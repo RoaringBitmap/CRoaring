@@ -1,0 +1,3 @@
+/*
+An implementation of Roaring Bitmaps in C.
+*/
