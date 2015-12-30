@@ -4,7 +4,7 @@
  */
 
 #include "bitset.h"
-
+#include <nmmintrin.h>
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
@@ -56,7 +56,7 @@ int bitset_container_compute_cardinality(bitset_container_t *bitset) {
     uint64_t * a = bitset->array;
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
         uint64_t w = a[k];
-        sum += __builtin_popcountl(w);
+        sum += _mm_popcnt_u64(w);
     }
     return sum;
 }
@@ -70,7 +70,7 @@ int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
         uint64_t w = a1[k] | a2[k];
         ao[k] = w;
-        cardinality += __builtin_popcountl(w);
+        cardinality += _mm_popcnt_u64(w);
     }
     bitsetout->cardinality = cardinality;
     return bitsetout->cardinality;
@@ -99,7 +99,7 @@ int bitset_container_and(bitset_container_t *bitset1, bitset_container_t *bitset
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
         uint64_t w = a1[k] & a2[k];
         ao[k] = w;
-        cardinality += __builtin_popcountl(w);
+        cardinality += _mm_popcnt_u64(w);
     }
     bitsetout->cardinality = cardinality;
     return bitsetout->cardinality;
