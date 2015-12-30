@@ -53,25 +53,12 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
 
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset) {
-	int sum = 0;
+	int32_t sum = 0;
 	uint64_t * a = bitset->array;
-	int k = 0;
-	for (; k + 3 < BITSET_CONTAINER_SIZE_IN_WORDS; k+=4) {
-		sum += __builtin_popcountl(a[k]);
-		sum += __builtin_popcountl(a[k+1]);
-		sum += __builtin_popcountl(a[k+2]);
-		sum += __builtin_popcountl(a[k+3]);
-
+	for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+		uint64_t w = a[k];
+                sum += __builtin_popcountl(w);
 	}
-	for (; k +1  < BITSET_CONTAINER_SIZE_IN_WORDS; k+=2) {
-		sum += __builtin_popcountl(a[k]);
-		sum += __builtin_popcountl(a[k+1]);
-
-	}
-	if ( k < BITSET_CONTAINER_SIZE_IN_WORDS) {
-		sum += __builtin_popcountl(a[k]);
-	}
-
 	return sum;
 }
 
@@ -80,11 +67,11 @@ int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2
 	uint64_t * a1 = bitset1->array;
 	uint64_t * a2 = bitset2->array;
 	uint64_t * ao = bitsetout->array;
-    int32_t cardinality = 0;
+        int32_t cardinality = 0;
 	for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
 		uint64_t w = a1[k] | a2[k];
 		ao[k] = w;
-		cardinality+=__builtin_popcountl(w);
+		cardinality += __builtin_popcountl(w);
 	}
 	bitsetout->cardinality = cardinality;
 	return bitsetout->cardinality;
