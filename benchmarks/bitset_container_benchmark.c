@@ -19,6 +19,13 @@ int set_test(bitset_container_t * B) {
 	return 0;
 }
 
+int unset_test(bitset_container_t * B) {
+	int x;
+	for(x = 0; x< 1<<16; x+=3) {
+		bitset_container_unset(B,(uint16_t)x);
+	}
+	return 0;
+}
 int get_test(bitset_container_t * B) {
 	int card = 0;
 	int x;
@@ -29,14 +36,20 @@ int get_test(bitset_container_t * B) {
 }
 
 
+
 int main() {
 	int repeat = 5000;
 	int size = (1<<16)/3;
+	printf("bitset container benchmarks\n");
 	bitset_container_t * B = bitset_container_create();
 	BEST_TIME(set_test(B), 0, repeat, size);
 	int answer = get_test(B);
 	size = 1 << 16;
 	BEST_TIME(get_test(B), answer, repeat, size);
+	BEST_TIME(bitset_container_cardinality(B), answer, repeat, 1);
+	BEST_TIME(bitset_container_compute_cardinality(B), answer, repeat, 1);
+	size = (1<<16)/3;
+	BEST_TIME(unset_test(B), 0, repeat, size);
 
 	bitset_container_free(B);
 	return 0;

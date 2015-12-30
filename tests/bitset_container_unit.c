@@ -30,6 +30,29 @@ int set_get_test() {
 			return 0;
 		}
 	}
+	if(bitset_container_cardinality(B) != (1<<16)/3 + 1) {
+		printf("Bug %s, line %d \n", __FILE__, __LINE__);
+		bitset_container_free(B);
+		return 0;
+	}
+	if(bitset_container_compute_cardinality(B) != (1<<16)/3 + 1) {
+		printf("Bug %s, line %d \n", __FILE__, __LINE__);
+		bitset_container_free(B);
+		return 0;
+	}
+	for(x = 0; x< 1<<16; x+=3) {
+		bitset_container_unset(B,(uint16_t)x);
+	}
+	if(bitset_container_cardinality(B) != 0) {
+		printf("Bug %s, line %d \n", __FILE__, __LINE__);
+		bitset_container_free(B);
+		return 0;
+	}
+	if(bitset_container_compute_cardinality(B) != 0) {
+		printf("Bug %s, line %d \n", __FILE__, __LINE__);
+		bitset_container_free(B);
+		return 0;
+	}
 	bitset_container_free(B);
 	return 1;
 }
