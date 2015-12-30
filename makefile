@@ -38,7 +38,7 @@ bitset_container_unit: ./tests/bitset_container_unit.c    $(HEADERS) $(OBJECTS)
 
 
 bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
-	$(CC) $(CFLAGS) -o bitset_container_unit ./benchmarks/bitset_container_benchmark.c $(INCLUDES)  $(OBJECTS)
+	$(CC) $(CFLAGS) -o bitset_container_benchmark ./benchmarks/bitset_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
 
 clean:
