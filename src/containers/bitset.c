@@ -29,15 +29,13 @@ void bitset_container_free(bitset_container_t *bitset) {
 
 /* Set the ith bit.  */
 void bitset_container_set(bitset_container_t *bitset,  uint16_t i ) {
-  bitset->array[i >> 6] |= ((uint64_t)1) << (i % 64);
+  bitset->array[i >> 6] |= UINT64_C(1) << (i & 63); // getting rid of the mask can shave one cycle off...
 }
-
 
 /* Get the value of the ith bit.  */
 int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
   uint64_t w =  bitset->array[i >> 6];
-  //return _bittest64(w,i % 64);
-  return ( w & ( ((uint64_t)1) << (i % 64))) != 0 ;
+  return (w >> (i & 63) ) & 1; // getting rid of the mask can shave one cycle off...
 }
 
 
