@@ -44,6 +44,12 @@ inline int bitset_container_cardinality(bitset_container_t *bitset) {
   return  bitset->cardinality;
 }
 
+/* computes the union of bitset1 and bitset2 and write the result to bitsetout */
+int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
+
+/* computes the union of bitset1 and bitset2 and write the result to bitsetout, does not compute the cardinality of the result */
+int bitset_container_or_nocard(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
+
 
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset);

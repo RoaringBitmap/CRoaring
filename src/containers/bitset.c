@@ -51,17 +51,41 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
   return (w >> (i & 63) ) & 1; // getting rid of the mask can shave one cycle off...
 }
 
-
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset) {
 	int sum = 0;
+	uint64_t * a = bitset->array;
 	for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
-		sum += __builtin_popcountl(bitset->array[k]);
+		sum += __builtin_popcountl(a[k]);
 	}
 	return sum;
 }
 
+/* computes the union of bitset1 and bitset2 and write the result to bitsetout */
+int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout) {
+	uint64_t * a1 = bitset1->array;
+	uint64_t * a2 = bitset2->array;
+	uint64_t * ao = bitsetout->array;
+    int32_t cardinality = 0;
+	for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+		uint64_t w = a1[k] | a2[k];
+		ao[k] = w;
+		cardinality+=__builtin_popcountl(w);
+	}
+	bitsetout->cardinality = cardinality;
+	return bitsetout->cardinality;
+}
 
-
-
+/* computes the union of bitset1 and bitset2 and write the result to bitsetout, does not compute the cardinality of the result */
+int bitset_container_or_nocard(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout) {
+	uint64_t * a1 = bitset1->array;
+	uint64_t * a2 = bitset2->array;
+	uint64_t * ao = bitsetout->array;
+	for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+		uint64_t w = a1[k] | a2[k];
+		ao[k] = w;
+	}
+	bitsetout->cardinality = -1;
+	return bitsetout->cardinality;
+}
 
