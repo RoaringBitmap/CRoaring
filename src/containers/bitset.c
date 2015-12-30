@@ -55,9 +55,23 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
 int bitset_container_compute_cardinality(bitset_container_t *bitset) {
 	int sum = 0;
 	uint64_t * a = bitset->array;
-	for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+	int k = 0;
+	for (; k + 3 < BITSET_CONTAINER_SIZE_IN_WORDS; k+=4) {
+		sum += __builtin_popcountl(a[k]);
+		sum += __builtin_popcountl(a[k+1]);
+		sum += __builtin_popcountl(a[k+2]);
+		sum += __builtin_popcountl(a[k+3]);
+
+	}
+	for (; k +1  < BITSET_CONTAINER_SIZE_IN_WORDS; k+=2) {
+		sum += __builtin_popcountl(a[k]);
+		sum += __builtin_popcountl(a[k+1]);
+
+	}
+	if ( k < BITSET_CONTAINER_SIZE_IN_WORDS) {
 		sum += __builtin_popcountl(a[k]);
 	}
+
 	return sum;
 }
 

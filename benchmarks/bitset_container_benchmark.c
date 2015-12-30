@@ -65,5 +65,7 @@ int main() {
 	BEST_TIME(bitset_container_or_nocard(B1,B2,BO), -1, repeat, 1);
 	answer = bitset_container_compute_cardinality(BO);
 	BEST_TIME(bitset_container_or(B1,B2,BO), answer, repeat, 1);
+	BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
+	BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat, 1);
 	return 0;
 }
