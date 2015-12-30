@@ -15,11 +15,13 @@
 #include <stdint.h>
 
 struct bitset_container_s {
-	int32_t cardinality;
+    int32_t cardinality;
     uint64_t *array;
 };
 
 typedef struct bitset_container_s bitset_container_t;
+
+enum {BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64};
 
 
 /* Create a new bitset. Return NULL in case of failure. */
@@ -41,7 +43,7 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i );
 
 /* Get the number of bits set */
 inline int bitset_container_cardinality(bitset_container_t *bitset) {
-  return  bitset->cardinality;
+    return  bitset->cardinality;
 }
 
 /* computes the union of bitset1 and bitset2 and write the result to bitsetout */
@@ -53,5 +55,11 @@ int bitset_container_or_nocard(bitset_container_t *bitset1, bitset_container_t *
 
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset);
+
+/* computes the intersection of bitset1 and bitset2 and write the result to bitsetout */
+int bitset_container_and(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
+
+/* computes the intersection of bitset1 and bitset2 and write the result to bitsetout, does not compute the cardinality of the result */
+int bitset_container_and_nocard(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */
