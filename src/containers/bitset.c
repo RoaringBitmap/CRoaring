@@ -54,22 +54,11 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset) {
     int32_t sum1 = 0;
-    int32_t sum2 = 0;
-    int32_t sum3 = 0;
-    int32_t sum4 = 0;
     uint64_t * a = bitset->array;
-    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
-    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k+= 4) {
-        uint64_t w1 = a[k];
-        sum1 += _mm_popcnt_u64(w1);
-        uint64_t w2 = a[k+1];
-        sum2 += _mm_popcnt_u64(w2);
-        uint64_t w3 = a[k+2];
-        sum3 += _mm_popcnt_u64(w3);
-        uint64_t w4 = a[k+3];
-        sum4 += _mm_popcnt_u64(w4);
+    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+        sum1 += _mm_popcnt_u64(a[k]);
     }
-    return sum1 + sum2 + sum3 + sum4;
+    return sum1;
 }
 
 /* computes the union of bitset1 and bitset2 and write the result to bitsetout */
