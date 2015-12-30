@@ -4,6 +4,7 @@
  */
 
 #include "bitset.h"
+#include <assert.h>
 #include <nmmintrin.h>
 
 /* Create a new bitset. Return NULL in case of failure. */
@@ -52,13 +53,23 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
 
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset) {
-    int32_t sum = 0;
+    int32_t sum1 = 0;
+    int32_t sum2 = 0;
+    int32_t sum3 = 0;
+    int32_t sum4 = 0;
     uint64_t * a = bitset->array;
-    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
-        uint64_t w = a[k];
-        sum += _mm_popcnt_u64(w);
+    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
+    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k+= 4) {
+        uint64_t w1 = a[k];
+        sum1 += _mm_popcnt_u64(w1);
+        uint64_t w2 = a[k+1];
+        sum2 += _mm_popcnt_u64(w2);
+        uint64_t w3 = a[k+2];
+        sum3 += _mm_popcnt_u64(w3);
+        uint64_t w4 = a[k+3];
+        sum4 += _mm_popcnt_u64(w4);
     }
-    return sum;
+    return sum1 + sum2 + sum3 + sum4;
 }
 
 /* computes the union of bitset1 and bitset2 and write the result to bitsetout */
@@ -67,6 +78,7 @@ int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2
     uint64_t * a2 = bitset2->array;
     uint64_t * ao = bitsetout->array;
     int32_t cardinality = 0;
+    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
         uint64_t w = a1[k] | a2[k];
         ao[k] = w;
@@ -81,6 +93,7 @@ int bitset_container_or_nocard(bitset_container_t *bitset1, bitset_container_t *
     uint64_t * a1 = bitset1->array;
     uint64_t * a2 = bitset2->array;
     uint64_t * ao = bitsetout->array;
+    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
         uint64_t w = a1[k] | a2[k];
         ao[k] = w;
@@ -96,10 +109,12 @@ int bitset_container_and(bitset_container_t *bitset1, bitset_container_t *bitset
     uint64_t * a2 = bitset2->array;
     uint64_t * ao = bitsetout->array;
     int32_t cardinality = 0;
+
+    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
-        uint64_t w = a1[k] & a2[k];
-        ao[k] = w;
-        cardinality += _mm_popcnt_u64(w);
+        uint64_t w1 = a1[k] & a2[k];
+        ao[k] = w1;
+        cardinality += _mm_popcnt_u64(w1);
     }
     bitsetout->cardinality = cardinality;
     return bitsetout->cardinality;
