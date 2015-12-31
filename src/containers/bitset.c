@@ -14,6 +14,7 @@ bitset_container_t *bitset_container_create() {
     if( ( bitset = malloc( sizeof( bitset_container_t ) ) ) == NULL ) {
         return NULL;
     }
+    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
     if ((bitset->array = (uint64_t *) malloc(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) == NULL) {
         free( bitset);
         return NULL;
@@ -55,8 +56,11 @@ int bitset_container_get(bitset_container_t *bitset,  uint16_t i ) {
 int bitset_container_compute_cardinality(bitset_container_t *bitset) {
     int32_t sum1 = 0;
     uint64_t * a = bitset->array;
-    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k+=4) {
         sum1 += _mm_popcnt_u64(a[k]);
+        sum1 += _mm_popcnt_u64(a[k+1]);
+        sum1 += _mm_popcnt_u64(a[k+2]);
+        sum1 += _mm_popcnt_u64(a[k+3]);
     }
     return sum1;
 }
@@ -67,12 +71,14 @@ int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2
     uint64_t * a2 = bitset2->array;
     uint64_t * ao = bitsetout->array;
     int32_t cardinality = 0;
-    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
-    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
-        uint64_t w = a1[k] | a2[k];
-        ao[k] = w;
-        cardinality += _mm_popcnt_u64(w);
-    }
+    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k+=2) {
+       uint64_t w1 = a1[k] | a2[k];
+        ao[k] = w1;
+        cardinality += _mm_popcnt_u64(w1);
+        uint64_t w2 = a1[k+1] | a2[k+1];
+        ao[k+1] = w2;
+        cardinality += _mm_popcnt_u64(w2);
+      }
     bitsetout->cardinality = cardinality;
     return bitsetout->cardinality;
 }
@@ -82,7 +88,6 @@ int bitset_container_or_nocard(bitset_container_t *bitset1, bitset_container_t *
     uint64_t * a1 = bitset1->array;
     uint64_t * a2 = bitset2->array;
     uint64_t * ao = bitsetout->array;
-    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
         uint64_t w = a1[k] | a2[k];
         ao[k] = w;
@@ -98,13 +103,14 @@ int bitset_container_and(bitset_container_t *bitset1, bitset_container_t *bitset
     uint64_t * a2 = bitset2->array;
     uint64_t * ao = bitsetout->array;
     int32_t cardinality = 0;
-
-    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
-    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
+    for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k+=2) {
         uint64_t w1 = a1[k] & a2[k];
         ao[k] = w1;
         cardinality += _mm_popcnt_u64(w1);
-    }
+        uint64_t w2 = a1[k+1] & a2[k+1];
+        ao[k+1] = w2;
+        cardinality += _mm_popcnt_u64(w2);
+     }
     bitsetout->cardinality = cardinality;
     return bitsetout->cardinality;
 }
