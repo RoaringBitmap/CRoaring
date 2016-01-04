@@ -3,9 +3,9 @@
 #
 .SUFFIXES: .cpp .o .c .h
 ifeq ($(DEBUG),1)
-CFLAGS = -fPIC  -std=c99 -ggdb -msse4.1  -mavx  -mavx2 -march=native -Wall -Wextra -pedantic
+CFLAGS = -fPIC  -std=c99 -ggdb -mavx2 -march=native -Wall -Wextra -pedantic
 else
-CFLAGS = -fPIC -std=c99 -O3 -msse4.1 -mavx  -mavx2  -march=native -Wall -Wextra -pedantic
+CFLAGS = -fPIC -std=c99 -O3 -mavx2 -march=native -Wall -Wextra -pedantic
 endif # debug
 
 HEADERS=./include/roaring.h ./include/containers/bitset.h
