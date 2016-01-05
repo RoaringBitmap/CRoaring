@@ -6,7 +6,6 @@
 #ifndef INCLUDE_CONTAINERS_BITSET_H_
 #define INCLUDE_CONTAINERS_BITSET_H_
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -21,8 +20,7 @@ struct bitset_container_s {
 
 typedef struct bitset_container_s bitset_container_t;
 
-enum {BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64};
-
+enum { BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64 };
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create();
@@ -31,35 +29,44 @@ bitset_container_t *bitset_container_create();
 void bitset_container_free(bitset_container_t *bitset);
 
 /* Set the ith bit.  */
-void bitset_container_set(bitset_container_t *bitset,  uint16_t i );
-
+void bitset_container_set(bitset_container_t *bitset, uint16_t i);
 
 /* Unset the ith bit.  */
-void bitset_container_unset(bitset_container_t *bitset,  uint16_t i );
+void bitset_container_unset(bitset_container_t *bitset, uint16_t i);
 
 /* Get the value of the ith bit.  */
-int bitset_container_get(bitset_container_t *bitset,  uint16_t i );
-
+int bitset_container_get(bitset_container_t *bitset, uint16_t i);
 
 /* Get the number of bits set */
 inline int bitset_container_cardinality(bitset_container_t *bitset) {
-    return  bitset->cardinality;
+    return bitset->cardinality;
 }
 
-/* computes the union of bitset1 and bitset2 and write the result to bitsetout */
-int bitset_container_or(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
+/* computes the union of bitset1 and bitset2 and write the result to bitsetout
+ */
+int bitset_container_or(bitset_container_t *bitset1,
+                        bitset_container_t *bitset2,
+                        bitset_container_t *bitsetout);
 
-/* computes the union of bitset1 and bitset2 and write the result to bitsetout, does not compute the cardinality of the result */
-int bitset_container_or_nocard(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
-
+/* computes the union of bitset1 and bitset2 and write the result to bitsetout,
+ * does not compute the cardinality of the result */
+int bitset_container_or_nocard(bitset_container_t *bitset1,
+                               bitset_container_t *bitset2,
+                               bitset_container_t *bitsetout);
 
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(bitset_container_t *bitset);
 
-/* computes the intersection of bitset1 and bitset2 and write the result to bitsetout */
-int bitset_container_and(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
+/* computes the intersection of bitset1 and bitset2 and write the result to
+ * bitsetout */
+int bitset_container_and(bitset_container_t *bitset1,
+                         bitset_container_t *bitset2,
+                         bitset_container_t *bitsetout);
 
-/* computes the intersection of bitset1 and bitset2 and write the result to bitsetout, does not compute the cardinality of the result */
-int bitset_container_and_nocard(bitset_container_t *bitset1, bitset_container_t *bitset2, bitset_container_t *bitsetout);
+/* computes the intersection of bitset1 and bitset2 and write the result to
+ * bitsetout, does not compute the cardinality of the result */
+int bitset_container_and_nocard(bitset_container_t *bitset1,
+                                bitset_container_t *bitset2,
+                                bitset_container_t *bitsetout);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */
