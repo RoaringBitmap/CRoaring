@@ -6,12 +6,8 @@
 #ifndef INCLUDE_CONTAINERS_BITSET_H_
 #define INCLUDE_CONTAINERS_BITSET_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
-#include <string.h>
-#include <sys/types.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 struct bitset_container_s {
     int32_t cardinality;
@@ -35,7 +31,7 @@ void bitset_container_set(bitset_container_t *bitset, uint16_t i);
 void bitset_container_unset(bitset_container_t *bitset, uint16_t i);
 
 /* Get the value of the ith bit.  */
-int bitset_container_get(bitset_container_t *bitset, uint16_t i);
+bool bitset_container_get(bitset_container_t *bitset, uint16_t i);
 
 /* Get the number of bits set */
 inline int bitset_container_cardinality(bitset_container_t *bitset) {

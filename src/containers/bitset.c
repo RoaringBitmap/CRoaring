@@ -3,10 +3,12 @@
  *
  */
 
-#include "bitset.h"
 #include <assert.h>
 #include <x86intrin.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "bitset.h"
 
 #define USEAVX
 
@@ -52,10 +54,10 @@ void bitset_container_unset(bitset_container_t *bitset, uint16_t i) {
 }
 
 /* Get the value of the ith bit.  */
-int bitset_container_get(bitset_container_t *bitset, uint16_t i) {
+bool bitset_container_get(bitset_container_t *bitset, uint16_t i) {
     uint64_t w = bitset->array[i >> 6];
-    return (w >> (i & 63)) &
-           1;  // getting rid of the mask can shave one cycle off...
+    // getting rid of the mask can shave one cycle off...
+    return (w >> (i & 63)) & 1;
 }
 
 /* Get the number of bits set (force computation) */
