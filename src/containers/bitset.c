@@ -13,10 +13,10 @@
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
-    bitset_container_t *bitset =
-        aligned_alloc(sizeof(__m256i), sizeof(bitset_container_t));
-    /* Allocate the bitset itself. */
-    if (!bitset) return NULL;
+    bitset_container_t *bitset = NULL;
+
+    if(posix_memalign((void *) &bitset, sizeof(__m256i), sizeof(bitset_container_t)))
+        return NULL;
 
     memset(bitset, 0, sizeof(bitset_container_t));
     bitset->cardinality = 0;
