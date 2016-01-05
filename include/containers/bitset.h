@@ -8,15 +8,24 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <x86intrin.h>
+
+#define USEAVX
+
+#ifdef USEAVX
+#define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
+#else
+#define ALIGN_AVX
+#endif
+
+enum { BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64 };
 
 struct bitset_container_s {
     int32_t cardinality;
-    uint64_t *array;
+    ALIGN_AVX uint64_t array[BITSET_CONTAINER_SIZE_IN_WORDS];
 };
 
 typedef struct bitset_container_s bitset_container_t;
-
-enum { BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64 };
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create();

@@ -4,7 +4,6 @@
  */
 
 #include <assert.h>
-#include <x86intrin.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,28 +13,18 @@
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
-    bitset_container_t *bitset = NULL;
+    bitset_container_t *bitset =
+        aligned_alloc(sizeof(__m256i), sizeof(bitset_container_t));
     /* Allocate the bitset itself. */
-    if ((bitset = malloc(sizeof(bitset_container_t))) == NULL) {
-        return NULL;
-    }
-    assert((BITSET_CONTAINER_SIZE_IN_WORDS & 3) == 0);
-    if (posix_memalign((void **)&bitset->array, sizeof(__m256i),
-                       sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS) !=
-        0) {
-        free(bitset);
-        return NULL;
-    }
-    memset(bitset->array, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (!bitset) return NULL;
+
+    memset(bitset, 0, sizeof(bitset_container_t));
     bitset->cardinality = 0;
     return bitset;
 }
 
 /* Free memory. */
-void bitset_container_free(bitset_container_t *bitset) {
-    free(bitset->array);
-    free(bitset);
-}
+void bitset_container_free(bitset_container_t *bitset) { free(bitset); }
 
 /* Set the ith bit.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t i) {
