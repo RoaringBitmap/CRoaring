@@ -39,31 +39,31 @@ void bitset_container_free(bitset_container_t *bitset) {
 
 /* Set the ith bit.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t i) {
-    uint64_t oldw = bitset->array[i >> 6];
-    uint64_t neww = oldw | (UINT64_C(1) << (i & 63));
+    const uint64_t oldw = bitset->array[i >> 6];
+    const uint64_t neww = oldw | (UINT64_C(1) << (i & 63));
     bitset->cardinality += (oldw != neww);
     bitset->array[i >> 6] = neww;
 }
 
 /* Unset the ith bit.  */
 void bitset_container_unset(bitset_container_t *bitset, uint16_t i) {
-    uint64_t oldw = bitset->array[i >> 6];
-    uint64_t neww = oldw & (~(UINT64_C(1) << (i & 63)));
+    const uint64_t oldw = bitset->array[i >> 6];
+    const uint64_t neww = oldw & (~(UINT64_C(1) << (i & 63)));
     bitset->cardinality -= (oldw != neww);
     bitset->array[i >> 6] = neww;
 }
 
 /* Get the value of the ith bit.  */
-bool bitset_container_get(bitset_container_t *bitset, uint16_t i) {
-    uint64_t w = bitset->array[i >> 6];
+bool bitset_container_get(const bitset_container_t *bitset, uint16_t i) {
+    const uint64_t w = bitset->array[i >> 6];
     // getting rid of the mask can shave one cycle off...
     return (w >> (i & 63)) & 1;
 }
 
 /* Get the number of bits set (force computation) */
-int bitset_container_compute_cardinality(bitset_container_t *bitset) {
+int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+    const uint64_t *a = bitset->array;
     int32_t sum1 = 0;
-    uint64_t *a = bitset->array;
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += 4) {
         sum1 += _mm_popcnt_u64(a[k]);
         sum1 += _mm_popcnt_u64(a[k + 1]);
@@ -75,23 +75,23 @@ int bitset_container_compute_cardinality(bitset_container_t *bitset) {
 
 /* computes the union of bitset1 and bitset2 and write the result to bitsetout
  */
-int bitset_container_or(bitset_container_t *bitset1,
-                        bitset_container_t *bitset2,
+int bitset_container_or(const bitset_container_t *bitset1,
+                        const bitset_container_t *bitset2,
                         bitset_container_t *bitsetout) {
 #ifdef USEAVX
     bitset_container_or_nocard(bitset1, bitset2, bitsetout);
     bitsetout->cardinality = bitset_container_compute_cardinality(bitsetout);
     return bitsetout->cardinality;
 #else
-    uint64_t *a1 = bitset1->array;
-    uint64_t *a2 = bitset2->array;
+    const uint64_t *a1 = bitset1->array;
+    const uint64_t *a2 = bitset2->array;
     uint64_t *ao = bitsetout->array;
     int32_t cardinality = 0;
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += 2) {
-        uint64_t w1 = a1[k] | a2[k];
+        const uint64_t w1 = a1[k] | a2[k];
         ao[k] = w1;
         cardinality += _mm_popcnt_u64(w1);
-        uint64_t w2 = a1[k + 1] | a2[k + 1];
+        const uint64_t w2 = a1[k + 1] | a2[k + 1];
         ao[k + 1] = w2;
         cardinality += _mm_popcnt_u64(w2);
     }
@@ -102,11 +102,11 @@ int bitset_container_or(bitset_container_t *bitset1,
 
 /* computes the union of bitset1 and bitset2 and write the result to bitsetout,
  * does not compute the cardinality of the result */
-int bitset_container_or_nocard(bitset_container_t *bitset1,
-                               bitset_container_t *bitset2,
+int bitset_container_or_nocard(const bitset_container_t *bitset1,
+                               const bitset_container_t *bitset2,
                                bitset_container_t *bitsetout) {
-    uint64_t *a1 = bitset1->array;
-    uint64_t *a2 = bitset2->array;
+    const uint64_t *a1 = bitset1->array;
+    const uint64_t *a2 = bitset2->array;
     uint64_t *ao = bitsetout->array;
 #ifdef USEAVX
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS / 4; k++) {
@@ -117,7 +117,7 @@ int bitset_container_or_nocard(bitset_container_t *bitset1,
     }
 #else
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k++) {
-        uint64_t w = a1[k] | a2[k];
+        const uint64_t w = a1[k] | a2[k];
         ao[k] = w;
     }
 #endif
@@ -127,23 +127,23 @@ int bitset_container_or_nocard(bitset_container_t *bitset1,
 
 /* computes the intersection of bitset1 and bitset2 and write the result to
  * bitsetout */
-int bitset_container_and(bitset_container_t *bitset1,
-                         bitset_container_t *bitset2,
+int bitset_container_and(const bitset_container_t *bitset1,
+                         const bitset_container_t *bitset2,
                          bitset_container_t *bitsetout) {
 #ifdef USEAVX
     bitset_container_and_nocard(bitset1, bitset2, bitsetout);
     bitsetout->cardinality = bitset_container_compute_cardinality(bitsetout);
     return bitsetout->cardinality;
 #else
-    uint64_t *a1 = bitset1->array;
-    uint64_t *a2 = bitset2->array;
+    const uint64_t *a1 = bitset1->array;
+    const uint64_t *a2 = bitset2->array;
     uint64_t *ao = bitsetout->array;
     int32_t cardinality = 0;
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += 2) {
-        uint64_t w1 = a1[k] & a2[k];
+        const uint64_t w1 = a1[k] & a2[k];
         ao[k] = w1;
         cardinality += _mm_popcnt_u64(w1);
-        uint64_t w2 = a1[k + 1] & a2[k + 1];
+        const uint64_t w2 = a1[k + 1] & a2[k + 1];
         ao[k + 1] = w2;
         cardinality += _mm_popcnt_u64(w2);
     }
@@ -154,11 +154,11 @@ int bitset_container_and(bitset_container_t *bitset1,
 
 /* computes the intersection of bitset1 and bitset2 and write the result to
  * bitsetout, does not compute the cardinality of the result */
-int bitset_container_and_nocard(bitset_container_t *bitset1,
-                                bitset_container_t *bitset2,
+int bitset_container_and_nocard(const bitset_container_t *bitset1,
+                                const bitset_container_t *bitset2,
                                 bitset_container_t *bitsetout) {
-    uint64_t *a1 = bitset1->array;
-    uint64_t *a2 = bitset2->array;
+    const uint64_t *a1 = bitset1->array;
+    const uint64_t *a2 = bitset2->array;
     uint64_t *ao = bitsetout->array;
 #ifdef USEAVX
     for (int k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS / 4; k++) {
