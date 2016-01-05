@@ -68,8 +68,25 @@ int bitset_container_or(const bitset_container_t *bitset1,
                         const bitset_container_t *bitset2,
                         bitset_container_t *bitsetout) {
 #ifdef USEAVX
-    bitset_container_or_nocard(bitset1, bitset2, bitsetout);
-    bitsetout->cardinality = bitset_container_compute_cardinality(bitsetout);
+    const uint64_t *a1 = bitset1->array;
+    const uint64_t *a2 = bitset2->array;
+    uint64_t *ao = bitsetout->array;
+    int sum = 0;
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / (4 * 8); i++) {
+        for (int j = 0; j < 8; ++j) {
+            __m256i A1 = _mm256_lddqu_si256((__m256i *)a1 + (i * 8) + j);
+            __m256i A2 = _mm256_lddqu_si256((__m256i *)a2 + (i * 8) + j);
+            __m256i AO = _mm256_or_si256(A1, A2);
+            _mm256_storeu_si256((__m256i *)ao + (i * 8) + j, AO);
+        }
+        for (int j = 0; j < 8; ++j) {
+            sum += _mm_popcnt_u64(ao[(i * 8) + j]);
+            sum += _mm_popcnt_u64(ao[(i * 8) + j + 1]);
+            sum += _mm_popcnt_u64(ao[(i * 8) + j + 2]);
+            sum += _mm_popcnt_u64(ao[(i * 8) + j + 3]);
+        }
+    }
+    bitsetout->cardinality = sum;
     return bitsetout->cardinality;
 #else
     const uint64_t *a1 = bitset1->array;
@@ -120,8 +137,25 @@ int bitset_container_and(const bitset_container_t *bitset1,
                          const bitset_container_t *bitset2,
                          bitset_container_t *bitsetout) {
 #ifdef USEAVX
-    bitset_container_and_nocard(bitset1, bitset2, bitsetout);
-    bitsetout->cardinality = bitset_container_compute_cardinality(bitsetout);
+    const uint64_t *a1 = bitset1->array;
+    const uint64_t *a2 = bitset2->array;
+    uint64_t *ao = bitsetout->array;
+    int sum = 0;
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / (4 * 8); i++) {
+        for (int j = 0; j < 8; ++j) {
+            __m256i A1 = _mm256_lddqu_si256((__m256i *)a1 + (i * 8) + j);
+            __m256i A2 = _mm256_lddqu_si256((__m256i *)a2 + (i * 8) + j);
+            __m256i AO = _mm256_and_si256(A1, A2);
+            _mm256_storeu_si256((__m256i *)ao + (i * 8) + j, AO);
+        }
+        for (int j = 0; j < 8; ++j) {
+            sum += _mm_popcnt_u64(ao[(i * 8) + j]);
+            sum += _mm_popcnt_u64(ao[(i * 8) + j + 1]);
+            sum += _mm_popcnt_u64(ao[(i * 8) + j + 2]);
+            sum += _mm_popcnt_u64(ao[(i * 8) + j + 3]);
+        }
+    }
+    bitsetout->cardinality = sum;
     return bitsetout->cardinality;
 #else
     const uint64_t *a1 = bitset1->array;
