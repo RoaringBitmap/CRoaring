@@ -80,10 +80,10 @@ int bitset_container_or(const bitset_container_t *bitset1,
             _mm256_storeu_si256((__m256i *)ao + (i * 8) + j, AO);
         }
         for (int j = 0; j < 8; ++j) {
-            sum += _mm_popcnt_u64(ao[(i * 8) + j]);
-            sum += _mm_popcnt_u64(ao[(i * 8) + j + 1]);
-            sum += _mm_popcnt_u64(ao[(i * 8) + j + 2]);
-            sum += _mm_popcnt_u64(ao[(i * 8) + j + 3]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 1]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 2]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 3]);
         }
     }
     bitsetout->cardinality = sum;
@@ -149,10 +149,10 @@ int bitset_container_and(const bitset_container_t *bitset1,
             _mm256_storeu_si256((__m256i *)ao + (i * 8) + j, AO);
         }
         for (int j = 0; j < 8; ++j) {
-            sum += _mm_popcnt_u64(ao[(i * 8) + j]);
-            sum += _mm_popcnt_u64(ao[(i * 8) + j + 1]);
-            sum += _mm_popcnt_u64(ao[(i * 8) + j + 2]);
-            sum += _mm_popcnt_u64(ao[(i * 8) + j + 3]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 ]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 1]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 2]);
+            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 3]);
         }
     }
     bitsetout->cardinality = sum;
