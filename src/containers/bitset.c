@@ -72,18 +72,20 @@ int bitset_container_or(const bitset_container_t *bitset1,
     const uint64_t *a2 = bitset2->array;
     uint64_t *ao = bitsetout->array;
     int sum = 0;
-    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / (4 * 8); i++) {
-        for (int j = 0; j < 8; ++j) {
-            __m256i A1 = _mm256_lddqu_si256((__m256i *)a1 + (i * 8) + j);
-            __m256i A2 = _mm256_lddqu_si256((__m256i *)a2 + (i * 8) + j);
+    const int repeat = 8; // data is processed in blocks of "repeat" 32-byte registers
+    const int wordsin256 = sizeof(__m256i) /  sizeof(uint64_t); // how many 64-bit words are there in a 32-byte register?
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / (wordsin256 * repeat); i++) {
+        for (int j = 0; j < repeat; ++j) {
+            __m256i A1 = _mm256_lddqu_si256((__m256i *)a1 + (i * repeat) + j);
+            __m256i A2 = _mm256_lddqu_si256((__m256i *)a2 + (i * repeat) + j);
             __m256i AO = _mm256_or_si256(A1, A2);
-            _mm256_storeu_si256((__m256i *)ao + (i * 8) + j, AO);
+            _mm256_storeu_si256((__m256i *)ao + (i * repeat) + j, AO);
         }
-        for (int j = 0; j < 8; ++j) {
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4]);
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 1]);
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 2]);
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 3]);
+        for (int j = 0; j < repeat; ++j) {
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4]);
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4 + 1]);
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4 + 2]);
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4 + 3]);
         }
     }
     bitsetout->cardinality = sum;
@@ -141,18 +143,20 @@ int bitset_container_and(const bitset_container_t *bitset1,
     const uint64_t *a2 = bitset2->array;
     uint64_t *ao = bitsetout->array;
     int sum = 0;
-    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / (4 * 8); i++) {
-        for (int j = 0; j < 8; ++j) {
-            __m256i A1 = _mm256_lddqu_si256((__m256i *)a1 + (i * 8) + j);
-            __m256i A2 = _mm256_lddqu_si256((__m256i *)a2 + (i * 8) + j);
+    const int repeat = 8; // data is processed in blocks of "repeat" 32-byte registers
+    const int wordsin256 = sizeof(__m256i) /  sizeof(uint64_t); // how many 64-bit words are there in a 32-byte register?
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / (wordsin256 * repeat); i++) {
+        for (int j = 0; j < repeat; ++j) {
+            __m256i A1 = _mm256_lddqu_si256((__m256i *)a1 + (i * repeat) + j);
+            __m256i A2 = _mm256_lddqu_si256((__m256i *)a2 + (i * repeat) + j);
             __m256i AO = _mm256_and_si256(A1, A2);
-            _mm256_storeu_si256((__m256i *)ao + (i * 8) + j, AO);
+            _mm256_storeu_si256((__m256i *)ao + (i * repeat) + j, AO);
         }
-        for (int j = 0; j < 8; ++j) {
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 ]);
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 1]);
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 2]);
-            sum += _mm_popcnt_u64(ao[(i * 32) + j * 4 + 3]);
+        for (int j = 0; j < repeat; ++j) {
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4]);
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4 + 1]);
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4 + 2]);
+            sum += _mm_popcnt_u64(ao[(i * repeat * wordsin256) + j * 4 + 3]);
         }
     }
     bitsetout->cardinality = sum;
