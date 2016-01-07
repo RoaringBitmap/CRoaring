@@ -9,7 +9,7 @@ CFLAGS1 = -fPIC -std=c99 -O3 -mavx2 -march=native -Wall -Wextra -pedantic
 endif # debug
 
 CFLAGS = $(CFLAGS1) -DUSEAVX
-CFLAGS = $(CFLAGS1)  #override, comment out if needed
+#CFLAGS = $(CFLAGS1)  #override, comment out if needed
 
 HEADERS=./include/roaring.h ./include/containers/bitset.h
 
