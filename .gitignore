@@ -30,3 +30,8 @@
 
 # Debug files
 *.dSYM/
+
+# binaries
+bitset_container_benchmark
+bitset_container_unit
+unit
