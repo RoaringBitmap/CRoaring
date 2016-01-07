@@ -27,20 +27,20 @@ test:
 	./bitset_container_unit
 
 
-roaring.o: ./src/roaring.c $(HEADERS) makefile
+roaring.o: ./src/roaring.c $(HEADERS)
 	$(CC) $(CFLAGS) -c ./src/roaring.c 
 
-bitset.o: ./src/containers/bitset.c ./include/containers/bitset.h makefile
+bitset.o: ./src/containers/bitset.c ./include/containers/bitset.h
 	$(CC) $(CFLAGS) -c ./src/containers/bitset.c $(INCLUDES)
 
-unit: ./tests/unit.c    $(HEADERS) $(OBJECTS) makefile
+unit: ./tests/unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o unit ./tests/unit.c $(INCLUDES)  $(OBJECTS)
 
-bitset_container_unit: ./tests/bitset_container_unit.c    $(HEADERS) $(OBJECTS) makefile
+bitset_container_unit: ./tests/bitset_container_unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o bitset_container_unit ./tests/bitset_container_unit.c $(INCLUDES)  $(OBJECTS)
 
 
-bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS) makefile
+bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o bitset_container_benchmark ./benchmarks/bitset_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
 
