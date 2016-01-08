@@ -37,6 +37,7 @@ int get_test(bitset_container_t* B) {
 int main() {
     int repeat = 5000;
     int size = (1 << 16) / 3;
+    tellmeall();
     printf("bitset container benchmarks\n");
     bitset_container_t* B = bitset_container_create();
     BEST_TIME(set_test(B), 0, repeat, size);

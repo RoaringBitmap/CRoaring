@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "containers/bitset.h"
+#include "misc/configreport.h"
 
 // returns 0 on error, 1 if ok.
 int set_get_test() {
@@ -189,12 +190,7 @@ int andnot_test() {
 
 int main() {
 
-   printf(" Build option USEAVX ");
-#ifdef USEAVX
-   printf("enabled\n");
-#else
-   printf("disabled\n");
-#endif
+	tellmeall();
 
     if (!set_get_test()) return -1;
     if (!and_or_test()) return -1;

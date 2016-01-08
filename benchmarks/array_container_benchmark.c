@@ -10,37 +10,49 @@
 #include "containers/array.h"
 #include "benchmark.h"
 
+enum{TESTSIZE=2048};
+
 int add_test(array_container_t* B) {
     int x;
-    for (x = 0; x < 1 << 16; x += 3) {
-        array_container_set(B, (uint16_t)x);
+    for (x = 0; x < TESTSIZE*3; x += 3) {
+        array_container_add(B, (uint16_t)x);
     }
     return 0;
 }
 
 int remove_test(array_container_t* B) {
     int x;
-    for (x = 0; x < 1 << 16; x += 3) {
-        array_container_unset(B, (uint16_t)x);
+    for (x = 0; x < TESTSIZE*3; x += 3) {
+        array_container_remove(B, (uint16_t)x);
     }
     return 0;
 }
 int contains_test(array_container_t* B) {
     int card = 0;
     int x;
-    for (x = 0; x < 1 << 16; x++) {
+    for (x = 0; x < TESTSIZE*3; x++) {
         card += array_container_contains(B, (uint16_t)x);
     }
     return card;
 }
 
+int union_test(array_container_t* B1, array_container_t* B2, array_container_t* BO) {
+	array_container_union(B1, B2, BO);
+	return BO->cardinality;
+}
+
+int intersection_test(array_container_t* B1, array_container_t* B2, array_container_t* BO) {
+	array_container_intersection(B1, B2, BO);
+	return BO->cardinality;
+}
 int main() {
     int repeat = 5000;
-    int size = (1 << 16) / 3;
+    int size = TESTSIZE;
+    tellmeall();
     printf("array container benchmarks\n");
     array_container_t* B = array_container_create();
     BEST_TIME(add_test(B), 0, repeat, size);
-    int answer = get_test(B);
+    int answer = contains_test(B);
     size = 1 << 16;
     BEST_TIME(contains_test(B), answer, repeat, size);
 
@@ -56,23 +68,15 @@ int main() {
     for (int x = 0; x < 1 << 16; x += 5) {
         array_container_add(B2, (uint16_t)x);
     }
+    int32_t inputsize = B1->cardinality + B2->cardinality;
     array_container_t* BO = array_container_create();
-    BEST_TIME(array_container_or(B1, B2, BO), -1, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    answer = array_container_compute_cardinality(BO);
-    BEST_TIME(array_container_or(B1, B2, BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    BEST_TIME(array_container_cardinality(BO), answer, repeat, 1);
-    BEST_TIME(array_container_compute_cardinality(BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    BEST_TIME(array_container_and_nocard(B1, B2, BO), -1, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    answer = array_container_compute_cardinality(BO);
-    BEST_TIME(array_container_and(B1, B2, BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    BEST_TIME(array_container_cardinality(BO), answer, repeat, 1);
-    BEST_TIME(array_container_compute_cardinality(BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+    printf("union and intersection times are expressed in cycles per number of input elements (both arrays)");
+    answer = union_test(B1, B2, BO);
+    BEST_TIME(union_test(B1, B2, BO), answer, repeat,
+    		inputsize);
+    answer = intersection_test(B1, B2, BO);
+    BEST_TIME(intersection_test(B1, B2, BO), answer, repeat,
+    		inputsize);
 
     return 0;
 }

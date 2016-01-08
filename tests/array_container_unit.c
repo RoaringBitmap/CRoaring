@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "containers/array.h"
+#include "misc/configreport.h"
 
 // returns 0 on error, 1 if ok.
 int add_contains_test() {
@@ -18,13 +19,36 @@ int add_contains_test() {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
     }
+    int expectedcard = 0;
     for (x = 0; x < 1 << 16; x += 3) {
-        array_container_add(B, (uint16_t)x);
+    	bool wasadded = array_container_add(B, (uint16_t)x);
+        if(!wasadded) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        if(!array_container_contains(B, (uint16_t)x)) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        expectedcard++;
+        if(B->cardinality != expectedcard) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        if(B->cardinality > B->capacity) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
     }
     for (x = 0; x < 1 << 16; x++) {
         int isset = array_container_contains(B, (uint16_t)x);
         int shouldbeset = (x / 3 * 3 == x);
         if (isset != shouldbeset) {
+        	printf("x=%d\n",x);
             printf("Bug %s, line %d \n", __FILE__, __LINE__);
             array_container_free(B);
             return 0;
@@ -35,24 +59,107 @@ int add_contains_test() {
         array_container_free(B);
         return 0;
     }
-    if (array_container_compute_cardinality(B) != (1 << 16) / 3 + 1) {
+    if (array_container_cardinality(B) != (1 << 16) / 3 + 1) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         array_container_free(B);
         return 0;
     }
     for (x = 0; x < 1 << 16; x += 3) {
-        array_container_remove(B, (uint16_t)x);
+        if(!array_container_contains(B, (uint16_t)x)) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+    	bool wasremoved = array_container_remove(B, (uint16_t)x);
+        if(!wasremoved) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        expectedcard--;
+        if(B->cardinality != expectedcard) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+
+        if(array_container_contains(B, (uint16_t)x)) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+
     }
     if (array_container_cardinality(B) != 0) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         array_container_free(B);
         return 0;
     }
-    if (array_container_compute_cardinality(B) != 0) {
+    if (array_container_cardinality(B) != 0) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         array_container_free(B);
         return 0;
     }
+
+    for (x = 65535; x >=0; x -= 3) {
+    	bool wasadded = array_container_add(B, (uint16_t)x);
+        if(!wasadded) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        if(!array_container_contains(B, (uint16_t)x)) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        expectedcard++;
+        if(B->cardinality != expectedcard) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        if(B->cardinality > B->capacity) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+    }
+    for (x = 0; x < 1 << 16; x++) {
+        int isset = array_container_contains(B, (uint16_t)x);
+        int shouldbeset = (x / 3 * 3 == x);
+        if (isset != shouldbeset) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+    }
+    for (x = 0; x < 1 << 16; x += 3) {
+        if(!array_container_contains(B, (uint16_t)x)) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+    	bool wasremoved = array_container_remove(B, (uint16_t)x);
+        if(!wasremoved) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+        expectedcard--;
+        if(B->cardinality != expectedcard) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+
+        if(array_container_contains(B, (uint16_t)x)) {
+            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+            array_container_free(B);
+            return 0;
+        }
+    }
+
     array_container_free(B);
     return 1;
 }
@@ -85,32 +192,23 @@ int and_or_test() {
 	// we interleave O and I on purpose (to trigger bugs!)
 	ci = array_container_cardinality(BO);// expected intersection
 	co = array_container_cardinality(BI);// expected union
-	array_container_and(B1,B2, BI);
+	array_container_intersection(B1,B2, BI);
 	c = array_container_cardinality(BI);
 	if(c != ci) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        return 0;
+       return 0;
 	}
-	c = array_container_and(B1,B2, BI);;
-	if(c != ci) {
-	    printf("Bug %s, line %d \n", __FILE__, __LINE__);
-	    return 0;
-	}
-	array_container_or(B1,B2, BO);
+	array_container_union(B1,B2, BO);
 	c = array_container_cardinality(BO);
 	if(c != co) {
 	    printf("Bug %s, line %d \n", __FILE__, __LINE__);
 	    return 0;
 	}
-	c = array_container_or(B1,B2, BO);
-	if(c != co) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        return 0;
-	}
 	return 1;
 }
 
 int main() {
+	tellmeall();
     if (!add_contains_test()) return -1;
     if (!and_or_test()) return -1;
 
