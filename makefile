@@ -3,9 +3,9 @@
 #
 .SUFFIXES: .cpp .o .c .h
 ifeq ($(DEBUG),1) # to debug, build with "make DEBUG=1"
-CFLAGS1 = -fPIC  -std=c99 -ggdb -mavx2 -march=native -Wall -Wextra -pedantic
+CFLAGS1 = -fPIC  -std=c99 -ggdb -mavx2 -march=native -Wall -Wshadow -Wextra -pedantic
 else
-CFLAGS1 = -fPIC -std=c99 -O3 -mavx2 -march=native -Wall -Wextra -pedantic
+CFLAGS1 = -fPIC -std=c99 -O3 -mavx2 -march=native -Wall -Wshadow -Wextra -pedantic
 endif # debug
 
 ifeq ($(NOAVX),1) # if you compile with "make NOAVXTUNING=1" you get what the compiler offers!
