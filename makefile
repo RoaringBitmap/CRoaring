@@ -8,7 +8,7 @@ else
 CFLAGS1 = -fPIC -std=c99 -O3 -mavx2 -march=native -Wall -Wshadow -Wextra -pedantic
 endif # debug
 
-ifeq ($(NOAVX),1) # if you compile with "make NOAVXTUNING=1" you get what the compiler offers!
+ifeq ($(NOAVXTUNING),1) # if you compile with "make NOAVXTUNING=1" you get what the compiler offers!
 CFLAGS = $(CFLAGS1) 
 else # by default we compile for AVX
 CFLAGS = $(CFLAGS1) -DUSEAVX 
