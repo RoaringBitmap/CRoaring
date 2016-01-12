@@ -247,6 +247,132 @@ void array_container_union(const array_container_t *array1,
 
 
 
+int32_t advanceUntil(
+		uint16_t * array,
+		int32_t pos,
+		int32_t length,
+		uint16_t min)  {
+	int32_t lower = pos + 1;
+
+	if ((lower >= length) || (array[lower] >= min)) {
+		return lower;
+	}
+
+	int32_t spansize = 1;
+
+	while ((lower+spansize < length) && (array[lower+spansize] < min)) {
+		spansize <<= 1;
+	}
+	int32_t upper = (lower+spansize < length )?lower + spansize:length - 1;
+
+	if (array[upper] == min) {
+		return upper;
+	}
+
+	if (array[upper] < min) {
+		// means
+		// array
+		// has no
+		// item
+		// >= min
+		// pos = array.length;
+		return length;
+	}
+
+	// we know that the next-smallest span was too small
+	lower += (spansize >> 1);
+
+	int32_t mid = 0;
+	while( lower+1 != upper) {
+		mid = (lower + upper) >> 1;
+		if (array[mid] == min) {
+			return mid;
+		} else if (array[mid] < min) {
+			lower = mid;
+		} else {
+			upper = mid;
+		}
+	}
+	return upper;
+
+}
+
+int32_t onesidedgallopingintersect2by2(
+		uint16_t * smallset, int32_t lensmallset,
+		uint16_t * largeset, int32_t lenlargeset,	uint16_t * buffer)  {
+
+	if( 0 == lensmallset) {
+		return 0;
+	}
+	int32_t k1 = 0;
+	int32_t k2 = 0;
+	int32_t pos = 0;
+	uint16_t s1 = largeset[k1];
+	uint16_t s2 = smallset[k2];
+    while(true) {
+		if (s1 < s2) {
+			k1 = advanceUntil(largeset, k1, lenlargeset, s2);
+			if (k1 == lenlargeset) {
+				break;
+			}
+			s1 = largeset[k1];
+		}
+		if (s2 < s1) {
+			k2++;
+			if (k2 == lensmallset) {
+				break;
+			}
+			s2 = smallset[k2];
+		} else {
+
+			buffer[pos] = s2;
+			pos++;
+			k2++;
+			if (k2 == lensmallset) {
+				break;
+			}
+			s2 = smallset[k2];
+			k1 = advanceUntil(largeset, k1, lenlargeset, s2);
+			if (k1 == lenlargeset) {
+				break;
+			}
+			s1 = largeset[k1];
+		}
+
+	}
+	return pos;
+}
+
+int32_t match_scalar(const uint16_t *A, const int32_t lenA,
+                    const uint16_t *B, const int32_t lenB,
+                    uint16_t *out) {
+
+    const uint16_t *initout = out;
+    if (lenA == 0 || lenB == 0) return 0;
+
+    const uint16_t *endA = A + lenA;
+    const uint16_t *endB = B + lenB;
+
+    while (1) {
+        while (*A < *B) {
+SKIP_FIRST_COMPARE:
+            if (++A == endA) goto FINISH;
+        }
+        while (*A > *B) {
+            if (++B == endB) goto FINISH;
+        }
+        if (*A == *B) {
+            *out++ = *A;
+            if (++A == endA || ++B == endB) goto FINISH;
+        } else {
+            goto SKIP_FIRST_COMPARE;
+        }
+    }
+
+FINISH:
+    return (out - initout);
+}
+
 
 
 
@@ -560,128 +686,9 @@ static int32_t intersect_vector16(const uint16_t *A, int32_t s_a,
 
 
 
-
-int32_t match_scalar(const uint16_t *A, const int32_t lenA,
-                    const uint16_t *B, const int32_t lenB,
-                    uint16_t *out) {
-
-    const uint16_t *initout = out;
-    if (lenA == 0 || lenB == 0) return 0;
-
-    const uint16_t *endA = A + lenA;
-    const uint16_t *endB = B + lenB;
-
-    while (1) {
-        while (*A < *B) {
-SKIP_FIRST_COMPARE:
-            if (++A == endA) goto FINISH;
-        }
-        while (*A > *B) {
-            if (++B == endB) goto FINISH;
-        }
-        if (*A == *B) {
-            *out++ = *A;
-            if (++A == endA || ++B == endB) goto FINISH;
-        } else {
-            goto SKIP_FIRST_COMPARE;
-        }
-    }
-
-FINISH:
-    return (out - initout);
-}
-
-/**
- * Intersections scheme designed by N. Kurz that works very
- * well when intersecting an array with another where the density
- * differential is small (between 2 to 10).
+/*
  *
- * It assumes that lenRare <= lenFreq.
- *
- * Note that this is not symmetric: flipping the rare and freq pointers
- * as well as lenRare and lenFreq could lead to significant performance
- * differences.
- *
- * The matchOut pointer can safely be equal to the rare pointer.
- *
- */
-int32_t v1(const uint16_t *rare, int32_t lenRare, const uint16_t *freq,
-		int32_t lenFreq, uint16_t *matchOut) {
-	assert(lenRare <= lenFreq);
-	const uint16_t *matchOrig = matchOut;
-	if (lenFreq == 0 || lenRare == 0)
-	return 0;
-	const int32_t numberofintspervec = sizeof(__m128i)/ sizeof(uint16_t);
-
-	const uint64_t kFreqSpace = numberofintspervec - 1;
-
-	const uint16_t *stopFreq = &freq[lenFreq] - kFreqSpace;
-	const uint16_t *stopRare = &rare[lenRare];
-
-	__m128i Rare;
-
-	__m128i F0;
-
-	if (((rare >= stopRare) || (freq >= stopFreq))) goto FINISH_SCALAR;
-	uint16_t valRare;
-	valRare = rare[0];
-	Rare = _mm_set1_epi16(valRare);
-
-	uint16_t maxFreq;
-	maxFreq = freq[kFreqSpace];
-	F0 = _mm_lddqu_si128((const __m128i *)(freq));
-
-	if ((maxFreq < valRare))
-	goto ADVANCE_FREQ;
-
-	ADVANCE_RARE: do {
-		*matchOut = valRare;
-		valRare = rare[1]; // for next iteration
-		rare += 1;
-		if ((rare >= stopRare)) {
-			rare -= 1;
-			goto FINISH_SCALAR;
-		}
-		F0 = _mm_cmpeq_epi16(F0, Rare);
-		Rare = _mm_set1_epi16(valRare);
-		//F0 = _mm_or_si128(F0, F1);
-		if(_mm_testz_si128(F0,F0) == 0)
-		matchOut++;
-		F0 = _mm_lddqu_si128((const __m128i *)(freq));
-
-	}while (maxFreq >= valRare);
-
-	uint16_t maxProbe;
-
-	ADVANCE_FREQ: do {
-		const uint16_t *probeFreq = freq + numberofintspervec;
-		maxProbe = freq[kFreqSpace];
-
-		if ((probeFreq >= stopFreq)) {
-			goto FINISH_SCALAR;
-		}
-
-		freq = probeFreq;
-
-	}while (maxProbe < valRare);
-
-	maxFreq = maxProbe;
-
-	F0 = _mm_lddqu_si128((const __m128i *)(freq));
-
-	goto ADVANCE_RARE;
-	int32_t count;
-
-	FINISH_SCALAR: count = matchOut - matchOrig;
-
-	lenFreq = stopFreq + kFreqSpace - freq;
-	lenRare = stopRare  - rare;
-
-	size_t tail = match_scalar(freq, lenFreq, rare, lenRare, matchOut);
-
-	return count + tail;
-}
-
+ * Useless crap kept around temporarily
 
 static int32_t intersectV1avx_vector16(const uint16_t *A, const int32_t s_a, const uint16_t *B,
 		 const int32_t s_b, uint16_t *C) {
@@ -731,8 +738,10 @@ static int32_t intersectV1avx_vector16(const uint16_t *A, const int32_t s_a, con
 	}
 	return count;
 }
-
-
+*/
+/*
+ *
+ * Useless crap kept around temporarily
 static int32_t intersectV2avx_vector16(const uint16_t *A, const int32_t s_a, const uint16_t *B,
 		 const int32_t s_b, uint16_t *C) {
 	if (s_a > s_b)
@@ -788,22 +797,19 @@ static int32_t intersectV2avx_vector16(const uint16_t *A, const int32_t s_a, con
 		}
 	}
 	return count;
-}
+}*/
 
 int32_t intersection2by2(
 		uint16_t * set1, int32_t lenset1,
 		uint16_t * set2, int32_t lenset2,
 		uint16_t * buffer) {
-	const int32_t bigthres = 32; // TODO: adjust this threshold
-	const int32_t thres = 4; // TODO: adjust this threshold
-	if (lenset1 * bigthres < lenset2) {
-        return intersectV2avx_vector16(set1, lenset1, set2, lenset2, buffer);
-	} else if( lenset2 * bigthres < lenset1) {
-		return intersectV2avx_vector16(set2, lenset2, set1, lenset1, buffer);
-	} else if (lenset1 * thres < lenset2) {
-        return intersectV1avx_vector16(set1, lenset1, set2, lenset2, buffer);
+	const int32_t thres = 64; // TODO: adjust this threshold
+	if (lenset1 * thres < lenset2) {
+		// TODO: a SIMD-enabled galloping intersection algorithm should be designed
+		return onesidedgallopingintersect2by2(set1, lenset1, set2, lenset2, buffer);
 	} else if( lenset2 * thres < lenset1) {
-		return intersectV1avx_vector16(set2, lenset2, set1, lenset1, buffer);
+		// TODO: a SIMD-enabled galloping intersection algorithm should be designed
+		return onesidedgallopingintersect2by2(set2, lenset2, set1, lenset1, buffer);
 	} else {
 		return intersect_vector16(set1,lenset1,set2,lenset2,buffer);
 	}
@@ -811,171 +817,17 @@ int32_t intersection2by2(
 
 #else
 
-
-int32_t localintersect2by2(
-	uint16_t * set1, int32_t lenset1,
-	uint16_t * set2, int32_t lenset2,
-	uint16_t * buffer)  {
-	if ((0 == lenset1) || (0 == lenset2)) {
-		return 0;
-	}
-	int32_t k1 = 0;
-	int32_t k2 = 0;
-	int32_t pos = 0;
-	uint16_t s1 = set1[k1];
-	uint16_t s2 = set2[k2];
-	while(true) {
-		if (s2 < s1) {
-			while(true) {
-				k2++;
-				if (k2 == lenset2) {
-					return pos;
-				}
-				s2 = set2[k2];
-				if (s2 >= s1) {
-					break;
-				}
-			}
-		}
-		if (s1 < s2) {
-			while(true) {
-				k1++;
-				if (k1 == lenset1) {
-					return pos;
-				}
-				s1 = set1[k1];
-				if (s1 >= s2) {
-					break;
-				}
-			}
-
-		} else {
-			// (set2[k2] == set1[k1])
-			buffer[pos] = s1;
-			pos++;
-			k1++;
-			if (k1 == lenset1) {
-				break;
-			}
-			s1 = set1[k1];
-			k2++;
-			if (k2 == lenset2) {
-				break;
-			}
-			s2 = set2[k2];
-		}
-	}
-	return pos;
-}
-
-int32_t advanceUntil(
-		uint16_t * array,
-		int32_t pos,
-		int32_t length,
-		uint16_t min)  {
-	int32_t lower = pos + 1;
-
-	if ((lower >= length) || (array[lower] >= min)) {
-		return lower;
-	}
-
-	int32_t spansize = 1;
-
-	while ((lower+spansize < length) && (array[lower+spansize] < min)) {
-		spansize <<= 1;
-	}
-	int32_t upper = (lower+spansize < length )?lower + spansize:length - 1;
-
-	if (array[upper] == min) {
-		return upper;
-	}
-
-	if (array[upper] < min) {
-		// means
-		// array
-		// has no
-		// item
-		// >= min
-		// pos = array.length;
-		return length;
-	}
-
-	// we know that the next-smallest span was too small
-	lower += (spansize >> 1);
-
-	int32_t mid = 0;
-	while( lower+1 != upper) {
-		mid = (lower + upper) >> 1;
-		if (array[mid] == min) {
-			return mid;
-		} else if (array[mid] < min) {
-			lower = mid;
-		} else {
-			upper = mid;
-		}
-	}
-	return upper;
-
-}
-
-int32_t onesidedgallopingintersect2by2(
-		uint16_t * smallset, int32_t lensmallset,
-		uint16_t * largeset, int32_t lenlargeset,	uint16_t * buffer)  {
-
-	if( 0 == lensmallset) {
-		return 0;
-	}
-	int32_t k1 = 0;
-	int32_t k2 = 0;
-	int32_t pos = 0;
-	uint16_t s1 = largeset[k1];
-	uint16_t s2 = smallset[k2];
-    while(true) {
-		if (s1 < s2) {
-			k1 = advanceUntil(largeset, k1, lenlargeset, s2);
-			if (k1 == lenlargeset) {
-				break;
-			}
-			s1 = largeset[k1];
-		}
-		if (s2 < s1) {
-			k2++;
-			if (k2 == lensmallset) {
-				break;
-			}
-			s2 = smallset[k2];
-		} else {
-
-			buffer[pos] = s2;
-			pos++;
-			k2++;
-			if (k2 == lensmallset) {
-				break;
-			}
-			s2 = smallset[k2];
-			k1 = advanceUntil(largeset, k1, lenlargeset, s2);
-			if (k1 == lenlargeset) {
-				break;
-			}
-			s1 = largeset[k1];
-		}
-
-	}
-	return pos;
-}
-
-
 int32_t intersection2by2(
 	uint16_t * set1, int32_t lenset1,
 	uint16_t * set2, int32_t lenset2,
 	uint16_t * buffer)  {
-	int32_t thres = 4; // TODO: adjust this threshold
+	int32_t thres = 64; // TODO: adjust this threshold
 	if (lenset1 * thres < lenset2) {
 		return onesidedgallopingintersect2by2(set1, lenset1, set2, lenset2, buffer);
 	} else if( lenset2 * thres < lenset1) {
 		return onesidedgallopingintersect2by2(set2, lenset2, set1, lenset1, buffer);
 	} else {
-		return localintersect2by2(set1, lenset1, set2, lenset2, buffer);
+		return match_scalar(set1, lenset1, set2, lenset2, buffer);
 	}
 }
 
