@@ -46,6 +46,12 @@ void array_container_free(array_container_t *arr) {
 
 #ifdef BRANCHLESSBINSEARCH
 
+
+/**
+* the branchless approach is inspired by 
+*  Array layouts for comparison-based searching
+*  http://arxiv.org/pdf/1509.05053.pdf
+*/
 // could potentially use SIMD-based bin. search
 static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
 	uint16_t * base = source;
