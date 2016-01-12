@@ -4,7 +4,9 @@ Roaring bitmaps in C
 # todo
 
 - consider LTO (Link Time Optimization)
-
+- implement SIMD galloping in arrays
+- implement SIMD bit decoding for bitset
+- implement SIMD binary search
 
 # Building
 
