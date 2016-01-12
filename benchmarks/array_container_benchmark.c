@@ -70,13 +70,42 @@ int main() {
     }
     int32_t inputsize = B1->cardinality + B2->cardinality;
     array_container_t* BO = array_container_create();
-    printf("union and intersection times are expressed in cycles per number of input elements (both arrays)");
+    printf("Note:\n");
+    printf("union times are expressed in cycles per number of input elements (both arrays)\n");
+    printf("intersection times are expressed in cycles per number of output elements\n");
+    printf("==intersection and union test 1 \n");
+    printf("input 1 cardinality = %d, input 2 cardinality = %d \n",B1->cardinality,B2->cardinality);
     answer = union_test(B1, B2, BO);
+    printf("union cardinality = %d \n",answer);
+    printf("B1 card = %d B2 card = %d \n",B1->cardinality,B2->cardinality);
     BEST_TIME(union_test(B1, B2, BO), answer, repeat,
     		inputsize);
     answer = intersection_test(B1, B2, BO);
+    printf("intersection cardinality = %d \n",answer);
     BEST_TIME(intersection_test(B1, B2, BO), answer, repeat,
+    		answer);
+    printf("==intersection and union test 2 \n");
+    array_container_clear(B1);
+    array_container_clear(B2);
+    for (int x = 0; x < 1 << 16; x += 16) {
+        array_container_add(B1, (uint16_t)x);
+    }
+    for (int x = 1; x < 1 << 16; x += x) {
+    	array_container_add(B2, (uint16_t)x);
+    }
+    printf("input 1 cardinality = %d, input 2 cardinality = %d \n",B1->cardinality,B2->cardinality);
+    answer = union_test(B1, B2, BO);
+    printf("union cardinality = %d \n",answer);
+    printf("B1 card = %d B2 card = %d \n",B1->cardinality,B2->cardinality);
+    BEST_TIME(union_test(B1, B2, BO), answer, repeat,
     		inputsize);
+    answer = intersection_test(B1, B2, BO);
+    printf("intersection cardinality = %d \n",answer);
+    BEST_TIME(intersection_test(B1, B2, BO), answer, repeat,
+    		answer);
 
+    array_container_free(B1);
+    array_container_free(B2);
+    array_container_free(BO);
     return 0;
 }

@@ -25,21 +25,29 @@ typedef struct array_container_s array_container_t;
 array_container_t *array_container_create();
 
 /* Free memory. */
-void array_container_free(array_container_t *bitset);
+void array_container_free(array_container_t *arr);
+
 
 /* Add x to the set. Returns true if x was not already present.  */
-bool array_container_add(array_container_t *bitset, uint16_t x);
+bool array_container_add(array_container_t *arr, uint16_t x);
 
 /* Remove x from the set. Returns true if x was present.  */
-bool array_container_remove(array_container_t *bitset, uint16_t x);
+bool array_container_remove(array_container_t *arr, uint16_t x);
 
 /* Check whether x is present.  */
-bool array_container_contains(const array_container_t *bitset, uint16_t x);
+bool array_container_contains(const array_container_t *arr, uint16_t x);
 
 /* Get the cardinality */
-inline int array_container_cardinality(array_container_t *bitset) {
-    return bitset->cardinality;
+inline int array_container_cardinality(array_container_t *arr) {
+    return arr->cardinality;
 }
+
+
+/* Set the cardinality to set (does not release memory). */
+inline void array_container_clear(array_container_t *arr) {
+	arr->cardinality = 0;
+}
+
 
 /* Compute the union of array1 and array2 and write the result to arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
