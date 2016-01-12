@@ -142,7 +142,7 @@ bool array_container_add(array_container_t *arr, uint16_t x) {
 	if (loc < 0) {// not already present
 		if(arr->capacity == arr->capacity) increaseCapacity(arr,arr->capacity+1,INT32_MAX,true);
 		int32_t i = -loc - 1;
-		memcpy(arr->array + i + 1,arr->array + i,(arr->cardinality - i)*sizeof(uint16_t));
+		memmove(arr->array + i + 1,arr->array + i,(arr->cardinality - i)*sizeof(uint16_t));
 		arr->array[i] = x;
 		arr->cardinality ++;
 		return true;
@@ -161,8 +161,8 @@ bool array_container_remove(array_container_t *arr, uint16_t x) {
 
 /* Check whether x is present.  */
 bool array_container_contains(const array_container_t *arr, uint16_t x) {
-	int32_t loc = binarySearch(arr->array,arr->cardinality, x);
-	return loc >= 0;
+	int32_t loc = binarySearch(arr->array,arr->cardinality,x);
+	return loc >= 0; // could possibly be faster...
 }
 
 
@@ -174,11 +174,11 @@ static int32_t union2by2(uint16_t * set1, int32_t lenset1,
 	int32_t k1 = 0;
 	int32_t k2 = 0;
 	if (0 == lenset2) {
-		memcpy(buffer,set1,lenset1*sizeof(uint16_t));
+		memcpy(buffer,set1,lenset1*sizeof(uint16_t));// is this safe if buffer is set1 or set2?
 		return lenset1;
 	}
 	if (0 == lenset1) {
-		memcpy(buffer,set2,lenset2*sizeof(uint16_t));
+		memcpy(buffer,set2,lenset2*sizeof(uint16_t));// is this safe if buffer is set1 or set2?
 		return lenset2;
 	}
 	uint16_t s1 = set1[k1];
@@ -189,7 +189,7 @@ static int32_t union2by2(uint16_t * set1, int32_t lenset1,
 			pos++;
 			k1++;
 			if (k1 >= lenset1) {
-				memcpy(buffer + pos,set2 + k2,(lenset2-k2)*sizeof(uint16_t));
+				memcpy(buffer + pos,set2 + k2,(lenset2-k2)*sizeof(uint16_t));// is this safe if buffer is set1 or set2?
 				pos += lenset2 - k2;
 				break;
 			}
@@ -200,12 +200,12 @@ static int32_t union2by2(uint16_t * set1, int32_t lenset1,
 			k1++;
 			k2++;
 			if (k1 >= lenset1) {
-				memcpy(buffer + pos,set2 + k2,(lenset2-k2)*sizeof(uint16_t));
+				memcpy(buffer + pos,set2 + k2,(lenset2-k2)*sizeof(uint16_t));// is this safe if buffer is set1 or set2?
 				pos += lenset2 - k2;
 				break;
 			}
 			if (k2 >= lenset2) {
-				memcpy(buffer + pos,set1 + k1,(lenset1-k1)*sizeof(uint16_t));
+				memcpy(buffer + pos,set1 + k1,(lenset1-k1)*sizeof(uint16_t));// is this safe if buffer is set1 or set2?
 				pos += lenset1 - k1;
 				break;
 			}
@@ -217,7 +217,7 @@ static int32_t union2by2(uint16_t * set1, int32_t lenset1,
 			k2++;
 			if (k2 >= lenset2) {
 				// should be memcpy
-				memcpy(buffer + pos,set1 + k1,(lenset1-k1)*sizeof(uint16_t));
+				memcpy(buffer + pos,set1 + k1,(lenset1-k1)*sizeof(uint16_t));// is this safe if buffer is set1 or set2?
 				pos += lenset1 - k1;
 				break;
 			}
@@ -692,7 +692,6 @@ static int32_t intersectV1avx_vector16(const uint16_t *A, const int32_t s_a, con
 	const int32_t st_a = s_a;
 	const int32_t howmanyvec = 2;
 	const int32_t numberofintspervec = howmanyvec* sizeof(__m256i)/ sizeof(uint16_t);
-	//printf("sa=%d sb=%d \n",s_a,s_b/(numberofintspervec));
 
 	const int32_t st_b = (s_b / numberofintspervec) * numberofintspervec;
 	//__m256i v_b;

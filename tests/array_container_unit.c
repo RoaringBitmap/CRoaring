@@ -48,16 +48,10 @@ int add_contains_test() {
         int isset = array_container_contains(B, (uint16_t)x);
         int shouldbeset = (x / 3 * 3 == x);
         if (isset != shouldbeset) {
-        	printf("x=%d\n",x);
             printf("Bug %s, line %d \n", __FILE__, __LINE__);
             array_container_free(B);
             return 0;
         }
-    }
-    if (array_container_cardinality(B) != (1 << 16) / 3 + 1) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        array_container_free(B);
-        return 0;
     }
     if (array_container_cardinality(B) != (1 << 16) / 3 + 1) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
@@ -124,8 +118,13 @@ int add_contains_test() {
             array_container_free(B);
             return 0;
         }
+   }
+    if (array_container_cardinality(B) != (1 << 16) / 3 + 1) {
+        printf("Bug %s, line %d \n", __FILE__, __LINE__);
+        array_container_free(B);
+        return 0;
     }
-    for (x = 0; x < 1 << 16; x++) {
+     for (x = 0; x < 1 << 16; x++) {
         int isset = array_container_contains(B, (uint16_t)x);
         int shouldbeset = (x / 3 * 3 == x);
         if (isset != shouldbeset) {
