@@ -70,9 +70,10 @@ int main() {
     }
     int32_t inputsize = B1->cardinality + B2->cardinality;
     array_container_t* BO = array_container_create();
-    printf("Note:\n");
+    printf("\nUnion and intersections...\n");
+    printf("\nNote:\n");
     printf("union times are expressed in cycles per number of input elements (both arrays)\n");
-    printf("intersection times are expressed in cycles per number of output elements\n");
+    printf("intersection times are expressed in cycles per number of output elements\n\n");
     printf("==intersection and union test 1 \n");
     printf("input 1 cardinality = %d, input 2 cardinality = %d \n",B1->cardinality,B2->cardinality);
     answer = union_test(B1, B2, BO);
