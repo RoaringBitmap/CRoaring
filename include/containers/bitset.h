@@ -33,14 +33,14 @@ bitset_container_t *bitset_container_create();
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset);
 
-/* Set the ith bit.  */
-void bitset_container_set(bitset_container_t *bitset, uint16_t i);
+/* Set the bit at position `pos'.  */
+void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 
-/* Unset the ith bit.  */
-void bitset_container_unset(bitset_container_t *bitset, uint16_t i);
+/* Set the bit at position `pos'.  */
+void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 
-/* Get the value of the ith bit.  */
-bool bitset_container_get(const bitset_container_t *bitset, uint16_t i);
+/* Get the value of bit at position `pos'.  */
+bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
 
 /* Get the number of bits set */
 inline int bitset_container_cardinality(bitset_container_t *bitset) {
@@ -50,44 +50,48 @@ inline int bitset_container_cardinality(bitset_container_t *bitset) {
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
-/* computes the union of bitset1 and bitset2 and write the result to bitsetout
- */
-int bitset_container_or(const bitset_container_t *bitset1,
-                        const bitset_container_t *bitset2,
-                        bitset_container_t *out);
+/* Computes the union of bitsets `src_1' and `src_2' into `dst'. */
+int bitset_container_or(const bitset_container_t *src_1,
+                        const bitset_container_t *src_2,
+                        bitset_container_t *dst);
 
-/* computes the union of bitset1 and bitset2 and write the result to bitsetout,
- * does not compute the cardinality of the result */
-int bitset_container_or_nocard(const bitset_container_t *bitset1,
-                               const bitset_container_t *bitset2,
-                               bitset_container_t *bitsetout);
+/* Computes the union of bitsets `src_1' and `src_2' into `dst', but does not
+ * update the cardinality. Provided to optimize chained operations. */
+int bitset_container_or_nocard(const bitset_container_t *src_1,
+                               const bitset_container_t *src_2,
+                               bitset_container_t *dst);
 
-/* similarly, routines for intersection */
-int bitset_container_and(const bitset_container_t *bitset1,
-                         const bitset_container_t *bitset2,
-                         bitset_container_t *bitsetout);
+/* Computes the intersection of bitsets `src_1' and `src_2' into `dst'. */
+int bitset_container_and(const bitset_container_t *src_1,
+                         const bitset_container_t *src_2,
+                         bitset_container_t *dst);
 
-int bitset_container_and_nocard(const bitset_container_t *bitset1,
-                                const bitset_container_t *bitset2,
-                                bitset_container_t *bitsetout);
+/* Computes the intersection of bitsets `src_1' and `src_2' into `dst', but does
+ * not update the cardinality. Provided to optimize chained operations. */
+int bitset_container_and_nocard(const bitset_container_t *src_1,
+                                const bitset_container_t *src_2,
+                                bitset_container_t *dst);
 
-/* similarly, routines for xor */
-int bitset_container_xor(const bitset_container_t *bitset1,
-                         const bitset_container_t *bitset2,
-                         bitset_container_t *bitsetout);
+/* Computes the exclusive or of bitsets `src_1' and `src_2' into `dst'. */
+int bitset_container_xor(const bitset_container_t *src_1,
+                         const bitset_container_t *src_2,
+                         bitset_container_t *dst);
 
-int bitset_container_xor_nocard(const bitset_container_t *bitset1,
-                                const bitset_container_t *bitset2,
-                                bitset_container_t *bitsetout);
+/* Computes the exclusive or of bitsets `src_1' and `src_2' into `dst', but does
+ * not update the cardinality. Provided to optimize chained operations. */
+int bitset_container_xor_nocard(const bitset_container_t *src_1,
+                                const bitset_container_t *src_2,
+                                bitset_container_t *dst);
 
-/* similarly, routines for and_not */
-int bitset_container_andnot(const bitset_container_t *bitset1,
-                            const bitset_container_t *bitset2,
-                            bitset_container_t *bitsetout);
+/* Computes the and not of bitsets `src_1' and `src_2' into `dst'. */
+int bitset_container_andnot(const bitset_container_t *src_1,
+                            const bitset_container_t *src_2,
+                            bitset_container_t *dst);
 
-int bitset_container_andnot_nocard(const bitset_container_t *bitset1,
-                                   const bitset_container_t *bitset2,
-                                   bitset_container_t *bitsetout);
-
+/* Computes the and not or of bitsets `src_1' and `src_2' into `dst', but does
+ * not update the cardinality. Provided to optimize chained operations. */
+int bitset_container_andnot_nocard(const bitset_container_t *src_1,
+                                   const bitset_container_t *src_2,
+                                   bitset_container_t *dst);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */
