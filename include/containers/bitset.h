@@ -22,7 +22,7 @@ enum { BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64 };
 
 struct bitset_container_s {
     int32_t cardinality;
-    ALIGN_AVX uint64_t array[BITSET_CONTAINER_SIZE_IN_WORDS];
+    uint64_t *array;
 };
 
 typedef struct bitset_container_s bitset_container_t;

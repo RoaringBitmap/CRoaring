@@ -13,18 +13,28 @@
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
-    bitset_container_t *bitset = NULL;
+    bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
 
-    if(posix_memalign((void *) &bitset, sizeof(__m256i), sizeof(bitset_container_t)))
+    if (!bitset) {
         return NULL;
+    }
 
-    memset(bitset, 0, sizeof(bitset_container_t));
+    if (posix_memalign((void *)&bitset->array, sizeof(__m256i),
+                       sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) {
+        free(bitset);
+        return NULL;
+    }
+
+    memset(bitset->array, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     bitset->cardinality = 0;
     return bitset;
 }
 
 /* Free memory. */
-void bitset_container_free(bitset_container_t *bitset) { free(bitset); }
+void bitset_container_free(bitset_container_t *bitset) {
+    free(bitset->array);
+    free(bitset);
+}
 
 /* Set the ith bit.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t i) {
