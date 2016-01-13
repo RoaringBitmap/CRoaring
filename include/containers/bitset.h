@@ -33,10 +33,14 @@ bitset_container_t *bitset_container_create();
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset);
 
+/* Duplicate bitset */
+bitset_container_t *bitset_container_clone( bitset_container_t *src);
+
+
 /* Set the bit at position `pos'.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 
-/* Set the bit at position `pos'.  */
+/* Unset the bit at position `pos'.  */
 void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 
 /* Get the value of bit at position `pos'.  */

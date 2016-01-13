@@ -34,6 +34,25 @@ void bitset_container_free(bitset_container_t *bitset) {
     free(bitset);
 }
 
+/* duplicate container. */
+bitset_container_t *bitset_container_clone( bitset_container_t *src) {
+    bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
+
+    if (!bitset) {
+        return NULL;
+    }
+
+    if (posix_memalign((void *)&bitset->array, sizeof(__m256i),
+                       sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) {
+        free(bitset);
+        return NULL;
+    }
+    bitset->cardinality = src->cardinality;
+    memcpy(bitset->array, src->array,  sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    return bitset;
+}
+
+
 /* Set the ith bit.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
     const uint64_t old_word = bitset->array[pos >> 6];

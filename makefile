@@ -14,13 +14,13 @@ else # by default we compile for AVX
 CFLAGS = $(CFLAGS1) -DUSEAVX 
 endif # noavx
 
-HEADERS=./include/roaring.h ./include/containers/bitset.h
+HEADERS=./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h
 
 INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include 
 
 
-OBJECTS= roaring.o bitset.o
+OBJECTS= roaring.o bitset.o roaring_array.o
 TESTEXECUTABLES=unit bitset_container_unit
 EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark
 all:  $(EXECUTABLES) 
@@ -29,9 +29,11 @@ test:
 	./unit
 	./bitset_container_unit
 
+roaring_array.o: ./src/roaring_array.c $(HEADERS)
+	$(CC) $(CFLAGS) -c ./src/roaring_array.c $(INCLUDES) 
 
 roaring.o: ./src/roaring.c $(HEADERS)
-	$(CC) $(CFLAGS) -c ./src/roaring.c 
+	$(CC) $(CFLAGS) -c ./src/roaring.c $(INCLUDES) 
 
 bitset.o: ./src/containers/bitset.c ./include/containers/bitset.h
 	$(CC) $(CFLAGS) -c ./src/containers/bitset.c $(INCLUDES)
