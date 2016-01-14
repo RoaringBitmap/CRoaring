@@ -110,12 +110,12 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 #ifdef USEAVX
 
-#define REPEAT 8
+
+#ifndef USEPOPCNT
+#define REPEAT 8 
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
 #define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * REPEAT)
 
-
-#ifndef USEPOPCNT
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
    result to bitsetout */
@@ -156,9 +156,8 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
             const int idx = (i * REPEAT) + j;                           \
             __m256i A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx);  \
             __m256i A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx);  \
-            __m256i AO = avx_intrinsic(A2, A1);                         \
-            _mm256_storeu_si256((__m256i *)out + idx, AO);              \
-            __m256i ymm1 = AO;                                          \
+            __m256i ymm1 = avx_intrinsic(A2, A1);                       \
+            _mm256_storeu_si256((__m256i *)out + idx, ymm1);            \
             __m256i ymm2 = _mm256_srli_epi32(ymm1,4);                   \
             ymm1 = _mm256_and_si256(ymm1,mask);                         \
             ymm2 = _mm256_and_si256(ymm2,mask);                         \
@@ -176,6 +175,10 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
 
 
 #else //USEPOPCNT
+#define REPEAT 8
+#define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
+#define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * REPEAT)
+
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
    result to bitsetout */
