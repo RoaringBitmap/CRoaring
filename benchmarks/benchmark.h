@@ -59,4 +59,28 @@
         fflush(NULL);                                                 \
     } while (0)
 
+#define BEST_TIME_PRE(test, pre, answer, repeat, size)                \
+    do {                                                              \
+        printf("%s: ", #test);                                        \
+        fflush(NULL);                                                 \
+        uint64_t cycles_start, cycles_final, cycles_diff;             \
+        uint64_t min_diff = (uint64_t)-1;                             \
+        int wrong_answer = 0;                                         \
+        for (int i = 0; i < repeat; i++) {                            \
+            pre;                                                      \
+            __asm volatile("" ::: /* pretend to clobber */ "memory"); \
+            RDTSC_START(cycles_start);                                \
+            if (test != answer) wrong_answer = 1;                     \
+            RDTSC_FINAL(cycles_final);                                \
+            cycles_diff = (cycles_final - cycles_start);              \
+            if (cycles_diff < min_diff) min_diff = cycles_diff;       \
+        }                                                             \
+        uint64_t S = size;                                            \
+        float cycle_per_op = (min_diff) / (double)S;                  \
+        printf(" %.2f cycles per operation", cycle_per_op);           \
+        if (wrong_answer) printf(" [ERROR]");                         \
+        printf("\n");                                                 \
+        fflush(NULL);                                                 \
+    } while (0)
+
 #endif /* BENCHMARKS_INCLUDE_BENCHMARK_H_ */

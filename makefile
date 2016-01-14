@@ -9,21 +9,21 @@ CFLAGS1 = -fPIC -std=c99 -O3 -mavx2 -march=native -Wall -Wshadow -Wextra -pedant
 endif # debug
 
 ifeq ($(NOAVXTUNING),1) # if you compile with "make NOAVXTUNING=1" you get what the compiler offers!
-CFLAGS = $(CFLAGS1) 
+CFLAGS = $(CFLAGS1)
 else # by default we compile for AVX
-CFLAGS = $(CFLAGS1) -DUSEAVX 
+CFLAGS = $(CFLAGS1) -DUSEAVX
 endif # noavx
 
 HEADERS=./include/roaring.h ./include/containers/bitset.h ./include/misc/configreport.h
 
 INCLUDES=-Iinclude  -Iinclude/containers
-BENCHINCLUDES=-Ibenchmarks/include 
+BENCHINCLUDES=-Ibenchmarks/include
 
 
 OBJECTS= roaring.o bitset.o array.o
 TESTEXECUTABLES=unit bitset_container_unit array_container_unit
-EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark
-all:  $(EXECUTABLES) 
+EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark search_benchmark
+all:  $(EXECUTABLES)
 
 test: $(TESTEXECUTABLES)
 	for exe in $(TESTEXECUTABLES) ; do \
@@ -31,7 +31,7 @@ test: $(TESTEXECUTABLES)
 	done
 
 roaring.o: ./src/roaring.c $(HEADERS)
-	$(CC) $(CFLAGS) -c ./src/roaring.c 
+	$(CC) $(CFLAGS) -c ./src/roaring.c
 
 bitset.o: ./src/containers/bitset.c ./include/containers/bitset.h
 	$(CC) $(CFLAGS) -c ./src/containers/bitset.c $(INCLUDES)
@@ -56,6 +56,8 @@ bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmar
 array_container_benchmark: ./benchmarks/array_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o array_container_benchmark ./benchmarks/array_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
+search_benchmark: benchmarks/search_benchmark.c
+	$(CC) $(CFLAGS) -o $@ $< $(INCLUDES)  $(OBJECTS)
 
 clean:
 	rm -f $(EXECUTABLES) $(OBJECTS)
