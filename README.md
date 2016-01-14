@@ -27,4 +27,13 @@ String SIMD instructions can be used to intersect arrays of
 
 See Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
 
+# Issues to consider
+
+There is a trade-off between throughput and latency. For example, 
+prefetching might improve latency, but at the expense of throughput
+on a multicore system.
+
+Some instructions, like POPCNT, can run on only one core which means
+that they can take a serious hit under hyperthreading.
+
 
