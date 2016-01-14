@@ -88,7 +88,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     __m256i zero = _mm256_setzero_si256();
     const int inner = 4;// length of the inner loop, could go up to 8 safely
     const int outer = BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/(sizeof(__m256i)*inner); // length of outer loop
-    for(unsigned  k = 0; k < outer ; k++) {
+    for(int  k = 0; k < outer ; k++) {
         __m256i innertotal = _mm256_setzero_si256();
         /**
          * Here  we have a tight loop. You'd think that manual unrolling would not
