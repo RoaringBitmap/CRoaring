@@ -90,12 +90,8 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const int outer = BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/(sizeof(__m256i)*inner); // length of outer loop
     for(int  k = 0; k < outer ; k++) {
         __m256i innertotal = _mm256_setzero_si256();
-        /**
-         * Here  we have a tight loop. You'd think that manual unrolling would not
-         * be useful.
-         */
-        {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)array + k*inner + 0);
+       for(int i = 0; i < inner; ++i) {
+            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)array + k*inner + i);
             __m256i ymm2 = _mm256_srli_epi32(ymm1,4); // shift right, shiftingin zeroes
             ymm1 = _mm256_and_si256(ymm1,mask); // contains even 4 bits
             ymm2 = _mm256_and_si256(ymm2,mask); // contains odd 4 bits
@@ -104,37 +100,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
             innertotal = _mm256_add_epi8(innertotal,ymm1);// inner total values in each byte are bounded by 8 * inner
             innertotal = _mm256_add_epi8(innertotal,ymm2);// inner total values in each byte are bounded by 8 * inner
         }
-        {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)array + k*inner + 1);
-            __m256i ymm2 = _mm256_srli_epi32(ymm1,4); // shift right, shiftingin zeroes
-            ymm1 = _mm256_and_si256(ymm1,mask); // contains even 4 bits
-            ymm2 = _mm256_and_si256(ymm2,mask); // contains odd 4 bits
-            ymm1 = _mm256_shuffle_epi8(shuf,ymm1);// use table look-up to sum the 4 bits
-            ymm2 = _mm256_shuffle_epi8(shuf,ymm2);
-            innertotal = _mm256_add_epi8(innertotal,ymm1);// inner total values in each byte are bounded by 8 * inner
-            innertotal = _mm256_add_epi8(innertotal,ymm2);// inner total values in each byte are bounded by 8 * inner
-        }
-        {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)array + k*inner + 2);
-            __m256i ymm2 = _mm256_srli_epi32(ymm1,4); // shift right, shiftingin zeroes
-            ymm1 = _mm256_and_si256(ymm1,mask); // contains even 4 bits
-            ymm2 = _mm256_and_si256(ymm2,mask); // contains odd 4 bits
-            ymm1 = _mm256_shuffle_epi8(shuf,ymm1);// use table look-up to sum the 4 bits
-            ymm2 = _mm256_shuffle_epi8(shuf,ymm2);
-            innertotal = _mm256_add_epi8(innertotal,ymm1);// inner total values in each byte are bounded by 8 * inner
-            innertotal = _mm256_add_epi8(innertotal,ymm2);// inner total values in each byte are bounded by 8 * inner
-        }
-        {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)array + k*inner + 3);
-            __m256i ymm2 = _mm256_srli_epi32(ymm1,4); // shift right, shiftingin zeroes
-            ymm1 = _mm256_and_si256(ymm1,mask); // contains even 4 bits
-            ymm2 = _mm256_and_si256(ymm2,mask); // contains odd 4 bits
-            ymm1 = _mm256_shuffle_epi8(shuf,ymm1);// use table look-up to sum the 4 bits
-            ymm2 = _mm256_shuffle_epi8(shuf,ymm2);
-            innertotal = _mm256_add_epi8(innertotal,ymm1);// inner total values in each byte are bounded by 8 * inner
-            innertotal = _mm256_add_epi8(innertotal,ymm2);// inner total values in each byte are bounded by 8 * inner
-        }
-        innertotal = _mm256_sad_epu8(zero,innertotal);// produces 4 64-bit counters (having values in [0,8 * inner * 4])
+       innertotal = _mm256_sad_epu8(zero,innertotal);// produces 4 64-bit counters (having values in [0,8 * inner * 4])
         total= _mm256_add_epi64(total,innertotal); // add the 4 64-bit counters to previous counter
     }
     return _mm256_extract_epi64(total,0)+_mm256_extract_epi64(total,1)+_mm256_extract_epi64(total,2)+_mm256_extract_epi64(total,3);
