@@ -9,9 +9,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-enum{
-	DEFAULT_MAX_SIZE = 4096// containers with DEFAULT_MAX_SZE or less integers should be array containers
-};
+/* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
+enum { DEFAULT_MAX_SIZE = 4096 };
 
 struct array_container_s {
     int32_t cardinality;
@@ -24,44 +23,38 @@ typedef struct array_container_s array_container_t;
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create();
 
-/* Free memory. */
-void array_container_free(array_container_t *arr);
+/* Free memory owned by `array'. */
+void array_container_free(array_container_t *array);
 
+/* Add `pos' to `array'. Returns true if `pos' was not present. */
+bool array_container_add(array_container_t *array, uint16_t pos);
 
-/* Add x to the set. Returns true if x was not already present.  */
-bool array_container_add(array_container_t *arr, uint16_t x);
+/* Remove `pos' to `array'. Returns true if `pos' was present. */
+bool array_container_remove(array_container_t *array, uint16_t pos);
 
-/* Remove x from the set. Returns true if x was present.  */
-bool array_container_remove(array_container_t *arr, uint16_t x);
+/* Check whether `pos' is present in `array'.  */
+bool array_container_contains(const array_container_t *array, uint16_t pos);
 
-/* Check whether x is present.  */
-bool array_container_contains(const array_container_t *arr, uint16_t x);
-
-/* Get the cardinality */
-inline int array_container_cardinality(array_container_t *arr) {
-    return arr->cardinality;
+/* Get the cardinality of `array'. */
+inline int array_container_cardinality(const array_container_t *array) {
+    return array->cardinality;
 }
-
 
 /* Set the cardinality to set (does not release memory). */
-inline void array_container_clear(array_container_t *arr) {
-	arr->cardinality = 0;
+inline void array_container_clear(array_container_t *array) {
+    array->cardinality = 0;
 }
 
+/* Compute the union of `src_1' and `src_2' and write the result to `dst'
+ * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
+void array_container_union(const array_container_t *src_1,
+                           const array_container_t *src_2,
+                           array_container_t *dst);
 
-/* Compute the union of array1 and array2 and write the result to arrayout.
- * It is assumed that arrayout is distinct from both array1 and array2.
- */
-void array_container_union(const array_container_t *array1,
-                        const array_container_t *array2,
-                        array_container_t *out);
-
-/* Compute the intersection of array1 and array2 and write the result to
- * arrayout.
- * It is assumed that arrayout is distinct from both array1 and array2.
- **/
-void array_container_intersection(const array_container_t *array1,
-                         const array_container_t *array2,
-                         array_container_t *arrayout);
+/* Compute the intersection of src_1 and src_2 and write the result to
+ * dst. It is assumed that dst is distinct from both src_1 and src_2. */
+void array_container_intersection(const array_container_t *src_1,
+                                  const array_container_t *src_2,
+                                  array_container_t *dst);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */
