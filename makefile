@@ -14,7 +14,7 @@ else # by default we compile for AVX
 CFLAGS = $(CFLAGS1) -DUSEAVX 
 endif # noavx
 
-HEADERS=./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h
+HEADERS=./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h ./include/containers/containers.h 
 
 INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include 
