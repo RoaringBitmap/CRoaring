@@ -43,7 +43,7 @@ void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
 
 /* Get the number of bits set */
-inline int bitset_container_cardinality(bitset_container_t *bitset) {
+static inline int bitset_container_cardinality(bitset_container_t *bitset) {
     return bitset->cardinality;
 }
 

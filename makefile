@@ -20,8 +20,8 @@ INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include 
 
 
-OBJECTS= roaring.o bitset.o array.o
-TESTEXECUTABLES=unit bitset_container_unit array_container_unit
+OBJECTS= roaring.o bitset.o array.o run.o
+TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit
 EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark
 all:  $(EXECUTABLES) 
 
@@ -39,6 +39,9 @@ bitset.o: ./src/containers/bitset.c ./include/containers/bitset.h
 array.o: ./src/containers/array.c ./include/containers/array.h
 	$(CC) $(CFLAGS) -c ./src/containers/array.c $(INCLUDES)
 
+run.o: ./src/containers/run.c ./include/containers/run.h
+	$(CC) $(CFLAGS) -c ./src/containers/run.c $(INCLUDES)
+
 unit: ./tests/unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o unit ./tests/unit.c $(INCLUDES)  $(OBJECTS)
 
@@ -47,6 +50,10 @@ bitset_container_unit: ./tests/bitset_container_unit.c    $(HEADERS) $(OBJECTS)
 
 array_container_unit: ./tests/array_container_unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o array_container_unit ./tests/array_container_unit.c $(INCLUDES)  $(OBJECTS)
+
+run_container_unit: ./tests/run_container_unit.c    $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) -o run_container_unit ./tests/run_container_unit.c $(INCLUDES)  $(OBJECTS)
+
 
 
 bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
