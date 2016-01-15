@@ -39,21 +39,30 @@ bool run_container_contains(const run_container_t *run, uint16_t pos);
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run);
 
+/* Copy one container into another. We assume that they are distinct. */
+void run_container_copy(run_container_t *source, run_container_t *dest) ;
+
 /* Set the cardinality to zero (does not release memory). */
 inline void run_container_clear(run_container_t *run) {
     run->nbrruns = 0;
 }
 
+/* Check whether the container spans the whole chunk (cardinality = 1<<16).
+ * This check can be done in constant time (inexpensive). */
+inline bool run_container_is_full(run_container_t *run) {
+    return (run->nbrruns == 1) && (run->valueslength[0] == 0) && (run->valueslength[1] == 0xFFFF);
+}
+
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-//void run_container_union(const run_container_t *src_1,
-  //                         const run_container_t *src_2,
-    //                       run_container_t *dst);
+void run_container_union(run_container_t *src_1,
+                           run_container_t *src_2,
+                           run_container_t *dst);
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-//void run_container_intersection(const run_container_t *src_1,
-  //                                const run_container_t *src_2,
-    //                              run_container_t *dst);
+void run_container_intersection(run_container_t *src_1,
+                                  run_container_t *src_2,
+                                  run_container_t *dst);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

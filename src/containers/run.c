@@ -60,11 +60,31 @@ static inline void incrementLength(uint16_t *valueslength, uint16_t index) {
     valueslength[2*index + 1]++;
 }
 
-static void increaseCapacity(run_container_t *run, bool copy) {
+// TODO: could be more efficient
+static void smartAppend(run_container_t *run, uint16_t start, uint16_t length) {
+        int32_t oldend;
+        if((run->nbrruns==0) ||
+                (start >
+                (oldend = getValue(run->valueslength, run->nbrruns - 1)
+                		+ getLength(run->valueslength, run->nbrruns - 1)) + 1)) { // we add a new one
+        	run->valueslength[2 * run->nbrruns] =  start;
+        	run->valueslength[2 * run->nbrruns + 1] = length;
+        	run->nbrruns++;
+            return;
+        }
+        int32_t newend = start + length + 1;
+        if(newend > oldend)  { // we merge
+            setLength(run->valueslength, run->nbrruns - 1,  (newend - 1 - getValue(run->valueslength, run->nbrruns - 1)));
+        }
+}
+
+
+static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity = (run->capacity == 0) ? DEFAULT_INIT_SIZE :
     		run->capacity < 64 ? run->capacity * 2
             : run->capacity < 1024 ? run->capacity * 3 / 2
             : run->capacity * 5 / 4;
+    if(newCapacity < min) newCapacity = min;
     run->capacity = newCapacity;
     if(copy)
     	run->valueslength = realloc(run->valueslength,run->capacity * 2 * sizeof(uint16_t)) ;
@@ -80,7 +100,7 @@ static void increaseCapacity(run_container_t *run, bool copy) {
 
 }
 static inline void makeRoomAtIndex( run_container_t *run,uint16_t index) {
-        if (2 * (run->nbrruns+1) > run->capacity) increaseCapacity(run, true);
+        if (run->nbrruns+1 > run->capacity) increaseCapacity(run, run->nbrruns+1, true);
         memmove(run->valueslength+(1+index)*2,run->valueslength+2*index,(run->nbrruns - index) * 2 * sizeof(uint16_t));
         run->nbrruns++;
 }
@@ -88,6 +108,15 @@ static inline void makeRoomAtIndex( run_container_t *run,uint16_t index) {
 static inline void recoverRoomAtIndex(run_container_t *run,uint16_t index) {
     memmove(run->valueslength+2*index,run->valueslength+(1+index)*2,(run->nbrruns - index - 1) * 2 * sizeof(uint16_t));
 	run->nbrruns--;
+}
+
+/* copy one container into another */
+void run_container_copy(run_container_t *source, run_container_t *dest) {
+	if(source->nbrruns < dest->capacity) {
+		increaseCapacity(dest,source->nbrruns,false);
+	}
+	dest->nbrruns = source->nbrruns;
+	memcpy(dest->valueslength,source->valueslength,2*sizeof(uint16_t)*source->nbrruns);
 }
 
 
@@ -249,14 +278,117 @@ bool run_container_contains(const run_container_t *run, uint16_t pos) {
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-/*void run_container_union(const run_container_t *src_1,
-                           const run_container_t *src_2,
-                           run_container_t *dst);
-*/
+void run_container_union(run_container_t *src_1,
+                           run_container_t *src_2,
+                           run_container_t *dst) {
+	// TODO: this could be a lot more efficient
+
+	// we start out with inexpensive checks
+	const bool if1 = run_container_is_full(src_1);
+	const bool if2 = run_container_is_full(src_2);
+	if (if1 || if2) {
+		if (if1) {
+			run_container_copy(src_2, dst);
+			return;
+		}
+		if (if2) {
+			run_container_copy(src_1, dst);
+			return;
+		}
+	}
+	const int32_t neededcapacity = src_1->nbrruns + src_2->nbrruns;
+	if(dst->capacity < neededcapacity)
+		increaseCapacity(dst, neededcapacity,false);
+	dst->nbrruns = 0;
+	int32_t rlepos = 0;
+    int32_t xrlepos = 0;
+
+    while ((xrlepos < src_2->nbrruns) && (rlepos < src_1->nbrruns)) {
+        if(getValue(src_1->valueslength,rlepos) <= getValue(src_2->valueslength,xrlepos) ) {
+            smartAppend(dst,getValue(src_1->valueslength,rlepos), getLength(src_1->valueslength,rlepos));
+            rlepos++;
+        } else {
+            smartAppend(dst,getValue(src_2->valueslength,xrlepos), getLength(src_2->valueslength,xrlepos));
+            xrlepos++;
+        }
+    }
+    while (xrlepos < src_2->nbrruns) {
+        smartAppend(dst,getValue(src_2->valueslength,xrlepos), getLength(src_2->valueslength,xrlepos));
+        xrlepos++;
+    }
+    while (rlepos < src_1->nbrruns) {
+        smartAppend(dst,getValue(src_1->valueslength,rlepos), getLength(src_1->valueslength,rlepos));
+        rlepos++;
+    }
+
+}
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-/*void run_container_intersection(const run_container_t *src_1,
-                                  const run_container_t *src_2,
-                                  run_container_t *dst);
+void run_container_intersection(run_container_t *src_1,
+                                  run_container_t *src_2,
+                                  run_container_t *dst) {
+	// TODO: this could be a lot more efficient, could use SIMD optimizations
+	const int32_t neededcapacity = src_1->nbrruns + src_2->nbrruns;
+	if(dst->capacity < neededcapacity)
+		increaseCapacity(dst, neededcapacity,false);
+	dst->nbrruns = 0;
+    int32_t rlepos = 0;
+    int32_t xrlepos = 0;
+    int32_t start = getValue(src_1->valueslength,rlepos);
+    int32_t end = start + getLength(src_1->valueslength,rlepos) + 1;
+    int32_t xstart = getValue(src_2->valueslength,xrlepos);
+    int32_t xend = xstart + getLength(src_2->valueslength,xrlepos) + 1;
+    while ((rlepos < src_1->nbrruns ) && (xrlepos < src_2->nbrruns )) {
+        if (end  <= xstart) {
+            ++rlepos;
+            if(rlepos < src_1->nbrruns ) {
+                start = getValue(src_1->valueslength,rlepos);
+                end = start + getLength(src_1->valueslength,rlepos) + 1;
+            }
+        } else if (xend <= start) {
+            ++xrlepos;
+            if(xrlepos < src_2->nbrruns ) {
+                xstart = getValue(src_2->valueslength,xrlepos);
+                xend = xstart + getLength(src_2->valueslength,xrlepos) + 1;
+            }
+        } else {// they overlap
+            const int32_t lateststart = start > xstart ? start : xstart;
+            int32_t earliestend;
+            if(end == xend) {// improbable
+                earliestend = end;
+                rlepos++;
+                xrlepos++;
+                if(rlepos < src_1->nbrruns ) {
+                    start = getValue(src_1->valueslength,rlepos);
+                    end = start + getLength(src_1->valueslength,rlepos) + 1;
+                }
+                if(xrlepos < src_2->nbrruns) {
+                    xstart = getValue(src_2->valueslength,xrlepos);
+                    xend = xstart + getLength(src_2->valueslength,xrlepos) + 1;
+                }
+            } else if(end < xend) {
+                earliestend = end;
+                rlepos++;
+                if(rlepos < src_1->nbrruns ) {
+                    start = getValue(src_1->valueslength,rlepos);
+                    end = start + getLength(src_1->valueslength,rlepos) + 1;
+                }
 
-*/
+            } else {// end > xend
+                earliestend = xend;
+                xrlepos++;
+                if(xrlepos < src_2->nbrruns) {
+                    xstart = getValue(src_2->valueslength,xrlepos);
+                    xend = xstart + getLength(src_2->valueslength,xrlepos) + 1;
+                }
+            }
+            dst->valueslength[2 * dst->nbrruns] = lateststart;
+            dst->valueslength[2 * dst->nbrruns + 1] = (earliestend - lateststart - 1);
+            dst->nbrruns++;
+        }
+    }
+
+}
+
+

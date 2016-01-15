@@ -191,20 +191,20 @@ int and_or_test() {
 	// we interleave O and I on purpose (to trigger bugs!)
 	ci = run_container_cardinality(BO);// expected intersection
 	co = run_container_cardinality(BI);// expected union
-	/*
 	run_container_intersection(B1,B2, BI);
 	c = run_container_cardinality(BI);
 	if(c != ci) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-       return 0;
+		printf("expected int card %d got %d \n",c,ci);
+		printf("Bug %s, line %d \n", __FILE__, __LINE__);
+        return 0;
 	}
 	run_container_union(B1,B2, BO);
 	c = run_container_cardinality(BO);
 	if(c != co) {
-	    printf("Bug %s, line %d \n", __FILE__, __LINE__);
+		printf("expected U card %d got %d \n",c,co);
+		printf("Bug %s, line %d \n", __FILE__, __LINE__);
 	    return 0;
-	}*/
-	printf("TODO: implement unions and intersections.\n");
+	}
 	return 1;
 }
 
