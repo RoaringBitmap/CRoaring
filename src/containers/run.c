@@ -67,10 +67,10 @@ static void increaseCapacity(run_container_t *run, bool copy) {
             : run->capacity * 5 / 4;
     run->capacity = newCapacity;
     if(copy)
-    	run->valueslength = realloc(run->valueslength,run->capacity) ;
+    	run->valueslength = realloc(run->valueslength,run->capacity * 2 * sizeof(uint16_t)) ;
     else {
       free(run->valueslength);
-      run->valueslength = malloc(run->capacity) ;
+      run->valueslength = malloc(run->capacity * 2 * sizeof(uint16_t)) ;
     }
     // TODO: handle the case where realloc fails
     if(run->valueslength) {
@@ -81,12 +81,12 @@ static void increaseCapacity(run_container_t *run, bool copy) {
 }
 static inline void makeRoomAtIndex( run_container_t *run,uint16_t index) {
         if (2 * (run->nbrruns+1) > run->capacity) increaseCapacity(run, true);
-        memmove(run->valueslength+2+2*index,run->valueslength+2*index,(run->nbrruns - index - 1) * 2);
+        memmove(run->valueslength+(1+index)*2*sizeof(uint16_t),run->valueslength+2*index*sizeof(uint16_t),(run->nbrruns - index) * 2 * sizeof(uint16_t));
         run->nbrruns++;
 }
 
 static inline void recoverRoomAtIndex(run_container_t *run,uint16_t index) {
-    memmove(run->valueslength+2*index,run->valueslength+2+2*index,(run->nbrruns - index - 2) * 2);
+    memmove(run->valueslength+2*index * sizeof(uint16_t),run->valueslength+(1+index)*2*sizeof(uint16_t),(run->nbrruns - index - 1) * 2 * sizeof(uint16_t));
     run->nbrruns--;
 }
 
@@ -100,7 +100,7 @@ run_container_t *run_container_create() {
 	}
 	if ((run->valueslength = malloc(2 * sizeof(uint16_t) * DEFAULT_INIT_SIZE)) == NULL) {
 		        free(run);
-				return NULL;
+			return NULL;
 	}
 	run->capacity = DEFAULT_INIT_SIZE;
 	run->nbrruns = 0;
