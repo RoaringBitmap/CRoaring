@@ -145,33 +145,69 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
     const uint64_t *array_1 = src_1->array;                             \
     const uint64_t *array_2 = src_2->array;                             \
     uint64_t *out = dst->array;                                         \
-    const __m256i shuf = _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, \
-                                          0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4); \
+    const __m256i shuf =                                                \
+        _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, \
+                         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4); \
     const __m256i  mask = _mm256_set1_epi8(0x0f);                       \
     __m256i total = _mm256_setzero_si256();                             \
     __m256i zero = _mm256_setzero_si256();                              \
-    for (size_t i = 0; i < LOOP_SIZE; i++) {                            \
-        __m256i innertotal = _mm256_setzero_si256();                    \
-    	for (size_t j = 0; j < REPEAT; ++j) {                           \
-            const int idx = (i * REPEAT) + j;                           \
-            __m256i A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx);  \
-            __m256i A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx);  \
-            __m256i ymm1 = avx_intrinsic(A2, A1);                       \
-            _mm256_storeu_si256((__m256i *)out + idx, ymm1);            \
-            __m256i ymm2 = _mm256_srli_epi32(ymm1,4);                   \
-            ymm1 = _mm256_and_si256(ymm1,mask);                         \
-            ymm2 = _mm256_and_si256(ymm2,mask);                         \
-            ymm1 = _mm256_shuffle_epi8(shuf,ymm1);                      \
-            ymm2 = _mm256_shuffle_epi8(shuf,ymm2);                      \
-            innertotal = _mm256_add_epi8(innertotal,ymm1);              \
-            innertotal = _mm256_add_epi8(innertotal,ymm2);              \
-        }                                                               \
+    for (size_t idx = 0; idx < 256; idx += 4) {                         \
+        __m256i A1, A2, ymm1, ymm2;                                     \
+       __m256i innertotal = _mm256_setzero_si256();                    \
+        A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx + 0);          \
+        A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx + 0);          \
+        ymm1 = avx_intrinsic(A2, A1);                                   \
+        _mm256_storeu_si256((__m256i *)out + idx + 0, ymm1);            \
+        ymm2 = _mm256_srli_epi32(ymm1,4);                               \
+        ymm1 = _mm256_and_si256(ymm1,mask);                             \
+        ymm2 = _mm256_and_si256(ymm2,mask);                             \
+        ymm1 = _mm256_shuffle_epi8(shuf,ymm1);                          \
+        ymm2 = _mm256_shuffle_epi8(shuf,ymm2);                          \
+        innertotal = _mm256_add_epi8(innertotal,ymm1);                  \
+        innertotal = _mm256_add_epi8(innertotal,ymm2);                  \
+        A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx + 1);          \
+        A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx + 1);          \
+        ymm1 = avx_intrinsic(A2, A1);                                   \
+        _mm256_storeu_si256((__m256i *)out + idx + 1, ymm1);            \
+        ymm2 = _mm256_srli_epi32(ymm1,4);                               \
+        ymm1 = _mm256_and_si256(ymm1,mask);                             \
+        ymm2 = _mm256_and_si256(ymm2,mask);                             \
+        ymm1 = _mm256_shuffle_epi8(shuf,ymm1);                          \
+        ymm2 = _mm256_shuffle_epi8(shuf,ymm2);                          \
+        innertotal = _mm256_add_epi8(innertotal,ymm1);                  \
+        innertotal = _mm256_add_epi8(innertotal,ymm2);                  \
+        A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx + 2);          \
+        A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx + 2);          \
+        ymm1 = avx_intrinsic(A2, A1);                                   \
+        _mm256_storeu_si256((__m256i *)out + idx + 2, ymm1);            \
+        ymm2 = _mm256_srli_epi32(ymm1,4);                               \
+        ymm1 = _mm256_and_si256(ymm1,mask);                             \
+        ymm2 = _mm256_and_si256(ymm2,mask);                             \
+        ymm1 = _mm256_shuffle_epi8(shuf,ymm1);                          \
+        ymm2 = _mm256_shuffle_epi8(shuf,ymm2);                          \
+        innertotal = _mm256_add_epi8(innertotal,ymm1);                  \
+        innertotal = _mm256_add_epi8(innertotal,ymm2);                  \
+        A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx + 3);          \
+        A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx + 3);          \
+        ymm1 = avx_intrinsic(A2, A1);                                   \
+        _mm256_storeu_si256((__m256i *)out + idx + 3, ymm1);            \
+        ymm2 = _mm256_srli_epi32(ymm1,4);                               \
+        ymm1 = _mm256_and_si256(ymm1,mask);                             \
+        ymm2 = _mm256_and_si256(ymm2,mask);                             \
+        ymm1 = _mm256_shuffle_epi8(shuf,ymm1);                          \
+        ymm2 = _mm256_shuffle_epi8(shuf,ymm2);                          \
+        innertotal = _mm256_add_epi8(innertotal,ymm1);                  \
+        innertotal = _mm256_add_epi8(innertotal,ymm2);                  \
         innertotal = _mm256_sad_epu8(zero,innertotal);                  \
         total= _mm256_add_epi64(total,innertotal);                      \
     }                                                                   \
-    dst->cardinality = _mm256_extract_epi64(total,0)+_mm256_extract_epi64(total,1)+_mm256_extract_epi64(total,2)+_mm256_extract_epi64(total,3); \
+    dst->cardinality = _mm256_extract_epi64(total,0) +                  \
+        _mm256_extract_epi64(total,1) +                                 \
+        _mm256_extract_epi64(total,2) +                                 \
+        _mm256_extract_epi64(total,3);                                  \
     return dst->cardinality;                                            \
 }
+
 
 
 #else //USEPOPCNT
