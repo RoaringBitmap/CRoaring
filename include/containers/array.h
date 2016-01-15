@@ -40,7 +40,7 @@ inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
 }
 
-/* Set the cardinality to set (does not release memory). */
+/* Set the cardinality to zero (does not release memory). */
 inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;
 }
