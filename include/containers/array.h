@@ -13,9 +13,9 @@
 enum { DEFAULT_MAX_SIZE = 4096 };
 
 struct array_container_s {
-    int32_t cardinality;
-    int32_t capacity;
-    uint16_t *array;
+    int32_t cardinality; // how many elements in array are occupied
+    int32_t capacity; // size of array (should be larger or equal to cardinality)
+    uint16_t *array; // strictly increasing list of integers 
 };
 
 typedef struct array_container_s array_container_t;
@@ -29,7 +29,7 @@ void array_container_free(array_container_t *array);
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);
 
-/* Remove `pos' to `array'. Returns true if `pos' was present. */
+/* Remove `pos' from `array'. Returns true if `pos' was present. */
 bool array_container_remove(array_container_t *array, uint16_t pos);
 
 /* Check whether `pos' is present in `array'.  */
