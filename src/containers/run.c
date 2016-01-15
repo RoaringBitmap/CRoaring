@@ -73,7 +73,7 @@ static void increaseCapacity(run_container_t *run, bool copy) {
       run->valueslength = malloc(run->capacity * 2 * sizeof(uint16_t)) ;
     }
     // TODO: handle the case where realloc fails
-    if(run->valueslength) {
+    if(run->valueslength == NULL) {
     	printf("Well, that's unfortunate. Did I say you could use this code in production?\n");
     }
 
@@ -81,13 +81,13 @@ static void increaseCapacity(run_container_t *run, bool copy) {
 }
 static inline void makeRoomAtIndex( run_container_t *run,uint16_t index) {
         if (2 * (run->nbrruns+1) > run->capacity) increaseCapacity(run, true);
-        memmove(run->valueslength+(1+index)*2*sizeof(uint16_t),run->valueslength+2*index*sizeof(uint16_t),(run->nbrruns - index) * 2 * sizeof(uint16_t));
+        memmove(run->valueslength+(1+index)*2,run->valueslength+2*index,(run->nbrruns - index) * 2 * sizeof(uint16_t));
         run->nbrruns++;
 }
 
 static inline void recoverRoomAtIndex(run_container_t *run,uint16_t index) {
-    memmove(run->valueslength+2*index * sizeof(uint16_t),run->valueslength+(1+index)*2*sizeof(uint16_t),(run->nbrruns - index - 1) * 2 * sizeof(uint16_t));
-    run->nbrruns--;
+    memmove(run->valueslength+2*index,run->valueslength+(1+index)*2,(run->nbrruns - index - 1) * 2 * sizeof(uint16_t));
+	run->nbrruns--;
 }
 
 
