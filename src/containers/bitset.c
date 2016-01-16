@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "bitset.h"
+extern int bitset_container_cardinality(bitset_container_t *bitset);
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {

@@ -11,6 +11,8 @@
 
 #include "run.h"
 
+extern void run_container_clear(run_container_t *run);
+extern bool run_container_is_full(run_container_t *run);
 
 enum{DEFAULT_INIT_SIZE = 4};
 
@@ -161,15 +163,16 @@ int run_container_cardinality(const run_container_t *run) {
 // could potentially use SIMD-based bin. search
 // values are interleaved with lengths
 static int32_t interleavedBinarySearch(uint16_t* source, int32_t n, uint16_t target) {
-	uint16_t * base = source;
+    uint16_t * base = source;
     if(n == 0) return -1;
+    uint16_t * end = source + 2 * n;    
     while(n>1) {
     	int32_t half = n >> 1;
-        base = (base[2*half] < target) ? &base[2*half] : base;
+        base = (base[2*half] < target) ? base + 2*half : base;
         n -= half;
     }
-    // todo: over last cache line, you can just scan or use SIMD instructions
     base += (*base < target)*2;
+    if(base == end) return -n - 1;
     return *base == target ? (base - source)/2 : (source - base)/2 - 1;
 }
 

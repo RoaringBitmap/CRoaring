@@ -36,12 +36,12 @@ bool array_container_remove(array_container_t *array, uint16_t pos);
 bool array_container_contains(const array_container_t *array, uint16_t pos);
 
 /* Get the cardinality of `array'. */
-static inline int array_container_cardinality(const array_container_t *array) {
+inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
 }
 
 /* Set the cardinality to zero (does not release memory). */
-static inline void array_container_clear(array_container_t *array) {
+inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;
 }
 

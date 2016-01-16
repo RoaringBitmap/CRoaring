@@ -11,6 +11,9 @@
 
 #include "array.h"
 
+extern int array_container_cardinality(const array_container_t *array);
+extern void array_container_clear(array_container_t *array);
+
 
 enum{DEFAULT_INIT_SIZE = 16};
 
