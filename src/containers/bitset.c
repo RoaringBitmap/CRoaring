@@ -29,6 +29,13 @@ bitset_container_t *bitset_container_create() {
     return bitset;
 }
 
+/* Copy one container into another. We assume that they are distinct. */
+void bitset_container_copy(bitset_container_t *source, bitset_container_t *dest) {
+	dest->cardinality = source->cardinality;
+	memcpy(dest->array,source->array,sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+}
+
+
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     free(bitset->array);

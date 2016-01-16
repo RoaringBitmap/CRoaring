@@ -40,6 +40,9 @@ inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
 }
 
+/* Copy one container into another. We assume that they are distinct. */
+void array_container_copy(array_container_t *source, array_container_t *dest) ;
+
 /* Set the cardinality to zero (does not release memory). */
 inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;

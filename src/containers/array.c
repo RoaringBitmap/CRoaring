@@ -37,6 +37,7 @@ array_container_t *array_container_create() {
 	return arr;
 }
 
+
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
 	free(arr->array);
@@ -134,6 +135,18 @@ static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max, b
     	printf("Well, that's unfortunate. Did I say you could use this code in production?\n");
     }
 }
+
+
+/* Copy one container into another. We assume that they are distinct. */
+void array_container_copy(array_container_t *source, array_container_t *dest) {
+	if(source->cardinality < dest->capacity) {
+		increaseCapacity(dest,source->cardinality,INT32_MAX, false);
+	}
+	dest->cardinality = source->cardinality;
+	memcpy(dest->array,source->array,sizeof(uint16_t)*source->cardinality);
+
+}
+
 
 static void append(array_container_t *arr, uint16_t i) {
 	if(arr->cardinality == arr->capacity) increaseCapacity(arr,arr->capacity+1,INT32_MAX, true);

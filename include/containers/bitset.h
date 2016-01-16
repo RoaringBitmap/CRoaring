@@ -47,6 +47,9 @@ inline int bitset_container_cardinality(bitset_container_t *bitset) {
     return bitset->cardinality;
 }
 
+/* Copy one container into another. We assume that they are distinct. */
+void bitset_container_copy(bitset_container_t *source, bitset_container_t *dest) ;
+
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
