@@ -59,6 +59,7 @@ void array_container_free(array_container_t *arr) {
 static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
 	uint16_t * base = source;
     if(n == 0) return -1;
+    if(target > source[n-1]) return - n - 1;// without this we have a buffer overrun
     while(n>1) {
     	int32_t half = n >> 1;
         __builtin_prefetch(base+(half>>1),0,0);

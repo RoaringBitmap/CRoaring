@@ -165,15 +165,14 @@ int run_container_cardinality(const run_container_t *run) {
 static int32_t interleavedBinarySearch(uint16_t* source, int32_t n, uint16_t target) {
     uint16_t * base = source;
     if(n == 0) return -1;
-    uint16_t * end = source + 2 * n;    
+    if(target > source[ 2 * n - 2 ]) return -n - 1; // without this, buffer overrun
     while(n>1) {
     	int32_t half = n >> 1;
         base = (base[2*half] < target) ? base + 2*half : base;
         n -= half;
     }
     base += (*base < target)*2;
-    if(base == end) return -n - 1;
-    return *base == target ? (base - source)/2 : (source - base)/2 - 1;
+    return  ( *base == target) ? (base - source)/2 : (source - base)/2 - 1;
 }
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */

@@ -48,7 +48,7 @@ int add_contains_test() {
         int isset = run_container_contains(B, (uint16_t)x);
         int shouldbeset = (x / 3 * 3 == x);
         if (isset != shouldbeset) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
+        	printf("Bug %s, line %d \n", __FILE__, __LINE__);
             run_container_free(B);
             return 0;
         }
