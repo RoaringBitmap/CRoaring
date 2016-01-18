@@ -70,11 +70,21 @@ extern inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t t
 
 // macro-izations possibilities for generic non-inplace binary-op dispatch
 
-extern inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2) {
+extern inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2, uint8_t *result_type) {
   switch (type1*4 + type2) {
   case BITSET_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+    void *result = bitset_container_create();
+
     // temp temp, type signature is to return an int, destination param is third
-    return bitset_container_and( (bitset_container_t *) c1, (bitset_container_t *) c2, 0);
+    int result_card =  bitset_container_and( c1, c2, result);
+    if (result_card < SPARSE_THRESHOLD)  {
+      // temp temp, container conversion?? Better not here!
+      *result_type = ARRAY_CONTAINER_TYPE_CODE;
+       return array_container_from_bitset(result); // assume it recycles memory as necessary
+    }
+    *result_type = BITSET_CONTAINER_TYPE_CODE;
+    return result;
+
 #if 0
   case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
     return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
