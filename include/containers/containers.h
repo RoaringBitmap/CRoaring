@@ -2,13 +2,14 @@
 #define CONTAINERS_CONTAINERS_H
 
 #include "bitset.h"
-//#include "arrays.h"
-//#include "runs.h"
+#include "array.h"
+#include "run.h"
 
-enum {BITSET_CONTAINER_TYPE_CODE=3, 
-      ARRAY_CONTAINER_TYPE_CODE=1, 
-      RUN_CONTAINER_TYPE_CODE=2,
-      UNINITIALIZED_TYPE_CODE=0}; // can probably avoid using uninit code
+// don't use an enum: needs constant folding
+#define BITSET_CONTAINER_TYPE_CODE 3
+#define ARRAY_CONTAINER_TYPE_CODE  1
+#define RUN_CONTAINER_TYPE_CODE    2
+//UNINITIALIZED_TYPE_CODE=0}; // can probably avoid using uninit code
 
 extern  inline void container_free( void *container, uint8_t typecode) {
   switch (typecode) {
@@ -71,15 +72,16 @@ extern inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t t
 // macro-izations possibilities for generic non-inplace binary-op dispatch
 
 extern inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2, uint8_t *result_type) {
-  switch (type1*4 + type2) {
-  case BITSET_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-    void *result = bitset_container_create();
+void *result;
+switch (type1*4 + type2) {
+ case (BITSET_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE):
+   result = bitset_container_create();
 
     // temp temp, type signature is to return an int, destination param is third
     int result_card =  bitset_container_and( c1, c2, result);
-    if (result_card < SPARSE_THRESHOLD)  {
+if (result_card < SPARSE_THRESHOLD)  { // find whatever name DL uused
       // temp temp, container conversion?? Better not here!
-      *result_type = ARRAY_CONTAINER_TYPE_CODE;
+*result_type = ARRAY_CONTAINER_TYPE_CODE;  // find DL name
        return array_container_from_bitset(result); // assume it recycles memory as necessary
     }
     *result_type = BITSET_CONTAINER_TYPE_CODE;

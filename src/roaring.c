@@ -1,4 +1,4 @@
-
+#include <assert.h>
 #include "roaring_array.h"
 #include "roaring.h"
 
