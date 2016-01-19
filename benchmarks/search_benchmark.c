@@ -270,6 +270,12 @@ int main(int argc, char *argv[]) {
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
 
+    BEST_TIME_PRE(run_test(binary_search_leaf_prefetch,
+                       array, n_elems,
+                       searches, n_searches),
+                  cache_flush(array, n_elems),
+                  expected_finds, repeat, n_searches);
+
     BEST_TIME_PRE(run_test(combined_search,
                        array, n_elems,
                        searches, n_searches),
