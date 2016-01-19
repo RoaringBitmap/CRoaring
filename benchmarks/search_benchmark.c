@@ -58,6 +58,20 @@ static int32_t binary_search(const uint16_t *source, size_t n,
     return *base == target ? base - source : -1;
 }
 
+static int32_t binary_search_hyb(const uint16_t *source, size_t n,
+                             uint16_t target) {
+    uint16_t *base = source;
+    uint16_t *end = source + n;
+    if (n == 0) return -1;
+    while (n > 128) {
+        int32_t half = n / 2;
+        base = (base[half] < target) ? &base[half] : base;
+        n -= half;
+    }
+    return linear_search_avx(base,end-base,target);
+}
+
+
 
 
 static int32_t binary_search_leaf_prefetch(const uint16_t *source, size_t n,
@@ -173,6 +187,10 @@ void permute(uint16_t *array, size_t len) {
 }
 
 int main(int argc, char *argv[]) {
+    if(argc < 2) {
+         printf("provide a number or die.\n");
+         return -1;
+    }
     size_t n_elems = strtol(argv[1], NULL, 10);
 
     size_t repeat = 100;
@@ -227,6 +245,13 @@ int main(int argc, char *argv[]) {
                   cache_populate(array, n_elems),
                   expected_finds, repeat, n_searches);
 
+    BEST_TIME_PRE(run_test(binary_search_hyb,
+                       array, n_elems,
+                       searches, n_searches),
+                  cache_populate(array, n_elems),
+                  expected_finds, repeat, n_searches);
+
+
     BEST_TIME_PRE(run_test(binary_search_leaf_prefetch,
                        array, n_elems,
                        searches, n_searches),
@@ -265,6 +290,12 @@ int main(int argc, char *argv[]) {
                   expected_finds, repeat, n_searches);
 
     BEST_TIME_PRE(run_test(binary_search,
+                       array, n_elems,
+                       searches, n_searches),
+                  cache_flush(array, n_elems),
+                  expected_finds, repeat, n_searches);
+
+    BEST_TIME_PRE(run_test(binary_search_hyb,
                        array, n_elems,
                        searches, n_searches),
                   cache_flush(array, n_elems),
