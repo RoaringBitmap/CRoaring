@@ -36,9 +36,9 @@ static int32_t linear_search_avx(const uint16_t *array, size_t len,
      * pass the array bounds. Valgrind will definitively complain. */
     size_t lookups_remaining = len % (SHORT_PER_M256);
     if (lookups_remaining) {
-        const int32_t idx = len - lookups_remaining;
-        const int32_t res = linear_search(&array[idx], lookups_remaining, key);
-        return (res == -1) ? res : res + idx;
+        for (size_t i = len - lookups_remaining; i < len; ++i) {
+            if (array[i] == key) return i;
+        }
     }
 
     return -1;
@@ -70,6 +70,14 @@ static int32_t binary_search_leaf_prefetch(const uint16_t *source, size_t n,
     }
     base += *base < target;
     return *base == target ? base - source : -1;
+}
+
+#define CUTOFF 128
+
+static int32_t combined_search(const uint16_t *source, size_t n,
+                               uint16_t target) {
+    return (n <= CUTOFF) ? linear_search_avx(source, n, target)
+                         : binary_search(source, n, target);
 }
 
 size_t run_test(__typeof__(linear_search) search, const uint16_t *array,
@@ -105,9 +113,20 @@ void cache_flush(uint16_t *array, size_t n_elems) {
     for (size_t i = 0; i < n_elems; ++i) __builtin_ia32_clflush(&array[i]);
 }
 
-int main() {
+void permute(uint16_t *array, size_t len) {
+    for (size_t i = 0; i < len - 2; ++i) {
+        const size_t idx = rand() % len;
+        // lazy swap
+        uint16_t tmp = array[i];
+        array[i] = array[idx];
+        array[idx] = tmp;
+    }
+}
+
+int main(int argc, char *argv[]) {
+    size_t n_elems = strtol(argv[1], NULL, 10);
+
     size_t repeat = 100;
-    size_t n_elems = 64;
     // WARN: update searches init loop if changing this expression.
     size_t n_searches = n_elems * 2;
     size_t expected_finds = 0;
@@ -115,25 +134,25 @@ int main() {
     uint16_t array[n_elems];
     for (size_t i = 0; i < n_elems; ++i) {
         array[i] = val(i);
+
+        expected_finds += val(i) < n_searches;
     }
 
     uint16_t searches[n_searches];
     for (size_t i = 0; i < n_searches; ++i) {
         searches[i] = i;
-
-        if ((i % 2 == 0) && array[i / 2] == i) {
-            expected_finds++;
-        }
     }
 
-    /* shuffling searches is used to compensate the advantage in cache
-     * locality induced by the benchmark that linear_search would benefit */
-    /* shuffle(searches, n_searches); */
+    /* shuffling searches order is used to compensate the advantage in cache
+     * locality induced by the benchmark would benefit */
+    srand(29032015);
+    permute(searches, n_searches);
 
     /* validate implementations */
     for (size_t i = 0; i < n_searches; ++i) {
         const int32_t expected = linear_search(array, n_elems, searches[i]);
         assert_eq(expected, linear_search_avx(array, n_elems, searches[i]));
+        assert_eq(expected, combined_search(array, n_elems, searches[i]));
         assert_eq(expected, binary_search(array, n_elems, searches[i]));
         assert_eq(expected,
                   binary_search_leaf_prefetch(array, n_elems, searches[i]));
@@ -165,6 +184,13 @@ int main() {
                   cache_populate(array, n_elems),
                   expected_finds, repeat, n_searches);
 
+    BEST_TIME_PRE(run_test(combined_search,
+                       array, n_elems,
+                       searches, n_searches),
+                  cache_populate(array, n_elems),
+                  expected_finds, repeat, n_searches);
+
+    /*
     BEST_TIME_PRE(run_test(linear_search,
                        array, n_elems,
                        searches, n_searches),
@@ -183,11 +209,12 @@ int main() {
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
 
-    BEST_TIME_PRE(run_test(binary_search_leaf_prefetch,
+    BEST_TIME_PRE(run_test(combined_search,
                        array, n_elems,
                        searches, n_searches),
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
+    */
 
     // clang-format on
 
