@@ -61,7 +61,7 @@
 
 #define BEST_TIME_PRE(test, pre, answer, repeat, size)                \
     do {                                                              \
-        printf("%s: ", #test);                                        \
+        printf("%s %s : ", #test, #pre);                                        \
         fflush(NULL);                                                 \
         uint64_t cycles_start, cycles_final, cycles_diff;             \
         uint64_t min_diff = (uint64_t)-1;                             \
