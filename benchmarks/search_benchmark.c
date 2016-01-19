@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
         assert_eq(expected,
                   binary_search_leaf_prefetch(array, n_elems, searches[i]));
     }
-
+    printf("Testing in-cache binary search.\n");
     // clang-format off
     BEST_TIME_PRE(run_test(linear_search,
                        array, n_elems,
@@ -275,8 +275,7 @@ int main(int argc, char *argv[]) {
                        searches, n_searches),
                   cache_populate(array, n_elems),
                   expected_finds, repeat, n_searches);
-
-    printf("\n\n");
+/*
     BEST_TIME_PRE(run_test(linear_search,
                        array, n_elems,
                        searches, n_searches),
@@ -324,7 +323,7 @@ int main(int argc, char *argv[]) {
                        searches, n_searches),
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
-
+*/
 
 
     // clang-format on
