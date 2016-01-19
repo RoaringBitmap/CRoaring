@@ -48,7 +48,7 @@ static int32_t binary_search(const uint16_t *source, size_t n,
                              uint16_t target) {
     uint16_t *base = source;
     if (n == 0) return -1;
-    if(target > source[n-1]) return - n - 1;// without this we have a buffer overrun
+    if(target > source[n-1]) return  - 1;// without this we have a buffer overrun
     while (n > 1) {
         int32_t half = n / 2;
         base = (base[half] < target) ? &base[half] : base;
@@ -64,7 +64,7 @@ static int32_t binary_search_leaf_prefetch(const uint16_t *source, size_t n,
                                            uint16_t target) {
     uint16_t *base = source;
     if (n == 0) return -1;
-    if(target > source[n-1]) return - n - 1;// without this we have a buffer overrun
+    if(target > source[n-1]) return  - 1;// without this we have a buffer overrun
     while (n > 1) {
         int32_t half = n / 2;
         __builtin_prefetch(base + (half / 2), 0, 0);
