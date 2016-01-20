@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "bitset.h"
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -25,6 +26,9 @@ array_container_t *array_container_create();
 
 /* Free memory owned by `array'. */
 void array_container_free(array_container_t *array);
+
+/* Convert a bitset into an array */
+array_container_t *array_container_from_bitset( bitset_container_t *bits, int32_t card);
 
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);
@@ -59,5 +63,8 @@ void array_container_union(const array_container_t *src_1,
 void array_container_intersection(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst);
+
+
+void array_container_to_uint32_array( uint32_t *out, const array_container_t *cont, uint32_t base);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

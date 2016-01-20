@@ -393,4 +393,11 @@ void run_container_intersection(run_container_t *src_1,
 
 }
 
-
+void run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, uint32_t base) {
+  int outpos = 0;
+  for (int i = 0; i < cont->nbrruns; ++i) {
+    uint32_t run_start = base + cont->valueslength[2 * i];
+    for (int j = 0; j <= cont->valueslength[2 * i + 1]; ++j)
+      out[outpos++] = run_start + j;
+  }
+}

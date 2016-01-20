@@ -101,4 +101,7 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
                                    const bitset_container_t *src_2,
                                    bitset_container_t *dst);
 
+
+void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
+
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

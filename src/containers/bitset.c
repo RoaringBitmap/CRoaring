@@ -332,4 +332,26 @@ BITSET_CONTAINER_FN(or, |, _mm256_or_si256)
 BITSET_CONTAINER_FN(and, &, _mm256_and_si256)
 BITSET_CONTAINER_FN(xor, ^, _mm256_xor_si256)
 BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
+
+
+
+void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
+  int outpos = 0;
+
+  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS;  ++i) {
+    uint64_t w = cont->array[i];
+    uint64_t mask = 1ULL;
+    for (int j=0; j < 64; ++j, mask <<= 1) {
+      if (w & mask)
+        out[outpos++] = base;
+      base++;
+    }
+    // ToDo:  use find-first-set-bit instructions (see hacker's delight p107, based on popcnt and numleadingzeros)
+
+  }
+}
+
+
+
+
 // clang-format On

@@ -10,6 +10,7 @@
 #include <x86intrin.h>
 
 #include "array.h"
+#include "util.h"
 
 extern int array_container_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
@@ -21,21 +22,28 @@ enum{DEFAULT_INIT_SIZE = 16};
 
 
 /* Create a new array. Return NULL in case of failure. */
-array_container_t *array_container_create() {
+static array_container_t *array_container_create_given_size(int32_t size) {
 	array_container_t * arr;
 	/* Allocate the array container itself. */
 
 	if ((arr = malloc(sizeof(array_container_t))) == NULL) {
 				return NULL;
 	}
-	if ((arr->array = malloc(sizeof(uint16_t) * DEFAULT_INIT_SIZE)) == NULL) {
+	if ((arr->array = malloc(sizeof(uint16_t) * size)) == NULL) {
 		        free(arr);
 				return NULL;
 	}
-	arr->capacity = DEFAULT_INIT_SIZE;
+	arr->capacity = size;
 	arr->cardinality = 0;
 	return arr;
 }
+
+/* Create a new array. Return NULL in case of failure. */
+array_container_t *array_container_create() {
+  return array_container_create_given_size( DEFAULT_INIT_SIZE);
+}
+
+
 
 
 /* Free memory. */
@@ -46,65 +54,6 @@ void array_container_free(array_container_t *arr) {
 }
 
 
-#define BRANCHLESSBINSEARCH // optimization (branchless with prefetching tends to be fast!)
-
-#ifdef BRANCHLESSBINSEARCH
-
-
-/**
-* the branchless approach is inspired by 
-*  Array layouts for comparison-based searching
-*  http://arxiv.org/pdf/1509.05053.pdf
-*/
-// could potentially use SIMD-based bin. search
-static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
-	uint16_t * base = source;
-    if(n == 0) return -1;
-    if(target > source[n-1]) return - n - 1;// without this we have a buffer overrun
-    while(n>1) {
-    	int32_t half = n >> 1;
-        __builtin_prefetch(base+(half>>1),0,0);
-        __builtin_prefetch(base+half+(half>>1),0,0);
-        base = (base[half] < target) ? &base[half] : base;
-        n -= half;
-    }
-    // todo: over last cache line, you can just scan or use SIMD instructions
-    base += *base < target;
-    return *base == target ? base - source : source - base -1;
-}
-
-
-#else
-
-// good old bin. search ending with a sequential search
-// could potentially use SIMD-based bin. search
-static int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
-	int32_t low = 0;
-	int32_t high = lenarray - 1;
-	while( low+16 <= high) {
-		int32_t middleIndex = (low+high) >> 1;
-		int32_t middleValue = array[middleIndex];
-		if (middleValue < ikey) {
-			low = middleIndex + 1;
-		} else if (middleValue > ikey) {
-			high = middleIndex - 1;
-		} else {
-			return middleIndex;
-		}
-	}
-	for (; low <= high; low++) {
-		uint16_t val = array[low];
-		if (val >= ikey) {
-			if (val == ikey) {
-				return low;
-			}
-			break;
-		}
-	}
-	return -(low + 1);
-}
-
-#endif
 
 /**
  * increase capacity to at least min, and to no more than max. Whether the
@@ -136,6 +85,15 @@ static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max, b
     }
 }
 
+
+array_container_t *array_container_from_bitset( bitset_container_t *bits, int32_t card) {
+  array_container_t *result = array_container_create_given_size(card);
+  // TODO, use find-first-set-bit or equivalent (look in Hacker's Delight) 
+  fprintf(stderr,"conversion of bitset into array not yet written");
+  exit(2);
+
+  bitset_container_free(bits);
+}
 
 /* Copy one container into another. We assume that they are distinct. */
 void array_container_copy(array_container_t *source, array_container_t *dest) {
@@ -270,55 +228,6 @@ void array_container_union(const array_container_t *array1,
 
 
 
-int32_t advanceUntil(
-		uint16_t * array,
-		int32_t pos,
-		int32_t length,
-		uint16_t min)  {
-	int32_t lower = pos + 1;
-
-	if ((lower >= length) || (array[lower] >= min)) {
-		return lower;
-	}
-
-	int32_t spansize = 1;
-
-	while ((lower+spansize < length) && (array[lower+spansize] < min)) {
-		spansize <<= 1;
-	}
-	int32_t upper = (lower+spansize < length )?lower + spansize:length - 1;
-
-	if (array[upper] == min) {
-		return upper;
-	}
-
-	if (array[upper] < min) {
-		// means
-		// array
-		// has no
-		// item
-		// >= min
-		// pos = array.length;
-		return length;
-	}
-
-	// we know that the next-smallest span was too small
-	lower += (spansize >> 1);
-
-	int32_t mid = 0;
-	while( lower+1 != upper) {
-		mid = (lower + upper) >> 1;
-		if (array[mid] == min) {
-			return mid;
-		} else if (array[mid] < min) {
-			lower = mid;
-		} else {
-			upper = mid;
-		}
-	}
-	return upper;
-
-}
 
 int32_t onesidedgallopingintersect2by2(
 		uint16_t * smallset, int32_t lensmallset,
@@ -871,3 +780,10 @@ void array_container_intersection(const array_container_t *array1,
 			array2->array, array2->cardinality, arrayout->array);
 }
 
+
+void array_container_to_uint32_array( uint32_t *out, const array_container_t *cont, uint32_t base) {
+  int outpos = 0;
+  for (int i = 0; i < cont->cardinality; ++i) {
+    out[outpos++] = base + cont->array[i];
+  }
+}
