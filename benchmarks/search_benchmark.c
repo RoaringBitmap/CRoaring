@@ -211,9 +211,10 @@ int main(int argc, char *argv[]) {
 
     /* shuffling searches order is used to compensate the advantage in cache
      * locality induced by the benchmark would benefit */
-    srand(29032015);
+    srand(time(NULL)); // use different seeds so result does not depend on exact seed (repeat to check)
     permute(searches, n_searches);
-
+    /* if you want to see the effect of caching, then you better just do one search */
+    n_searches = 1;
     /* validate implementations */
     for (size_t i = 0; i < n_searches; ++i) {
         const int32_t expected = linear_search(array, n_elems, searches[i]);
