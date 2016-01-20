@@ -48,7 +48,8 @@ static int32_t binary_search(const uint16_t *source, size_t n,
                              uint16_t target) {
     uint16_t *base = source;
     if (n == 0) return -1;
-    if(target > source[n-1]) return  - 1;// without this we have a buffer overrun
+    if (target > source[n - 1])
+        return -1;  // without this we have a buffer overrun
     while (n > 1) {
         int32_t half = n / 2;
         base = (base[half] < target) ? &base[half] : base;
@@ -59,7 +60,7 @@ static int32_t binary_search(const uint16_t *source, size_t n,
 }
 
 static int32_t binary_search_hyb(const uint16_t *source, size_t n,
-                             uint16_t target) {
+                                 uint16_t target) {
     uint16_t *base = source;
     uint16_t *end = source + n;
     if (n == 0) return -1;
@@ -68,17 +69,15 @@ static int32_t binary_search_hyb(const uint16_t *source, size_t n,
         base = (base[half] < target) ? &base[half] : base;
         n -= half;
     }
-    return linear_search_avx(base,end-base,target);
+    return linear_search_avx(base, end - base, target);
 }
-
-
-
 
 static int32_t binary_search_leaf_prefetch(const uint16_t *source, size_t n,
                                            uint16_t target) {
     uint16_t *base = source;
     if (n == 0) return -1;
-    if(target > source[n-1]) return  - 1;// without this we have a buffer overrun
+    if (target > source[n - 1])
+        return -1;  // without this we have a buffer overrun
     while (n > 1) {
         int32_t half = n / 2;
         __builtin_prefetch(base + (half / 2), 0, 0);
@@ -90,50 +89,50 @@ static int32_t binary_search_leaf_prefetch(const uint16_t *source, size_t n,
     return *base == target ? base - source : -1;
 }
 
-static int32_t hybrid_binarySearch(const uint16_t * array, size_t lenarray, uint16_t ikey )  {
-	int32_t low = 0;
-	int32_t high = lenarray - 1;
-	while( low+16 <= high) {
-		int32_t middleIndex = (low+high) >> 1;
-		int32_t middleValue = array[middleIndex];
-		if (middleValue < ikey) {
-			low = middleIndex + 1;
-		} else if (middleValue > ikey) {
-			high = middleIndex - 1;
-		} else {
-			return middleIndex;
-		}
-	}
-	for (; low <= high; low++) {
-		uint16_t val = array[low];
-		if (val >= ikey) {
-			if (val == ikey) {
-				return low;
-			}
-			break;
-		}
-	}
-	return -(low + 1);
+static int32_t binary_search_branch_hybrid(const uint16_t *array,
+                                           size_t lenarray, uint16_t ikey) {
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low + 16 <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        int32_t middleValue = array[middleIndex];
+        if (middleValue < ikey) {
+            low = middleIndex + 1;
+        } else if (middleValue > ikey) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    for (; low <= high; low++) {
+        uint16_t val = array[low];
+        if (val >= ikey) {
+            if (val == ikey) {
+                return low;
+            }
+            break;
+        }
+    }
+    return -1;
 }
 
-static int32_t oldschool_binarySearch(const uint16_t * array, size_t lenarray, uint16_t ikey )  {
-	int32_t low = 0;
-	int32_t high = lenarray - 1;
-	while( low < high) {
-		int32_t middleIndex = (low+high) >> 1;
-		int32_t middleValue = array[middleIndex];
-		if (middleValue < ikey) {
-			low = middleIndex + 1;
-		} else if (middleValue > ikey) {
-			high = middleIndex - 1;
-		} else {
-			return middleIndex;
-		}
-	}
-	return -(low + 1);
+static int32_t binary_search_branch(const uint16_t *array, size_t lenarray,
+                                    uint16_t ikey) {
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        int32_t middleValue = array[middleIndex];
+        if (middleValue < ikey) {
+            low = middleIndex + 1;
+        } else if (middleValue > ikey) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    return -1;
 }
-
-
 
 #define CUTOFF 128
 
@@ -223,7 +222,11 @@ int main(int argc, char *argv[]) {
         assert_eq(expected, binary_search(array, n_elems, searches[i]));
         assert_eq(expected,
                   binary_search_leaf_prefetch(array, n_elems, searches[i]));
+        assert_eq(expected, binary_search_branch(array, n_elems, searches[i]));
+        assert_eq(expected,
+                  binary_search_branch_hybrid(array, n_elems, searches[i]));
     }
+
     printf("Testing in-cache binary search.\n");
     // clang-format off
     BEST_TIME_PRE(run_test(linear_search,
@@ -264,18 +267,21 @@ int main(int argc, char *argv[]) {
                   cache_populate(array, n_elems),
                   expected_finds, repeat, n_searches);
 
-    BEST_TIME_PRE(run_test(hybrid_binarySearch,
+    BEST_TIME_PRE(run_test(binary_search_branch,
                        array, n_elems,
                        searches, n_searches),
                   cache_populate(array, n_elems),
                   expected_finds, repeat, n_searches);
 
-    BEST_TIME_PRE(run_test(oldschool_binarySearch,
+    BEST_TIME_PRE(run_test(binary_search_branch_hybrid,
                        array, n_elems,
                        searches, n_searches),
                   cache_populate(array, n_elems),
                   expected_finds, repeat, n_searches);
-/*
+
+
+    printf("Testing no-cache binary search.\n\n\n");
+
     BEST_TIME_PRE(run_test(linear_search,
                        array, n_elems,
                        searches, n_searches),
@@ -294,12 +300,6 @@ int main(int argc, char *argv[]) {
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
 
-    BEST_TIME_PRE(run_test(binary_search_hyb,
-                       array, n_elems,
-                       searches, n_searches),
-                  cache_flush(array, n_elems),
-                  expected_finds, repeat, n_searches);
-
     BEST_TIME_PRE(run_test(binary_search_leaf_prefetch,
                        array, n_elems,
                        searches, n_searches),
@@ -312,19 +312,19 @@ int main(int argc, char *argv[]) {
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
 
-    BEST_TIME_PRE(run_test(hybrid_binarySearch,
+    BEST_TIME_PRE(run_test(binary_search_branch,
                        array, n_elems,
                        searches, n_searches),
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
 
-    BEST_TIME_PRE(run_test(oldschool_binarySearch,
+    BEST_TIME_PRE(run_test(binary_search_branch_hybrid,
                        array, n_elems,
                        searches, n_searches),
                   cache_flush(array, n_elems),
                   expected_finds, repeat, n_searches);
+/*
 */
-
 
     // clang-format on
 
