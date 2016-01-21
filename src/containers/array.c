@@ -46,8 +46,6 @@ void array_container_free(array_container_t *arr) {
 }
 
 
-#define BRANCHLESSBINSEARCH // optimization (branchless with prefetching tends to be fast!)
-
 #ifdef BRANCHLESSBINSEARCH
 
 
@@ -63,8 +61,10 @@ static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
     if(target > source[n-1]) return - n - 1;// without this we have a buffer overrun
     while(n>1) {
     	int32_t half = n >> 1;
+#ifdef BRANCHLESSBINSEARCHPREFETCH
         __builtin_prefetch(base+(half>>1),0,0);
         __builtin_prefetch(base+half+(half>>1),0,0);
+#endif
         base = (base[half] < target) ? &base[half] : base;
         n -= half;
     }
@@ -73,8 +73,7 @@ static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
     return *base == target ? base - source : source - base -1;
 }
 
-
-#else
+#elif defined(HYBRIDBINSEACH)
 
 // good old bin. search ending with a sequential search
 // could potentially use SIMD-based bin. search
@@ -99,6 +98,27 @@ static int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey ) 
 				return low;
 			}
 			break;
+		}
+	}
+	return -(low + 1);
+}
+
+
+#else
+
+// good old bin. search 
+static int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
+	int32_t low = 0;
+	int32_t high = lenarray - 1;
+	while( low <= high) {
+		int32_t middleIndex = (low+high) >> 1;
+		int32_t middleValue = array[middleIndex];
+		if (middleValue < ikey) {
+			low = middleIndex + 1;
+		} else if (middleValue > ikey) {
+			high = middleIndex - 1;
+		} else {
+			return middleIndex;
 		}
 	}
 	return -(low + 1);
