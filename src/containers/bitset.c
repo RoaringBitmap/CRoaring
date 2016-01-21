@@ -40,6 +40,7 @@ void bitset_container_copy(bitset_container_t *source, bitset_container_t *dest)
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     free(bitset->array);
+    bitset->array = NULL;
     free(bitset);
 }
 
