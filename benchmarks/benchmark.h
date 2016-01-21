@@ -59,4 +59,36 @@
         fflush(NULL);                                                 \
     } while (0)
 
+
+/*
+ * This is like BEST_TIME except that ... is runs functions "test" using the
+ * first parameter "base" and various parameters from "testvalues" (there
+ * are nbrtestvalues), calling pre on base between tests
+ */
+#define BEST_TIME_PRE_ARRAY(base, test, pre,  repeat, testvalues, nbrtestvalues)        \
+    do {                                                                                \
+        printf("%s %s: ", #test, #pre);                                                 \
+        fflush(NULL);                                                                   \
+        uint64_t cycles_start, cycles_final, cycles_diff;                               \
+        uint64_t min_diff = (uint64_t)-1;                                               \
+        int sum = 0;                                                                    \
+        for (size_t j = 0; j < nbrtestvalues; j++) {                                    \
+         for (int i = 0; i < repeat; i++) {                                             \
+            pre(base);                                                                  \
+            __asm volatile("" ::: /* pretend to clobber */ "memory");                   \
+            RDTSC_START(cycles_start);                                                  \
+            test(base,testvalues[j]);                                                   \
+            RDTSC_FINAL(cycles_final);                                                  \
+            cycles_diff = (cycles_final - cycles_start);                                \
+            if (cycles_diff < min_diff) min_diff = cycles_diff;                         \
+          }                                                                             \
+          sum += cycles_diff;                                                           \
+        }                                                                               \
+        uint64_t S = nbrtestvalues;                                                     \
+        float cycle_per_op = sum / (double)S;                                           \
+        printf(" %.2f cycles per operation", cycle_per_op);                             \
+        printf("\n");                                                                   \
+        fflush(NULL);                                                                   \
+    } while (0)
+
 #endif /* BENCHMARKS_INCLUDE_BENCHMARK_H_ */

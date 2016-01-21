@@ -56,14 +56,14 @@ run_container_unit: ./tests/run_container_unit.c    $(HEADERS) $(OBJECTS)
 
 
 
-bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
+bitset_container_benchmark: ./benchmarks/bitset_container_benchmark.c ./benchmarks/benchmark.h ./benchmarks/random.h   $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o bitset_container_benchmark ./benchmarks/bitset_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
 
-array_container_benchmark: ./benchmarks/array_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
+array_container_benchmark: ./benchmarks/array_container_benchmark.c ./benchmarks/benchmark.h ./benchmarks/random.h  $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o array_container_benchmark ./benchmarks/array_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
-run_container_benchmark: ./benchmarks/run_container_benchmark.c ./benchmarks/benchmark.h   $(HEADERS) $(OBJECTS)
+run_container_benchmark: ./benchmarks/run_container_benchmark.c ./benchmarks/benchmark.h ./benchmarks/random.h   $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o run_container_benchmark ./benchmarks/run_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
 

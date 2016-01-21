@@ -9,6 +9,27 @@
 
 #include "containers/bitset.h"
 #include "benchmark.h"
+#include "random.h"
+
+
+// flushes the array of words from cache
+void bitset_cache_flush(bitset_container_t* B) {
+	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
+	for(int32_t  k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += CACHELINESIZE/sizeof(uint64_t)) {
+		__builtin_ia32_clflush(B->array + k);
+	}
+}
+
+// tries to put array of words in cache
+void bitset_cache_prefetch(bitset_container_t* B) {
+	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
+	for(int32_t  k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += CACHELINESIZE/sizeof(uint64_t)) {
+		__builtin_prefetch(B->array + k);
+	}
+}
+
+
+
 
 int set_test(bitset_container_t* B) {
     int x;
@@ -25,6 +46,7 @@ int unset_test(bitset_container_t* B) {
     }
     return 0;
 }
+
 int get_test(bitset_container_t* B) {
     int card = 0;
     int x;
@@ -35,7 +57,7 @@ int get_test(bitset_container_t* B) {
 }
 
 int main() {
-    int repeat = 5000;
+    int repeat = 500;
     int size = (1 << 16) / 3;
     tellmeall();
     printf("bitset container benchmarks\n");
@@ -51,6 +73,20 @@ int main() {
     size = (1 << 16) / 3;
     BEST_TIME(unset_test(B), 0, repeat, size);
     bitset_container_free(B);
+
+    for(int howmany = 32; howmany <= (1<<16); howmany *=8) {
+    	bitset_container_t* Bt = bitset_container_create();
+        for( int j = 0; j < howmany ; ++j ) {
+        	bitset_container_set(Bt, (uint16_t)pcg32_random() );
+        }
+        size_t nbrtestvalues = 1024;
+        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
+        printf("\n number of values in container = %d\n",Bt->cardinality);
+        BEST_TIME_PRE_ARRAY(Bt,bitset_container_get, bitset_cache_prefetch,  repeat, testvalues, nbrtestvalues);
+        BEST_TIME_PRE_ARRAY(Bt,bitset_container_get, bitset_cache_flush,  repeat, testvalues, nbrtestvalues);
+        free(testvalues);
+        bitset_container_free(Bt);
+    }
 
     bitset_container_t* B1 = bitset_container_create();
     for (int x = 0; x < 1 << 16; x += 3) {

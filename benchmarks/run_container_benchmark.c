@@ -9,12 +9,30 @@
 
 #include "containers/run.h"
 #include "benchmark.h"
+#include "random.h"
 
 enum{TESTSIZE=2048};
 
+// flushes the array from cache
+void run_cache_flush(run_container_t* B) {
+	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
+	for(int32_t  k = 0; k < B->nbrruns * 2; k += CACHELINESIZE/sizeof(uint16_t)) {
+		__builtin_ia32_clflush(B->valueslength + k);
+	}
+}
+
+// tries to put array in cache
+void run_cache_prefetch(run_container_t* B) {
+	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
+	for(int32_t  k = 0; k < B->nbrruns * 2; k += CACHELINESIZE/sizeof(uint16_t)) {
+		__builtin_prefetch(B->valueslength + k);
+	}
+}
+
+
 int add_test(run_container_t* B) {
     int x;
-    for (x = 0; x < TESTSIZE*3; x += 3) {
+    for (x = 0; x <  (1<<16); x += 3) {
         run_container_add(B, (uint16_t)x);
     }
     return 0;
@@ -22,15 +40,16 @@ int add_test(run_container_t* B) {
 
 int remove_test(run_container_t* B) {
     int x;
-    for (x = 0; x < TESTSIZE*3; x += 3) {
+    for (x = 0; x <  (1<<16); x += 3) {
         run_container_remove(B, (uint16_t)x);
     }
     return 0;
 }
+
 int contains_test(run_container_t* B) {
     int card = 0;
     int x;
-    for (x = 0; x < TESTSIZE*3; x++) {
+    for (x = 0; x < (1<<16); x++) {
         card += run_container_contains(B, (uint16_t)x);
     }
     return card;
@@ -46,7 +65,7 @@ int intersection_test(run_container_t* B1, run_container_t* B2, run_container_t*
 	return run_container_cardinality(BO);
 }
 int main() {
-    int repeat = 5000;
+    int repeat = 500;
     int size = TESTSIZE;
     tellmeall();
     printf("run container benchmarks\n");
@@ -55,10 +74,24 @@ int main() {
     int answer = contains_test(B);
     size = 1 << 16;
     BEST_TIME(contains_test(B), answer, repeat, size);
-
     size = (1 << 16) / 3;
     BEST_TIME(remove_test(B), 0, repeat, size);
     run_container_free(B);
+
+    for(int howmany = 32; howmany <= (1<<16); howmany *=8) {
+        run_container_t* Bt = run_container_create();
+        for( int j = 0; j < howmany ; ++j ) {
+        	run_container_add(Bt, (uint16_t)pcg32_random() );
+        }
+        size_t nbrtestvalues = 1024;
+        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
+        printf("\n number of values in container = %d\n",run_container_cardinality(Bt));
+        BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_prefetch,  repeat, testvalues, nbrtestvalues);        \
+        BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_flush,  repeat, testvalues, nbrtestvalues);        \
+        free(testvalues);
+        run_container_free(Bt);
+    }
+
 
     run_container_t* B1 = run_container_create();
     for (int x = 0; x < 1 << 16; x += 3) {
