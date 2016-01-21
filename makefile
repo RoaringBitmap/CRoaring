@@ -20,7 +20,7 @@ INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include 
 
 
-OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o util.o
+OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o util.o containers.o
 TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit toplevel_unit
 EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark run_container_benchmark
 all:  $(EXECUTABLES) 
@@ -46,6 +46,8 @@ array.o: ./src/containers/array.c ./include/containers/array.h
 run.o: ./src/containers/run.c ./include/containers/run.h
 	$(CC) $(CFLAGS) -c ./src/containers/run.c $(INCLUDES)
 
+containers.o: ./src/containers/containers.c $(wildcard ./include/containers/*.h) 
+	$(CC) $(CFLAGS) -c ./src/containers/containers.c $(INCLUDES)
 
 util.o: ./src/util.c ./include/util.h
 	$(CC) $(CFLAGS) -c ./src/util.c $(INCLUDES)

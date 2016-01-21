@@ -11,8 +11,9 @@
 
 #include "run.h"
 
-extern void run_container_clear(run_container_t *run);
 extern bool run_container_is_full(run_container_t *run);
+extern bool  run_container_nonzero_cardinality(run_container_t *r);
+extern void run_container_clear(run_container_t *run) ;
 
 enum{DEFAULT_INIT_SIZE = 4};
 

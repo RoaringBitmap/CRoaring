@@ -9,13 +9,6 @@
 #include "containers.h"
 #include "util.h"
 
-// lacking a containers.c, these can go here
-extern uint32_t container_get_cardinality(void *container, uint8_t typecode);
-extern bool container_nonzero_cardinality(void *container, uint8_t typecode);
-extern void container_free( void *container, uint8_t typecode);
-extern void *container_clone( void *container, uint8_t typecode);
-// extern bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t type2);
-extern void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2, uint8_t *result_type);
 
 // ported from RoaringArray.java
 // Todo: optimization (eg branchless binary search)
