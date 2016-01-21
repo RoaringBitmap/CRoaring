@@ -56,7 +56,7 @@ void ra_free(roaring_array_t *ra) {
 }
 
 
-static inline void extend_array(roaring_array_t *ra, uint16_t k) {
+static void extend_array(roaring_array_t *ra, uint16_t k) {
   // corresponding Java code uses >= ??
   int desired_size = ra->size + (int) k;
   if (desired_size > ra->allocation_size) {
