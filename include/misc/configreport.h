@@ -6,6 +6,8 @@
 #ifndef INCLUDE_MISC_CONFIGREPORT_H_
 #define INCLUDE_MISC_CONFIGREPORT_H_
 
+
+// useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
 		unsigned int *ecx, unsigned int *edx) {
 	__asm volatile("cpuid"
@@ -14,6 +16,23 @@ static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
 			"=c" (*ecx),
 			"=d" (*edx)
 			: "0" (*eax), "2" (*ecx));
+}
+
+// CPUID instruction takes no parameters as CPUID implicitly uses the EAX register.
+// The EAX register should be loaded with a value specifying what information to return
+static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
+	__asm__ volatile(
+			"cpuid;" //  call cpuid instruction
+			:"=a"(*eax),"=b"(*ebx),"=c"(*ecx), "=d"(*edx)// output equal to "movl  %%eax %1"
+			:"a"(code)// input equal to "movl %1, %%eax"
+			//:"%eax","%ebx","%ecx","%edx"// clobbered register
+	);
+}
+
+static inline int computecacheline() {
+	int eax = 0, ebx = 0, ecx = 0, edx = 0;
+	cpuinfo(0x80000006, &eax, &ebx, &ecx, &edx);
+	return ecx & 0xFF;
 }
 
 // this is quite imperfect, but can be handy
@@ -117,6 +136,7 @@ static inline void tellmeall() {
 	if (__CHAR_BIT__ != 8)
 	printf("on your machine, chars don't have 8bits???");
 #endif
+	if(computecacheline() != 64) printf("cache line: %d bytes\n", computecacheline());
 }
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */
