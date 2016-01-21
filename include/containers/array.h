@@ -8,7 +8,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "bitset.h"
+
+
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -20,6 +21,7 @@ struct array_container_s {
 };
 
 typedef struct array_container_s array_container_t;
+#include "bitset.h"
 
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create();

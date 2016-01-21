@@ -27,6 +27,9 @@ struct bitset_container_s {
 
 typedef struct bitset_container_s bitset_container_t;
 
+#include "array.h"
+#include "run.h"
+
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create();
 
@@ -103,5 +106,11 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
 
 
 void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
+
+
+/* Convert an array into a bitset */
+bitset_container_t *bitset_container_from_array( array_container_t *arr);
+bitset_container_t *bitset_container_from_run( run_container_t *arr, int32_t *card);
+
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

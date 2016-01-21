@@ -14,5 +14,5 @@ typedef struct roaring_bitmap_s {
 roaring_bitmap_t *roaring_bitmap_create();
 roaring_bitmap_t *roaring_bitmap_and();
 void roaring_bitmap_free(roaring_bitmap_t *r);
-
+void roaring_bitmap_add( roaring_bitmap_t *r, uint32_t x);
 #endif

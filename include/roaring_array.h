@@ -24,5 +24,6 @@ void ra_free(roaring_array_t *r);
 int32_t ra_get_index( roaring_array_t *ra, uint16_t x);
 void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i, uint8_t *typecode);
 uint16_t ra_get_key_at_index(roaring_array_t *ra, uint16_t i);
+void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, void *container, uint8_t typecode);
 void ra_append( roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
 #endif

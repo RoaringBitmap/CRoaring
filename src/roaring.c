@@ -21,6 +21,23 @@ void roaring_bitmap_free(roaring_bitmap_t *r) {
   free(r);
 }
 
+void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
+  const uint16_t hb = val >> 16;
+  const int i = ra_get_index(r->high_low_container, hb);
+    uint8_t typecode;
+    if (i>=0) {
+      void *container = ra_get_container_at_index(r->high_low_container, i, &typecode);
+      void *container2 = container_add(container, val & 0xFFFF, typecode, &typecode);
+      ra_set_container_at_index(r->high_low_container, i, typecode);
+    }
+    else {
+      array_container_t *newac = array_container_create();
+      void *container =  container_add(newac, val & 0xFFFF, ARRAY_CONTAINER_TYPE_CODE, &typecode);
+      // we could just assume that it stays an array container
+      ra_insert_new_key_value_at(r->high_low_container, -i-1, hb, container, typecode); 
+    }
+}
+
 
 // there should be some SIMD optimizations possible here
 roaring_bitmap_t *roaring_bitmap_and( roaring_bitmap_t *x1, roaring_bitmap_t *x2) {

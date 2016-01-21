@@ -56,21 +56,46 @@ inline void container_to_uint32_array( uint32_t *output, void *container, uint8_
   }
 }
 
-
+inline void *container_add(  void *container, uint16_t val, uint8_t typecode, uint8_t *new_typecode) {
+  switch (typecode) {
+  case BITSET_CONTAINER_TYPE_CODE:
+    bitset_container_set( (bitset_container_t *) container, val);
+    *new_typecode = BITSET_CONTAINER_TYPE_CODE;
+    return container;
+  case ARRAY_CONTAINER_TYPE_CODE: ;
+    array_container_t *ac = (array_container_t *) container;
+    array_container_add(ac, val);
+    if (array_container_cardinality(ac)  > DEFAULT_MAX_SIZE) {
+      *new_typecode = BITSET_CONTAINER_TYPE_CODE;
+      return bitset_container_from_array(ac);
+    }
+    else {
+      *new_typecode = BITSET_CONTAINER_TYPE_CODE;
+      return ac;
+    }
+  case RUN_CONTAINER_TYPE_CODE:
+    // per Java, no container type adjustments are done (revisit?)
+    run_container_add( (run_container_t *) container, val);
+    return container;
+  default:
+    assert(0);
+    return NULL;
+  }
+}
 
 inline void *container_clone(void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
     return bitset_container_clone( (bitset_container_t *) container);
 #if 0
-  case ARRAY_CONTAINER_TYPE_CODE:
+    //todo 
+ case ARRAY_CONTAINER_TYPE_CODE:
     return array_container_clone(  (array_container_t *) container);
   case RUN_CONTAINER_TYPE_CODE:
     return run_container_clone( (run_container_t *) container);
 #endif
   default:
     assert(0);
-    *(NULL);
     return NULL;
   }
 }
