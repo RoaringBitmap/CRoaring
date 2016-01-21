@@ -54,6 +54,12 @@ inline int bitset_container_cardinality(bitset_container_t *bitset) {
     return bitset->cardinality;
 }
 
+/* Get whether there is at least one bit set  */
+inline bool bitset_container_nonzero_cardinality(bitset_container_t *bitset) {
+    return bitset->cardinality > 0;
+}
+
+
 /* Copy one container into another. We assume that they are distinct. */
 void bitset_container_copy(bitset_container_t *source, bitset_container_t *dest) ;
 

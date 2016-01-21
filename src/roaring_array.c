@@ -95,7 +95,7 @@ static inline void extend_array(roaring_array_t *ra, uint16_t k) {
 
 
 
-void append(roaring_array_t *ra, uint16_t key, void *container, uint8_t typecode) {
+void ra_append(roaring_array_t *ra, uint16_t key, void *container, uint8_t typecode) {
   extend_array(ra, 1);
   const int32_t pos = ra->size;
 

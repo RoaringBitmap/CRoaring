@@ -21,7 +21,7 @@ BENCHINCLUDES=-Ibenchmarks/include
 
 
 OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o util.o
-TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit
+TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit toplevel_unit
 EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark run_container_benchmark
 all:  $(EXECUTABLES) 
 
@@ -63,6 +63,9 @@ array_container_unit: ./tests/array_container_unit.c    $(HEADERS) $(OBJECTS)
 
 run_container_unit: ./tests/run_container_unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o run_container_unit ./tests/run_container_unit.c $(INCLUDES)  $(OBJECTS)
+
+toplevel_unit: ./tests/toplevel_unit.c    $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) -o toplevel_unit ./tests/toplevel_unit.c $(INCLUDES)  $(OBJECTS)
 
 
 

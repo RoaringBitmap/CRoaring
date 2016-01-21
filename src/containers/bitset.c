@@ -351,6 +351,13 @@ void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *
   }
 }
 
+bitset_container_t *bitset_container_from_array( array_container_t *a) {
+  bitset_container_t *ans = bitset_container_create();
+  int limit = array_container_cardinality(a);
+  for (int i=0; i < limit; ++i)
+    bitset_container_set( ans, a->array[i]);
+  return ans;
+}
 
 
 

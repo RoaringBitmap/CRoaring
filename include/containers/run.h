@@ -39,6 +39,11 @@ bool run_container_contains(const run_container_t *run, uint16_t pos);
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run);
 
+/* Card > 0? */
+inline bool  run_container_nonzero_cardinality(run_container_t *r) {
+  return r->nbrruns > 0; // runs never empty
+}
+
 /* Copy one container into another. We assume that they are distinct. */
 void run_container_copy(run_container_t *source, run_container_t *dest) ;
 

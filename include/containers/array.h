@@ -46,6 +46,10 @@ inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
 }
 
+inline bool array_container_nonzero_cardinality(const array_container_t *array) {
+    return array->cardinality > 0;
+}
+
 /* Copy one container into another. We assume that they are distinct. */
 void array_container_copy(array_container_t *source, array_container_t *dest) ;
 

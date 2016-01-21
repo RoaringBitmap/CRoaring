@@ -19,16 +19,31 @@
 
 
 inline uint32_t container_get_cardinality(void *container, uint8_t typecode) {
-  //TODO: write me
-  return 0;
+  switch (typecode) {
+  case BITSET_CONTAINER_TYPE_CODE:
+    return bitset_container_cardinality(container);
+  case ARRAY_CONTAINER_TYPE_CODE:
+    return array_container_cardinality(container);
+  case RUN_CONTAINER_TYPE_CODE:
+    return run_container_cardinality(container);
+  }
+  return 0; // unreached
 }
 
 
 
 inline bool container_nonzero_cardinality(void *container, uint8_t typecode) {
-  //TODO: write me
-  return false;
+  switch (typecode) {
+  case BITSET_CONTAINER_TYPE_CODE:
+    return bitset_container_nonzero_cardinality(container);
+  case ARRAY_CONTAINER_TYPE_CODE:
+    return array_container_nonzero_cardinality(container);
+  case RUN_CONTAINER_TYPE_CODE:
+    return run_container_nonzero_cardinality(container);
+  }
+  return 0;//unreached
 }
+
 
 
 inline void container_free( void *container, uint8_t typecode) {
