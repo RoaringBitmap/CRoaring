@@ -8,7 +8,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "bitset.h"
+
+
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -20,6 +21,7 @@ struct array_container_s {
 };
 
 typedef struct array_container_s array_container_t;
+#include "bitset.h"
 
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create();
@@ -42,6 +44,10 @@ bool array_container_contains(const array_container_t *array, uint16_t pos);
 /* Get the cardinality of `array'. */
 inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
+}
+
+inline bool array_container_nonzero_cardinality(const array_container_t *array) {
+    return array->cardinality > 0;
 }
 
 /* Copy one container into another. We assume that they are distinct. */

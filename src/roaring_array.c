@@ -95,7 +95,7 @@ static inline void extend_array(roaring_array_t *ra, uint16_t k) {
 
 
 
-void append(roaring_array_t *ra, uint16_t key, void *container, uint8_t typecode) {
+void ra_append(roaring_array_t *ra, uint16_t key, void *container, uint8_t typecode) {
   extend_array(ra, 1);
   const int32_t pos = ra->size;
 
@@ -114,7 +114,7 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index) {
 
   // old contents is junk not needing freeing
   ra->keys[pos] = sa->keys[index];
-  ra->containers[pos] = container_clone(sa->typecodes[index], sa->containers[index]);
+  ra->containers[pos] = container_clone(sa->containers[index], sa->typecodes[index]);
   ra->typecodes[pos] = sa->typecodes[index];
   ra->size++;
 }
@@ -129,7 +129,7 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
     const int32_t pos = ra->size;
     
     ra->keys[pos] = sa->keys[i];
-    ra->containers[pos] = container_clone(sa->typecodes[i], sa->containers[i]);
+    ra->containers[pos] = container_clone(sa->containers[i], sa->typecodes[i]);
     ra->typecodes[pos] = sa->typecodes[i];
     ra->size++;
   }
@@ -150,7 +150,7 @@ void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
     const int32_t pos = ra->size;
     
     ra->keys[pos] = sa->keys[i];
-    ra->containers[pos] = container_clone(sa->typecodes[i], sa->containers[i]);
+    ra->containers[pos] = container_clone(sa->containers[i], sa->typecodes[i]);
     ra->typecodes[pos] = sa->typecodes[i];
     ra->size++;
   }
@@ -211,7 +211,7 @@ inline int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos) {
 } 
 
 
-void ra_insert_new_keyvalue_at( roaring_array_t *ra, int32_t i, uint16_t key, void *container, uint8_t typecode) {
+void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, void *container, uint8_t typecode) {
   extend_array(ra,1);
   // May be an optimization opportunity with DIY memmove
   memmove( &(ra->keys[i+1]), &(ra->keys[i]), ra->size - i);

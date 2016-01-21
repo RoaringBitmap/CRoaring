@@ -21,10 +21,27 @@ void roaring_bitmap_free(roaring_bitmap_t *r) {
   free(r);
 }
 
+void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
+  const uint16_t hb = val >> 16;
+  const int i = ra_get_index(r->high_low_container, hb);
+    uint8_t typecode;
+    if (i>=0) {
+      void *container = ra_get_container_at_index(r->high_low_container, i, &typecode);
+      void *container2 = container_add(container, val & 0xFFFF, typecode, &typecode);
+      ra_set_container_at_index(r->high_low_container, i,  container2, typecode);
+    }
+    else {
+      array_container_t *newac = array_container_create();
+      void *container =  container_add(newac, val & 0xFFFF, ARRAY_CONTAINER_TYPE_CODE, &typecode);
+      // we could just assume that it stays an array container
+      ra_insert_new_key_value_at(r->high_low_container, -i-1, hb, container, typecode); 
+    }
+}
+
 
 // there should be some SIMD optimizations possible here
 roaring_bitmap_t *roaring_bitmap_and( roaring_bitmap_t *x1, roaring_bitmap_t *x2) {
-  uint8_t container_result_type;
+  uint8_t container_result_type=0;
   roaring_bitmap_t *answer = roaring_bitmap_create();
   const int length1 = x1->high_low_container->size, length2 = x2->high_low_container->size;
 
@@ -53,7 +70,7 @@ roaring_bitmap_t *roaring_bitmap_and( roaring_bitmap_t *x1, roaring_bitmap_t *x2
   return answer;
 }
 
-int32_t roaring_get_cardinality( roaring_bitmap_t *ra) {
+int32_t roaring_bitmap_get_cardinality( roaring_bitmap_t *ra) {
   int32_t ans = 0;
   for( int i = 0; i < ra->high_low_container->size; ++i)
     ans += container_get_cardinality( ra->high_low_container->containers[i], 
@@ -61,8 +78,8 @@ int32_t roaring_get_cardinality( roaring_bitmap_t *ra) {
   return ans;
 }
 
-uint32_t *roaring_to_uint32_array( roaring_bitmap_t *ra) {
-  uint32_t *ans = malloc( roaring_get_cardinality(ra) * sizeof( uint32_t));
+uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra) {
+  uint32_t *ans = malloc( roaring_bitmap_get_cardinality(ra) * sizeof( uint32_t));
   int ctr=0;
 
   for( int i = 0; i < ra->high_low_container->size; ++i) {
