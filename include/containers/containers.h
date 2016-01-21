@@ -17,7 +17,25 @@
 #define RUN_CONTAINER_TYPE_CODE    2
 //UNINITIALIZED_TYPE_CODE=0}; // can probably avoid using uninit code
 
+/**
+ * Get the container name from the typecode
+ */
+inline char * get_container_name(uint8_t typecode) {
+  switch (typecode) {
+  case BITSET_CONTAINER_TYPE_CODE:
+    return "bitset";
+  case ARRAY_CONTAINER_TYPE_CODE:
+	return "array";
+  case RUN_CONTAINER_TYPE_CODE:
+    return "run";
+  }
+  return "unknown";
+}
 
+
+/**
+ * Get the container cardinality (number of elements), requires a  typecode
+ */
 inline uint32_t container_get_cardinality(void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
@@ -32,6 +50,9 @@ inline uint32_t container_get_cardinality(void *container, uint8_t typecode) {
 
 
 
+/**
+ * Checks whether a container is not empty, requires a  typecode
+ */
 inline bool container_nonzero_cardinality(void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
@@ -46,6 +67,9 @@ inline bool container_nonzero_cardinality(void *container, uint8_t typecode) {
 
 
 
+/**
+ * Recover memory from a container, requires a  typecode
+ */
 inline void container_free( void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
@@ -59,6 +83,9 @@ inline void container_free( void *container, uint8_t typecode) {
 }
 
 
+/**
+ * Convert a container to an array of values, requires a  typecode as well as a "base" (most significant values)
+ */
 inline void container_to_uint32_array( uint32_t *output, void *container, uint8_t typecode, uint32_t base) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
@@ -71,6 +98,10 @@ inline void container_to_uint32_array( uint32_t *output, void *container, uint8_
   }
 }
 
+/**
+ * Add a value to a container, requires a  typecode, fills in new_typecode and return (possibly different) container.
+ * This function may allocate a new container, and caller is responsible for memory deallocation
+ */
 inline void *container_add(  void *container, uint16_t val, uint8_t typecode, uint8_t *new_typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
@@ -85,12 +116,13 @@ inline void *container_add(  void *container, uint16_t val, uint8_t typecode, ui
       return bitset_container_from_array(ac);
     }
     else {
-      *new_typecode = BITSET_CONTAINER_TYPE_CODE;
+      *new_typecode = ARRAY_CONTAINER_TYPE_CODE;
       return ac;
     }
   case RUN_CONTAINER_TYPE_CODE:
     // per Java, no container type adjustments are done (revisit?)
     run_container_add( (run_container_t *) container, val);
+    *new_typecode = RUN_CONTAINER_TYPE_CODE;
     return container;
   default:
     assert(0);
@@ -98,6 +130,10 @@ inline void *container_add(  void *container, uint16_t val, uint8_t typecode, ui
   }
 }
 
+/**
+ * Copies a container, requires a typecode. This allocates new memory, caller
+ * is responsible for deallocation.
+ */
 inline void *container_clone(void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
@@ -144,49 +180,55 @@ inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t type2) {
 
 // macro-izations possibilities for generic non-inplace binary-op dispatch
 
-inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2, uint8_t *result_type) {
-void *result;
-switch (type1*4 + type2) {
- case (BITSET_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE):
-   result = bitset_container_create();
 
-    // temp temp, type signature is to return an int, destination param is third
-    int result_card =  bitset_container_and( c1, c2, result);
-if (result_card <= DEFAULT_MAX_SIZE)  { 
-      // temp temp, container conversion?? Better not here!
-       *result_type = ARRAY_CONTAINER_TYPE_CODE;  
-       return (void *) array_container_from_bitset(result, result_card); // assume it recycles memory as necessary
-    }
-    *result_type = BITSET_CONTAINER_TYPE_CODE;
-    return result;
-  case ARRAY_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
-   result = array_container_create();
+/**
+ * Compute intersection between two containers, generate a new container (having type result_type), requires a typecode. This allocates new memory, caller
+ * is responsible for deallocation.
+ */
+inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
+		uint8_t *result_type) {
+	void *result;
+	switch (type1 * 4 + type2) {
+	case (BITSET_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE):
+		result = bitset_container_create();
 
-    array_container_intersection( c1, c2, result);
-    *result_type = ARRAY_CONTAINER_TYPE_CODE; 
-    return result;
-  case RUN_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
-    result = run_container_create();
-    run_container_intersection( c1, c2, result);
-    *result_type = RUN_CONTAINER_TYPE_CODE; 
-    // ToDo, conversion to bitset or array
-    return result;
+		// temp temp, type signature is to return an int, destination param is third
+		int result_card = bitset_container_and(c1, c2, result);
+		if (result_card <= DEFAULT_MAX_SIZE) {
+			// temp temp, container conversion?? Better not here!
+			*result_type = ARRAY_CONTAINER_TYPE_CODE;
+			return (void *) array_container_from_bitset(result, result_card); // assume it recycles memory as necessary
+		}
+		*result_type = BITSET_CONTAINER_TYPE_CODE;
+		return result;
+	case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
+		result = array_container_create();
+
+		array_container_intersection(c1, c2, result);
+		*result_type = ARRAY_CONTAINER_TYPE_CODE;
+		return result;
+	case RUN_CONTAINER_TYPE_CODE * 4 + RUN_CONTAINER_TYPE_CODE:
+		result = run_container_create();
+		run_container_intersection(c1, c2, result);
+		*result_type = RUN_CONTAINER_TYPE_CODE;
+		// ToDo, conversion to bitset or array
+		return result;
 #if 0
-  case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
-    return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
-  case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-    return run_container_and_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
-  case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
-    return bitset_container_and_array( (bitset_container t *) c1, (array_container_t *) c2);
-  case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-    return bitset_container_and_array( (bitset_container t *) c2, (array_container_t *) c1);
-  case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
-    return run_container_and_array( (run_container_t) c2, (array_container_t) c1);
-  case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
-    return run_container_and_array( (run_container_t) c1, (array_container_t) c2);
+		case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
+		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
+		case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+		return run_container_and_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
+		case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+		return bitset_container_and_array( (bitset_container t *) c1, (array_container_t *) c2);
+		case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+		return bitset_container_and_array( (bitset_container t *) c2, (array_container_t *) c1);
+		case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
+		return run_container_and_array( (run_container_t) c2, (array_container_t) c1);
+		case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+		return run_container_and_array( (run_container_t) c1, (array_container_t) c2);
 #endif
-  }
- return 0; // unreached
+	}
+	return 0; // unreached
 }
 
 #endif

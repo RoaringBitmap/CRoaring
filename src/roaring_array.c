@@ -47,7 +47,9 @@ void ra_clear(roaring_array_t *ra) {
     container_free(ra->containers[i], ra->typecodes[i]);
 
   free(ra->containers);
+  ra->containers = NULL; // paranoid
   free(ra->typecodes);
+  ra->typecodes = NULL; // paranoid
 }
 
 void ra_free(roaring_array_t *ra) {
@@ -298,7 +300,7 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end, uint32_t n
 void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c, uint8_t typecode) {
   assert(i < ra->size);
   // valid container there already
-  container_free(ra->containers[i], ra->typecodes[i]);
+  //container_free(ra->containers[i], ra->typecodes[i]);// too eager!
  
   ra->containers[i] = c;
   ra->typecodes[i] = typecode;
@@ -306,7 +308,7 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c, uint8_t 
 
 void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i, uint16_t key, void *c, uint8_t typecode) {
   assert(i < ra->size);
-  container_free(ra->containers[i], ra->typecodes[i]);
+  //container_free(ra->containers[i], ra->typecodes[i]);//too eager!
 
   ra->keys[i] = key;
   ra->containers[i] = c;

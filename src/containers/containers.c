@@ -1,6 +1,8 @@
 
 #include "containers.h"
 
+extern char * get_container_name(uint8_t typecode);
+
 extern uint32_t container_get_cardinality(void *container, uint8_t typecode);
 
 extern bool container_nonzero_cardinality(void *container, uint8_t typecode);
