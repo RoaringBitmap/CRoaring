@@ -19,7 +19,7 @@
 *  http://arxiv.org/pdf/1509.05053.pdf
 */
 // could potentially use SIMD-based bin. search
-static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
+int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
 	uint16_t * base = source;
     if(n == 0) return -1;
     if(target > source[n-1]) return - n - 1;// without this we have a buffer overrun
@@ -41,7 +41,7 @@ static int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target) {
 
 // good old bin. search ending with a sequential search
 // could potentially use SIMD-based bin. search
-static int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
+int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
 	int32_t low = 0;
 	int32_t high = lenarray - 1;
 	while( low+16 <= high) {
@@ -71,7 +71,7 @@ static int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey ) 
 #else
 
 // good old bin. search 
-static int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
+int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
 	int32_t low = 0;
 	int32_t high = lenarray - 1;
 	while( low <= high) {
