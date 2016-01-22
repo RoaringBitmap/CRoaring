@@ -52,6 +52,12 @@ void roaring_bitmap_free(roaring_bitmap_t *r);
  */
 void roaring_bitmap_add( roaring_bitmap_t *r, uint32_t x);
 
+/**
+ * Check if value x is present
+ */
+bool roaring_bitmap_contains( roaring_bitmap_t *r, uint32_t x);
+
+
 
 
 /**

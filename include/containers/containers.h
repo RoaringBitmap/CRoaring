@@ -131,6 +131,24 @@ inline void *container_add(  void *container, uint16_t val, uint8_t typecode, ui
 }
 
 /**
+ * Check whether a value is in a container, requires a  typecode
+ */
+inline bool container_contains(  void *container, uint16_t val, uint8_t typecode) {
+  switch (typecode) {
+  case BITSET_CONTAINER_TYPE_CODE:
+    return bitset_container_get( (bitset_container_t *) container, val);
+  case ARRAY_CONTAINER_TYPE_CODE: ;
+    return array_container_contains( (array_container_t *) container, val);
+  case RUN_CONTAINER_TYPE_CODE:
+	return run_container_contains( (run_container_t *) container, val);
+  default:
+    assert(0);
+    return NULL;
+  }
+}
+
+
+/**
  * Copies a container, requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */

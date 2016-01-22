@@ -16,6 +16,23 @@ int test_add(){
   return 1;
 }
 
+int test_contains(){
+  printf("test contains\n");
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  assert(r1);
+
+  for (uint32_t i=0; i < 10000; ++i) {
+	  assert(roaring_bitmap_get_cardinality(r1) == i);
+	  roaring_bitmap_add(r1, 200*i);
+      assert(roaring_bitmap_get_cardinality(r1) == i + 1);
+  }
+  for (uint32_t i=0; i < 200*10000; ++i) {
+	  bool isset = (i % 200 == 0);
+	  bool rset = roaring_bitmap_contains(r1, i);
+	  assert(isset == rset);
+  }
+  return 1;
+}
 
 int test_intersection(){
   printf("test intersection\n");
@@ -57,6 +74,7 @@ int test_union(){
 
 int main(){
   test_add();
+  test_contains();
   test_intersection();
   test_union();
   printf("done toplevel tests\n");
