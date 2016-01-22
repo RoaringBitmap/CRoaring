@@ -22,7 +22,7 @@ extern void array_container_clear(array_container_t *array);
 
 
 /* Create a new array. Return NULL in case of failure. */
-static array_container_t *array_container_create_given_size(int32_t size) {
+static array_container_t *array_container_create_given_capacity(int32_t size) {
 	array_container_t * arr;
 	/* Allocate the array container itself. */
 
@@ -40,11 +40,18 @@ static array_container_t *array_container_create_given_size(int32_t size) {
 
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create() {
-  return array_container_create_given_size( DEFAULT_INIT_SIZE);
+  return array_container_create_given_capacity( DEFAULT_INIT_SIZE);
 }
 
 
-
+/* Duplicate container */
+array_container_t *array_container_clone( array_container_t *src) {
+	array_container_t * answer = array_container_create_given_capacity(src->capacity);
+	if(answer == NULL) return NULL;
+	answer->cardinality = src->cardinality;
+	memcpy(answer->array,src->array,src->cardinality*sizeof(uint16_t));
+	return answer;
+}
 
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
@@ -86,7 +93,7 @@ static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max, b
 
 
 array_container_t *array_container_from_bitset( bitset_container_t *bits, int32_t card) {
-  array_container_t *result = array_container_create_given_size(card);
+  array_container_t *result = array_container_create_given_capacity(card);
   // TODO, use find-first-set-bit or equivalent (look in Hacker's Delight) 
   fprintf(stderr,"conversion of bitset into array not yet written");
   exit(2);

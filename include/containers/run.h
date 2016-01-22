@@ -16,9 +16,6 @@ struct valuelength_s {
 
 typedef struct valuelength_s valuelength_t;
 
-// with some luck: sizeof(struct valuelength_s) = 2 *sizeof(uint16_t) = 4
-_Static_assert( sizeof(valuelength_t) == 2 * sizeof(uint16_t), "Bad struct size"); // part of C standard
-
 struct run_container_s {
     int32_t nbrruns;// how many runs, this number should fit in 16 bits.
     int32_t capacity;// how many runs we could store in valueslength, should be no smaller than nbrruns.
@@ -35,6 +32,11 @@ run_container_t *run_container_create();
 
 /* Free memory owned by `run'. */
 void run_container_free(run_container_t *run);
+
+
+/* Duplicate container */
+run_container_t *run_container_clone( run_container_t *src);
+
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos);

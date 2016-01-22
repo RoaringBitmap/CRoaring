@@ -37,8 +37,8 @@ int test_intersection(){
 }
 
 int test_union(){
-  printf("test union TODO \n");
-/*  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  printf("test union  \n");
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
   roaring_bitmap_t *r2 = roaring_bitmap_create();
   assert(r1); assert(r2);
 
@@ -52,7 +52,6 @@ int test_union(){
 
   roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
   assert(roaring_bitmap_get_cardinality(r1_or_r2) == 166);
-  */
   return 1;
 }
 
@@ -61,5 +60,4 @@ int main(){
   test_intersection();
   test_union();
   printf("done toplevel tests\n");
-
 }

@@ -29,6 +29,10 @@ array_container_t *array_container_create();
 /* Free memory owned by `array'. */
 void array_container_free(array_container_t *array);
 
+/* Duplicate container */
+array_container_t *array_container_clone( array_container_t *src);
+
+
 /* Convert a bitset into an array */
 array_container_t *array_container_from_bitset( bitset_container_t *bits, int32_t card);
 

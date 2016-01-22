@@ -138,13 +138,10 @@ inline void *container_clone(void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
     return bitset_container_clone( (bitset_container_t *) container);
-#if 0
-    //todo 
- case ARRAY_CONTAINER_TYPE_CODE:
+  case ARRAY_CONTAINER_TYPE_CODE:
     return array_container_clone(  (array_container_t *) container);
   case RUN_CONTAINER_TYPE_CODE:
     return run_container_clone( (run_container_t *) container);
-#endif
   default:
     assert(0);
     return NULL;
@@ -226,6 +223,51 @@ inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
 		return run_container_and_array( (run_container_t) c2, (array_container_t) c1);
 		case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
 		return run_container_and_array( (run_container_t) c1, (array_container_t) c2);
+#endif
+	}
+	return 0; // unreached
+}
+
+/**
+ * Compute union between two containers, generate a new container (having type result_type), requires a typecode. This allocates new memory, caller
+ * is responsible for deallocation.
+ */
+inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
+		uint8_t *result_type) {
+	void *result;
+	switch (type1 * 4 + type2) {
+	case (BITSET_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE):
+		result = bitset_container_create();
+		//int result_card =
+				bitset_container_or(c1, c2, result);
+		*result_type = BITSET_CONTAINER_TYPE_CODE;
+		return result;
+	case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
+		result = array_container_create();
+// TODO: this is not correct
+		array_container_union(c1, c2, result);
+		*result_type = ARRAY_CONTAINER_TYPE_CODE;
+		return result;
+	case RUN_CONTAINER_TYPE_CODE * 4 + RUN_CONTAINER_TYPE_CODE:
+		result = run_container_create();
+// TODO: this is not correct
+		run_container_union(c1, c2, result);
+		*result_type = RUN_CONTAINER_TYPE_CODE;
+		// ToDo, conversion to bitset or array
+		return result;
+#if 0
+		case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
+		return run_container_or_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
+		case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+		return run_container_or_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
+		case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+		return bitset_container_or_array( (bitset_container t *) c1, (array_container_t *) c2);
+		case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+		return bitset_container_or_array( (bitset_container t *) c2, (array_container_t *) c1);
+		case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
+		return run_container_or_array( (run_container_t) c2, (array_container_t) c1);
+		case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+		return run_container_or_array( (run_container_t) c1, (array_container_t) c2);
 #endif
 	}
 	return 0; // unreached

@@ -16,3 +16,6 @@ extern void *container_add(  void *container, uint16_t val, uint8_t typecode, ui
 extern void *container_clone(void *container, uint8_t typecode);
 
 extern void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2, uint8_t *result_type);
+
+extern void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
+		uint8_t *result_type) ;

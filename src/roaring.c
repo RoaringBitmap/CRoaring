@@ -16,6 +16,19 @@ roaring_bitmap_t *roaring_bitmap_create() {
   return ans;
 }
 
+roaring_bitmap_t *roaring_bitmap_copy(roaring_bitmap_t *r) {
+  roaring_bitmap_t *ans = (roaring_bitmap_t *) malloc( sizeof(*ans));
+  if (!ans) {
+    return NULL;
+  }
+  ans->high_low_container = ra_copy(r->high_low_container);
+  if (!ans->high_low_container) {
+    free(ans);
+    return NULL;
+  }
+  return ans;
+}
+
 void roaring_bitmap_free(roaring_bitmap_t *r) {
   ra_free(r->high_low_container);
   r->high_low_container = NULL; // paranoid
@@ -30,7 +43,7 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
       void *container = ra_get_container_at_index(r->high_low_container, i, &typecode);
       uint8_t newtypecode = typecode;
       void *container2 = container_add(container, val & 0xFFFF, typecode, &newtypecode);
-      uint32_t newcard = container_get_cardinality(container2, newtypecode) ;
+      //uint32_t newcard = container_get_cardinality(container2, newtypecode) ;
       if(container2 != container) {
     	  container_free(container, typecode);
     	  ra_set_container_at_index(r->high_low_container, i,  container2, newtypecode);
@@ -77,6 +90,69 @@ roaring_bitmap_t *roaring_bitmap_and(roaring_bitmap_t *x1, roaring_bitmap_t *x2)
 		} else { // s1 > s2
 			pos2 = advanceUntil(x2->high_low_container->keys, s1, 0xffff, pos2);
 		}
+	}
+	return answer;
+}
+
+roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2) {
+	uint8_t container_result_type = 0;
+	roaring_bitmap_t *answer = roaring_bitmap_create();
+	const int length1 = x1->high_low_container->size, length2 =
+			x2->high_low_container->size;
+	if (0 == length1) {
+		return roaring_bitmap_copy(x1);
+	}
+	if (0 == length2) {
+		return roaring_bitmap_copy(x2);
+	}
+	int pos1 = 0, pos2 = 0;
+	uint8_t container_type_1, container_type_2;
+	uint16_t s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+	uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+	while (true) {
+		if (s1 == s2) {
+			void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
+					&container_type_1);
+			void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
+					&container_type_2);
+			void *c = container_or(c1, container_type_1, c2, container_type_2,
+					&container_result_type);
+			if (container_nonzero_cardinality(c, container_result_type)) {
+				ra_append(answer->high_low_container, s1, c,
+						container_result_type);
+			}
+			++pos1;
+			++pos2;
+			if(pos1 == length1) break;
+			if(pos2 == length2) break;
+			s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+			s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+
+		} else if (s1 < s2) { // s1 < s2
+			void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
+					&container_type_1);
+			ra_append(answer->high_low_container, s1, c1,
+					container_type_1);
+			pos1++;
+			if(pos1 == length1) break;
+			s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+
+		} else { // s1 > s2
+			void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
+					&container_type_2);
+			ra_append(answer->high_low_container, s2, c2,
+					container_type_2);
+			pos2++;
+			if(pos2 == length2) break;
+			s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+		}
+	}
+	if (pos1 == length1) {
+		ra_append_copy_range(answer->high_low_container, x2->high_low_container,
+				pos2, length2) ;
+	} else if (pos2 == length2) {
+		ra_append_copy_range(answer->high_low_container, x1->high_low_container,
+				pos1, length1) ;
 	}
 	return answer;
 }

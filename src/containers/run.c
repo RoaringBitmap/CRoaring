@@ -17,6 +17,58 @@ extern void run_container_clear(run_container_t *run) ;
 
 enum{DEFAULT_INIT_SIZE = 4};
 
+/* Create a new run container. Return NULL in case of failure. */
+static run_container_t *run_container_create_given_capacity(int32_t size) {
+	run_container_t * run;
+	/* Allocate the run container itself. */
+	if ((run = malloc(sizeof(run_container_t))) == NULL) {
+				return NULL;
+	}
+	if ((run->valueslength = malloc(sizeof(valuelength_t) * size)) == NULL) {
+		        free(run);
+			return NULL;
+	}
+	run->capacity = size;
+	run->nbrruns = 0;
+	return run;
+}
+
+/* Create a new run container. Return NULL in case of failure. */
+run_container_t *run_container_create() {
+	return run_container_create_given_capacity(DEFAULT_INIT_SIZE) ;
+}
+
+run_container_t *run_container_clone( run_container_t *src) {
+	run_container_t * run = run_container_create_given_capacity(src->capacity);
+	if(run == NULL) return NULL;
+	run->capacity = src->capacity;
+	run->nbrruns = src->nbrruns;
+	memcpy(run->valueslength,src->valueslength,src->nbrruns*sizeof(valuelength_t));
+	return run;
+
+}
+
+
+/* Free memory. */
+void run_container_free(run_container_t *run) {
+	free(run->valueslength);
+	run->valueslength = NULL;// pedantic
+	free(run);
+}
+
+/* Get the cardinality of `run'. Requires an actual computation. */
+int run_container_cardinality(const run_container_t *run) {
+	int card = run->nbrruns;
+	valuelength_t *valueslength = run->valueslength;
+	for(int k = 0; k < run->nbrruns; ++k) {
+		card += valueslength[k].length;// TODO: this is begging for vectorization
+	}
+	return card;
+}
+
+// with some luck: sizeof(struct valuelength_s) = 2 *sizeof(uint16_t) = 4
+_Static_assert( sizeof(valuelength_t) == 2 * sizeof(uint16_t), "Bad struct size"); // part of C standard
+
 
 // TODO: could be more efficient
 static void smartAppend(run_container_t *run, uint16_t start, uint16_t length) {
@@ -78,39 +130,6 @@ void run_container_copy(run_container_t *source, run_container_t *dest) {
 	memcpy(dest->valueslength,source->valueslength,2*sizeof(uint16_t)*source->nbrruns);
 }
 
-
-/* Create a new run container. Return NULL in case of failure. */
-run_container_t *run_container_create() {
-	run_container_t * run;
-	/* Allocate the run container itself. */
-	if ((run = malloc(sizeof(run_container_t))) == NULL) {
-				return NULL;
-	}
-	if ((run->valueslength = malloc(sizeof(valuelength_t) * DEFAULT_INIT_SIZE)) == NULL) {
-		        free(run);
-			return NULL;
-	}
-	run->capacity = DEFAULT_INIT_SIZE;
-	run->nbrruns = 0;
-	return run;
-}
-
-/* Free memory. */
-void run_container_free(run_container_t *run) {
-	free(run->valueslength);
-	run->valueslength = NULL;// pedantic
-	free(run);
-}
-
-/* Get the cardinality of `run'. Requires an actual computation. */
-int run_container_cardinality(const run_container_t *run) {
-	int card = run->nbrruns;
-	valuelength_t *valueslength = run->valueslength;
-	for(int k = 0; k < run->nbrruns; ++k) {
-		card += valueslength[k].length;// TODO: this is begging for vectorization
-	}
-	return card;
-}
 
 
 #ifdef RUNBRANCHLESSBINSEARCH

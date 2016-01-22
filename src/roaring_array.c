@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
+
 #include "roaring_array.h"
 #include "bitset.h"
 #include "containers.h"
@@ -26,19 +27,57 @@
 roaring_array_t *ra_create() {
   roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
   if (!new_ra) return NULL;
+  new_ra->keys = NULL;
+  new_ra->containers = NULL;
+  new_ra->typecodes = NULL;
   
   new_ra->allocation_size = INITIAL_CAPACITY;
   new_ra->keys = malloc(INITIAL_CAPACITY * sizeof(uint16_t));
   new_ra->containers = malloc(INITIAL_CAPACITY * sizeof(void *));
   new_ra->typecodes = malloc(INITIAL_CAPACITY * sizeof(uint8_t));
-  if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes)
-    return NULL;
+  if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
+    free(new_ra);
+    free(new_ra->keys);
+    free(new_ra->containers);
+    free(new_ra->typecodes);
+	return NULL;
+  }
   new_ra->size = 0;
 
   return new_ra;
 }
 
-void ra_clear(roaring_array_t *ra) {
+
+roaring_array_t * ra_copy(roaring_array_t *r) {
+	  roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
+	  if (!new_ra) return NULL;
+	  new_ra->keys = NULL;
+	  new_ra->containers = NULL;
+	  new_ra->typecodes = NULL;
+
+	  const int32_t allocsize = r->allocation_size;
+	  new_ra->allocation_size = allocsize;
+	  new_ra->keys = malloc(allocsize * sizeof(uint16_t));
+	  new_ra->containers = malloc(allocsize * sizeof(void *));
+	  new_ra->typecodes = malloc(allocsize * sizeof(uint8_t));
+	  if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
+	    free(new_ra);
+	    free(new_ra->keys);
+	    free(new_ra->containers);
+	    free(new_ra->typecodes);
+		return NULL;
+	  }
+	  int32_t s = r->size;
+	  new_ra->size = s;
+	  memcpy(new_ra->keys,r->keys,s * sizeof(uint16_t));
+	  memcpy(new_ra->containers,r->containers,s * sizeof(void *));
+	  memcpy(new_ra->typecodes,r->typecodes,s * sizeof(uint8_t));
+	  return new_ra;
+}
+
+
+
+static void ra_clear(roaring_array_t *ra) {
   free(ra->keys);
   // TODO: should the containers themselves be freed by this?
   // need to verify there are no cases where 2 roaring_arrays share containers
@@ -131,7 +170,9 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
 }
 
 
-void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa, 
+#if 0
+// if actually used, should be documented and part of header file
+void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
                        uint16_t before_start) {
   int start_location = ra_get_index(sa, before_start);
   if (start_location >= 0) 
@@ -150,11 +191,8 @@ void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
     ra->size++;
   }
 }
+#endif
 
-roaring_array_t *ra_clone() {
-  // TODO write
-  return NULL;
-}
 
 #if 0
 // a form of deep equality. Keys must match and containers must test as equal in

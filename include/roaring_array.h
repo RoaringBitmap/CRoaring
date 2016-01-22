@@ -32,6 +32,10 @@ typedef struct roaring_array_s {
 roaring_array_t *ra_create();
 
 
+/**
+ * Copies this roaring array (caller is responsible for memory management)
+ */
+roaring_array_t * ra_copy(roaring_array_t *r);
 
 /**
  * Frees the memory used by a roaring array
@@ -62,6 +66,21 @@ void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, v
  * Append a new key-value pair
  */
 void ra_append( roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
+
+
+/**
+ * Append a new key-value pair to ra, cloning a value from sa at index index
+ */
+void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index) ;
+
+
+
+/**
+ * Append new key-value pairs to ra, cloning  values from sa at indexes [start_index, uint16_t end_index)
+ */
+void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
+                       uint16_t start_index, uint16_t end_index) ;
+
 
 
 /**
