@@ -54,7 +54,6 @@ void array_container_free(array_container_t *arr) {
 }
 
 
-
 /**
  * increase capacity to at least min, and to no more than max. Whether the
  * existing data needs to be copied over depends on copy. If copy is false,
