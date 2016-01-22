@@ -9,14 +9,23 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+struct valuelength_s {
+	uint16_t value;// start value of the run
+	uint16_t length;// length+1 is the length of the run
+};
+
+typedef struct valuelength_s valuelength_t;
+
+// with some luck: sizeof(struct valuelength_s) = 2 *sizeof(uint16_t) = 4
+_Static_assert( sizeof(valuelength_t) == 2 * sizeof(uint16_t), "Bad struct size"); // part of C standard
+
 struct run_container_s {
     int32_t nbrruns;// how many runs, this number should fit in 16 bits.
     int32_t capacity;// how many runs we could store in valueslength, should be no smaller than nbrruns.
-    uint16_t *valueslength; // we interleave values and lengths, so
+    valuelength_t *valueslength; // we interleave values and lengths, so
     // that if you have the values 11,12,13,14,15, you store that as 11,4 where 4 means that beyond 11 itself, there are
     // 4 contiguous values that follows.
     // Other example: e.g., 1, 10, 20,0, 31,2 would be a concise representation of  1, 2, ..., 11, 20, 31, 32, 33
-
 };
 
 typedef struct run_container_s run_container_t;
@@ -55,7 +64,8 @@ inline void run_container_clear(run_container_t *run) {
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
 inline bool run_container_is_full(run_container_t *run) {
-    return (run->nbrruns == 1) && (run->valueslength[0] == 0) && (run->valueslength[1] == 0xFFFF);
+	valuelength_t  vl = run->valueslength[0];
+    return (run->nbrruns == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
