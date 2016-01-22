@@ -8,7 +8,6 @@
 #include "util.h"
 
 
-#define BRANCHLESSBINSEARCH // optimization (branchless with prefetching tends to be fast!)
 
 #ifdef BRANCHLESSBINSEARCH
 
