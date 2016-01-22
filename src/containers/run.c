@@ -113,7 +113,8 @@ int run_container_cardinality(const run_container_t *run) {
 }
 
 
-// TODO: replace by a branchy bin search
+#ifdef RUNBRANCHLESSBINSEARCH
+
 /**
 * the branchless approach is inspired by
 *  Array layouts for comparison-based searching
@@ -133,6 +134,25 @@ static int32_t interleavedBinarySearch(const valuelength_t* source, int32_t n, u
     base += (base->value < target);
     return  ( base->value == target) ? (base - source) : (source - base) - 1;
 }
+#else 
+// good old bin. search 
+static int32_t interleavedBinarySearch(const valuelength_t * array, int32_t lenarray, uint16_t ikey )  {
+	int32_t low = 0;
+	int32_t high = lenarray - 1;
+	while( low <= high) {
+		int32_t middleIndex = (low+high) >> 1;
+		uint16_t middleValue = array[middleIndex].value;
+		if (middleValue < ikey) {
+			low = middleIndex + 1;
+		} else if (middleValue > ikey) {
+			high = middleIndex - 1;
+		} else {
+			return middleIndex;
+		}
+	}
+	return -(low + 1);
+}
+#endif
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos) {
