@@ -82,6 +82,6 @@ void run_container_intersection(run_container_t *src_1,
                                   run_container_t *src_2,
                                   run_container_t *dst);
 
-void run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, uint32_t base);
+int run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, uint32_t base);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

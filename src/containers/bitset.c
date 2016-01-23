@@ -337,7 +337,7 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 
 
 
-void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
+int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
   int outpos = 0;
 
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS;  ++i) {
@@ -351,6 +351,7 @@ void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *
     // ToDo:  use find-first-set-bit instructions (see hacker's delight p107, based on popcnt and numleadingzeros)
 
   }
+  return outpos;
 }
 
 bitset_container_t *bitset_container_from_array( array_container_t *a) {

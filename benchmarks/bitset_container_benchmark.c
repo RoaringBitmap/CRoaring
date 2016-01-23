@@ -29,6 +29,14 @@ void bitset_cache_prefetch(bitset_container_t* B) {
 }
 
 
+int extract_test(bitset_container_t* B) {
+	int card = bitset_container_cardinality(B);
+	uint32_t *out = malloc(sizeof(uint32_t) * card);
+	bitset_container_to_uint32_array(out,B,1234);
+	free(out);
+	return card;
+}
+
 
 
 int set_test(bitset_container_t* B) {
@@ -79,6 +87,10 @@ int main() {
         for( int j = 0; j < howmany ; ++j ) {
         	bitset_container_set(Bt, (uint16_t)pcg32_random() );
         }
+    	int card = bitset_container_cardinality(B);
+    	uint32_t *out = malloc(sizeof(uint32_t) * card);
+        BEST_TIME(bitset_container_to_uint32_array(out,B,1234), card, repeat, card);
+    	free(out);
         size_t nbrtestvalues = 1024;
         uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
         printf("\n number of values in container = %d\n",Bt->cardinality);

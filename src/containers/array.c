@@ -787,9 +787,10 @@ void array_container_intersection(const array_container_t *array1,
 }
 
 
-void array_container_to_uint32_array( uint32_t *out, const array_container_t *cont, uint32_t base) {
+int array_container_to_uint32_array( uint32_t *out, const array_container_t *cont, uint32_t base) {
   int outpos = 0;
   for (int i = 0; i < cont->cardinality; ++i) {
     out[outpos++] = base + cont->array[i];
   }
+  return outpos;
 }

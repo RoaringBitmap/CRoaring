@@ -111,7 +111,7 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
                                    bitset_container_t *dst);
 
 
-void bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
+int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
 
 
 /* Convert an array into a bitset */

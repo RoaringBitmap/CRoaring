@@ -71,19 +71,18 @@ _Static_assert( sizeof(valuelength_t) == 2 * sizeof(uint16_t), "Bad struct size"
 
 
 // TODO: could be more efficient
-static void smartAppend(run_container_t *run, uint16_t start, uint16_t length) {
+static void smartAppend(run_container_t *run, valuelength_t vl) {//uint16_t start, uint16_t length) {
         int32_t oldend;
-        // todo: next line is probably unsafe when nbrruns == 0 in the sense where we might access memory out of bounds (crash prone?)
+        // todo: next line is maybe unsafe when nbrruns == 0 in the sense where we might access memory out of bounds (crash prone?)
         if((run->nbrruns==0) ||
-                (start >
+                (vl.value >
                 (oldend = run->valueslength[run->nbrruns - 1].value
                 		+ run->valueslength[run->nbrruns - 1].length) + 1)) { // we add a new one
-        	run->valueslength[run->nbrruns].value =  start;
-        	run->valueslength[run->nbrruns].length = length;
+        	run->valueslength[run->nbrruns] = vl;
         	run->nbrruns++;
             return;
         }
-        int32_t newend = start + length + 1;
+        int32_t newend = vl.value + vl.length + 1;
         if(newend > oldend)  { // we merge
         	run->valueslength[run->nbrruns - 1].length =   newend - 1 - run->valueslength[run->nbrruns - 1].value;
         }
@@ -305,19 +304,19 @@ void run_container_union(run_container_t *src_1,
 
     while ((xrlepos < src_2->nbrruns) && (rlepos < src_1->nbrruns)) {
         if(src_1->valueslength[rlepos].value <= src_2->valueslength[xrlepos].value ) {
-            smartAppend(dst,src_1->valueslength[rlepos].value, src_1->valueslength[rlepos].length);
+            smartAppend(dst,src_1->valueslength[rlepos]);
             rlepos++;
         } else {
-            smartAppend(dst,src_2->valueslength[xrlepos].value, src_2->valueslength[xrlepos].length);
+            smartAppend(dst,src_2->valueslength[xrlepos]);
             xrlepos++;
         }
     }
     while (xrlepos < src_2->nbrruns) {
-        smartAppend(dst,src_2->valueslength[xrlepos].value, src_2->valueslength[xrlepos].length);
+        smartAppend(dst,src_2->valueslength[xrlepos]);
         xrlepos++;
     }
     while (rlepos < src_1->nbrruns) {
-        smartAppend(dst,src_1->valueslength[rlepos].value, src_1->valueslength[rlepos].length);
+        smartAppend(dst,src_1->valueslength[rlepos]);
         rlepos++;
     }
 
@@ -391,7 +390,7 @@ void run_container_intersection(run_container_t *src_1,
 
 }
 
-void run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, uint32_t base) {
+int run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, uint32_t base) {
   int outpos = 0;
   for (int i = 0; i < cont->nbrruns; ++i) {
     uint32_t run_start = base + cont->valueslength[i].value;
@@ -399,4 +398,5 @@ void run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, 
     for (int j = 0; j <= le ; ++j)
       out[outpos++] = run_start + j;
   }
+  return outpos;
 }

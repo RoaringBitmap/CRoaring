@@ -75,6 +75,6 @@ void array_container_intersection(const array_container_t *src_1,
                                   array_container_t *dst);
 
 
-void array_container_to_uint32_array( uint32_t *out, const array_container_t *cont, uint32_t base);
+int array_container_to_uint32_array( uint32_t *out, const array_container_t *cont, uint32_t base);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */
