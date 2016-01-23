@@ -86,12 +86,16 @@ int main() {
         size_t nbrtestvalues = 1024;
         uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
         printf("\n number of values in container = %d\n",run_container_cardinality(Bt));
+    	int card = run_container_cardinality(Bt);
+    	uint32_t *out = malloc(sizeof(uint32_t) * card);
+        BEST_TIME(run_container_to_uint32_array(out,Bt,1234), card, repeat, card);
+    	free(out);
         BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_prefetch,  repeat, testvalues, nbrtestvalues);        \
         BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_flush,  repeat, testvalues, nbrtestvalues);        \
         free(testvalues);
         run_container_free(Bt);
     }
-
+    printf("\n");
 
     run_container_t* B1 = run_container_create();
     for (int x = 0; x < 1 << 16; x += 3) {
