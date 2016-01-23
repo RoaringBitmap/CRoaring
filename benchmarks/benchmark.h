@@ -61,7 +61,7 @@
 
 
 /*
- * This is like BEST_TIME except that ... is runs functions "test" using the
+ * This is like BEST_TIME except that ... it runs functions "test" using the
  * first parameter "base" and various parameters from "testvalues" (there
  * are nbrtestvalues), calling pre on base between tests
  */
