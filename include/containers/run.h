@@ -82,6 +82,12 @@ void run_container_intersection(run_container_t *src_1,
                                   run_container_t *src_2,
                                   run_container_t *dst);
 
+/*
+ * Write out the 16-bit integers contained in this container as a list of 32-bit integers using base
+ * as the starting value (it might be expected that base has zeros in its 16 least significant bits).
+ * The function returns the number of values written.
+ * The caller is responsible for allocating enough memory in out.
+ */
 int run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, uint32_t base);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

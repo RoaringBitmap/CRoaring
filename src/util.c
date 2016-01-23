@@ -6,7 +6,22 @@
 #include <stdint.h>
 
 #include "util.h"
-
+/*
+ * Set all bits in indexes [begin,end) to true.
+ */
+void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
+    if (start == end) return;
+    uint32_t firstword = start / 64;
+    uint32_t endword   = (end - 1 ) / 64;
+    if(firstword == endword) {
+      bitmap[firstword] |= ((~UINT64_C(0)) << (start % 64)) & ((~UINT64_C(0)) >> (-end & 64));
+      return;
+    }
+    bitmap[firstword] |= ~0L << start;
+    for (uint32_t i = firstword+1; i < endword; i++)
+        bitmap[i] = ~UINT64_C(0);
+    bitmap[endword] |= (~UINT64_C(0)) >> (-end % 64);
+}
 
 
 #ifdef BRANCHLESSBINSEARCH

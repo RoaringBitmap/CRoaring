@@ -12,7 +12,6 @@
 #include "array.h"
 #include "util.h"
 
-
 enum{DEFAULT_INIT_SIZE = 16};
 
 
@@ -21,8 +20,8 @@ extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
 
 
-/* Create a new array. Return NULL in case of failure. */
-static array_container_t *array_container_create_given_capacity(int32_t size) {
+/* Create a new array with capacity size. Return NULL in case of failure. */
+array_container_t *array_container_create_given_capacity(int32_t size) {
 	array_container_t * arr;
 	/* Allocate the array container itself. */
 
@@ -91,15 +90,6 @@ static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max, b
     }
 }
 
-
-array_container_t *array_container_from_bitset( bitset_container_t *bits, int32_t card) {
-  array_container_t *result = array_container_create_given_capacity(card);
-  // TODO, use find-first-set-bit or equivalent (look in Hacker's Delight) 
-  fprintf(stderr,"conversion of bitset into array not yet written");
-  exit(2);
-
-  bitset_container_free(bits);
-}
 
 /* Copy one container into another. We assume that they are distinct. */
 void array_container_copy(array_container_t *source, array_container_t *dest) {

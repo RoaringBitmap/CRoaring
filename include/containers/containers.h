@@ -7,6 +7,7 @@
 #include "bitset.h"
 #include "array.h"
 #include "run.h"
+#include "convert.h"
 
 
 // don't use an enum: needs constant folding
@@ -212,7 +213,7 @@ inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
 		if (result_card <= DEFAULT_MAX_SIZE) {
 			// temp temp, container conversion?? Better not here!
 			*result_type = ARRAY_CONTAINER_TYPE_CODE;
-			return (void *) array_container_from_bitset(result, result_card); // assume it recycles memory as necessary
+			return (void *) array_container_from_bitset(result); // assume it recycles memory as necessary
 		}
 		*result_type = BITSET_CONTAINER_TYPE_CODE;
 		return result;

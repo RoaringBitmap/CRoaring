@@ -8,6 +8,9 @@
 #include <string.h>
 
 #include "bitset.h"
+#include "util.h"
+
+
 extern int bitset_container_cardinality(bitset_container_t *bitset);
 extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 
@@ -70,6 +73,12 @@ void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
     bitset->cardinality += (old_word != new_word);
     bitset->array[pos >> 6] = new_word;
 }
+
+void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint32_t end) {
+	bitset_set_range(bitset->array, begin,end);
+	bitset->cardinality = bitset_container_compute_cardinality(bitset);// could be smarter
+}
+
 
 /* Unset the ith bit.  */
 void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
@@ -361,15 +370,6 @@ int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *c
   }
   return outpos;
 }
-
-bitset_container_t *bitset_container_from_array( array_container_t *a) {
-  bitset_container_t *ans = bitset_container_create();
-  int limit = array_container_cardinality(a);
-  for (int i=0; i < limit; ++i)
-    bitset_container_set( ans, a->array[i]);
-  return ans;
-}
-
 
 
 // clang-format On

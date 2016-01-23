@@ -27,8 +27,6 @@ struct bitset_container_s {
 
 typedef struct bitset_container_s bitset_container_t;
 
-#include "array.h"
-#include "run.h"
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create();
@@ -42,6 +40,9 @@ bitset_container_t *bitset_container_clone( bitset_container_t *src);
 
 /* Set the bit at position `pos'.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
+
+/* Set the bit in [begin,end).  */
+void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint32_t end);
 
 /* Unset the bit at position `pos'.  */
 void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
@@ -111,12 +112,14 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
                                    bitset_container_t *dst);
 
 
+/*
+ * Write out the 16-bit integers contained in this container as a list of 32-bit integers using base
+ * as the starting value (it might be expected that base has zeros in its 16 least significant bits).
+ * The function returns the number of values written.
+ * The caller is responsible for allocating enough memory in out.
+ */
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
 
-
-/* Convert an array into a bitset */
-bitset_container_t *bitset_container_from_array( array_container_t *arr);
-bitset_container_t *bitset_container_from_run( run_container_t *arr, int32_t *card);
 
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

@@ -99,6 +99,7 @@ int main() {
         free(testvalues);
         bitset_container_free(Bt);
     }
+    printf("\n");
 
     bitset_container_t* B1 = bitset_container_create();
     for (int x = 0; x < 1 << 16; x += 3) {

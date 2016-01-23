@@ -14,13 +14,13 @@ else # by default we compile for AVX
 CFLAGS = $(CFLAGS1) -DUSEAVX 
 endif # noavx
 
-HEADERS=./include/util.h ./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h ./include/containers/containers.h ./include/misc/configreport.h 
+HEADERS=./include/util.h ./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h ./include/containers/containers.h ./include/containers/convert.h ./include/misc/configreport.h 
 
 INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include 
 
 
-OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o util.o containers.o
+OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o util.o convert.o containers.o
 TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit toplevel_unit
 EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark run_container_benchmark
 all:  $(EXECUTABLES) 
@@ -45,6 +45,9 @@ array.o: ./src/containers/array.c ./include/containers/array.h
 
 run.o: ./src/containers/run.c ./include/containers/run.h
 	$(CC) $(CFLAGS) -c ./src/containers/run.c $(INCLUDES)
+
+convert.o: ./src/containers/convert.c $(wildcard ./include/containers/*.h) 
+	$(CC) $(CFLAGS) -c ./src/containers/convert.c $(INCLUDES)
 
 containers.o: ./src/containers/containers.c $(wildcard ./include/containers/*.h) 
 	$(CC) $(CFLAGS) -c ./src/containers/containers.c $(INCLUDES)
