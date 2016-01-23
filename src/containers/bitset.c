@@ -342,6 +342,7 @@ int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *c
 
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS;  ++i) {
     uint64_t w = cont->array[i];
+#ifdef NAIVEBITDECODE
     uint64_t mask = 1ULL;
     for (int j=0; j < 64; ++j, mask <<= 1) {
       if (w & mask)
@@ -349,7 +350,14 @@ int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *c
       base++;
     }
     // ToDo:  use find-first-set-bit instructions (see hacker's delight p107, based on popcnt and numleadingzeros)
-
+#else
+    while (w != 0) {
+      uint64_t t = w & -w;
+      int r = __builtin_ctzl(w);
+      out[outpos++] = (i * 64 + r) | base;
+      w ^= t;
+    }
+#endif
   }
   return outpos;
 }
