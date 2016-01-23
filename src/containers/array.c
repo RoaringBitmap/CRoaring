@@ -80,10 +80,10 @@ static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max, b
         newCapacity = max;
     arr->capacity = newCapacity;
     if(copy)
-      arr->array = realloc(arr->array,arr->capacity * size(uint16_t)) ;
+      arr->array = realloc(arr->array,arr->capacity * sizeof(uint16_t)) ;
     else {
       free(arr->array);
-      arr->array = malloc(arr->capacity * size(uint16_t)) ;
+      arr->array = malloc(arr->capacity * sizeof(uint16_t)) ;
     }
     // TODO: handle the case where realloc fails
     if(arr->array == NULL) {

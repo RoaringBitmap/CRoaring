@@ -45,7 +45,7 @@ int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
 	int32_t high = lenarray - 1;
 	while( low+16 <= high) {
 		int32_t middleIndex = (low+high) >> 1;
-		int32_t middleValue = array[middleIndex];
+		uint16_t middleValue = array[middleIndex];
 		if (middleValue < ikey) {
 			low = middleIndex + 1;
 		} else if (middleValue > ikey) {
@@ -75,7 +75,7 @@ int32_t binarySearch(uint16_t * array, int32_t lenarray, uint16_t ikey )  {
 	int32_t high = lenarray - 1;
 	while( low <= high) {
 		int32_t middleIndex = (low+high) >> 1;
-		int32_t middleValue = array[middleIndex];
+		uint16_t middleValue = array[middleIndex];
 		if (middleValue < ikey) {
 			low = middleIndex + 1;
 		} else if (middleValue > ikey) {
