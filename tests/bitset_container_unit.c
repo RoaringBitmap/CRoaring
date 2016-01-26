@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "containers/bitset.h"
 #include "misc/configreport.h"
@@ -19,8 +20,15 @@ int set_get_test() {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
     }
+    for (x = 0; x < 1 << 16; x++) {
+    	assert(!bitset_container_get(B, x));
+    }
     for (x = 0; x < 1 << 16; x += 3) {
-        bitset_container_set(B, (uint16_t)x);
+        assert(bitset_container_cardinality(B) == x/3);
+    	assert(!bitset_container_get(B, x));
+    	bitset_container_set(B, (uint16_t)x);
+        assert(bitset_container_get(B, x));
+        assert(bitset_container_cardinality(B) == x/3 + 1);
     }
     for (x = 0; x < 1 << 16; x++) {
         int isset = bitset_container_get(B, (uint16_t)x);

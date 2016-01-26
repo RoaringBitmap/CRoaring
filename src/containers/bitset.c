@@ -69,24 +69,28 @@ bitset_container_t *bitset_container_clone( bitset_container_t *src) {
 /* Set the ith bit.  */
 void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
     const uint64_t old_word = bitset->array[pos >> 6];
-    const uint64_t new_word = old_word | (UINT64_C(1) << (pos & 63));
-    bitset->cardinality += (old_word != new_word);
+	const int index = pos & 63;
+    const uint64_t new_word = old_word | (UINT64_C(1) << index);
+    bitset->cardinality += (old_word ^ new_word) >> index;
     bitset->array[pos >> 6] = new_word;
 }
+
 
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint32_t end) {
 	bitset_set_range(bitset->array, begin,end);
 	bitset->cardinality = bitset_container_compute_cardinality(bitset);// could be smarter
 }
 
-
 /* Unset the ith bit.  */
 void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
-    const uint64_t new_word = old_word & (~(UINT64_C(1) << (pos & 63)));
-    bitset->cardinality -= (old_word != new_word);
+	const uint64_t old_word = bitset->array[pos >> 6];
+	const int index = pos & 63;
+    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
+    bitset->cardinality -= (old_word ^ new_word) >> index;
     bitset->array[pos >> 6] = new_word;
 }
+
+
 
 /* Get the value of the ith bit.  */
 bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos) {
@@ -150,9 +154,9 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 
 #ifndef USEPOPCNT
-#define REPEAT 8 
+#define BITSET_CONTAINER_FN_REPEAT 8
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
-#define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * REPEAT)
+#define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * BITSET_CONTAINER_FN_REPEAT)
 
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
@@ -162,16 +166,50 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
                                        const bitset_container_t *src_2, \
                                        bitset_container_t *dst) {       \
-    const uint64_t *array_1 = src_1->array;                             \
-    const uint64_t *array_2 = src_2->array;                             \
+    const uint8_t *array_1 = (const uint8_t *)src_1->array;             \
+    const uint8_t *array_2 = (const uint8_t *)src_2->array;             \
     /* not using the blocking optimization for some reason*/            \
-    uint64_t *out = dst->array;                                         \
-    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS / 4; i++) {   \
-        __m256i A1 = _mm256_lddqu_si256((__m256i *)array_1 + i);        \
-        __m256i A2 = _mm256_lddqu_si256((__m256i *)array_2 + i);        \
-        /* swapped order to get andnot to work*/                        \
-        __m256i AO = avx_intrinsic(A2, A1);                             \
-        _mm256_storeu_si256((__m256i *)out + i, AO);                    \
+    uint8_t *out = (uint8_t*)dst->array;                                \
+    const int innerloop = 8;                                            \
+    for (size_t i = 0;                                                  \
+        i < BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG);       \
+                                                         i+=innerloop) {\
+        __m256i A1, A2, AO;                                             \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1));                  \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2));                  \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)out, AO);                        \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 32));             \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 32));             \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+32), AO);                   \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 64));             \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 64));             \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+64), AO);                   \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 96));             \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 96));             \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+96), AO);                   \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 128));            \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 128));            \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+128), AO);                  \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 160));            \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 160));            \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+160), AO);                  \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 192));            \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 192));            \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+192), AO);                  \
+        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 224));            \
+        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 224));            \
+        AO = avx_intrinsic(A2, A1);                                     \
+        _mm256_storeu_si256((__m256i *)(out+224), AO);                  \
+        out+=256;                                                       \
+        array_1 += 256;                                                 \
+        array_2 += 256;                                                 \
     }                                                                   \
     dst->cardinality = -1;                                              \
     return dst->cardinality;                                            \
@@ -184,14 +222,14 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
     const uint64_t *array_2 = src_2->array;                             \
     uint64_t *out = dst->array;                                         \
     const __m256i shuf =                                                \
-        _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, \
-                         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4); \
+       _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, \
+                        0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);\
     const __m256i  mask = _mm256_set1_epi8(0x0f);                       \
     __m256i total = _mm256_setzero_si256();                             \
     __m256i zero = _mm256_setzero_si256();                              \
     for (size_t idx = 0; idx < 256; idx += 4) {                         \
         __m256i A1, A2, ymm1, ymm2;                                     \
-       __m256i innertotal = _mm256_setzero_si256();                    \
+       __m256i innertotal = _mm256_setzero_si256();                     \
         A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx + 0);          \
         A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx + 0);          \
         ymm1 = avx_intrinsic(A2, A1);                                   \
@@ -249,9 +287,9 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
 
 
 #else //USEPOPCNT
-#define REPEAT 8
+#define BITSET_CONTAINER_FN_REPEAT 8
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
-#define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * REPEAT)
+#define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * BITSET_CONTAINER_FN_REPEAT)
 
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
@@ -284,15 +322,15 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
     uint64_t *out = dst->array;                                         \
     int32_t sum = 0;                                                    \
     for (size_t i = 0; i < LOOP_SIZE; i++) {                            \
-        for (size_t j = 0; j < REPEAT; ++j) {                           \
-            const int idx = (i * REPEAT) + j;                           \
+        for (size_t j = 0; j < BITSET_CONTAINER_FN_REPEAT; ++j) {                           \
+            const int idx = (i * BITSET_CONTAINER_FN_REPEAT) + j;                           \
             __m256i A1 = _mm256_lddqu_si256((__m256i *)array_1 + idx);  \
             __m256i A2 = _mm256_lddqu_si256((__m256i *)array_2 + idx);  \
             __m256i AO = avx_intrinsic(A2, A1);                         \
             _mm256_storeu_si256((__m256i *)out + idx, AO);              \
         }                                                               \
-        for (size_t j = 0; j < REPEAT; ++j) {                           \
-            const int idx = (i * REPEAT * WORDS_IN_AVX2_REG);           \
+        for (size_t j = 0; j < BITSET_CONTAINER_FN_REPEAT; ++j) {                           \
+            const int idx = (i * BITSET_CONTAINER_FN_REPEAT * WORDS_IN_AVX2_REG);           \
             sum += _mm_popcnt_u64(out[idx + j * 4]);                    \
             sum += _mm_popcnt_u64(out[idx + j * 4 + 1]);                \
             sum += _mm_popcnt_u64(out[idx + j * 4 + 2]);                \
