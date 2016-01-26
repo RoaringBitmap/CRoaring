@@ -9,10 +9,16 @@
 
 #include "bitset.h"
 #include "util.h"
+#include "utilasm.h"
 
 
 extern int bitset_container_cardinality(bitset_container_t *bitset);
 extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
+extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
+extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
+extern bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
+
+
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
@@ -70,122 +76,6 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint
 	bitset_set_range(bitset->array, begin,end);
 	bitset->cardinality = bitset_container_compute_cardinality(bitset);// could be smarter
 }
-
-#define ASMBITMANIPOPTIMIZATION// optimization flag
-#ifdef ASMBITMANIPOPTIMIZATION
-
-
-#define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg)       \
-    __asm volatile ("shrx %1, %2, %0" :                 \
-                    "=r" (destReg): /* write */    \
-                    "r" (bitsReg),  /* read only */     \
-                    "r" (srcReg)    /* read only */     \
-                    )
-
-#define ASM_INPLACESHIFT_RIGHT(srcReg, bitsReg)       \
-    __asm volatile ("shrx %1, %0, %0" :                 \
-                    "+r" (srcReg): /* read/write */    \
-                    "r" (bitsReg)  /* read only */     \
-                    )
-
-#define ASM_SHIFT_LEFT(srcReg, bitsReg, destReg)       \
-    __asm volatile ("shlx %1, %2, %0" :                 \
-                    "=r" (destReg): /* write */    \
-                    "r" (bitsReg),  /* read only */     \
-                    "r" (srcReg)    /* read only */     \
-                    )
-// set bit at position testBit within testByte to 1 and
-// copy cmovDst to cmovSrc if that bit was previously clear
-#define ASM_SET_BIT_INC_WAS_CLEAR(testByte, testBit, count)     \
-    __asm volatile ("bts %2, %0\n"                              \
-                    "sbb $-1, %1\n" :                           \
-                    "+r" (testByte), /* read/write */           \
-                    "+r" (count) :   /* read/write */           \
-                    "r" (testBit)    /* read only */            \
-                    )
-
-#define ASM_CLEAR_BIT_DEC_WAS_SET(testByte, testBit, count)     \
-    __asm volatile ("btr %2, %0\n"                              \
-                    "sbb $0, %1\n" :                            \
-                    "+r" (testByte), /* read/write */           \
-                    "+r" (count) :   /* read/write */           \
-                    "r" (testBit)    /* read only */            \
-                    )
-
-#define ASM_BT64(testByte, testBit, count)                         \
-__asm volatile("bt %2,%1\n"                                  \
-		"sbb %0,%0":                                 \
-        "=r" (count) :   /* write */           \
-         "r" (testByte), /* read only */           \
-		"r" (testBit)    /* read only */            \
-        )
-
-
-/* Set the ith bit.  */
-void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
-    uint64_t shift = 6;
-    uint64_t offset;
-    uint64_t p = pos;
-    ASM_SHIFT_RIGHT(p, shift, offset);
-    uint64_t load = bitset->array[offset];
-    ASM_SET_BIT_INC_WAS_CLEAR(load, p, bitset->cardinality);
-    bitset->array[offset] = load;
-}
-
-
-
-/* Unset the ith bit.  */
-void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
-	uint64_t shift = 6;
-    uint64_t offset;
-    uint64_t p = pos;
-    ASM_SHIFT_RIGHT(p, shift, offset);
-    uint64_t load = bitset->array[offset];
-    ASM_CLEAR_BIT_DEC_WAS_SET(load, p, bitset->cardinality);
-    bitset->array[offset] = load;
-}
-
-
-/* Get the value of the ith bit.  */
-bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos) {
-	 uint64_t word = bitset->array[pos >> 6];
-	 const uint64_t p = pos;
-	 ASM_INPLACESHIFT_RIGHT(word, p) ;
-	return word & 1;
-}
-
-#else
-
-/* Set the ith bit.  */
-void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
-	const int index = pos & 63;
-    const uint64_t new_word = old_word | (UINT64_C(1) << index);
-    bitset->cardinality += (old_word ^ new_word) >> index;
-    bitset->array[pos >> 6] = new_word;
-}
-
-
-
-/* Unset the ith bit.  */
-void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
-	const uint64_t old_word = bitset->array[pos >> 6];
-	const int index = pos & 63;
-    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
-    bitset->cardinality -= (old_word ^ new_word) >> index;
-    bitset->array[pos >> 6] = new_word;
-}
-
-
-
-/* Get the value of the ith bit.  */
-bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos) {
-    const uint64_t word = bitset->array[pos >> 6];
-    // getting rid of the mask can shave one cycle off...
-    return (word >> (pos & 63)) & 1;
-}
-
-#endif
 
 //#define USEPOPCNT // when this is disabled bitset_container_compute_cardinality uses AVX to compute hamming weight
 
