@@ -1,6 +1,16 @@
 # CRoaring
 Roaring bitmaps in C
 
+Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortunately, they can use too much memory.
+ To compensate, we often use compressed bitmaps.
+
+Roaring bitmaps are compressed bitmaps which tend to outperform conventional compressed bitmaps such as WAH, EWAH or Concise.
+They are used by several major systems such as Apache Lucene and derivative systems such as Solr and Elastic,
+Metamarkets' Druid, Apache Spark, Metamarkets' Druid, Whoosh and eBay's Apache Kylin.
+
+The primary goal of the CRoaring is to provide a high performance low-level implementation that fully take advantage
+of the latest hardware.
+
 # Requirements
 
 - Recent Intel processor: Haswell (2013) or better.
