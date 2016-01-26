@@ -84,7 +84,7 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint
 
 #define ASM_INPLACESHIFT_RIGHT(srcReg, bitsReg)       \
     __asm volatile ("shrx %1, %0, %0" :                 \
-                    "+r" (srcReg): /* write/write */    \
+                    "+r" (srcReg): /* read/write */    \
                     "r" (bitsReg)  /* read only */     \
                     )
 
