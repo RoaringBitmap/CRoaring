@@ -13,6 +13,10 @@
 
 extern int bitset_container_cardinality(bitset_container_t *bitset);
 extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
+extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
+extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
+extern bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
+
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
@@ -66,38 +70,12 @@ bitset_container_t *bitset_container_clone( bitset_container_t *src) {
 }
 
 
-/* Set the ith bit.  */
-void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
-	const int index = pos & 63;
-    const uint64_t new_word = old_word | (UINT64_C(1) << index);
-    bitset->cardinality += (old_word ^ new_word) >> index;
-    bitset->array[pos >> 6] = new_word;
-}
-
 
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint32_t end) {
 	bitset_set_range(bitset->array, begin,end);
 	bitset->cardinality = bitset_container_compute_cardinality(bitset);// could be smarter
 }
 
-/* Unset the ith bit.  */
-void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
-	const uint64_t old_word = bitset->array[pos >> 6];
-	const int index = pos & 63;
-    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
-    bitset->cardinality -= (old_word ^ new_word) >> index;
-    bitset->array[pos >> 6] = new_word;
-}
-
-
-
-/* Get the value of the ith bit.  */
-bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos) {
-    const uint64_t word = bitset->array[pos >> 6];
-    // getting rid of the mask can shave one cycle off...
-    return (word >> (pos & 63)) & 1;
-}
 
 
 //#define USEPOPCNT // when this is disabled bitset_container_compute_cardinality uses AVX to compute hamming weight

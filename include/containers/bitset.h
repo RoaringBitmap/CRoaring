@@ -38,17 +38,39 @@ void bitset_container_free(bitset_container_t *bitset);
 bitset_container_t *bitset_container_clone( bitset_container_t *src);
 
 
-/* Set the bit at position `pos'.  */
-void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 
 /* Set the bit in [begin,end).  */
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint32_t end);
 
-/* Unset the bit at position `pos'.  */
-void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 
-/* Get the value of bit at position `pos'.  */
-bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
+/* Set the ith bit.  */
+inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
+    const uint64_t old_word = bitset->array[pos >> 6];
+	const int index = pos & 63;
+    const uint64_t new_word = old_word | (UINT64_C(1) << index);
+    bitset->cardinality += (old_word ^ new_word) >> index;
+    bitset->array[pos >> 6] = new_word;
+}
+
+
+/* Unset the ith bit.  */
+inline void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
+	const uint64_t old_word = bitset->array[pos >> 6];
+	const int index = pos & 63;
+    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
+    bitset->cardinality -= (old_word ^ new_word) >> index;
+    bitset->array[pos >> 6] = new_word;
+}
+
+
+
+/* Get the value of the ith bit.  */
+inline bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos) {
+    const uint64_t word = bitset->array[pos >> 6];
+    // getting rid of the mask can shave one cycle off...
+    return (word >> (pos & 63)) & 1;
+}
+
 
 /* Get the number of bits set */
 inline int bitset_container_cardinality(bitset_container_t *bitset) {
