@@ -1,6 +1,13 @@
 # CRoaring
 Roaring bitmaps in C
 
+# Requirements
+
+- Recent Intel processor: Haswell (2013) or better.
+- Recent C compiler (GCC 4.8 or better)
+
+Support for legacy hardware and compiler might be added later.
+
 # todo
 
 - consider LTO (Link Time Optimization)
