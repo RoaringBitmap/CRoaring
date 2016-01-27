@@ -4,6 +4,7 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -363,28 +364,68 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
   int outpos = 0;
-
+  // TODO: can be accelerated using SIMD instructions when the density is sufficient
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS;  ++i) {
     uint64_t w = cont->array[i];
-#ifdef NAIVEBITDECODE
-    uint64_t mask = 1ULL;
-    for (int j=0; j < 64; ++j, mask <<= 1) {
-      if (w & mask)
-        out[outpos++] = base;
-      base++;
-    }
     // ToDo:  use find-first-set-bit instructions (see hacker's delight p107, based on popcnt and numleadingzeros)
-#else
     while (w != 0) {
       uint64_t t = w & -w;
       int r = __builtin_ctzl(w);
       out[outpos++] = (i * 64 + r) | base;
       w ^= t;
     }
-#endif
   }
   return outpos;
 }
+
+
+
+/*
+ * Print this container using printf (useful for debugging).
+ */
+void bitset_container_printf(const bitset_container_t * v) {
+	printf("{");
+	bool iamfirst = true;// TODO: rework so that this is not necessary yet still readable
+	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+		uint64_t w = v->array[i];
+		while (w != 0) {
+			uint64_t t = w & -w;
+			int r = __builtin_ctzl(w);
+			if(iamfirst) {// predicted to be false
+				printf("%d",i * 64 + r);
+				iamfirst = false;
+			} else {
+				printf(",%d",i * 64 + r);
+			}
+			w ^= t;
+		}
+	}
+	printf("}");
+}
+
+
+/*
+ * Print this container using printf as a comma-separated list of 32-bit integers starting at base.
+ */
+void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint32_t base) {
+	bool iamfirst = true;// TODO: rework so that this is not necessary yet still readable
+	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+		uint64_t w = v->array[i];
+		while (w != 0) {
+			uint64_t t = w & -w;
+			int r = __builtin_ctzl(w);
+			if(iamfirst) {// predicted to be false
+				printf("%d",i * 64 + r + base);
+				iamfirst = false;
+			} else {
+				printf(",%d",i * 64 + r + base);
+			}
+			w ^= t;
+		}
+	}
+}
+
+
 
 
 // clang-format On

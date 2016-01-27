@@ -182,6 +182,16 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
  */
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
 
+/*
+ * Print this container using printf (useful for debugging).
+ */
+void bitset_container_printf(const bitset_container_t * v);
+
+
+/*
+ * Print this container using printf as a comma-separated list of 32-bit integers starting at base.
+ */
+void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint32_t base);
 
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

@@ -400,3 +400,37 @@ int run_container_to_uint32_array( uint32_t *out, const run_container_t *cont, u
   }
   return outpos;
 }
+
+
+/*
+ * Print this container using printf (useful for debugging).
+ */
+void run_container_printf(const run_container_t * cont) {
+	for (int i = 0; i < cont->nbrruns; ++i) {
+	    uint16_t run_start = cont->valueslength[i].value;
+	    uint16_t le = cont->valueslength[i].length;
+	    printf("[%d,%d]",run_start,run_start+le);
+	}
+}
+
+
+/*
+ * Print this container using printf as a comma-separated list of 32-bit integers starting at base.
+ */
+void run_container_printf_as_uint32_array(const run_container_t * cont, uint32_t base) {
+	if(cont->nbrruns == 0) return;
+	{
+		uint32_t run_start = base + cont->valueslength[0].value;
+	    uint16_t le = cont->valueslength[0].length;
+		printf("%d",run_start);
+		for (int j = 1; j <= le ; ++j)
+			printf(",%d",run_start + j);
+	}
+	for (int i = 1; i < cont->nbrruns; ++i) {
+		uint32_t run_start = base + cont->valueslength[i].value;
+	    uint16_t le = cont->valueslength[i].length;
+		for (int j = 0; j <= le ; ++j)
+			printf(",%d",run_start + j);
+	}
+}
+

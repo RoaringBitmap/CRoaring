@@ -16,11 +16,22 @@ typedef struct roaring_bitmap_s {
  */
 roaring_bitmap_t *roaring_bitmap_create();
 
+
+/**
+ * Creates a new bitmap from a list of uint32_t integers
+ */
+roaring_bitmap_t *roaring_bitmap_of(size_t n,...);
+
+
 /**
  * Copies a  bitmap. This does memory allocation. The caller is responsible for memory management.
  */
 roaring_bitmap_t *roaring_bitmap_copy(roaring_bitmap_t *r) ;
 
+/**
+ * Print the content of the bitmap.
+ */
+void roaring_bitmap_printf(roaring_bitmap_t *ra);
 
 /**
  * Computes the intersection between two bitmaps and returns new bitmap. The caller is
