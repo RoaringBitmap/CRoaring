@@ -8,10 +8,12 @@
 
 static int32_t linear_search(const uint16_t *array, size_t len, uint16_t key) {
     for (size_t i = 0; i < len; ++i) {
-        if (array[i] == key) {
-            return i;
+        const uint16_t v = array[i];
+        if (v >= key) {
+            return (v > key) ? -1 : i;
         }
     }
+
     return -1;
 }
 
