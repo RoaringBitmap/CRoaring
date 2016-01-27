@@ -784,3 +784,27 @@ int array_container_to_uint32_array( uint32_t *out, const array_container_t *con
   }
   return outpos;
 }
+
+void array_container_printf(const array_container_t * v) {
+	if(v->cardinality == 0) {
+		printf("{}");
+		return;
+	}
+	printf("{");
+    printf("%d",v->array[0]);
+	for (int i = 1; i < v->cardinality; ++i) {
+		printf(",%d",v->array[i]);
+	}
+	printf("}");
+}
+
+
+void array_container_printf_as_uint32_array(const array_container_t * v, uint32_t base) {
+	if(v->cardinality == 0) {
+		return;
+	}
+    printf("%d",v->array[0] + base);
+	for (int i = 1; i < v->cardinality; ++i) {
+		printf(",%d",v->array[i]  + base);
+	}
+}

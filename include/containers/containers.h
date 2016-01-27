@@ -49,6 +49,17 @@ inline uint32_t container_get_cardinality(void *container, uint8_t typecode) {
   return 0; // unreached
 }
 
+/**
+ * print the container (useful for debugging), requires a  typecode
+ */
+void container_printf(void *container, uint8_t typecode);
+
+
+/**
+ * print the content of the container as a comma-separated list of 32-bit values starting at base, requires a  typecode
+ */
+void container_printf_as_uint32_array(void *container, uint8_t typecode, uint32_t base);
+
 
 
 /**

@@ -5,9 +5,67 @@
 #include <x86intrin.h>
 #include <stdint.h>
 
-#include "util.h"
+#include "utilasm.h"
+
+#ifdef ASMBITMANIPOPTIMIZATION
+
+uint64_t bitset_set_list(void *bitset, uint64_t card,
+                         uint16_t *list, uint64_t length) {
+    uint64_t offset, load, pos;
+    uint64_t shift = 6;
+    uint16_t *end = list + length;
+    // bts is not available as an intrinsic in GCC
+    __asm volatile("1:\n"
+                   "movzwq (%[list]), %[pos]\n"
+                   "shrx %[shift], %[pos], %[offset]\n"
+                   "mov (%[bitset],%[offset],8), %[load]\n"
+                   "bts %[pos], %[load]\n"
+                   "mov %[load], (%[bitset],%[offset],8)\n"
+                   "sbb $-1, %[card]\n"
+                   "add $2, %[list]\n"
+                   "cmp %[list], %[end]\n"
+                   "jnz 1b" :
+                   [card] "+&r" (card),
+                   [list] "+&r" (list),
+                   [load] "=&r" (load),
+                   [pos] "=&r" (pos),
+                   [offset] "=&r" (offset) :
+                   [end] "r" (end),
+                   [bitset] "r" (bitset),
+                   [shift] "r" (shift));
+    return card;
+}
+
+uint64_t bitset_clear_list(void *bitset, uint64_t card,
+                           uint16_t *list, uint64_t length) {
+    uint64_t offset, load, pos;
+    uint64_t shift = 6;
+    uint16_t *end = list + length;
+    // btr is not available as an intrinsic in GCC
+    __asm volatile("1:\n"
+                   "movzwq (%[list]), %[pos]\n"
+                   "shrx %[shift], %[pos], %[offset]\n"
+                   "mov (%[bitset],%[offset],8), %[load]\n"
+                   "btr %[pos], %[load]\n"
+                   "mov %[load], (%[bitset],%[offset],8)\n"
+                   "sbb $0, %[card]\n"
+                   "add $2, %[list]\n"
+                   "cmp %[list], %[end]\n"
+                   "jnz 1b" :
+                   [card] "+&r" (card),
+                   [list] "+&r" (list),
+                   [load] "=&r" (load),
+                   [pos] "=&r" (pos),
+                   [offset] "=&r" (offset) :
+                   [end] "r" (end),
+                   [bitset] "r" (bitset),
+                   [shift] "r" (shift) :
+                   /* clobbers */ "memory");
+    return card;
+}
 
 
+#else
 
 uint64_t bitset_clear_list(void *bitset, uint64_t card,
                            uint16_t *list, uint64_t length) {
@@ -43,6 +101,8 @@ uint64_t bitset_set_list(void *bitset, uint64_t card,
     return card;
 }
 
+
+#endif
 
 /*
  * Set all bits in indexes [begin,end) to true.

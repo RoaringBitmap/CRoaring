@@ -92,8 +92,8 @@ int main() {
     	uint32_t *out = malloc(sizeof(uint32_t) * card);
         BEST_TIME(array_container_to_uint32_array(out,Bt,1234), card, repeat, card);
     	free(out);
-        BEST_TIME_PRE_ARRAY(Bt,array_container_contains, array_cache_prefetch,  repeat, testvalues, nbrtestvalues);        \
-        BEST_TIME_PRE_ARRAY(Bt,array_container_contains, array_cache_flush,  repeat, testvalues, nbrtestvalues);        \
+        BEST_TIME_PRE_ARRAY(Bt,array_container_contains, array_cache_prefetch, testvalues, nbrtestvalues);        \
+        BEST_TIME_PRE_ARRAY(Bt,array_container_contains, array_cache_flush, testvalues, nbrtestvalues);        \
         free(testvalues);
         array_container_free(Bt);
     }

@@ -83,4 +83,15 @@ int array_container_to_uint32_array( uint32_t *out, const array_container_t *con
 array_container_t *array_container_create_given_capacity(int32_t size);
 
 
+/*
+ * Print this container using printf (useful for debugging).
+ */
+void array_container_printf(const array_container_t * v);
+
+
+/*
+ * Print this container using printf as a comma-separated list of 32-bit integers starting at base.
+ */
+void array_container_printf_as_uint32_array(const array_container_t * v, uint32_t base);
+
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

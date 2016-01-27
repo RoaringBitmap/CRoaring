@@ -10,6 +10,22 @@
 #include "containers/run.h"
 #include "misc/configreport.h"
 
+
+// returns 0 on error, 1 if ok.
+int printf_test() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    run_container_t* B = run_container_create();
+    run_container_add(B, (uint16_t)1);
+    run_container_add(B, (uint16_t)2);
+    run_container_add(B, (uint16_t)3);
+    run_container_add(B, (uint16_t)10);
+	run_container_add(B, (uint16_t)10000);
+	run_container_printf(B); // does it crash?
+	printf("\n");
+    run_container_free(B);
+    return 1;
+}
+
 // returns 0 on error, 1 if ok.
 int add_contains_test() {
     run_container_t* B = run_container_create();
@@ -210,7 +226,8 @@ int and_or_test() {
 
 int main() {
 	tellmeall();
-    if (!add_contains_test()) return -1;
+    if (!printf_test()) return -1;
+	if (!add_contains_test()) return -1;
     if (!and_or_test()) return -1;
 
     printf("[%s] your code might be ok.\n", __FILE__);

@@ -6,9 +6,17 @@
 
 void show_structure(roaring_array_t *);  // debug
 
+int test_printf() {
+	printf("[%s] %s\n", __FILE__, __func__);
+	roaring_bitmap_t *r1 = roaring_bitmap_of(8,   1,2,3,100,1000,10000,1000000,20000000);
+	roaring_bitmap_printf(r1); // does it crash?
+	roaring_bitmap_free(r1);
+	printf("\n");
+	return 1;
+}
 
 int test_add(){
-  printf("test add\n");
+  printf("[%s] %s\n", __FILE__, __func__);
   roaring_bitmap_t *r1 = roaring_bitmap_create();
   assert(r1);
 
@@ -17,11 +25,12 @@ int test_add(){
 	  roaring_bitmap_add(r1, 200*i);
       assert(roaring_bitmap_get_cardinality(r1) == i + 1);
   }
+  roaring_bitmap_free(r1);
   return 1;
 }
 
 int test_contains(){
-  printf("test contains\n");
+  printf("[%s] %s\n", __FILE__, __func__);
   roaring_bitmap_t *r1 = roaring_bitmap_create();
   assert(r1);
 
@@ -35,11 +44,12 @@ int test_contains(){
 	  bool rset = roaring_bitmap_contains(r1, i);
 	  assert(isset == rset);
   }
+  roaring_bitmap_free(r1);
   return 1;
 }
 
 int test_intersection(){
-  printf("test intersection\n");
+  printf("[%s] %s\n", __FILE__, __func__);
   roaring_bitmap_t *r1 = roaring_bitmap_create();
   roaring_bitmap_t *r2 = roaring_bitmap_create();
   assert(r1); assert(r2);
@@ -53,12 +63,15 @@ int test_intersection(){
   }
    
   roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
+  roaring_bitmap_free(r1);
+  roaring_bitmap_free(r2);
   assert(roaring_bitmap_get_cardinality(r1_and_r2) == 34);
+  roaring_bitmap_free(r1_and_r2);
   return 1;
 }
 
 int test_union(){
-  printf("test union  \n");
+  printf("[%s] %s\n", __FILE__, __func__);
   roaring_bitmap_t *r1 = roaring_bitmap_create();
   roaring_bitmap_t *r2 = roaring_bitmap_create();
   assert(r1); assert(r2);
@@ -72,7 +85,10 @@ int test_union(){
   }
 
   roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
+  roaring_bitmap_free(r1);
+  roaring_bitmap_free(r2);
   assert(roaring_bitmap_get_cardinality(r1_or_r2) == 166);
+  roaring_bitmap_free(r1_or_r2);
   return 1;
 }
 
@@ -89,7 +105,7 @@ static int array_equals(uint32_t  *a1, int32_t size1, uint32_t *a2, int32_t size
 
 
 int test_conversion_to_int_array(){
-  printf("test conversion to int array \n");
+  printf("[%s] %s\n", __FILE__, __func__);
   roaring_bitmap_t *r1 = roaring_bitmap_create();
   int ans_ctr = 0;
   uint32_t *ans = calloc(100000, sizeof(int32_t));
@@ -125,12 +141,14 @@ int test_conversion_to_int_array(){
   printf("arrays have %d and %d\n",card, ans_ctr);
   show_structure(r1->high_low_container);
   assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
   return 1;
 }
 
 
 
 int main(){
+  test_printf();
   test_add();
   test_contains();
   test_intersection();

@@ -12,6 +12,21 @@
 #include "misc/configreport.h"
 
 // returns 0 on error, 1 if ok.
+int printf_test() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    bitset_container_t* B = bitset_container_create();
+    bitset_container_set(B, (uint16_t)1);
+    bitset_container_set(B, (uint16_t)2);
+    bitset_container_set(B, (uint16_t)3);
+    bitset_container_set(B, (uint16_t)10);
+	bitset_container_set(B, (uint16_t)10000);
+	bitset_container_printf(B); // does it crash?
+	printf("\n");
+    bitset_container_free(B);
+    return 1;
+}
+
+// returns 0 on error, 1 if ok.
 int set_get_test() {
     bitset_container_t* B = bitset_container_create();
     int x;
@@ -200,6 +215,7 @@ int main() {
 
 	tellmeall();
 
+    if (!printf_test()) return -1;
     if (!set_get_test()) return -1;
     if (!and_or_test()) return -1;
     if (!xor_test()) return -1;   

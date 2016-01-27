@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 #include "roaring_array.h"
 #include "roaring.h"
+#include <stdint.h>
+#include <stdarg.h>
 #include "util.h"
 
 roaring_bitmap_t *roaring_bitmap_create() {
@@ -15,6 +18,34 @@ roaring_bitmap_t *roaring_bitmap_create() {
     return NULL;
   }
   return ans;
+}
+
+roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
+	// todo: could be greatly optimized
+	roaring_bitmap_t * answer = roaring_bitmap_create();
+	va_list ap;
+	va_start(ap, n_args);
+	for (size_t i = 1; i <= n_args; i++) {
+		uint32_t val = va_arg(ap, uint32_t);
+		roaring_bitmap_add(answer, val);
+
+	}
+	va_end(ap);
+	return answer;
+}
+
+
+void roaring_bitmap_printf(roaring_bitmap_t *ra) {
+	printf("{");
+	for (int i = 0; i < ra->high_low_container->size; ++i) {
+		container_printf_as_uint32_array(ra->high_low_container->containers[i],
+				ra->high_low_container->typecodes[i],
+				((uint32_t) ra->high_low_container->keys[i]) << 16);
+		if(i+1 < ra->high_low_container->size)
+			printf(",");
+	}
+	printf("}");
+
 }
 
 roaring_bitmap_t *roaring_bitmap_copy(roaring_bitmap_t *r) {
