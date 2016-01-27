@@ -3,6 +3,10 @@
 
 #include "roaring.h"
 
+
+void show_structure(roaring_array_t *);  // debug
+
+
 int test_add(){
   printf("test add\n");
   roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -72,10 +76,65 @@ int test_union(){
   return 1;
 }
 
+static int array_equals(uint32_t  *a1, int32_t size1, uint32_t *a2, int32_t size2) {
+  if (size1 != size2) return 0;
+  for (int i=0; i < size1; ++i)
+    if (a1[i] != a2[i]) {
+      printf("array_equals a1[%d] is %d != a2[%d] is %d\n", i, a1[i], i, a2[i]);
+      return 0;
+    }
+  return 1;
+}
+
+
+
+int test_conversion_to_int_array(){
+  printf("test conversion to int array \n");
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  int ans_ctr = 0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // a dense bitmap container  (best done with runs)
+  for (uint32_t i=0; i < 50000; ++i) {
+    if (i != 30000) { // making 2 runs
+	  roaring_bitmap_add(r1, i);
+          ans[ans_ctr++]=i;
+    }
+  }
+
+  // a sparse one
+  for (uint32_t i=70000; i < 130000; i += 17) {
+	  roaring_bitmap_add(r1, i);
+          ans[ans_ctr++]=i;
+  }
+
+  // a dense one but not good for runs
+
+  for (uint32_t i= 65536*3; i < 65536*4; i++) {
+    if (i % 3 != 0) {
+	  roaring_bitmap_add(r1, i);
+          ans[ans_ctr++]=i;
+    }
+  }
+
+  // TODO: run_optimize it
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  printf("arrays have %d and %d\n",card, ans_ctr);
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  return 1;
+}
+
+
+
 int main(){
   test_add();
   test_contains();
   test_intersection();
   test_union();
+  test_conversion_to_int_array();
   printf("done toplevel tests\n");
 }

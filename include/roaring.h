@@ -68,9 +68,9 @@ uint32_t roaring_bitmap_get_cardinality( roaring_bitmap_t *ra);
 
 
 /**
- * Convert the bitmap to an array. Caller is responsible for memory management.
+ * Convert the bitmap to an array. Array is allocated and caller is responsible for eventually freeing it.
  */
-uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra);
+uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardinality);
 #endif
 
 

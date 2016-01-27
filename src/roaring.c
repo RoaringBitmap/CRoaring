@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <assert.h>
 #include "roaring_array.h"
 #include "roaring.h"
@@ -180,19 +181,20 @@ uint32_t roaring_bitmap_get_cardinality( roaring_bitmap_t *ra) {
   return ans;
 }
 
-uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra) {
+uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardinality) {
   uint32_t *ans = malloc( roaring_bitmap_get_cardinality(ra) * sizeof( uint32_t));
   int ctr=0;
 
   for( int i = 0; i < ra->high_low_container->size; ++i) {
-    container_to_uint32_array( ans+ctr, 
-                               ra->high_low_container->containers[i], 
-                               ra->high_low_container->typecodes[i],
-                               ((uint32_t) i) << 16);
+    int num_added = container_to_uint32_array( ans+ctr, 
+                                               ra->high_low_container->containers[i], 
+                                               ra->high_low_container->typecodes[i],
+                                               ra->high_low_container->keys[i] << 16);
+    ctr += num_added;
   }
+  *cardinality = ctr;
   return ans;
 }
-
 
 
 

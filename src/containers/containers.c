@@ -9,7 +9,7 @@ extern bool container_nonzero_cardinality(void *container, uint8_t typecode);
 
 extern void container_free( void *container, uint8_t typecode);
 
-extern void container_to_uint32_array( uint32_t *output, void *container, uint8_t typecode, uint32_t base);
+extern int container_to_uint32_array( uint32_t *output, void *container, uint8_t typecode, uint32_t base);
 
 extern void *container_add(  void *container, uint16_t val, uint8_t typecode, uint8_t *new_typecode);
 

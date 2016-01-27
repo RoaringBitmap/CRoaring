@@ -86,17 +86,19 @@ inline void container_free( void *container, uint8_t typecode) {
 
 /**
  * Convert a container to an array of values, requires a  typecode as well as a "base" (most significant values)
+ * Returns number of ints added.
  */
-inline void container_to_uint32_array( uint32_t *output, void *container, uint8_t typecode, uint32_t base) {
+inline int container_to_uint32_array( uint32_t *output, void *container, uint8_t typecode, uint32_t base) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
-    bitset_container_to_uint32_array( output, container, base); break;
+    return bitset_container_to_uint32_array( output, container, base);
   case ARRAY_CONTAINER_TYPE_CODE:
-    array_container_to_uint32_array(  output, container, base); break;
+    return array_container_to_uint32_array(  output, container, base);
   case RUN_CONTAINER_TYPE_CODE:
-    run_container_to_uint32_array( output, container, base); break;
-    //  case UNINITIALIZED_TYPE_CODE: break;
+    return run_container_to_uint32_array( output, container, base);
   }
+  __builtin_unreachable();
+  //return 0; // unreached
 }
 
 /**

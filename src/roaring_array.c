@@ -320,7 +320,7 @@ void ra_remove_index_range( roaring_array_t *ra, int32_t begin, int32_t end) {
 void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end, uint32_t new_begin) {
   static bool warned_em = false;
   if (!warned_em) {
-    fprintf(stderr,"[Warning] potential memory lead in ra_copy_range");
+    fprintf(stderr,"[Warning] potential memory leak in ra_copy_range");
     warned_em = true;
   }
   assert(begin <= end);
@@ -340,6 +340,7 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c, uint8_t 
   assert(i < ra->size);
   // valid container there already
   //container_free(ra->containers[i], ra->typecodes[i]);// too eager!
+  // is there a possible memory leak here?
  
   ra->containers[i] = c;
   ra->typecodes[i] = typecode;
@@ -352,6 +353,21 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i, uint1
   ra->keys[i] = key;
   ra->containers[i] = c;
   ra->typecodes[i] = typecode;
+}
+
+
+// just for debugging use
+void show_structure(roaring_array_t *ra) {
+
+
+ for( int i = 0; i <  ra->size; ++i) {
+   printf(" i=%d\n",i); fflush(stdout);
+
+   
+   printf("Container %d has key %d and its type is %s  of card %d\n",
+          i, (int) ra->keys[i], get_container_name( ra->typecodes[i]),
+          container_get_cardinality(ra->containers[i], ra->typecodes[i]));
+ }
 }
 
 // TODO : all serialization/deserialization., containerpointer abstraction.
