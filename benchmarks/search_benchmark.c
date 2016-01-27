@@ -176,8 +176,8 @@ void cache_flush(uint16_t *array, size_t n_elems) {
 }
 
 void permute(uint16_t *array, size_t len) {
-    for (size_t i = 0; i < len - 2; ++i) {
-        const size_t idx = rand() % len;
+    for (size_t i = 0; i < len; ++i) {
+        const size_t idx = rand() % (i + 1);
         // lazy swap
         uint16_t tmp = array[i];
         array[i] = array[idx];
@@ -186,9 +186,9 @@ void permute(uint16_t *array, size_t len) {
 }
 
 int main(int argc, char *argv[]) {
-    if(argc < 2) {
-         printf("provide a number or die.\n");
-         return -1;
+    if (argc < 2) {
+        printf("provide a number or die.\n");
+        return -1;
     }
     size_t n_elems = strtol(argv[1], NULL, 10);
 
@@ -211,10 +211,7 @@ int main(int argc, char *argv[]) {
 
     /* shuffling searches order is used to compensate the advantage in cache
      * locality induced by the benchmark would benefit */
-    srand(time(NULL)); // use different seeds so result does not depend on exact seed (repeat to check)
     permute(searches, n_searches);
-    /* if you want to see the effect of caching, then you better just do one search */
-    n_searches = 1;
     /* validate implementations */
     for (size_t i = 0; i < n_searches; ++i) {
         const int32_t expected = linear_search(array, n_elems, searches[i]);
