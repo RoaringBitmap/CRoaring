@@ -18,7 +18,7 @@ enum{DEFAULT_INIT_SIZE = 16};
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
-
+extern int32_t array_container_serialized_size_in_bytes( int32_t card);
 
 /* Create a new array with capacity size. Return NULL in case of failure. */
 array_container_t *array_container_create_given_capacity(int32_t size) {
@@ -807,4 +807,18 @@ void array_container_printf_as_uint32_array(const array_container_t * v, uint32_
 	for (int i = 1; i < v->cardinality; ++i) {
 		printf(",%d",v->array[i]  + base);
 	}
+}
+
+
+/* Compute the number of runs */
+int32_t array_container_number_of_runs( array_container_t *a) {
+  // Can SIMD work here?
+  int32_t nr_runs = 0;
+  int32_t prev = -2;
+  for (uint16_t *p = a->array; p != a->array + a->cardinality; ++p) {
+    if (*p != prev+1) nr_runs++;
+    prev = *p;
+  }
+  return nr_runs;
+
 }

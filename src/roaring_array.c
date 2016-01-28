@@ -349,6 +349,7 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c, uint8_t 
 void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i, uint16_t key, void *c, uint8_t typecode) {
   assert(i < ra->size);
   //container_free(ra->containers[i], ra->typecodes[i]);//too eager!
+  // is there a possible memory leak here, then?
 
   ra->keys[i] = key;
   ra->containers[i] = c;

@@ -191,7 +191,13 @@ void bitset_container_printf(const bitset_container_t * v);
 /*
  * Print this container using printf as a comma-separated list of 32-bit integers starting at base.
  */
-void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint32_t base);
+void bitset_container_printf_as_uint32_array(const bitset_container_t *v, uint32_t base);
+
+inline int32_t bitset_container_serialized_size_in_bytes() {
+  return BITSET_CONTAINER_SIZE_IN_WORDS*8;
+}
+
+int bitset_container_number_of_runs(bitset_container_t *b);
 
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

@@ -5,6 +5,7 @@ An implementation of Roaring Bitmaps in C.
 #ifndef ROARING_H
 #define ROARING_H
 
+#include "stdbool.h"
 #include "roaring_array.h"
 
 typedef struct roaring_bitmap_s {
@@ -84,6 +85,7 @@ uint32_t roaring_bitmap_get_cardinality( roaring_bitmap_t *ra);
 uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardinality);
 #endif
 
+bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
 
 /*
  * TODO: implement "equals", "string", serialization, contains

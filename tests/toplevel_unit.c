@@ -142,6 +142,7 @@ int test_conversion_to_int_array(){
   show_structure(r1->high_low_container);
   assert(array_equals(arr,card, ans, ans_ctr));
   roaring_bitmap_free(r1);
+  free(arr);
   return 1;
 }
 

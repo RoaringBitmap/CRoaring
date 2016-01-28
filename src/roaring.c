@@ -220,14 +220,50 @@ uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardin
     int num_added = container_to_uint32_array( ans+ctr, 
                                                ra->high_low_container->containers[i], 
                                                ra->high_low_container->typecodes[i],
-                                               ra->high_low_container->keys[i] << 16);
+                                               ((uint32_t) ra->high_low_container->keys[i]) << 16);
     ctr += num_added;
   }
   *cardinality = ctr;
   return ans;
 }
 
+/** convert array and bitmap containers to run containers when it is more efficient;
+ * also convert from run containers when more space efficient.  Returns
+ * true if the result has at least one run container.
+*/
+bool roaring_bitmap_run_optimize(roaring_bitmap_t *r) {
+  bool answer = false;
+  for (int i = 0; i < r->high_low_container->size; i++) {
+    uint8_t typecode_original, typecode_after;
+    void *c =  ra_get_container_at_index(r->high_low_container, i, &typecode_original);
+    
+    void *c1 = convert_run_optimize(c, typecode_original, &typecode_after);
+    if (typecode_after == RUN_CONTAINER_TYPE_CODE) answer = true;
+    ra_set_container_at_index(r->high_low_container, i, c1, typecode_after);
+  }
+  return answer;
+}
 
+
+/**
+ *  Remove run-length encoding even when it is more space efficient
+ *  return whether a change was applied
+ */
+bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
+  bool answer = false;
+  for (int i = 0; i < r->high_low_container->size; i++) {
+    uint8_t typecode_original, typecode_after;
+    void *c =  ra_get_container_at_index(r->high_low_container, i, &typecode_original);
+    if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
+      answer = true;
+      int32_t card = run_container_cardinality(c);
+      void *c1 = convert_to_bitset_or_array_container(c, card, &typecode_after);
+      ra_set_container_at_index(r->high_low_container, i, c1, typecode_after);
+      run_container_free(c);
+    }
+  }
+  return answer;
+}
 
 
 

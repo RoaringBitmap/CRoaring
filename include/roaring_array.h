@@ -2,6 +2,7 @@
 #define INCLUDE_ROARING_ARRAY_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "containers.h"
 
 #define MAX_CONTAINERS 65536

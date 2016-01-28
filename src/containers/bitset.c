@@ -18,7 +18,7 @@ extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
-
+extern int32_t bitset_container_serialized_size_in_bytes();
 
 
 /* Create a new bitset. Return NULL in case of failure. */
@@ -425,6 +425,25 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 	}
 }
 
+
+// TODO: use the fast lower bound, also
+int bitset_container_number_of_runs(bitset_container_t *b) {
+  int num_runs = 0;
+  uint64_t next_word = b->array[0];
+
+  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+    uint64_t word = next_word;
+    next_word = b->array[i+1];
+    num_runs += _mm_popcnt_u64((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
+  }
+
+  long word = next_word;
+  num_runs += _mm_popcnt_u64((~word) & (word << 1));
+  if((word & 0x8000000000000000L) != 0) 
+    num_runs++;
+
+  return num_runs;
+}
 
 
 

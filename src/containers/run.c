@@ -14,11 +14,12 @@
 extern bool run_container_is_full(run_container_t *run);
 extern bool  run_container_nonzero_cardinality(run_container_t *r);
 extern void run_container_clear(run_container_t *run) ;
+extern int32_t run_container_serialized_size_in_bytes( int32_t num_runs);
 
 enum{DEFAULT_INIT_SIZE = 4};
 
 /* Create a new run container. Return NULL in case of failure. */
-static run_container_t *run_container_create_given_capacity(int32_t size) {
+run_container_t *run_container_create_given_capacity(int32_t size) {
 	run_container_t * run;
 	/* Allocate the run container itself. */
 	if ((run = malloc(sizeof(run_container_t))) == NULL) {
@@ -433,4 +434,5 @@ void run_container_printf_as_uint32_array(const run_container_t * cont, uint32_t
 			printf(",%d",run_start + j);
 	}
 }
+
 
