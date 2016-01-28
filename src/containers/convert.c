@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "containers.h"
 #include "convert.h"
 #include "util.h"
@@ -50,16 +51,20 @@ array_container_t *array_container_from_bitset( bitset_container_t *bits) {
 
 void *convert_to_bitset_or_array_container( run_container_t *r, int32_t card, uint8_t *resulttype) {
     if (card <= DEFAULT_MAX_SIZE) {
-      array_container_t *answer = array_container_create(card);
+      array_container_t *answer = array_container_create_given_capacity(card);
       answer->cardinality=0;
+      
       for (int rlepos=0; rlepos < r->nbrruns; ++rlepos) {
         uint16_t run_start = r->valueslength[rlepos].value;
         uint16_t  run_end = run_start + r->valueslength[rlepos].length;
+
+        //printf("run [%d %d]\n",(int) run_start, (int) run_end);
 
         for (uint16_t run_value = run_start; run_value <= run_end; ++run_value) {
           answer->array[answer->cardinality++] = run_value;
         }
       }
+      assert(card == answer->cardinality);
       *resulttype = ARRAY_CONTAINER_TYPE_CODE;
       run_container_free(r);
       return answer;
