@@ -259,7 +259,6 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
       int32_t card = run_container_cardinality(c);
       void *c1 = convert_to_bitset_or_array_container(c, card, &typecode_after);
       ra_set_container_at_index(r->high_low_container, i, c1, typecode_after);
-      run_container_free(c);
     }
   }
   return answer;

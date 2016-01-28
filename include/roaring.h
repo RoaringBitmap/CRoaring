@@ -87,6 +87,8 @@ uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardin
 
 bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
 
+bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
+
 /*
  * TODO: implement "equals", "string", serialization, contains
  */

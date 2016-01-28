@@ -48,6 +48,7 @@ int test_contains(){
   return 1;
 }
 
+// TODO go beyond first container
 int test_intersection(){
   printf("[%s] %s\n", __FILE__, __func__);
   roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -92,6 +93,7 @@ int test_union(){
   return 1;
 }
 
+// arrays expected to both be sorted.
 static int array_equals(uint32_t  *a1, int32_t size1, uint32_t *a2, int32_t size2) {
   if (size1 != size2) return 0;
   for (int i=0; i < size1; ++i)
@@ -103,24 +105,27 @@ static int array_equals(uint32_t  *a1, int32_t size1, uint32_t *a2, int32_t size
 }
 
 
+static roaring_bitmap_t *make_roaring_from_array(uint32_t *a, int len) {
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  for (int i=0; i < len; ++i)
+    roaring_bitmap_add(r1, a[i]);  
+  return r1;
+}
 
 int test_conversion_to_int_array(){
   printf("[%s] %s\n", __FILE__, __func__);
-  roaring_bitmap_t *r1 = roaring_bitmap_create();
   int ans_ctr = 0;
   uint32_t *ans = calloc(100000, sizeof(int32_t));
 
   // a dense bitmap container  (best done with runs)
   for (uint32_t i=0; i < 50000; ++i) {
     if (i != 30000) { // making 2 runs
-	  roaring_bitmap_add(r1, i);
           ans[ans_ctr++]=i;
     }
   }
 
   // a sparse one
   for (uint32_t i=70000; i < 130000; i += 17) {
-	  roaring_bitmap_add(r1, i);
           ans[ans_ctr++]=i;
   }
 
@@ -128,12 +133,11 @@ int test_conversion_to_int_array(){
 
   for (uint32_t i= 65536*3; i < 65536*4; i++) {
     if (i % 3 != 0) {
-	  roaring_bitmap_add(r1, i);
           ans[ans_ctr++]=i;
     }
   }
 
-  // TODO: run_optimize it
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
 
   uint32_t card;
   uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
@@ -148,6 +152,261 @@ int test_conversion_to_int_array(){
 
 
 
+
+int test_conversion_to_int_array_with_runoptimize(){
+  printf("[%s] %s\n", __FILE__, __func__);
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  int ans_ctr = 0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // a dense bitmap container  (best done with runs)
+  for (uint32_t i=0; i < 50000; ++i) {
+    if (i != 30000) { // making 2 runs
+          ans[ans_ctr++]=i;
+    }
+  }
+
+  // a sparse one
+  for (uint32_t i=70000; i < 130000; i += 17) {
+          ans[ans_ctr++]=i;
+  }
+
+  // a dense one but not good for runs
+
+  for (uint32_t i= 65536*3; i < 65536*4; i++) {
+    if (i % 3 != 0) {
+          ans[ans_ctr++]=i;
+    }
+  }
+
+  r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1);
+  assert(b);
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  printf("arrays have %d and %d\n",card, ans_ctr);
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}
+
+
+
+
+int   test_array_to_run() {
+  printf("[%s] %s\n", __FILE__, __func__);
+  int ans_ctr=0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // array container  (best done with runs)
+  for (uint32_t i=0; i < 500; ++i) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1);
+  assert(b);
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+int   test_array_to_self() {
+  int ans_ctr=0;
+  printf("[%s] %s\n", __FILE__, __func__);
+
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // array container  (best not done with runs)
+  for (uint32_t i=0; i < 500; i+=2) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1);
+  assert(!b);
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+int   test_bitset_to_self() {
+  printf("[%s] %s\n", __FILE__, __func__);
+  int ans_ctr=0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // bitset container  (best not done with runs)
+  for (uint32_t i=0; i < 50000; i+=2) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1);
+  assert(!b);
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+
+int   test_bitset_to_run() {
+  printf("[%s] %s\n", __FILE__, __func__);
+
+  int ans_ctr=0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // bitset container  (best done with runs)
+  for (uint32_t i=0; i < 50000; i++) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1);
+  assert(b);
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+
+// not sure how to get containers that are runcontainers but not efficient
+
+
+
+
+int   test_run_to_self() {
+  printf("[%s] %s\n", __FILE__, __func__);
+
+  int ans_ctr=0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // bitset container  (best done with runs)
+  for (uint32_t i=0; i < 50000; i++) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1); // will make a run container
+  b = roaring_bitmap_run_optimize(r1); // we hope it will keep it
+  assert(b); // still true there is a runcontainer
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+int   test_remove_run_to_bitset() {
+  printf("[%s] %s\n", __FILE__, __func__);
+  int ans_ctr=0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // bitset container  (best done with runs)
+  for (uint32_t i=0; i < 50000; i++) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1); // will make a run container
+  b = roaring_bitmap_remove_run_compression(r1); 
+  assert(b); // removal done
+  b = roaring_bitmap_run_optimize(r1);
+  assert(b); // there is again a run container
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+int   test_remove_run_to_array() {
+  printf("[%s] %s\n", __FILE__, __func__);
+
+  int ans_ctr=0;
+  uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+  // array  (best done with runs)
+  for (uint32_t i=0; i < 500; i++) {
+    if (i != 300) { // making 2 runs
+          ans[ans_ctr++] = 65536+i;
+    }
+  }
+
+  roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+  bool b = roaring_bitmap_run_optimize(r1); // will make a run container
+  b = roaring_bitmap_remove_run_compression(r1); 
+  assert(b); // removal done
+  b = roaring_bitmap_run_optimize(r1);
+  assert(b); // there is again a run container
+
+  uint32_t card;
+  uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+
+  show_structure(r1->high_low_container);
+  assert(array_equals(arr,card, ans, ans_ctr));
+  roaring_bitmap_free(r1);
+  free(arr);
+  return 1;
+}    
+
+
+
+
+
 int main(){
   test_printf();
   test_add();
@@ -155,5 +414,16 @@ int main(){
   test_intersection();
   test_union();
   test_conversion_to_int_array();
+  test_array_to_run();
+  test_array_to_self();
+  test_bitset_to_run();
+  test_bitset_to_self();
+  test_run_to_self();
+  //  test_run_to_bitset();  not sure how to do this
+  //test_run_to_array();
+  test_remove_run_to_bitset();
+  test_remove_run_to_array();
+
+  test_conversion_to_int_array_with_runoptimize();
   printf("done toplevel tests\n");
 }
