@@ -12,6 +12,9 @@ typedef struct roaring_bitmap_s {
   roaring_array_t *high_low_container;
 } roaring_bitmap_t;
 
+
+// TODO sprinkle in consts
+
 /**
  * Creates a new bitmap (initially empty)
  */
@@ -38,9 +41,14 @@ void roaring_bitmap_printf(roaring_bitmap_t *ra);
  * Computes the intersection between two bitmaps and returns new bitmap. The caller is
  * responsible for memory management.
  *
- * TODO: create an in-place version
  */
 roaring_bitmap_t *roaring_bitmap_and( roaring_bitmap_t *x1, roaring_bitmap_t *x2);
+
+/**
+ * Inplace version modifies x1
+ */
+void roaring_bitmap_and_inplace( roaring_bitmap_t *x1, const roaring_bitmap_t *x2);
+
 
 /**
  * Computes the union between two bitmaps and returns new bitmap. The caller is

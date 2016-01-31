@@ -141,6 +141,38 @@ roaring_bitmap_t *roaring_bitmap_and(roaring_bitmap_t *x1, roaring_bitmap_t *x2)
 	return answer;
 }
 
+// inplace and (modifies its first argument)
+void roaring_bitmap_and_inplace(roaring_bitmap_t *x1, const roaring_bitmap_t *x2) {
+  int pos1 = 0, pos2 = 0, intersection_size = 0;
+  const int length1 = ra_get_size( x1->high_low_container);
+  const int length2 = ra_get_size( x2->high_low_container);
+  
+  while (pos1 < length1 && pos2 < length2) {
+    const uint16_t s1 = ra_get_key_at_index(x1->high_low_container,pos1);
+    const uint16_t s2 = ra_get_key_at_index(x2->high_low_container,pos2);
+
+    if (s1 == s2) {
+      uint8_t typecode1, typecode2, typecode_result;
+      void *c1 = ra_get_container_at_index(x1->high_low_container, pos1, &typecode1);
+      void *c2 = ra_get_container_at_index(x2->high_low_container, pos2, &typecode2);
+      void *c = container_iand(c1, typecode1, c2, typecode2, &typecode_result);
+
+      if (container_nonzero_cardinality(c, typecode_result)) {
+        ra_replace_key_and_container_at_index( x1->high_low_container, intersection_size++, s1, c, typecode_result);
+      }
+      ++pos1;
+      ++pos2;
+    } else if  (s1 < s2) {
+      pos1 = ra_advance_until(x1->high_low_container, s2, pos1);
+    } else { // s1 > s2
+      pos2 = ra_advance_until(x2->high_low_container, s1, pos2);
+    }
+  }
+  ra_downsize(x1->high_low_container, intersection_size);
+}
+
+
+
 roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2) {
 	uint8_t container_result_type = 0;
 	roaring_bitmap_t *answer = roaring_bitmap_create();

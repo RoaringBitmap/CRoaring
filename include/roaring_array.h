@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "containers.h"
+#include "util.h"
 
 #define MAX_CONTAINERS 65536
 
@@ -88,5 +89,17 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
  * Set the container at the corresponding index using the specified typecode.
  */
 void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c, uint8_t typecode);
+
+inline int32_t ra_get_size(roaring_array_t *ra) {
+  return ra->size;
+}
+
+inline int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos) {
+  return advanceUntil(ra->keys, pos, ra->size, x);
+} 
+
+void ra_downsize( roaring_array_t *ra, int32_t new_length);
+
+void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i, uint16_t key, void *c, uint8_t typecode);
 
 #endif

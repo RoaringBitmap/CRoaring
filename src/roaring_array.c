@@ -21,6 +21,8 @@
 // Convention: [0,ra->size) all elements are initialized
 //  [ra->size, ra->allocation_size) is junk and contains nothing needing freeing
 
+extern int32_t ra_get_size(roaring_array_t *ra);
+
 
 #define INITIAL_CAPACITY 4
 
@@ -240,9 +242,7 @@ int32_t ra_get_index( roaring_array_t *ra, uint16_t x) {
 }
 
 
-inline int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos) {
-  return advanceUntil(ra->keys, pos, ra->size, x);
-} 
+extern int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos);
 
 
 void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, void *container, uint8_t typecode) {
@@ -264,7 +264,8 @@ void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, v
 
 void ra_downsize( roaring_array_t *ra, int32_t new_length) {
   //assert(new_length <= ra->allocation_size);
-  assert(new_length < ra->size);
+  //printf("downsize from %d to %d \n", (int) ra->size, (int) new_length);
+  assert(new_length <= ra->size);
   
   // free up the containers (assume not shared...)
   for (int i = new_length; i < ra->size; ++i) {

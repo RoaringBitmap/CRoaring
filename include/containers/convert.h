@@ -29,4 +29,7 @@ void *convert_to_bitset_or_array_container( run_container_t *r, int32_t card, ui
 
 void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode_after);
 
+void *convert_run_to_efficient_container(run_container_t *c, uint8_t *typecode_after);
+
+
 #endif /* INCLUDE_CONTAINERS_CONVERT_H_ */

@@ -89,32 +89,27 @@ static void add_run(run_container_t *r, int s, int e) {
 }
 
 
-/* once converted, the original container is disposed here, rather than
-   in roaring_array
-*/
+/* converts a run container to either an array or a bitset, IF it saves space */
+/* If a conversion occurs, the original containers is freed and a new one allocated */
 
-// TODO: split into run-  array-  and bitset-  subfunctions for sanity;
-// a few function calls won't really matter.
-
-void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode_after) {
-  if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
-    run_container_t *c_qua_run = (run_container_t *)c;
-    int32_t size_as_run_container = run_container_serialized_size_in_bytes(c_qua_run->nbrruns);
+void *convert_run_to_efficient_container(run_container_t *c, uint8_t *typecode_after) {
+    int32_t size_as_run_container = run_container_serialized_size_in_bytes(c->nbrruns);
     int32_t size_as_bitset_container = bitset_container_serialized_size_in_bytes();
     int32_t card = run_container_cardinality(c);
     int32_t size_as_array_container = array_container_serialized_size_in_bytes(card);
     int32_t min_size_non_run = size_as_bitset_container < size_as_array_container ?
       size_as_bitset_container : size_as_array_container;
-    if(size_as_run_container <= min_size_non_run) {
+    if(size_as_run_container <= min_size_non_run) { // no conversion
       *typecode_after = RUN_CONTAINER_TYPE_CODE;
       return c;
     }
     if(card <= DEFAULT_MAX_SIZE) {
+      // to array
       array_container_t *answer = array_container_create(card);
       answer->cardinality=0;
-      for (int rlepos=0; rlepos < c_qua_run->nbrruns; ++rlepos) {
-        int run_start = c_qua_run->valueslength[rlepos].value;
-        int run_end = run_start + c_qua_run->valueslength[rlepos].length;
+      for (int rlepos=0; rlepos < c->nbrruns; ++rlepos) {
+        int run_start = c->valueslength[rlepos].value;
+        int run_end = run_start + c->valueslength[rlepos].length;
          
         for (int run_value = run_start; run_value <= run_end; ++run_value) {
           answer->array[answer->cardinality++] = (uint16_t) run_value;
@@ -124,17 +119,30 @@ void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode
       run_container_free(c);
       return answer;
     }
+    // else to bitset
     bitset_container_t *answer = bitset_container_create();
 
-    for (int rlepos=0; rlepos < c_qua_run->nbrruns; ++rlepos) {
-      int start = c_qua_run->valueslength[rlepos].value;
-      int end =  start + c_qua_run->valueslength[rlepos].length;
+    for (int rlepos=0; rlepos < c->nbrruns; ++rlepos) {
+      int start = c->valueslength[rlepos].value;
+      int end =  start + c->valueslength[rlepos].length;
       bitset_container_set_range(answer, start, end+1);
     }
     answer->cardinality = card;
     *typecode_after = BITSET_CONTAINER_TYPE_CODE;
     run_container_free(c);
     return answer;
+}
+
+/* once converted, the original container is disposed here, rather than
+   in roaring_array
+*/
+
+// TODO: split into run-  array-  and bitset-  subfunctions for sanity;
+// a few function calls won't really matter.
+
+void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode_after) {
+  if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
+    return convert_run_to_efficient_container(c, typecode_after);
   }
   else if (typecode_original == ARRAY_CONTAINER_TYPE_CODE) {
     // it might need to be converted to a run container. 
