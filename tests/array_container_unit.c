@@ -221,11 +221,41 @@ int and_or_test() {
 	return 1;
 }
 
+
+// returns 0 on error, 1 if ok.
+int to_uint32_array_test() {
+    printf("[%s] %s\n", __FILE__, __func__);
+	for(int offset = 1; offset < 128; offset *= 2) {
+		array_container_t* B = array_container_create();
+		for(int k = 0; k < (1<<16); k+= offset) {
+		    array_container_add(B, (uint16_t)k);
+		}
+		int card = array_container_cardinality(B);
+		uint32_t *out = malloc(sizeof(uint32_t) * card);
+		int nc = array_container_to_uint32_array(out, B,0);
+		if(card != nc) {
+	        printf("Bug %s, line %d \n", __FILE__, __LINE__);
+	        return 0;
+		}
+		for(int k = 1; k < nc; ++k) {
+			if(out[k] != offset + out[k-1] ) {
+		        printf("Bug %s, line %d \n", __FILE__, __LINE__);
+		        return 0;
+			}
+		}
+		free(out);
+		array_container_free(B);
+	}
+	return 0;
+}
+
+
 int main() {
 	tellmeall();
     if (!printf_test()) return -1;
 	if (!add_contains_test()) return -1;
     if (!and_or_test()) return -1;
+    if (!to_uint32_array_test()) return -1;
 
     printf("[%s] your code might be ok.\n", __FILE__);
     return 0;
