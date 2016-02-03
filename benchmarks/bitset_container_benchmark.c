@@ -82,9 +82,9 @@ int main() {
     BEST_TIME(unset_test(B), 0, repeat, size);
     bitset_container_free(B);
 
-    for(int howmany = 32; howmany <= (1<<16); howmany *=8) {
+    for(int howmany = 4096; howmany <= (1<<16); howmany *= 2) {
     	bitset_container_t* Bt = bitset_container_create();
-        for( int j = 0; j < howmany ; ++j ) {
+        while(bitset_container_cardinality(Bt) < howmany) {
         	bitset_container_set(Bt, (uint16_t)pcg32_random() );
         }
         size_t nbrtestvalues = 1024;

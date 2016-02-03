@@ -367,7 +367,7 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
 #ifdef USEAVX2FORDECODING
-	if(cont->cardinality > 8192)// heuristic
+	if(cont->cardinality >= 8192)// heuristic
 		return (int) bitset_extract_setbits_avx2(cont->array, BITSET_CONTAINER_SIZE_IN_WORDS, out,base);
 	else
 		return (int) bitset_extract_setbits(cont->array, BITSET_CONTAINER_SIZE_IN_WORDS, out,base);
