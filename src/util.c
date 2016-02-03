@@ -8,11 +8,7 @@
 #include "utilasm.h"
 #include "portability.h"
 
-#ifdef USEAVX
-#define USEAVX2FORDECODING// optimization
-#endif
 
-#ifdef USEAVX2FORDECODING
 
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -294,7 +290,7 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32)  = {
 };
 
 // the main downside of this approach is that you can write garbage for an extra 32 bytes.
-size_t bitset_extract_setbits(uint64_t *array, size_t length, uint32_t *out, uint32_t base) {
+size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, uint32_t *out, uint32_t base) {
 	uint32_t *initout = out;
 	__m256i baseVec = _mm256_set1_epi32(base - 1);
 	__m256i incVec = _mm256_set1_epi32(64);
@@ -328,7 +324,6 @@ size_t bitset_extract_setbits(uint64_t *array, size_t length, uint32_t *out, uin
 
 }
 
-#else
 size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
 		uint32_t base) {
 	int outpos = 0;
@@ -344,7 +339,6 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
 	}
 	return outpos;
 }
-#endif
 
 #ifdef ASMBITMANIPOPTIMIZATION
 
