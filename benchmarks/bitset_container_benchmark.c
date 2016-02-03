@@ -88,7 +88,7 @@ int main() {
         	bitset_container_set(Bt, (uint16_t)pcg32_random() );
         }
         size_t nbrtestvalues = 1024;
-        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
+        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t) + sizeof(__m256i));
         printf("\n number of values in container = %d\n",bitset_container_cardinality(Bt));
     	int card = bitset_container_cardinality(Bt);
     	uint32_t *out = malloc(sizeof(uint32_t) * card);

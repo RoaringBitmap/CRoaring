@@ -363,28 +363,15 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 
 
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
-  int outpos = 0;
-  // TODO: can be accelerated using SIMD instructions when the density is sufficient
-  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS;  ++i) {
-    uint64_t w = cont->array[i];
-    // ToDo:  use find-first-set-bit instructions (see hacker's delight p107, based on popcnt and numleadingzeros)
-    while (w != 0) {
-      uint64_t t = w & -w;
-      int r = __builtin_ctzl(w);
-      out[outpos++] = (i * 64 + r) | base;
-      w ^= t;
-    }
-  }
-  return outpos;
+	return (int) bitset_extract_setbits(cont->array, BITSET_CONTAINER_SIZE_IN_WORDS, out,base);
 }
-
-
 
 /*
  * Print this container using printf (useful for debugging).
  */
 void bitset_container_printf(const bitset_container_t * v) {
 	printf("{");
+	uint32_t base = 0;
 	bool iamfirst = true;// TODO: rework so that this is not necessary yet still readable
 	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
 		uint64_t w = v->array[i];
@@ -392,11 +379,12 @@ void bitset_container_printf(const bitset_container_t * v) {
 			uint64_t t = w & -w;
 			int r = __builtin_ctzl(w);
 			if(iamfirst) {// predicted to be false
-				printf("%d",i * 64 + r);
+				printf("%d",base + r);
 				iamfirst = false;
 			} else {
-				printf(",%d",i * 64 + r);
+				printf(",%d",base + r);
 			}
+			base += 64;
 			w ^= t;
 		}
 	}
@@ -415,11 +403,12 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 			uint64_t t = w & -w;
 			int r = __builtin_ctzl(w);
 			if(iamfirst) {// predicted to be false
-				printf("%d",i * 64 + r + base);
+				printf("%d", r + base);
 				iamfirst = false;
 			} else {
-				printf(",%d",i * 64 + r + base);
+				printf(",%d",r + base);
 			}
+			base += 64;
 			w ^= t;
 		}
 	}

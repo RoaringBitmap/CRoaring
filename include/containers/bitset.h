@@ -179,6 +179,8 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
  * as the starting value (it might be expected that base has zeros in its 16 least significant bits).
  * The function returns the number of values written.
  * The caller is responsible for allocating enough memory in out.
+ * The out pointer should point to enough memory (32 bytes more than the cardinality times 32 bits or
+ * (1<<16) times 32 bits).
  */
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base);
 
