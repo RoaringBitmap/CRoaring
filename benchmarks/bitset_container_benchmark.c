@@ -82,16 +82,16 @@ int main() {
     BEST_TIME(unset_test(B), 0, repeat, size);
     bitset_container_free(B);
 
-    for(int howmany = 32; howmany <= (1<<16); howmany *=8) {
+    for(int howmany = 4096; howmany <= (1<<16); howmany *= 2) {
     	bitset_container_t* Bt = bitset_container_create();
-        for( int j = 0; j < howmany ; ++j ) {
+        while(bitset_container_cardinality(Bt) < howmany) {
         	bitset_container_set(Bt, (uint16_t)pcg32_random() );
         }
         size_t nbrtestvalues = 1024;
-        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
+        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t) );
         printf("\n number of values in container = %d\n",bitset_container_cardinality(Bt));
     	int card = bitset_container_cardinality(Bt);
-    	uint32_t *out = malloc(sizeof(uint32_t) * card);
+    	uint32_t *out = malloc(sizeof(uint32_t) * card + sizeof(__m256i));
         BEST_TIME(bitset_container_to_uint32_array(out,Bt,1234), card, repeat, card);
     	free(out);
         BEST_TIME_PRE_ARRAY(Bt,bitset_container_get, bitset_cache_prefetch, testvalues, nbrtestvalues);

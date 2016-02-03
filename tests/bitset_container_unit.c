@@ -216,7 +216,7 @@ int to_uint32_array_test() {
 		    bitset_container_set(B, (uint16_t)k);
 		}
 		int card = bitset_container_cardinality(B);
-		uint32_t *out = malloc(sizeof(uint32_t) * card);
+		uint32_t *out = malloc(sizeof(uint32_t) * (card + sizeof(__m256i) ));
 		int nc = bitset_container_to_uint32_array(out, B,0);
 		if(card != nc) {
 	        printf("Bug %s, line %d \n", __FILE__, __LINE__);
@@ -249,5 +249,7 @@ int main() {
     if (!to_uint32_array_test()) return -1;
 
     printf("[%s] your code might be ok.\n", __FILE__);
+    printf("I will return zero.");
+
     return 0;
 }
