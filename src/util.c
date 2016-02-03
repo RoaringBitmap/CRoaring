@@ -290,13 +290,14 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32)  = {
 };
 
 // the main downside of this approach is that you can write garbage for an extra 32 bytes.
-size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, uint32_t *out, uint32_t base) {
+size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, uint32_t *out, size_t outcapacity, uint32_t base) {
 	uint32_t *initout = out;
 	__m256i baseVec = _mm256_set1_epi32(base - 1);
 	__m256i incVec = _mm256_set1_epi32(64);
 	__m256i add8 = _mm256_set1_epi32(8);
-
-	for (size_t i = 0; i < length; ++i) {
+	uint32_t *safeout = out + outcapacity;
+	size_t i = 0;
+	for (; (i < length) && (out +  sizeof(__m256i)/sizeof(uint32_t) <= safeout) ; ++i) {
 		uint64_t w = array[i];
 		if (w == 0) {
 			baseVec = _mm256_add_epi32(baseVec, incVec);
@@ -319,6 +320,17 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, uint32_t *out
 				out += advanceB;
 			}
 		}
+	}
+	for (; (i < length) && (out < safeout); ++i) {
+		uint64_t w = array[i];
+		while ((w != 0) && (out < safeout)) {
+			uint64_t t = w & -w;
+			int r = __builtin_ctzl(w);
+			*out = r + base;
+			out++;
+			w ^= t;
+		}
+		base += 64;
 	}
 	return out - initout;
 

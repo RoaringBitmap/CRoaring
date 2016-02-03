@@ -28,7 +28,7 @@ void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end);
  *
  * This function uses AVX2 decoding.
  */
-size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length, uint32_t *out, uint32_t base);
+size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length, uint32_t *out, size_t outcapacity, uint32_t base);
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
