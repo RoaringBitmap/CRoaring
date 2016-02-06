@@ -44,12 +44,15 @@ array_container_t *array_container_create() {
 
 /* Duplicate container */
 array_container_t *array_container_clone(array_container_t *src) {
-    array_container_t *answer =
+    array_container_t *new =
         array_container_create_given_capacity(src->capacity);
-    if (answer == NULL) return NULL;
-    answer->cardinality = src->cardinality;
-    memcpy(answer->array, src->array, src->cardinality * sizeof(uint16_t));
-    return answer;
+    if (new == NULL) return NULL;
+
+    new->cardinality = src->cardinality;
+
+    memcpy(new->array, src->array, src->cardinality * sizeof(uint16_t));
+
+    return new;
 }
 
 /* Free memory. */
