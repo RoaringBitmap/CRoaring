@@ -20,19 +20,21 @@ extern void array_container_clear(array_container_t *array);
 
 /* Create a new array with capacity size. Return NULL in case of failure. */
 array_container_t *array_container_create_given_capacity(int32_t size) {
-    array_container_t *arr;
-    /* Allocate the array container itself. */
+    array_container_t *container;
 
-    if ((arr = malloc(sizeof(array_container_t))) == NULL) {
+    if ((container = malloc(sizeof(array_container_t))) == NULL) {
         return NULL;
     }
-    if ((arr->array = malloc(sizeof(uint16_t) * size)) == NULL) {
-        free(arr);
+
+    if ((container->array = malloc(sizeof(uint16_t) * size)) == NULL) {
+        free(container);
         return NULL;
     }
-    arr->capacity = size;
-    arr->cardinality = 0;
-    return arr;
+
+    container->capacity = size;
+    container->cardinality = 0;
+
+    return container;
 }
 
 /* Create a new array. Return NULL in case of failure. */
