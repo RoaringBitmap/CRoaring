@@ -145,15 +145,16 @@ bool array_container_add(array_container_t *arr, uint16_t pos) {
 }
 
 /* Remove x from the set. Returns true if x was present.  */
-bool array_container_remove(array_container_t *arr, uint16_t x) {
-    int32_t loc = binarySearch(arr->array, arr->cardinality, x);
-    if (loc >= 0) {
-        memmove(arr->array + loc, arr->array + loc + 1,
-                (arr->cardinality - loc) * sizeof(uint16_t));
+bool array_container_remove(array_container_t *arr, uint16_t pos) {
+    const int32_t idx = binarySearch(arr->array, arr->cardinality, pos);
+    const bool is_present = idx >= 0;
+    if (is_present) {
+        memmove(arr->array + idx, arr->array + idx + 1,
+                (arr->cardinality - idx) * sizeof(uint16_t));
         arr->cardinality--;
-        return true;
-    } else
-        return false;
+    }
+
+    return is_present;
 }
 
 /* Check whether x is present.  */
