@@ -62,37 +62,37 @@ void array_container_free(array_container_t *arr) {
     free(arr);
 }
 
+static inline int32_t grow_capacity(int32_t capacity) {
+    return (capacity <= 0) ? DEFAULT_INIT_SIZE
+                           : capacity < 64 ? capacity * 2
+                                           : capacity < 1024 ? capacity * 3 / 2
+                                                             : capacity * 5 / 4;
+}
+
 /**
  * increase capacity to at least min, and to no more than max. Whether the
- * existing data needs to be copied over depends on copy. If copy is false,
- * then the new content might be uninitialized.
+ * existing data needs to be copied over depends on copy. If preserve is false,
+ * then the new content will be uninitialized.
  */
-static void array_container_grow(array_container_t *arr, int32_t min,
-                                 int32_t max, bool copy) {
-    int32_t newCapacity =
-        (arr->capacity == 0)
-            ? DEFAULT_INIT_SIZE
-            : arr->capacity < 64 ? arr->capacity * 2
-                                 : arr->capacity < 1024 ? arr->capacity * 3 / 2
-                                                        : arr->capacity * 5 / 4;
-    if (newCapacity < min) newCapacity = min;
-    // never allocate more than we will ever need
-    if (newCapacity > max) newCapacity = max;
+static void array_container_grow(array_container_t *container, int32_t min,
+                                 int32_t max, bool preserve) {
+    int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
+
     // if we are within 1/16th of the max, go to max
-    if (newCapacity < max - max / 16) newCapacity = max;
-    arr->capacity = newCapacity;
-    if (copy)
-        arr->array = realloc(arr->array, arr->capacity * sizeof(uint16_t));
-    else {
-        free(arr->array);
-        arr->array = malloc(arr->capacity * sizeof(uint16_t));
+    if (new_capacity < max - max / 16) new_capacity = max;
+
+    container->capacity = new_capacity;
+    uint16_t *array = container->array;
+
+    if (preserve) {
+        container->array = realloc(array, new_capacity * sizeof(uint16_t));
+    } else {
+        free(array);
+        container->array = malloc(new_capacity * sizeof(uint16_t));
     }
+
     // TODO: handle the case where realloc fails
-    if (arr->array == NULL) {
-        printf(
-            "Well, that's unfortunate. Did I say you could use this code in "
-            "production?\n");
-    }
+    assert(container->array != NULL);
 }
 
 /* Copy one container into another. We assume that they are distinct. */

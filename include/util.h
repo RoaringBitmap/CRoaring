@@ -1,8 +1,8 @@
-
 #ifndef UTIL_H
- 
 #define UTIL_H
 
+#define clamp(value, min, max) \
+    ((value < min) ? min : (value > max) ? max : value)
 
 int32_t binarySearch(uint16_t* source, int32_t n, uint16_t target);
 
