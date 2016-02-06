@@ -158,9 +158,8 @@ bool array_container_remove(array_container_t *arr, uint16_t pos) {
 }
 
 /* Check whether x is present.  */
-bool array_container_contains(const array_container_t *arr, uint16_t x) {
-    int32_t loc = binarySearch(arr->array, arr->cardinality, x);
-    return loc >= 0;  // could possibly be faster...
+bool array_container_contains(const array_container_t *arr, uint16_t pos) {
+    return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }
 
 // TODO: can one vectorize the computation of the union?
