@@ -55,7 +55,7 @@ inline bool array_container_nonzero_cardinality(
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void array_container_copy(array_container_t *source, array_container_t *dest);
+void array_container_copy(const array_container_t *src, array_container_t *dst);
 
 /* Set the cardinality to zero (does not release memory). */
 inline void array_container_clear(array_container_t *array) {

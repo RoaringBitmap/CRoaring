@@ -96,12 +96,15 @@ static void array_container_grow(array_container_t *container, int32_t min,
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void array_container_copy(array_container_t *source, array_container_t *dest) {
-    if (source->cardinality < dest->capacity) {
-        array_container_grow(dest, source->cardinality, INT32_MAX, false);
+void array_container_copy(const array_container_t *src,
+                          array_container_t *dst) {
+    const int32_t cardinality = src->cardinality;
+    if (cardinality < dst->capacity) {
+        array_container_grow(dst, cardinality, INT32_MAX, false);
     }
-    dest->cardinality = source->cardinality;
-    memcpy(dest->array, source->array, sizeof(uint16_t) * source->cardinality);
+
+    dst->cardinality = cardinality;
+    memcpy(dst->array, src->array, cardinality * sizeof(uint16_t));
 }
 
 static void append(array_container_t *arr, uint16_t i) {
