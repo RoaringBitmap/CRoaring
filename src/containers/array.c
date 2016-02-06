@@ -107,33 +107,41 @@ void array_container_copy(const array_container_t *src,
     memcpy(dst->array, src->array, cardinality * sizeof(uint16_t));
 }
 
-static void append(array_container_t *arr, uint16_t i) {
-    if (arr->cardinality == arr->capacity)
-        array_container_grow(arr, arr->capacity + 1, INT32_MAX, true);
-    arr->array[arr->cardinality] = i;
-    arr->cardinality++;
+static void array_container_append(array_container_t *arr, uint16_t pos) {
+    const int32_t capacity = arr->capacity;
+
+    if (array_container_full(arr)) {
+        array_container_grow(arr, capacity + 1, INT32_MAX, true);
+    }
+
+    arr->array[arr->cardinality++] = pos;
 }
 
 /* Add x to the set. Returns true if x was not already present.  */
-bool array_container_add(array_container_t *arr, uint16_t x) {
-    if (((arr->cardinality > 0) && (arr->array[arr->cardinality - 1] < x)) ||
-        (arr->cardinality == 0)) {
-        append(arr, x);
+bool array_container_add(array_container_t *arr, uint16_t pos) {
+    const int32_t cardinality = arr->cardinality;
+
+    // best case, we can append.
+    if (array_container_empty(arr) || (arr->array[cardinality - 1] < pos)) {
+        array_container_append(arr, pos);
         return true;
     }
 
-    int32_t loc = binarySearch(arr->array, arr->cardinality, x);
-    if (loc < 0) {  // not already present
-        if (arr->capacity == arr->capacity)
+    const int32_t loc = binarySearch(arr->array, cardinality, pos);
+    const bool not_found = loc < 0;
+
+    if (not_found) {
+        if (array_container_full(arr)) {
             array_container_grow(arr, arr->capacity + 1, INT32_MAX, true);
-        int32_t i = -loc - 1;
-        memmove(arr->array + i + 1, arr->array + i,
-                (arr->cardinality - i) * sizeof(uint16_t));
-        arr->array[i] = x;
+        }
+        const int32_t insert_idx = -loc - 1;
+        memmove(arr->array + insert_idx + 1, arr->array + insert_idx,
+                (cardinality - insert_idx) * sizeof(uint16_t));
+        arr->array[insert_idx] = pos;
         arr->cardinality++;
-        return true;
-    } else
-        return false;
+    }
+
+    return not_found;
 }
 
 /* Remove x from the set. Returns true if x was present.  */

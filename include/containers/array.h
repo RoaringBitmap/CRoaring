@@ -62,6 +62,14 @@ inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;
 }
 
+inline bool array_container_empty(const array_container_t *array) {
+    return array->cardinality == 0;
+}
+
+inline bool array_container_full(const array_container_t *array) {
+    return array->cardinality == array->capacity;
+}
+
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
 void array_container_union(const array_container_t *src_1,
