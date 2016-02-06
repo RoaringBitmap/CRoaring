@@ -12,11 +12,16 @@
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
 
+/* struct array_container - sparse representation of a bitmap
+ *
+ * @cardinality: number of indices in `array` (and the bitmap)
+ * @capacity:    allocated size of `array`
+ * @array:       sorted list of integers
+ */
 struct array_container_s {
-    int32_t cardinality;  // how many elements in array are occupied
-    int32_t
-        capacity;  // size of array (should be larger or equal to cardinality)
-    uint16_t *array;  // strictly increasing list of integers
+    int32_t cardinality;
+    int32_t capacity;
+    uint16_t *array;
 };
 
 typedef struct array_container_s array_container_t;
