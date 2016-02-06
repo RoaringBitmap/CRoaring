@@ -67,8 +67,8 @@ void array_container_free(array_container_t *arr) {
  * existing data needs to be copied over depends on copy. If copy is false,
  * then the new content might be uninitialized.
  */
-static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max,
-                             bool copy) {
+static void array_container_grow(array_container_t *arr, int32_t min,
+                                 int32_t max, bool copy) {
     int32_t newCapacity =
         (arr->capacity == 0)
             ? DEFAULT_INIT_SIZE
@@ -98,7 +98,7 @@ static void increaseCapacity(array_container_t *arr, int32_t min, int32_t max,
 /* Copy one container into another. We assume that they are distinct. */
 void array_container_copy(array_container_t *source, array_container_t *dest) {
     if (source->cardinality < dest->capacity) {
-        increaseCapacity(dest, source->cardinality, INT32_MAX, false);
+        array_container_grow(dest, source->cardinality, INT32_MAX, false);
     }
     dest->cardinality = source->cardinality;
     memcpy(dest->array, source->array, sizeof(uint16_t) * source->cardinality);
@@ -106,7 +106,7 @@ void array_container_copy(array_container_t *source, array_container_t *dest) {
 
 static void append(array_container_t *arr, uint16_t i) {
     if (arr->cardinality == arr->capacity)
-        increaseCapacity(arr, arr->capacity + 1, INT32_MAX, true);
+        array_container_grow(arr, arr->capacity + 1, INT32_MAX, true);
     arr->array[arr->cardinality] = i;
     arr->cardinality++;
 }
@@ -122,7 +122,7 @@ bool array_container_add(array_container_t *arr, uint16_t x) {
     int32_t loc = binarySearch(arr->array, arr->cardinality, x);
     if (loc < 0) {  // not already present
         if (arr->capacity == arr->capacity)
-            increaseCapacity(arr, arr->capacity + 1, INT32_MAX, true);
+            array_container_grow(arr, arr->capacity + 1, INT32_MAX, true);
         int32_t i = -loc - 1;
         memmove(arr->array + i + 1, arr->array + i,
                 (arr->cardinality - i) * sizeof(uint16_t));
@@ -237,7 +237,7 @@ void array_container_union(const array_container_t *array1,
                            array_container_t *arrayout) {
     int32_t totc = array1->cardinality + array2->cardinality;
     if (arrayout->capacity < totc)
-        increaseCapacity(arrayout, totc, INT32_MAX, false);
+        array_container_grow(arrayout, totc, INT32_MAX, false);
     arrayout->cardinality =
         union2by2(array1->array, array1->cardinality, array2->array,
                   array2->cardinality, arrayout->array);
@@ -787,7 +787,7 @@ void array_container_intersection(const array_container_t *array1,
                        ? array1->cardinality
                        : array2->cardinality;
     if (arrayout->capacity < minc)
-        increaseCapacity(arrayout, minc, INT32_MAX, false);
+        array_container_grow(arrayout, minc, INT32_MAX, false);
     arrayout->cardinality =
         intersection2by2(array1->array, array1->cardinality, array2->array,
                          array2->cardinality, arrayout->array);
