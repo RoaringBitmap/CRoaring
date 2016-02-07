@@ -163,95 +163,72 @@ bool array_container_contains(const array_container_t *arr, uint16_t pos) {
 }
 
 // TODO: can one vectorize the computation of the union?
-static int32_t union2by2(uint16_t *set1, int32_t lenset1, uint16_t *set2,
-                         int32_t lenset2, uint16_t *buffer) {
-    int32_t pos = 0;
-    int32_t k1 = 0;
-    int32_t k2 = 0;
-    if (0 == lenset2) {
-        memcpy(
-            buffer, set1,
-            lenset1 *
-                sizeof(uint16_t));  // is this safe if buffer is set1 or set2?
-        return lenset1;
+static size_t union_uint16(const uint16_t *set_1, size_t size_1,
+                           const uint16_t *set_2, size_t size_2,
+                           uint16_t *buffer) {
+    size_t pos = 0, idx_1 = 0, idx_2 = 0;
+    if (0 == size_2) {
+        memcpy(buffer, set_1, size_1 * sizeof(uint16_t));
+        return size_1;
     }
-    if (0 == lenset1) {
-        memcpy(
-            buffer, set2,
-            lenset2 *
-                sizeof(uint16_t));  // is this safe if buffer is set1 or set2?
-        return lenset2;
+    if (0 == size_1) {
+        memcpy(buffer, set_2, size_2 * sizeof(uint16_t));
+        return size_2;
     }
-    uint16_t s1 = set1[k1];
-    uint16_t s2 = set2[k2];
-    while (1) {
-        if (s1 < s2) {
-            buffer[pos] = s1;
-            pos++;
-            k1++;
-            if (k1 >= lenset1) {
-                memcpy(buffer + pos, set2 + k2,
-                       (lenset2 - k2) * sizeof(uint16_t));  // is this safe if
-                                                            // buffer is set1 or
-                                                            // set2?
-                pos += lenset2 - k2;
-                break;
-            }
-            s1 = set1[k1];
-        } else if (s1 == s2) {
-            buffer[pos] = s1;
-            pos++;
-            k1++;
-            k2++;
-            if (k1 >= lenset1) {
-                memcpy(buffer + pos, set2 + k2,
-                       (lenset2 - k2) * sizeof(uint16_t));  // is this safe if
-                                                            // buffer is set1 or
-                                                            // set2?
-                pos += lenset2 - k2;
-                break;
-            }
-            if (k2 >= lenset2) {
-                memcpy(buffer + pos, set1 + k1,
-                       (lenset1 - k1) * sizeof(uint16_t));  // is this safe if
-                                                            // buffer is set1 or
-                                                            // set2?
-                pos += lenset1 - k1;
-                break;
-            }
-            s1 = set1[k1];
-            s2 = set2[k2];
-        } else {  // if (set1[k1]>set2[k2])
-            buffer[pos] = s2;
-            pos++;
-            k2++;
-            if (k2 >= lenset2) {
-                // should be memcpy
-                memcpy(buffer + pos, set1 + k1,
-                       (lenset1 - k1) * sizeof(uint16_t));  // is this safe if
-                                                            // buffer is set1 or
-                                                            // set2?
-                pos += lenset1 - k1;
-                break;
-            }
-            s2 = set2[k2];
+
+    uint16_t val_1 = set_1[idx_1];
+    uint16_t val_2 = set_2[idx_2];
+
+    while (true) {
+        if (val_1 < val_2) {
+            buffer[pos++] = val_1;
+            val_1 = set_1[++idx_1];
+            if (idx_1 >= size_1) break;
+        } else if (val_2 < val_1) {
+            buffer[pos++] = val_2;
+            val_2 = set_2[++idx_2];
+            if (idx_2 >= size_2) break;
+        } else {
+            buffer[pos++] = val_1;
+            val_1 = set_1[++idx_1];
+            val_2 = set_2[++idx_2];
+            if (idx_1 >= size_1 || idx_2 >= size_2) break;
         }
     }
+
+    if (idx_1 < size_1) {
+        const size_t n_elems = size_1 - idx_1;
+        memcpy(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint16_t));
+        pos += n_elems;
+    } else if (idx_2 < size_2) {
+        const size_t n_elems = size_2 - idx_2;
+        memcpy(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint16_t));
+        pos += n_elems;
+    }
+
     return pos;
 }
 
 /* Computes the union of array1 and array2 and write the result to arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
  */
-void array_container_union(const array_container_t *array1,
-                           const array_container_t *array2,
-                           array_container_t *arrayout) {
-    int32_t totc = array1->cardinality + array2->cardinality;
-    if (arrayout->capacity < totc)
-        array_container_grow(arrayout, totc, INT32_MAX, false);
-    arrayout->cardinality =
-        union2by2(array1->array, array1->cardinality, array2->array,
-                  array2->cardinality, arrayout->array);
+void array_container_union(const array_container_t *array_1,
+                           const array_container_t *array_2,
+                           array_container_t *out) {
+    const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
+    const int32_t max_cardinality = card_1 + card_2;
+
+    if (out->capacity < max_cardinality)
+        array_container_grow(out, max_cardinality, INT32_MAX, false);
+
+    // compute union with smallest array first
+    if (card_1 < card_2) {
+        out->cardinality = union_uint16(array_1->array, card_1, array_2->array,
+                                        card_2, out->array);
+    } else {
+        out->cardinality = union_uint16(array_2->array, card_2, array_1->array,
+                                        card_1, out->array);
+    }
 }
 
 int32_t onesidedgallopingintersect2by2(uint16_t *smallset, int32_t lensmallset,
