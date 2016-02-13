@@ -8,7 +8,6 @@
 
 #define ASMBITMANIPOPTIMIZATION// optimization flag
 
-
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg)       \
     __asm volatile ("shrx %1, %2, %0" :                 \
                     "=r" (destReg): /* write */    \

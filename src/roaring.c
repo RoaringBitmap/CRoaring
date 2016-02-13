@@ -20,6 +20,15 @@ roaring_bitmap_t *roaring_bitmap_create() {
   return ans;
 }
 
+roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, uint32_t * vals) {
+	// todo: could be greatly optimized
+	roaring_bitmap_t * answer = roaring_bitmap_create();
+	for (size_t i = 0; i < n_args; i++) {
+		roaring_bitmap_add(answer, vals[i]);
+	}
+	return answer;
+}
+
 roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
 	// todo: could be greatly optimized
 	roaring_bitmap_t * answer = roaring_bitmap_create();
@@ -155,11 +164,12 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1, const roaring_bitmap_t *x2
       uint8_t typecode1, typecode2, typecode_result;
       void *c1 = ra_get_container_at_index(x1->high_low_container, pos1, &typecode1);
       void *c2 = ra_get_container_at_index(x2->high_low_container, pos2, &typecode2);
-      void *c = container_iand(c1, typecode1, c2, typecode2, &typecode_result);
+      /* Daniel disable next bit on Feb. 12th */
+      /*void *c = container_iand(c1, typecode1, c2, typecode2, &typecode_result);
 
       if (container_nonzero_cardinality(c, typecode_result)) {
         ra_replace_key_and_container_at_index( x1->high_low_container, intersection_size++, s1, c, typecode_result);
-      }
+      }*/
       ++pos1;
       ++pos2;
     } else if  (s1 < s2) {

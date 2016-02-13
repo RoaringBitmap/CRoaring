@@ -22,7 +22,7 @@ BENCHINCLUDES=-Ibenchmarks/include
 
 OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o util.o convert.o containers.o
 TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit toplevel_unit
-EXECUTABLES=$(TESTEXECUTABLES) bitset_container_benchmark array_container_benchmark run_container_benchmark
+EXECUTABLES=$(TESTEXECUTABLES) real_bitmaps_benchmark bitset_container_benchmark array_container_benchmark run_container_benchmark
 all:  $(EXECUTABLES) 
 
 
@@ -84,6 +84,8 @@ array_container_benchmark: ./benchmarks/array_container_benchmark.c ./benchmarks
 run_container_benchmark: ./benchmarks/run_container_benchmark.c ./benchmarks/benchmark.h ./benchmarks/random.h   $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o run_container_benchmark ./benchmarks/run_container_benchmark.c $(INCLUDES)  $(OBJECTS)
 
+real_bitmaps_benchmark: ./benchmarks/real_bitmaps_benchmark.c ./benchmarks/benchmark.h ./benchmarks/random.h   $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) -o real_bitmaps_benchmark ./benchmarks/real_bitmaps_benchmark.c $(INCLUDES)  $(OBJECTS)
 
 
 clean:

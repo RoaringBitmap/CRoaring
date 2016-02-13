@@ -20,6 +20,10 @@ typedef struct roaring_bitmap_s {
  */
 roaring_bitmap_t *roaring_bitmap_create();
 
+/**
+ * Creates a new bitmap from a pointer of uint32_t integers
+ */
+roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, uint32_t * vals);
 
 /**
  * Creates a new bitmap from a list of uint32_t integers
