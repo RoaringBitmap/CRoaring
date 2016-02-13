@@ -38,7 +38,7 @@ inline char * get_container_name(uint8_t typecode) {
 /**
  * Get the container cardinality (number of elements), requires a  typecode
  */
-inline uint32_t container_get_cardinality(void *container, uint8_t typecode) {
+inline int container_get_cardinality(void *container, uint8_t typecode) {
         switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
                 return bitset_container_cardinality(container);

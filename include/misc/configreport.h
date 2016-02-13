@@ -31,7 +31,7 @@ static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
 
 static inline int computecacheline() {
 	int eax = 0, ebx = 0, ecx = 0, edx = 0;
-	cpuinfo(0x80000006, &eax, &ebx, &ecx, &edx);
+	cpuinfo((int) 0x80000006, &eax, &ebx, &ecx, &edx);
 	return ecx & 0xFF;
 }
 

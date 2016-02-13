@@ -16,7 +16,7 @@ enum{TESTSIZE=2048};
 // flushes the array from cache
 void run_cache_flush(run_container_t* B) {
 	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
-	for(int32_t  k = 0; k < B->nbrruns * 2; k += CACHELINESIZE/sizeof(uint16_t)) {
+	for(int32_t  k = 0; k < B->nbrruns * 2; k +=  CACHELINESIZE/ (int32_t) sizeof(uint16_t)) {
 		__builtin_ia32_clflush(B->valueslength + k);
 	}
 }
@@ -24,7 +24,7 @@ void run_cache_flush(run_container_t* B) {
 // tries to put array in cache
 void run_cache_prefetch(run_container_t* B) {
 	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
-	for(int32_t  k = 0; k < B->nbrruns * 2; k += CACHELINESIZE/sizeof(uint16_t)) {
+	for(int32_t  k = 0; k < B->nbrruns * 2; k +=   CACHELINESIZE/(int32_t) sizeof(uint16_t)) {
 		__builtin_prefetch(B->valueslength + k);
 	}
 }
@@ -87,7 +87,7 @@ int main() {
         uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
         printf("\n number of values in container = %d\n",run_container_cardinality(Bt));
     	int card = run_container_cardinality(Bt);
-    	uint32_t *out = malloc(sizeof(uint32_t) * card);
+    	uint32_t *out = malloc(sizeof(uint32_t) * (unsigned long) card);
         BEST_TIME(run_container_to_uint32_array(out,Bt,1234), card, repeat, card);
     	free(out);
         BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_prefetch, testvalues, nbrtestvalues);        \

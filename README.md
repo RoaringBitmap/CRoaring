@@ -18,6 +18,11 @@ of the latest hardware.
 
 Support for legacy hardware and compiler might be added later.
 
+# sanity todo
+- get the code to compile cleanly with -Wconversion and possibly -Weverything
+- get everything to work with valgrind cleanly
+- get everything to work cleanly with other static checkers, sanitizers and so forth
+
 # todo
 
 - consider LTO (Link Time Optimization)

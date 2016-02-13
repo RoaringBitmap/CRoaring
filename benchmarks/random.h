@@ -22,7 +22,7 @@ static pcg32_random_t pcg32_global = { 0x853c49e6748fea9bULL, 0xda3e39cb94b95bdb
 static inline uint32_t pcg32_random_r(pcg32_random_t* rng) {
     uint64_t oldstate = rng->state;
     rng->state = oldstate * 6364136223846793005ULL + rng->inc;
-    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+    uint32_t xorshifted = (uint32_t)(((oldstate >> 18u) ^ oldstate) >> 27u);
     uint32_t rot = oldstate >> 59u;
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
@@ -43,7 +43,7 @@ static inline uint32_t ranged_random_mult_lazy(uint32_t range) {
       while(random32bit >= range) {
           random32bit = pcg32_random();
       }
-      return random32bit; // [0, range)
+      return (uint32_t) random32bit; // [0, range)
   }
   multiresult = random32bit * range;
   leftover = (uint32_t) multiresult;
@@ -63,21 +63,21 @@ static inline void  shuffle_uint16(uint16_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
         uint32_t nextpos = ranged_random_mult_lazy(i);
-        int tmp = storage[i-1];// likely in cache
-        int val = storage[nextpos]; // could be costly
+        uint16_t tmp = storage[i-1];// likely in cache
+        uint16_t val = storage[nextpos]; // could be costly
         storage[i - 1] = val;
         storage[nextpos] = tmp; // you might have to read this store later
     }
 }
 
 // Fisher-Yates shuffle, shuffling an array of integers
-static inline void  shuffle_uint32(uint16_t *storage, uint32_t size) {
+static inline void  shuffle_uint32(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i=size; i>1; i--) {
         uint32_t nextpos = ranged_random_mult_lazy(i);
-        int tmp = storage[i-1];// likely in cache
-        int val = storage[nextpos]; // could be costly
-        storage[i - 1] = val;
+        uint32_t tmp = storage[i-1];// likely in cache
+        uint32_t val = storage[nextpos]; // could be costly
+        storage[i - 1] =  val;
         storage[nextpos] = tmp; // you might have to read this store later
     }
 }

@@ -25,7 +25,7 @@ static char * read_file(const char * filename) {
     }
 
     fseek( fp , 0 , SEEK_END);
-    int size = ftell( fp );
+    size_t size = (size_t) ftell( fp );
     rewind( fp );
     char * answer = malloc(size + 1);
     if(! answer) {
@@ -64,10 +64,10 @@ static uint32_t * read_integer_file(char * filename, size_t * howmany) {
             i++;
             if(buffer[i] == '\0') goto END;
         }
-        currentint = buffer[i] - '0';
+        currentint =  (uint32_t) ( buffer[i] - '0');
         i++;
         for ( ; (buffer[i] >= '0') && (buffer[i] <= '9'); i++)
-            currentint = currentint * 10 + (buffer[i] - '0');
+            currentint = currentint * 10 + (uint32_t) (buffer[i] - '0');
         answer[pos++] = currentint;
     }
 END:

@@ -51,8 +51,8 @@
             cycles_diff = (cycles_final - cycles_start);              \
             if (cycles_diff < min_diff) min_diff = cycles_diff;       \
         }                                                             \
-        uint64_t S = size;                                            \
-        float cycle_per_op = (min_diff) / (double)S;                  \
+        uint64_t S = (uint64_t) size;                                            \
+        float cycle_per_op = (min_diff) / (float)S;                   \
         printf(" %.2f cycles per operation", cycle_per_op);           \
         if (wrong_answer) printf(" [ERROR]");                         \
         printf("\n");                                                 \
@@ -80,8 +80,8 @@
             cycles_diff = (cycles_final - cycles_start);                                \
             sum += cycles_diff;                                                         \
         }                                                                               \
-        uint64_t S = nbrtestvalues;                                                     \
-        float cycle_per_op = sum / (double)S;                                           \
+        uint64_t S = (uint64_t) nbrtestvalues;                                                     \
+        float cycle_per_op = sum / (float)S;                                           \
         printf(" %.2f cycles per operation", cycle_per_op);                             \
         printf("\n");                                                                   \
         fflush(NULL);                                                                   \

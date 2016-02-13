@@ -3,7 +3,7 @@
 
 extern char * get_container_name(uint8_t typecode);
 
-extern uint32_t container_get_cardinality(void *container, uint8_t typecode);
+extern int container_get_cardinality(void *container, uint8_t typecode);
 
 void container_printf(void *container, uint8_t typecode) {
   switch (typecode) {
