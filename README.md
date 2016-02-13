@@ -23,6 +23,17 @@ Support for legacy hardware and compiler might be added later.
 - get everything to work with valgrind cleanly
 - get everything to work cleanly with other static checkers, sanitizers and so forth
 
+```
+-fsanitize=address -fno-omit-frame-pointer
+-fsanitize=memory  -fno-omit-frame-pointer
+-fsanitize=undefined
+-fsanitize=dataflow
+-fsanitize=cfi -flto
+-fsanitize=safe-stack
+```
+- Daniel
+
+
 # todo
 
 - consider LTO (Link Time Optimization)
