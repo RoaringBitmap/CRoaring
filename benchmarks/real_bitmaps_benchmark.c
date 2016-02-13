@@ -112,7 +112,7 @@ static uint32_t ** read_all_integer_files(char * dirname, char * extension, size
     for (size_t i = 0, pos = 0; i < *count; i++) {
         if (!hasExtension(entry_list[i]->d_name, extension)) continue;
         size_t filelen = strlen(entry_list[i]->d_name);
-        char * fullpath = malloc(dirlen + filelen);
+        char * fullpath = malloc(dirlen + filelen + 1);
         strcpy(fullpath,modifdirname);
         strcpy(fullpath+dirlen,entry_list[i]->d_name);
         answer[pos] = read_integer_file(fullpath,&((*howmany)[pos]));
