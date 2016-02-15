@@ -69,6 +69,10 @@ static inline int32_t grow_capacity(int32_t capacity) {
                                                              : capacity * 5 / 4;
 }
 
+static inline int32_t clamp(int32_t val, int32_t min, int32_t max) {
+    return ((val < min) ? min : (val > max) ? max : val);
+}
+
 /**
  * increase capacity to at least min, and to no more than max. Whether the
  * existing data needs to be copied over depends on copy. If preserve is false,
@@ -303,6 +307,8 @@ extern int32_t intersect_vector16(const uint16_t *set_1, size_t size_1,
 
 #define THRESHOLD 64
 
+static inline int32_t minimum(int32_t a, int32_t b) { return (a < b) ? a : b; }
+
 /* computes the intersection of array1 and array2 and write the result to
  * arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
@@ -311,7 +317,7 @@ void array_container_intersection(const array_container_t *array1,
                                   const array_container_t *array2,
                                   array_container_t *out) {
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
-            min_card = roar_min(card_1, card_2);
+            min_card = minimum(card_1, card_2);
 
     if (out->capacity < min_card)
         array_container_grow(out, min_card, INT32_MAX, false);

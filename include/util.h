@@ -1,12 +1,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#define clamp(value, min, max) \
-    ((value < min) ? min : (value > max) ? max : value)
-
-#define roar_min(a, b) (a < b) ? a : b;
-#define roar_max(a, b) (a < b) ? b : a;
-
 int32_t binarySearch(uint16_t *source, int32_t n, uint16_t target);
 
 int32_t advanceUntil(uint16_t *array, int32_t pos, int32_t length,
