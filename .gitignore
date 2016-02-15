@@ -32,6 +32,6 @@
 *.dSYM/
 
 # binaries
-bitset_container_benchmark
-bitset_container_unit
+*_benchmark
+*_unit
 unit
