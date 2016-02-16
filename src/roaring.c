@@ -36,6 +36,7 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
 	va_start(ap, n_args);
 	for (size_t i = 1; i <= n_args; i++) {
 		uint32_t val = va_arg(ap, uint32_t);
+                //fprintf(stderr,"bitmap_of adds %d\n",val);
 		roaring_bitmap_add(answer, val);
 
 	}
@@ -77,6 +78,7 @@ void roaring_bitmap_free(roaring_bitmap_t *r) {
 }
 
 void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
+        //fprintf(stderr," roaring_bitmap_add of value %d\n",val);
 	const uint16_t hb = val >> 16;
 	const int i = ra_get_index(r->high_low_container, hb);
 	uint8_t typecode;

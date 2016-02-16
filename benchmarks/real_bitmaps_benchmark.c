@@ -133,7 +133,7 @@ static roaring_bitmap_t * read_all_bitmaps(char * dirname, char * extension, siz
     roaring_bitmap_t * answer = malloc(sizeof(roaring_bitmap_t) * (*count));
     for (size_t i = 0; i < *count; i++) {
         printf("loading %d integers in bitmap %d \n",(int)howmany[i],(int)i+1);
-        answer[i] = *roaring_bitmap_of(howmany[i],numbers[i]);
+        answer[i] = *roaring_bitmap_of_ptr(howmany[i],numbers[i]);
         free(numbers[i]);
         numbers[i] = NULL;
     }
