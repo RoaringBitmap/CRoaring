@@ -17,6 +17,8 @@ enum { DEFAULT_INIT_SIZE = 16 };
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
+extern bool array_container_empty(const array_container_t *array);
+extern bool array_container_full(const array_container_t *array);
 
 /* Create a new array with capacity size. Return NULL in case of failure. */
 array_container_t *array_container_create_given_capacity(int32_t size) {
