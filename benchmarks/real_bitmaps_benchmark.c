@@ -109,7 +109,7 @@ static uint32_t ** read_all_integer_files(char * dirname, char * extension, size
         modifdirname[dirlen+1] ='\0';
         dirlen ++;
     }
-    for (size_t i = 0, pos = 0; i < *count; i++) {
+    for (size_t i = 0, pos = 0; i < (size_t) c; i++) { /* formerly looped while i < *count */
         if (!hasExtension(entry_list[i]->d_name, extension)) continue;
         size_t filelen = strlen(entry_list[i]->d_name);
         char * fullpath = malloc(dirlen + filelen + 1);
@@ -122,18 +122,22 @@ static uint32_t ** read_all_integer_files(char * dirname, char * extension, size
     if(modifdirname != dirname) {
         free(modifdirname);
     }
+    for (int i=0; i < c; ++i)
+            free(entry_list[i]);
+    free(entry_list);
     return answer;
 }
 
-static roaring_bitmap_t * read_all_bitmaps(char * dirname, char * extension, size_t * count) {
+static roaring_bitmap_t ** read_all_bitmaps(char * dirname, char * extension, size_t * count) {
     size_t * howmany = NULL;
     uint32_t ** numbers = read_all_integer_files(dirname, extension, &howmany, count);
     if(numbers == NULL) return NULL;
+
     printf("reading %d files, now constructing bitmaps.\n",(int)*count);
-    roaring_bitmap_t * answer = malloc(sizeof(roaring_bitmap_t) * (*count));
+    roaring_bitmap_t ** answer = malloc(sizeof(roaring_bitmap_t *) * (*count));
     for (size_t i = 0; i < *count; i++) {
         printf("loading %d integers in bitmap %d \n",(int)howmany[i],(int)i+1);
-        answer[i] = *roaring_bitmap_of_ptr(howmany[i],numbers[i]);
+        answer[i] = roaring_bitmap_of_ptr(howmany[i],numbers[i]);
         free(numbers[i]);
         numbers[i] = NULL;
     }
@@ -166,9 +170,11 @@ int main(int argc, char **argv) {
     }
     char * dirname = argv[optind];
     size_t count;
-    roaring_bitmap_t * bitmaps = read_all_bitmaps(dirname,extension, &count);
+    roaring_bitmap_t ** bitmaps = read_all_bitmaps(dirname,extension, &count);
     if(bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n",(int)count,dirname);
+    for (int i=0; i < (int) count; ++i)
+            roaring_bitmap_free(bitmaps[i]);
     free(bitmaps);
     return 0;
 }

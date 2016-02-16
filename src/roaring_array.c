@@ -101,7 +101,6 @@ void ra_free(roaring_array_t *ra) {
 
 static void extend_array(roaring_array_t *ra, uint16_t k) {
   // corresponding Java code uses >= ??
-        // fprintf(stderr,"\nextend_array\n");
   int desired_size = ra->size + (int) k;
   if (desired_size > ra->allocation_size) {
     int new_capacity = (ra->size < 1024) ? 
@@ -133,7 +132,6 @@ static void extend_array(roaring_array_t *ra, uint16_t k) {
 
 
 void ra_append(roaring_array_t *ra, uint16_t key, void *container, uint8_t typecode) {
-        //fprintf(stderr, "called ra_apend");
   extend_array(ra, 1);
   const int32_t pos = ra->size;
 
@@ -147,7 +145,6 @@ void ra_append(roaring_array_t *ra, uint16_t key, void *container, uint8_t typec
 
 
 void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index) {
-        //fprintf(stderr,"called ra_apend_copy");
   extend_array(ra, 1);
   const int32_t pos = ra->size;
 
@@ -163,7 +160,6 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index) {
 
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa, 
                        uint16_t start_index, uint16_t end_index) {
-        //fprintf(stderr,"called ra_apend_copy_range");
   extend_array(ra, end_index - start_index);
 
   for (uint16_t i = start_index; i < end_index; ++i) {
@@ -241,21 +237,8 @@ uint16_t ra_get_key_at_index(roaring_array_t *ra, uint16_t i) {
 
 int32_t ra_get_index( roaring_array_t *ra, uint16_t x) {
   // TODO: next line is possibly unsafe
-//        fprintf(stderr,"rasize is %d\n", (int) ra->size);
-
-        if (ra->size != 0) {
-                //       printf(" ra->keys[ra->size-1] == %d\n",(int) ra->keys[ra->size-1]);
-        }
-        // the array element is uninitialized
-        //fprintf(stderr," x is %d\n",(int) x);
-        //fprintf(stderr,"finished prints\n");
-        //fflush(stderr);
-
         if ( (ra->size == 0) || ra->keys[ra->size-1] == x)
                 return ra->size-1;
-
-        //if (ra->size == 4) exit(0); // temp temp
-
 
   return binarySearch(ra->keys, (int32_t) ra->size, x);
 }
@@ -265,7 +248,6 @@ extern int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos);
 
 
 void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, void *container, uint8_t typecode) {
-        //fprintf(stderr,"called ra_insert_new_key_value_at k=%d i=%d\n", (int) key, i);
   extend_array(ra,1);
   // May be an optimization opportunity with DIY memmove
   memmove( &(ra->keys[i+1]), &(ra->keys[i]), sizeof(uint16_t) * (ra->size - i));
@@ -283,8 +265,6 @@ void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, v
 // valid containers below ra->size.
 
 void ra_downsize( roaring_array_t *ra, int32_t new_length) {
-  //assert(new_length <= ra->allocation_size);
-  //printf("downsize from %d to %d \n", (int) ra->size, (int) new_length);
   assert(new_length <= ra->size);
   
   // free up the containers (assume not shared...)
