@@ -173,6 +173,22 @@ int main(int argc, char **argv) {
     roaring_bitmap_t ** bitmaps = read_all_bitmaps(dirname,extension, &count);
     if(bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n",(int)count,dirname);
+
+    // try ANDing together consecutive pairs
+    for (int i=0; i < (int) count-1; ++i) {
+            roaring_bitmap_t *temp = roaring_bitmap_and( bitmaps[i], bitmaps[i+1]);
+            printf("AND number %d has card %d\n",i,(int) roaring_bitmap_get_cardinality(temp));
+            roaring_bitmap_free(temp);
+    }
+
+    // then mangle them with inplace
+    for (int i=0; i < (int) count-1; i+=2) {
+            roaring_bitmap_and_inplace( bitmaps[i], bitmaps[i+1]);
+            printf("inplace AND number %d has card %d\n",i,(int) roaring_bitmap_get_cardinality(bitmaps[i]));
+    }
+
+
+
     for (int i=0; i < (int) count; ++i)
             roaring_bitmap_free(bitmaps[i]);
     free(bitmaps);

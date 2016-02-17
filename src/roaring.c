@@ -142,19 +142,22 @@ roaring_bitmap_t *roaring_bitmap_and(roaring_bitmap_t *x1, roaring_bitmap_t *x2)
 			++pos1;
 			++pos2;
 		} else if (s1 < s2) { // s1 < s2
-			pos1 = advanceUntil(x1->high_low_container->keys, s2, 0xffff, pos1);
+                        pos1 = ra_advance_until(x1->high_low_container, s2, pos1);
 		} else { // s1 > s2
-			pos2 = advanceUntil(x2->high_low_container->keys, s1, 0xffff, pos2);
+                        pos2 = ra_advance_until(x2->high_low_container, s1, pos2);
 		}
 	}
 	return answer;
 }
 
-// inplace and (modifies its first argument)
+// inplace and (modifies its first argument).
 void roaring_bitmap_and_inplace(roaring_bitmap_t *x1, const roaring_bitmap_t *x2) {
   int pos1 = 0, pos2 = 0, intersection_size = 0;
   const int length1 = ra_get_size( x1->high_low_container);
   const int length2 = ra_get_size( x2->high_low_container);
+  
+  // any skipped-over or newly emptied containers in x1
+  // have to be freed.
   
   while (pos1 < length1 && pos2 < length2) {
     const uint16_t s1 = ra_get_key_at_index(x1->high_low_container,pos1);
@@ -164,20 +167,33 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1, const roaring_bitmap_t *x2
       uint8_t typecode1, typecode2, typecode_result;
       void *c1 = ra_get_container_at_index(x1->high_low_container, pos1, &typecode1);
       void *c2 = ra_get_container_at_index(x2->high_low_container, pos2, &typecode2);
-      /* Daniel disable next bit on Feb. 12th */
-      /*void *c = container_iand(c1, typecode1, c2, typecode2, &typecode_result);
+      /* Daniel disabled next bit on Feb. 12th */ // owen put it back to debug
+      void *c = container_iand(c1, typecode1, c2, typecode2, &typecode_result);
 
       if (container_nonzero_cardinality(c, typecode_result)) {
-        ra_replace_key_and_container_at_index( x1->high_low_container, intersection_size++, s1, c, typecode_result);
-      }*/
+              ra_replace_key_and_container_at_index( x1->high_low_container, intersection_size, s1, c, typecode_result);
+              intersection_size++;
+      } else {
+              container_free(c, typecode1);
+      }
+      /**/
       ++pos1;
       ++pos2;
     } else if  (s1 < s2) {
-      pos1 = ra_advance_until(x1->high_low_container, s2, pos1);
+      pos1 = ra_advance_until_freeing(x1->high_low_container, s2, pos1);
     } else { // s1 > s2
       pos2 = ra_advance_until(x2->high_low_container, s1, pos2);
     }
   }
+
+  // if we ended early because x2 ran out, then all remaining in x1 should be freed
+  while (pos1 < length1) {
+          container_free(x1->high_low_container->containers[pos1],
+                         x1->high_low_container->typecodes[pos1]);
+          ++pos1;
+  }
+
+  // all containers after this have either been copied or freed
   ra_downsize(x1->high_low_container, intersection_size);
 }
 
@@ -255,8 +271,12 @@ uint32_t roaring_bitmap_get_cardinality( roaring_bitmap_t *ra) {
 }
 
 uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardinality) {
-  uint32_t *ans = malloc( roaring_bitmap_get_cardinality(ra) * sizeof( uint32_t));
-  int ctr=0;
+        uint32_t card1 = roaring_bitmap_get_cardinality(ra);
+
+        uint32_t *ans = malloc( (card1+10) * sizeof( uint32_t)); //+20??
+// TODO Valgrind reports we write beyond the end of this array (?) with an 8-byte write (?)
+// but it may just be an AVX2 instruction needing a little extra space.  Add 40 bytes...seems to fix problem, but adding 8 didn't
+  uint32_t ctr=0;
 
   for( int i = 0; i < ra->high_low_container->size; ++i) {
     int num_added = container_to_uint32_array( ans+ctr, 
@@ -265,6 +285,7 @@ uint32_t *roaring_bitmap_to_uint32_array( roaring_bitmap_t *ra, uint32_t *cardin
                                                ((uint32_t) ra->high_low_container->keys[i]) << 16);
     ctr += num_added;
   }
+  assert(ctr == card1);
   *cardinality = ctr;
   return ans;
 }

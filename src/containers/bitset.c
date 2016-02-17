@@ -430,7 +430,7 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   int num_runs = 0;
   uint64_t next_word = b->array[0];
 
-  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS-1; ++i) {
     uint64_t word = next_word;
     next_word = b->array[i+1];
     num_runs += _mm_popcnt_u64((~word) & (word << 1)) + ( (word >> 63) & ~next_word);

@@ -234,6 +234,7 @@ int test_conversion_to_int_array(){
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }
 
@@ -278,6 +279,7 @@ int test_conversion_to_int_array_with_runoptimize(){
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }
 
@@ -307,6 +309,7 @@ int   test_array_to_run() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 
@@ -335,6 +338,7 @@ int   test_array_to_self() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 
@@ -362,6 +366,7 @@ int   test_bitset_to_self() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 
@@ -391,6 +396,7 @@ int   test_bitset_to_run() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 
@@ -426,6 +432,7 @@ int   test_run_to_self() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 
@@ -456,6 +463,7 @@ int   test_remove_run_to_bitset() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 
@@ -487,6 +495,7 @@ int   test_remove_run_to_array() {
         assert(array_equals(arr,card, ans, ans_ctr));
         roaring_bitmap_free(r1);
         free(arr);
+        free(ans);
         return 1;
 }    
 

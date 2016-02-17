@@ -98,6 +98,9 @@ inline int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos) {
   return advanceUntil(ra->keys, pos, ra->size, x);
 } 
 
+int32_t ra_advance_until_freeing( roaring_array_t *ra, uint16_t x, int32_t pos);
+
+
 void ra_downsize( roaring_array_t *ra, int32_t new_length);
 
 void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i, uint16_t key, void *c, uint8_t typecode);

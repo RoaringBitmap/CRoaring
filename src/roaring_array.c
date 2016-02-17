@@ -246,6 +246,14 @@ int32_t ra_get_index( roaring_array_t *ra, uint16_t x) {
 
 extern int32_t ra_advance_until( roaring_array_t *ra, uint16_t x, int32_t pos);
 
+// everything skipped over is freed
+int32_t ra_advance_until_freeing( roaring_array_t *ra, uint16_t x, int32_t pos) {
+        while (pos < ra->size && ra->keys[pos] < x ) {
+                container_free( ra->containers[pos], ra->typecodes[pos]);
+                ++pos;
+        }
+        return pos;
+}
 
 void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, void *container, uint8_t typecode) {
   extend_array(ra,1);
@@ -267,16 +275,23 @@ void ra_insert_new_key_value_at( roaring_array_t *ra, int32_t i, uint16_t key, v
 void ra_downsize( roaring_array_t *ra, int32_t new_length) {
   assert(new_length <= ra->size);
   
-  // free up the containers (assume not shared...)
+  printf("ra downsize from size %d to %d\n",(int)ra->size, (int) new_length);
+
+  // all these excess containers  are either in use elsewhere or
+  // have already been freed by inplace and.
+
+  /* bad idea...
   for (int i = new_length; i < ra->size; ++i) {
-    container_free(ra->containers[i], ra->typecodes[i]);
+          container_free(ra->containers[i], ra->typecodes[i]);  
+  */
+
     // by convention, these things will be above ra->size
     // and hence garbage not requiring freeing.
 #if 0
     ra->containers[i] = NULL; // unnecessary, avoids dangling pointer
     ra->typecodes[i] = UNINITIALIZED_TYPE_CODE;
 #endif
-  }
+    //}
   ra->size = new_length;
 }
 
@@ -351,6 +366,11 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i, uint1
   assert(i < ra->size);
   //container_free(ra->containers[i], ra->typecodes[i]);//too eager!
   // is there a possible memory leak here, then?
+
+  // anyone calling this is responsible for making sure we have freed the container currently at the index,
+  // (unless it is the same one we are writing in)
+
+  // possibly we just need to avoid free if c == ra->containers[i] but otherwise do it.
 
   ra->keys[i] = key;
   ra->containers[i] = c;

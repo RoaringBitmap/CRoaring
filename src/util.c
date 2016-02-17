@@ -568,7 +568,6 @@ int32_t advanceUntil(
 	if (array[upper] == min) {
 		return upper;
 	}
-
 	if (array[upper] < min) {
 		// means
 		// array
