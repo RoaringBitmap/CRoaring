@@ -85,7 +85,7 @@ static void array_container_grow(array_container_t *container, int32_t min,
     int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
 
     // if we are within 1/16th of the max, go to max
-    if (new_capacity < max - max / 16) new_capacity = max;
+    if (new_capacity > max - max / 16) new_capacity = max;
 
     container->capacity = new_capacity;
     uint16_t *array = container->array;
