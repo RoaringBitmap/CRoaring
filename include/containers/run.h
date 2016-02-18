@@ -25,7 +25,7 @@ struct rle16_s {
 typedef struct rle16_s rle16_t;
 
 struct run_container_s {
-    int32_t nbrruns;
+    int32_t n_runs;
     int32_t capacity;
     rle16_t *valueslength;
 };
@@ -55,20 +55,20 @@ int run_container_cardinality(const run_container_t *run);
 
 /* Card > 0? */
 inline bool run_container_nonzero_cardinality(run_container_t *r) {
-    return r->nbrruns > 0;  // runs never empty
+    return r->n_runs > 0;  // runs never empty
 }
 
 /* Copy one container into another. We assume that they are distinct. */
 void run_container_copy(run_container_t *source, run_container_t *dest);
 
 /* Set the cardinality to zero (does not release memory). */
-inline void run_container_clear(run_container_t *run) { run->nbrruns = 0; }
+inline void run_container_clear(run_container_t *run) { run->n_runs = 0; }
 
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
 inline bool run_container_is_full(run_container_t *run) {
     rle16_t vl = run->valueslength[0];
-    return (run->nbrruns == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
+    return (run->n_runs == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
