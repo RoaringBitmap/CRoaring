@@ -11,8 +11,8 @@
 
 #include "run.h"
 
-extern bool run_container_is_full(run_container_t *run);
-extern bool run_container_nonzero_cardinality(run_container_t *r);
+extern bool run_container_is_full(const run_container_t *run);
+extern bool run_container_nonzero_cardinality(const run_container_t *r);
 extern void run_container_clear(run_container_t *run);
 
 enum { DEFAULT_INIT_SIZE = 4 };
@@ -38,7 +38,7 @@ run_container_t *run_container_create() {
     return run_container_create_given_capacity(DEFAULT_INIT_SIZE);
 }
 
-run_container_t *run_container_clone(run_container_t *src) {
+run_container_t *run_container_clone(const run_container_t *src) {
     run_container_t *run = run_container_create_given_capacity(src->capacity);
     if (run == NULL) return NULL;
     run->capacity = src->capacity;
@@ -128,13 +128,13 @@ static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 }
 
 /* copy one container into another */
-void run_container_copy(run_container_t *source, run_container_t *dest) {
-    if (source->n_runs < dest->capacity) {
-        increaseCapacity(dest, source->n_runs, false);
+void run_container_copy(const run_container_t *src, run_container_t *dst) {
+    const int32_t n_runs = src->n_runs;
+    if (src->n_runs < dst->capacity) {
+        increaseCapacity(dst, src->n_runs, false);
     }
-    dest->n_runs = source->n_runs;
-    memcpy(dest->valueslength, source->valueslength,
-           2 * sizeof(uint16_t) * source->n_runs);
+    dst->n_runs = n_runs;
+    memcpy(dst->valueslength, src->valueslength, 2 * sizeof(uint16_t) * n_runs);
 }
 
 #ifdef RUNBRANCHLESSBINSEARCH
@@ -288,8 +288,8 @@ bool run_container_contains(const run_container_t *run, uint16_t pos) {
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_union(run_container_t *src_1, run_container_t *src_2,
-                         run_container_t *dst) {
+void run_container_union(const run_container_t *src_1,
+                         const run_container_t *src_2, run_container_t *dst) {
     // TODO: this could be a lot more efficient
 
     // we start out with inexpensive checks
@@ -334,7 +334,8 @@ void run_container_union(run_container_t *src_1, run_container_t *src_2,
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-void run_container_intersection(run_container_t *src_1, run_container_t *src_2,
+void run_container_intersection(const run_container_t *src_1,
+                                const run_container_t *src_2,
                                 run_container_t *dst) {
     // TODO: this could be a lot more efficient, could use SIMD optimizations
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;

@@ -39,7 +39,7 @@ run_container_t *run_container_create();
 void run_container_free(run_container_t *run);
 
 /* Duplicate container */
-run_container_t *run_container_clone(run_container_t *src);
+run_container_t *run_container_clone(const run_container_t *src);
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos);
@@ -54,31 +54,32 @@ bool run_container_contains(const run_container_t *run, uint16_t pos);
 int run_container_cardinality(const run_container_t *run);
 
 /* Card > 0? */
-inline bool run_container_nonzero_cardinality(run_container_t *r) {
-    return r->n_runs > 0;  // runs never empty
+inline bool run_container_nonzero_cardinality(const run_container_t *run) {
+    return run->n_runs > 0;  // runs never empty
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void run_container_copy(run_container_t *source, run_container_t *dest);
+void run_container_copy(const run_container_t *src, run_container_t *dst);
 
 /* Set the cardinality to zero (does not release memory). */
 inline void run_container_clear(run_container_t *run) { run->n_runs = 0; }
 
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
-inline bool run_container_is_full(run_container_t *run) {
+inline bool run_container_is_full(const run_container_t *run) {
     rle16_t vl = run->valueslength[0];
     return (run->n_runs == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_union(run_container_t *src_1, run_container_t *src_2,
-                         run_container_t *dst);
+void run_container_union(const run_container_t *src_1,
+                         const run_container_t *src_2, run_container_t *dst);
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-void run_container_intersection(run_container_t *src_1, run_container_t *src_2,
+void run_container_intersection(const run_container_t *src_1,
+                                const run_container_t *src_2,
                                 run_container_t *dst);
 
 /*
