@@ -56,12 +56,16 @@ void run_container_free(run_container_t *run) {
 
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run) {
-    int card = run->n_runs;
-    rle16_t *runs = run->runs;
-    for (int k = 0; k < run->n_runs; ++k) {
-        card += runs[k].length;  // TODO: this is begging for vectorization
+    const int32_t n_runs = run->n_runs;
+    const rle16_t *runs = run->runs;
+
+    /* by initializing with n_runs, we omit counting the +1 for each pair. */
+    int sum = n_runs;
+    for (size_t k = 0; k < n_runs; ++k) {
+        sum += runs[k].length;
     }
-    return card;
+
+    return sum;
 }
 
 // with some luck: sizeof(struct valuelength_s) = 2 *sizeof(uint16_t) = 4
