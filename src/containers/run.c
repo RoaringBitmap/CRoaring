@@ -24,7 +24,7 @@ static run_container_t *run_container_create_given_capacity(int32_t size) {
     if ((run = malloc(sizeof(run_container_t))) == NULL) {
         return NULL;
     }
-    if ((run->valueslength = malloc(sizeof(valuelength_t) * size)) == NULL) {
+    if ((run->valueslength = malloc(sizeof(rle16_t) * size)) == NULL) {
         free(run);
         return NULL;
     }
@@ -44,7 +44,7 @@ run_container_t *run_container_clone(run_container_t *src) {
     run->capacity = src->capacity;
     run->nbrruns = src->nbrruns;
     memcpy(run->valueslength, src->valueslength,
-           src->nbrruns * sizeof(valuelength_t));
+           src->nbrruns * sizeof(rle16_t));
     return run;
 }
 
@@ -58,7 +58,7 @@ void run_container_free(run_container_t *run) {
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run) {
     int card = run->nbrruns;
-    valuelength_t *valueslength = run->valueslength;
+    rle16_t *valueslength = run->valueslength;
     for (int k = 0; k < run->nbrruns; ++k) {
         card +=
             valueslength[k].length;  // TODO: this is begging for vectorization
@@ -67,13 +67,12 @@ int run_container_cardinality(const run_container_t *run) {
 }
 
 // with some luck: sizeof(struct valuelength_s) = 2 *sizeof(uint16_t) = 4
-_Static_assert(sizeof(valuelength_t) == 2 * sizeof(uint16_t),
+_Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
                "Bad struct size");  // part of C standard
 
 // TODO: could be more efficient
-static void smartAppend(
-    run_container_t *run,
-    valuelength_t vl) {  // uint16_t start, uint16_t length) {
+static void smartAppend(run_container_t *run,
+                        rle16_t vl) {  // uint16_t start, uint16_t length) {
     int32_t oldend;
     // todo: next line is maybe unsafe when nbrruns == 0 in the sense where we
     // might access memory out of bounds (crash prone?)
@@ -103,10 +102,10 @@ static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
     run->capacity = newCapacity;
     if (copy)
         run->valueslength =
-            realloc(run->valueslength, run->capacity * sizeof(valuelength_t));
+            realloc(run->valueslength, run->capacity * sizeof(rle16_t));
     else {
         free(run->valueslength);
-        run->valueslength = malloc(run->capacity * sizeof(valuelength_t));
+        run->valueslength = malloc(run->capacity * sizeof(rle16_t));
     }
     // TODO: handle the case where realloc fails
     if (run->valueslength == NULL) {
@@ -119,13 +118,13 @@ static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
     if (run->nbrruns + 1 > run->capacity)
         increaseCapacity(run, run->nbrruns + 1, true);
     memmove(run->valueslength + 1 + index, run->valueslength + index,
-            (run->nbrruns - index) * sizeof(valuelength_t));
+            (run->nbrruns - index) * sizeof(rle16_t));
     run->nbrruns++;
 }
 
 static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
     memmove(run->valueslength + index, run->valueslength + (1 + index),
-            (run->nbrruns - index - 1) * sizeof(valuelength_t));
+            (run->nbrruns - index - 1) * sizeof(rle16_t));
     run->nbrruns--;
 }
 
@@ -148,9 +147,9 @@ void run_container_copy(run_container_t *source, run_container_t *dest) {
 */
 // could potentially use SIMD-based bin. search
 // values are interleaved with lengths
-static int32_t interleavedBinarySearch(const valuelength_t *source, int32_t n,
+static int32_t interleavedBinarySearch(const rle16_t *source, int32_t n,
                                        uint16_t target) {
-    const valuelength_t *base = source;
+    const rle16_t *base = source;
     if (n == 0) return -1;
     if (target > source[n - 1].value)
         return -n - 1;  // without this, buffer overrun
@@ -164,8 +163,8 @@ static int32_t interleavedBinarySearch(const valuelength_t *source, int32_t n,
 }
 #else
 // good old bin. search
-static int32_t interleavedBinarySearch(const valuelength_t *array,
-                                       int32_t lenarray, uint16_t ikey) {
+static int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
+                                       uint16_t ikey) {
     int32_t low = 0;
     int32_t high = lenarray - 1;
     while (low <= high) {

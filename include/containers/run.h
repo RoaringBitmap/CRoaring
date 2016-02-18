@@ -9,23 +9,25 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct valuelength_s {
-    uint16_t value;   // start value of the run
-    uint16_t length;  // length+1 is the length of the run
+/* struct rle16_s - run length pair
+ *
+ * @value:  start position of the run
+ * @length: length of the run is `length + 1`
+ *
+ * An RLE pair {v, l} would represent the integers between the interval
+ * [v, v+l+1], e.g. {3, 2} = [3, 4, 5].
+ */
+struct rle16_s {
+    uint16_t value;
+    uint16_t length;
 };
 
-typedef struct valuelength_s valuelength_t;
+typedef struct rle16_s rle16_t;
 
 struct run_container_s {
-    int32_t nbrruns;   // how many runs, this number should fit in 16 bits.
-    int32_t capacity;  // how many runs we could store in valueslength, should
-                       // be no smaller than nbrruns.
-    valuelength_t *valueslength;  // we interleave values and lengths, so
-    // that if you have the values 11,12,13,14,15, you store that as 11,4 where
-    // 4 means that beyond 11 itself, there are
-    // 4 contiguous values that follows.
-    // Other example: e.g., 1, 10, 20,0, 31,2 would be a concise representation
-    // of  1, 2, ..., 11, 20, 31, 32, 33
+    int32_t nbrruns;
+    int32_t capacity;
+    rle16_t *valueslength;
 };
 
 typedef struct run_container_s run_container_t;
@@ -65,7 +67,7 @@ inline void run_container_clear(run_container_t *run) { run->nbrruns = 0; }
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
 inline bool run_container_is_full(run_container_t *run) {
-    valuelength_t vl = run->valueslength[0];
+    rle16_t vl = run->valueslength[0];
     return (run->nbrruns == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
 
