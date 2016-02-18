@@ -116,6 +116,9 @@ static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
     }
 }
 static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
+    /* This function calls realloc + memmove sequentially to move by one index.
+     * Potentially copying twice the array.
+     */
     if (run->n_runs + 1 > run->capacity)
         increaseCapacity(run, run->n_runs + 1, true);
     memmove(run->runs + 1 + index, run->runs + index,
