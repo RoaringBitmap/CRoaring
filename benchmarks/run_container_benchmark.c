@@ -19,7 +19,7 @@ void run_cache_flush(run_container_t* B) {
         computecacheline();  // 64 bytes per cache line
     for (int32_t k = 0; k < B->n_runs * 2;
          k += CACHELINESIZE / sizeof(uint16_t)) {
-        __builtin_ia32_clflush(B->valueslength + k);
+        __builtin_ia32_clflush(B->runs + k);
     }
 }
 
@@ -29,7 +29,7 @@ void run_cache_prefetch(run_container_t* B) {
         computecacheline();  // 64 bytes per cache line
     for (int32_t k = 0; k < B->n_runs * 2;
          k += CACHELINESIZE / sizeof(uint16_t)) {
-        __builtin_prefetch(B->valueslength + k);
+        __builtin_prefetch(B->runs + k);
     }
 }
 

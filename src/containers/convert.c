@@ -12,7 +12,7 @@ bitset_container_t *bitset_container_from_run(run_container_t *arr) {
     int card = run_container_cardinality(arr);
     bitset_container_t *answer = bitset_container_create();
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
-        rle16_t vl = arr->valueslength[rlepos];
+        rle16_t vl = arr->runs[rlepos];
         bitset_set_range(answer->array, vl.value, vl.value + vl.length + 1);
     }
     answer->cardinality = card;

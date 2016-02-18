@@ -24,10 +24,17 @@ struct rle16_s {
 
 typedef struct rle16_s rle16_t;
 
+/* struct run_container_s - run container bitmap
+ *
+ * @n_runs:   number of rle_t pairs in `runs`.
+ * @capacity: capacity in rle_t pairs `runs` can hold.
+ * @runs:     pairs of rle_t.
+ *
+ */
 struct run_container_s {
     int32_t n_runs;
     int32_t capacity;
-    rle16_t *valueslength;
+    rle16_t *runs;
 };
 
 typedef struct run_container_s run_container_t;
@@ -67,7 +74,7 @@ inline void run_container_clear(run_container_t *run) { run->n_runs = 0; }
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
 inline bool run_container_is_full(const run_container_t *run) {
-    rle16_t vl = run->valueslength[0];
+    rle16_t vl = run->runs[0];
     return (run->n_runs == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
 
