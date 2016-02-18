@@ -134,7 +134,7 @@ void run_container_copy(const run_container_t *src, run_container_t *dst) {
         increaseCapacity(dst, n_runs, false);
     }
     dst->n_runs = n_runs;
-    memcpy(dst->valueslength, src->valueslength, 2 * sizeof(uint16_t) * n_runs);
+    memcpy(dst->valueslength, src->valueslength, sizeof(rle16_t) * n_runs);
 }
 
 #ifdef RUNBRANCHLESSBINSEARCH
