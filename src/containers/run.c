@@ -130,8 +130,8 @@ static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 /* copy one container into another */
 void run_container_copy(const run_container_t *src, run_container_t *dst) {
     const int32_t n_runs = src->n_runs;
-    if (src->n_runs < dst->capacity) {
-        increaseCapacity(dst, src->n_runs, false);
+    if (src->n_runs > dst->capacity) {
+        increaseCapacity(dst, n_runs, false);
     }
     dst->n_runs = n_runs;
     memcpy(dst->valueslength, src->valueslength, 2 * sizeof(uint16_t) * n_runs);
