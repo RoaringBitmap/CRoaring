@@ -5,6 +5,9 @@ extern char * get_container_name(uint8_t typecode);
 
 extern int container_get_cardinality(void *container, uint8_t typecode);
 
+extern void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
+        uint8_t *result_type);
+
 void container_printf(void *container, uint8_t typecode) {
   switch (typecode) {
   case BITSET_CONTAINER_TYPE_CODE:
