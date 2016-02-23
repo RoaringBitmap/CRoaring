@@ -336,8 +336,6 @@ void array_container_intersection(const array_container_t *array1,
     	out->cardinality = intersect_skewed_uint16(
             array1->array, card_1, array2->array, card_2, out->array);
     } else if (card_2 * THRESHOLD < card_1) {
-    	printf("skew21\n");
-
     	out->cardinality = intersect_skewed_uint16(
             array2->array, card_2, array1->array, card_1, out->array);
     } else {
