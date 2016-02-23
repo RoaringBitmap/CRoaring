@@ -200,6 +200,7 @@ int main(int argc, char **argv) {
             if(c1 + c2 != co + ci) {
             	printf(KRED "cardinalities are wrong somehow\n");
             }
+            printf("\n");
     }
 
     // then mangle them with inplace

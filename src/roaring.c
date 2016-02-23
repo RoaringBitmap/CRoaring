@@ -228,7 +228,7 @@ roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2) 
 				ra_append(answer->high_low_container, s1, c,
 						container_result_type);
 			} else {
-                                 container_free(c,container_result_type); // otherwise:memory leak!
+                                container_free(c,container_result_type); // otherwise:memory leak!
 			}
 			++pos1;
 			++pos2;
@@ -240,6 +240,7 @@ roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2) 
 		} else if (s1 < s2) { // s1 < s2
 			void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
 					&container_type_1);
+			c1 = container_clone(c1,container_type_1); // creating a copy since we do not have COW support
 			ra_append(answer->high_low_container, s1, c1,
 					container_type_1);
 			pos1++;
@@ -249,6 +250,7 @@ roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2) 
 		} else { // s1 > s2
 			void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
 					&container_type_2);
+			c2 = container_clone(c2,container_type_2); // creating a copy since we do not have COW support
 			ra_append(answer->high_low_container, s2, c2,
 					container_type_2);
 			pos2++;

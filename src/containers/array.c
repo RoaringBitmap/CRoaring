@@ -192,17 +192,21 @@ static size_t union_uint16(const uint16_t *set_1, size_t size_1,
     while (true) {
         if (val_1 < val_2) {
             buffer[pos++] = val_1;
-            val_1 = set_1[++idx_1];
+            ++idx_1;
             if (idx_1 >= size_1) break;
+            val_1 = set_1[idx_1];
         } else if (val_2 < val_1) {
             buffer[pos++] = val_2;
-            val_2 = set_2[++idx_2];
+            ++idx_2;
             if (idx_2 >= size_2) break;
+            val_2 = set_2[idx_2];
         } else {
             buffer[pos++] = val_1;
-            val_1 = set_1[++idx_1];
-            val_2 = set_2[++idx_2];
+            ++idx_1;
+            ++idx_2;
             if (idx_1 >= size_1 || idx_2 >= size_2) break;
+            val_1 = set_1[idx_1];
+            val_2 = set_2[idx_2];
         }
     }
 
