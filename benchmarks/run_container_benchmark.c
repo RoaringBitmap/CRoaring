@@ -16,19 +16,18 @@ enum{TESTSIZE=2048};
 // flushes the array from cache
 void run_cache_flush(run_container_t* B) {
 	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
-	for(int32_t  k = 0; k < B->nbrruns * 2; k +=  CACHELINESIZE/ (int32_t) sizeof(uint16_t)) {
-		__builtin_ia32_clflush(B->valueslength + k);
+	for(int32_t  k = 0; k < B->n_runs * 2; k +=  CACHELINESIZE/ (int32_t) sizeof(uint16_t)) {
+		__builtin_ia32_clflush(B->runs + k);
 	}
 }
 
 // tries to put array in cache
 void run_cache_prefetch(run_container_t* B) {
 	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
-	for(int32_t  k = 0; k < B->nbrruns * 2; k +=   CACHELINESIZE/(int32_t) sizeof(uint16_t)) {
-		__builtin_prefetch(B->valueslength + k);
+	for(int32_t  k = 0; k < B->n_runs * 2; k +=   CACHELINESIZE/(int32_t) sizeof(uint16_t)) {
+		__builtin_prefetch(B->runs + k);
 	}
 }
-
 
 int add_test(run_container_t* B) {
     int x;
@@ -60,7 +59,8 @@ int union_test(run_container_t* B1, run_container_t* B2, run_container_t* BO) {
 	return run_container_cardinality(BO);
 }
 
-int intersection_test(run_container_t* B1, run_container_t* B2, run_container_t* BO) {
+int intersection_test(run_container_t* B1, run_container_t* B2,
+                      run_container_t* BO) {
 	run_container_intersection(B1, B2, BO);
 	return run_container_cardinality(BO);
 }
@@ -85,13 +85,16 @@ int main() {
         }
         size_t nbrtestvalues = 1024;
         uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
-        printf("\n number of values in container = %d\n",run_container_cardinality(Bt));
+        printf("\n number of values in container = %d\n",
+               run_container_cardinality(Bt));
     	int card = run_container_cardinality(Bt);
     	uint32_t *out = malloc(sizeof(uint32_t) * (unsigned long) card);
         BEST_TIME(run_container_to_uint32_array(out,Bt,1234), card, repeat, card);
     	free(out);
-        BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_prefetch, testvalues, nbrtestvalues);        \
-        BEST_TIME_PRE_ARRAY(Bt,run_container_contains, run_cache_flush, testvalues, nbrtestvalues);        \
+        BEST_TIME_PRE_ARRAY(Bt, run_container_contains, run_cache_prefetch,
+                            testvalues, nbrtestvalues);
+        BEST_TIME_PRE_ARRAY(Bt, run_container_contains, run_cache_flush,
+                            testvalues, nbrtestvalues);
         free(testvalues);
         run_container_free(Bt);
     }
@@ -105,23 +108,28 @@ int main() {
     for (int x = 0; x < 1 << 16; x += 5) {
         run_container_add(B2, (uint16_t)x);
     }
-    int32_t inputsize = run_container_cardinality(B1) + run_container_cardinality(B2);
+    int32_t inputsize =
+        run_container_cardinality(B1) + run_container_cardinality(B2);
     run_container_t* BO = run_container_create();
     printf("\nUnion and intersections...\n");
     printf("\nNote:\n");
-    printf("union times are expressed in cycles per number of input elements (both runs)\n");
-    printf("intersection times are expressed in cycles per number of output elements\n\n");
+    printf(
+        "union times are expressed in cycles per number of input elements "
+        "(both runs)\n");
+    printf(
+        "intersection times are expressed in cycles per number of output "
+        "elements\n\n");
     printf("==intersection and union test 1 \n");
-    printf("input 1 cardinality = %d, input 2 cardinality = %d \n",run_container_cardinality(B1),run_container_cardinality(B2));
+    printf("input 1 cardinality = %d, input 2 cardinality = %d \n",
+           run_container_cardinality(B1), run_container_cardinality(B2));
     answer = union_test(B1, B2, BO);
     printf("union cardinality = %d \n",answer);
-    printf("B1 card = %d B2 card = %d \n",run_container_cardinality(B1),run_container_cardinality(B2));
-    BEST_TIME(union_test(B1, B2, BO), answer, repeat,
-    		inputsize);
+    printf("B1 card = %d B2 card = %d \n", run_container_cardinality(B1),
+           run_container_cardinality(B2));
+    BEST_TIME(union_test(B1, B2, BO), answer, repeat, inputsize);
     answer = intersection_test(B1, B2, BO);
     printf("intersection cardinality = %d \n",answer);
-    BEST_TIME(intersection_test(B1, B2, BO), answer, repeat,
-    		answer);
+    BEST_TIME(intersection_test(B1, B2, BO), answer, repeat, answer);
     printf("==intersection and union test 2 \n");
     run_container_clear(B1);
     run_container_clear(B2);
@@ -131,16 +139,16 @@ int main() {
     for (int x = 1; x < 1 << 16; x += x) {
     	run_container_add(B2, (uint16_t)x);
     }
-    printf("input 1 cardinality = %d, input 2 cardinality = %d \n",run_container_cardinality(B1),run_container_cardinality(B2));
+    printf("input 1 cardinality = %d, input 2 cardinality = %d \n",
+           run_container_cardinality(B1), run_container_cardinality(B2));
     answer = union_test(B1, B2, BO);
     printf("union cardinality = %d \n",answer);
-    printf("B1 card = %d B2 card = %d \n",run_container_cardinality(B1),run_container_cardinality(B2));
-    BEST_TIME(union_test(B1, B2, BO), answer, repeat,
-    		inputsize);
+    printf("B1 card = %d B2 card = %d \n", run_container_cardinality(B1),
+           run_container_cardinality(B2));
+    BEST_TIME(union_test(B1, B2, BO), answer, repeat, inputsize);
     answer = intersection_test(B1, B2, BO);
     printf("intersection cardinality = %d \n",answer);
-    BEST_TIME(intersection_test(B1, B2, BO), answer, repeat,
-    		answer);
+    BEST_TIME(intersection_test(B1, B2, BO), answer, repeat, answer);
 
     run_container_free(B1);
     run_container_free(B2);

@@ -10,7 +10,6 @@
 #include "run.h"
 #include "convert.h"
 
-
 // don't use an enum: needs constant folding
 // should revisit
 
@@ -34,7 +33,6 @@ inline char * get_container_name(uint8_t typecode) {
         return "unknown";
 }
 
-
 /**
  * Get the container cardinality (number of elements), requires a  typecode
  */
@@ -55,13 +53,12 @@ inline int container_get_cardinality(void *container, uint8_t typecode) {
  */
 void container_printf(void *container, uint8_t typecode);
 
-
 /**
- * print the content of the container as a comma-separated list of 32-bit values starting at base, requires a  typecode
+ * print the content of the container as a comma-separated list of 32-bit values
+ * starting at base, requires a  typecode
  */
-void container_printf_as_uint32_array(void *container, uint8_t typecode, uint32_t base);
-
-
+void container_printf_as_uint32_array(void *container, uint8_t typecode,
+                                      uint32_t base);
 
 /**
  * Checks whether a container is not empty, requires a  typecode
@@ -78,23 +75,23 @@ inline bool container_nonzero_cardinality(void *container, uint8_t typecode) {
         return 0;//unreached
 }
 
-
-
 /**
  * Recover memory from a container, requires a  typecode
  */
 inline void container_free( void *container, uint8_t typecode) {
         switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-                bitset_container_free( (bitset_container_t *) container); break;
+            bitset_container_free((bitset_container_t *)container);
+            break;
         case ARRAY_CONTAINER_TYPE_CODE:
-                array_container_free(  (array_container_t *) container); break;
+            array_container_free((array_container_t *)container);
+            break;
         case RUN_CONTAINER_TYPE_CODE:
-                run_container_free( (run_container_t *) container); break;
+            run_container_free((run_container_t *)container);
+            break;
                 //  case UNINITIALIZED_TYPE_CODE: break;
         }
 }
-
 
 /**
  * Convert a container to an array of values, requires a  typecode as well as a "base" (most significant values)
@@ -110,27 +107,30 @@ inline int container_to_uint32_array( uint32_t *output, void *container, uint8_t
                 return run_container_to_uint32_array( output, container, base);
         }
         __builtin_unreachable();
-        //return 0; // unreached
+        return 0; // unreached
 }
 
 /**
- * Add a value to a container, requires a  typecode, fills in new_typecode and return (possibly different) container.
- * This function may allocate a new container, and caller is responsible for memory deallocation
+ * Add a value to a container, requires a  typecode, fills in new_typecode and
+ * return (possibly different) container.
+ * This function may allocate a new container, and caller is responsible for
+ * memory deallocation
  */
-inline void *container_add(  void *container, uint16_t val, uint8_t typecode, uint8_t *new_typecode) {
+inline void *container_add(void *container, uint16_t val, uint8_t typecode,
+                           uint8_t *new_typecode) {
         switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
                 bitset_container_set( (bitset_container_t *) container, val);
                 *new_typecode = BITSET_CONTAINER_TYPE_CODE;
                 return container;
-        case ARRAY_CONTAINER_TYPE_CODE: ;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
                 array_container_t *ac = (array_container_t *) container;
                 array_container_add(ac, val);
                 if (array_container_cardinality(ac)  > DEFAULT_MAX_SIZE) {
                         *new_typecode = BITSET_CONTAINER_TYPE_CODE;
                         return bitset_container_from_array(ac);
-                }
-                else {
+            } else {
                         *new_typecode = ARRAY_CONTAINER_TYPE_CODE;
                         return ac;
                 }
@@ -148,12 +148,15 @@ inline void *container_add(  void *container, uint16_t val, uint8_t typecode, ui
 /**
  * Check whether a value is in a container, requires a  typecode
  */
-inline bool container_contains(  void *container, uint16_t val, uint8_t typecode) {
+inline bool container_contains(void *container, uint16_t val,
+                               uint8_t typecode) {
         switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
                 return bitset_container_get( (bitset_container_t *) container, val);
-        case ARRAY_CONTAINER_TYPE_CODE: ;
-                return array_container_contains( (array_container_t *) container, val);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
+            return array_container_contains((array_container_t *)container,
+                                            val);
         case RUN_CONTAINER_TYPE_CODE:
                 return run_container_contains( (run_container_t *) container, val);
         default:
@@ -161,7 +164,6 @@ inline bool container_contains(  void *container, uint16_t val, uint8_t typecode
                 return NULL;
         }
 }
-
 
 /**
  * Copies a container, requires a typecode. This allocates new memory, caller
@@ -180,7 +182,6 @@ inline void *container_clone(void *container, uint8_t typecode) {
                 return NULL;
         }
 }
-
 
 #if 0
 // TODO enable and debug this equality stuff
@@ -210,9 +211,9 @@ inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t type2) {
 
 // macro-izations possibilities for generic non-inplace binary-op dispatch
 
-
 /**
- * Compute intersection between two containers, generate a new container (having type result_type), requires a typecode. This allocates new memory, caller
+ * Compute intersection between two containers, generate a new container (having
+ * type result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
 inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
@@ -221,12 +222,12 @@ inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
 	switch (type1 * 4 + type2) {
 	case (BITSET_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE):
 		result = bitset_container_create();
-
 		int result_card = bitset_container_and(c1, c2, result);
 		if (result_card <= DEFAULT_MAX_SIZE) {
 			// temp temp, container conversion?? Better not here!
 			*result_type = ARRAY_CONTAINER_TYPE_CODE;
-			return (void *) array_container_from_bitset(result); // assume it recycles memory as necessary
+                return (void *)array_container_from_bitset(
+                    result);  // assume it recycles memory as necessary
 		}
 		*result_type = BITSET_CONTAINER_TYPE_CODE;
 		return result;
@@ -313,7 +314,8 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
 }
 
 /**
- * Compute union between two containers, generate a new container (having type result_type), requires a typecode. This allocates new memory, caller
+ * Compute union between two containers, generate a new container (having type
+ * result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
 inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,

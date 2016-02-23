@@ -8,17 +8,15 @@
 bitset_container_t *bitset_container_from_array( array_container_t *a) {
   bitset_container_t *ans = bitset_container_create();
   int limit = array_container_cardinality(a);
-  for (int i=0; i < limit; ++i)
-    bitset_container_set( ans, a->array[i]);
+    for (int i = 0; i < limit; ++i) bitset_container_set(ans, a->array[i]);
   return ans;
 }
-
 
 bitset_container_t *bitset_container_from_run( run_container_t *arr) {
     int card = run_container_cardinality(arr);
     bitset_container_t *answer = bitset_container_create();
-    for (int rlepos=0; rlepos < arr->nbrruns; ++rlepos) {
-        valuelength_t vl = arr->valueslength[rlepos];
+    for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
+        rle16_t vl = arr->runs[rlepos];
     	bitset_set_range(answer->array, vl.value, vl.value + vl.length + 1);
     }
     answer->cardinality = card;
@@ -26,7 +24,8 @@ bitset_container_t *bitset_container_from_run( run_container_t *arr) {
 }
 
 array_container_t *array_container_from_bitset( bitset_container_t *bits) {
-  array_container_t *result = array_container_create_given_capacity(bits->cardinality);
+    array_container_t *result =
+        array_container_create_given_capacity(bits->cardinality);
   result->cardinality = bits->cardinality;
   int outpos = 0;
   uint16_t * out = result->array;
@@ -54,9 +53,9 @@ void *convert_to_bitset_or_array_container( run_container_t *r, int32_t card, ui
       array_container_t *answer = array_container_create_given_capacity(card);
       answer->cardinality=0;
       
-      for (int rlepos=0; rlepos < r->nbrruns; ++rlepos) {
-        uint16_t run_start = r->valueslength[rlepos].value;
-        uint16_t  run_end = run_start + r->valueslength[rlepos].length;
+      for (int rlepos=0; rlepos < r->n_runs; ++rlepos) {
+        uint16_t run_start = r->runs[rlepos].value;
+        uint16_t  run_end = run_start + r->runs[rlepos].length;
 
         //printf("run [%d %d]\n",(int) run_start, (int) run_end);
 
@@ -70,9 +69,9 @@ void *convert_to_bitset_or_array_container( run_container_t *r, int32_t card, ui
       return answer;
     }
     bitset_container_t *answer = bitset_container_create();
-    for (int rlepos=0; rlepos < r->nbrruns; ++rlepos) {
-      uint16_t run_start = r->valueslength[rlepos].value;
-      uint16_t  run_end = run_start + r->valueslength[rlepos].length;
+    for (int rlepos=0; rlepos < r->n_runs; ++rlepos) {
+      uint16_t run_start = r->runs[rlepos].value;
+      uint16_t  run_end = run_start + r->runs[rlepos].length;
       bitset_set_range(answer->array, run_start, run_end+1); 
     }
     answer->cardinality = card;
@@ -83,9 +82,9 @@ void *convert_to_bitset_or_array_container( run_container_t *r, int32_t card, ui
 
 /* assumes that container has adequate space.  Run from [s,e] (inclusive) */
 static void add_run(run_container_t *r, int s, int e) {
-  r->valueslength[r->nbrruns].value = s;
-  r->valueslength[r->nbrruns].length = e-s;
-  r->nbrruns++;
+  r->runs[r->n_runs].value = s;
+  r->runs[r->n_runs].length = e-s;
+  r->n_runs++;
 }
 
 
@@ -93,7 +92,7 @@ static void add_run(run_container_t *r, int s, int e) {
 /* If a conversion occurs, the original containers is freed and a new one allocated */
 
 void *convert_run_to_efficient_container(run_container_t *c, uint8_t *typecode_after) {
-    int32_t size_as_run_container = run_container_serialized_size_in_bytes(c->nbrruns);
+    int32_t size_as_run_container = run_container_serialized_size_in_bytes(c->n_runs);
     int32_t size_as_bitset_container = bitset_container_serialized_size_in_bytes();
     int32_t card = run_container_cardinality(c);
     int32_t size_as_array_container = array_container_serialized_size_in_bytes(card);
@@ -107,9 +106,9 @@ void *convert_run_to_efficient_container(run_container_t *c, uint8_t *typecode_a
       // to array
       array_container_t *answer = array_container_create(card);
       answer->cardinality=0;
-      for (int rlepos=0; rlepos < c->nbrruns; ++rlepos) {
-        int run_start = c->valueslength[rlepos].value;
-        int run_end = run_start + c->valueslength[rlepos].length;
+      for (int rlepos=0; rlepos < c->n_runs; ++rlepos) {
+        int run_start = c->runs[rlepos].value;
+        int run_end = run_start + c->runs[rlepos].length;
          
         for (int run_value = run_start; run_value <= run_end; ++run_value) {
           answer->array[answer->cardinality++] = (uint16_t) run_value;
@@ -122,9 +121,9 @@ void *convert_run_to_efficient_container(run_container_t *c, uint8_t *typecode_a
     // else to bitset
     bitset_container_t *answer = bitset_container_create();
 
-    for (int rlepos=0; rlepos < c->nbrruns; ++rlepos) {
-      int start = c->valueslength[rlepos].value;
-      int end =  start + c->valueslength[rlepos].length;
+    for (int rlepos=0; rlepos < c->n_runs; ++rlepos) {
+      int start = c->runs[rlepos].value;
+      int end =  start + c->runs[rlepos].length;
       bitset_container_set_range(answer, start, end+1);
     }
     answer->cardinality = card;
@@ -229,6 +228,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode
       run_count++;
       cur_word = cur_word_with_1s & (cur_word_with_1s + 1);
     }
+    return answer;
   }
 }
 
