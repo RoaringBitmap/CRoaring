@@ -198,10 +198,10 @@ void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode
     uint64_t cur_word = c_qua_bitset->array[0];  
     int run_count=0;
     while (true) {
-      while (cur_word == 0L && long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS-1)
+      while (cur_word == UINT64_C(0) && long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS-1)
         cur_word = c_qua_bitset->array[ ++long_ctr];
      
-      if (cur_word == 0L) {
+      if (cur_word == UINT64_C(0)) {
         bitset_container_free(c);
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         return answer;
@@ -209,13 +209,13 @@ void *convert_run_optimize(void *c, uint8_t typecode_original, uint8_t *typecode
      
       int local_run_start = __builtin_ctzl(cur_word);
       int run_start = local_run_start   + 64*long_ctr;
-      long cur_word_with_1s = cur_word | (cur_word - 1);
+      uint64_t cur_word_with_1s = cur_word | (cur_word - 1);
      
       int run_end = 0;
-      while (cur_word_with_1s == -1L && long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS-1)
+      while (cur_word_with_1s == UINT64_C(-1) && long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS-1)
         cur_word_with_1s = c_qua_bitset->array[++long_ctr];
      
-      if (cur_word_with_1s == -1L) {
+      if (cur_word_with_1s == UINT64_C(-1) {
         run_end = 64 + long_ctr*64; // exclusive, I guess
         add_run(answer, run_start, run_end-1); 
         bitset_container_free(c);
