@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
             uint32_t co = roaring_bitmap_get_cardinality(tempor);
             printf("OR number %d has card %d\n",i,(int) co);
             roaring_bitmap_free(tempor);
-        	printf("set1 has card %d, set2 has card %d, intersection is %d, union is %d\n",(int)c1,(int)c2,(int)ci,(int)co);
+            printf("set1 has card %d, set2 has card %d, intersection is %d, union is %d\n",(int)c1,(int)c2,(int)ci,(int)co);
 
             if(c1 + c2 != co + ci) {
             	printf(KRED "cardinalities are wrong somehow\n");
@@ -204,8 +204,14 @@ int main(int argc, char **argv) {
 
     // then mangle them with inplace
     for (int i=0; i < (int) count-1; i+=2) {
-            roaring_bitmap_and_inplace( bitmaps[i], bitmaps[i+1]);
-            printf("inplace AND number %d has card %d\n",i,(int) roaring_bitmap_get_cardinality(bitmaps[i]));
+            roaring_bitmap_t * CI = roaring_bitmap_copy(bitmaps[i]); // to test the inplace version we create a copy
+            roaring_bitmap_and_inplace(CI , bitmaps[i+1]);
+            uint32_t ci = roaring_bitmap_get_cardinality(CI);
+            printf("inplace AND number %d has card %d\n",i,(int) ci);
+            roaring_bitmap_t *tempand = roaring_bitmap_and( bitmaps[i], bitmaps[i+1]);
+            if(ci != roaring_bitmap_get_cardinality(tempand)) {
+                printf(KRED " there is a problem with in-place intersections\n");
+            }
     }
 
 
