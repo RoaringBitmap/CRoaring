@@ -266,6 +266,7 @@ int test_conversion_to_int_array_with_runoptimize(){
                         ans[ans_ctr++]=i;
                 }
         }
+        roaring_bitmap_free(r1);
 
         r1 = make_roaring_from_array(ans, ans_ctr);
         bool b = roaring_bitmap_run_optimize(r1);
