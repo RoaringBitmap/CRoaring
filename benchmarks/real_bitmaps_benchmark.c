@@ -195,11 +195,12 @@ int main(int argc, char **argv) {
             uint32_t co = roaring_bitmap_get_cardinality(tempor);
             printf("OR number %d has card %d\n",i,(int) co);
             roaring_bitmap_free(tempor);
-        	printf("set1 has card %d, set2 has card %d, intersection is %d, union is %d\n",(int)c1,(int)c2,(int)ci,(int)co);
+            printf("set1 has card %d, set2 has card %d, intersection is %d, union is %d\n",(int)c1,(int)c2,(int)ci,(int)co);
 
             if(c1 + c2 != co + ci) {
             	printf(KRED "cardinalities are wrong somehow\n");
             }
+            printf("\n");
     }
 
     // then mangle them with inplace
