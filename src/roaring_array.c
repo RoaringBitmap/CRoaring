@@ -72,8 +72,22 @@ roaring_array_t * ra_copy(roaring_array_t *r) {
 	  int32_t s = r->size;
 	  new_ra->size = s;
 	  memcpy(new_ra->keys,r->keys,s * sizeof(uint16_t));
-	  memcpy(new_ra->containers,r->containers,s * sizeof(void *));
+	  // next line would be a shallow copy, but we need better...
+	  //memcpy(new_ra->containers,r->containers,s * sizeof(void *));
 	  memcpy(new_ra->typecodes,r->typecodes,s * sizeof(uint8_t));
+	  for(int32_t i = 0; i < s; i++) {
+		  new_ra->containers[i] = container_clone(r->containers[i],r->typecodes[i]);
+		  if(new_ra->containers[i] == NULL) {
+			  for(int32_t j = 0; j < i; j++) {
+				  container_free(r->containers[j],r->typecodes[j]);
+			  }
+			  free(new_ra);
+			  free(new_ra->keys);
+			  free(new_ra->containers);
+			  free(new_ra->typecodes);
+		      return NULL;
+		  }
+	  }
 	  return new_ra;
 }
 
