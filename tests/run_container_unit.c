@@ -246,7 +246,7 @@ int to_uint32_array_test() {
         free(out);
         run_container_free(B);
     }
-    return 0;
+    return 1;
 }
 
 int main() {
