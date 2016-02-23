@@ -126,6 +126,8 @@ int main() {
     BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
     BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat,
               BITSET_CONTAINER_SIZE_IN_WORDS);
-
+    bitset_container_free(BO);
+    bitset_container_free(B1);
+    bitset_container_free(B2);
     return 0;
 }

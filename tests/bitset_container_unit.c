@@ -131,6 +131,10 @@ int and_or_test() {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
 	}
+        bitset_container_free(B1);
+        bitset_container_free(B2);
+        bitset_container_free(BI);
+        bitset_container_free(BO);
 	return 1;
 }
 
@@ -168,6 +172,9 @@ int xor_test() {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
 	}
+        bitset_container_free(B1);
+        bitset_container_free(B2);
+        bitset_container_free(BI);
 	return 1;
 }
 
@@ -204,6 +211,9 @@ int andnot_test() {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
 	}
+        bitset_container_free(B1);
+        bitset_container_free(B2);
+        bitset_container_free(BI);
 	return 1;
 }
 

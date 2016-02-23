@@ -218,6 +218,10 @@ int and_or_test() {
 	    printf("Bug %s, line %d \n", __FILE__, __LINE__);
 	    return 0;
 	}
+        array_container_free(B1);
+        array_container_free(B2);
+        array_container_free(BI);
+        array_container_free(BO);
 	return 1;
 }
 
