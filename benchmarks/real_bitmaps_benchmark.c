@@ -202,6 +202,7 @@ int main(int argc, char **argv) {
             }
             printf("\n");
     }
+    printf("\n Trying in-place computations \n ========= \n");
 
     // then mangle them with inplace
     for (int i=0; i < (int) count-1; i+=2) {
@@ -213,6 +214,10 @@ int main(int argc, char **argv) {
             if(ci != roaring_bitmap_get_cardinality(tempand)) {
                 printf(KRED " there is a problem with in-place intersections\n");
             }
+            roaring_bitmap_free(tempand);
+            roaring_bitmap_free(CI);
+            printf("\n");
+
     }
 
 
