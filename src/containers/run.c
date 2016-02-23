@@ -103,9 +103,11 @@ static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
             : run->capacity * 5 / 4;
     if(newCapacity < min) newCapacity = min;
     run->capacity = newCapacity;
-    if(copy)
-        run->runs = realloc(run->runs, run->capacity * sizeof(rle16_t));
-    else {
+    if (copy) {
+        rle16_t * oldruns = run->runs;
+        run->runs = realloc(oldruns, run->capacity * sizeof(rle16_t));
+        if(run->runs == NULL) free(oldruns);
+    } else {
         free(run->runs);
         run->runs = malloc(run->capacity * sizeof(rle16_t));
     }

@@ -95,6 +95,7 @@ static void array_container_grow(array_container_t *container, int32_t min,
 
     if (preserve) {
         container->array = realloc(array, new_capacity * sizeof(uint16_t));
+        if(container->array == NULL) free(array);
     } else {
         free(array);
         container->array = malloc(new_capacity * sizeof(uint16_t));
