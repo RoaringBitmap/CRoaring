@@ -138,7 +138,9 @@ roaring_bitmap_t *roaring_bitmap_and(roaring_bitmap_t *x1, roaring_bitmap_t *x2)
 			if (container_nonzero_cardinality(c, container_result_type)) {
 				ra_append(answer->high_low_container, s1, c,
 						container_result_type);
-			}
+			} else {
+                                container_free(c,container_result_type); // otherwise:memory leak!
+                        }
 			++pos1;
 			++pos2;
 		} else if (s1 < s2) { // s1 < s2
@@ -225,6 +227,8 @@ roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2) 
 			if (container_nonzero_cardinality(c, container_result_type)) {
 				ra_append(answer->high_low_container, s1, c,
 						container_result_type);
+			} else {
+                                 container_free(c,container_result_type); // otherwise:memory leak!
 			}
 			++pos1;
 			++pos2;
