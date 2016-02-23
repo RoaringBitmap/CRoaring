@@ -150,6 +150,15 @@ static void printusage(char * command) {
     printf(" Try %s directory \n where directory could be benchmarks/realdata/census1881\n",command);;
 }
 
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+
 int main(int argc, char **argv) {
     int c;
     char * extension = ".txt";
@@ -176,9 +185,21 @@ int main(int argc, char **argv) {
 
     // try ANDing together consecutive pairs
     for (int i=0; i < (int) count-1; ++i) {
-            roaring_bitmap_t *temp = roaring_bitmap_and( bitmaps[i], bitmaps[i+1]);
-            printf("AND number %d has card %d\n",i,(int) roaring_bitmap_get_cardinality(temp));
-            roaring_bitmap_free(temp);
+    	    uint32_t c1 = roaring_bitmap_get_cardinality(bitmaps[i]);
+    	    uint32_t c2 = roaring_bitmap_get_cardinality(bitmaps[i+1]);
+            roaring_bitmap_t *tempand = roaring_bitmap_and( bitmaps[i], bitmaps[i+1]);
+            uint32_t ci = roaring_bitmap_get_cardinality(tempand);
+            printf("AND number %d has card %d\n",i,(int) ci);
+            roaring_bitmap_free(tempand);
+            roaring_bitmap_t *tempor = roaring_bitmap_or( bitmaps[i], bitmaps[i+1]);
+            uint32_t co = roaring_bitmap_get_cardinality(tempor);
+            printf("OR number %d has card %d\n",i,(int) co);
+            roaring_bitmap_free(tempor);
+        	printf("set1 has card %d, set2 has card %d, intersection is %d, union is %d\n",(int)c1,(int)c2,(int)ci,(int)co);
+
+            if(c1 + c2 != co + ci) {
+            	printf(KRED "cardinalities are wrong somehow\n");
+            }
     }
 
     // then mangle them with inplace
