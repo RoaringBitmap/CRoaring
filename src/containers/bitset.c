@@ -436,9 +436,9 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
     num_runs += _mm_popcnt_u64((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
   }
 
-  long word = next_word;
+  uint64_t word = next_word;
   num_runs += _mm_popcnt_u64((~word) & (word << 1));
-  if((word & 0x8000000000000000L) != 0) 
+  if((word & 0x8000000000000000ULL) != 0) 
     num_runs++;
 
   return num_runs;

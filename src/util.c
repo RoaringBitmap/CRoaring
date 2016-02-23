@@ -460,7 +460,7 @@ void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
       bitmap[firstword] |= ((~UINT64_C(0)) << (start % 64)) & ((~UINT64_C(0)) >> (-end & 64));
       return;
     }
-    bitmap[firstword] |= ~0L << start;
+    bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
     for (uint32_t i = firstword+1; i < endword; i++)
         bitmap[i] = ~UINT64_C(0);
     bitmap[endword] |= (~UINT64_C(0)) >> (-end % 64);
