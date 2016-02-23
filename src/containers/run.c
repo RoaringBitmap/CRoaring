@@ -61,7 +61,7 @@ int run_container_cardinality(const run_container_t *run) {
 
     /* by initializing with n_runs, we omit counting the +1 for each pair. */
     int sum = n_runs;
-    for (size_t k = 0; k < n_runs; ++k) {
+    for (int k = 0; k < n_runs; ++k) {
         sum += runs[k].length;
     }
 
