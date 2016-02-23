@@ -231,7 +231,7 @@ int to_uint32_array_test() {
 		free(out);
 		bitset_container_free(B);
 	}
-	return 0;
+	return 1;
 }
 
 
@@ -249,7 +249,6 @@ int main() {
     if (!to_uint32_array_test()) return -1;
 
     printf("[%s] your code might be ok.\n", __FILE__);
-    printf("I will return zero.");
 
     return 0;
 }

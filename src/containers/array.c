@@ -276,35 +276,40 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
     return pos;
 }
 
-int32_t intersect_uint16(const uint16_t *set_1, size_t size_1,
-                         const uint16_t *set_2, size_t size_2,
-                         uint16_t *buffer) {
-    size_t pos = 0, idx_1 = 0, idx_2 = 0;
 
-    if (size_1 == 0 || size_2 == 0) return 0;
+#ifndef USEAVX
+/**
+ * Generic intersection function. Passes unit tests.
+ */
+static int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
+              const uint16_t *B, const size_t lenB, uint16_t *out) {
+    const uint16_t * initout = out;
+    if (lenA == 0 || lenB == 0)
+        return 0;
+    const uint16_t *endA = A + lenA;
+    const uint16_t *endB = B + lenB;
 
-    uint16_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
-
-    while (true) {
-        while (val_1 < val_2) {
-            val_1 = set_1[++idx_1];
-            if (idx_1 >= size_1) goto finish;
+    while (1) {
+        while (*A < *B) {
+SKIP_FIRST_COMPARE:
+            if (++A == endA)
+                return (out - initout);
         }
-        while (val_1 > val_2) {
-            val_2 = set_2[++idx_2];
-            if (idx_2 >= size_2) goto finish;
+        while (*A > *B) {
+            if (++B == endB)
+                return (out - initout);
         }
-        if (val_1 == val_2) {
-            buffer[pos++] = val_1;
-            val_1 = set_1[++idx_1];
-            val_2 = set_2[++idx_2];
-            if (val_1 >= size_1 || val_2 >= size_2) goto finish;
+        if (*A == *B) {
+            *out++ = *A;
+            if (++A == endA || ++B == endB)
+                return (out - initout);
+        } else {
+            goto SKIP_FIRST_COMPARE;
         }
     }
-
-finish:
-    return pos;
+    return (out - initout); // NOTREACHED
 }
+#endif
 
 extern int32_t intersect_vector16(const uint16_t *set_1, size_t size_1,
                                   const uint16_t *set_2, size_t size_2,
