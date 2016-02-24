@@ -183,7 +183,15 @@ int main(int argc, char **argv) {
     if(bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n",(int)count,dirname);
 
-    // try ANDing together consecutive pairs
+    printf("\n Merely copying the bitmaps. \n ========= \n");
+    for (int i=0; i < (int) count; i+=2) {
+            roaring_bitmap_t * CI = roaring_bitmap_copy(bitmaps[i]); // to test the inplace version we create a copy
+            roaring_bitmap_free(CI);
+    }
+
+    printf("\n Consecutive AND and OR. \n ========= \n");
+
+    // try ANDing and ORing together consecutive pairs
     for (int i=0; i < (int) count-1; ++i) {
     	    uint32_t c1 = roaring_bitmap_get_cardinality(bitmaps[i]);
     	    uint32_t c2 = roaring_bitmap_get_cardinality(bitmaps[i+1]);
@@ -209,13 +217,13 @@ int main(int argc, char **argv) {
             roaring_bitmap_t * CI = roaring_bitmap_copy(bitmaps[i]); // to test the inplace version we create a copy
             roaring_bitmap_and_inplace(CI , bitmaps[i+1]);
             uint32_t ci = roaring_bitmap_get_cardinality(CI);
+            roaring_bitmap_free(CI);
             printf("inplace AND number %d has card %d\n",i,(int) ci);
             roaring_bitmap_t *tempand = roaring_bitmap_and( bitmaps[i], bitmaps[i+1]);
             if(ci != roaring_bitmap_get_cardinality(tempand)) {
                 printf(KRED " there is a problem with in-place intersections\n");
             }
             roaring_bitmap_free(tempand);
-            roaring_bitmap_free(CI);
             printf("\n");
 
     }
