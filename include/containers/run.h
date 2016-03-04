@@ -6,8 +6,8 @@
 #ifndef INCLUDE_CONTAINERS_RUN_H_
 #define INCLUDE_CONTAINERS_RUN_H_
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /* struct rle16_s - run length pair
  *
@@ -42,8 +42,8 @@ typedef struct run_container_s run_container_t;
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create();
 
-
-/* Create a new run container with given capacity. Return NULL in case of failure. */
+/* Create a new run container with given capacity. Return NULL in case of
+ * failure. */
 run_container_t *run_container_create_given_capacity();
 
 /* Free memory owned by `run'. */
@@ -91,7 +91,7 @@ void run_container_union(const run_container_t *src_1,
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
 void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
-                                  run_container_t *dst);
+                                run_container_t *dst);
 
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit
@@ -107,7 +107,7 @@ int run_container_to_uint32_array(uint32_t *out, const run_container_t *cont,
 /*
  * Print this container using printf (useful for debugging).
  */
-void run_container_printf(const run_container_t * v);
+void run_container_printf(const run_container_t *v);
 
 /*
  * Print this container using printf as a comma-separated list of 32-bit
@@ -116,9 +116,8 @@ void run_container_printf(const run_container_t * v);
 void run_container_printf_as_uint32_array(const run_container_t *v,
                                           uint32_t base);
 
-inline int32_t run_container_serialized_size_in_bytes( int32_t num_runs){
-  return 2 + 2 * 2 * num_runs;  // each run requires 2 2-byte entries.
+inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
+    return 2 + 2 * 2 * num_runs;  // each run requires 2 2-byte entries.
 }
-
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

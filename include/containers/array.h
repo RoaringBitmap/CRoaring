@@ -6,8 +6,8 @@
 #ifndef INCLUDE_CONTAINERS_ARRAY_H_
 #define INCLUDE_CONTAINERS_ARRAY_H_
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -82,12 +82,11 @@ void array_container_intersection(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst);
 
-
 /* Compute the intersection of src_1 and src_2.  The result is placed
  * in src_1 (and src_1 is the return value).
  */
-array_container_t *array_container_intersection_inplace(array_container_t *src_1,
-                                                        const array_container_t *src_2);
+array_container_t *array_container_intersection_inplace(
+    array_container_t *src_1, const array_container_t *src_2);
 
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit
@@ -104,9 +103,8 @@ int array_container_to_uint32_array(uint32_t *out,
 /* Create a new array with capacity size. Return NULL in case of failure. */
 array_container_t *array_container_create_given_capacity(int32_t size);
 
-
 /* Compute the number of runs */
-int32_t array_container_number_of_runs( array_container_t *a);
+int32_t array_container_number_of_runs(array_container_t *a);
 
 /*
  * Print this container using printf (useful for debugging).
@@ -120,9 +118,8 @@ void array_container_printf(const array_container_t *v);
 void array_container_printf_as_uint32_array(const array_container_t *v,
                                             uint32_t base);
 
-inline int32_t array_container_serialized_size_in_bytes( int32_t card) {
-  return card * 2 + 2;
+inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
+    return card * 2 + 2;
 }
-
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

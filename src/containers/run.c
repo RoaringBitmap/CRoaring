@@ -4,8 +4,8 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <x86intrin.h>
 
@@ -13,46 +13,46 @@
 
 extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);
-extern void run_container_clear(run_container_t *run) ;
-extern int32_t run_container_serialized_size_in_bytes( int32_t num_runs);
+extern void run_container_clear(run_container_t *run);
+extern int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
 
-enum{DEFAULT_INIT_SIZE = 4};
+enum { DEFAULT_INIT_SIZE = 4 };
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create_given_capacity(int32_t size) {
-	run_container_t * run;
-	/* Allocate the run container itself. */
-	if ((run = malloc(sizeof(run_container_t))) == NULL) {
-				return NULL;
-	}
+    run_container_t *run;
+    /* Allocate the run container itself. */
+    if ((run = malloc(sizeof(run_container_t))) == NULL) {
+        return NULL;
+    }
     if ((run->runs = malloc(sizeof(rle16_t) * size)) == NULL) {
-		        free(run);
-			return NULL;
-	}
-	run->capacity = size;
+        free(run);
+        return NULL;
+    }
+    run->capacity = size;
     run->n_runs = 0;
-	return run;
+    return run;
 }
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create() {
-	return run_container_create_given_capacity(DEFAULT_INIT_SIZE) ;
+    return run_container_create_given_capacity(DEFAULT_INIT_SIZE);
 }
 
 run_container_t *run_container_clone(const run_container_t *src) {
-	run_container_t * run = run_container_create_given_capacity(src->capacity);
-	if(run == NULL) return NULL;
-	run->capacity = src->capacity;
+    run_container_t *run = run_container_create_given_capacity(src->capacity);
+    if (run == NULL) return NULL;
+    run->capacity = src->capacity;
     run->n_runs = src->n_runs;
     memcpy(run->runs, src->runs, src->n_runs * sizeof(rle16_t));
-	return run;
+    return run;
 }
 
 /* Free memory. */
 void run_container_free(run_container_t *run) {
     free(run->runs);
     run->runs = NULL;  // pedantic
-	free(run);
+    free(run);
 }
 
 /* Get the cardinality of `run'. Requires an actual computation. */
@@ -64,7 +64,7 @@ int run_container_cardinality(const run_container_t *run) {
     int sum = n_runs;
     for (int k = 0; k < n_runs; ++k) {
         sum += runs[k].length;
-	}
+    }
 
     return sum;
 }
@@ -76,7 +76,7 @@ _Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
 // TODO: could be more efficient
 static void smartAppend(run_container_t *run,
                         rle16_t vl) {  // uint16_t start, uint16_t length) {
-        int32_t oldend;
+    int32_t oldend;
     // todo: next line is maybe unsafe when n_runs == 0 in the sense where we
     // might access memory out of bounds (crash prone?)
     if ((run->n_runs == 0) ||
@@ -85,13 +85,13 @@ static void smartAppend(run_container_t *run,
                         1)) {  // we add a new one
         run->runs[run->n_runs] = vl;
         run->n_runs++;
-            return;
-        }
-        int32_t newend = vl.value + vl.length + 1;
-        if(newend > oldend)  { // we merge
+        return;
+    }
+    int32_t newend = vl.value + vl.length + 1;
+    if (newend > oldend) {  // we merge
         run->runs[run->n_runs - 1].length =
             newend - 1 - run->runs[run->n_runs - 1].value;
-        }
+    }
 }
 
 static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
@@ -99,14 +99,14 @@ static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
         (run->capacity == 0)
             ? DEFAULT_INIT_SIZE
             : run->capacity < 64 ? run->capacity * 2
-            : run->capacity < 1024 ? run->capacity * 3 / 2
-            : run->capacity * 5 / 4;
-    if(newCapacity < min) newCapacity = min;
+                                 : run->capacity < 1024 ? run->capacity * 3 / 2
+                                                        : run->capacity * 5 / 4;
+    if (newCapacity < min) newCapacity = min;
     run->capacity = newCapacity;
     if (copy) {
-        rle16_t * oldruns = run->runs;
+        rle16_t *oldruns = run->runs;
         run->runs = realloc(oldruns, run->capacity * sizeof(rle16_t));
-        if(run->runs == NULL) free(oldruns);
+        if (run->runs == NULL) free(oldruns);
     } else {
         free(run->runs);
         run->runs = malloc(run->capacity * sizeof(rle16_t));
@@ -118,7 +118,7 @@ static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
             "production?\n");
     }
 }
-static inline void makeRoomAtIndex( run_container_t *run,uint16_t index) {
+static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
     /* This function calls realloc + memmove sequentially to move by one index.
      * Potentially copying twice the array.
      */
@@ -129,7 +129,7 @@ static inline void makeRoomAtIndex( run_container_t *run,uint16_t index) {
     run->n_runs++;
 }
 
-static inline void recoverRoomAtIndex(run_container_t *run,uint16_t index) {
+static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
     memmove(run->runs + index, run->runs + (1 + index),
             (run->n_runs - index - 1) * sizeof(rle16_t));
     run->n_runs--;
@@ -140,7 +140,7 @@ void run_container_copy(const run_container_t *src, run_container_t *dst) {
     const int32_t n_runs = src->n_runs;
     if (src->n_runs > dst->capacity) {
         increaseCapacity(dst, n_runs, false);
-	}
+    }
     dst->n_runs = n_runs;
     memcpy(dst->runs, src->runs, sizeof(rle16_t) * n_runs);
 }
@@ -157,48 +157,48 @@ void run_container_copy(const run_container_t *src, run_container_t *dst) {
 static int32_t interleavedBinarySearch(const rle16_t *source, int32_t n,
                                        uint16_t target) {
     const rle16_t *base = source;
-    if(n == 0) return -1;
+    if (n == 0) return -1;
     if (target > source[n - 1].value)
         return -n - 1;  // without this, buffer overrun
-    while(n>1) {
-    	int32_t half = n >> 1;
+    while (n > 1) {
+        int32_t half = n >> 1;
         base = (base[half].value < target) ? base + half : base;
         n -= half;
     }
     base += (base->value < target);
-    return  ( base->value == target) ? (base - source) : (source - base) - 1;
+    return (base->value == target) ? (base - source) : (source - base) - 1;
 }
-#else 
-// good old bin. search 
+#else
+// good old bin. search
 static int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
                                        uint16_t ikey) {
-	int32_t low = 0;
-	int32_t high = lenarray - 1;
-	while( low <= high) {
-		int32_t middleIndex = (low+high) >> 1;
-		uint16_t middleValue = array[middleIndex].value;
-		if (middleValue < ikey) {
-			low = middleIndex + 1;
-		} else if (middleValue > ikey) {
-			high = middleIndex - 1;
-		} else {
-			return middleIndex;
-		}
-	}
-	return -(low + 1);
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t middleValue = array[middleIndex].value;
+        if (middleValue < ikey) {
+            low = middleIndex + 1;
+        } else if (middleValue > ikey) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    return -(low + 1);
 }
 #endif
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
-    if(index >= 0) return false;// already there
-    index = - index - 2;// points to preceding value, possibly -1
-    if(index >= 0) {// possible match
+    if (index >= 0) return false;  // already there
+    index = -index - 2;            // points to preceding value, possibly -1
+    if (index >= 0) {              // possible match
         int32_t offset = pos - run->runs[index].value;
         int32_t le = run->runs[index].length;
-        if(offset <= le) return false;// already there
-        if(offset == le + 1) {
+        if (offset <= le) return false;  // already there
+        if (offset == le + 1) {
             // we may need to fuse
             if (index + 1 < run->n_runs) {
                 if (run->runs[index + 1].value == pos + 1) {
@@ -206,7 +206,7 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
                     run->runs[index].length = run->runs[index + 1].value +
                                               run->runs[index + 1].length -
                                               run->runs[index].value;
-                    recoverRoomAtIndex(run,index + 1);
+                    recoverRoomAtIndex(run, index + 1);
                     return true;
                 }
             }
@@ -223,7 +223,7 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
             }
         }
     }
-    if(index == -1) {
+    if (index == -1) {
         // we may need to extend the first run
         if (0 < run->n_runs) {
             if (run->runs[0].value == pos + 1) {
@@ -233,7 +233,7 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
             }
         }
     }
-    makeRoomAtIndex(run,index + 1);
+    makeRoomAtIndex(run, index + 1);
     run->runs[index + 1].value = pos;
     run->runs[index + 1].length = 0;
     return true;
@@ -242,49 +242,49 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
 /* Remove `pos' from `run'. Returns true if `pos' was present. */
 bool run_container_remove(run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
-        if(index >= 0) {
+    if (index >= 0) {
         int32_t le = run->runs[index].length;
-            if(le == 0) {
-                recoverRoomAtIndex(run,index);
-            } else {
+        if (le == 0) {
+            recoverRoomAtIndex(run, index);
+        } else {
             run->runs[index].value++;
             run->runs[index].length--;
-            }
-            return true;
         }
-        index = - index - 2;// points to preceding value, possibly -1
-        if(index >= 0) {// possible match
+        return true;
+    }
+    index = -index - 2;  // points to preceding value, possibly -1
+    if (index >= 0) {    // possible match
         int32_t offset = pos - run->runs[index].value;
         int32_t le = run->runs[index].length;
-            if(offset < le) {
-                // need to break in two
+        if (offset < le) {
+            // need to break in two
             run->runs[index].length = offset - 1;
-                // need to insert
-                uint16_t newvalue = pos + 1;
-                int32_t newlength = le - offset - 1;
-                makeRoomAtIndex(run,index+1);
+            // need to insert
+            uint16_t newvalue = pos + 1;
+            int32_t newlength = le - offset - 1;
+            makeRoomAtIndex(run, index + 1);
             run->runs[index + 1].value = newvalue;
             run->runs[index + 1].length = newlength;
-                return true;
+            return true;
 
-            } else if(offset == le) {
+        } else if (offset == le) {
             run->runs[index].length--;
-                return true;
-            }
+            return true;
         }
-        // no match
-        return false;
     }
+    // no match
+    return false;
+}
 
 /* Check whether `pos' is present in `run'.  */
 bool run_container_contains(const run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
-    if(index >= 0) return true;
-    index = - index - 2; // points to preceding value, possibly -1
-    if (index != -1)  {// possible match
+    if (index >= 0) return true;
+    index = -index - 2;  // points to preceding value, possibly -1
+    if (index != -1) {   // possible match
         int32_t offset = pos - run->runs[index].value;
         int32_t le = run->runs[index].length;
-        if(offset <= le) return true;
+        if (offset <= le) return true;
     }
     return false;
 }
@@ -293,26 +293,26 @@ bool run_container_contains(const run_container_t *run, uint16_t pos) {
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
 void run_container_union(const run_container_t *src_1,
                          const run_container_t *src_2, run_container_t *dst) {
-	// TODO: this could be a lot more efficient
+    // TODO: this could be a lot more efficient
 
-	// we start out with inexpensive checks
-	const bool if1 = run_container_is_full(src_1);
-	const bool if2 = run_container_is_full(src_2);
-	if (if1 || if2) {
-		if (if1) {
-			run_container_copy(src_2, dst);
-			return;
-		}
-		if (if2) {
-			run_container_copy(src_1, dst);
-			return;
-		}
-	}
+    // we start out with inexpensive checks
+    const bool if1 = run_container_is_full(src_1);
+    const bool if2 = run_container_is_full(src_2);
+    if (if1 || if2) {
+        if (if1) {
+            run_container_copy(src_2, dst);
+            return;
+        }
+        if (if2) {
+            run_container_copy(src_1, dst);
+            return;
+        }
+    }
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
-	if(dst->capacity < neededcapacity)
-		increaseCapacity(dst, neededcapacity,false);
+    if (dst->capacity < neededcapacity)
+        increaseCapacity(dst, neededcapacity, false);
     dst->n_runs = 0;
-	int32_t rlepos = 0;
+    int32_t rlepos = 0;
     int32_t xrlepos = 0;
 
     while ((xrlepos < src_2->n_runs) && (rlepos < src_1->n_runs)) {
@@ -338,11 +338,11 @@ void run_container_union(const run_container_t *src_1,
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
 void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
-                                  run_container_t *dst) {
-	// TODO: this could be a lot more efficient, could use SIMD optimizations
+                                run_container_t *dst) {
+    // TODO: this could be a lot more efficient, could use SIMD optimizations
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
-	if(dst->capacity < neededcapacity)
-		increaseCapacity(dst, neededcapacity,false);
+    if (dst->capacity < neededcapacity)
+        increaseCapacity(dst, neededcapacity, false);
     dst->n_runs = 0;
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
@@ -351,7 +351,7 @@ void run_container_intersection(const run_container_t *src_1,
     int32_t xstart = src_2->runs[xrlepos].value;
     int32_t xend = xstart + src_2->runs[xrlepos].length + 1;
     while ((rlepos < src_1->n_runs) && (xrlepos < src_2->n_runs)) {
-        if (end  <= xstart) {
+        if (end <= xstart) {
             ++rlepos;
             if (rlepos < src_1->n_runs) {
                 start = src_1->runs[rlepos].value;
@@ -363,10 +363,10 @@ void run_container_intersection(const run_container_t *src_1,
                 xstart = src_2->runs[xrlepos].value;
                 xend = xstart + src_2->runs[xrlepos].length + 1;
             }
-        } else {// they overlap
+        } else {  // they overlap
             const int32_t lateststart = start > xstart ? start : xstart;
             int32_t earliestend;
-            if(end == xend) {// improbable
+            if (end == xend) {  // improbable
                 earliestend = end;
                 rlepos++;
                 xrlepos++;
@@ -378,7 +378,7 @@ void run_container_intersection(const run_container_t *src_1,
                     xstart = src_2->runs[xrlepos].value;
                     xend = xstart + src_2->runs[xrlepos].length + 1;
                 }
-            } else if(end < xend) {
+            } else if (end < xend) {
                 earliestend = end;
                 rlepos++;
                 if (rlepos < src_1->n_runs) {
@@ -386,7 +386,7 @@ void run_container_intersection(const run_container_t *src_1,
                     end = start + src_1->runs[rlepos].length + 1;
                 }
 
-            } else {// end > xend
+            } else {  // end > xend
                 earliestend = xend;
                 xrlepos++;
                 if (xrlepos < src_2->n_runs) {
@@ -403,24 +403,24 @@ void run_container_intersection(const run_container_t *src_1,
 
 int run_container_to_uint32_array(uint32_t *out, const run_container_t *cont,
                                   uint32_t base) {
-  int outpos = 0;
+    int outpos = 0;
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
         for (int j = 0; j <= le; ++j) out[outpos++] = run_start + j;
-  }
-  return outpos;
+    }
+    return outpos;
 }
 
 /*
  * Print this container using printf (useful for debugging).
  */
-void run_container_printf(const run_container_t * cont) {
+void run_container_printf(const run_container_t *cont) {
     for (int i = 0; i < cont->n_runs; ++i) {
         uint16_t run_start = cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
-	    printf("[%d,%d]",run_start,run_start+le);
-	}
+        printf("[%d,%d]", run_start, run_start + le);
+    }
 }
 
 /*
@@ -430,15 +430,15 @@ void run_container_printf(const run_container_t * cont) {
 void run_container_printf_as_uint32_array(const run_container_t *cont,
                                           uint32_t base) {
     if (cont->n_runs == 0) return;
-	{
+    {
         uint32_t run_start = base + cont->runs[0].value;
         uint16_t le = cont->runs[0].length;
-		printf("%d",run_start);
+        printf("%d", run_start);
         for (int j = 1; j <= le; ++j) printf(",%d", run_start + j);
-	}
+    }
     for (int i = 1; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
         for (int j = 0; j <= le; ++j) printf(",%d", run_start + j);
-	}
+    }
 }

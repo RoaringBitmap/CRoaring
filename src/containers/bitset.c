@@ -12,14 +12,13 @@
 #include "util.h"
 #include "utilasm.h"
 
-
 extern int bitset_container_cardinality(bitset_container_t *bitset);
 extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
-extern bool bitset_container_get(const bitset_container_t *bitset, uint16_t pos);
+extern bool bitset_container_get(const bitset_container_t *bitset,
+                                 uint16_t pos);
 extern int32_t bitset_container_serialized_size_in_bytes();
-
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
@@ -41,11 +40,12 @@ bitset_container_t *bitset_container_create() {
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void bitset_container_copy(bitset_container_t *source, bitset_container_t *dest) {
-	dest->cardinality = source->cardinality;
-	memcpy(dest->array,source->array,sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+void bitset_container_copy(bitset_container_t *source,
+                           bitset_container_t *dest) {
+    dest->cardinality = source->cardinality;
+    memcpy(dest->array, source->array,
+           sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
-
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
@@ -55,7 +55,7 @@ void bitset_container_free(bitset_container_t *bitset) {
 }
 
 /* duplicate container. */
-bitset_container_t *bitset_container_clone( bitset_container_t *src) {
+bitset_container_t *bitset_container_clone(bitset_container_t *src) {
     bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
 
     if (!bitset) {
@@ -68,17 +68,20 @@ bitset_container_t *bitset_container_clone( bitset_container_t *src) {
         return NULL;
     }
     bitset->cardinality = src->cardinality;
-    memcpy(bitset->array, src->array,  sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    memcpy(bitset->array, src->array,
+           sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     return bitset;
 }
 
-
-void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin, uint32_t end) {
-	bitset_set_range(bitset->array, begin,end);
-	bitset->cardinality = bitset_container_compute_cardinality(bitset);// could be smarter
+void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
+                                uint32_t end) {
+    bitset_set_range(bitset->array, begin, end);
+    bitset->cardinality =
+        bitset_container_compute_cardinality(bitset);  // could be smarter
 }
 
-//#define USEPOPCNT // when this is disabled bitset_container_compute_cardinality uses AVX to compute hamming weight
+//#define USEPOPCNT // when this is disabled
+// bitset_container_compute_cardinality uses AVX to compute hamming weight
 
 #ifdef USEPOPCNT
 
@@ -101,41 +104,57 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const uint64_t *array = bitset->array;
     // these are precomputed hamming weights (weight(0), weight(1)...)
-    const __m256i shuf = _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
-                                          0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);
-    const __m256i  mask = _mm256_set1_epi8(0x0f); // low 4 bits of each byte
+    const __m256i shuf =
+        _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 0, 1,
+                         1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);
+    const __m256i mask = _mm256_set1_epi8(0x0f);  // low 4 bits of each byte
     __m256i total = _mm256_setzero_si256();
     __m256i zero = _mm256_setzero_si256();
-    const int inner = 4;// length of the inner loop, could go up to 8 safely
-    const int outer = BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/(sizeof(__m256i)*inner); // length of outer loop
-    for(int  k = 0; k < outer ; k++) {
+    const int inner = 4;  // length of the inner loop, could go up to 8 safely
+    const int outer = BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t) /
+                      (sizeof(__m256i) * inner);  // length of outer loop
+    for (int k = 0; k < outer; k++) {
         __m256i innertotal = _mm256_setzero_si256();
-        for(int i = 0; i < inner; ++i) {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)array + k*inner + i);
-            __m256i ymm2 = _mm256_srli_epi32(ymm1,4); // shift right, shiftingin zeroes
-            ymm1 = _mm256_and_si256(ymm1,mask); // contains even 4 bits
-            ymm2 = _mm256_and_si256(ymm2,mask); // contains odd 4 bits
-            ymm1 = _mm256_shuffle_epi8(shuf,ymm1);// use table look-up to sum the 4 bits
-            ymm2 = _mm256_shuffle_epi8(shuf,ymm2);
-            innertotal = _mm256_add_epi8(innertotal,ymm1);// inner total values in each byte are bounded by 8 * inner
-            innertotal = _mm256_add_epi8(innertotal,ymm2);// inner total values in each byte are bounded by 8 * inner
+        for (int i = 0; i < inner; ++i) {
+            __m256i ymm1 =
+                _mm256_lddqu_si256((const __m256i *)array + k * inner + i);
+            __m256i ymm2 =
+                _mm256_srli_epi32(ymm1, 4);  // shift right, shiftingin zeroes
+            ymm1 = _mm256_and_si256(ymm1, mask);  // contains even 4 bits
+            ymm2 = _mm256_and_si256(ymm2, mask);  // contains odd 4 bits
+            ymm1 = _mm256_shuffle_epi8(
+                shuf, ymm1);  // use table look-up to sum the 4 bits
+            ymm2 = _mm256_shuffle_epi8(shuf, ymm2);
+            innertotal = _mm256_add_epi8(innertotal, ymm1);  // inner total
+                                                             // values in each
+                                                             // byte are bounded
+                                                             // by 8 * inner
+            innertotal = _mm256_add_epi8(innertotal, ymm2);  // inner total
+                                                             // values in each
+                                                             // byte are bounded
+                                                             // by 8 * inner
         }
-        innertotal = _mm256_sad_epu8(zero,innertotal);// produces 4 64-bit counters (having values in [0,8 * inner * 4])
-        total= _mm256_add_epi64(total,innertotal); // add the 4 64-bit counters to previous counter
+        innertotal = _mm256_sad_epu8(zero, innertotal);  // produces 4 64-bit
+                                                         // counters (having
+                                                         // values in [0,8 *
+                                                         // inner * 4])
+        total = _mm256_add_epi64(
+            total,
+            innertotal);  // add the 4 64-bit counters to previous counter
     }
-    return _mm256_extract_epi64(total,0)+_mm256_extract_epi64(total,1)+_mm256_extract_epi64(total,2)+_mm256_extract_epi64(total,3);
+    return _mm256_extract_epi64(total, 0) + _mm256_extract_epi64(total, 1) +
+           _mm256_extract_epi64(total, 2) + _mm256_extract_epi64(total, 3);
 }
 #endif
 
-
 #ifdef USEAVX
-
 
 #ifndef USEPOPCNT
 #define BITSET_CONTAINER_FN_REPEAT 8
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
-#define LOOP_SIZE BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG * BITSET_CONTAINER_FN_REPEAT)
-
+#define LOOP_SIZE                    \
+    BITSET_CONTAINER_SIZE_IN_WORDS / \
+        (WORDS_IN_AVX2_REG * BITSET_CONTAINER_FN_REPEAT)
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
    result to bitsetout */

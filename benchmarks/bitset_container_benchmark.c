@@ -3,41 +3,41 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "containers/bitset.h"
 #include "benchmark.h"
+#include "containers/bitset.h"
 #include "random.h"
-
 
 // flushes the array of words from cache
 void bitset_cache_flush(bitset_container_t* B) {
-	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
-	for(int32_t  k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += CACHELINESIZE/(int32_t) sizeof(uint64_t)) {
-		__builtin_ia32_clflush(B->array + k);
-	}
+    const int32_t CACHELINESIZE =
+        computecacheline();  // 64 bytes per cache line
+    for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
+         k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
+        __builtin_ia32_clflush(B->array + k);
+    }
 }
 
 // tries to put array of words in cache
 void bitset_cache_prefetch(bitset_container_t* B) {
-	const int32_t CACHELINESIZE = computecacheline();// 64 bytes per cache line
-	for(int32_t  k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS; k += CACHELINESIZE/(int32_t) sizeof(uint64_t)) {
-		__builtin_prefetch(B->array + k);
-	}
+    const int32_t CACHELINESIZE =
+        computecacheline();  // 64 bytes per cache line
+    for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
+         k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
+        __builtin_prefetch(B->array + k);
+    }
 }
-
 
 int extract_test(bitset_container_t* B) {
-	int card = bitset_container_cardinality(B);
-	uint32_t *out = malloc(sizeof(uint32_t) * (unsigned) card);
-	bitset_container_to_uint32_array(out,B,1234);
-	free(out);
-	return card;
+    int card = bitset_container_cardinality(B);
+    uint32_t* out = malloc(sizeof(uint32_t) * (unsigned)card);
+    bitset_container_to_uint32_array(out, B, 1234);
+    free(out);
+    return card;
 }
-
-
 
 int set_test(bitset_container_t* B) {
     int x;
@@ -82,20 +82,25 @@ int main() {
     BEST_TIME(unset_test(B), 0, repeat, size);
     bitset_container_free(B);
 
-    for(int howmany = 4096; howmany <= (1<<16); howmany *= 2) {
-    	bitset_container_t* Bt = bitset_container_create();
-        while(bitset_container_cardinality(Bt) < howmany) {
-        	bitset_container_set(Bt, (uint16_t)pcg32_random() );
+    for (int howmany = 4096; howmany <= (1 << 16); howmany *= 2) {
+        bitset_container_t* Bt = bitset_container_create();
+        while (bitset_container_cardinality(Bt) < howmany) {
+            bitset_container_set(Bt, (uint16_t)pcg32_random());
         }
         size_t nbrtestvalues = 1024;
-        uint16_t * testvalues = malloc(nbrtestvalues * sizeof(uint16_t) );
-        printf("\n number of values in container = %d\n",bitset_container_cardinality(Bt));
-    	int card = bitset_container_cardinality(Bt);
-    	uint32_t *out = malloc(sizeof(uint32_t) * (unsigned) card + sizeof(__m256i));
-        BEST_TIME(bitset_container_to_uint32_array(out,Bt,1234), card, repeat, card);
-    	free(out);
-        BEST_TIME_PRE_ARRAY(Bt,bitset_container_get, bitset_cache_prefetch, testvalues, nbrtestvalues);
-        BEST_TIME_PRE_ARRAY(Bt,bitset_container_get, bitset_cache_flush, testvalues, nbrtestvalues);
+        uint16_t* testvalues = malloc(nbrtestvalues * sizeof(uint16_t));
+        printf("\n number of values in container = %d\n",
+               bitset_container_cardinality(Bt));
+        int card = bitset_container_cardinality(Bt);
+        uint32_t* out =
+            malloc(sizeof(uint32_t) * (unsigned)card + sizeof(__m256i));
+        BEST_TIME(bitset_container_to_uint32_array(out, Bt, 1234), card, repeat,
+                  card);
+        free(out);
+        BEST_TIME_PRE_ARRAY(Bt, bitset_container_get, bitset_cache_prefetch,
+                            testvalues, nbrtestvalues);
+        BEST_TIME_PRE_ARRAY(Bt, bitset_container_get, bitset_cache_flush,
+                            testvalues, nbrtestvalues);
         free(testvalues);
         bitset_container_free(Bt);
     }
