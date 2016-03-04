@@ -19,6 +19,10 @@ extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_get(const bitset_container_t *bitset,
                                  uint16_t pos);
 extern int32_t bitset_container_serialized_size_in_bytes();
+extern bool bitset_container_add(bitset_container_t *bitset, uint16_t pos);
+extern bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos);
+extern bool bitset_container_contains(const bitset_container_t *bitset,
+                                      uint16_t pos);
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
@@ -40,7 +44,7 @@ bitset_container_t *bitset_container_create() {
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void bitset_container_copy(bitset_container_t *source,
+void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest) {
     dest->cardinality = source->cardinality;
     memcpy(dest->array, source->array,
@@ -374,8 +378,14 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1,   \
 }
 #endif
 
+// we duplicate the function because other containers use the "or" term, makes API more consistent
 BITSET_CONTAINER_FN(or, |, _mm256_or_si256)
+BITSET_CONTAINER_FN(union, |, _mm256_or_si256)
+
+// we duplicate the function because other containers use the "intersection" term, makes API more consistent
 BITSET_CONTAINER_FN(and, &, _mm256_and_si256)
+BITSET_CONTAINER_FN(intersection, &, _mm256_and_si256)
+
 BITSET_CONTAINER_FN(xor, ^, _mm256_xor_si256)
 BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 

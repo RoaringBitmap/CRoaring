@@ -20,8 +20,8 @@ INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include
 
 
-OBJECTS= roaring.o bitset.o roaring_array.o array.o array_simd.o run.o util.o convert.o containers.o
-TESTEXECUTABLES=unit bitset_container_unit array_container_unit run_container_unit toplevel_unit
+OBJECTS= roaring.o bitset.o roaring_array.o array.o array_simd.o run.o util.o mixed_intersection.o mixed_union.o convert.o containers.o
+TESTEXECUTABLES=unit bitset_container_unit array_container_unit mixed_container_unit run_container_unit toplevel_unit
 EXECUTABLES=$(TESTEXECUTABLES) real_bitmaps_benchmark bitset_container_benchmark array_container_benchmark run_container_benchmark
 all:  $(EXECUTABLES)
 
@@ -52,6 +52,14 @@ run.o: ./src/containers/run.c ./include/containers/run.h
 convert.o: ./src/containers/convert.c $(wildcard ./include/containers/*.h)
 	$(CC) $(CFLAGS) -c ./src/containers/convert.c $(INCLUDES)
 
+mixed_union.o: ./src/containers/mixed_union.c $(wildcard ./include/containers/*.h)
+	$(CC) $(CFLAGS) -c ./src/containers/mixed_union.c $(INCLUDES)
+
+mixed_intersection.o: ./src/containers/mixed_intersection.c $(wildcard ./include/containers/*.h)
+	$(CC) $(CFLAGS) -c ./src/containers/mixed_intersection.c $(INCLUDES)
+
+
+
 containers.o: ./src/containers/containers.c $(wildcard ./include/containers/*.h)
 	$(CC) $(CFLAGS) -c ./src/containers/containers.c $(INCLUDES)
 
@@ -68,6 +76,9 @@ bitset_container_unit: ./tests/bitset_container_unit.c    $(HEADERS) $(OBJECTS)
 
 array_container_unit: ./tests/array_container_unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o array_container_unit ./tests/array_container_unit.c $(INCLUDES)  $(OBJECTS)
+
+mixed_container_unit: ./tests/mixed_container_unit.c    $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) -o mixed_container_unit ./tests/mixed_container_unit.c $(INCLUDES)  $(OBJECTS)
 
 run_container_unit: ./tests/run_container_unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o run_container_unit ./tests/run_container_unit.c $(INCLUDES)  $(OBJECTS)

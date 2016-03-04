@@ -9,6 +9,8 @@
 #include "bitset.h"
 #include "convert.h"
 #include "run.h"
+#include "mixed_intersection.h"
+#include "mixed_union.h"
 
 // don't use an enum: needs constant folding
 // should revisit
@@ -241,15 +243,19 @@ inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
             result = run_container_create();
             run_container_intersection(c1, c2, result);
             return convert_run_to_efficient_container(result, result_type);
+        case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+            result = array_container_create();
+            array_bitset_container_intersection(c2,c1,result);
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+            result = array_container_create();
+             array_bitset_container_intersection(c1,c2,result);
+             return result;
 #if 0
         case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
         case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
 		return run_container_and_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
-        case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
-		return bitset_container_and_array( (bitset_container t *) c1, (array_container_t *) c2);
-        case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-		return bitset_container_and_array( (bitset_container t *) c2, (array_container_t *) c1);
         case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_and_array( (run_container_t) c2, (array_container_t) c1);
         case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
@@ -294,6 +300,14 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
             // as of January 2016, Java code used non-in-place intersection for
             // two runcontainers
             return convert_run_to_efficient_container(result, result_type);
+        case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+            result = bitset_container_create();
+            array_bitset_container_union(c2,c1,result);
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+            result = bitset_container_create();
+            array_bitset_container_union(c1,c2,result);
+            return result;
 #if 0
         case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);

@@ -118,8 +118,19 @@ void array_container_printf(const array_container_t *v);
 void array_container_printf_as_uint32_array(const array_container_t *v,
                                             uint32_t base);
 
+/**
+ * Return the serialized size in bytes of a container having cardinality "card".
+ */
 inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
     return card * 2 + 2;
 }
+
+/**
+ * increase capacity to at least min, and to no more than max. Whether the
+ * existing data needs to be copied over depends on copy. If preserve is false,
+ * then the new content will be uninitialized.
+ */
+void array_container_grow(array_container_t *container, int32_t min,
+                                 int32_t max, bool preserve);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */
