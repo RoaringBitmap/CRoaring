@@ -4,7 +4,7 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 RE=0
-ALLFILES=$(find -regex '.*/.*\.\(c\|hh\|cc\|cpp\|h\)$')
+ALLFILES=$(find . -name '*.c' -o -name '*.cpp' -o -name '*.h' -name '*.cc' -name '*.hh')
 for FILE in $ALLFILES; do
   $STYLE $FILE | cmp -s $FILE -
   if [ $? -ne 0 ]; then
