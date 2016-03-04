@@ -8,6 +8,7 @@ TESTS=(bitset_container_unit \
        array_container_unit \
        run_container_unit \
        toplevel_unit \
+       mixed_container_unit \
        unit)
 
 function run_tests() {
