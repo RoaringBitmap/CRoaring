@@ -220,6 +220,7 @@ int main(int argc, char **argv) {
 
         if (c1 + c2 != co + ci) {
             printf(KRED "cardinalities are wrong somehow\n");
+            return -1;
         }
         printf("\n");
     }
@@ -237,6 +238,7 @@ int main(int argc, char **argv) {
             roaring_bitmap_and(bitmaps[i], bitmaps[i + 1]);
         if (ci != roaring_bitmap_get_cardinality(tempand)) {
             printf(KRED " there is a problem with in-place intersections\n");
+            return -1;
         }
         roaring_bitmap_free(tempand);
         printf("\n");

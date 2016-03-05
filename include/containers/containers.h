@@ -246,11 +246,13 @@ inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
         case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
             result = array_container_create();
             array_bitset_container_intersection(c2,c1,result);
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
             return result;
         case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
             result = array_container_create();
-             array_bitset_container_intersection(c1,c2,result);
-             return result;
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
+            array_bitset_container_intersection(c1,c2,result);
+            return result;
 #if 0
         case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
@@ -301,25 +303,23 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
             // two runcontainers
             return convert_run_to_efficient_container(result, result_type);
         case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
-            result = bitset_container_create();
-            array_bitset_container_union(c2,c1,result);
+		    // c1 is a bitmap so no inplace possible
+            result = array_container_create();
+            array_bitset_container_intersection(c2,c1,result);
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
             return result;
         case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-            result = bitset_container_create();
-            array_bitset_container_union(c1,c2,result);
-            return result;
-#if 0
+		    *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
+            array_bitset_container_intersection(c1,c2,c1);
+            return c1;
+ #if 0
         case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
         case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
 		return run_container_and_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
         case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
 		return bitset_container_and_array( (bitset_container t *) c1, (array_container_t *) c2);
-        case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-		return bitset_container_and_array( (bitset_container t *) c2, (array_container_t *) c1);
-        case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
-		return run_container_and_array( (run_container_t) c2, (array_container_t) c1);
-        case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+         case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
 		return run_container_and_array( (run_container_t) c1, (array_container_t) c2);
 #else
         default:
@@ -340,7 +340,6 @@ inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
     switch (type1 * 4 + type2) {
         case (BITSET_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE):
             result = bitset_container_create();
-            // int result_card =
             bitset_container_or(c1, c2, result);
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return result;
@@ -357,15 +356,21 @@ inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
             *result_type = RUN_CONTAINER_TYPE_CODE;
             // ToDo, conversion to bitset or array
             return result;
+        case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+            result = bitset_container_create();
+            array_bitset_container_union(c2,c1,result);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+            result = bitset_container_create();
+            array_bitset_container_union(c1,c2,result);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return result;
 #if 0
         case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_or_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
         case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
 		return run_container_or_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
-        case BITSET_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
-		return bitset_container_or_array( (bitset_container t *) c1, (array_container_t *) c2);
-        case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
-		return bitset_container_or_array( (bitset_container t *) c2, (array_container_t *) c1);
         case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
 		return run_container_or_array( (run_container_t) c2, (array_container_t) c1);
         case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
