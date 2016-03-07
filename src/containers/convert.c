@@ -2,7 +2,7 @@
 
 #include "convert.h"
 #include "containers.h"
-#include "util.h"
+#include "bitset_util.h"
 
 // file contains grubby stuff that must know impl. details of all container
 // types.

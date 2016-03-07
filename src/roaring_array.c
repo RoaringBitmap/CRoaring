@@ -7,7 +7,6 @@
 #include "bitset.h"
 #include "containers.h"
 #include "roaring_array.h"
-#include "util.h"
 
 // ported from RoaringArray.java
 // Todo: optimization (eg branchless binary search)

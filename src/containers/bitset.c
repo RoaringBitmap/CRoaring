@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "bitset.h"
-#include "util.h"
+#include "bitset_util.h"
 #include "utilasm.h"
 
 extern int bitset_container_cardinality(bitset_container_t *bitset);

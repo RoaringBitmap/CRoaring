@@ -4,7 +4,7 @@
  */
 
 #include "mixed_union.h"
-#include "util.h"
+#include "bitset_util.h"
 
 /* Compute the union of src_1 and src_2 and write the result to
  * dst.  */

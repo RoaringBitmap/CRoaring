@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "containers.h"
-#include "util.h"
+#include "array_util.h"
 
 #define MAX_CONTAINERS 65536
 

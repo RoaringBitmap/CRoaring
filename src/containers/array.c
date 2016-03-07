@@ -10,7 +10,7 @@
 #include <x86intrin.h>
 
 #include "array.h"
-#include "util.h"
+#include "array_util.h"
 
 enum { DEFAULT_INIT_SIZE = 16 };
 
@@ -172,57 +172,6 @@ bool array_container_contains(const array_container_t *arr, uint16_t pos) {
     return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }
 
-// TODO: can one vectorize the computation of the union?
-static size_t union_uint16(const uint16_t *set_1, size_t size_1,
-                           const uint16_t *set_2, size_t size_2,
-                           uint16_t *buffer) {
-    size_t pos = 0, idx_1 = 0, idx_2 = 0;
-
-    if (0 == size_2) {
-        memcpy(buffer, set_1, size_1 * sizeof(uint16_t));
-        return size_1;
-    }
-    if (0 == size_1) {
-        memcpy(buffer, set_2, size_2 * sizeof(uint16_t));
-        return size_2;
-    }
-
-    uint16_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
-
-    while (true) {
-        if (val_1 < val_2) {
-            buffer[pos++] = val_1;
-            ++idx_1;
-            if (idx_1 >= size_1) break;
-            val_1 = set_1[idx_1];
-        } else if (val_2 < val_1) {
-            buffer[pos++] = val_2;
-            ++idx_2;
-            if (idx_2 >= size_2) break;
-            val_2 = set_2[idx_2];
-        } else {
-            buffer[pos++] = val_1;
-            ++idx_1;
-            ++idx_2;
-            if (idx_1 >= size_1 || idx_2 >= size_2) break;
-            val_1 = set_1[idx_1];
-            val_2 = set_2[idx_2];
-        }
-    }
-
-    if (idx_1 < size_1) {
-        const size_t n_elems = size_1 - idx_1;
-        memcpy(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint16_t));
-        pos += n_elems;
-    } else if (idx_2 < size_2) {
-        const size_t n_elems = size_2 - idx_2;
-        memcpy(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint16_t));
-        pos += n_elems;
-    }
-
-    return pos;
-}
-
 /* Computes the union of array1 and array2 and write the result to arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
  */
@@ -245,79 +194,6 @@ void array_container_union(const array_container_t *array_1,
     }
 }
 
-/* Computes the intersection between one small and one large set of uint16_t.
- * Stores the result into buffer and return the number of elements. */
-int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
-                                const uint16_t *large, size_t size_l,
-                                uint16_t *buffer) {
-    size_t pos = 0, idx_l = 0, idx_s = 0;
-
-    if (0 == size_s) {
-        return 0;
-    }
-
-    uint16_t val_l = large[idx_l], val_s = small[idx_s];
-
-    while (true) {
-        if (val_l < val_s) {
-            idx_l = advanceUntil(large, idx_l, size_l, val_s);
-            if (idx_l == size_l) break;
-            val_l = large[idx_l];
-        } else if (val_s < val_l) {
-            idx_s++;
-            if (idx_s == size_s) break;
-            val_s = small[idx_s];
-        } else {
-            buffer[pos++] = val_s;
-            idx_s++;
-            if (idx_s == size_s) break;
-            val_s = small[idx_s];
-            idx_l = advanceUntil(large, idx_l, size_l, val_s);
-            if (idx_l == size_l) break;
-            val_l = large[idx_l];
-        }
-    }
-
-    return pos;
-}
-
-#ifndef USEAVX
-/**
- * Generic intersection function. Passes unit tests.
- */
-static int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
-                                const uint16_t *B, const size_t lenB,
-                                uint16_t *out) {
-    const uint16_t *initout = out;
-    if (lenA == 0 || lenB == 0) return 0;
-    const uint16_t *endA = A + lenA;
-    const uint16_t *endB = B + lenB;
-
-    while (1) {
-        while (*A < *B) {
-        SKIP_FIRST_COMPARE:
-            if (++A == endA) return (out - initout);
-        }
-        while (*A > *B) {
-            if (++B == endB) return (out - initout);
-        }
-        if (*A == *B) {
-            *out++ = *A;
-            if (++A == endA || ++B == endB) return (out - initout);
-        } else {
-            goto SKIP_FIRST_COMPARE;
-        }
-    }
-    return (out - initout);  // NOTREACHED
-}
-#endif
-
-extern int32_t intersect_vector16(const uint16_t *set_1, size_t size_1,
-                                  const uint16_t *set_2, size_t size_2,
-                                  uint16_t *out);
-
-#define THRESHOLD 64
-
 static inline int32_t minimum(int32_t a, int32_t b) { return (a < b) ? a : b; }
 
 /* computes the intersection of array1 and array2 and write the result to
@@ -329,13 +205,14 @@ void array_container_intersection(const array_container_t *array1,
                                   array_container_t *out) {
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
             min_card = minimum(card_1, card_2);
+    const int threshold = 64;  // subject to tuning
 
     if (out->capacity < min_card)
         array_container_grow(out, min_card, INT32_MAX, false);
-    if (card_1 * THRESHOLD < card_2) {
+    if (card_1 * threshold < card_2) {
         out->cardinality = intersect_skewed_uint16(
             array1->array, card_1, array2->array, card_2, out->array);
-    } else if (card_2 * THRESHOLD < card_1) {
+    } else if (card_2 * threshold < card_1) {
         out->cardinality = intersect_skewed_uint16(
             array2->array, card_2, array1->array, card_1, out->array);
     } else {

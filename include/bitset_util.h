@@ -1,10 +1,7 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef BITSET_UTIL_H
+#define BITSET_UTIL_H
 
-int32_t binarySearch(const uint16_t *source, int32_t n, uint16_t target);
-
-int32_t advanceUntil(const uint16_t *array, int32_t pos, int32_t length,
-                     uint16_t min);
+#include "stdint.h"
 
 /*
  * Set all bits in indexes [begin,end) to true.
@@ -45,7 +42,7 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
  * and return the updated cardinality. This evidently assumes that the bitset
  * already contained data.
  */
-uint64_t bitset_set_list(uint64_t *bitset, uint64_t card, uint16_t *list,
+uint64_t bitset_set_list(void *bitset, uint64_t card, uint16_t *list,
                          uint64_t length);
 
 /**
@@ -54,7 +51,7 @@ uint64_t bitset_set_list(uint64_t *bitset, uint64_t card, uint16_t *list,
  * and return the updated cardinality. This evidently assumes that the bitset
  * already contained data.
  */
-uint64_t bitset_clear_list(uint64_t *bitset, uint64_t card, uint16_t *list,
+uint64_t bitset_clear_list(void *bitset, uint64_t card, uint16_t *list,
                            uint64_t length);
 
 #endif

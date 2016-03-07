@@ -14,13 +14,13 @@ else # by default we compile for AVX
 CFLAGS = $(CFLAGS1) -DUSEAVX
 endif # noavx
 
-HEADERS=./include/util.h ./include/utilasm.h ./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h ./include/containers/containers.h ./include/containers/convert.h ./include/misc/configreport.h
+HEADERS=./include/array_util.h ./include/bitset_util.h ./include/utilasm.h ./include/roaring.h ./include/containers/bitset.h ./include/roaring_array.h ./include/containers/containers.h ./include/containers/convert.h ./include/misc/configreport.h
 
 INCLUDES=-Iinclude  -Iinclude/containers
 BENCHINCLUDES=-Ibenchmarks/include
 
 
-OBJECTS= roaring.o bitset.o roaring_array.o array.o array_simd.o run.o util.o mixed_intersection.o mixed_union.o convert.o containers.o
+OBJECTS= roaring.o bitset.o roaring_array.o array.o run.o array_util.o  bitset_util.o mixed_intersection.o mixed_union.o convert.o containers.o
 TESTEXECUTABLES=unit bitset_container_unit array_container_unit mixed_container_unit run_container_unit toplevel_unit
 EXECUTABLES=$(TESTEXECUTABLES) real_bitmaps_benchmark bitset_container_benchmark array_container_benchmark run_container_benchmark
 all:  $(EXECUTABLES)
@@ -43,8 +43,6 @@ bitset.o: ./src/containers/bitset.c ./include/containers/bitset.h
 array.o: ./src/containers/array.c ./include/containers/array.h
 	$(CC) $(CFLAGS) -c ./src/containers/array.c $(INCLUDES)
 
-array_simd.o: ./src/containers/array_simd.c ./include/containers/array.h
-	$(CC) $(CFLAGS) -c ./src/containers/array_simd.c $(INCLUDES)
 
 run.o: ./src/containers/run.c ./include/containers/run.h
 	$(CC) $(CFLAGS) -c ./src/containers/run.c $(INCLUDES)
@@ -63,10 +61,11 @@ mixed_intersection.o: ./src/containers/mixed_intersection.c $(wildcard ./include
 containers.o: ./src/containers/containers.c $(wildcard ./include/containers/*.h)
 	$(CC) $(CFLAGS) -c ./src/containers/containers.c $(INCLUDES)
 
-util.o: ./src/util.c ./include/util.h
-	$(CC) $(CFLAGS) -c ./src/util.c $(INCLUDES)
+bitset_util.o: ./src/bitset_util.c ./include/bitset_util.h
+	$(CC) $(CFLAGS) -c ./src/bitset_util.c $(INCLUDES)
 
-
+array_util.o: ./src/array_util.c ./include/array_util.h
+	$(CC) $(CFLAGS) -c ./src/array_util.c $(INCLUDES)
 
 unit: ./tests/unit.c    $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) -o unit ./tests/unit.c $(INCLUDES)  $(OBJECTS)
