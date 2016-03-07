@@ -10,6 +10,9 @@ int32_t advanceUntil(const uint16_t *array, int32_t pos, int32_t length,
 /**
  * From Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
  * Optimized by D. Lemire on May 3rd 2013
+ *
+ * C should have capacity greater than the minimum of s_1 and s_b + 8
+ * where 8 is sizeof(__m128i)/sizeof(uint16_t).
  */
 int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                            size_t s_b, uint16_t *C);

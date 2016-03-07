@@ -301,7 +301,6 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
     size_t count = 0;
     size_t i_a = 0, i_b = 0;
     const int vectorlength = sizeof(__m128i) / sizeof(uint16_t);
-
     const size_t st_a = (s_a / vectorlength) * vectorlength;
     const size_t st_b = (s_b / vectorlength) * vectorlength;
     __m128i v_a, v_b;
@@ -315,7 +314,7 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
             const int r = _mm_extract_epi32(res_v, 0);
             __m128i sm16 = _mm_load_si128((const __m128i *)shuffle_mask16 + r);
             __m128i p = _mm_shuffle_epi8(v_a, sm16);
-            _mm_storeu_si128((__m128i *)&C[count], p);
+            _mm_storeu_si128((__m128i *)&C[count], p);  // can overflow
             count += _mm_popcnt_u32(r);
             const uint16_t a_max = A[i_a + vectorlength - 1];
             const uint16_t b_max = B[i_b + vectorlength - 1];
@@ -339,7 +338,7 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                 __m128i sm16 =
                     _mm_load_si128((const __m128i *)shuffle_mask16 + r);
                 __m128i p = _mm_shuffle_epi8(v_a, sm16);
-                _mm_storeu_si128((__m128i *)&C[count], p);
+                _mm_storeu_si128((__m128i *)&C[count], p);  // can overflow
                 count += _mm_popcnt_u32(r);
                 const uint16_t a_max = A[i_a + vectorlength - 1];
                 const uint16_t b_max = B[i_b + vectorlength - 1];

@@ -206,7 +206,9 @@ void array_container_intersection(const array_container_t *array1,
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
             min_card = minimum(card_1, card_2);
     const int threshold = 64;  // subject to tuning
-
+#ifdef USEAVX
+    min_card += sizeof(__m128i) / sizeof(uint16_t);
+#endif
     if (out->capacity < min_card)
         array_container_grow(out, min_card, INT32_MAX, false);
     if (card_1 * threshold < card_2) {
