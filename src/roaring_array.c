@@ -55,7 +55,8 @@ roaring_array_t *ra_copy(roaring_array_t *r) {
     const int32_t allocsize = r->allocation_size;
     new_ra->allocation_size = allocsize;
     new_ra->keys = malloc(allocsize * sizeof(uint16_t));
-    new_ra->containers = malloc(allocsize * sizeof(void *));
+    new_ra->containers =
+        calloc(allocsize, sizeof(void *));  // setting pointers to zero
     new_ra->typecodes = malloc(allocsize * sizeof(uint8_t));
     if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
         free(new_ra);
@@ -89,9 +90,7 @@ roaring_array_t *ra_copy(roaring_array_t *r) {
 
 static void ra_clear(roaring_array_t *ra) {
     free(ra->keys);
-    // TODO: should the containers themselves be freed by this?
-    // need to verify there are no cases where 2 roaring_arrays share containers
-    // time being, assume no sharing and thus...
+    ra->keys = NULL;  // paranoid
     for (int i = 0; i < ra->size; ++i)
         container_free(ra->containers[i], ra->typecodes[i]);
 

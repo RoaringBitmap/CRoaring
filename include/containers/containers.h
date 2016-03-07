@@ -228,8 +228,10 @@ inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
             if (result_card <= DEFAULT_MAX_SIZE) {
                 // temp temp, container conversion?? Better not here!
                 *result_type = ARRAY_CONTAINER_TYPE_CODE;
-                return (void *)array_container_from_bitset(
+                void * returnval  =  (void *)array_container_from_bitset(
                     result);  // assume it recycles memory as necessary
+                bitset_container_free(result);
+                return returnval;
             }
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return result;
@@ -287,7 +289,9 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
             int result_card = bitset_container_and(c1, c2, result);
             if (result_card <= DEFAULT_MAX_SIZE) {
                 *result_type = ARRAY_CONTAINER_TYPE_CODE;
-                return (void *)array_container_from_bitset(result);
+                void * returnval = (void *)array_container_from_bitset(result);
+                bitset_container_free(c1);
+                return returnval;
             }
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return result;
@@ -345,7 +349,7 @@ inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
             return result;
         case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
             result = array_container_create();
-            // TODO: this is not correct
+            // TODO: this is not correct, need to convert to bitset
             array_container_union(c1, c2, result);
             *result_type = ARRAY_CONTAINER_TYPE_CODE;
             return result;

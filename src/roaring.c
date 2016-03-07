@@ -171,10 +171,13 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                                  &typecode1);
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &typecode2);
-            /* Daniel disabled next bit on Feb. 12th */  // owen put it back to
-                                                         // debug
             void *c =
                 container_iand(c1, typecode1, c2, typecode2, &typecode_result);
+            const bool samecontainer = (c == c1);
+            if (!samecontainer) {
+                // if they are different then, for sure, we must get rid of c
+                container_free(c1, typecode1);
+            }
 
             if (container_nonzero_cardinality(c, typecode_result)) {
                 ra_replace_key_and_container_at_index(x1->high_low_container,
@@ -230,13 +233,10 @@ roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1,
                                                  &container_type_2);
             void *c = container_or(c1, container_type_1, c2, container_type_2,
                                    &container_result_type);
-            if (container_nonzero_cardinality(c, container_result_type)) {
-                ra_append(answer->high_low_container, s1, c,
-                          container_result_type);
-            } else {
-                container_free(
-                    c, container_result_type);  // otherwise:memory leak!
-            }
+            // since we assume that the initial containers are non-empty, the
+            // result here
+            // can only be non-empty
+            ra_append(answer->high_low_container, s1, c, container_result_type);
             ++pos1;
             ++pos2;
             if (pos1 == length1) break;
