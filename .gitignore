@@ -35,3 +35,12 @@
 *_benchmark
 *_unit
 unit
+
+# CMake
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+Testing
+Makefile
