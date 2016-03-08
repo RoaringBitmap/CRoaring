@@ -2,11 +2,16 @@ cmake_minimum_required (VERSION 2.6)
 
 project (RoaringBitmap)
 
-set (ROARING_LIB_NAME roaring)
-set (ROARING_LIB_TYPE SHARED)
-
 option (AVX_TUNING "Enable AVX tuning" ON)
+option (BUILD_STATIC "Build a static library" OFF)
 option (DEBUG "Create a debug build" OFF)
+
+set (ROARING_LIB_NAME roaring)
+if (BUILD_STATIC)
+  set (ROARING_LIB_TYPE STATIC)
+else ()
+  set (ROARING_LIB_TYPE SHARED)
+endif()
 
 set (ROARING_SRC
     src/array_util.c
@@ -46,7 +51,7 @@ install (FILES ${ROARING_INCLUDE_CONTAINERS} DESTINATION include/${ROARING_LIB_N
 
 set (STD_FLAGS "-std=c11 -fPIC")
 set (OPT_FLAGS "-march=native")
-set (WARNING_FLAGS "-Wall -Winline  -Wshadow -Wextra -pedantic")
+set (WARNING_FLAGS "-Wall -Winline -Wshadow -Wextra -pedantic")
 set (INCLUDE_FLAGS "-Iinclude -Iinclude/containers -Ibenchmark")
 
 if (AVX_TUNING)
