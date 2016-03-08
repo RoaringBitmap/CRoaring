@@ -1,7 +1,7 @@
 #ifndef BITSET_UTIL_H
 #define BITSET_UTIL_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 /*
  * Set all bits in indexes [begin,end) to true.
