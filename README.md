@@ -5,8 +5,16 @@ Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortu
  To compensate, we often use compressed bitmaps.
 
 Roaring bitmaps are compressed bitmaps which tend to outperform conventional compressed bitmaps such as WAH, EWAH or Concise.
-They are used by several major systems such as Apache Lucene and derivative systems such as Solr and Elastic,
-Metamarkets' Druid, Apache Spark, Whoosh and eBay's Apache Kylin.
+They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
+[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [Apache Spark][spark], [Whoosh][whoosh] and eBay's [Apache Kylin][kylin].
+
+[lucene]: https://lucene.apache.org/
+[solr]: https://lucene.apache.org/solr/
+[elasticsearch]: https://www.elastic.co/products/elasticsearch
+[druid]: http://druid.io/
+[spark]: https://spark.apache.org/
+[whoosh]: #
+[kylin]: http://kylin.apache.org/
 
 The primary goal of the CRoaring is to provide a high performance low-level implementation that fully take advantage
 of the latest hardware.
