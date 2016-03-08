@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdio.h>
 #include "roaring_array.h"
-#include "util.h"
+#include "array_util.h"
 
 roaring_bitmap_t *roaring_bitmap_create() {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
