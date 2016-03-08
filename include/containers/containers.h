@@ -310,6 +310,7 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
 		    // c1 is a bitmap so no inplace possible
             result = array_container_create();
             array_bitset_container_intersection(c2,c1,result);
+            bitset_container_free(c1);
             *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
             return result;
         case ARRAY_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:

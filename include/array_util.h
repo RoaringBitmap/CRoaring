@@ -38,4 +38,34 @@ int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
 size_t union_uint16(const uint16_t *set_1, size_t size_1,
                            const uint16_t *set_2, size_t size_2,
                            uint16_t *buffer);
+
+
+
+/**
+ * Generic intersection function.
+ */
+size_t intersect_uint32(const uint32_t *A, const size_t lenA,
+                                const uint32_t *B, const size_t lenB,
+                                uint32_t *out);
+
+/**
+ * Generic intersection function, returns just the cardinality.
+ */
+size_t intersect_uint32_card(const uint32_t *A, const size_t lenA,
+                                const uint32_t *B, const size_t lenB);
+
+/**
+ * Generic union function.
+ */
+size_t union_uint32(const uint32_t *set_1, size_t size_1,
+                           const uint32_t *set_2, size_t size_2,
+                           uint32_t *buffer);
+
+
+/**
+ * Generic union function, returns just the cardinality.
+ */
+size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
+                           const uint32_t *set_2, size_t size_2);
+
 #endif

@@ -173,11 +173,6 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                                  &typecode2);
             void *c =
                 container_iand(c1, typecode1, c2, typecode2, &typecode_result);
-            const bool samecontainer = (c == c1);
-            if (!samecontainer) {
-                // if they are different then, for sure, we must get rid of c
-                container_free(c1, typecode1);
-            }
 
             if (container_nonzero_cardinality(c, typecode_result)) {
                 ra_replace_key_and_container_at_index(x1->high_low_container,
@@ -185,9 +180,8 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                                       typecode_result);
                 intersection_size++;
             } else {
-                container_free(c, typecode1);
+                container_free(c, typecode_result);
             }
-            /**/
             ++pos1;
             ++pos2;
         } else if (s1 < s2) {

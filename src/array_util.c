@@ -356,8 +356,8 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
     }
     // intersect the tail using scalar intersection
     while (i_a < s_a && i_b < s_b) {
-        int16_t a = A[i_a];
-        int16_t b = B[i_b];
+        uint16_t a = A[i_a];
+        uint16_t b = B[i_b];
         if (a < b) {
             i_a++;
         } else if (b < a) {
@@ -369,7 +369,6 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
             i_b++;
         }
     }
-
     return count;
 }
 
@@ -437,7 +436,61 @@ int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
     return (out - initout);  // NOTREACHED
 }
 
+/**
+ * Generic intersection function.
+ */
+size_t intersect_uint32(const uint32_t *A, const size_t lenA, const uint32_t *B,
+                        const size_t lenB, uint32_t *out) {
+    const uint32_t *initout = out;
+    if (lenA == 0 || lenB == 0) return 0;
+    const uint32_t *endA = A + lenA;
+    const uint32_t *endB = B + lenB;
+
+    while (1) {
+        while (*A < *B) {
+        SKIP_FIRST_COMPARE:
+            if (++A == endA) return (out - initout);
+        }
+        while (*A > *B) {
+            if (++B == endB) return (out - initout);
+        }
+        if (*A == *B) {
+            *out++ = *A;
+            if (++A == endA || ++B == endB) return (out - initout);
+        } else {
+            goto SKIP_FIRST_COMPARE;
+        }
+    }
+    return (out - initout);  // NOTREACHED
+}
+
+size_t intersect_uint32_card(const uint32_t *A, const size_t lenA,
+                             const uint32_t *B, const size_t lenB) {
+    if (lenA == 0 || lenB == 0) return 0;
+    size_t card = 0;
+    const uint32_t *endA = A + lenA;
+    const uint32_t *endB = B + lenB;
+
+    while (1) {
+        while (*A < *B) {
+        SKIP_FIRST_COMPARE:
+            if (++A == endA) return card;
+        }
+        while (*A > *B) {
+            if (++B == endB) return card;
+        }
+        if (*A == *B) {
+            card++;
+            if (++A == endA || ++B == endB) return card;
+        } else {
+            goto SKIP_FIRST_COMPARE;
+        }
+    }
+    return card;  // NOTREACHED
+}
+
 // TODO: can one vectorize the computation of the union?
+
 size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
     size_t pos = 0, idx_1 = 0, idx_2 = 0;
@@ -484,5 +537,98 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
         pos += n_elems;
     }
 
+    return pos;
+}
+
+size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
+                    size_t size_2, uint32_t *buffer) {
+    size_t pos = 0, idx_1 = 0, idx_2 = 0;
+
+    if (0 == size_2) {
+        memcpy(buffer, set_1, size_1 * sizeof(uint32_t));
+        return size_1;
+    }
+    if (0 == size_1) {
+        memcpy(buffer, set_2, size_2 * sizeof(uint32_t));
+        return size_2;
+    }
+
+    uint32_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
+
+    while (true) {
+        if (val_1 < val_2) {
+            buffer[pos++] = val_1;
+            ++idx_1;
+            if (idx_1 >= size_1) break;
+            val_1 = set_1[idx_1];
+        } else if (val_2 < val_1) {
+            buffer[pos++] = val_2;
+            ++idx_2;
+            if (idx_2 >= size_2) break;
+            val_2 = set_2[idx_2];
+        } else {
+            buffer[pos++] = val_1;
+            ++idx_1;
+            ++idx_2;
+            if (idx_1 >= size_1 || idx_2 >= size_2) break;
+            val_1 = set_1[idx_1];
+            val_2 = set_2[idx_2];
+        }
+    }
+
+    if (idx_1 < size_1) {
+        const size_t n_elems = size_1 - idx_1;
+        memcpy(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint32_t));
+        pos += n_elems;
+    } else if (idx_2 < size_2) {
+        const size_t n_elems = size_2 - idx_2;
+        memcpy(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint32_t));
+        pos += n_elems;
+    }
+
+    return pos;
+}
+
+size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
+                         const uint32_t *set_2, size_t size_2) {
+    size_t pos = 0, idx_1 = 0, idx_2 = 0;
+
+    if (0 == size_2) {
+        return size_1;
+    }
+    if (0 == size_1) {
+        return size_2;
+    }
+
+    uint32_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
+
+    while (true) {
+        if (val_1 < val_2) {
+            ++idx_1;
+            ++pos;
+            if (idx_1 >= size_1) break;
+            val_1 = set_1[idx_1];
+        } else if (val_2 < val_1) {
+            ++idx_2;
+            ++pos;
+            if (idx_2 >= size_2) break;
+            val_2 = set_2[idx_2];
+        } else {
+            ++idx_1;
+            ++idx_2;
+            ++pos;
+            if (idx_1 >= size_1 || idx_2 >= size_2) break;
+            val_1 = set_1[idx_1];
+            val_2 = set_2[idx_2];
+        }
+    }
+
+    if (idx_1 < size_1) {
+        const size_t n_elems = size_1 - idx_1;
+        pos += n_elems;
+    } else if (idx_2 < size_2) {
+        const size_t n_elems = size_2 - idx_2;
+        pos += n_elems;
+    }
     return pos;
 }

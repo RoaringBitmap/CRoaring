@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 
+#include "benchmark.h"
 #include "roaring.h"
 
 /**
@@ -129,24 +131,17 @@ static uint32_t **read_all_integer_files(char *dirname, char *extension,
     return answer;
 }
 
-static roaring_bitmap_t **read_all_bitmaps(char *dirname, char *extension,
-                                           size_t *count) {
-    size_t *howmany = NULL;
-    uint32_t **numbers =
-        read_all_integer_files(dirname, extension, &howmany, count);
+static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
+                                             uint32_t **numbers, size_t count) {
     if (numbers == NULL) return NULL;
-
-    printf("reading %d files, now constructing bitmaps.\n", (int)*count);
-    roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * (*count));
-    for (size_t i = 0; i < *count; i++) {
-        printf("loading %d integers in bitmap %d \n", (int)howmany[i],
-               (int)i + 1);
+    printf("Constructing %d  bitmaps.\n", (int)count);
+    roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
+    for (size_t i = 0; i < count; i++) {
+        printf(".");
+        fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
-        free(numbers[i]);
-        numbers[i] = NULL;
     }
-    free(howmany);
-    free(numbers);
+    printf("\n");
     return answer;
 }
 
@@ -186,65 +181,89 @@ int main(int argc, char **argv) {
     }
     char *dirname = argv[optind];
     size_t count;
-    roaring_bitmap_t **bitmaps = read_all_bitmaps(dirname, extension, &count);
+
+    size_t *howmany = NULL;
+    uint32_t **numbers =
+        read_all_integer_files(dirname, extension, &howmany, &count);
+    if (numbers == NULL) return -1;
+
+    uint64_t cycles_start = 0, cycles_final = 0;
+
+    RDTSC_START(cycles_start);
+    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count);
+    RDTSC_FINAL(cycles_final);
     if (bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n", (int)count, dirname);
 
-    printf("\n Merely copying the bitmaps. \n ========= \n");
+    printf("Creating %zu bitmaps took %" PRIu64 " cycles\n", count,
+           cycles_final - cycles_start);
+
+    RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count; i += 2) {
         roaring_bitmap_t *CI = roaring_bitmap_copy(
             bitmaps[i]);  // to test the inplace version we create a copy
         roaring_bitmap_free(CI);
     }
+    RDTSC_FINAL(cycles_final);
+    printf("Copying and freeing %zu bitmaps took %" PRIu64 " cycles\n", count,
+           cycles_final - cycles_start);
 
-    printf("\n Consecutive AND and OR. \n ========= \n");
-
+    uint64_t successive_and = 0;
+    uint64_t successive_or = 0;
     // try ANDing and ORing together consecutive pairs
     for (int i = 0; i < (int)count - 1; ++i) {
         uint32_t c1 = roaring_bitmap_get_cardinality(bitmaps[i]);
         uint32_t c2 = roaring_bitmap_get_cardinality(bitmaps[i + 1]);
+        RDTSC_START(cycles_start);
         roaring_bitmap_t *tempand =
             roaring_bitmap_and(bitmaps[i], bitmaps[i + 1]);
+        RDTSC_FINAL(cycles_final);
+        successive_and += cycles_final - cycles_start;
+
         uint32_t ci = roaring_bitmap_get_cardinality(tempand);
-        printf("AND number %d has card %d\n", i, (int)ci);
         roaring_bitmap_free(tempand);
+        RDTSC_START(cycles_start);
         roaring_bitmap_t *tempor =
             roaring_bitmap_or(bitmaps[i], bitmaps[i + 1]);
+        RDTSC_FINAL(cycles_final);
+        successive_or += cycles_final - cycles_start;
+
         uint32_t co = roaring_bitmap_get_cardinality(tempor);
-        printf("OR number %d has card %d\n", i, (int)co);
         roaring_bitmap_free(tempor);
-        printf(
-            "set1 has card %d, set2 has card %d, intersection is %d, union is "
-            "%d\n",
-            (int)c1, (int)c2, (int)ci, (int)co);
 
         if (c1 + c2 != co + ci) {
             printf(KRED "cardinalities are wrong somehow\n");
+            printf("c1 = %d, c2 = %d, co = %d, ci = %d\n", c1, c2, co, ci);
             return -1;
         }
-        printf("\n");
     }
-    printf("\n Trying in-place computations \n ========= \n");
+    printf(" %zu successive bitmaps intersections took %" PRIu64 " cycles\n",
+           count - 1, successive_and);
+    printf(" %zu successive bitmaps unions took %" PRIu64 " cycles\n",
+           count - 1, successive_or);
 
-    // then mangle them with inplace
-    for (int i = 0; i < (int)count - 1; i += 2) {
-        roaring_bitmap_t *CI = roaring_bitmap_copy(
-            bitmaps[i]);  // to test the inplace version we create a copy
-        roaring_bitmap_and_inplace(CI, bitmaps[i + 1]);
-        uint32_t ci = roaring_bitmap_get_cardinality(CI);
-        roaring_bitmap_free(CI);
-        printf("inplace AND number %d has card %d\n", i, (int)ci);
-        roaring_bitmap_t *tempand =
-            roaring_bitmap_and(bitmaps[i], bitmaps[i + 1]);
-        if (ci != roaring_bitmap_get_cardinality(tempand)) {
-            printf(KRED " there is a problem with in-place intersections\n");
-            return -1;
-        }
-        roaring_bitmap_free(tempand);
-        printf("\n");
+    roaring_bitmap_t **copyofr = malloc(sizeof(roaring_bitmap_t *) * count);
+    for (int i = 0; i < (int)count; i++) {
+        copyofr[i] = roaring_bitmap_copy(bitmaps[i]);
     }
+    RDTSC_START(cycles_start);
+    for (int i = 0; i < (int)count - 1; i++) {
+        roaring_bitmap_and_inplace(copyofr[i], bitmaps[i + 1]);
+    }
+    RDTSC_FINAL(cycles_final);
+    printf(" %zu successive in-place bitmaps intersections took %" PRIu64
+           " cycles\n",
+           count - 1, cycles_final - cycles_start);
 
-    for (int i = 0; i < (int)count; ++i) roaring_bitmap_free(bitmaps[i]);
+    for (int i = 0; i < (int)count; ++i) {
+        free(numbers[i]);
+        numbers[i] = NULL;  // paranoid
+        roaring_bitmap_free(bitmaps[i]);
+        bitmaps[i] = NULL;  // paranoid
+    }
     free(bitmaps);
+    free(howmany);
+    free(numbers);
+
     return 0;
 }

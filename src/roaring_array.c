@@ -272,7 +272,7 @@ void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
 void ra_downsize(roaring_array_t *ra, int32_t new_length) {
     assert(new_length <= ra->size);
 
-    printf("ra downsize from size %d to %d\n", (int)ra->size, (int)new_length);
+// printf("ra downsize from size %d to %d\n", (int)ra->size, (int)new_length);
 
 // all these excess containers  are either in use elsewhere or
 // have already been freed by inplace and.
