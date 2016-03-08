@@ -81,8 +81,8 @@ add_executable (toplevel_unit tests/toplevel_unit.c)
 target_link_libraries (toplevel_unit roaring)
 add_test (toplevel_unit toplevel_unit)
 
-# invoke all tests with: make test
-add_custom_target(test COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS
+# invoke all tests with: make check
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS
     unit
     bitset_container_unit
     array_container_unit
