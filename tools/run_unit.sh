@@ -9,7 +9,8 @@ TESTS=(bitset_container_unit \
        run_container_unit \
        toplevel_unit \
        mixed_container_unit \
-       unit)
+       unit \
+       util_unit)
 
 function run_tests() {
   for t in ${TESTS[@]}; do

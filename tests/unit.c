@@ -157,7 +157,7 @@ int realdatacheck(char *dirname) {
             "I could not find or load any data file with extension %s in "
             "directory %s.\n",
             extension, dirname);
-    	return -1;
+        return -1;
     }
 
     roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count);

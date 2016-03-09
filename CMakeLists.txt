@@ -71,6 +71,10 @@ add_test (run_container_unit unit)
 add_executable (toplevel_unit tests/toplevel_unit.c)
 target_link_libraries (toplevel_unit ${ROARING_LIB_NAME})
 add_test (toplevel_unit toplevel_unit)
+add_executable (util_unit tests/util_unit.c)
+target_link_libraries (util_unit ${ROARING_LIB_NAME})
+add_test (util_unit util_unit)
+
 
 # invoke all tests with: make check
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS
@@ -79,7 +83,8 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS
     array_container_unit
     mixed_container_unit
     run_container_unit
-    toplevel_unit)
+    toplevel_unit
+    util_unit)
 
 add_executable (real_bitmaps_benchmark benchmarks/real_bitmaps_benchmark.c)
 target_link_libraries (real_bitmaps_benchmark ${ROARING_LIB_NAME})
