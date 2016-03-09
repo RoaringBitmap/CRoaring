@@ -1,7 +1,4 @@
-/*
- * bitset_container_unit.c
- *
- */
+
 
 #include <stdint.h>
 #include <stdio.h>
