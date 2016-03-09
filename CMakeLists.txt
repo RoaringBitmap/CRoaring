@@ -26,28 +26,10 @@ set (ROARING_SRC
     src/roaring.c
     src/roaring_array.c)
 
-set (ROARING_INCLUDE
-    include/array_util.h
-    include/bitset_util.h
-    include/portability.h
-    include/roaring.h
-    include/roaring_array.h
-    include/utilasm.h)
-
-set (ROARING_INCLUDE_CONTAINERS
-    include/containers/array.h
-    include/containers/bitset.h
-    include/containers/containers.h
-    include/containers/convert.h
-    include/containers/mixed_intersection.h
-    include/containers/mixed_union.h
-    include/containers/run.h)
-
 add_library (${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 
 install (TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
-install (FILES ${ROARING_INCLUDE} DESTINATION include/${ROARING_LIB_NAME})
-install (FILES ${ROARING_INCLUDE_CONTAINERS} DESTINATION include/${ROARING_LIB_NAME}/containers)
+install (DIRECTORY include/ DESTINATION include/${ROARING_LIB_NAME})
 
 set (STD_FLAGS "-std=c11 -fPIC")
 set (OPT_FLAGS "-march=native")
