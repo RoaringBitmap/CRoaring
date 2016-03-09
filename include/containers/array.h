@@ -87,11 +87,11 @@ void array_container_intersection(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst);
 
-/* Compute the intersection of src_1 and src_2.  The result is placed
- * in src_1 (and src_1 is the return value).
- */
-array_container_t *array_container_intersection_inplace(
-    array_container_t *src_1, const array_container_t *src_2);
+/* computes the intersection of array1 and array2 and write the result to
+ * array1.
+ * */
+void array_container_intersection_inplace(array_container_t *src_1,
+                                          const array_container_t *src_2);
 
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit

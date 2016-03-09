@@ -280,10 +280,9 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
                     : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
-            result = array_container_intersection_inplace(
-                c1, c2);  // result must be c1
+            array_container_intersection_inplace(c1, c2);
             *result_type = ARRAY_CONTAINER_TYPE_CODE;
-            return result;
+            return c1;
         case RUN_CONTAINER_TYPE_CODE * 4 + RUN_CONTAINER_TYPE_CODE:
             result = run_container_create();
             run_container_intersection(c1, c2, result);

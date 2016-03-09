@@ -228,30 +228,24 @@ void array_container_intersection(const array_container_t *array1,
     }
 }
 
-/** compute the intersection and put the result in src1 (also the return value)
- */
-array_container_t *array_container_intersection_inplace(
-    array_container_t *src_1, const array_container_t *src_2) {
-    static int warnedEm = 0;
-    if (!warnedEm) {
-        fprintf(stderr, "warning, array x array intersection is naive\n");
-        warnedEm = 1;
+/* computes the intersection of array1 and array2 and write the result to
+ * array1.
+ * */
+void array_container_intersection_inplace(array_container_t *src_1,
+                                          const array_container_t *src_2) {
+    // todo: can any of this be vectorized?
+    int32_t card_1 = src_1->cardinality, card_2 = src_2->cardinality;
+    const int threshold = 64;  // subject to tuning
+    if (card_1 * threshold < card_2) {
+        src_1->cardinality = intersect_skewed_uint16(
+            src_1->array, card_1, src_2->array, card_2, src_1->array);
+    } else if (card_2 * threshold < card_1) {
+        src_1->cardinality = intersect_skewed_uint16(
+            src_2->array, card_2, src_1->array, card_1, src_1->array);
+    } else {
+        src_1->cardinality = intersect_uint16(
+            src_1->array, card_1, src_2->array, card_2, src_1->array);
     }
-    // TODO: consider something smarter than this merge
-    int card = 0, read1_pos = 0, read2_pos = 0;
-    while (read1_pos < src_1->cardinality && read2_pos < src_2->cardinality) {
-        if (src_1->array[read1_pos] < src_2->array[read2_pos])
-            ++read1_pos;
-        else if (src_1->array[read1_pos] > src_2->array[read2_pos])
-            ++read2_pos;
-        else {
-            src_1->array[card++] = src_1->array[read1_pos];
-            ++read1_pos;
-            ++read2_pos;
-        }
-    }
-    src_1->cardinality = card;
-    return src_1;
 }
 
 int array_container_to_uint32_array(uint32_t *out,
