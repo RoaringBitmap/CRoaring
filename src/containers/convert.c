@@ -32,6 +32,7 @@ array_container_t *array_container_from_bitset(bitset_container_t *bits) {
     int outpos = 0;
     uint16_t *out = result->array;
     for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+        // todo: vectorize!
         uint64_t w = bits->array[i];
         while (w != 0) {
             uint64_t t = w & -w;
