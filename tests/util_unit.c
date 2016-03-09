@@ -25,7 +25,7 @@ int setandextract_uint16() {
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
-        bitset_set_list(bitset, 0, vals, valsize);
+        bitset_set_list(bitset, vals, valsize);
         uint16_t* newvals = malloc(valsize * sizeof(uint16_t));
         bitset_extract_setbits_uint16(bitset, bitset_size_in_words, newvals, 0);
         for (unsigned int k = 0; k < valsize; ++k) {
@@ -56,7 +56,7 @@ int setandextract_sse_uint16() {
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
-        bitset_set_list(bitset, 0, vals, valsize);
+        bitset_set_list(bitset, vals, valsize);
         uint16_t* newvals = malloc(valsize * sizeof(uint16_t) + 64);
         bitset_extract_setbits_sse_uint16(bitset, bitset_size_in_words, newvals,
                                           valsize, 0);
@@ -88,7 +88,7 @@ int setandextract_uint32() {
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
-        bitset_set_list(bitset, 0, vals, valsize);
+        bitset_set_list(bitset, vals, valsize);
         uint32_t* newvals = malloc(valsize * sizeof(uint32_t));
         bitset_extract_setbits(bitset, bitset_size_in_words, newvals, 0);
         for (unsigned int k = 0; k < valsize; ++k) {
@@ -119,7 +119,7 @@ int setandextract_avx2_uint32() {
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
-        bitset_set_list(bitset, 0, vals, valsize);
+        bitset_set_list(bitset, vals, valsize);
         uint32_t* newvals = malloc(valsize * sizeof(uint32_t) + 64);
         bitset_extract_setbits_avx2(bitset, bitset_size_in_words, newvals,
                                     valsize, 0);

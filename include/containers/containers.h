@@ -333,10 +333,9 @@ inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return result;
         case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
-            result = array_container_create();
-            // TODO: this is not correct, need to convert to bitset
-            array_container_union(c1, c2, result);
-            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+            *result_type = array_array_container_union(c1, c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case RUN_CONTAINER_TYPE_CODE * 4 + RUN_CONTAINER_TYPE_CODE:
             result = run_container_create();

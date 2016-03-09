@@ -93,8 +93,13 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
  * and return the updated cardinality. This evidently assumes that the bitset
  * already contained data.
  */
-uint64_t bitset_set_list(void *bitset, uint64_t card, const uint16_t *list,
-                         uint64_t length);
+uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
+                                  const uint16_t *list, uint64_t length);
+/**
+ * Given a bitset, set all bit values in the list (there
+ * are length of them).
+ */
+void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length);
 
 /**
  * Given a bitset having cardinality card, unset all bit values in the list

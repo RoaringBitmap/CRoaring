@@ -716,8 +716,8 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
 
 #ifdef ASMBITMANIPOPTIMIZATION
 
-uint64_t bitset_set_list(void *bitset, uint64_t card, const uint16_t *list,
-                         uint64_t length) {
+uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
+                                  const uint16_t *list, uint64_t length) {
     uint64_t offset, load, pos;
     uint64_t shift = 6;
     const uint16_t *end = list + length;
@@ -737,6 +737,26 @@ uint64_t bitset_set_list(void *bitset, uint64_t card, const uint16_t *list,
           [pos] "=&r"(pos), [offset] "=&r"(offset)
         : [end] "r"(end), [bitset] "r"(bitset), [shift] "r"(shift));
     return card;
+}
+
+void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
+    uint64_t offset, load, pos;
+    uint64_t shift = 6;
+    const uint16_t *end = list + length;
+    // bts is not available as an intrinsic in GCC
+    __asm volatile(
+        "1:\n"
+        "movzwq (%[list]), %[pos]\n"
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)\n"
+        "add $2, %[list]\n"
+        "cmp %[list], %[end]\n"
+        "jnz 1b"
+        : [list] "+&r"(list), [load] "=&r"(load), [pos] "=&r"(pos),
+          [offset] "=&r"(offset)
+        : [end] "r"(end), [bitset] "r"(bitset), [shift] "r"(shift));
 }
 
 uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
@@ -783,8 +803,8 @@ uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
     return card;
 }
 
-uint64_t bitset_set_list(void *bitset, uint64_t card, const uint16_t *list,
-                         uint64_t length) {
+uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
+                                  const uint16_t *list, uint64_t length) {
     uint64_t offset, load, newload, pos, index;
     const uint16_t *end = list + length;
     while (list != end) {
@@ -798,6 +818,21 @@ uint64_t bitset_set_list(void *bitset, uint64_t card, const uint16_t *list,
         list++;
     }
     return card;
+}
+
+void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
+    uint64_t offset, load, newload, pos, index;
+    const uint16_t *end = list + length;
+    while (list != end) {
+        pos = *(const uint16_t *)list;
+        offset = pos >> 6;
+        index = pos % 64;
+        load = ((uint64_t *)bitset)[offset];
+        newload = load | (UINT64_C(1) << index);
+        card += (load ^ newload) >> index;
+        ((uint64_t *)bitset)[offset] = newload;
+        list++;
+    }
 }
 
 #endif
