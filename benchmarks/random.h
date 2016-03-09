@@ -28,7 +28,7 @@ static inline uint32_t pcg32_random_r(pcg32_random_t *rng) {
 
 static inline uint32_t pcg32_random() { return pcg32_random_r(&pcg32_global); }
 
-static inline uint32_t ranged_random_mult_lazy(uint32_t range) {
+static inline uint32_t ranged_random(uint32_t range) {
     uint64_t random32bit, multiresult;
     uint32_t leftover;
     uint32_t threshold;
@@ -59,7 +59,7 @@ static inline uint32_t ranged_random_mult_lazy(uint32_t range) {
 static inline void shuffle_uint16(uint16_t *storage, uint32_t size) {
     uint32_t i;
     for (i = size; i > 1; i--) {
-        uint32_t nextpos = ranged_random_mult_lazy(i);
+        uint32_t nextpos = ranged_random(i);
         uint16_t tmp = storage[i - 1];    // likely in cache
         uint16_t val = storage[nextpos];  // could be costly
         storage[i - 1] = val;
@@ -71,7 +71,7 @@ static inline void shuffle_uint16(uint16_t *storage, uint32_t size) {
 static inline void shuffle_uint32(uint32_t *storage, uint32_t size) {
     uint32_t i;
     for (i = size; i > 1; i--) {
-        uint32_t nextpos = ranged_random_mult_lazy(i);
+        uint32_t nextpos = ranged_random(i);
         uint32_t tmp = storage[i - 1];    // likely in cache
         uint32_t val = storage[nextpos];  // could be costly
         storage[i - 1] = val;
