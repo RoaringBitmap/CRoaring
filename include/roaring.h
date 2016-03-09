@@ -5,8 +5,8 @@ An implementation of Roaring Bitmaps in C.
 #ifndef ROARING_H
 #define ROARING_H
 
+#include <stdbool.h>
 #include "roaring_array.h"
-#include "stdbool.h"
 
 typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;

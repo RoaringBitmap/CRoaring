@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <x86intrin.h>
 
-#include "utilasm.h"
+#include "../utilasm.h"
 
 #ifdef USEAVX
 #define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))

@@ -17,13 +17,19 @@ function run_tests() {
   done
 }
 
+function clean_build() {
+  [[ -f Makefile ]] && make clean
+  cmake $@ .
+  cmake --build .
+}
+
 function main() {
   echo -e " \x1B[0;32mTesting non-AVX version.\x1B[0m "
-  make --silent NOAVXTUNING=1 clean all
+  clean_build -DAVX_TUNING=0
   run_tests
 
   echo -e " \x1B[0;32mTesting AVX version.\x1B[0m "
-  make --silent NOAVXTUNING=0 clean all
+  clean_build -DAVX_TUNING=1
   run_tests
 
   echo -e "\n\n \x1B[0;31m[\x1B[0m \x1B[0;32mAll tests clear.\x1B[0m \x1B[0;31m]\x1B[0m \n\n"

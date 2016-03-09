@@ -1,7 +1,7 @@
 #ifndef ARRAY_UTIL_H
 #define ARRAY_UTIL_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 int32_t binarySearch(const uint16_t *source, int32_t n, uint16_t target);
 
