@@ -26,8 +26,12 @@ struct array_container_s {
 
 typedef struct array_container_s array_container_t;
 
-/* Create a new array. Return NULL in case of failure. */
+/* Create a new array with default. Return NULL in case of failure. See also array_container_create_given_capacity. */
 array_container_t *array_container_create();
+
+/* Create a new array with a specified capacity size. Return NULL in case of failure. */
+array_container_t *array_container_create_given_capacity(int32_t size);
+
 
 /* Free memory owned by `array'. */
 void array_container_free(array_container_t *array);
@@ -100,9 +104,6 @@ int array_container_to_uint32_array(uint32_t *out,
                                     const array_container_t *cont,
                                     uint32_t base);
 
-/* Create a new array with capacity size. Return NULL in case of failure. */
-array_container_t *array_container_create_given_capacity(int32_t size);
-
 /* Compute the number of runs */
 int32_t array_container_number_of_runs(array_container_t *a);
 
@@ -131,6 +132,6 @@ inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
  * then the new content will be uninitialized.
  */
 void array_container_grow(array_container_t *container, int32_t min,
-                                 int32_t max, bool preserve);
+                          int32_t max, bool preserve);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */
