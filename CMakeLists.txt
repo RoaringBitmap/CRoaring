@@ -1,4 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
+if (CMAKE_VERSION VERSION_GREATER 3.0.0)
+  cmake_policy(VERSION 3.0.0)
+endif ()
 
 project (RoaringBitmap)
 
