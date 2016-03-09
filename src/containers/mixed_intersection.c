@@ -89,5 +89,6 @@ bool bitset_bitset_container_intersection_inplace(
             }
         }
     }
+    bitset_container_free(src_1);
     return false;  // not a bitset
 }
