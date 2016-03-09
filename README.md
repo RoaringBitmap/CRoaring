@@ -23,25 +23,31 @@ of the latest hardware.
 
 - Recent Intel processor: Haswell (2013) or better.
 - Recent C compiler (GCC 4.8 or better)
+- CMake
 
 Support for legacy hardware and compiler might be added later.
 
 # Building
 
-You can use ```make NOAVXTUNING=1``` to build the code
-without too much hand-tuning, relying instead of what
-the compiler could produce (e.g., auto-vectorization).
+CRoaring follows the standard cmake workflow:
+
+```
+mkdir build
+cd build
+cmake ..
+make
+```
 
 To run unit tests:
 
 ```
-./run_unit.sh
+make test
 ```
 
 To run real-data benchmark
 
 ```
-./real_bitmaps_benchmark benchmarks/realdata/census1881
+./real_bitmaps_benchmark ../benchmarks/realdata/census1881
 ```
 
 
