@@ -185,7 +185,13 @@ int main(int argc, char **argv) {
     size_t *howmany = NULL;
     uint32_t **numbers =
         read_all_integer_files(dirname, extension, &howmany, &count);
-    if (numbers == NULL) return -1;
+    if (numbers == NULL) {
+        printf(
+            "I could not find or load any data file with extension %s in "
+            "directory %s.\n",
+            extension, dirname);
+        return -1;
+    }
 
     uint64_t cycles_start = 0, cycles_final = 0;
 
