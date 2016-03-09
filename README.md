@@ -13,7 +13,7 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 [elasticsearch]: https://www.elastic.co/products/elasticsearch
 [druid]: http://druid.io/
 [spark]: https://spark.apache.org/
-[whoosh]: #
+[whoosh]: https://bitbucket.org/mchaput/whoosh/wiki/Home
 [kylin]: http://kylin.apache.org/
 
 The primary goal of the CRoaring is to provide a high performance low-level implementation that fully take advantage
