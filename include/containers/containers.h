@@ -274,17 +274,10 @@ inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
     void *result;
     switch (type1 * 4 + type2) {
         case (BITSET_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE):
-            // the documentation for bitset_container_OP does not suggest that
-            // the destination cannot overlap an input.  So let's see!
-            result = c1;
-            int result_card = bitset_container_and(c1, c2, result);
-            if (result_card <= DEFAULT_MAX_SIZE) {
-                *result_type = ARRAY_CONTAINER_TYPE_CODE;
-                void *returnval = (void *)array_container_from_bitset(result);
-                bitset_container_free(c1);
-                return returnval;
-            }
-            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            *result_type =
+                bitset_bitset_container_intersection_inplace(c1, c2, &result)
+                    ? BITSET_CONTAINER_TYPE_CODE
+                    : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
             result = array_container_intersection_inplace(

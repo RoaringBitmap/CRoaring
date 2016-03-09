@@ -41,6 +41,37 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
         }
         return true;  // it is a bitset
     }
+    // todo: next part should not be implemented here, should be vectorized
+    *dst = array_container_create_given_capacity(newCardinality);
+    if (*dst != NULL) {
+        ((array_container_t *)*dst)->cardinality = newCardinality;
+        int outpos = 0;
+        uint16_t *out = ((array_container_t *)*dst)->array;
+        for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+            // todo: vectorize!
+            uint64_t w = ((bitset_container_t *)src_1)->array[i] &
+                         ((bitset_container_t *)src_2)->array[i];
+            while (w != 0) {
+                uint64_t t = w & -w;
+                int r = __builtin_ctzl(w);
+                out[outpos++] = i * 64 + r;
+                w ^= t;
+            }
+        }
+    }
+    return false;  // not a bitset
+}
+
+bool bitset_bitset_container_intersection_inplace(
+    bitset_container_t *src_1, const bitset_container_t *src_2, void **dst) {
+    const int newCardinality = bitset_container_and_justcard(src_1, src_2);
+    if (newCardinality > DEFAULT_MAX_SIZE) {
+        *dst = src_1;
+        bitset_container_and_nocard(src_1, src_2, src_1);
+        ((bitset_container_t *)*dst)->cardinality = newCardinality;
+        return true;  // it is a bitset
+    }
+    // todo: next part should not be implemented here, should be vectorized
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
         ((array_container_t *)*dst)->cardinality = newCardinality;

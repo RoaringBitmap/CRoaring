@@ -27,4 +27,12 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
                                           const bitset_container_t *src_2,
                                           void **dst);
 
+/*
+ * Same as bitset_bitset_container_intersection except that if the output is to
+ * be a
+ * bitset_container_t, then src_1 is modified and no need allocation is made.
+ */
+bool bitset_bitset_container_intersection_inplace(
+    bitset_container_t *src_1, const bitset_container_t *src_2, void **dst);
+
 #endif /* INCLUDE_CONTAINERS_MIXED_INTERSECTION_H_ */
