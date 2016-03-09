@@ -24,6 +24,7 @@ of the latest hardware.
 - Recent Intel processor: Haswell (2013) or better.
 - Recent C compiler (GCC 4.8 or better)
 - CMake
+- clang-format (optional)
 
 Support for legacy hardware and compiler might be added later.
 
@@ -50,7 +51,17 @@ To run real-data benchmark
 ./real_bitmaps_benchmark ../benchmarks/realdata/census1881
 ```
 
+To check that your code abides by the style convention (make sure that ``clang-format`` is installed):
 
+```
+./tools/clang-format-check.sh
+```
+
+To reformat your code according to the style convention (make sure that ``clang-format`` is installed):
+
+```
+./tools/clang-format.sh
+```
 
 # sanity todo
 - get the code to compile cleanly with -Wconversion and possibly -Weverything
