@@ -4,7 +4,6 @@ project (RoaringBitmap)
 
 option (AVX_TUNING "Enable AVX tuning" ON)
 option (BUILD_STATIC "Build a static library" OFF)
-option (DEBUG "Create a debug build" OFF)
 
 set (ROARING_LIB_NAME roaring)
 if (BUILD_STATIC)
@@ -40,13 +39,10 @@ if (AVX_TUNING)
   set (OPT_FLAGS "-DUSEAVX -mavx2 ${OPT_FLAGS}" )
 endif()
 
-if (DEBUG)
-  set (DEBUG_FLAGS "-ggdb")
-else ()
-  set (OPT_FLAGS "-O3 ${OPT_FLAGS}")
-endif()
+set (CMAKE_C_FLAGS_DEBUG "-ggdb")
+set (CMAKE_C_FLAGS_RELEASE "-O3")
 
-set (CMAKE_C_FLAGS "${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${DEBUG_FLAGS}")
+set (CMAKE_C_FLAGS "${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS}")
 
 enable_testing()
 add_executable (unit tests/unit.c)
