@@ -49,7 +49,8 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 set (CMAKE_C_FLAGS "${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS}")
 
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/realdata/")
-configure_file (tests/config.h.in tests/config.h)
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h")
 
 enable_testing()
 add_executable (unit tests/unit.c)
