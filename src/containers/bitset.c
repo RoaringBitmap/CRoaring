@@ -29,7 +29,6 @@ void bitset_container_clear(bitset_container_t *bitset) {
     bitset->cardinality = 0;
 }
 
-
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
     bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
@@ -47,7 +46,6 @@ bitset_container_t *bitset_container_create() {
     bitset_container_clear(bitset);
     return bitset;
 }
-
 
 /* Copy one container into another. We assume that they are distinct. */
 void bitset_container_copy(const bitset_container_t *source,

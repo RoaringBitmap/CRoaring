@@ -29,18 +29,11 @@ array_container_t *array_container_from_bitset(bitset_container_t *bits) {
     array_container_t *result =
         array_container_create_given_capacity(bits->cardinality);
     result->cardinality = bits->cardinality;
-    int outpos = 0;
-    uint16_t *out = result->array;
-    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
-        // todo: vectorize!
-        uint64_t w = bits->array[i];
-        while (w != 0) {
-            uint64_t t = w & -w;
-            int r = __builtin_ctzl(w);
-            out[outpos++] = i * 64 + r;
-            w ^= t;
-        }
-    }
+    // todo: sse version ends up being slower here
+    // (bitset_extract_setbits_sse_uint16)
+    // because of the sparsity of the data
+    bitset_extract_setbits_uint16(bits->array, BITSET_CONTAINER_SIZE_IN_WORDS,
+                                  result->array, 0);
     return result;
 }
 

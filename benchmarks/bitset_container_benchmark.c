@@ -6,6 +6,7 @@
 
 #include "benchmark.h"
 #include "containers/bitset.h"
+#include "containers/convert.h"
 #include "random.h"
 
 // flushes the array of words from cache
@@ -26,6 +27,14 @@ void bitset_cache_prefetch(bitset_container_t* B) {
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_prefetch(B->array + k);
     }
+}
+
+// used to benchmark array_container_from_bitset
+int get_cardinality_through_conversion_to_array(bitset_container_t* B) {
+    array_container_t* conv = array_container_from_bitset(B);
+    int card = conv->cardinality;
+    array_container_free(conv);
+    return card;
 }
 
 int extract_test(bitset_container_t* B) {
@@ -128,6 +137,17 @@ int main() {
     BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
     BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat,
               BITSET_CONTAINER_SIZE_IN_WORDS);
+
+    // next we are going to benchmark conversion from bitset to array (an
+    // important step)
+    bitset_container_clear(B1);
+    for (int k = 0; k < 4096; ++k) {
+        bitset_container_set(B1, (uint16_t)ranged_random(1 << 16));
+    }
+    answer = get_cardinality_through_conversion_to_array(B1);
+    BEST_TIME(get_cardinality_through_conversion_to_array(B1), answer, repeat,
+              BITSET_CONTAINER_SIZE_IN_WORDS);
+
     bitset_container_free(BO);
     bitset_container_free(B1);
     bitset_container_free(B2);

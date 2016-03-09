@@ -608,6 +608,24 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
     return outpos;
 }
 
+size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
+                                                  const uint64_t *bitset2,
+                                                  size_t length, uint16_t *out,
+                                                  uint16_t base) {
+    int outpos = 0;
+    for (size_t i = 0; i < length; ++i) {
+        uint64_t w = bitset1[i] & bitset2[i];
+        while (w != 0) {
+            uint64_t t = w & -w;
+            int r = __builtin_ctzl(w);
+            out[outpos++] = r + base;
+            w ^= t;
+        }
+        base += 64;
+    }
+    return outpos;
+}
+
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out" as 16-bit integers, values start at "base" (can

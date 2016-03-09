@@ -33,7 +33,6 @@ bitset_container_t *bitset_container_create();
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset);
 
-
 /* Clear bitset (sets bits to 0). */
 void bitset_container_clear(bitset_container_t *bitset);
 

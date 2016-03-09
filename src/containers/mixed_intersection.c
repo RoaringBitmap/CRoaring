@@ -4,6 +4,7 @@
  */
 
 #include "mixed_intersection.h"
+#include "bitset_util.h"
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst.  */
@@ -41,23 +42,14 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
         }
         return true;  // it is a bitset
     }
-    // todo: next part should not be implemented here, should be vectorized
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
         ((array_container_t *)*dst)->cardinality = newCardinality;
-        int outpos = 0;
-        uint16_t *out = ((array_container_t *)*dst)->array;
-        for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
-            // todo: vectorize!
-            uint64_t w = ((bitset_container_t *)src_1)->array[i] &
-                         ((bitset_container_t *)src_2)->array[i];
-            while (w != 0) {
-                uint64_t t = w & -w;
-                int r = __builtin_ctzl(w);
-                out[outpos++] = i * 64 + r;
-                w ^= t;
-            }
-        }
+        bitset_extract_intersection_setbits_uint16(
+            ((bitset_container_t *)src_1)->array,
+            ((bitset_container_t *)src_2)->array,
+            BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
+            0);
     }
     return false;  // not a bitset
 }
@@ -71,23 +63,14 @@ bool bitset_bitset_container_intersection_inplace(
         ((bitset_container_t *)*dst)->cardinality = newCardinality;
         return true;  // it is a bitset
     }
-    // todo: next part should not be implemented here, should be vectorized
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
         ((array_container_t *)*dst)->cardinality = newCardinality;
-        int outpos = 0;
-        uint16_t *out = ((array_container_t *)*dst)->array;
-        for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
-            // todo: vectorize!
-            uint64_t w = ((bitset_container_t *)src_1)->array[i] &
-                         ((bitset_container_t *)src_2)->array[i];
-            while (w != 0) {
-                uint64_t t = w & -w;
-                int r = __builtin_ctzl(w);
-                out[outpos++] = i * 64 + r;
-                w ^= t;
-            }
-        }
+        bitset_extract_intersection_setbits_uint16(
+            ((bitset_container_t *)src_1)->array,
+            ((bitset_container_t *)src_2)->array,
+            BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
+            0);
     }
     bitset_container_free(src_1);
     return false;  // not a bitset
