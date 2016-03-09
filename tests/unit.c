@@ -9,6 +9,8 @@
 #include "misc/configreport.h"
 #include "roaring.h"
 
+#include "config.h"
+
 /**
  * Read the content of a file to a char array. Caller is
  * responsible for memory de-allocation.
@@ -237,25 +239,24 @@ int realdatacheck(char *dirname) {
 
 int main() {
     tellmeall();
-    // that's right: hardcoded file paths in code FIXME
     int r = 0;
-    r = realdatacheck("benchmarks/realdata/census1881");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/census1881");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/census1881_srt");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/census1881_srt");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/census-income");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/census-income");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/census-income_srt");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/census-income_srt");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/uscensus2000");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/uscensus2000");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/weather_sept_85");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/weather_sept_85");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/weather_sept_85_srt");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/weather_sept_85_srt");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/wikileaks-noquotes");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/wikileaks-noquotes");
     if (r != 0) return -1;
-    r = realdatacheck("benchmarks/realdata/wikileaks-noquotes_srt");
+    r = realdatacheck(BENCHMARK_DATA_DIR "/wikileaks-noquotes_srt");
     if (r != 0) return -1;
     printf("[%s] your code might be ok.\n", __FILE__);
     return 0;

@@ -44,3 +44,4 @@ install_manifest.txt
 CTestTestfile.cmake
 Testing
 Makefile
+config.h
