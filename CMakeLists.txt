@@ -30,10 +30,11 @@ add_library (${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 install (TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
 install (DIRECTORY include/ DESTINATION include/${ROARING_LIB_NAME})
 
+include_directories (include include/containers benchmark)
+
 set (STD_FLAGS "-std=c11 -fPIC")
 set (OPT_FLAGS "-march=native")
 set (WARNING_FLAGS "-Wall -Winline -Wshadow -Wextra -pedantic")
-set (INCLUDE_FLAGS "-Iinclude -Iinclude/containers -Ibenchmark")
 
 if (AVX_TUNING)
   set (OPT_FLAGS "-DUSEAVX -mavx2 ${OPT_FLAGS}" )
