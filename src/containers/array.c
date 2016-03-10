@@ -294,31 +294,44 @@ int32_t array_container_number_of_runs(array_container_t *a) {
     return nr_runs;
 }
 
-void array_container_serialize(array_container_t *container, char *buf) {
+int32_t array_container_serialize(array_container_t *container, char *buf) {
+  int32_t l;
+
   memcpy(buf, container, sizeof(array_container_t));
-  memcpy(&buf[sizeof(array_container_t)], container->array, (sizeof(uint16_t) * container->capacity));
+  l = sizeof(uint16_t) * container->capacity;
+  memcpy(&buf[sizeof(array_container_t)], container->array, l);
+
+  return(sizeof(array_container_t) + l);
 }
 
 uint32_t array_container_serialization_len(array_container_t *container) {
   return(sizeof(array_container_t)+(sizeof(uint16_t) * container->capacity));
 }
 
-void* array_container_deserialize(char *buf) {
-  array_container_t *ptr = malloc(sizeof(array_container_t));
+void* array_container_deserialize(char *buf, size_t max_num_bytes) {
+  array_container_t *ptr;
 
-  if(ptr) {
-    int len;
+  if(sizeof(array_container_t) > max_num_bytes)
+    return(NULL);
+
+  if((ptr = malloc(sizeof(array_container_t))) != NULL) {
+    size_t len;
 
     memcpy(ptr, buf, sizeof(array_container_t));
-    
     len = sizeof(uint16_t) * ptr->capacity;
+
+    if((sizeof(array_container_t) + len) > max_num_bytes) {
+      free(ptr);
+      return(NULL);
+    }
+
     if((ptr->array = malloc(len)) == NULL) {
       free(ptr);
       return(NULL);
     }
-    
+
     memcpy(ptr->array, &buf[sizeof(array_container_t)], len);
   }
-  
+
   return(ptr);
 }

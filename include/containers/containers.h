@@ -185,9 +185,9 @@ inline void *container_clone(void *container, uint8_t typecode) {
     }
 }
 
-void container_serialize(void *container, uint8_t typecode, char *buf);
+int32_t container_serialize(void *container, uint8_t typecode, char *buf) __attribute__((warn_unused_result));
 uint32_t container_serialization_len(void *container, uint8_t typecode);
-void* container_deserialize(uint8_t typecode, char *buf);
+void* container_deserialize(uint8_t typecode, char *buf, size_t max_num_bytes);
 
 #if 0
 // TODO enable and debug this equality stuff
