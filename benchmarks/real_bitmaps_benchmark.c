@@ -261,6 +261,19 @@ int main(int argc, char **argv) {
            " cycles\n",
            count - 1, cycles_final - cycles_start);
 
+    free(copyofr);
+    copyofr = malloc(sizeof(roaring_bitmap_t *) * count);
+    for (int i = 0; i < (int)count; i++) {
+        copyofr[i] = roaring_bitmap_copy(bitmaps[i]);
+    }
+    RDTSC_START(cycles_start);
+    for (int i = 0; i < (int)count - 1; i++) {
+        roaring_bitmap_or_inplace(copyofr[i], bitmaps[i + 1]);
+    }
+    RDTSC_FINAL(cycles_final);
+    printf(" %zu successive in-place bitmaps unions took %" PRIu64 " cycles\n",
+           count - 1, cycles_final - cycles_start);
+
     for (int i = 0; i < (int)count; ++i) {
         free(numbers[i]);
         numbers[i] = NULL;  // paranoid

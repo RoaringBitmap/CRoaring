@@ -128,8 +128,6 @@ int test_intersection_bitset_x_bitset() {
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    // printf("resultant cardinality is
-    // %d\n",roaring_bitmap_get_cardinality(r1_and_r2));
 
     assert(roaring_bitmap_get_cardinality(r1_and_r2) ==
            26666);  // NOT analytically determined but seems reasonable
@@ -144,7 +142,6 @@ int test_intersection_bitset_x_bitset_inplace() {
 
     roaring_bitmap_and_inplace(r1, r2);
     roaring_bitmap_free(r2);
-    printf("resultant cardinality is %d\n", roaring_bitmap_get_cardinality(r1));
 
     assert(roaring_bitmap_get_cardinality(r1) == 26666);
     roaring_bitmap_free(r1);
@@ -159,9 +156,8 @@ int test_intersection_bitset_x_array() {
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    printf("resultant cardinality is %d\n",
-           roaring_bitmap_get_cardinality(r1_and_r2));
-    assert(roaring_bitmap_get_cardinality(r1_and_r2) == 2 * 34);
+
+    assert(roaring_bitmap_get_cardinality(r1_and_r2) == 100);
     roaring_bitmap_free(r1_and_r2);
     return 1;
 }
@@ -175,7 +171,7 @@ int test_intersection_bitset_x_array_inplace() {
 
     roaring_bitmap_and_inplace(r1, r2);
     roaring_bitmap_free(r2);
-    assert(roaring_bitmap_get_cardinality(r1) == 2 * 34);
+    assert(roaring_bitmap_get_cardinality(r1) == 100);
     roaring_bitmap_free(r1);
     return 1;
 }
@@ -186,11 +182,21 @@ int test_intersection_array_x_bitset() {
     roaring_bitmap_t *r1 = make_roaring_using_arrays_by3();
 
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
+    /*
+        for (int i = 0; i < 1000000; ++i) {
+            if ((roaring_bitmap_contains(r1, i) &&
+                 roaring_bitmap_contains(r2, i)) !=
+                roaring_bitmap_contains(r1_and_r2, i))
+                printf("fail on %d\n", i);
+            if (roaring_bitmap_contains(r1_and_r2, i)) printf(" %d", i);
+        }
+        printf("\n");
+    */
+
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    printf("resultant cardinality is %d\n",
-           roaring_bitmap_get_cardinality(r1_and_r2));
-    assert(roaring_bitmap_get_cardinality(r1_and_r2) == 2 * 34);
+
+    assert(roaring_bitmap_get_cardinality(r1_and_r2) == 100);
     roaring_bitmap_free(r1_and_r2);
     return 1;
 }
@@ -203,7 +209,7 @@ int test_intersection_array_x_bitset_inplace() {
 
     roaring_bitmap_and_inplace(r1, r2);
     roaring_bitmap_free(r2);
-    assert(roaring_bitmap_get_cardinality(r1) == 2 * 34);
+    assert(roaring_bitmap_get_cardinality(r1) == 100);
     roaring_bitmap_free(r1);
     return 1;
 }
@@ -211,22 +217,14 @@ int test_intersection_array_x_bitset_inplace() {
 // simplistic
 int test_union() {
     printf("[%s] %s\n", __FILE__, __func__);
-    roaring_bitmap_t *r1 = roaring_bitmap_create();
-    roaring_bitmap_t *r2 = roaring_bitmap_create();
-    assert(r1);
-    assert(r2);
 
-    for (uint32_t i = 0; i < 100; ++i) {
-        roaring_bitmap_add(r1, 2 * i);
-        roaring_bitmap_add(r2, 3 * i);
-        assert(roaring_bitmap_get_cardinality(r2) == i + 1);
-        assert(roaring_bitmap_get_cardinality(r1) == i + 1);
-    }
+    roaring_bitmap_t *r1 = make_roaring_using_arrays_by2();
+    roaring_bitmap_t *r2 = make_roaring_using_arrays_by3();
 
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    assert(roaring_bitmap_get_cardinality(r1_or_r2) == 166);
+    assert(roaring_bitmap_get_cardinality(r1_or_r2) == 2 * 166);
     roaring_bitmap_free(r1_or_r2);
     return 1;
 }
@@ -234,22 +232,14 @@ int test_union() {
 // simplistic
 int test_union_inplace() {
     printf("[%s] %s\n", __FILE__, __func__);
-    roaring_bitmap_t *r1 = roaring_bitmap_create();
-    roaring_bitmap_t *r2 = roaring_bitmap_create();
-    assert(r1);
-    assert(r2);
 
-    for (uint32_t i = 0; i < 100; ++i) {
-        roaring_bitmap_add(r1, 2 * i);
-        roaring_bitmap_add(r2, 3 * i);
-        assert(roaring_bitmap_get_cardinality(r2) == i + 1);
-        assert(roaring_bitmap_get_cardinality(r1) == i + 1);
-    }
+    roaring_bitmap_t *r1 = make_roaring_using_arrays_by2();
+    roaring_bitmap_t *r2 = make_roaring_using_arrays_by3();
 
     roaring_bitmap_t *r1_or_r2 = r1;
     roaring_bitmap_or_inplace(r1, r2);
     roaring_bitmap_free(r2);
-    assert(roaring_bitmap_get_cardinality(r1_or_r2) == 166);
+    assert(roaring_bitmap_get_cardinality(r1_or_r2) == 2 * 166);
     roaring_bitmap_free(r1_or_r2);
     return 1;
 }
@@ -262,9 +252,6 @@ int test_union_array_x_array() {
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-
-    printf("resultant cardinality is  %d\n",
-           roaring_bitmap_get_cardinality(r1_or_r2));
 
     assert(roaring_bitmap_get_cardinality(r1_or_r2) == 2 * (200 - 34));
     roaring_bitmap_free(r1_or_r2);
@@ -292,8 +279,6 @@ int test_union_bitset_x_bitset() {
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    printf("resultant cardinality is  %d\n",
-           roaring_bitmap_get_cardinality(r1_or_r2));
 
     assert(roaring_bitmap_get_cardinality(r1_or_r2) == 80000 + 40000 - 26666);
     roaring_bitmap_free(r1_or_r2);
@@ -307,7 +292,6 @@ int test_union_bitset_x_bitset_inplace() {
 
     roaring_bitmap_or_inplace(r1, r2);
     roaring_bitmap_free(r2);
-    printf("resultant cardinality is %d\n", roaring_bitmap_get_cardinality(r1));
 
     assert(roaring_bitmap_get_cardinality(r1) == 80000 + 40000 - 26666);
     roaring_bitmap_free(r1);
@@ -320,15 +304,6 @@ int test_union_bitset_x_array() {
     roaring_bitmap_t *r2 = make_roaring_using_arrays_by3();
 
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
-
-    printf("resultant cardinality is %d\n",
-           roaring_bitmap_get_cardinality(r1_or_r2));
-
-    for (int i = 0; i < 1000000; ++i)
-        if ((roaring_bitmap_contains(r1, i) ||
-             roaring_bitmap_contains(r2, i)) !=
-            roaring_bitmap_contains(r1_or_r2, i))
-            printf("fail on %d\n", i);
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
@@ -358,12 +333,6 @@ int test_union_array_x_bitset() {
     roaring_bitmap_t *r1 = make_roaring_using_arrays_by3();
 
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
-
-    for (int i = 0; i < 1000000; ++i)
-        if ((roaring_bitmap_contains(r1, i) ||
-             roaring_bitmap_contains(r2, i)) !=
-            roaring_bitmap_contains(r1_or_r2, i))
-            printf("fail on %d\n", i);
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
