@@ -293,3 +293,32 @@ int32_t array_container_number_of_runs(array_container_t *a) {
     }
     return nr_runs;
 }
+
+void array_container_serialize(array_container_t *container, char *buf) {
+  memcpy(buf, container, sizeof(array_container_t));
+  memcpy(&buf[sizeof(array_container_t)], container->array, (sizeof(uint16_t) * container->capacity));
+}
+
+uint32_t array_container_serialization_len(array_container_t *container) {
+  return(sizeof(array_container_t)+(sizeof(uint16_t) * container->capacity));
+}
+
+void* array_container_deserialize(char *buf) {
+  array_container_t *ptr = malloc(sizeof(array_container_t));
+
+  if(ptr) {
+    int len;
+
+    memcpy(ptr, buf, sizeof(array_container_t));
+    
+    len = sizeof(uint16_t) * ptr->capacity;
+    if((ptr->array = malloc(len)) == NULL) {
+      free(ptr);
+      return(NULL);
+    }
+    
+    memcpy(ptr->array, &buf[sizeof(array_container_t)], len);
+  }
+  
+  return(ptr);
+}

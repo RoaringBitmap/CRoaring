@@ -178,7 +178,7 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
 void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
                        uint16_t before_start) {
   int start_location = ra_get_index(sa, before_start);
-  if (start_location >= 0) 
+  if (start_location >= 0)
     ++start_location;
   else
     start_location = -start_location -1;
@@ -187,7 +187,7 @@ void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
 
   for (uint16_t i = start_location; i < sa->size; ++i) {
     const int32_t pos = ra->size;
-    
+
     ra->keys[pos] = sa->keys[i];
     ra->containers[pos] = container_clone(sa->containers[i], sa->typecodes[i]);
     ra->typecodes[pos] = sa->typecodes[i];
@@ -324,7 +324,7 @@ void ra_remove_index_range(roaring_array_t *ra, int32_t begin, int32_t end) {
 #if 0
   // should be unnecessary
   for (int i = 1; i <= range; ++i)
-  ra->keys[ra->size-i] = ra->containers[ra->size-i] 
+  ra->keys[ra->size-i] = ra->containers[ra->size-i]
     = ra->typecodes[ra->size-i] = 0;
 #endif
     ra->size -= range;
@@ -399,4 +399,102 @@ void show_structure(roaring_array_t *ra) {
     }
 }
 
-// TODO : all serialization/deserialization., containerpointer abstraction.
+char* ra_serialize(roaring_array_t *ra, uint32_t *serialize_len, uint32_t overhead) {
+  uint32_t off = overhead, l, tot_len = overhead + sizeof(roaring_array_t) +
+    ra->allocation_size*(sizeof(uint16_t)+sizeof(void *)+sizeof(uint8_t));
+  char *out;
+  uint32_t slen = 0, each;
+
+  for (int32_t i = 0; i < ra->size; i++)
+    slen += (each = container_serialization_len(ra->containers[i], ra->typecodes[i]));
+
+  tot_len += slen;
+
+  out = (char*)malloc(tot_len);
+
+  if(out == NULL) {
+    *serialize_len = 0;
+    return(NULL);
+  } else
+    *serialize_len = tot_len;
+
+  l = sizeof(roaring_array_t);
+  memcpy(&out[off], ra, l);
+  off += l;
+
+  l = ra->allocation_size*sizeof(uint16_t);
+  memcpy(&out[off], ra->keys, l);
+  off += l;
+
+  l = ra->allocation_size*sizeof(void*);
+  memcpy(&out[off], ra->containers, l);
+  off += l;
+
+  l = ra->allocation_size*sizeof(uint8_t);
+  memcpy(&out[off], ra->typecodes, l);
+  off += l;
+
+  for (int32_t i = 0; i < ra->size; i++) {
+    container_serialize(ra->containers[i], ra->typecodes[i], &out[off]);
+    off += each;
+  }
+
+  return(out);
+}
+
+
+roaring_array_t* ra_deserialize(char *buf, uint32_t buf_len) {
+  roaring_array_t *ra = (roaring_array_t*)buf, *ra_copy;
+  uint32_t off, l;
+  uint32_t expected_len = sizeof(roaring_array_t) +
+    ra->allocation_size*(sizeof(uint16_t)+sizeof(void *)+sizeof(uint8_t));
+  uint32_t slen = 0, each;
+
+  for (int32_t i = 0; i < ra->size; i++)
+    slen += (each = container_serialization_len(ra->containers[i], ra->typecodes[i]));
+
+  if((slen+expected_len) != buf_len)
+    return(NULL); /* Invalid lenght */
+
+  if((ra_copy = (roaring_array_t*)malloc(sizeof(roaring_array_t))) == NULL)
+    return(NULL);
+
+  memcpy(ra_copy, ra, off = sizeof(roaring_array_t));
+
+  if((ra_copy->keys = malloc(ra->allocation_size * sizeof(uint16_t))) == NULL) {
+    free(ra_copy);
+    return(NULL);
+  }
+
+  if((ra_copy->containers = malloc(ra->allocation_size * sizeof(void *))) == NULL) {
+    free(ra_copy->keys);
+    free(ra_copy);
+    return(NULL);
+  }
+
+  if((ra_copy->typecodes = malloc(ra->allocation_size * sizeof(uint8_t))) == NULL) {
+    free(ra_copy->containers);
+    free(ra_copy->keys);
+    free(ra_copy);
+    return(NULL);
+  }
+
+  l = ra->allocation_size*sizeof(uint16_t);
+  memcpy(ra_copy->keys, &buf[off], l);
+  off += l;
+
+  l = ra->allocation_size*sizeof(void*);
+  memcpy(ra_copy->containers, &buf[off], l);
+  off += l;
+
+  l = ra->allocation_size*sizeof(uint8_t);
+  memcpy(ra_copy->typecodes, &buf[off], l);
+  off += l;
+  
+  for (int32_t i = 0; i < ra->size; i++) {
+    ra_copy->containers[i] = container_deserialize(ra_copy->typecodes[i], &buf[off]);
+    off += each;
+  }
+
+  return(ra_copy);
+}
