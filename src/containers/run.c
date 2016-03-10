@@ -442,3 +442,32 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
         for (int j = 0; j <= le; ++j) printf(",%d", run_start + j);
     }
 }
+
+void run_container_serialize(run_container_t *container, char *buf) {
+  memcpy(buf, container, sizeof(run_container_t));
+  memcpy(&buf[sizeof(run_container_t)], container->runs, sizeof(rle16_t) * container->capacity);
+}
+
+uint32_t run_container_serialization_len(run_container_t *container) {
+  return(sizeof(run_container_t)+sizeof(rle16_t) * container->capacity);
+}
+
+void* run_container_deserialize(char *buf) {
+  run_container_t *ptr = malloc(sizeof(run_container_t));
+  
+  if(ptr) {
+    int len;
+    
+    memcpy(ptr, buf, sizeof(run_container_t));    
+
+    len = sizeof(rle16_t) * ptr->capacity;
+    if((ptr->runs = malloc(len)) == NULL) {
+      free(ptr);
+      return(NULL);
+    }
+
+    memcpy(ptr->runs, &buf[sizeof(run_container_t)], len);
+  }
+  
+  return(ptr);
+}

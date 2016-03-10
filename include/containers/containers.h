@@ -185,6 +185,10 @@ inline void *container_clone(void *container, uint8_t typecode) {
     }
 }
 
+void container_serialize(void *container, uint8_t typecode, char *buf);
+uint32_t container_serialization_len(void *container, uint8_t typecode);
+void* container_deserialize(uint8_t typecode, char *buf);
+
 #if 0
 // TODO enable and debug this equality stuff
 inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t type2) {

@@ -52,6 +52,12 @@ void run_container_free(run_container_t *run);
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
 
+void run_container_serialize(run_container_t *container, char *buf);
+
+uint32_t run_container_serialization_len(run_container_t *container);
+
+void* run_container_deserialize(char *buf);
+
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos);
 

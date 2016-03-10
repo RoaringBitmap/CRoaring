@@ -15,6 +15,24 @@ int test_printf() {
     return 1;
 }
 
+int test_serialize() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 = roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+    uint32_t serialize_len;
+    char *serialized = roaring_bitmap_serialize(r1, &serialize_len);
+    roaring_bitmap_t *r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+
+    roaring_bitmap_printf(r1);  // does it crash?
+    roaring_bitmap_printf(r2);  // does it crash?
+    
+
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+    free(serialized);
+    printf("\n");
+    return 1;
+}
+
 int test_add() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -484,6 +502,7 @@ int test_remove_run_to_array() {
 int main() {
     int passed = 0;
     passed += test_printf();
+    passed += test_serialize();
     passed += test_add();
     passed += test_contains();
     passed += test_intersection_array_x_array();

@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdio.h>
+#include <string.h>
 #include "roaring_array.h"
 #include "array_util.h"
 
@@ -342,3 +342,26 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
     }
     return answer;
 }
+
+char* roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
+  char *serialized = ra_serialize(ra->high_low_container, serialize_len, sizeof(roaring_bitmap_t));
+
+  if(serialized) memcpy(serialized, ra, sizeof(roaring_bitmap_t));  
+
+  return(serialized);
+}
+
+roaring_bitmap_t* roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
+  roaring_bitmap_t *b = (roaring_bitmap_t*)malloc(sizeof(roaring_bitmap_t*));
+
+  if(b) {
+    b->high_low_container = ra_deserialize(&buf[sizeof(roaring_bitmap_t)], buf_len - sizeof(roaring_bitmap_t));
+    if(b->high_low_container == NULL) {
+      free(b);
+      b = NULL;
+    }
+  }
+
+  return(b);
+}
+

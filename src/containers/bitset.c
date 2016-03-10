@@ -496,6 +496,25 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   return num_runs;
 }
 
+void bitset_container_serialize(bitset_container_t *container, char *buf) {
+  memcpy(buf, container, sizeof(bitset_container_t));
+  memcpy(&buf[sizeof(bitset_container_t)], container->array, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+}
 
+uint32_t bitset_container_serialization_len() {
+  return(sizeof(bitset_container_t)+sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+}
+
+void* bitset_container_deserialize(char *buf) {
+  bitset_container_t *ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t));
+  
+  if(ptr) {
+    memcpy(ptr, buf, sizeof(bitset_container_t));
+    memcpy(ptr->array, &buf[sizeof(bitset_container_t)], 
+	   sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+  }
+
+  return((void*)ptr);
+}
 
 // clang-format On

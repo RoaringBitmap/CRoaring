@@ -40,6 +40,12 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(array_container_t *src);
 
+void array_container_serialize(array_container_t *container, char *buf);
+
+uint32_t array_container_serialization_len(array_container_t *container);
+
+void* array_container_deserialize(char *buf);
+
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);
 
