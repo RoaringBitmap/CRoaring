@@ -444,42 +444,41 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
 }
 
 int32_t run_container_serialize(run_container_t *container, char *buf) {
-  int32_t l;
+    int32_t l;
 
-  memcpy(buf, container, sizeof(run_container_t));
-  l = sizeof(rle16_t) * container->capacity;
-  memcpy(&buf[sizeof(run_container_t)], container->runs, l);
-  return(sizeof(run_container_t)+l);
+    memcpy(buf, container, sizeof(run_container_t));
+    l = sizeof(rle16_t) * container->capacity;
+    memcpy(&buf[sizeof(run_container_t)], container->runs, l);
+    return (sizeof(run_container_t) + l);
 }
 
 uint32_t run_container_serialization_len(run_container_t *container) {
-  return(sizeof(run_container_t)+sizeof(rle16_t) * container->capacity);
+    return (sizeof(run_container_t) + sizeof(rle16_t) * container->capacity);
 }
 
-void* run_container_deserialize(char *buf, size_t max_num_bytes) {
-  run_container_t *ptr;
+void *run_container_deserialize(char *buf, size_t max_num_bytes) {
+    run_container_t *ptr;
 
-  if(sizeof(run_container_t) > max_num_bytes)
-    return(NULL);
+    if (sizeof(run_container_t) > max_num_bytes) return (NULL);
 
-  if((ptr = malloc(sizeof(run_container_t))) != NULL) {
-    size_t len;
+    if ((ptr = malloc(sizeof(run_container_t))) != NULL) {
+        size_t len;
 
-    memcpy(ptr, buf, sizeof(run_container_t));
-    len = sizeof(rle16_t) * ptr->capacity;
+        memcpy(ptr, buf, sizeof(run_container_t));
+        len = sizeof(rle16_t) * ptr->capacity;
 
-    if((sizeof(run_container_t)+len) > max_num_bytes) {
-      free(ptr);
-      return(NULL);
+        if ((sizeof(run_container_t) + len) > max_num_bytes) {
+            free(ptr);
+            return (NULL);
+        }
+
+        if ((ptr->runs = malloc(len)) == NULL) {
+            free(ptr);
+            return (NULL);
+        }
+
+        memcpy(ptr->runs, &buf[sizeof(run_container_t)], len);
     }
 
-    if((ptr->runs = malloc(len)) == NULL) {
-      free(ptr);
-      return(NULL);
-    }
-
-    memcpy(ptr->runs, &buf[sizeof(run_container_t)], len);
-  }
-
-  return(ptr);
+    return (ptr);
 }

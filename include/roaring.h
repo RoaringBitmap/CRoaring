@@ -102,9 +102,9 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
 
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 
-char* roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
+char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
 
-roaring_bitmap_t* roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
+roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
 
 /*
  * TODO: implement "equals", "string", serialization, contains
