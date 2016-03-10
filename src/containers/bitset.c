@@ -490,28 +490,43 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
 
   uint64_t word = next_word;
   num_runs += _mm_popcnt_u64((~word) & (word << 1));
-  if((word & 0x8000000000000000ULL) != 0) 
+  if((word & 0x8000000000000000ULL) != 0)
     num_runs++;
 
   return num_runs;
 }
 
-void bitset_container_serialize(bitset_container_t *container, char *buf) {
+int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
+  int32_t l;
+
   memcpy(buf, container, sizeof(bitset_container_t));
-  memcpy(&buf[sizeof(bitset_container_t)], container->array, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+  l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
+  memcpy(&buf[sizeof(bitset_container_t)], container->array, l);
+  return(sizeof(bitset_container_t) + l);
 }
 
 uint32_t bitset_container_serialization_len() {
   return(sizeof(bitset_container_t)+sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
-void* bitset_container_deserialize(char *buf) {
-  bitset_container_t *ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t));
-  
-  if(ptr) {
+void* bitset_container_deserialize(char *buf, size_t max_num_bytes) {
+  bitset_container_t *ptr;
+
+  if(sizeof(bitset_container_t) > max_num_bytes)
+    return(NULL);
+
+  if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
+    size_t len;
+
     memcpy(ptr, buf, sizeof(bitset_container_t));
-    memcpy(ptr->array, &buf[sizeof(bitset_container_t)], 
-	   sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    len = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
+
+    if((sizeof(bitset_container_t)+len) > max_num_bytes) {
+      free(ptr);
+      return(NULL);
+    }
+
+    memcpy(ptr->array, &buf[sizeof(bitset_container_t)], len);
   }
 
   return((void*)ptr);

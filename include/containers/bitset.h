@@ -39,11 +39,11 @@ void bitset_container_clear(bitset_container_t *bitset);
 /* Duplicate bitset */
 bitset_container_t *bitset_container_clone(bitset_container_t *src);
 
-void bitset_container_serialize(bitset_container_t *container, char *buf);
+int32_t bitset_container_serialize(bitset_container_t *container, char *buf) __attribute__((warn_unused_result));
 
 uint32_t bitset_container_serialization_len();
 
-void* bitset_container_deserialize(char *buf);
+void* bitset_container_deserialize(char *buf, size_t max_num_bytes);
 
 /* Set the bit in [begin,end).  */
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,

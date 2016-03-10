@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -40,11 +41,11 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(array_container_t *src);
 
-void array_container_serialize(array_container_t *container, char *buf);
+int32_t array_container_serialize(array_container_t *container, char *buf) __attribute__((warn_unused_result));
 
 uint32_t array_container_serialization_len(array_container_t *container);
 
-void* array_container_deserialize(char *buf);
+void* array_container_deserialize(char *buf, size_t max_num_bytes);
 
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);
