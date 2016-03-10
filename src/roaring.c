@@ -67,6 +67,14 @@ roaring_bitmap_t *roaring_bitmap_copy(roaring_bitmap_t *r) {
     return ans;
 }
 
+void roaring_bitmap_overwrite(roaring_bitmap_t *dest,
+                              const roaring_bitmap_t *src) {
+    ra_free(dest->high_low_container);
+    dest->high_low_container = ra_copy(src->high_low_container);
+    // TODO any better error handling
+    assert(dest->high_low_container);
+}
+
 void roaring_bitmap_free(roaring_bitmap_t *r) {
     ra_free(r->high_low_container);
     r->high_low_container = NULL;  // paranoid
@@ -269,6 +277,67 @@ roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1,
                              pos1, length1);
     }
     return answer;
+}
+
+// inplace or (modifies its first argument).
+// TODO: test it....
+void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
+                               const roaring_bitmap_t *x2) {
+    uint8_t container_result_type = 0;
+    roaring_bitmap_t *answer = roaring_bitmap_create();
+    int length1 = x1->high_low_container->size;
+    const int length2 = x2->high_low_container->size;
+
+    if (0 == length2) return;
+
+    if (0 == length2) {
+        roaring_bitmap_overwrite(x1, x2);
+        return;
+    }
+    int pos1 = 0, pos2 = 0;
+    uint8_t container_type_1, container_type_2;
+    uint16_t s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+    uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+    while (true) {
+        if (s1 == s2) {
+            void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
+                                                 &container_type_1);
+            void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
+                                                 &container_type_2);
+            void *c = container_ior(c1, container_type_1, c2, container_type_2,
+                                    &container_result_type);
+
+            ra_set_container_at_index(x1->high_low_container, pos1, c,
+                                      container_result_type);
+            ++pos1;
+            ++pos2;
+            if (pos1 == length1) break;
+            if (pos2 == length2) break;
+            s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+            s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+
+        } else if (s1 < s2) {  // s1 < s2
+            pos1++;
+            if (pos1 == length1) break;
+            s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+
+        } else {  // s1 > s2
+            void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
+                                                 &container_type_2);
+            void *c2_clone = container_clone(c2, container_type_2);
+            ra_insert_new_key_value_at(x1->high_low_container, pos1, s2,
+                                       c2_clone, container_type_2);
+            pos1++;
+            length1++;
+            pos2++;
+            if (pos2 == length2) break;
+            s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+        }
+    }
+    if (pos1 == length1) {
+        ra_append_copy_range(answer->high_low_container, x2->high_low_container,
+                             pos2, length2);
+    }
 }
 
 uint32_t roaring_bitmap_get_cardinality(roaring_bitmap_t *ra) {

@@ -12,8 +12,7 @@
 #include "mixed_intersection.h"
 #include "mixed_union.h"
 
-// don't use an enum: needs constant folding
-// should revisit
+// would enum be possible or better?
 
 #define BITSET_CONTAINER_TYPE_CODE 3
 #define ARRAY_CONTAINER_TYPE_CODE 1
@@ -127,7 +126,8 @@ inline void *container_add(void *container, uint16_t val, uint8_t typecode,
             bitset_container_set((bitset_container_t *)container, val);
             *new_typecode = BITSET_CONTAINER_TYPE_CODE;
             return container;
-        case ARRAY_CONTAINER_TYPE_CODE:;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
             array_container_t *ac = (array_container_t *)container;
             array_container_add(ac, val);
             if (array_container_cardinality(ac) > DEFAULT_MAX_SIZE) {
@@ -156,7 +156,8 @@ inline bool container_contains(void *container, uint16_t val,
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_get((bitset_container_t *)container, val);
-        case ARRAY_CONTAINER_TYPE_CODE:;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
             return array_container_contains((array_container_t *)container,
                                             val);
         case RUN_CONTAINER_TYPE_CODE:
@@ -362,6 +363,59 @@ inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
 		return run_container_or_array( (run_container_t) c2, (array_container_t) c1);
         case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
 		return run_container_or_array( (run_container_t) c1, (array_container_t) c2);
+#endif
+    }
+    return 0;  // unreached
+}
+
+/**
+ * Compute the union between two containers, with result in the first container.
+ * The type of the first container may change, in which case the old container
+ * will be deallocated. Returns the modified (and possibly new) container
+*/
+
+inline void *container_ior(void *c1, uint8_t type1, void *c2, uint8_t type2,
+                           uint8_t *result_type) {
+    void *result;
+    switch (type1 * 4 + type2) {
+        case (BITSET_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE):
+            bitset_container_or(c1, c2, c1);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return c1;
+        case ARRAY_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
+            // Java impl. also does not do real in-place in this case
+            *result_type = array_array_container_union(c1, c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case RUN_CONTAINER_TYPE_CODE * 4 + RUN_CONTAINER_TYPE_CODE:
+            result = run_container_create();
+            // TODO: write in-place run container union
+            run_container_union(c1, c2, result);
+            return convert_run_to_efficient_container(result, result_type);
+        case BITSET_CONTAINER_TYPE_CODE * 4 + ARRAY_CONTAINER_TYPE_CODE:
+            array_bitset_container_union(c2, c1, c1);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;  // never array
+            return c1;
+        case ARRAY_CONTAINER_TYPE_CODE * 4 + BITSET_CONTAINER_TYPE_CODE:
+            // c1 is an array, so no in-place possible
+            result = bitset_container_create();
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            array_bitset_container_union(c1, c2, result);
+            array_container_free(c1);
+            return result;
+#if 0
+        case BITSET_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
+                // todo
+        case RUN_CONTAINER_TYPE_CODE*4 + BITSET_CONTAINER_TYPE_CODE:
+                // todo
+         case RUN_CONTAINER_TYPE_CODE*4 + ARRAY_CONTAINER_TYPE_CODE:
+                // todo
+         case ARRAY_CONTAINER_TYPE_CODE*4 + RUN_CONTAINER_TYPE_CODE:
+                // todo
+#else
+        default:
+            fprintf(stderr, "ior lacks support for run container types");
 #endif
     }
     return 0;  // unreached

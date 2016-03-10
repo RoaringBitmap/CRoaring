@@ -59,9 +59,14 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
  * Computes the union between two bitmaps and returns new bitmap. The caller is
  * responsible for memory management.
  *
- * TODO: create an in-place version
  */
 roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1, roaring_bitmap_t *x2);
+
+/**
+ * Inplace version modifies x1
+ */
+void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
+                               const roaring_bitmap_t *x2);
 
 /**
  * Frees the memory.
