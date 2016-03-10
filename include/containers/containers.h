@@ -127,7 +127,8 @@ inline void *container_add(void *container, uint16_t val, uint8_t typecode,
             bitset_container_set((bitset_container_t *)container, val);
             *new_typecode = BITSET_CONTAINER_TYPE_CODE;
             return container;
-        case ARRAY_CONTAINER_TYPE_CODE:;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
             array_container_t *ac = (array_container_t *)container;
             array_container_add(ac, val);
             if (array_container_cardinality(ac) > DEFAULT_MAX_SIZE) {
@@ -156,7 +157,8 @@ inline bool container_contains(void *container, uint16_t val,
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_get((bitset_container_t *)container, val);
-        case ARRAY_CONTAINER_TYPE_CODE:;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
             return array_container_contains((array_container_t *)container,
                                             val);
         case RUN_CONTAINER_TYPE_CODE:
@@ -185,9 +187,10 @@ inline void *container_clone(void *container, uint8_t typecode) {
     }
 }
 
-int32_t container_serialize(void *container, uint8_t typecode, char *buf) __attribute__((warn_unused_result));
+int32_t container_serialize(void *container, uint8_t typecode, char *buf)
+    __attribute__((warn_unused_result));
 uint32_t container_serialization_len(void *container, uint8_t typecode);
-void* container_deserialize(uint8_t typecode, char *buf, size_t max_num_bytes);
+void *container_deserialize(uint8_t typecode, char *buf, size_t max_num_bytes);
 
 #if 0
 // TODO enable and debug this equality stuff

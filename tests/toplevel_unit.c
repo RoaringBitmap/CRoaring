@@ -5,6 +5,19 @@
 
 void show_structure(roaring_array_t *);  // debug
 
+// arrays expected to both be sorted.
+static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
+                        int32_t size2) {
+    if (size1 != size2) return 0;
+    for (int i = 0; i < size1; ++i)
+        if (a1[i] != a2[i]) {
+            printf("array_equals a1[%d] is %d != a2[%d] is %d\n", i, a1[i], i,
+                   a2[i]);
+            return 0;
+        }
+    return 1;
+}
+
 int test_printf() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 =
@@ -17,14 +30,23 @@ int test_printf() {
 
 int test_serialize() {
     printf("[%s] %s\n", __FILE__, __func__);
-    roaring_bitmap_t *r1 = roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+    roaring_bitmap_t *r1 =
+        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     uint32_t serialize_len;
     char *serialized = roaring_bitmap_serialize(r1, &serialize_len);
-    roaring_bitmap_t *r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+    roaring_bitmap_t *r2 =
+        roaring_bitmap_deserialize(serialized, serialize_len);
 
+    printf("Serialization len: %u\n", serialize_len);
     roaring_bitmap_printf(r1);  // does it crash?
+    printf("\n");
     roaring_bitmap_printf(r2);  // does it crash?
-    
+
+    uint32_t card1, card2;
+    uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    assert(array_equals(arr1, card1, arr2, card2));
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
@@ -193,19 +215,6 @@ int test_union() {
     roaring_bitmap_free(r2);
     assert(roaring_bitmap_get_cardinality(r1_or_r2) == 166);
     roaring_bitmap_free(r1_or_r2);
-    return 1;
-}
-
-// arrays expected to both be sorted.
-static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
-                        int32_t size2) {
-    if (size1 != size2) return 0;
-    for (int i = 0; i < size1; ++i)
-        if (a1[i] != a2[i]) {
-            printf("array_equals a1[%d] is %d != a2[%d] is %d\n", i, a1[i], i,
-                   a2[i]);
-            return 0;
-        }
     return 1;
 }
 

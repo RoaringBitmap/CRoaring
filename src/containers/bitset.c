@@ -521,11 +521,12 @@ void* bitset_container_deserialize(char *buf, size_t max_num_bytes) {
     memcpy(ptr, buf, sizeof(bitset_container_t));
     len = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 
-    if((sizeof(bitset_container_t)+len) > max_num_bytes) {
+    if(((sizeof(bitset_container_t)+len) > max_num_bytes)
+       || (posix_memalign((void *)&ptr->array, sizeof(__m256i), len))) {
       free(ptr);
       return(NULL);
     }
-
+    
     memcpy(ptr->array, &buf[sizeof(bitset_container_t)], len);
   }
 
