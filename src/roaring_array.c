@@ -402,25 +402,39 @@ void show_structure(roaring_array_t *ra) {
 char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
                    uint32_t overhead) {
     uint32_t off = overhead, l,
-             tot_len = overhead + sizeof(roaring_array_t) +
+      tot_len = overhead + 4 /* totlen */ + sizeof(roaring_array_t) +
                        ra->allocation_size * (sizeof(uint16_t) +
                                               sizeof(void *) + sizeof(uint8_t));
     char *out;
-    int32_t slen = 0, each;
+    int32_t slen = 0;
+    uint16_t *lens;
 
-    for (int32_t i = 0; i < ra->size; i++)
-        slen += (each = container_serialization_len(ra->containers[i],
-                                                    ra->typecodes[i]));
+    if((lens = (uint16_t*)malloc(sizeof(int16_t)*ra->size)) == NULL) {
+      *serialize_len = 0;
+      return(NULL);
+    }
+
+    for (int32_t i = 0; i < ra->size; i++) {
+      lens[i] = container_serialization_len(ra->containers[i],
+					    ra->typecodes[i]);
+
+      assert(lens[i] != 0);
+      slen += lens[i] + sizeof(uint16_t);
+    }
 
     tot_len += slen;
 
     out = (char *)malloc(tot_len);
 
     if (out == NULL) {
-        *serialize_len = 0;
-        return (NULL);
+      free(lens);
+      *serialize_len = 0;
+      return (NULL);
     } else
         *serialize_len = tot_len;
+
+    /* Total lenght (first 4 bytes of the serialization) */
+    memcpy(out, &tot_len, 4), off += 4;
 
     l = sizeof(roaring_array_t);
     memcpy(&out[off], ra, l);
@@ -439,19 +453,35 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
     off += l;
 
     for (int32_t i = 0; i < ra->size; i++) {
-        int32_t serialized_bytes =
-            container_serialize(ra->containers[i], ra->typecodes[i], &out[off]);
+      int32_t serialized_bytes;
 
-        if (serialized_bytes != each) {
-            for (int32_t j = 0; j <= i; j++)
-                container_free(ra->containers[j], ra->typecodes[j]);
+      memcpy(&out[off], &lens[i], sizeof(lens[i]));
+      off += sizeof(lens[i]);
+      serialized_bytes = container_serialize(ra->containers[i], ra->typecodes[i], &out[off]);
+      
+      // printf("typecodes=%d [serialized_bytes=%d]\n", ra->typecodes[i], serialized_bytes);
+      assert(serialized_bytes != -1);
+      
+      if (serialized_bytes != lens[i]) {
+	for (int32_t j = 0; j <= i; j++)
+	  container_free(ra->containers[j], ra->typecodes[j]);
 
+	    free(lens);
             free(out);
+	    /* printf("ERROR: serialized_bytes=%d, each=%d\n", serialized_bytes, lens[i]); */
+	    assert(serialized_bytes != lens[i]);
             return (NULL);
         }
 
-        off += each;
+        off += serialized_bytes;
     }
+
+    if(tot_len != off) {
+      /* printf("ERROR: tot_len=%d, off=%d\n", tot_len, off); */
+      assert(tot_len != off);
+    }
+
+    free(lens);
 
     return (out);
 }
@@ -463,13 +493,9 @@ roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len) {
         sizeof(roaring_array_t) +
         ra->allocation_size *
             (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
-    uint32_t slen = 0, each;
 
-    for (int32_t i = 0; i < ra->size; i++)
-        slen += (each = container_serialization_len(ra->containers[i],
-                                                    ra->typecodes[i]));
-
-    if ((slen + expected_len) != buf_len) return (NULL); /* Invalid lenght */
+    if(buf_len < expected_len)
+      return(NULL);
 
     if ((ra_copy = (roaring_array_t *)malloc(sizeof(roaring_array_t))) == NULL)
         return (NULL);
@@ -510,9 +536,25 @@ roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len) {
     off += l;
 
     for (int32_t i = 0; i < ra->size; i++) {
-        ra_copy->containers[i] =
-            container_deserialize(ra_copy->typecodes[i], &buf[off], each);
-        off += each;
+      uint16_t len;
+
+      memcpy(&len, &buf[off], sizeof(len));
+      off += sizeof(len);
+
+      ra_copy->containers[i] =
+	container_deserialize(ra_copy->typecodes[i], &buf[off], len);
+
+	if(ra_copy->containers[i] == NULL) {
+	  for (int32_t j = 0; j < i; j++)
+	    container_free(ra_copy->containers[j], ra_copy->typecodes[j]);
+  
+	  free(ra_copy->containers);
+	  free(ra_copy->keys);
+	  free(ra_copy);
+	  return (NULL);
+	}
+
+        off += len;
     }
 
     return (ra_copy);

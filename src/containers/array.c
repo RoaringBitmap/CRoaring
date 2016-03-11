@@ -312,21 +312,25 @@ uint32_t array_container_serialization_len(array_container_t *container) {
 void *array_container_deserialize(char *buf, size_t max_num_bytes) {
     array_container_t *ptr;
 
-    if (sizeof(array_container_t) > max_num_bytes) return (NULL);
-
+    if (sizeof(array_container_t) > max_num_bytes) {
+      assert(0);
+      return (NULL);
+    }
     if ((ptr = malloc(sizeof(array_container_t))) != NULL) {
         size_t len;
 
         memcpy(ptr, buf, sizeof(array_container_t));
         len = sizeof(uint16_t) * ptr->capacity;
 
-        if ((sizeof(array_container_t) + len) > max_num_bytes) {
+        if (len > max_num_bytes) {
             free(ptr);
+	    assert(len == max_num_bytes);
             return (NULL);
         }
 
         if ((ptr->array = malloc(len)) == NULL) {
             free(ptr);
+	    assert(0);
             return (NULL);
         }
 

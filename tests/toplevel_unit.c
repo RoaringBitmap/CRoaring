@@ -33,10 +33,14 @@ int test_serialize() {
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     uint32_t serialize_len;
-    char *serialized = roaring_bitmap_serialize(r1, &serialize_len);
-    roaring_bitmap_t *r2 =
-        roaring_bitmap_deserialize(serialized, serialize_len);
+    char *serialized;
+    roaring_bitmap_t *r2;
 
+    for(int i=0; i<35923; i++)
+      roaring_bitmap_add(r1, i+322);
+
+    serialized = roaring_bitmap_serialize(r1, &serialize_len);
+    r2 = roaring_bitmap_deserialize(serialized, serialize_len);
     printf("Serialization len: %u\n", serialize_len);
     roaring_bitmap_printf(r1);  // does it crash?
     printf("\n");
