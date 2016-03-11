@@ -45,14 +45,11 @@ int32_t container_serialize(void *container, uint8_t typecode, char *buf) {
         case BITSET_CONTAINER_TYPE_CODE:
             return (bitset_container_serialize((bitset_container_t *)container,
                                                buf));
-            break;
         case ARRAY_CONTAINER_TYPE_CODE:
             return (
                 array_container_serialize((array_container_t *)container, buf));
-            break;
         case RUN_CONTAINER_TYPE_CODE:
             return (run_container_serialize((run_container_t *)container, buf));
-            break;
         default:
             assert(0);
             return (-1);
@@ -79,13 +76,10 @@ void *container_deserialize(uint8_t typecode, char *buf, size_t max_num_bytes) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return (bitset_container_deserialize(buf, max_num_bytes));
-            break;
         case ARRAY_CONTAINER_TYPE_CODE:
             return (array_container_deserialize(buf, max_num_bytes));
-            break;
         case RUN_CONTAINER_TYPE_CODE:
             return (run_container_deserialize(buf, max_num_bytes));
-            break;
         default:
             assert(0);
             return (NULL);
