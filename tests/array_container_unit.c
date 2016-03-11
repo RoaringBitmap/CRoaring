@@ -3,6 +3,7 @@
  *
  */
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,6 +178,46 @@ int add_contains_test() {
     return 1;
 }
 
+int equal_test() {
+    array_container_t* B1 = array_container_create();
+    array_container_t* B2 = array_container_create();
+
+    assert(array_container_equal(B1, B2));
+
+    for (size_t i = 0; i < 16; ++i) {
+        array_container_add(B1, i);
+    }
+
+    assert(!array_container_equal(B1, B2));
+
+    for (size_t i = 1; i < 17; ++i) {
+        array_container_add(B2, i);
+    }
+
+    assert(!array_container_equal(B1, B2));
+
+    array_container_add(B1, 16);
+    array_container_add(B2, 0);
+
+    assert(array_container_equal(B1, B2));
+
+    for (size_t i = 0; i < 17; ++i) {
+        array_container_remove(B1, i);
+        array_container_remove(B2, i);
+    }
+
+    assert(array_container_equal(B1, B2));
+
+    array_container_add(B1, (1 << 16) - 1);
+    array_container_add(B2, (1 << 16) - 1);
+
+    assert(array_container_equal(B1, B2));
+
+    array_container_free(B2);
+    array_container_free(B1);
+    return 1;
+}
+
 // returns 0 on error, 1 if ok.
 int and_or_test() {
     array_container_t* B1 = array_container_create();
@@ -255,6 +296,7 @@ int main() {
     tellmeall();
     if (!printf_test()) return -1;
     if (!add_contains_test()) return -1;
+    if (!equal_test()) return -1;
     if (!and_or_test()) return -1;
     if (!to_uint32_array_test()) return -1;
 

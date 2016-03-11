@@ -172,6 +172,23 @@ bool array_container_contains(const array_container_t *arr, uint16_t pos) {
     return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }
 
+bool array_container_equal(const array_container_t *a,
+                           const array_container_t *b) {
+    const int32_t card_a = a->cardinality, card_b = b->cardinality;
+
+    if (card_a != card_b) {
+        return false;
+    }
+
+    for (size_t i = 0; i < (size_t)card_a; ++i) {
+        if (a->array[i] != b->array[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /* Computes the union of array1 and array2 and write the result to arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
  */
