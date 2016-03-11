@@ -337,8 +337,6 @@ int test_union_array_x_bitset() {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
 
-    printf("resultant cardinality is %d\n",
-           roaring_bitmap_get_cardinality(r1_or_r2));
     assert(roaring_bitmap_get_cardinality(r1_or_r2) == 40100);
     roaring_bitmap_free(r1_or_r2);
     return 1;
