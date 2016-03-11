@@ -82,6 +82,8 @@ inline bool run_container_is_full(const run_container_t *run) {
     return (run->n_runs == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
 
+bool run_container_equal(const run_container_t *a, const run_container_t *b);
+
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
 void run_container_union(const run_container_t *src_1,

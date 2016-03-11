@@ -289,6 +289,23 @@ bool run_container_contains(const run_container_t *run, uint16_t pos) {
     return false;
 }
 
+bool run_container_equal(const run_container_t *a, const run_container_t *b) {
+    const int32_t n_runs_a = a->n_runs, n_runs_b = b->n_runs;
+
+    if (n_runs_a != n_runs_b) {
+        return false;
+    }
+
+    for (size_t i = 0; i < (size_t)n_runs_a; ++i) {
+        const rle16_t a_rle = a->runs[i], b_rle = b->runs[i];
+        if (a_rle.value != b_rle.value || a_rle.length != b_rle.length) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
 void run_container_union(const run_container_t *src_1,
