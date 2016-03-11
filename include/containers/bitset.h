@@ -182,6 +182,9 @@ void bitset_container_copy(const bitset_container_t *source,
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
+bool bitset_container_equal(const bitset_container_t *a,
+                            const bitset_container_t *b);
+
 /* Computes the union of bitsets `src_1' and `src_2' into `dst'  and return the
  * cardinality. */
 int bitset_container_or(const bitset_container_t *src_1,

@@ -155,6 +155,22 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 #endif
 
+bool bitset_container_equal(const bitset_container_t *a,
+                            const bitset_container_t *b) {
+    const int32_t a_card = a->cardinality, b_card = b->cardinality;
+    if (a_card != -1 && b_card != -1 && a_card != b_card) {
+        return false;
+    }
+
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+        if (a->array[i] != b->array[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 #ifdef USEAVX
 
 #define BITSET_CONTAINER_FN_REPEAT 8

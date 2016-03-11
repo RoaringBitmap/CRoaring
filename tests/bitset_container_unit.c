@@ -81,6 +81,38 @@ int set_get_test() {
     return 1;
 }
 
+int equal_test() {
+    bitset_container_t* bitset_1 = bitset_container_create();
+    bitset_container_t* bitset_2 = bitset_container_create();
+
+    assert(bitset_container_equal(bitset_1, bitset_2));
+
+    for (size_t i = 0; i < 16; ++i) {
+        bitset_container_set(bitset_1, i);
+    }
+
+    assert(!bitset_container_equal(bitset_1, bitset_2));
+
+    for (size_t i = 1; i < 17; ++i) {
+        bitset_container_set(bitset_2, i);
+    }
+
+    assert(!bitset_container_equal(bitset_1, bitset_2));
+
+    bitset_container_set(bitset_1, 16);
+    bitset_container_set(bitset_2, 0);
+
+    bitset_container_set(bitset_1, (1 << 16) - 1);
+    bitset_container_set(bitset_2, (1 << 16) - 1);
+
+    assert(bitset_container_equal(bitset_1, bitset_2));
+
+    bitset_container_free(bitset_2);
+    bitset_container_free(bitset_1);
+
+    return 1;
+}
+
 // returns 0 on error, 1 if ok.
 int and_or_test() {
     bitset_container_t* B1 = bitset_container_create();
@@ -248,6 +280,7 @@ int main() {
 
     if (!printf_test()) return -1;
     if (!set_get_test()) return -1;
+    if (!equal_test()) return -1;
     if (!and_or_test()) return -1;
     if (!xor_test()) return -1;
     if (!andnot_test()) return -1;
