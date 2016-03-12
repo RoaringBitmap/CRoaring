@@ -42,7 +42,10 @@ void array_container_free(array_container_t *array);
 array_container_t *array_container_clone(array_container_t *src);
 
 int32_t array_container_serialize(array_container_t *container, char *buf)
-    __attribute__((warn_unused_result));
+#ifdef __GNUC__
+    __attribute__((warn_unused_result))
+#endif
+;
 
 uint32_t array_container_serialization_len(array_container_t *container);
 

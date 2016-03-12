@@ -53,7 +53,10 @@ void run_container_free(run_container_t *run);
 run_container_t *run_container_clone(const run_container_t *src);
 
 int32_t run_container_serialize(run_container_t *container, char *buf)
-    __attribute__((warn_unused_result));
+#ifdef __GNUC__
+    __attribute__((warn_unused_result))
+#endif
+;
 
 uint32_t run_container_serialization_len(run_container_t *container);
 

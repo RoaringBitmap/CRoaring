@@ -40,7 +40,10 @@ void bitset_container_clear(bitset_container_t *bitset);
 bitset_container_t *bitset_container_clone(bitset_container_t *src);
 
 int32_t bitset_container_serialize(bitset_container_t *container, char *buf)
-    __attribute__((warn_unused_result));
+#ifdef __GNUC__
+    __attribute__((warn_unused_result))
+#endif
+;
 
 uint32_t bitset_container_serialization_len();
 
