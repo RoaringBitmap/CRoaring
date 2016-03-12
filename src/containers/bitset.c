@@ -509,19 +509,22 @@ uint32_t bitset_container_serialization_len() {
   return(sizeof(bitset_container_t)+sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
-void* bitset_container_deserialize(char *buf, size_t max_num_bytes) {
+void* bitset_container_deserialize(char *buf, size_t buf_len) {
   bitset_container_t *ptr;
 
-  if(sizeof(bitset_container_t) > max_num_bytes)
+  if(sizeof(bitset_container_t) > buf_len)
     return(NULL);
+  else
+    buf_len -= sizeof(bitset_container_t);
 
   if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
     size_t len;
 
     memcpy(ptr, buf, sizeof(bitset_container_t));
-    len = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 
-    if(((sizeof(bitset_container_t)+len) > max_num_bytes)
+    len = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
+    
+    if((len != buf_len)
        || (posix_memalign((void *)&ptr->array, sizeof(__m256i), len))) {
       free(ptr);
       return(NULL);

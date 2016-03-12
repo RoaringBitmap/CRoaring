@@ -36,15 +36,14 @@ int test_serialize() {
     char *serialized;
     roaring_bitmap_t *r2;
 
+    /* Add some values to the bitmap */
     for(int i=0; i<35923; i++)
       roaring_bitmap_add(r1, i+322);
 
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
-    printf("Serialization len: %u\n", serialize_len);
-    roaring_bitmap_printf(r1);  // does it crash?
-    printf("\n");
-    roaring_bitmap_printf(r2);  // does it crash?
+    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len, 
+	   ((float)(8*serialize_len))/((float)roaring_bitmap_get_cardinality(r2)));
 
     uint32_t card1, card2;
     uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);

@@ -456,10 +456,13 @@ uint32_t run_container_serialization_len(run_container_t *container) {
     return (sizeof(run_container_t) + sizeof(rle16_t) * container->capacity);
 }
 
-void *run_container_deserialize(char *buf, size_t max_num_bytes) {
+void *run_container_deserialize(char *buf, size_t buf_len) {
     run_container_t *ptr;
 
-    if (sizeof(run_container_t) > max_num_bytes) return (NULL);
+    if (sizeof(run_container_t) > buf_len)
+      return (NULL);    
+    else
+      buf_len -= sizeof(run_container_t);
 
     if ((ptr = malloc(sizeof(run_container_t))) != NULL) {
         size_t len;
@@ -467,7 +470,7 @@ void *run_container_deserialize(char *buf, size_t max_num_bytes) {
         memcpy(ptr, buf, sizeof(run_container_t));
         len = sizeof(rle16_t) * ptr->capacity;
 
-        if ((sizeof(run_container_t) + len) > max_num_bytes) {
+        if (len != buf_len) {
             free(ptr);
             return (NULL);
         }

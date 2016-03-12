@@ -46,7 +46,7 @@ int32_t array_container_serialize(array_container_t *container, char *buf)
 
 uint32_t array_container_serialization_len(array_container_t *container);
 
-void *array_container_deserialize(char *buf, size_t max_num_bytes);
+void *array_container_deserialize(char *buf, size_t buf_len);
 
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);
@@ -58,11 +58,11 @@ bool array_container_remove(array_container_t *array, uint16_t pos);
 bool array_container_contains(const array_container_t *array, uint16_t pos);
 
 /* Get the cardinality of `array'. */
-inline int array_container_cardinality(const array_container_t *array) {
+static inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
 }
 
-inline bool array_container_nonzero_cardinality(
+static inline bool array_container_nonzero_cardinality(
     const array_container_t *array) {
     return array->cardinality > 0;
 }
@@ -71,15 +71,15 @@ inline bool array_container_nonzero_cardinality(
 void array_container_copy(const array_container_t *src, array_container_t *dst);
 
 /* Set the cardinality to zero (does not release memory). */
-inline void array_container_clear(array_container_t *array) {
+static inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;
 }
 
-inline bool array_container_empty(const array_container_t *array) {
+static inline bool array_container_empty(const array_container_t *array) {
     return array->cardinality == 0;
 }
 
-inline bool array_container_full(const array_container_t *array) {
+static inline bool array_container_full(const array_container_t *array) {
     return array->cardinality == array->capacity;
 }
 
@@ -131,7 +131,7 @@ void array_container_printf_as_uint32_array(const array_container_t *v,
 /**
  * Return the serialized size in bytes of a container having cardinality "card".
  */
-inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
+static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
     return card * 2 + 2;
 }
 

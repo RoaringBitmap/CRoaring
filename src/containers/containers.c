@@ -72,14 +72,14 @@ uint32_t container_serialization_len(void *container, uint8_t typecode) {
     }
 }
 
-void *container_deserialize(uint8_t typecode, char *buf, size_t max_num_bytes) {
+void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return (bitset_container_deserialize(buf, max_num_bytes));
+            return (bitset_container_deserialize(buf, buf_len));
         case ARRAY_CONTAINER_TYPE_CODE:
-            return (array_container_deserialize(buf, max_num_bytes));
+            return (array_container_deserialize(buf, buf_len));
         case RUN_CONTAINER_TYPE_CODE:
-            return (run_container_deserialize(buf, max_num_bytes));
+            return (run_container_deserialize(buf, buf_len));
         default:
             assert(0);
             return (NULL);
