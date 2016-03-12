@@ -497,40 +497,33 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
 }
 
 int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
-  int32_t l;
+  int32_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 
-  memcpy(buf, container, sizeof(bitset_container_t));
-  l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
-  memcpy(&buf[sizeof(bitset_container_t)], container->array, l);
-  return(sizeof(bitset_container_t) + l);
+  memcpy(buf, container->array, l);
+  return(l);
 }
 
 uint32_t bitset_container_serialization_len() {
-  return(sizeof(bitset_container_t)+sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+  return(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
 void* bitset_container_deserialize(char *buf, size_t buf_len) {
   bitset_container_t *ptr;
+  size_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 
-  if(sizeof(bitset_container_t) > buf_len)
+  if(l != buf_len)
     return(NULL);
-  else
-    buf_len -= sizeof(bitset_container_t);
 
   if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
-    size_t len;
-
     memcpy(ptr, buf, sizeof(bitset_container_t));
 
-    len = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
-    
-    if((len != buf_len)
-       || (posix_memalign((void *)&ptr->array, sizeof(__m256i), len))) {
+    if(posix_memalign((void *)&ptr->array, sizeof(__m256i), l)) {
       free(ptr);
       return(NULL);
     }
     
-    memcpy(ptr->array, &buf[sizeof(bitset_container_t)], len);
+    memcpy(ptr->array, buf, l);
+    ptr->cardinality = bitset_container_compute_cardinality(ptr);
   }
 
   return((void*)ptr);

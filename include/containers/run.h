@@ -56,7 +56,7 @@ int32_t run_container_serialize(run_container_t *container, char *buf)
 #ifdef __GNUC__
     __attribute__((warn_unused_result))
 #endif
-;
+    ;
 
 uint32_t run_container_serialization_len(run_container_t *container);
 
@@ -75,7 +75,8 @@ bool run_container_contains(const run_container_t *run, uint16_t pos);
 int run_container_cardinality(const run_container_t *run);
 
 /* Card > 0? */
-static inline bool run_container_nonzero_cardinality(const run_container_t *run) {
+static inline bool run_container_nonzero_cardinality(
+    const run_container_t *run) {
     return run->n_runs > 0;  // runs never empty
 }
 
@@ -83,7 +84,9 @@ static inline bool run_container_nonzero_cardinality(const run_container_t *run)
 void run_container_copy(const run_container_t *src, run_container_t *dst);
 
 /* Set the cardinality to zero (does not release memory). */
-static inline void run_container_clear(run_container_t *run) { run->n_runs = 0; }
+static inline void run_container_clear(run_container_t *run) {
+    run->n_runs = 0;
+}
 
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */

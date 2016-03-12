@@ -43,7 +43,7 @@ int32_t bitset_container_serialize(bitset_container_t *container, char *buf)
 #ifdef __GNUC__
     __attribute__((warn_unused_result))
 #endif
-;
+    ;
 
 uint32_t bitset_container_serialization_len();
 
@@ -55,7 +55,8 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
 
 #ifdef ASMBITMANIPOPTIMIZATION
 /* Set the ith bit.  */
-static inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
+static inline void bitset_container_set(bitset_container_t *bitset,
+                                        uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -66,7 +67,8 @@ static inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos
 }
 
 /* Unset the ith bit.  */
-static inline void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
+static inline void bitset_container_unset(bitset_container_t *bitset,
+                                          uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -78,7 +80,8 @@ static inline void bitset_container_unset(bitset_container_t *bitset, uint16_t p
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
  * than bitset_container_set.  */
-static inline bool bitset_container_add(bitset_container_t *bitset, uint16_t pos) {
+static inline bool bitset_container_add(bitset_container_t *bitset,
+                                        uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -93,7 +96,8 @@ static inline bool bitset_container_add(bitset_container_t *bitset, uint16_t pos
 
 /* Remove `pos' from `bitset'. Returns true if `pos' was present.  Might be
  * slower than bitset_container_unset.  */
-static inline bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos) {
+static inline bool bitset_container_remove(bitset_container_t *bitset,
+                                           uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -108,7 +112,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset, uint16_t 
 
 /* Get the value of the ith bit.  */
 static inline bool bitset_container_get(const bitset_container_t *bitset,
-                                 uint16_t pos) {
+                                        uint16_t pos) {
     uint64_t word = bitset->array[pos >> 6];
     const uint64_t p = pos;
     ASM_INPLACESHIFT_RIGHT(word, p);
@@ -118,7 +122,8 @@ static inline bool bitset_container_get(const bitset_container_t *bitset,
 #else
 
 /* Set the ith bit.  */
-static inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos) {
+static inline void bitset_container_set(bitset_container_t *bitset,
+                                        uint16_t pos) {
     const uint64_t old_word = bitset->array[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word | (UINT64_C(1) << index);
@@ -127,7 +132,8 @@ static inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos
 }
 
 /* Unset the ith bit.  */
-static inline void bitset_container_unset(bitset_container_t *bitset, uint16_t pos) {
+static inline void bitset_container_unset(bitset_container_t *bitset,
+                                          uint16_t pos) {
     const uint64_t old_word = bitset->array[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
@@ -137,7 +143,8 @@ static inline void bitset_container_unset(bitset_container_t *bitset, uint16_t p
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
  * than bitset_container_set.  */
-static inline bool bitset_container_add(bitset_container_t *bitset, uint16_t pos) {
+static inline bool bitset_container_add(bitset_container_t *bitset,
+                                        uint16_t pos) {
     const uint64_t old_word = bitset->array[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word | (UINT64_C(1) << index);
@@ -149,7 +156,8 @@ static inline bool bitset_container_add(bitset_container_t *bitset, uint16_t pos
 
 /* Remove `pos' from `bitset'. Returns true if `pos' was present.  Might be
  * slower than bitset_container_unset.  */
-static inline bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos) {
+static inline bool bitset_container_remove(bitset_container_t *bitset,
+                                           uint16_t pos) {
     const uint64_t old_word = bitset->array[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
@@ -161,7 +169,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset, uint16_t 
 
 /* Get the value of the ith bit.  */
 static inline bool bitset_container_get(const bitset_container_t *bitset,
-                                 uint16_t pos) {
+                                        uint16_t pos) {
     const uint64_t word = bitset->array[pos >> 6];
     // getting rid of the mask can shave one cycle off...
     return (word >> (pos & 63)) & 1;
@@ -171,7 +179,7 @@ static inline bool bitset_container_get(const bitset_container_t *bitset,
 
 /* Check whether `bitset' is present in `array'.  Calls bitset_container_get. */
 static inline bool bitset_container_contains(const bitset_container_t *bitset,
-                                      uint16_t pos) {
+                                             uint16_t pos) {
     return bitset_container_get(bitset, pos);
 }
 
@@ -181,7 +189,8 @@ static inline int bitset_container_cardinality(bitset_container_t *bitset) {
 }
 
 /* Get whether there is at least one bit set  */
-static inline bool bitset_container_nonzero_cardinality(bitset_container_t *bitset) {
+static inline bool bitset_container_nonzero_cardinality(
+    bitset_container_t *bitset) {
     return bitset->cardinality > 0;
 }
 

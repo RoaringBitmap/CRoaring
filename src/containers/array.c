@@ -295,45 +295,61 @@ int32_t array_container_number_of_runs(array_container_t *a) {
 }
 
 int32_t array_container_serialize(array_container_t *container, char *buf) {
-    int32_t l;
+    int32_t l, off;
 
-    memcpy(buf, container, sizeof(array_container_t));
-    l = sizeof(uint16_t) * container->capacity;
-    memcpy(&buf[sizeof(array_container_t)], container->array, l);
+    memcpy(buf, &container->capacity, off = sizeof(container->capacity));
+    memcpy(&buf[off], &container->cardinality, sizeof(container->cardinality));
+    off += sizeof(container->cardinality);
+    l = sizeof(uint16_t) * container->cardinality;
+    memcpy(&buf[off], container->array, l);
 
-    return (sizeof(array_container_t) + l);
+    return (off + l);
 }
 
 uint32_t array_container_serialization_len(array_container_t *container) {
-    return (sizeof(array_container_t) +
-            (sizeof(uint16_t) * container->capacity));
+    return (sizeof(container->capacity) + sizeof(container->cardinality) +
+            (sizeof(uint16_t) * container->cardinality));
 }
 
 void *array_container_deserialize(char *buf, size_t buf_len) {
     array_container_t *ptr;
 
-    if (sizeof(array_container_t) > buf_len)
-      return (NULL);    
+    if (buf_len < 8) /* capacity+cardinality */
+        return (NULL);
     else
-      buf_len -= sizeof(array_container_t);
+        buf_len -= 8;
 
     if ((ptr = malloc(sizeof(array_container_t))) != NULL) {
         size_t len;
+        int32_t off;
 
-        memcpy(ptr, buf, sizeof(array_container_t));
-        len = sizeof(uint16_t) * ptr->capacity;
+        memcpy(&ptr->capacity, buf, off = sizeof(ptr->capacity));
+        memcpy(&ptr->cardinality, &buf[off], sizeof(ptr->cardinality));
+        off += sizeof(ptr->cardinality);
+
+        len = sizeof(uint16_t) * ptr->cardinality;
 
         if (len != buf_len) {
             free(ptr);
             return (NULL);
         }
 
-        if ((ptr->array = malloc(len)) == NULL) {
+        if ((ptr->array = malloc(sizeof(uint16_t) * ptr->capacity)) == NULL) {
             free(ptr);
             return (NULL);
         }
 
-        memcpy(ptr->array, &buf[sizeof(array_container_t)], len);
+        memcpy(ptr->array, &buf[off], len);
+
+        /* Check if returned values are monotonically increasing */
+        for (int32_t i = 0, j = 0; i < ptr->cardinality; i++) {
+            if (ptr->array[i] < j) {
+                free(ptr->array);
+                free(ptr);
+                return (NULL);
+            } else
+                j = ptr->array[i];
+        }
     }
 
     return (ptr);

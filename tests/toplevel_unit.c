@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "roaring.h"
 
@@ -32,29 +33,41 @@ int test_serialize() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
-    uint32_t serialize_len;
+    uint32_t serialize_len, seed = time(NULL);
     char *serialized;
     roaring_bitmap_t *r2;
 
     /* Add some values to the bitmap */
-    for(int i=0; i<35923; i++)
-      roaring_bitmap_add(r1, i+322);
+    for (int i = 0, top_val = seed % 1000000; i < top_val; i++)
+        roaring_bitmap_add(r1, seed + 3 * i);
 
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
-    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len, 
-	   ((float)(8*serialize_len))/((float)roaring_bitmap_get_cardinality(r2)));
+    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len,
+           ((float)(8 * serialize_len)) /
+               ((float)roaring_bitmap_get_cardinality(r2)));
 
     uint32_t card1, card2;
     uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
     uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
-
+    free(arr1);
+    free(arr2);
+    free(serialized);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    free(serialized);
-    printf("\n");
+
+    run_container_t *run = run_container_create_given_capacity(1024);
+    for (int i = 0; i < 768; i++) run_container_add(run, 3 * i);
+
+    serialize_len = run_container_serialization_len(run);
+    char rbuf[serialize_len];
+    assert((int32_t)serialize_len == run_container_serialize(run, rbuf));
+    run_container_t *run1 = run_container_deserialize(rbuf, serialize_len);
+
+    run_container_free(run);
+    run_container_free(run1);
     return 1;
 }
 

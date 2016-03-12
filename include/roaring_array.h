@@ -88,7 +88,8 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
 
 static inline int32_t ra_get_size(roaring_array_t *ra) { return ra->size; }
 
-static inline int32_t ra_advance_until(roaring_array_t *ra, uint16_t x, int32_t pos) {
+static inline int32_t ra_advance_until(roaring_array_t *ra, uint16_t x,
+                                       int32_t pos) {
     return advanceUntil(ra->keys, pos, ra->size, x);
 }
 
@@ -100,8 +101,7 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
                                            uint16_t key, void *c,
                                            uint8_t typecode);
 
-char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
-                   uint32_t overhead);
+char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len);
 
 roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len);
 #endif

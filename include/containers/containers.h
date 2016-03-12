@@ -66,7 +66,8 @@ void container_printf_as_uint32_array(void *container, uint8_t typecode,
 /**
  * Checks whether a container is not empty, requires a  typecode
  */
-static inline bool container_nonzero_cardinality(void *container, uint8_t typecode) {
+static inline bool container_nonzero_cardinality(void *container,
+                                                 uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_nonzero_cardinality(container);
@@ -102,7 +103,7 @@ static inline void container_free(void *container, uint8_t typecode) {
  * Returns number of ints added.
  */
 static inline int container_to_uint32_array(uint32_t *output, void *container,
-                                     uint8_t typecode, uint32_t base) {
+                                            uint8_t typecode, uint32_t base) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_to_uint32_array(output, container, base);
@@ -121,8 +122,8 @@ static inline int container_to_uint32_array(uint32_t *output, void *container,
  * This function may allocate a new container, and caller is responsible for
  * memory deallocation
  */
-static inline void *container_add(void *container, uint16_t val, uint8_t typecode,
-                           uint8_t *new_typecode) {
+static inline void *container_add(void *container, uint16_t val,
+                                  uint8_t typecode, uint8_t *new_typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             bitset_container_set((bitset_container_t *)container, val);
@@ -154,7 +155,7 @@ static inline void *container_add(void *container, uint16_t val, uint8_t typecod
  * Check whether a value is in a container, requires a  typecode
  */
 static inline bool container_contains(void *container, uint16_t val,
-                               uint8_t typecode) {
+                                      uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_get((bitset_container_t *)container, val);
@@ -192,7 +193,7 @@ int32_t container_serialize(void *container, uint8_t typecode, char *buf)
 #ifdef __GNUC__
     __attribute__((warn_unused_result))
 #endif
-;
+    ;
 uint32_t container_serialization_len(void *container, uint8_t typecode);
 void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len);
 
@@ -229,8 +230,8 @@ static inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t t
  * type result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
-static inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t type2,
-                           uint8_t *result_type) {
+static inline void *container_and(void *c1, uint8_t type1, void *c2,
+                                  uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
@@ -284,8 +285,8 @@ static inline void *container_and(void *c1, uint8_t type1, void *c2, uint8_t typ
  The type of the first container may change, in which case the old container
  will be deallocated. Returns the modified (and possibly new) container
 */
-static inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t type2,
-                            uint8_t *result_type) {
+static inline void *container_iand(void *c1, uint8_t type1, void *c2,
+                                   uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
@@ -341,8 +342,8 @@ static inline void *container_iand(void *c1, uint8_t type1, void *c2, uint8_t ty
  * result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
-static inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type2,
-                          uint8_t *result_type) {
+static inline void *container_or(void *c1, uint8_t type1, void *c2,
+                                 uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
@@ -396,8 +397,8 @@ static inline void *container_or(void *c1, uint8_t type1, void *c2, uint8_t type
  * will be deallocated. Returns the modified (and possibly new) container
 */
 
-static inline void *container_ior(void *c1, uint8_t type1, void *c2, uint8_t type2,
-                           uint8_t *result_type) {
+static inline void *container_ior(void *c1, uint8_t type1, void *c2,
+                                  uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,

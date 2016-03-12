@@ -413,30 +413,22 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
 }
 
 char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
-    char *serialized = ra_serialize(ra->high_low_container, serialize_len,
-                                    sizeof(roaring_bitmap_t));
-
-    if (serialized) /* First 4 bytes contain the lenght */
-      memcpy(&serialized[4], ra, sizeof(roaring_bitmap_t));
-
-    return (serialized);
+    return (ra_serialize(ra->high_low_container, serialize_len));
 }
 
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
-  roaring_bitmap_t *b;
-  uint32_t len;
+    roaring_bitmap_t *b;
+    uint32_t len;
 
-  if(buf_len < 4) return(NULL);
+    if (buf_len < 4) return (NULL);
 
-  memcpy(&len, buf, 4);
+    memcpy(&len, buf, 4);
 
-  if(len != buf_len)
-    return(NULL);
+    if (len != buf_len) return (NULL);
 
     b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
     if (b) {
-        b->high_low_container = ra_deserialize(
-            &buf[4+sizeof(roaring_bitmap_t)], buf_len - sizeof(roaring_bitmap_t) - 4);
+        b->high_low_container = ra_deserialize(&buf[4], buf_len - 4);
         if (b->high_low_container == NULL) {
             free(b);
             b = NULL;
