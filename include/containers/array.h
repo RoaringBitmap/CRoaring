@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "portability.h"
+
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
 
@@ -41,11 +43,7 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(array_container_t *src);
 
-int32_t array_container_serialize(array_container_t *container, char *buf)
-#ifdef __GNUC__
-    __attribute__((warn_unused_result))
-#endif
-    ;
+int32_t array_container_serialize(array_container_t *container, char *buf) WARN_UNUSED;
 
 uint32_t array_container_serialization_len(array_container_t *container);
 

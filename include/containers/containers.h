@@ -189,11 +189,10 @@ static inline void *container_clone(void *container, uint8_t typecode) {
     }
 }
 
-int32_t container_serialize(void *container, uint8_t typecode, char *buf)
-#ifdef __GNUC__
-    __attribute__((warn_unused_result))
-#endif
-    ;
+int32_t container_serialize(void *container, uint8_t typecode, char *buf) 
+WARN_UNUSED
+;
+
 uint32_t container_serialization_len(void *container, uint8_t typecode);
 void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len);
 

@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "portability.h"
+
 /* struct rle16_s - run length pair
  *
  * @value:  start position of the run
@@ -52,11 +54,7 @@ void run_container_free(run_container_t *run);
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
 
-int32_t run_container_serialize(run_container_t *container, char *buf)
-#ifdef __GNUC__
-    __attribute__((warn_unused_result))
-#endif
-    ;
+int32_t run_container_serialize(run_container_t *container, char *buf) WARN_UNUSED;
 
 uint32_t run_container_serialization_len(run_container_t *container);
 

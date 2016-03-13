@@ -33,13 +33,13 @@ int test_serialize() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
-    uint32_t serialize_len, seed = time(NULL);
+    uint32_t serialize_len;
     char *serialized;
     roaring_bitmap_t *r2;
 
     /* Add some values to the bitmap */
-    for (int i = 0, top_val = seed % 1000000; i < top_val; i++)
-        roaring_bitmap_add(r1, seed + 3 * i);
+    for (int i = 0, top_val = 384000; i < top_val; i++)
+        roaring_bitmap_add(r1, 3 * i);
 
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);

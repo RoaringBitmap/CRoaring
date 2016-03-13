@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <x86intrin.h>
 
+#include "portability.h"
 #include "../utilasm.h"
 
 #ifdef USEAVX
@@ -39,11 +40,7 @@ void bitset_container_clear(bitset_container_t *bitset);
 /* Duplicate bitset */
 bitset_container_t *bitset_container_clone(bitset_container_t *src);
 
-int32_t bitset_container_serialize(bitset_container_t *container, char *buf)
-#ifdef __GNUC__
-    __attribute__((warn_unused_result))
-#endif
-    ;
+int32_t bitset_container_serialize(bitset_container_t *container, char *buf) WARN_UNUSED;
 
 uint32_t bitset_container_serialization_len();
 
