@@ -12,6 +12,7 @@
 
 #include "portability.h"
 #include "../utilasm.h"
+#include "roaring_types.h"
 
 #ifdef USEAVX
 #define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
@@ -325,5 +326,7 @@ static inline int32_t bitset_container_serialized_size_in_bytes() {
  * Return the the number of runs.
  */
 int bitset_container_number_of_runs(bitset_container_t *b);
+
+void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

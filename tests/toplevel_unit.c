@@ -29,6 +29,30 @@ int test_printf() {
     return 1;
 }
 
+void dummy_iterator(uint32_t value, void *param) {
+  uint32_t *num = (uint32_t*)param;
+  
+  (*num)++;
+}
+
+int test_iterate() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 =
+        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+    uint32_t num = 0;
+
+    /* Add some values to the bitmap */
+    for (int i = 0, top_val = 384000; i < top_val; i++)
+        roaring_bitmap_add(r1, 3 * i);
+
+    roaring_iterate(r1, dummy_iterator, (void*)&num);
+
+    assert(roaring_bitmap_get_cardinality(r1) == num);
+    roaring_bitmap_free(r1);
+    return(1);
+}
+
+
 int test_serialize() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 =
@@ -528,6 +552,7 @@ int main() {
     int passed = 0;
     passed += test_printf();
     passed += test_serialize();
+    passed += test_iterate();
     passed += test_add();
     passed += test_contains();
     passed += test_intersection_array_x_array();

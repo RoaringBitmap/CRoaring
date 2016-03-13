@@ -529,4 +529,18 @@ void* bitset_container_deserialize(char *buf, size_t buf_len) {
   return((void*)ptr);
 }
 
+void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
+  for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+    uint64_t w = cont->array[i];
+
+    while (w != 0) {
+      uint64_t t = w & -w;
+      int r = __builtin_ctzl(w);
+      iterator(r + base, ptr);
+      w ^= t;
+    }
+    base += 64;
+  }
+}
+
 // clang-format On

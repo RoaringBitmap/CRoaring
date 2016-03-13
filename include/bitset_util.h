@@ -13,12 +13,12 @@ void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end);
  * of all the set bits to "out", values start at "base".
  *
  * The "out" pointer should be sufficient to store the actual number of bits
- *set.
+ * set.
  *
  * Returns how many values were actually decoded.
  *
  * This function should only be expected to be faster than
- *bitset_extract_setbits
+ * bitset_extract_setbits
  * when the density of the bitset is high.
  *
  * This function uses AVX2 decoding.

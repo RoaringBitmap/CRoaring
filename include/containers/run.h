@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "portability.h"
+#include "roaring_types.h"
 
 /* struct rle16_s - run length pair
  *
@@ -133,5 +134,7 @@ void run_container_printf_as_uint32_array(const run_container_t *v,
 static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
     return 2 + 2 * 2 * num_runs;  // each run requires 2 2-byte entries.
 }
+
+void run_container_iterate(const run_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

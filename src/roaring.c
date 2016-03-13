@@ -437,3 +437,12 @@ roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
 
     return (b);
 }
+
+void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator, void *ptr) {
+  for (int i = 0; i < ra->high_low_container->size; ++i)
+    container_iterate(ra->high_low_container->containers[i],
+		      ra->high_low_container->typecodes[i],
+		      ((uint32_t)ra->high_low_container->keys[i]) << 16,
+		      iterator, ptr);
+}
+

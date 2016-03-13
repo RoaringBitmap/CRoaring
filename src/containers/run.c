@@ -503,3 +503,13 @@ void *run_container_deserialize(char *buf, size_t buf_len) {
 
     return (ptr);
 }
+
+void run_container_iterate(const run_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
+  for (int i = 0; i < cont->n_runs; ++i) {
+    uint32_t run_start = base + cont->runs[i].value;
+    uint16_t le = cont->runs[i].length;
+
+    for (int j = 0; j <= le; ++j) 
+      iterator(run_start + j, ptr);
+  }
+}

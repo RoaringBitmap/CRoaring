@@ -354,3 +354,9 @@ void *array_container_deserialize(char *buf, size_t buf_len) {
 
     return (ptr);
 }
+	      
+void array_container_iterate(const array_container_t *cont, uint32_t base,
+			     roaring_iterator iterator, void *ptr) {
+  for (int i = 0; i < cont->cardinality; i++)
+    iterator(cont->array[i] + base, ptr);    
+}

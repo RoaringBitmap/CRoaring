@@ -447,4 +447,21 @@ static inline void *container_ior(void *c1, uint8_t type1, void *c2,
     return 0;  // unreached
 }
 
+static inline void container_iterate(void *container, uint8_t typecode, uint32_t base, 
+				     roaring_iterator iterator, void *ptr) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+	   bitset_container_iterate(container, base, iterator, ptr);
+	   break;
+        case ARRAY_CONTAINER_TYPE_CODE:
+	  array_container_iterate(container, base, iterator, ptr);
+	   break;
+        case RUN_CONTAINER_TYPE_CODE:
+	   run_container_iterate(container, base, iterator, ptr);
+	   break;	   
+    default:
+      __builtin_unreachable();
+    }
+}
+
 #endif
