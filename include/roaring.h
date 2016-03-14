@@ -98,8 +98,17 @@ uint32_t *roaring_bitmap_to_uint32_array(roaring_bitmap_t *ra,
                                          uint32_t *cardinality);
 #endif
 
+/**
+ *  Remove run-length encoding even when it is more space efficient
+ *  return whether a change was applied
+ */
 bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
 
+/** convert array and bitmap containers to run containers when it is more
+ * efficient;
+ * also convert from run containers when more space efficient.  Returns
+ * true if the result has at least one run container.
+*/
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 
 /*
