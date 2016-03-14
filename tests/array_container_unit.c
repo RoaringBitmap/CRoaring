@@ -4,6 +4,7 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,150 +29,52 @@ int printf_test() {
 
 // returns 0 on error, 1 if ok.
 int add_contains_test() {
-    array_container_t* B = array_container_create();
-    int x;
     printf("[%s] %s\n", __FILE__, __func__);
-    if (B == NULL) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        return 0;
-    }
-    int expectedcard = 0;
-    for (x = 0; x < 1 << 16; x += 3) {
-        bool wasadded = array_container_add(B, (uint16_t)x);
-        if (!wasadded) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        if (!array_container_contains(B, (uint16_t)x)) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        expectedcard++;
-        if (B->cardinality != expectedcard) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        if (B->cardinality > B->capacity) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-    }
-    for (x = 0; x < 1 << 16; x++) {
-        int isset = array_container_contains(B, (uint16_t)x);
-        int shouldbeset = (x / 3 * 3 == x);
-        if (isset != shouldbeset) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-    }
-    if (array_container_cardinality(B) != (1 << 16) / 3 + 1) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        array_container_free(B);
-        return 0;
-    }
-    for (x = 0; x < 1 << 16; x += 3) {
-        if (!array_container_contains(B, (uint16_t)x)) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        bool wasremoved = array_container_remove(B, (uint16_t)x);
-        if (!wasremoved) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        expectedcard--;
-        if (B->cardinality != expectedcard) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
+    array_container_t* B = array_container_create();
+    assert(B);
 
-        if (array_container_contains(B, (uint16_t)x)) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-    }
-    if (array_container_cardinality(B) != 0) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        array_container_free(B);
-        return 0;
-    }
-    if (array_container_cardinality(B) != 0) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        array_container_free(B);
-        return 0;
+    int32_t expectedcard = 0;
+
+    for (uint32_t x = 0; x < UINT16_MAX + 1; x += 3) {
+        assert(array_container_add(B, x));
+        assert(array_container_contains(B, x));
+        assert(B->cardinality == ++expectedcard);
+        assert(B->cardinality <= B->capacity);
     }
 
-    for (x = 65535; x >= 0; x -= 3) {
-        bool wasadded = array_container_add(B, (uint16_t)x);
-        if (!wasadded) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        if (!array_container_contains(B, (uint16_t)x)) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        expectedcard++;
-        if (B->cardinality != expectedcard) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        if (B->cardinality > B->capacity) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
+    for (uint32_t x = 0; x < UINT16_MAX + 1; ++x) {
+        assert(array_container_contains(B, x) == (x % 3 == 0));
     }
-    if (array_container_cardinality(B) != (1 << 16) / 3 + 1) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        array_container_free(B);
-        return 0;
-    }
-    for (x = 0; x < 1 << 16; x++) {
-        int isset = array_container_contains(B, (uint16_t)x);
-        int shouldbeset = (x / 3 * 3 == x);
-        if (isset != shouldbeset) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-    }
-    for (x = 0; x < 1 << 16; x += 3) {
-        if (!array_container_contains(B, (uint16_t)x)) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        bool wasremoved = array_container_remove(B, (uint16_t)x);
-        if (!wasremoved) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
-        expectedcard--;
-        if (B->cardinality != expectedcard) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
 
-        if (array_container_contains(B, (uint16_t)x)) {
-            printf("Bug %s, line %d \n", __FILE__, __LINE__);
-            array_container_free(B);
-            return 0;
-        }
+    assert(array_container_cardinality(B) == (1 << 16) / 3 + 1);
+
+    for (uint32_t x = 0; x < UINT16_MAX + 1; x += 3) {
+        assert(array_container_contains(B, x));
+        assert(array_container_remove(B, x));
+        assert(B->cardinality == --expectedcard);
+        assert(!array_container_contains(B, x));
+    }
+
+    assert(array_container_cardinality(B) == 0);
+
+    for (int32_t x = 65535; x >= 0; x -= 3) {
+        assert(array_container_add(B, x));
+        assert(array_container_contains(B, x));
+        assert(B->cardinality == ++expectedcard);
+        assert(B->cardinality <= B->capacity);
+    }
+
+    assert(array_container_cardinality(B) == (1 << 16) / 3 + 1);
+
+    for (uint32_t x = 0; x < UINT16_MAX + 1; ++x) {
+        assert(array_container_contains(B, x) == (x % 3 == 0));
+    }
+
+    for (uint32_t x = 0; x < UINT16_MAX + 1; x += 3) {
+        assert(array_container_contains(B, x));
+        assert(array_container_remove(B, x));
+        assert(B->cardinality == --expectedcard);
+        assert(!array_container_contains(B, x));
     }
 
     array_container_free(B);
@@ -179,6 +82,7 @@ int add_contains_test() {
 }
 
 int equal_test() {
+    printf("[%s] %s\n", __FILE__, __func__);
     array_container_t* B1 = array_container_create();
     array_container_t* B2 = array_container_create();
 
@@ -220,48 +124,41 @@ int equal_test() {
 
 // returns 0 on error, 1 if ok.
 int and_or_test() {
+    printf("[%s] %s\n", __FILE__, __func__);
     array_container_t* B1 = array_container_create();
     array_container_t* B2 = array_container_create();
-    array_container_t* BI = array_container_create();
-    array_container_t* BO = array_container_create();
+    array_container_t* bitmap_intersection = array_container_create();
+    array_container_t* bitmap_union = array_container_create();
+    assert(B1 && B2 && bitmap_intersection && bitmap_union);
 
-    int x, c, ci, co;
-    printf("[%s] %s\n", __FILE__, __func__);
-    if ((B1 == NULL) || (B2 == NULL) || (BO == NULL) || (BI == NULL)) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        return 0;
+    for (uint32_t x = 0; x < UINT16_MAX + 1; x += 3) {
+        array_container_add(B1, x);
+        array_container_add(bitmap_union, x);
     }
-    for (x = 0; x < (1 << 16); x += 3) {
-        array_container_add(B1, (uint16_t)x);
-        array_container_add(BI, (uint16_t)x);
+
+    // 62 is not divisible by 3
+    for (uint32_t x = 0; x < UINT16_MAX + 1; x += 62) {
+        array_container_add(B2, x);
+        array_container_add(bitmap_union, x);
     }
-    for (x = 0; x < (1 << 16);
-         x += 62) {  // important: 62 is not divisible by 3
-        array_container_add(B2, (uint16_t)x);
-        array_container_add(BI, (uint16_t)x);
+
+    for (uint32_t x = 0; x < UINT16_MAX + 1; x += 62 * 3) {
+        array_container_add(bitmap_intersection, x);
     }
-    for (x = 0; x < (1 << 16); x += 62 * 3) {
-        array_container_add(BO, (uint16_t)x);
-    }
-    // we interleave O and I on purpose (to trigger bugs!)
-    ci = array_container_cardinality(BO);  // expected intersection
-    co = array_container_cardinality(BI);  // expected union
-    array_container_intersection(B1, B2, BI);
-    c = array_container_cardinality(BI);
-    if (c != ci) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        return 0;
-    }
-    array_container_union(B1, B2, BO);
-    c = array_container_cardinality(BO);
-    if (c != co) {
-        printf("Bug %s, line %d \n", __FILE__, __LINE__);
-        return 0;
-    }
+
+    array_container_t* res = array_container_create();
+    array_container_intersection(B1, B2, res);
+    assert(array_container_equal(res, bitmap_intersection));
+
+    array_container_union(B1, B2, res);
+    assert(array_container_equal(res, bitmap_union));
+
+    array_container_free(res);
     array_container_free(B1);
     array_container_free(B2);
-    array_container_free(BI);
-    array_container_free(BO);
+    array_container_free(bitmap_intersection);
+    array_container_free(bitmap_union);
+
     return 1;
 }
 
