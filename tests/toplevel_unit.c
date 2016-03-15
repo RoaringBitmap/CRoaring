@@ -29,7 +29,13 @@ int test_printf() {
     return 1;
 }
 
-void dummy_iterator(uint32_t value, void *param) {
+#ifdef __GNUC__
+#define VARIABLE_IS_NOT_USED __attribute__ ((unused))
+#else
+#define VARIABLE_IS_NOT_USED
+#endif
+
+void dummy_iterator(uint32_t VARIABLE_IS_NOT_USED value, void *param) {
   uint32_t *num = (uint32_t*)param;
   
   (*num)++;
