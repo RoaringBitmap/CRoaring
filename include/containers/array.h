@@ -8,6 +8,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+
+#include "portability.h"
+#include "roaring_types.h"
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -40,6 +44,12 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(array_container_t *src);
 
+int32_t array_container_serialize(array_container_t *container, char *buf) WARN_UNUSED;
+
+uint32_t array_container_serialization_len(array_container_t *container);
+
+void *array_container_deserialize(char *buf, size_t buf_len);
+
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);
 
@@ -50,11 +60,11 @@ bool array_container_remove(array_container_t *array, uint16_t pos);
 bool array_container_contains(const array_container_t *array, uint16_t pos);
 
 /* Get the cardinality of `array'. */
-inline int array_container_cardinality(const array_container_t *array) {
+static inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
 }
 
-inline bool array_container_nonzero_cardinality(
+static inline bool array_container_nonzero_cardinality(
     const array_container_t *array) {
     return array->cardinality > 0;
 }
@@ -63,15 +73,15 @@ inline bool array_container_nonzero_cardinality(
 void array_container_copy(const array_container_t *src, array_container_t *dst);
 
 /* Set the cardinality to zero (does not release memory). */
-inline void array_container_clear(array_container_t *array) {
+static inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;
 }
 
-inline bool array_container_empty(const array_container_t *array) {
+static inline bool array_container_empty(const array_container_t *array) {
     return array->cardinality == 0;
 }
 
-inline bool array_container_full(const array_container_t *array) {
+static inline bool array_container_full(const array_container_t *array) {
     return array->cardinality == array->capacity;
 }
 
@@ -123,7 +133,7 @@ void array_container_printf_as_uint32_array(const array_container_t *v,
 /**
  * Return the serialized size in bytes of a container having cardinality "card".
  */
-inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
+static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
     return card * 2 + 2;
 }
 
@@ -134,5 +144,8 @@ inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
  */
 void array_container_grow(array_container_t *container, int32_t min,
                           int32_t max, bool preserve);
+
+void array_container_iterate(const array_container_t *cont, uint32_t base,
+			     roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

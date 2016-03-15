@@ -7,10 +7,12 @@ An implementation of Roaring Bitmaps in C.
 
 #include <stdbool.h>
 #include "roaring_array.h"
+#include "roaring_types.h"
 
 typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;
 } roaring_bitmap_t;
+
 
 // TODO sprinkle in consts
 
@@ -110,6 +112,14 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
  * true if the result has at least one run container.
 */
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
+
+char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
+
+roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
+
+/**                                                                                                                                                                                                                                                    * Iterate the bitmap elements
+ */
+void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator, void *ptr);
 
 /*
  * TODO: implement "equals", "string", serialization, contains

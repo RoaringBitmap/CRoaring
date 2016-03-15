@@ -293,3 +293,70 @@ int32_t array_container_number_of_runs(array_container_t *a) {
     }
     return nr_runs;
 }
+
+int32_t array_container_serialize(array_container_t *container, char *buf) {
+    int32_t l, off;
+
+    memcpy(buf, &container->capacity, off = sizeof(container->capacity));
+    memcpy(&buf[off], &container->cardinality, sizeof(container->cardinality));
+    off += sizeof(container->cardinality);
+    l = sizeof(uint16_t) * container->cardinality;
+    if(l) memcpy(&buf[off], container->array, l);
+
+    return (off + l);
+}
+
+uint32_t array_container_serialization_len(array_container_t *container) {
+    return (sizeof(container->capacity) + sizeof(container->cardinality) +
+            (sizeof(uint16_t) * container->cardinality));
+}
+
+void *array_container_deserialize(char *buf, size_t buf_len) {
+    array_container_t *ptr;
+
+    if (buf_len < 8) /* capacity+cardinality */
+        return (NULL);
+    else
+        buf_len -= 8;
+
+    if ((ptr = malloc(sizeof(array_container_t))) != NULL) {
+        size_t len;
+        int32_t off;
+
+        memcpy(&ptr->capacity, buf, off = sizeof(ptr->capacity));
+        memcpy(&ptr->cardinality, &buf[off], sizeof(ptr->cardinality));
+        off += sizeof(ptr->cardinality);
+
+        len = sizeof(uint16_t) * ptr->cardinality;
+
+        if (len != buf_len) {
+            free(ptr);
+            return (NULL);
+        }
+
+        if ((ptr->array = malloc(sizeof(uint16_t) * ptr->capacity)) == NULL) {
+            free(ptr);
+            return (NULL);
+        }
+
+        if(len) memcpy(ptr->array, &buf[off], len);
+
+        /* Check if returned values are monotonically increasing */
+        for (int32_t i = 0, j = 0; i < ptr->cardinality; i++) {
+            if (ptr->array[i] < j) {
+                free(ptr->array);
+                free(ptr);
+                return (NULL);
+            } else
+                j = ptr->array[i];
+        }
+    }
+
+    return (ptr);
+}
+	      
+void array_container_iterate(const array_container_t *cont, uint32_t base,
+			     roaring_iterator iterator, void *ptr) {
+  for (int i = 0; i < cont->cardinality; i++)
+    iterator(cont->array[i] + base, ptr);    
+}

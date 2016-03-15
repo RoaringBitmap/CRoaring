@@ -40,6 +40,52 @@ void container_printf_as_uint32_array(void *container, uint8_t typecode,
     }
 }
 
+int32_t container_serialize(void *container, uint8_t typecode, char *buf) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return (bitset_container_serialize((bitset_container_t *)container,
+                                               buf));
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return (
+                array_container_serialize((array_container_t *)container, buf));
+        case RUN_CONTAINER_TYPE_CODE:
+            return (run_container_serialize((run_container_t *)container, buf));
+        default:
+            assert(0);
+            return (-1);
+    }
+}
+
+uint32_t container_serialization_len(void *container, uint8_t typecode) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_serialization_len();
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_serialization_len(
+                (array_container_t *)container);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_serialization_len(
+                (run_container_t *)container);
+        default:
+            assert(0);
+            return (0);
+    }
+}
+
+void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return (bitset_container_deserialize(buf, buf_len));
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return (array_container_deserialize(buf, buf_len));
+        case RUN_CONTAINER_TYPE_CODE:
+            return (run_container_deserialize(buf, buf_len));
+        default:
+            assert(0);
+            return (NULL);
+    }
+}
+
 extern bool container_nonzero_cardinality(void *container, uint8_t typecode);
 
 extern void container_free(void *container, uint8_t typecode);

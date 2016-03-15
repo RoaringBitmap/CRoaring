@@ -9,6 +9,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "portability.h"
+#include "roaring_types.h"
+
 /* struct rle16_s - run length pair
  *
  * @value:  start position of the run
@@ -52,6 +55,12 @@ void run_container_free(run_container_t *run);
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
 
+int32_t run_container_serialize(run_container_t *container, char *buf) WARN_UNUSED;
+
+uint32_t run_container_serialization_len(run_container_t *container);
+
+void *run_container_deserialize(char *buf, size_t buf_len);
+
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos);
 
@@ -65,7 +74,8 @@ bool run_container_contains(const run_container_t *run, uint16_t pos);
 int run_container_cardinality(const run_container_t *run);
 
 /* Card > 0? */
-inline bool run_container_nonzero_cardinality(const run_container_t *run) {
+static inline bool run_container_nonzero_cardinality(
+    const run_container_t *run) {
     return run->n_runs > 0;  // runs never empty
 }
 
@@ -73,11 +83,13 @@ inline bool run_container_nonzero_cardinality(const run_container_t *run) {
 void run_container_copy(const run_container_t *src, run_container_t *dst);
 
 /* Set the cardinality to zero (does not release memory). */
-inline void run_container_clear(run_container_t *run) { run->n_runs = 0; }
+static inline void run_container_clear(run_container_t *run) {
+    run->n_runs = 0;
+}
 
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
-inline bool run_container_is_full(const run_container_t *run) {
+static inline bool run_container_is_full(const run_container_t *run) {
     rle16_t vl = run->runs[0];
     return (run->n_runs == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
 }
@@ -119,8 +131,10 @@ void run_container_printf_as_uint32_array(const run_container_t *v,
 /**
  * Return the serialized size in bytes of a container having "num_runs" runs.
  */
-inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
+static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
     return 2 + 2 * 2 * num_runs;  // each run requires 2 2-byte entries.
 }
+
+void run_container_iterate(const run_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

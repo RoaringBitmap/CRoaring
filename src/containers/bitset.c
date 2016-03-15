@@ -490,12 +490,57 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
 
   uint64_t word = next_word;
   num_runs += _mm_popcnt_u64((~word) & (word << 1));
-  if((word & 0x8000000000000000ULL) != 0) 
+  if((word & 0x8000000000000000ULL) != 0)
     num_runs++;
 
   return num_runs;
 }
 
+int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
+  int32_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 
+  memcpy(buf, container->array, l);
+  return(l);
+}
+
+uint32_t bitset_container_serialization_len() {
+  return(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+}
+
+void* bitset_container_deserialize(char *buf, size_t buf_len) {
+  bitset_container_t *ptr;
+  size_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
+
+  if(l != buf_len)
+    return(NULL);
+
+  if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
+    memcpy(ptr, buf, sizeof(bitset_container_t));
+
+    if(posix_memalign((void *)&ptr->array, sizeof(__m256i), l)) {
+      free(ptr);
+      return(NULL);
+    }
+    
+    memcpy(ptr->array, buf, l);
+    ptr->cardinality = bitset_container_compute_cardinality(ptr);
+  }
+
+  return((void*)ptr);
+}
+
+void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
+  for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+    uint64_t w = cont->array[i];
+
+    while (w != 0) {
+      uint64_t t = w & -w;
+      int r = __builtin_ctzl(w);
+      iterator(r + base, ptr);
+      w ^= t;
+    }
+    base += 64;
+  }
+}
 
 // clang-format On

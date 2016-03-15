@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdio.h>
+#include <string.h>
 #include "roaring_array.h"
 #include "array_util.h"
 
@@ -411,3 +411,38 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
     }
     return answer;
 }
+
+char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
+    return (ra_serialize(ra->high_low_container, serialize_len));
+}
+
+roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
+    roaring_bitmap_t *b;
+    uint32_t len;
+
+    if (buf_len < 4) return (NULL);
+
+    memcpy(&len, buf, 4);
+
+    if (len != buf_len) return (NULL);
+
+    b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
+    if (b) {
+        b->high_low_container = ra_deserialize(&buf[4], buf_len - 4);
+        if (b->high_low_container == NULL) {
+            free(b);
+            b = NULL;
+        }
+    }
+
+    return (b);
+}
+
+void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator, void *ptr) {
+  for (int i = 0; i < ra->high_low_container->size; ++i)
+    container_iterate(ra->high_low_container->containers[i],
+		      ra->high_low_container->typecodes[i],
+		      ((uint32_t)ra->high_low_container->keys[i]) << 16,
+		      iterator, ptr);
+}
+
