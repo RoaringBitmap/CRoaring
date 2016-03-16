@@ -189,9 +189,8 @@ static inline void *container_clone(void *container, uint8_t typecode) {
     }
 }
 
-int32_t container_serialize(void *container, uint8_t typecode, char *buf) 
-WARN_UNUSED
-;
+int32_t container_serialize(void *container, uint8_t typecode,
+                            char *buf) WARN_UNUSED;
 
 uint32_t container_serialization_len(void *container, uint8_t typecode);
 void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len);
@@ -447,20 +446,21 @@ static inline void *container_ior(void *c1, uint8_t type1, void *c2,
     return 0;  // unreached
 }
 
-static inline void container_iterate(void *container, uint8_t typecode, uint32_t base, 
-				     roaring_iterator iterator, void *ptr) {
+static inline void container_iterate(void *container, uint8_t typecode,
+                                     uint32_t base, roaring_iterator iterator,
+                                     void *ptr) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-	   bitset_container_iterate(container, base, iterator, ptr);
-	   break;
+            bitset_container_iterate(container, base, iterator, ptr);
+            break;
         case ARRAY_CONTAINER_TYPE_CODE:
-	  array_container_iterate(container, base, iterator, ptr);
-	   break;
+            array_container_iterate(container, base, iterator, ptr);
+            break;
         case RUN_CONTAINER_TYPE_CODE:
-	   run_container_iterate(container, base, iterator, ptr);
-	   break;	   
-    default:
-      __builtin_unreachable();
+            run_container_iterate(container, base, iterator, ptr);
+            break;
+        default:
+            __builtin_unreachable();
     }
 }
 

@@ -101,7 +101,8 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
                                            uint16_t key, void *c,
                                            uint8_t typecode);
 
-char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len);
+char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
+                   uint8_t *retry_with_array);
 
 roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len);
 #endif

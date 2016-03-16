@@ -413,36 +413,71 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
 }
 
 char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
-    return (ra_serialize(ra->high_low_container, serialize_len));
+    uint8_t retry_with_array;
+    char *ret =
+        ra_serialize(ra->high_low_container, serialize_len, &retry_with_array);
+
+    if (retry_with_array) {
+        /*
+           In this case, space-wise, it's more efficient to represent the bitmap
+           as an array of uint32_t rather than a serialized bitmap.
+        */
+        uint32_t cardinality;
+        unsigned char *a =
+            (unsigned char *)roaring_bitmap_to_uint32_array(ra, &cardinality);
+
+        /*
+           In roaring_bitmap_to_uint32_array() the allocated memory is more than
+           the necessary amount. So we shift data of one byte to mark it as
+           a "non-standard serialization" instead of reallocating all the memory
+        */
+        *serialize_len = cardinality * sizeof(uint32_t);
+        memmove(&a[1], a, *serialize_len);
+        a[0] = 0xFF, *serialize_len += 1;
+        return ((char *)a);
+    } else
+        return (ret);
 }
 
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
     roaring_bitmap_t *b;
-    uint32_t len;
 
     if (buf_len < 4) return (NULL);
 
-    memcpy(&len, buf, 4);
+    if ((unsigned char)buf[0] == 0xFF) {
+        /* This looks like a compressed set of uint32_t elements */
+        uint32_t i, card = (buf_len - 1) / sizeof(uint32_t),
+                    *elems = (uint32_t *)&buf[1];
 
-    if (len != buf_len) return (NULL);
+        b = roaring_bitmap_create();
 
-    b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
-    if (b) {
-        b->high_low_container = ra_deserialize(&buf[4], buf_len - 4);
-        if (b->high_low_container == NULL) {
-            free(b);
-            b = NULL;
+        for (i = 0; i < card; i++) roaring_bitmap_add(b, elems[i]);
+        return (b);
+    } else {
+        uint32_t len;
+
+        memcpy(&len, buf, 4);
+
+        if (len != buf_len) return (NULL);
+
+        b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
+        if (b) {
+            b->high_low_container = ra_deserialize(&buf[4], buf_len - 4);
+            if (b->high_low_container == NULL) {
+                free(b);
+                b = NULL;
+            }
         }
+
+        return (b);
     }
-
-    return (b);
 }
 
-void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator, void *ptr) {
-  for (int i = 0; i < ra->high_low_container->size; ++i)
-    container_iterate(ra->high_low_container->containers[i],
-		      ra->high_low_container->typecodes[i],
-		      ((uint32_t)ra->high_low_container->keys[i]) << 16,
-		      iterator, ptr);
+void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
+                     void *ptr) {
+    for (int i = 0; i < ra->high_low_container->size; ++i)
+        container_iterate(ra->high_low_container->containers[i],
+                          ra->high_low_container->typecodes[i],
+                          ((uint32_t)ra->high_low_container->keys[i]) << 16,
+                          iterator, ptr);
 }
-

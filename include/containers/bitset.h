@@ -41,7 +41,8 @@ void bitset_container_clear(bitset_container_t *bitset);
 /* Duplicate bitset */
 bitset_container_t *bitset_container_clone(bitset_container_t *src);
 
-int32_t bitset_container_serialize(bitset_container_t *container, char *buf) WARN_UNUSED;
+int32_t bitset_container_serialize(bitset_container_t *container,
+                                   char *buf) WARN_UNUSED;
 
 uint32_t bitset_container_serialization_len();
 
@@ -327,6 +328,7 @@ static inline int32_t bitset_container_serialized_size_in_bytes() {
  */
 int bitset_container_number_of_runs(bitset_container_t *b);
 
-void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr);
+void bitset_container_iterate(const bitset_container_t *cont, uint32_t base,
+                              roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

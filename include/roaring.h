@@ -13,7 +13,6 @@ typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;
 } roaring_bitmap_t;
 
-
 // TODO sprinkle in consts
 
 /**
@@ -117,9 +116,10 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
 
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
 
-/**                                                                                                                                                                                                                                                    * Iterate the bitmap elements
+/** * Iterate the bitmap elements
  */
-void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator, void *ptr);
+void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
+                     void *ptr);
 
 /*
  * TODO: implement "equals", "string", serialization, contains

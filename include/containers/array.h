@@ -44,7 +44,8 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(array_container_t *src);
 
-int32_t array_container_serialize(array_container_t *container, char *buf) WARN_UNUSED;
+int32_t array_container_serialize(array_container_t *container,
+                                  char *buf) WARN_UNUSED;
 
 uint32_t array_container_serialization_len(array_container_t *container);
 
@@ -146,6 +147,6 @@ void array_container_grow(array_container_t *container, int32_t min,
                           int32_t max, bool preserve);
 
 void array_container_iterate(const array_container_t *cont, uint32_t base,
-			     roaring_iterator iterator, void *ptr);
+                             roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

@@ -399,15 +399,18 @@ void show_structure(roaring_array_t *ra) {
     }
 }
 
-char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len) {
+char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
+                   uint8_t *retry_with_array) {
     uint32_t off, l,
+        cardinality = 0,
         tot_len = 4 /* tot_len */ + sizeof(roaring_array_t) +
                   ra->allocation_size *
                       (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
     char *out;
     uint16_t *lens;
 
-    /* [ 32 bit lenght ] [ serialization bytes ] */
+    (*retry_with_array) = 0;
+    /* [ 32 bit length ] [ serialization bytes ] */
     if ((lens = (uint16_t *)malloc(sizeof(int16_t) * ra->size)) == NULL) {
         *serialize_len = 0;
         return (NULL);
@@ -419,6 +422,13 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len) {
 
         assert(lens[i] != 0);
         tot_len += (lens[i] + sizeof(lens[i]));
+        cardinality +=
+            container_get_cardinality(ra->containers[i], ra->typecodes[i]);
+    }
+
+    if ((cardinality * sizeof(uint32_t)) < tot_len) {
+        *retry_with_array = 1;
+        return (NULL);
     }
 
     out = (char *)malloc(tot_len);

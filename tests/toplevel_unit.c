@@ -30,15 +30,15 @@ int test_printf() {
 }
 
 #ifdef __GNUC__
-#define VARIABLE_IS_NOT_USED __attribute__ ((unused))
+#define VARIABLE_IS_NOT_USED __attribute__((unused))
 #else
 #define VARIABLE_IS_NOT_USED
 #endif
 
 void dummy_iterator(uint32_t VARIABLE_IS_NOT_USED value, void *param) {
-  uint32_t *num = (uint32_t*)param;
-  
-  (*num)++;
+    uint32_t *num = (uint32_t *)param;
+
+    (*num)++;
 }
 
 int test_iterate() {
@@ -51,13 +51,12 @@ int test_iterate() {
     for (int i = 0, top_val = 384000; i < top_val; i++)
         roaring_bitmap_add(r1, 3 * i);
 
-    roaring_iterate(r1, dummy_iterator, (void*)&num);
+    roaring_iterate(r1, dummy_iterator, (void *)&num);
 
     assert(roaring_bitmap_get_cardinality(r1) == num);
     roaring_bitmap_free(r1);
-    return(1);
+    return (1);
 }
-
 
 int test_serialize() {
     printf("[%s] %s\n", __FILE__, __func__);
@@ -98,6 +97,25 @@ int test_serialize() {
 
     run_container_free(run);
     run_container_free(run1);
+
+    r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
+                           19866827);
+    serialized = roaring_bitmap_serialize(r1, &serialize_len);
+    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len,
+           ((float)(8 * serialize_len)) /
+               ((float)roaring_bitmap_get_cardinality(r1)));
+    r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+
+    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    assert(array_equals(arr1, card1, arr2, card2));
+    free(arr1);
+    free(arr2);
+    free(serialized);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+
     return 1;
 }
 

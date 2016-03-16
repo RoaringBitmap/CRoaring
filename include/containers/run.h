@@ -55,7 +55,8 @@ void run_container_free(run_container_t *run);
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
 
-int32_t run_container_serialize(run_container_t *container, char *buf) WARN_UNUSED;
+int32_t run_container_serialize(run_container_t *container,
+                                char *buf) WARN_UNUSED;
 
 uint32_t run_container_serialization_len(run_container_t *container);
 
@@ -135,6 +136,7 @@ static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
     return 2 + 2 * 2 * num_runs;  // each run requires 2 2-byte entries.
 }
 
-void run_container_iterate(const run_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr);
+void run_container_iterate(const run_container_t *cont, uint32_t base,
+                           roaring_iterator iterator, void *ptr);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

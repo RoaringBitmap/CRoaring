@@ -301,7 +301,7 @@ int32_t array_container_serialize(array_container_t *container, char *buf) {
     memcpy(&buf[off], &container->cardinality, sizeof(container->cardinality));
     off += sizeof(container->cardinality);
     l = sizeof(uint16_t) * container->cardinality;
-    if(l) memcpy(&buf[off], container->array, l);
+    if (l) memcpy(&buf[off], container->array, l);
 
     return (off + l);
 }
@@ -339,7 +339,7 @@ void *array_container_deserialize(char *buf, size_t buf_len) {
             return (NULL);
         }
 
-        if(len) memcpy(ptr->array, &buf[off], len);
+        if (len) memcpy(ptr->array, &buf[off], len);
 
         /* Check if returned values are monotonically increasing */
         for (int32_t i = 0, j = 0; i < ptr->cardinality; i++) {
@@ -354,9 +354,9 @@ void *array_container_deserialize(char *buf, size_t buf_len) {
 
     return (ptr);
 }
-	      
+
 void array_container_iterate(const array_container_t *cont, uint32_t base,
-			     roaring_iterator iterator, void *ptr) {
-  for (int i = 0; i < cont->cardinality; i++)
-    iterator(cont->array[i] + base, ptr);    
+                             roaring_iterator iterator, void *ptr) {
+    for (int i = 0; i < cont->cardinality; i++)
+        iterator(cont->array[i] + base, ptr);
 }
