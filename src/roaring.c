@@ -290,7 +290,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
 
     if (0 == length2) return;
 
-    if (0 == length2) {
+    if (0 == length1) {
         roaring_bitmap_overwrite(x1, x2);
         return;
     }
