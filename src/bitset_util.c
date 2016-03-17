@@ -829,7 +829,6 @@ void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
         index = pos % 64;
         load = ((uint64_t *)bitset)[offset];
         newload = load | (UINT64_C(1) << index);
-        card += (load ^ newload) >> index;
         ((uint64_t *)bitset)[offset] = newload;
         list++;
     }
