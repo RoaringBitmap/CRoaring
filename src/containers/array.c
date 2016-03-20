@@ -295,38 +295,37 @@ int32_t array_container_number_of_runs(array_container_t *a) {
 }
 
 int32_t array_container_serialize(array_container_t *container, char *buf) {
-    int32_t l, off;
+  int32_t l, off;
+  uint16_t cardinality = (uint16_t)container->cardinality;
+  
+  memcpy(buf, &cardinality, off = sizeof(cardinality));
+  l = sizeof(uint16_t) * container->cardinality;
+  if (l) memcpy(&buf[off], container->array, l);
 
-    memcpy(buf, &container->capacity, off = sizeof(container->capacity));
-    memcpy(&buf[off], &container->cardinality, sizeof(container->cardinality));
-    off += sizeof(container->cardinality);
-    l = sizeof(uint16_t) * container->cardinality;
-    if (l) memcpy(&buf[off], container->array, l);
-
-    return (off + l);
+  return (off + l);
 }
 
 uint32_t array_container_serialization_len(array_container_t *container) {
-    return (sizeof(container->capacity) + sizeof(container->cardinality) +
-            (sizeof(uint16_t) * container->cardinality));
+  return (sizeof(uint16_t) /* container->cardinality converted to 16 bit */ +
+	  (sizeof(uint16_t) * container->cardinality));
 }
 
 void *array_container_deserialize(char *buf, size_t buf_len) {
     array_container_t *ptr;
 
-    if (buf_len < 8) /* capacity+cardinality */
+    if (buf_len < 2) /* capacity converted to 16 bit */
         return (NULL);
     else
-        buf_len -= 8;
+        buf_len -= 2;
 
     if ((ptr = malloc(sizeof(array_container_t))) != NULL) {
         size_t len;
         int32_t off;
+	uint16_t cardinality;
 
-        memcpy(&ptr->capacity, buf, off = sizeof(ptr->capacity));
-        memcpy(&ptr->cardinality, &buf[off], sizeof(ptr->cardinality));
-        off += sizeof(ptr->cardinality);
+        memcpy(&cardinality, buf, off = sizeof(cardinality));
 
+        ptr->capacity = ptr->cardinality = (uint32_t)cardinality;
         len = sizeof(uint16_t) * ptr->cardinality;
 
         if (len != buf_len) {

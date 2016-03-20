@@ -72,6 +72,7 @@ int test_serialize() {
 
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+    assert(r2);
     printf("Serialization len: %u [%.1f bit/element]\n", serialize_len,
            ((float)(8 * serialize_len)) /
                ((float)roaring_bitmap_get_cardinality(r2)));
