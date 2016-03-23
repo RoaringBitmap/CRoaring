@@ -52,6 +52,23 @@ static inline int container_get_cardinality(void *container, uint8_t typecode) {
 }
 
 /**
+ * Get the container size in bytes under portable serialization, requires a
+ * typecode
+ */
+static inline int32_t container_size_in_bytes(void *container,
+                                              uint8_t typecode) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_size_in_bytes(container);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_size_in_bytes(container);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_size_in_bytes(container);
+    }
+    return 0;  // unreached
+}
+
+/**
  * print the container (useful for debugging), requires a  typecode
  */
 void container_printf(void *container, uint8_t typecode);
@@ -129,8 +146,7 @@ static inline void *container_add(void *container, uint16_t val,
             bitset_container_set((bitset_container_t *)container, val);
             *new_typecode = BITSET_CONTAINER_TYPE_CODE;
             return container;
-        case ARRAY_CONTAINER_TYPE_CODE:
-            ;
+        case ARRAY_CONTAINER_TYPE_CODE:;
             array_container_t *ac = (array_container_t *)container;
             array_container_add(ac, val);
             if (array_container_cardinality(ac) > DEFAULT_MAX_SIZE) {
@@ -159,8 +175,7 @@ static inline bool container_contains(void *container, uint16_t val,
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_get((bitset_container_t *)container, val);
-        case ARRAY_CONTAINER_TYPE_CODE:
-            ;
+        case ARRAY_CONTAINER_TYPE_CODE:;
             return array_container_contains((array_container_t *)container,
                                             val);
         case RUN_CONTAINER_TYPE_CODE:

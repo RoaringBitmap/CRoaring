@@ -455,38 +455,37 @@ int32_t run_container_serialize(run_container_t *container, char *buf) {
     return (off + l);
 }
 
-int32_t run_container_write(run_container_t *container,
-                                  char *buf) {
-#ifdef IS_BIG_ENDIAN
-	// forcing little endian (could be faster)
-	buf[0] = (uint8_t)(container->n_runs);
-	buf[1] = (uint8_t)(container->n_runs >> 8);
-	for(int32_t i = 0 ; i < container->n_runs; i++) {
-		rle16_t val = container->runs[i];
-		buf[2 + 4 * i] = (uint8_t)(val.value);
-		buf[2 + 4 * i + 1] = (uint8_t)(val.value >> 8);
-		buf[2 + 4 * i + 2] = (uint8_t)(val.length);
-		buf[2 + 4 * i + 3] = (uint8_t)(val.length >> 8);
-
-	}
-#else
-    memcpy(buf, &container->n_runs, sizeof(uint16_t));
-	memcpy(buf + sizeof(uint16_t), container->runs, container->n_runs * sizeof(uint16_t));
-#endif
-	return run_container_size_in_bytes(container);
+int32_t run_container_write(run_container_t *container, char *buf) {
+    if (IS_BIG_ENDIAN) {
+        // forcing little endian (could be faster)
+        buf[0] = (uint8_t)(container->n_runs);
+        buf[1] = (uint8_t)(container->n_runs >> 8);
+        for (int32_t i = 0; i < container->n_runs; i++) {
+            rle16_t val = container->runs[i];
+            buf[2 + 4 * i] = (uint8_t)(val.value);
+            buf[2 + 4 * i + 1] = (uint8_t)(val.value >> 8);
+            buf[2 + 4 * i + 2] = (uint8_t)(val.length);
+            buf[2 + 4 * i + 3] = (uint8_t)(val.length >> 8);
+        }
+    } else {
+        memcpy(buf, &container->n_runs, sizeof(uint16_t));
+        memcpy(buf + sizeof(uint16_t), container->runs,
+               container->n_runs * sizeof(uint16_t));
+    }
+    return run_container_size_in_bytes(container);
 }
 
-
 int32_t run_container_read(int32_t cardinality, run_container_t *container,
-                                  char *buf)  {
-#ifdef IS_BIG_ENDIAN
-	assert(false); // implement
-#else
+                           char *buf) {
+    (void)cardinality;
+    assert(!IS_BIG_ENDIAN);  // TODO: Implement
     memcpy(buf, &container->n_runs, sizeof(uint16_t));
-    if(container->n_runs < container->capacity) increaseCapacity(container, container->n_runs, false);
-	memcpy(container->runs, buf + sizeof(uint16_t), container->n_runs * sizeof(uint16_t));
-#endif
-	return run_container_size_in_bytes(container);
+    container->n_runs++;
+    if (container->n_runs < container->capacity)
+        increaseCapacity(container, container->n_runs, false);
+    memcpy(container->runs, buf + sizeof(uint16_t),
+           container->n_runs * sizeof(uint16_t));
+    return run_container_size_in_bytes(container);
 }
 
 uint32_t run_container_serialization_len(run_container_t *container) {

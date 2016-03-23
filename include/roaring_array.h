@@ -8,6 +8,12 @@
 
 #define MAX_CONTAINERS 65536
 
+enum {
+    SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
+    SERIAL_COOKIE = 12347,
+    NO_OFFSET_THRESHOLD = 4
+};
+
 /**
  * Roaring arrays are array-based key-value pairs having containers as values
  * and 16-bit integer keys. A roaring bitmap  might be implemented as such.
@@ -30,6 +36,11 @@ typedef struct roaring_array_s {
  * Create a new roaring array
  */
 roaring_array_t *ra_create();
+
+/**
+ * Create a new roaring array with the specified capacity
+ */
+roaring_array_t *ra_create_with_capacity(int32_t cap);
 
 /**
  * Copies this roaring array (caller is responsible for memory management)
@@ -105,4 +116,29 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
                    uint8_t *retry_with_array);
 
 roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len);
+
+/**
+ * read a bitmap from a serialized version. This is meant to be compatible with
+ * the
+ * Java and Go versions.
+ */
+roaring_array_t *ra_portable_deserialize(char *buf);
+
+/**
+ * How many bytes are required to serialize this bitmap (meant to be compatible
+ * with Java and Go versions)
+ */
+size_t ra_portable_size_in_bytes(roaring_array_t *ra);
+
+/**
+ * return true if it contains at least one run container.
+ */
+bool ra_has_run_container(roaring_array_t *ra);
+
+/**
+ * Size of the header when serializing (meant to be compatible
+ * with Java and Go versions)
+ */
+uint32_t ra_portable_header_size(roaring_array_t *ra);
+
 #endif

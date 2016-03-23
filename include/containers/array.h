@@ -151,28 +151,33 @@ void array_container_iterate(const array_container_t *cont, uint32_t base,
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
- * This is meant to be byte-by-byte compatible with the Java and Go versions of Roaring.
- * The number of bytes written should be array_container_size_in_bytes(container).
+ * This is meant to be byte-by-byte compatible with the Java and Go versions of
+ * Roaring.
+ * The number of bytes written should be
+ * array_container_size_in_bytes(container).
  *
  */
-int32_t array_container_write(array_container_t *container,
-                                  char *buf);
+int32_t array_container_write(array_container_t *container, char *buf);
 /**
  * Reads the instance from buf, outputs how many bytes were read.
- * This is meant to be byte-by-byte compatible with the Java and Go versions of Roaring.
+ * This is meant to be byte-by-byte compatible with the Java and Go versions of
+ * Roaring.
  * The number of bytes read should be array_container_size_in_bytes(container).
  * You need to provide the (known) cardinality.
  */
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
-                                  char *buf) ;
+                             char *buf);
 
 /**
- * Return the serialized size in bytes of a container (see bitset_container_write)
- * This is meant to be compatible with the Java and Go versions of Roaring and assumes
+ * Return the serialized size in bytes of a container (see
+ * bitset_container_write)
+ * This is meant to be compatible with the Java and Go versions of Roaring and
+ * assumes
  * that the cardinality of the container is already known.
  *
  */
-static inline int32_t array_container_size_in_bytes(array_container_t *container) {
+static inline int32_t array_container_size_in_bytes(
+    array_container_t *container) {
     return container->cardinality * sizeof(uint16_t);
 }
 

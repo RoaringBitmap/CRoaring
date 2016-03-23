@@ -439,6 +439,20 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
         return (ret);
 }
 
+size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra) {
+    return ra_portable_size_in_bytes(ra->high_low_container);
+}
+
+roaring_bitmap_t *roaring_bitmap_portable_deserialize(char *buf) {
+    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
+    if (ans == NULL) {
+        return NULL;
+    }
+    ans->high_low_container =
+        ra_portable_deserialize(buf);  // todo: handle the case where it is NULL
+    return ans;
+}
+
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
     roaring_bitmap_t *b;
 

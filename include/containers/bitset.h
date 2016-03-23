@@ -333,28 +333,33 @@ void bitset_container_iterate(const bitset_container_t *cont, uint32_t base,
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
- * This is meant to be byte-by-byte compatible with the Java and Go versions of Roaring.
- * The number of bytes written should be bitset_container_size_in_bytes(container).
+ * This is meant to be byte-by-byte compatible with the Java and Go versions of
+ * Roaring.
+ * The number of bytes written should be
+ * bitset_container_size_in_bytes(container).
  */
-int32_t bitset_container_write(bitset_container_t *container,
-                                  char *buf);
+int32_t bitset_container_write(bitset_container_t *container, char *buf);
 
 /**
  * Reads the instance from buf, outputs how many bytes were read.
- * This is meant to be byte-by-byte compatible with the Java and Go versions of Roaring.
+ * This is meant to be byte-by-byte compatible with the Java and Go versions of
+ * Roaring.
  * The number of bytes read should be bitset_container_size_in_bytes(container).
  * You need to provide the (known) cardinality.
  */
-int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container,
-                                  char *buf) ;
+int32_t bitset_container_read(int32_t cardinality,
+                              bitset_container_t *container, char *buf);
 /**
- * Return the serialized size in bytes of a container (see bitset_container_write).
- * This is meant to be compatible with the Java and Go versions of Roaring and assumes
+ * Return the serialized size in bytes of a container (see
+ * bitset_container_write).
+ * This is meant to be compatible with the Java and Go versions of Roaring and
+ * assumes
  * that the cardinality of the container is already known or can be computed.
  */
-static inline int32_t bitset_container_size_in_bytes(bitset_container_t *container) {
-    return BITSET_CONTAINER_SIZE_IN_WORDS/sizeof(uint64_t);
+static inline int32_t bitset_container_size_in_bytes(
+    bitset_container_t *container) {
+    (void)container;
+    return BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
 }
-
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

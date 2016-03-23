@@ -116,7 +116,20 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
 
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
 
-/** * Iterate the bitmap elements
+/**
+ * read a bitmap from a serialized version. This is meant to be compatible with
+ * the
+ * Java and Go versions.
+ */
+roaring_bitmap_t *roaring_bitmap_portable_deserialize(char *buf);
+
+/**
+ * How many bytes are required to serialize this bitmap (meant to be compatible
+ * with Java and Go versions)
+ */
+size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra);
+
+/** * Iterate over the bitmap elements
  */
 void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr);

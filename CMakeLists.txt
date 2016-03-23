@@ -49,7 +49,7 @@ set (CMAKE_C_FLAGS_RELEASE "-O3")
 set (CMAKE_C_FLAGS "${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS}")
 
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/realdata/")
-set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/realdata/")
+set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/")
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h")
 
@@ -75,6 +75,10 @@ add_test (toplevel_unit toplevel_unit)
 add_executable (util_unit tests/util_unit.c)
 target_link_libraries (util_unit ${ROARING_LIB_NAME})
 add_test (util_unit util_unit)
+add_executable (format_portability_unit tests/format_portability_unit.c)
+target_link_libraries (format_portability_unit ${ROARING_LIB_NAME})
+add_test (format_portability_unit format_portability_unit)
+
 
 
 # invoke all tests with: make check
@@ -85,7 +89,8 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS
     mixed_container_unit
     run_container_unit
     toplevel_unit
-    util_unit)
+    util_unit
+    format_portability_unit)
 
 add_executable (real_bitmaps_benchmark benchmarks/real_bitmaps_benchmark.c)
 target_link_libraries (real_bitmaps_benchmark ${ROARING_LIB_NAME})

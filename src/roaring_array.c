@@ -22,17 +22,17 @@ extern int32_t ra_get_size(roaring_array_t *ra);
 
 #define INITIAL_CAPACITY 4
 
-roaring_array_t *ra_create() {
+roaring_array_t *ra_create_with_capacity(int32_t cap) {
     roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
     if (!new_ra) return NULL;
     new_ra->keys = NULL;
     new_ra->containers = NULL;
     new_ra->typecodes = NULL;
 
-    new_ra->allocation_size = INITIAL_CAPACITY;
-    new_ra->keys = malloc(INITIAL_CAPACITY * sizeof(uint16_t));
-    new_ra->containers = malloc(INITIAL_CAPACITY * sizeof(void *));
-    new_ra->typecodes = malloc(INITIAL_CAPACITY * sizeof(uint8_t));
+    new_ra->allocation_size = cap;
+    new_ra->keys = malloc(cap * sizeof(uint16_t));
+    new_ra->containers = malloc(cap * sizeof(void *));
+    new_ra->typecodes = malloc(cap * sizeof(uint8_t));
     if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
         free(new_ra);
         free(new_ra->keys);
@@ -43,6 +43,10 @@ roaring_array_t *ra_create() {
     new_ra->size = 0;
 
     return new_ra;
+}
+
+roaring_array_t *ra_create() {
+    return ra_create_with_capacity(INITIAL_CAPACITY);
 }
 
 roaring_array_t *ra_copy(roaring_array_t *r) {
@@ -403,9 +407,9 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
                    uint8_t *retry_with_array) {
     uint32_t off, l,
         cardinality = 0,
-        tot_len = 4 /* tot_len */ + sizeof(roaring_array_t) +
-                  ra->size *
-                      (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
+        tot_len =
+            4 /* tot_len */ + sizeof(roaring_array_t) +
+            ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
     char *out;
     uint16_t *lens;
 
@@ -501,8 +505,7 @@ roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len) {
     uint32_t off, l;
     uint32_t expected_len =
         sizeof(roaring_array_t) +
-        ra->size *
-            (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
+        ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
 
     if (buf_len < expected_len) return (NULL);
 
@@ -511,21 +514,18 @@ roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len) {
 
     memcpy(ra_copy, ra, off = sizeof(roaring_array_t));
 
-    if ((ra_copy->keys = malloc(ra->size * sizeof(uint16_t))) ==
-        NULL) {
+    if ((ra_copy->keys = malloc(ra->size * sizeof(uint16_t))) == NULL) {
         free(ra_copy);
         return (NULL);
     }
 
-    if ((ra_copy->containers = malloc(ra->size * sizeof(void *))) ==
-        NULL) {
+    if ((ra_copy->containers = malloc(ra->size * sizeof(void *))) == NULL) {
         free(ra_copy->keys);
         free(ra_copy);
         return (NULL);
     }
 
-    if ((ra_copy->typecodes = malloc(ra->size * sizeof(uint8_t))) ==
-        NULL) {
+    if ((ra_copy->typecodes = malloc(ra->size * sizeof(uint8_t))) == NULL) {
         free(ra_copy->containers);
         free(ra_copy->keys);
         free(ra_copy);
@@ -567,4 +567,122 @@ roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len) {
     }
 
     return (ra_copy);
+}
+
+bool ra_has_run_container(roaring_array_t *ra) {
+    for (int32_t k = 0; k < ra->size; ++k) {
+        if (ra->typecodes[k] == RUN_CONTAINER_TYPE_CODE) return true;
+    }
+    return false;
+}
+
+uint32_t ra_portable_header_size(roaring_array_t *ra) {
+    if (ra_has_run_container(ra)) {
+        if (ra->size <
+            NO_OFFSET_THRESHOLD) {  // for small bitmaps, we omit the offsets
+            return 4 + (ra->size + 7) / 8 + 4 * ra->size;
+        }
+        return 4 + (ra->size + 7) / 8 +
+               8 * ra->size;  // - 4 because we pack the size with the cookie
+    } else {
+        return 4 + 4 + 8 * ra->size;
+    }
+}
+
+size_t ra_portable_size_in_bytes(roaring_array_t *ra) {
+    size_t count = ra_portable_header_size(ra);
+
+    for (int32_t k = 0; k < ra->size; ++k) {
+        count += container_size_in_bytes(ra->containers[k], ra->typecodes[k]);
+    }
+    return count;
+}
+
+roaring_array_t *ra_portable_deserialize(char *buf) {
+    assert(!IS_BIG_ENDIAN);  // not implemented
+    uint32_t cookie;
+    memcpy(&cookie, buf, sizeof(int32_t));
+    buf += sizeof(uint32_t);
+    if ((cookie & 0xFFFF) != SERIAL_COOKIE &&
+        cookie != SERIAL_COOKIE_NO_RUNCONTAINER) {
+        fprintf(stderr, "I failed to find one of the right cookies. Found %d\n",
+                cookie);
+        return NULL;
+    }
+    int32_t size;
+
+    if ((cookie & 0xFFFF) == SERIAL_COOKIE)
+        size = (cookie >> 16) + 1;
+    else {
+        memcpy(&size, buf, sizeof(int32_t));
+        buf += sizeof(uint32_t);
+    }
+    roaring_array_t *answer = ra_create_with_capacity(size);
+    if (answer == NULL) {
+        fprintf(stderr, "Failed to allocate memory early on. Bailing out.\n");
+        return answer;
+    }
+    answer->size = size;
+    char *bitmapOfRunContainers = NULL;
+    bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
+    if (hasrun) {
+        int32_t s = (size + 7) / 8;
+        bitmapOfRunContainers = malloc((size + 7) / 8);
+        assert(bitmapOfRunContainers != NULL);  // todo: handle
+        memcpy(bitmapOfRunContainers, buf, s);
+        buf += s;
+    }
+    uint16_t *keys = answer->keys;
+    int32_t *cardinalities = malloc(size * sizeof(int32_t));
+    assert(cardinalities != NULL);  // todo: handle
+    bool *isBitmap = malloc(size * sizeof(bool));
+    assert(isBitmap != NULL);  // todo: handle
+    uint16_t tmp;
+    for (int32_t k = 0; k < size; ++k) {
+        memcpy(&keys[k], buf, sizeof(keys[k]));
+        buf += sizeof(keys[k]);
+        memcpy(&tmp, buf, sizeof(tmp));
+        buf += sizeof(tmp);
+        cardinalities[k] = 1 + tmp;
+
+        isBitmap[k] = cardinalities[k] > DEFAULT_MAX_SIZE;
+        if (bitmapOfRunContainers != NULL &&
+            (bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0) {
+            isBitmap[k] = false;
+        }
+    }
+    if ((!hasrun) || (size >= NO_OFFSET_THRESHOLD)) {
+        // skipping the offsets
+        buf += size * 4;
+    }
+    // Reading the containers
+    for (int32_t k = 0; k < size; ++k) {
+        if (isBitmap[k]) {
+            bitset_container_t *c = bitset_container_create();
+            assert(c != NULL);  // todo: handle
+            buf += bitset_container_read(cardinalities[k], c, buf);
+            answer->containers[k] = c;
+            answer->typecodes[k] = BITSET_CONTAINER_TYPE_CODE;
+
+        } else if (bitmapOfRunContainers != NULL &&
+                   ((bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0)) {
+            run_container_t *c = run_container_create();
+            assert(c != NULL);  // todo: handle
+            buf += run_container_read(cardinalities[k], c, buf);
+            answer->containers[k] = c;
+            answer->typecodes[k] = RUN_CONTAINER_TYPE_CODE;
+
+        } else {
+            array_container_t *c =
+                array_container_create_given_capacity(cardinalities[k]);
+            assert(c != NULL);  // todo: handle
+            buf += array_container_read(cardinalities[k], c, buf);
+            answer->containers[k] = c;
+            answer->typecodes[k] = ARRAY_CONTAINER_TYPE_CODE;
+        }
+    }
+    free(bitmapOfRunContainers);
+    free(cardinalities);
+    free(isBitmap);
+    return answer;
 }
