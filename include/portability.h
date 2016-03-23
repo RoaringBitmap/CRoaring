@@ -20,4 +20,7 @@
 #define WARN_UNUSED
 #endif
 
+#define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
+
+
 #endif /* INCLUDE_PORTABILITY_H_ */

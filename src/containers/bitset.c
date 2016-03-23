@@ -503,6 +503,35 @@ int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
   return(l);
 }
 
+
+
+int32_t bitset_container_write(bitset_container_t *container,
+                                  char *buf) {
+#ifdef IS_BIG_ENDIAN
+	// forcing little endian (could be faster)
+	for(int32_t i = 0 ; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {
+		uint64_t val = container->array[i];
+		val = __builtin_bswap64(val);
+		memcpy(buf + i * sizeof(uint64_t), &val, sizeof(uint64_t));
+	}
+#else
+	memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
+#endif
+	return bitset_container_size_in_bytes(container);
+}
+
+
+int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container,
+                                  char *buf)  {
+	container->cardinality = cardinality;
+#ifdef IS_BIG_ENDIAN
+	assert(false); //TODO: implement
+#else
+	memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
+#endif
+	return bitset_container_size_in_bytes(container);
+}
+
 uint32_t bitset_container_serialization_len() {
   return(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }

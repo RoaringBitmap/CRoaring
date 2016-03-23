@@ -305,6 +305,41 @@ int32_t array_container_serialize(array_container_t *container, char *buf) {
   return (off + l);
 }
 
+/**
+ * Writes the underlying array to buf, outputs how many bytes were written.
+ * The number of bytes written should be array_container_size_in_bytes(container).
+ *
+ */
+int32_t array_container_write(array_container_t *container,
+                                  char *buf) {
+#ifdef IS_BIG_ENDIAN
+	// forcing little endian (could be faster)
+	for(int32_t i = 0 ; i < container->cardinality; i++) {
+		uint16_t val = container->array[i];
+		buf[2 * i] = (uint8_t)val;
+		buf[2 * i + 1] = (uint8_t)(val >> 8);
+	}
+#else
+	memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
+#endif
+	return array_container_size_in_bytes(container);
+}
+
+int32_t array_container_read(int32_t cardinality, array_container_t *container,
+                                  char *buf) {
+	if(container->capacity < cardinality) {
+		array_container_grow(container, cardinality,DEFAULT_MAX_SIZE, false);
+	}
+	container->cardinality = cardinality;
+#ifdef IS_BIG_ENDIAN
+	assert(false);// TODO: Implement
+#else
+	memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));
+#endif
+	return array_container_size_in_bytes(container);
+}
+
+
 uint32_t array_container_serialization_len(array_container_t *container) {
   return (sizeof(uint16_t) /* container->cardinality converted to 16 bit */ +
 	  (sizeof(uint16_t) * container->cardinality));
