@@ -515,7 +515,7 @@ if( IS_BIG_ENDIAN){
 		memcpy(buf + i * sizeof(uint64_t), &val, sizeof(uint64_t));
 	}
 } else {
-	memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
+	memcpy(buf, container->array, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
 }
 	return bitset_container_size_in_bytes(container);
 }
@@ -526,7 +526,7 @@ int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container
 	container->cardinality = cardinality;
 	assert(!IS_BIG_ENDIAN);// TODO: Implement
 
-	memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));
+	memcpy(container->array, buf, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
 	return bitset_container_size_in_bytes(container);
 }
 
