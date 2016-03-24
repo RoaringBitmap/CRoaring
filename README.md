@@ -88,9 +88,18 @@ To reformat your code according to the style convention (make sure that ``clang-
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
 -  Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
 
+
+### References about Roaring
+
+-  Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin,
+Better bitmap performance with Roaring bitmaps,
+Software: Practice and Experience (accepted in 2015, to appear)
+http://arxiv.org/abs/1402.6407 This paper used data from http://lemire.me/data/realroaring2014.html
+- Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience (accepted in 2016, to appear) http://arxiv.org/abs/1603.06549
+
 # Issues to consider
 
-AVX operations take a while before they warm up to their best speed 
+AVX operations take a while before they warm up to their best speed
 as documented by Agner Fog and others.
 
 There is a trade-off between throughput and latency. For example,
