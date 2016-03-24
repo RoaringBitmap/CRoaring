@@ -115,6 +115,34 @@ int test_portable_serialize() {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
 
+    r1 = roaring_bitmap_create();
+    for(uint32_t k = 100; k < 100000; ++k) {
+    	roaring_bitmap_add(r1, k);
+    }
+    roaring_bitmap_run_optimize(r1);
+    expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
+    serialized = malloc(expectedsize);
+    serialize_len = roaring_bitmap_portable_serialize(r1, serialized);
+    assert(serialize_len == expectedsize);
+
+
+    printf("Serialization len: %u [%.4f bit/element]\n", serialize_len,
+           ((float)(8 * serialize_len)) /
+               ((float)roaring_bitmap_get_cardinality(r1)));
+    r2 = roaring_bitmap_portable_deserialize(serialized);
+    assert(r2);
+
+    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    assert(array_equals(arr1, card1, arr2, card2));
+    free(arr1);
+    free(arr2);
+    free(serialized);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+
+
     return 1;
 }
 
@@ -163,7 +191,7 @@ int test_serialize() {
     r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
                            19866827);
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
-    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len,
+    printf("Serialization len: %u [%.4f bit/element]\n", serialize_len,
            ((float)(8 * serialize_len)) /
                ((float)roaring_bitmap_get_cardinality(r1)));
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
@@ -177,6 +205,28 @@ int test_serialize() {
     free(serialized);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
+
+    r1 = roaring_bitmap_create();
+    for(uint32_t k = 100; k < 100000; ++k) {
+    	roaring_bitmap_add(r1, k);
+    }
+    roaring_bitmap_run_optimize(r1);
+    serialized = roaring_bitmap_serialize(r1, &serialize_len);
+    printf("Serialization len: %u [%.4f bit/element]\n", serialize_len,
+           ((float)(8 * serialize_len)) /
+               ((float)roaring_bitmap_get_cardinality(r1)));
+    r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+
+    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    assert(array_equals(arr1, card1, arr2, card2));
+    free(arr1);
+    free(arr2);
+    free(serialized);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+
 
     return 1;
 }
