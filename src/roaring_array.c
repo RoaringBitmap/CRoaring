@@ -737,10 +737,6 @@ roaring_array_t *ra_portable_deserialize(const char *buf) {
             answer->containers[k] = c;
             answer->typecodes[k] = ARRAY_CONTAINER_TYPE_CODE;
         }
-        // sanity check
-        assert(container_get_cardinality(answer->containers[k],
-                                         answer->typecodes[k]) ==
-               cardinalities[k]);
     }
     free(bitmapOfRunContainers);
     free(cardinalities);
