@@ -658,7 +658,7 @@ size_t ra_portable_serialize(roaring_array_t *ra, char *buf) {
     return buf - initbuf;
 }
 
-roaring_array_t *ra_portable_deserialize(char *buf) {
+roaring_array_t *ra_portable_deserialize(const char *buf) {
     assert(!IS_BIG_ENDIAN);  // not implemented
     uint32_t cookie;
     memcpy(&cookie, buf, sizeof(int32_t));

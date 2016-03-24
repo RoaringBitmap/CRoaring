@@ -58,6 +58,67 @@ int test_iterate() {
     return (1);
 }
 
+// serialization as in Java and Go
+int test_portable_serialize() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 =
+        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+    uint32_t serialize_len;
+    roaring_bitmap_t *r2;
+
+    /* Add some values to the bitmap */
+    for (int i = 0, top_val = 384000; i < top_val; i++)
+        roaring_bitmap_add(r1, 3 * i);
+    uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
+    char *serialized = malloc(expectedsize);
+    serialize_len = roaring_bitmap_portable_serialize(r1, serialized);
+    assert(serialize_len == expectedsize);
+    r2 = roaring_bitmap_portable_deserialize(serialized);
+    assert(r2);
+    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len,
+           ((float)(8 * serialize_len)) /
+               ((float)roaring_bitmap_get_cardinality(r2)));
+
+    uint32_t card1, card2;
+    uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    assert(array_equals(arr1, card1, arr2, card2));
+    free(arr1);
+    free(arr2);
+    free(serialized);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+
+
+    r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
+                           19866827);
+    expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
+    serialized = malloc(expectedsize);
+    serialize_len = roaring_bitmap_portable_serialize(r1, serialized);
+    assert(serialize_len == expectedsize);
+
+
+    printf("Serialization len: %u [%.1f bit/element]\n", serialize_len,
+           ((float)(8 * serialize_len)) /
+               ((float)roaring_bitmap_get_cardinality(r1)));
+    r2 = roaring_bitmap_portable_deserialize(serialized);
+    assert(r2);
+
+    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    assert(array_equals(arr1, card1, arr2, card2));
+    free(arr1);
+    free(arr2);
+    free(serialized);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+
+    return 1;
+}
+
+
 int test_serialize() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 =
@@ -577,6 +638,7 @@ int main() {
     int passed = 0;
     passed += test_printf();
     passed += test_serialize();
+    passed += test_portable_serialize();
     passed += test_iterate();
     passed += test_add();
     passed += test_contains();

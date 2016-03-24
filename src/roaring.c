@@ -443,7 +443,7 @@ size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra) {
     return ra_portable_size_in_bytes(ra->high_low_container);
 }
 
-roaring_bitmap_t *roaring_bitmap_portable_deserialize(char *buf) {
+roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
     if (ans == NULL) {
         return NULL;

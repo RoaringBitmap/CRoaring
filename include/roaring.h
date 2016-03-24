@@ -112,8 +112,10 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
 */
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 
+// see roaring_bitmap_portable_serialize if you want a format that's compatible with Java and Go implementations
 char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
 
+// see roaring_bitmap_portable_deserialize if you want a format that's compatible with Java and Go implementations
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
 
 /**
@@ -121,7 +123,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
  * the
  * Java and Go versions.
  */
-roaring_bitmap_t *roaring_bitmap_portable_deserialize(char *buf);
+roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be compatible
