@@ -16,11 +16,14 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 [whoosh]: https://bitbucket.org/mchaput/whoosh/wiki/Home
 [kylin]: http://kylin.apache.org/
 
+# Objective
+
 The primary goal of the CRoaring is to provide a high performance low-level implementation that fully take advantage
-of the latest hardware.
+of the latest hardware. Roaring bitmaps are already available on a variety of platform through Java, Go, Rust... implementations. CRoaring is a library that seeks to achieve superior performance by staying close to the latest hardware.
 
 # Requirements
 
+- 64-bit Linux-like operating system (including MacOS)
 - Recent Intel processor: Haswell (2013) or better.
 - Recent C compiler (GCC 4.8 or better)
 - CMake
@@ -39,6 +42,15 @@ cmake ..
 make
 ```
 
+For debug release, try
+
+```
+mkdir debug
+cd debug
+cmake -DCMAKE_BUILD_TYPE=Debug ...
+make
+```
+
 To run unit tests:
 
 ```
@@ -50,6 +62,8 @@ To run real-data benchmark
 ```
 ./real_bitmaps_benchmark ../benchmarks/realdata/census1881
 ```
+where you must adjust the path "../benchmarks/realdata/census1881" so that it points to one of the directories in the benchmarks/realdata directory.
+
 
 To check that your code abides by the style convention (make sure that ``clang-format`` is installed):
 
@@ -67,21 +81,9 @@ To reformat your code according to the style convention (make sure that ``clang-
 - get the code to compile cleanly with -Wconversion and possibly -Weverything
 - get everything to work with valgrind cleanly
 - get everything to work cleanly with other static checkers, sanitizers and so forth
+- get everything to run cleanly with the flags ``-fsanitize=address -fno-omit-frame-pointer``
+- get everything to run cleanly with the flga ``-fsanitize=undefined``
 
-```
--fsanitize=address -fno-omit-frame-pointer
--fsanitize=memory  -fno-omit-frame-pointer
--fsanitize=undefined
--fsanitize=dataflow
--fsanitize=cfi -flto
--fsanitize=safe-stack
-```
-- Daniel
-
-
-# todo
-
-* consider LTO (Link Time Optimization)
 
 # References and further reading
 
