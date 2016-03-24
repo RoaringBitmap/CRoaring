@@ -608,7 +608,7 @@ size_t ra_portable_serialize(roaring_array_t *ra, char *buf) {
         memcpy(buf, &cookie, sizeof(cookie));
         buf += sizeof(cookie);
         uint32_t s = (ra->size + 7) / 8;
-        uint8_t *bitmapOfRunContainers = malloc(s);
+        uint8_t *bitmapOfRunContainers = calloc(s,1);
         assert(bitmapOfRunContainers != NULL);  // todo: handle
         for (int32_t i = 0; i < ra->size; ++i) {
             if (ra->typecodes[i] == RUN_CONTAINER_TYPE_CODE) {
