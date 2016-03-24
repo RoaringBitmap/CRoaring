@@ -52,7 +52,29 @@ static inline int container_get_cardinality(void *container, uint8_t typecode) {
 }
 
 /**
- * Get the container size in bytes under portable serialization, requires a
+ * Writes the underlying array to buf, outputs how many bytes were written.
+ * This is meant to be byte-by-byte compatible with the Java and Go versions of
+ * Roaring.
+ * The number of bytes written should be
+ * container_write(container, buf).
+ *
+ */
+static inline int32_t container_write(void *container, uint8_t typecode,
+                                      char *buf) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_write(container, buf);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_write(container, buf);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_write(container, buf);
+    }
+    return 0;  // unreached
+}
+
+/**
+ * Get the container size in bytes under portable serialization (see
+ * container_write), requires a
  * typecode
  */
 static inline int32_t container_size_in_bytes(void *container,

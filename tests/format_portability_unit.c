@@ -13,76 +13,97 @@
 #include "misc/configreport.h"
 
 long filesize(char const* path) {
-	FILE  * fp = fopen(path, "rb");
-    if( NULL == fp ) {
-    	fprintf(stderr, "Could not open.\n");
+    FILE* fp = fopen(path, "rb");
+    if (NULL == fp) {
+        fprintf(stderr, "Could not open.\n");
         return 0;
     }
     fseek(fp, 0L, SEEK_END);
     return ftell(fp);
 }
 
-char * readfile(char const* path) {
-	printf("loading file %s\n",path);
-    FILE  * fp = fopen(path, "rb");
-    if( NULL == fp ) {
-    	fprintf(stderr, "Could not open.\n");
+char* readfile(char const* path) {
+    printf("loading file %s\n", path);
+    FILE* fp = fopen(path, "rb");
+    if (NULL == fp) {
+        fprintf(stderr, "Could not open.\n");
         return NULL;
     }
     fseek(fp, 0L, SEEK_END);
     long bytes = ftell(fp);
-    char *buf = malloc( bytes );
-    if( NULL == buf ) {
-    	fprintf(stderr, "Allocation failure.\n");
-    	return NULL;
+    char* buf = malloc(bytes);
+    if (NULL == buf) {
+        fprintf(stderr, "Allocation failure.\n");
+        return NULL;
     }
     rewind(fp);
-    if(bytes != (long) fread(buf, 1, bytes, fp)) {
-    	fprintf(stderr, "Failure while reading file.\n");
-    	free(buf);
+    if (bytes != (long)fread(buf, 1, bytes, fp)) {
+        fprintf(stderr, "Failure while reading file.\n");
+        free(buf);
         fclose(fp);
-    	return NULL;
+        return NULL;
     }
     fclose(fp);
     return buf;
 }
 
-int test_deserialize_portable_norun() {
-    printf("[%s] %s\n", __FILE__, __func__);
-    char filename[1024];
-    strcpy (filename,TEST_DATA_DIR);
-    strcat (filename,"bitmapwithoutruns.bin");
-    char * buf = readfile(filename);
-    assert(buf != NULL);
-    roaring_bitmap_t * bitmap = roaring_bitmap_portable_deserialize(buf);
-    free(buf);
-    size_t sizeinbytes = roaring_bitmap_portable_size_in_bytes(bitmap);
-    if((long) sizeinbytes != filesize(filename)) {
-    	fprintf(stderr, "Bitmap size mismatch, expected %d but got %d.\n",(int)filesize(filename),(int)sizeinbytes);
-    	return 0;
+int compare(char* x, char* y, size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+        if (x[i] != y[i]) {
+            return i + 1;
+        }
     }
+    return 0;
+}
+
+int test_deserialize(char* filename) {
+    char* buf = readfile(filename);
+    assert(buf != NULL);
+
+    roaring_bitmap_t* bitmap = roaring_bitmap_portable_deserialize(buf);
+    size_t sizeinbytes = roaring_bitmap_portable_size_in_bytes(bitmap);
+
+    if ((long)sizeinbytes != filesize(filename)) {
+        fprintf(stderr, "Bitmap size mismatch, expected %d but got %d.\n",
+                (int)filesize(filename), (int)sizeinbytes);
+        return 0;
+    }
+    char* tmpbuf = malloc(sizeinbytes);
+    size_t newsize = roaring_bitmap_portable_serialize(bitmap, tmpbuf);
+
+    if (newsize != sizeinbytes) {
+        fprintf(stderr, "Bitmap size change, expected %d but got %d.\n",
+                (int)newsize, (int)sizeinbytes);
+        return 0;
+    }
+    if (compare(buf, tmpbuf, newsize)) {
+        fprintf(stderr,
+                "We do not serialize to the same content. First difference "
+                "found at %d. \n",
+                compare(buf, tmpbuf, newsize) - 1);
+        return 0;
+    }
+
+    free(buf);
     roaring_bitmap_free(bitmap);
     printf("\n");
     return 1;
 }
 
+int test_deserialize_portable_norun() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    char filename[1024];
+    strcpy(filename, TEST_DATA_DIR);
+    strcat(filename, "bitmapwithoutruns.bin");
+    return test_deserialize(filename);
+}
+
 int test_deserialize_portable_wrun() {
     printf("[%s] %s\n", __FILE__, __func__);
     char filename[1024];
-    strcpy (filename,TEST_DATA_DIR);
-    strcat (filename,"bitmapwithruns.bin");
-    char * buf = readfile(filename);
-    assert(buf != NULL);
-    roaring_bitmap_t * bitmap = roaring_bitmap_portable_deserialize(buf);
-    free(buf);
-    size_t sizeinbytes = roaring_bitmap_portable_size_in_bytes(bitmap);
-    if((long) sizeinbytes != filesize(filename)) {
-    	fprintf(stderr, "Bitmap size mismatch, expected %d but got %d.\n",(int)filesize(filename),(int)sizeinbytes);
-    	return 0;
-    }
-    roaring_bitmap_free(bitmap);
-    printf("\n");
-    return 1;
+    strcpy(filename, TEST_DATA_DIR);
+    strcat(filename, "bitmapwithruns.bin");
+    return test_deserialize(filename);
 }
 
 int main() {
@@ -93,6 +114,3 @@ int main() {
     printf("[%s] your code might be ok.\n", __FILE__);
     return 0;
 }
-
-
-

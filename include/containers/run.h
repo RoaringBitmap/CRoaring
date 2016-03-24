@@ -157,7 +157,7 @@ int32_t run_container_write(run_container_t *container, char *buf);
  * it might be effectively ignored..
  */
 int32_t run_container_read(int32_t cardinality, run_container_t *container,
-                           char *buf);
+                           const char *buf);
 
 /**
  * Return the serialized size in bytes of a container (see run_container_write).

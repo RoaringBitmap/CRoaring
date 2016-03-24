@@ -453,6 +453,10 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(char *buf) {
     return ans;
 }
 
+size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf) {
+    return ra_portable_serialize(ra->high_low_container, buf);
+}
+
 roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
     roaring_bitmap_t *b;
 

@@ -348,7 +348,7 @@ int32_t bitset_container_write(bitset_container_t *container, char *buf);
  * You need to provide the (known) cardinality.
  */
 int32_t bitset_container_read(int32_t cardinality,
-                              bitset_container_t *container, char *buf);
+                              bitset_container_t *container, const char *buf);
 /**
  * Return the serialized size in bytes of a container (see
  * bitset_container_write).

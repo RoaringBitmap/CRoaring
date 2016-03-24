@@ -522,11 +522,11 @@ if( IS_BIG_ENDIAN){
 
 
 int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container,
-                                  char *buf)  {
+		const char *buf)  {
 	container->cardinality = cardinality;
 	assert(!IS_BIG_ENDIAN);// TODO: Implement
 
-	memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
+	memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));
 	return bitset_container_size_in_bytes(container);
 }
 

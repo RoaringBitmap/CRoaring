@@ -129,6 +129,14 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(char *buf);
  */
 size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra);
 
+/**
+ * write a bitmap to a char buffer. This is meant to be compatible with
+ * the
+ * Java and Go versions. Returns how many bytes were written which should be
+ * roaring_bitmap_portable_size_in_bytes(ra).
+ */
+size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf);
+
 /** * Iterate over the bitmap elements
  */
 void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,

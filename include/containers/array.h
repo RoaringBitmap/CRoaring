@@ -166,7 +166,7 @@ int32_t array_container_write(array_container_t *container, char *buf);
  * You need to provide the (known) cardinality.
  */
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
-                             char *buf);
+                             const char *buf);
 
 /**
  * Return the serialized size in bytes of a container (see

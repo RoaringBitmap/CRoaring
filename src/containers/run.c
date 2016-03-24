@@ -470,21 +470,20 @@ int32_t run_container_write(run_container_t *container, char *buf) {
     } else {
         memcpy(buf, &container->n_runs, sizeof(uint16_t));
         memcpy(buf + sizeof(uint16_t), container->runs,
-               container->n_runs * sizeof(uint16_t));
+               container->n_runs * sizeof(rle16_t));
     }
     return run_container_size_in_bytes(container);
 }
 
 int32_t run_container_read(int32_t cardinality, run_container_t *container,
-                           char *buf) {
+                           const char *buf) {
     (void)cardinality;
     assert(!IS_BIG_ENDIAN);  // TODO: Implement
-    memcpy(buf, &container->n_runs, sizeof(uint16_t));
-    container->n_runs++;
+    memcpy(&container->n_runs, buf, sizeof(uint16_t));
     if (container->n_runs < container->capacity)
         increaseCapacity(container, container->n_runs, false);
     memcpy(container->runs, buf + sizeof(uint16_t),
-           container->n_runs * sizeof(uint16_t));
+           container->n_runs * sizeof(rle16_t));
     return run_container_size_in_bytes(container);
 }
 

@@ -327,7 +327,7 @@ int32_t array_container_write(array_container_t *container, char *buf) {
 }
 
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
-                             char *buf) {
+                             const char *buf) {
     if (container->capacity < cardinality) {
         array_container_grow(container, cardinality, DEFAULT_MAX_SIZE, false);
     }

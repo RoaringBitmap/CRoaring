@@ -114,8 +114,14 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
 
 char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
                    uint8_t *retry_with_array);
-
 roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len);
+/**
+ * write a bitmap to a buffer. This is meant to be compatible with
+ * the
+ * Java and Go versions. Return the size in bytes of the serialized
+ * output (which should be ra_portable_size_in_bytes(ra)).
+ */
+size_t ra_portable_serialize(roaring_array_t *ra, char *buf);
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible with
