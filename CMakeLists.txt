@@ -24,6 +24,7 @@ set (ROARING_SRC
     src/containers/convert.c
     src/containers/mixed_intersection.c
     src/containers/mixed_union.c
+    src/containers/mixed_equal.c
     src/containers/run.c
     src/roaring.c
     src/roaring_array.c)

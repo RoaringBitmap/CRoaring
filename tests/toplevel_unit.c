@@ -84,6 +84,7 @@ int test_portable_serialize() {
     uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
+    assert(roaring_bitmap_equals(r1, r2));
     free(arr1);
     free(arr2);
     free(serialized);
@@ -107,6 +108,7 @@ int test_portable_serialize() {
     arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
+    assert(roaring_bitmap_equals(r1, r2));
     free(arr1);
     free(arr2);
     free(serialized);
@@ -133,6 +135,7 @@ int test_portable_serialize() {
     arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
+    assert(roaring_bitmap_equals(r1, r2));
     free(arr1);
     free(arr2);
     free(serialized);
@@ -166,6 +169,7 @@ int test_serialize() {
     uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
+    assert(roaring_bitmap_equals(r1, r2));
     free(arr1);
     free(arr2);
     free(serialized);
@@ -195,6 +199,7 @@ int test_serialize() {
     arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
+    assert(roaring_bitmap_equals(r1, r2));
     free(arr1);
     free(arr2);
     free(serialized);
@@ -216,6 +221,7 @@ int test_serialize() {
     arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 
     assert(array_equals(arr1, card1, arr2, card2));
+    assert(roaring_bitmap_equals(r1, r2));
     free(arr1);
     free(arr2);
     free(serialized);

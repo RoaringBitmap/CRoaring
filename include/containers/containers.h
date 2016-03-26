@@ -11,6 +11,7 @@
 #include "run.h"
 #include "mixed_intersection.h"
 #include "mixed_union.h"
+#include "mixed_equal.h"
 
 // would enum be possible or better?
 
@@ -232,31 +233,49 @@ int32_t container_serialize(void *container, uint8_t typecode,
 uint32_t container_serialization_len(void *container, uint8_t typecode);
 void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len);
 
-#if 0
-// TODO enable and debug this equality stuff
-static inline bool container_equals(void *c1, uint8_t type1, void *c2, uint8_t type2) {
-        switch (CONTAINER_PAIR(type1,type2)) {
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-                return bitset_container_equals( (bitset_container_t *) c1, (bitset_container_t *) c2);
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-                return run_container_equals_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
-        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-                return run_container_equals_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-                return false;
-        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-                return false;
+static inline bool container_equals(void *c1, uint8_t type1, void *c2,
+                                    uint8_t type2) {
+    switch (CONTAINER_PAIR(type1, type2)) {
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return bitset_container_equals((bitset_container_t *)c1,
+                                           (bitset_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            return run_container_equals_bitset((run_container_t *)c2,
+                                               (bitset_container_t *)c1);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return run_container_equals_bitset((run_container_t *)c1,
+                                               (bitset_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            // java would always return false?
+            return array_container_equal_bitset((array_container_t *)c2,
+                                                (bitset_container_t *)c1);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            // java would always return false?
+            return array_container_equal_bitset((array_container_t *)c1,
+                                                (bitset_container_t *)c2);
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-                return run_container_equals_array( (run_container_t *) c2, (array_container_t *) c1);
-        case CONTAINER_PAIR( RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-                return run_container_equals_array( (run_container_t *) c1, (array_container_t *) c2);
-        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-                return array_container_equals( (array_container_t *) c1, (array_container_t *) c2);
+            return run_container_equals_array((run_container_t *)c2,
+                                              (array_container_t *)c1);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            return run_container_equals_array((run_container_t *)c1,
+                                              (array_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return array_container_equals((array_container_t *)c1,
+                                          (array_container_t *)c2);
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-                return run_container_equals( (run_container_t *) c1, (run_container_t *) c2);
-        }
+            return run_container_equals((run_container_t *)c1,
+                                        (run_container_t *)c2);
+        default:
+            assert(0);
+            return NULL;
+    }
 }
-#endif
 
 // macro-izations possibilities for generic non-inplace binary-op dispatch
 

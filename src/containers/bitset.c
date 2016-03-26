@@ -215,7 +215,7 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
         array_1 += 256;                                                 \
         array_2 += 256;                                                 \
     }                                                                   \
-    dst->cardinality = -1;                                              \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                                              \
     return dst->cardinality;                                            \
 }                                                                       \
 /* next, a version that updates cardinality*/                           \
@@ -382,7 +382,7 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1,   \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {         \
         out[i] = (array_1[i])opsymbol(array_2[i]);                        \
     }                                                                     \
-    dst->cardinality = -1;                                                \
+    dst->cardinality = BISET_UNKNOWN_CARDINALITY;                                                \
     return dst->cardinality;                                              \
 }                                                                         \
 int bitset_container_##opname##_justcard(const bitset_container_t *src_1,   \
@@ -411,6 +411,7 @@ BITSET_CONTAINER_FN(intersection, &, _mm256_and_si256)
 
 BITSET_CONTAINER_FN(xor, ^, _mm256_xor_si256)
 BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
+// clang-format On
 
 
 #ifdef USEAVX
@@ -446,9 +447,9 @@ void bitset_container_printf(const bitset_container_t * v) {
 			} else {
 				printf(",%d",base + r);
 			}
-			base += 64;
 			w ^= t;
 		}
+		base += 64;
 	}
 	printf("}");
 }
@@ -470,9 +471,9 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 			} else {
 				printf(",%d",r + base);
 			}
-			base += 64;
 			w ^= t;
 		}
+		base += 64;
 	}
 }
 
@@ -492,13 +493,11 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   num_runs += _mm_popcnt_u64((~word) & (word << 1));
   if((word & 0x8000000000000000ULL) != 0)
     num_runs++;
-
   return num_runs;
 }
 
 int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
   int32_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
-
   memcpy(buf, container->array, l);
   return(l);
 }
@@ -557,9 +556,8 @@ void* bitset_container_deserialize(char *buf, size_t buf_len) {
 }
 
 void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
-  for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+  for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->array[i];
-
     while (w != 0) {
       uint64_t t = w & -w;
       int r = __builtin_ctzl(w);
@@ -570,4 +568,17 @@ void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
   }
 }
 
-// clang-format On
+
+bool bitset_container_equals(bitset_container_t *container1, bitset_container_t *container2) {
+	if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
+		if(container1->cardinality != container2->cardinality) {
+			return false;
+		}
+	}
+	for(int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+		if(container1->array[i] != container2->array[i]) {
+			return false;
+		}
+	}
+	return true;
+}

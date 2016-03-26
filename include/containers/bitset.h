@@ -20,7 +20,10 @@
 #define ALIGN_AVX
 #endif
 
-enum { BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64 };
+enum {
+    BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64,
+    BITSET_UNKNOWN_CARDINALITY = -1
+};
 
 struct bitset_container_s {
     int32_t cardinality;
@@ -361,5 +364,11 @@ static inline int32_t bitset_container_size_in_bytes(
     (void)container;
     return BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
 }
+
+/**
+ * Return true if the two containers have the same content.
+ */
+bool bitset_container_equals(bitset_container_t *container1,
+                             bitset_container_t *container2);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

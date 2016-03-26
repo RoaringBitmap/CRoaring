@@ -141,10 +141,20 @@ size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra);
  */
 size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf);
 
-/** * Iterate over the bitmap elements
+/**
+ * Iterate over the bitmap elements. The function iterator is called once for
+ *  all the values with ptr (can be NULL) as the second parameter of each call.
+ *
+ *  roaring_iterator is simply a pointer to a function that returns void,
+ *  and takes (uint32_t,void*) as inputs.
  */
 void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr);
+
+/**
+ * Return true if the two bitmaps contain the same elements.
+ */
+bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
 
 /*
  * TODO: implement "equals", "string", serialization, contains

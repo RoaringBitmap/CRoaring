@@ -499,3 +499,25 @@ void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
                           ((uint32_t)ra->high_low_container->keys[i]) << 16,
                           iterator, ptr);
 }
+
+bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
+    if (ra1->high_low_container->size != ra2->high_low_container->size) {
+        return false;
+    }
+    for (int i = 0; i < ra1->high_low_container->size; ++i) {
+        if (ra1->high_low_container->keys[i] !=
+            ra2->high_low_container->keys[i]) {
+            return false;
+        }
+    }
+    for (int i = 0; i < ra1->high_low_container->size; ++i) {
+        bool areequal = container_equals(ra1->high_low_container->containers[i],
+                                         ra1->high_low_container->typecodes[i],
+                                         ra2->high_low_container->containers[i],
+                                         ra2->high_low_container->typecodes[i]);
+        if (!areequal) {
+            return false;
+        }
+    }
+    return true;
+}

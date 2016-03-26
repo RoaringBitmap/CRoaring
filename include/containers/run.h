@@ -167,4 +167,10 @@ static inline int32_t run_container_size_in_bytes(run_container_t *container) {
     return run_container_serialized_size_in_bytes(container->n_runs);
 }
 
+/**
+ * Return true if the two containers have the same content.
+ */
+bool run_container_equals(run_container_t *container1,
+                          run_container_t *container2);
+
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

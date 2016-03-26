@@ -181,4 +181,10 @@ static inline int32_t array_container_size_in_bytes(
     return container->cardinality * sizeof(uint16_t);
 }
 
+/**
+ * Return true if the two arrays have the same content.
+ */
+bool array_container_equals(array_container_t *container1,
+                            array_container_t *container2);
+
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

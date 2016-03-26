@@ -434,12 +434,12 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
         uint32_t run_start = base + cont->runs[0].value;
         uint16_t le = cont->runs[0].length;
         printf("%d", run_start);
-        for (int j = 1; j <= le; ++j) printf(",%d", run_start + j);
+        for (uint32_t j = 1; j <= le; ++j) printf(",%d", run_start + j);
     }
-    for (int i = 1; i < cont->n_runs; ++i) {
+    for (int32_t i = 1; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
-        for (int j = 0; j <= le; ++j) printf(",%d", run_start + j);
+        for (uint32_t j = 0; j <= le; ++j) printf(",%d", run_start + j);
     }
 }
 
@@ -544,4 +544,17 @@ void run_container_iterate(const run_container_t *cont, uint32_t base,
 
         for (int j = 0; j <= le; ++j) iterator(run_start + j, ptr);
     }
+}
+
+bool run_container_equals(run_container_t *container1,
+                          run_container_t *container2) {
+    if (container1->n_runs != container2->n_runs) {
+        return false;
+    }
+    for (int32_t i = 1; i < container1->n_runs; ++i) {
+        if ((container1->runs[i].value != container2->runs[i].value) ||
+            (container1->runs[i].length != container2->runs[i].length))
+            return false;
+    }
+    return true;
 }
