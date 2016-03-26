@@ -1,6 +1,14 @@
 # CRoaring
 Roaring bitmaps in C
 
+# Current status
+
+This library is being actively developed. For the time being, this library is not **usable for anything but 
+ _research_**. **Do not attempt to use this library in production systems*. See http://roaringbitmap.org for
+a list of supported libraries.
+
+# Introduction
+
 Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortunately, they can use too much memory.
  To compensate, we often use compressed bitmaps.
 
