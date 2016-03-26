@@ -4,7 +4,7 @@ Roaring bitmaps in C
 # Current status
 
 This library is being actively developed. For the time being, this library is not **usable for anything but 
- _research_**. **Do not attempt to use this library in production systems*. See http://roaringbitmap.org for
+ _research_**. **Do not attempt to use this library in production systems**. See http://roaringbitmap.org for
 a list of supported libraries.
 
 # Introduction
