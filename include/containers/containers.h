@@ -235,8 +235,14 @@ int32_t container_serialize(void *container, uint8_t typecode,
                             char *buf) WARN_UNUSED;
 
 uint32_t container_serialization_len(void *container, uint8_t typecode);
+
 void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len);
 
+
+/**
+ * Returns true if the two containers have the same content. Note that
+ * two containers having different types can be "equal" in this sense.
+ */
 static inline bool container_equals(void *c1, uint8_t type1, void *c2,
                                     uint8_t type2) {
     switch (CONTAINER_PAIR(type1, type2)) {
@@ -467,7 +473,6 @@ static inline void *container_or(void *c1, uint8_t type1, void *c2,
  * The type of the first container may change, in which case the old container
  * will be deallocated. Returns the modified (and possibly new) container
 */
-
 static inline void *container_ior(void *c1, uint8_t type1, void *c2,
                                   uint8_t type2, uint8_t *result_type) {
     void *result;
@@ -519,6 +524,11 @@ static inline void *container_ior(void *c1, uint8_t type1, void *c2,
     return 0;  // unreached
 }
 
+
+/**
+ * Visit all values x of the container once, passing (base+x,ptr)
+ * to iterator. You need to specify a container and its type.
+ */
 static inline void container_iterate(void *container, uint8_t typecode,
                                      uint32_t base, roaring_iterator iterator,
                                      void *ptr) {
