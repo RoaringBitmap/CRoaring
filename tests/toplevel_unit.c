@@ -29,6 +29,35 @@ int test_printf() {
     return 1;
 }
 
+
+int test_printf_withbitmap() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_printf(r1);  // does it crash?
+    /* Add some values to the bitmap */
+    for (int i = 0, top_val = 4097; i < top_val; i++)
+        roaring_bitmap_add(r1, 2 * i);
+    roaring_bitmap_printf(r1);  // does it crash?
+    roaring_bitmap_free(r1);
+    printf("\n");
+    return 1;
+}
+
+
+
+int test_printf_withrun() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_printf(r1);  // does it crash?
+    /* Add some values to the bitmap */
+    for (int i = 100, top_val = 200; i < top_val; i++)
+        roaring_bitmap_add(r1, i);
+    roaring_bitmap_run_optimize(r1);
+    roaring_bitmap_printf(r1);  // does it crash?
+    roaring_bitmap_free(r1);
+    printf("\n");
+    return 1;
+}
 #ifdef __GNUC__
 #define VARIABLE_IS_NOT_USED __attribute__((unused))
 #else
@@ -57,6 +86,52 @@ int test_iterate() {
     roaring_bitmap_free(r1);
     return (1);
 }
+
+int test_iterate_empty() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    uint32_t num = 0;
+
+    roaring_iterate(r1, dummy_iterator, (void *)&num);
+
+    assert(roaring_bitmap_get_cardinality(r1) == 0);
+    assert(roaring_bitmap_get_cardinality(r1) == num);
+    roaring_bitmap_free(r1);
+    return (1);
+}
+
+
+int test_iterate_withbitmap() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    /* Add some values to the bitmap */
+    for (int i = 0, top_val = 4097; i < top_val; i++)
+        roaring_bitmap_add(r1, 2 * i);
+    uint32_t num = 0;
+
+    roaring_iterate(r1, dummy_iterator, (void *)&num);
+
+    assert(roaring_bitmap_get_cardinality(r1) == num);
+    roaring_bitmap_free(r1);
+    return (1);
+}
+
+
+int test_iterate_withrun() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    /* Add some values to the bitmap */
+    for (int i = 100, top_val = 200; i < top_val; i++)
+        roaring_bitmap_add(r1, i);
+    roaring_bitmap_run_optimize(r1);
+    uint32_t num = 0;
+    roaring_iterate(r1, dummy_iterator, (void *)&num);
+
+    assert(roaring_bitmap_get_cardinality(r1) == num);
+    roaring_bitmap_free(r1);
+    return (1);
+}
+
 
 // serialization as in Java and Go
 int test_portable_serialize() {
@@ -687,9 +762,14 @@ int test_remove_run_to_array() {
 int main() {
     int passed = 0;
     passed += test_printf();
+    passed += test_printf_withbitmap();
+    passed += test_printf_withrun();
     passed += test_serialize();
     passed += test_portable_serialize();
     passed += test_iterate();
+    passed += test_iterate_empty();
+    passed += test_iterate_withbitmap();
+    passed += test_iterate_withrun();
     passed += test_add();
     passed += test_contains();
     passed += test_intersection_array_x_array();
