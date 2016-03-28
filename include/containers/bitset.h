@@ -42,7 +42,7 @@ void bitset_container_free(bitset_container_t *bitset);
 void bitset_container_clear(bitset_container_t *bitset);
 
 /* Duplicate bitset */
-bitset_container_t *bitset_container_clone(bitset_container_t *src);
+bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 
 int32_t bitset_container_serialize(bitset_container_t *container,
                                    char *buf) WARN_UNUSED;
@@ -200,7 +200,9 @@ static inline bool bitset_container_nonzero_cardinality(
 void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest);
 
-/* Get the number of bits set (force computation) */
+/* Get the number of bits set (force computation). This does not modify bitset.
+ * To update the cardinality, you should do
+ * bitset->cardinality =  bitset_container_compute_cardinality(bitset).*/
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
 /* Computes the union of bitsets `src_1' and `src_2' into `dst'  and return the

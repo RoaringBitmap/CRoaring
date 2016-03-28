@@ -78,8 +78,10 @@ static inline int32_t clamp(int32_t val, int32_t min, int32_t max) {
 
 /**
  * increase capacity to at least min, and to no more than max. Whether the
- * existing data needs to be copied over depends on copy. If preserve is false,
- * then the new content will be uninitialized.
+ * existing data needs to be copied over depends on the "preserve" parameter. If
+ * preserve is false,
+ * then the new content will be uninitialized, otherwise the old content is
+ * copie.
  */
 void array_container_grow(array_container_t *container, int32_t min,
                           int32_t max, bool preserve) {

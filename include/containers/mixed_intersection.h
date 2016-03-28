@@ -32,6 +32,20 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
                                           const bitset_container_t *src_2,
                                           void **dst);
 
+/* Compute the intersection of src_1 and src_2 and write the result to
+ * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
+ * valid container. */
+void array_run_container_intersection(const array_container_t *src_1,
+                                      const run_container_t *src_2,
+                                      array_container_t *dst);
+
+/* Compute the intersection of src_1 and src_2 and write the result to
+ * *dst. If the result is true then the result is a bitset_container_t
+ * otherwise is a array_container_t.  */
+bool run_bitset_container_intersection(const run_container_t *src_1,
+                                       const bitset_container_t *src_2,
+                                       void **dst);
+
 /*
  * Same as bitset_bitset_container_intersection except that if the output is to
  * be a

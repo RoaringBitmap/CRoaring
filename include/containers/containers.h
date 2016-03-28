@@ -316,21 +316,34 @@ static inline void *container_and(void *c1, uint8_t type1, void *c2,
             *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
             array_bitset_container_intersection(c1, c2, result);
             return result;
-#if 0
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
-        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-		return run_container_and_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
+
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            *result_type = run_bitset_container_intersection(c2, c1, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            *result_type = run_bitset_container_intersection(c1, c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-		return run_container_and_array( (run_container_t) c2, (array_container_t) c1);
+            result = array_container_create();
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
+            array_run_container_intersection(c1, c2, result);
+            return result;
+
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-		return run_container_and_array( (run_container_t) c1, (array_container_t) c2);
-#else
+            result = array_container_create();
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
+            array_run_container_intersection(c2, c1, result);
+            return result;
         default:
-            fprintf(stderr, "and lacks support for mixing container types");
-#endif
+            assert(0);
+            return NULL;
     }
-    return 0;  // unreached
 }
 
 /**

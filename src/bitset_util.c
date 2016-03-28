@@ -852,3 +852,32 @@ void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
     for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~UINT64_C(0);
     bitmap[endword] |= (~UINT64_C(0)) >> (-end % 64);
 }
+
+/*
+ * Flip all the bits in indexes [begin,end).
+ */
+void bitset_flip_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
+    if (start == end) return;
+    uint32_t firstword = start / 64;
+    uint32_t endword = (end - 1) / 64;
+    bitmap[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
+    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~bitmap[i];
+    bitmap[endword] ^= ((~UINT64_C(0)) >> ((-end) % 64));
+}
+
+/*
+ * Set all bits in indexes [begin,end) to false.
+ */
+void bitset_reset_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
+    if (start == end) return;
+    uint32_t firstword = start / 64;
+    uint32_t endword = (end - 1) / 64;
+    if (firstword == endword) {
+        bitmap[firstword] &=
+            ~((~UINT64_C(0)) << (start % 64)) & ((~UINT64_C(0)) >> (-end & 64));
+        return;
+    }
+    bitmap[firstword] &= ~((~UINT64_C(0)) << (start % 64));
+    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = UINT64_C(0);
+    bitmap[endword] &= ~((~UINT64_C(0)) >> (-end % 64));
+}

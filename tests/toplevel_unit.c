@@ -29,7 +29,6 @@ int test_printf() {
     return 1;
 }
 
-
 int test_printf_withbitmap() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -42,8 +41,6 @@ int test_printf_withbitmap() {
     printf("\n");
     return 1;
 }
-
-
 
 int test_printf_withrun() {
     printf("[%s] %s\n", __FILE__, __func__);
@@ -100,7 +97,6 @@ int test_iterate_empty() {
     return (1);
 }
 
-
 int test_iterate_withbitmap() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -116,7 +112,6 @@ int test_iterate_withbitmap() {
     return (1);
 }
 
-
 int test_iterate_withrun() {
     printf("[%s] %s\n", __FILE__, __func__);
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -131,7 +126,6 @@ int test_iterate_withrun() {
     roaring_bitmap_free(r1);
     return (1);
 }
-
 
 // serialization as in Java and Go
 int test_portable_serialize() {

@@ -9,6 +9,16 @@
 void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end);
 
 /*
+ * Flip all the bits in indexes [begin,end).
+ */
+void bitset_flip_range(uint64_t *bitmap, uint32_t start, uint32_t end);
+
+/*
+ * Set all bits in indexes [begin,end) to false.
+ */
+void bitset_reset_range(uint64_t *bitmap, uint32_t start, uint32_t end);
+
+/*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out", values start at "base".
  *

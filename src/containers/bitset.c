@@ -63,7 +63,7 @@ void bitset_container_free(bitset_container_t *bitset) {
 }
 
 /* duplicate container. */
-bitset_container_t *bitset_container_clone(bitset_container_t *src) {
+bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
 
     if (!bitset) {
