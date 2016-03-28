@@ -1,7 +1,7 @@
 
 #include "containers.h"
 
-extern char *get_container_name(uint8_t typecode);
+extern const char *get_container_name(uint8_t typecode);
 
 extern int container_get_cardinality(void *container, uint8_t typecode);
 

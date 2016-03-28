@@ -22,19 +22,23 @@
 // macro for pairing container type codes
 #define CONTAINER_PAIR(c1, c2) (4 * (c1) + (c2))
 
+
+static const char* container_names[] = {"bitset","array","run"};
 /**
  * Get the container name from the typecode
  */
-static inline char *get_container_name(uint8_t typecode) {
+static inline const char *get_container_name(uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return "bitset";
+            return container_names[0];
         case ARRAY_CONTAINER_TYPE_CODE:
-            return "array";
+            return container_names[1];
         case RUN_CONTAINER_TYPE_CODE:
-            return "run";
+            return container_names[2];
+        default:
+        	assert(0);
+            return "unknown";
     }
-    return "unknown";
 }
 
 /**
