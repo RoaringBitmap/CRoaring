@@ -10,24 +10,30 @@
 #include "bitset.h"
 #include "run.h"
 
-/* Convert an array into a bitset */
-bitset_container_t *bitset_container_from_array(array_container_t *arr);
+/* Convert an array into a bitset. The input container is not freed or modified.
+ */
+bitset_container_t *bitset_container_from_array(const array_container_t *arr);
 
-/* Convert a run into a bitset */
-bitset_container_t *bitset_container_from_run(run_container_t *arr);
+/* Convert a run into a bitset. The input container is not freed or modified. */
+bitset_container_t *bitset_container_from_run(const run_container_t *arr);
 
-/* Convert a bitset into an array */
-array_container_t *array_container_from_bitset(bitset_container_t *bits);
+/* Convert a bitset into an array. The input container is not freed or modified.
+ */
+array_container_t *array_container_from_bitset(const bitset_container_t *bits);
 
-/* convert a run into either an array or a bitset */
+/* convert a run into either an array or a bitset
+ * might free the container */
 void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
                                            uint8_t *resulttype);
 
-/* convert containers to and from runcontainers, as is most space efficient. */
-
+/* convert containers to and from runcontainers, as is most space efficient.
+ * The container might be freed. */
 void *convert_run_optimize(void *c, uint8_t typecode_original,
                            uint8_t *typecode_after);
 
+/* converts a run container to either an array or a bitset, IF it saves space */
+/* If a conversion occurs, the original containers is freed and a new one
+ * allocated */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after);
 

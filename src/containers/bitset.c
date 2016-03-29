@@ -12,8 +12,9 @@
 #include "bitset_util.h"
 #include "utilasm.h"
 
-extern int bitset_container_cardinality(bitset_container_t *bitset);
-extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
+extern int bitset_container_cardinality(const bitset_container_t *bitset);
+extern bool bitset_container_nonzero_cardinality(
+    const bitset_container_t *bitset);
 extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_get(const bitset_container_t *bitset,

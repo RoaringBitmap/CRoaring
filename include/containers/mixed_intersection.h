@@ -41,7 +41,9 @@ void array_run_container_intersection(const array_container_t *src_1,
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * *dst. If the result is true then the result is a bitset_container_t
- * otherwise is a array_container_t.  */
+ * otherwise is a array_container_t.
+ * If *dst == src_2, then an in-place intersection is attempted
+ **/
 bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        void **dst);

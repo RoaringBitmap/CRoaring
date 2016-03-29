@@ -74,8 +74,7 @@ _Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
                "Bad struct size");  // part of C standard
 
 // TODO: could be more efficient
-static void smartAppend(run_container_t *run,
-                        rle16_t vl) {  // uint16_t start, uint16_t length) {
+void run_container_append(run_container_t *run, rle16_t vl) {
     int32_t oldend;
     // todo: next line is maybe unsafe when n_runs == 0 in the sense where we
     // might access memory out of bounds (crash prone?)
@@ -94,7 +93,22 @@ static void smartAppend(run_container_t *run,
     }
 }
 
-static void increaseCapacity(run_container_t *run, int32_t min, bool copy) {
+void run_container_append_value(run_container_t *run, uint16_t val) {
+    uint16_t oldend;
+    if ((run->n_runs == 0) ||
+        (val > (oldend = run->runs[run->n_runs - 1].value +
+                         run->runs[run->n_runs - 1].length) +
+                   1)) {  // we add a new one
+        run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
+        run->n_runs++;
+        return;
+    }
+    if (val + 1 == oldend) {  // we merge
+        run->runs[run->n_runs - 1].length++;
+    }
+}
+
+void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =
         (run->capacity == 0)
             ? DEFAULT_INIT_SIZE
@@ -123,7 +137,7 @@ static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
      * Potentially copying twice the array.
      */
     if (run->n_runs + 1 > run->capacity)
-        increaseCapacity(run, run->n_runs + 1, true);
+        run_container_grow(run, run->n_runs + 1, true);
     memmove(run->runs + 1 + index, run->runs + index,
             (run->n_runs - index) * sizeof(rle16_t));
     run->n_runs++;
@@ -139,7 +153,7 @@ static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 void run_container_copy(const run_container_t *src, run_container_t *dst) {
     const int32_t n_runs = src->n_runs;
     if (src->n_runs > dst->capacity) {
-        increaseCapacity(dst, n_runs, false);
+        run_container_grow(dst, n_runs, false);
     }
     dst->n_runs = n_runs;
     memcpy(dst->runs, src->runs, sizeof(rle16_t) * n_runs);
@@ -300,36 +314,86 @@ void run_container_union(const run_container_t *src_1,
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
         if (if1) {
-            run_container_copy(src_2, dst);
+            run_container_copy(src_1, dst);
             return;
         }
         if (if2) {
-            run_container_copy(src_1, dst);
+            run_container_copy(src_2, dst);
             return;
         }
     }
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
     if (dst->capacity < neededcapacity)
-        increaseCapacity(dst, neededcapacity, false);
+        run_container_grow(dst, neededcapacity, false);
     dst->n_runs = 0;
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
 
     while ((xrlepos < src_2->n_runs) && (rlepos < src_1->n_runs)) {
         if (src_1->runs[rlepos].value <= src_2->runs[xrlepos].value) {
-            smartAppend(dst, src_1->runs[rlepos]);
+            run_container_append(dst, src_1->runs[rlepos]);
             rlepos++;
         } else {
-            smartAppend(dst, src_2->runs[xrlepos]);
+            run_container_append(dst, src_2->runs[xrlepos]);
             xrlepos++;
         }
     }
     while (xrlepos < src_2->n_runs) {
-        smartAppend(dst, src_2->runs[xrlepos]);
+        run_container_append(dst, src_2->runs[xrlepos]);
         xrlepos++;
     }
     while (rlepos < src_1->n_runs) {
-        smartAppend(dst, src_1->runs[rlepos]);
+        run_container_append(dst, src_1->runs[rlepos]);
+        rlepos++;
+    }
+}
+
+/* Compute the union of `src_1' and `src_2' and write the result to `src_1'
+ */
+void run_container_union_inplace(run_container_t *src_1,
+                                 const run_container_t *src_2) {
+    // TODO: this could be a lot more efficient
+
+    // we start out with inexpensive checks
+    const bool if1 = run_container_is_full(src_1);
+    const bool if2 = run_container_is_full(src_2);
+    if (if1 || if2) {
+        if (if1) {
+            return;
+        }
+        if (if2) {
+            run_container_copy(src_2, src_1);
+            return;
+        }
+    }
+    // we move the data to the end of the current array
+    const int32_t maxoutput = src_1->n_runs + src_2->n_runs;
+    const int32_t neededcapacity = maxoutput + src_1->n_runs;
+    if (src_1->capacity < neededcapacity)
+        run_container_grow(src_1, neededcapacity, true);
+    memmove(src_1->runs + maxoutput, src_1->runs,
+            src_1->n_runs * sizeof(rle16_t));
+    rle16_t *inputsrc1 = src_1->runs + maxoutput;
+    const int32_t input1nruns = src_1->n_runs;
+    src_1->n_runs = 0;
+    int32_t rlepos = 0;
+    int32_t xrlepos = 0;
+
+    while ((xrlepos < src_2->n_runs) && (rlepos < input1nruns)) {
+        if (inputsrc1[rlepos].value <= src_2->runs[xrlepos].value) {
+            run_container_append(src_1, inputsrc1[rlepos]);
+            rlepos++;
+        } else {
+            run_container_append(src_1, src_2->runs[xrlepos]);
+            xrlepos++;
+        }
+    }
+    while (xrlepos < src_2->n_runs) {
+        run_container_append(src_1, src_2->runs[xrlepos]);
+        xrlepos++;
+    }
+    while (rlepos < input1nruns) {
+        run_container_append(src_1, inputsrc1[rlepos]);
         rlepos++;
     }
 }
@@ -339,10 +403,22 @@ void run_container_union(const run_container_t *src_1,
 void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst) {
+    const bool if1 = run_container_is_full(src_1);
+    const bool if2 = run_container_is_full(src_2);
+    if (if1 || if2) {
+        if (if1) {
+            run_container_copy(src_2, dst);
+            return;
+        }
+        if (if2) {
+            run_container_copy(src_1, dst);
+            return;
+        }
+    }
     // TODO: this could be a lot more efficient, could use SIMD optimizations
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
     if (dst->capacity < neededcapacity)
-        increaseCapacity(dst, neededcapacity, false);
+        run_container_grow(dst, neededcapacity, false);
     dst->n_runs = 0;
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
@@ -481,7 +557,7 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     assert(!IS_BIG_ENDIAN);  // TODO: Implement
     memcpy(&container->n_runs, buf, sizeof(uint16_t));
     if (container->n_runs < container->capacity)
-        increaseCapacity(container, container->n_runs, false);
+        run_container_grow(container, container->n_runs, false);
     memcpy(container->runs, buf + sizeof(uint16_t),
            container->n_runs * sizeof(rle16_t));
     return run_container_size_in_bytes(container);
