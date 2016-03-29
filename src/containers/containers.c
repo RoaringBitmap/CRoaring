@@ -72,7 +72,7 @@ uint32_t container_serialization_len(void *container, uint8_t typecode) {
     }
 }
 
-void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len) {
+void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return (bitset_container_deserialize(buf, buf_len));

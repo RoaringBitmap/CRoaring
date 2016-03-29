@@ -492,7 +492,7 @@ uint32_t run_container_serialization_len(run_container_t *container) {
             sizeof(rle16_t) * container->n_runs);
 }
 
-void *run_container_deserialize(char *buf, size_t buf_len) {
+void *run_container_deserialize(const char *buf, size_t buf_len) {
     run_container_t *ptr;
 
     if (buf_len < 8 /* n_runs + capacity */)

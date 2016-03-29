@@ -60,7 +60,7 @@ int32_t run_container_serialize(run_container_t *container,
 
 uint32_t run_container_serialization_len(run_container_t *container);
 
-void *run_container_deserialize(char *buf, size_t buf_len);
+void *run_container_deserialize(const char *buf, size_t buf_len);
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
 bool run_container_add(run_container_t *run, uint16_t pos);

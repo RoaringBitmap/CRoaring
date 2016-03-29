@@ -59,6 +59,12 @@ cmake -DCMAKE_BUILD_TYPE=Debug ...
 make
 ```
 
+To turn on sanitizer flags, try
+```
+cmake -DSANITIZE=1
+```
+
+
 To run unit tests:
 
 ```

@@ -64,6 +64,15 @@ int array_bitset_and_or_test() {
     assert(co == bitset_container_cardinality(BO));
     array_bitset_container_union(A2, B1, BO);
     assert(co == bitset_container_cardinality(BO));
+    array_container_free(A1);
+    array_container_free(A2);
+    array_container_free(AI);
+    array_container_free(AO);
+    bitset_container_free(B1);
+    bitset_container_free(B2);
+    bitset_container_free(BI);
+    bitset_container_free(BO);
+
     return 1;
 }
 

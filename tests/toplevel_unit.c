@@ -263,7 +263,6 @@ int test_serialize() {
            ((float)(8 * serialize_len)) /
                ((float)roaring_bitmap_get_cardinality(r1)));
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
-
     arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
     arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
 

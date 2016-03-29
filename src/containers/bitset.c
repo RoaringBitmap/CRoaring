@@ -533,7 +533,7 @@ uint32_t bitset_container_serialization_len() {
   return(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
-void* bitset_container_deserialize(char *buf, size_t buf_len) {
+void* bitset_container_deserialize(const char *buf, size_t buf_len) {
   bitset_container_t *ptr;
   size_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 

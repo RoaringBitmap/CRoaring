@@ -49,7 +49,7 @@ int32_t array_container_serialize(array_container_t *container,
 
 uint32_t array_container_serialization_len(array_container_t *container);
 
-void *array_container_deserialize(char *buf, size_t buf_len);
+void *array_container_deserialize(const char *buf, size_t buf_len);
 
 /* Add `pos' to `array'. Returns true if `pos' was not present. */
 bool array_container_add(array_container_t *array, uint16_t pos);

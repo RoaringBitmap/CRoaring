@@ -1,11 +1,11 @@
 #define _GNU_SOURCE
 #include <dirent.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <inttypes.h>
 
 #include "benchmark.h"
 #include "roaring.h"

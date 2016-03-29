@@ -358,7 +358,7 @@ uint32_t array_container_serialization_len(array_container_t *container) {
             (sizeof(uint16_t) * container->cardinality));
 }
 
-void *array_container_deserialize(char *buf, size_t buf_len) {
+void *array_container_deserialize(const char *buf, size_t buf_len) {
     array_container_t *ptr;
 
     if (buf_len < 2) /* capacity converted to 16 bit */

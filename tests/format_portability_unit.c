@@ -9,8 +9,8 @@
 #include <string.h>
 
 #include "config.h"
-#include "roaring.h"
 #include "misc/configreport.h"
+#include "roaring.h"
 
 long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");
@@ -83,7 +83,7 @@ int test_deserialize(char* filename) {
                 compare(buf, tmpbuf, newsize) - 1);
         return 0;
     }
-
+    free(tmpbuf);
     free(buf);
     roaring_bitmap_free(bitmap);
     printf("\n");

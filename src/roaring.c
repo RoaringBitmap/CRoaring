@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "roaring_array.h"
 #include "array_util.h"
+#include "roaring_array.h"
 
 roaring_bitmap_t *roaring_bitmap_create() {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
@@ -422,6 +422,7 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
            In this case, space-wise, it's more efficient to represent the bitmap
            as an array of uint32_t rather than a serialized bitmap.
         */
+        free(ret);
         uint32_t cardinality;
         unsigned char *a =
             (unsigned char *)roaring_bitmap_to_uint32_array(ra, &cardinality);
@@ -457,19 +458,24 @@ size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf) {
     return ra_portable_serialize(ra->high_low_container, buf);
 }
 
-roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
+roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
+                                             uint32_t buf_len) {
     roaring_bitmap_t *b;
 
     if (buf_len < 4) return (NULL);
 
-    if ((unsigned char)buf[0] == 0xFF) {
+    if (*(const unsigned char *)buf == 0xFF) {
         /* This looks like a compressed set of uint32_t elements */
-        uint32_t i, card = (buf_len - 1) / sizeof(uint32_t),
-                    *elems = (uint32_t *)&buf[1];
+        uint32_t i, card = (buf_len - 1) / sizeof(uint32_t);
+        const uint32_t *elems = (const uint32_t *)((const char *)buf + 1);
 
         b = roaring_bitmap_create();
 
-        for (i = 0; i < card; i++) roaring_bitmap_add(b, elems[i]);
+        for (i = 0; i < card; i++) {
+            uint32_t val;
+            memcpy(&val, elems + i, sizeof(val));
+            roaring_bitmap_add(b, val);
+        }
         return (b);
     } else {
         uint32_t len;
@@ -480,7 +486,8 @@ roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len) {
 
         b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
         if (b) {
-            b->high_low_container = ra_deserialize(&buf[4], buf_len - 4);
+            b->high_low_container =
+                ra_deserialize((const char *)buf + 4, buf_len - 4);
             if (b->high_low_container == NULL) {
                 free(b);
                 b = NULL;

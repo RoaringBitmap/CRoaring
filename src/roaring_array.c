@@ -432,6 +432,7 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
 
     if ((cardinality * sizeof(uint32_t)) < tot_len) {
         *retry_with_array = 1;
+        free(lens);
         return (NULL);
     }
 
@@ -500,58 +501,61 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
     return (out);
 }
 
-roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len) {
-    roaring_array_t *ra = (roaring_array_t *)buf, *ra_copy;
+roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len) {
+    int32_t size;
+    const char *bufaschar = (const char *)buf;
+    memcpy(&size, bufaschar, sizeof(int32_t));
+    roaring_array_t *ra_copy;
     uint32_t off, l;
     uint32_t expected_len =
         sizeof(roaring_array_t) +
-        ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
+        size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
 
     if (buf_len < expected_len) return (NULL);
 
     if ((ra_copy = (roaring_array_t *)malloc(sizeof(roaring_array_t))) == NULL)
         return (NULL);
 
-    memcpy(ra_copy, ra, off = sizeof(roaring_array_t));
+    memcpy(ra_copy, bufaschar, off = sizeof(roaring_array_t));
 
-    if ((ra_copy->keys = malloc(ra->size * sizeof(uint16_t))) == NULL) {
+    if ((ra_copy->keys = malloc(size * sizeof(uint16_t))) == NULL) {
         free(ra_copy);
         return (NULL);
     }
 
-    if ((ra_copy->containers = malloc(ra->size * sizeof(void *))) == NULL) {
+    if ((ra_copy->containers = malloc(size * sizeof(void *))) == NULL) {
         free(ra_copy->keys);
         free(ra_copy);
         return (NULL);
     }
 
-    if ((ra_copy->typecodes = malloc(ra->size * sizeof(uint8_t))) == NULL) {
+    if ((ra_copy->typecodes = malloc(size * sizeof(uint8_t))) == NULL) {
         free(ra_copy->containers);
         free(ra_copy->keys);
         free(ra_copy);
         return (NULL);
     }
 
-    l = ra->size * sizeof(uint16_t);
-    memcpy(ra_copy->keys, &buf[off], l);
+    l = size * sizeof(uint16_t);
+    memcpy(ra_copy->keys, &bufaschar[off], l);
     off += l;
 
-    l = ra->size * sizeof(void *);
-    memcpy(ra_copy->containers, &buf[off], l);
+    l = size * sizeof(void *);
+    memcpy(ra_copy->containers, &bufaschar[off], l);
     off += l;
 
-    l = ra->size * sizeof(uint8_t);
-    memcpy(ra_copy->typecodes, &buf[off], l);
+    l = size * sizeof(uint8_t);
+    memcpy(ra_copy->typecodes, &bufaschar[off], l);
     off += l;
 
-    for (int32_t i = 0; i < ra->size; i++) {
+    for (int32_t i = 0; i < size; i++) {
         uint16_t len;
 
-        memcpy(&len, &buf[off], sizeof(len));
+        memcpy(&len, &bufaschar[off], sizeof(len));
         off += sizeof(len);
 
         ra_copy->containers[i] =
-            container_deserialize(ra_copy->typecodes[i], &buf[off], len);
+            container_deserialize(ra_copy->typecodes[i], &bufaschar[off], len);
 
         if (ra_copy->containers[i] == NULL) {
             for (int32_t j = 0; j < i; j++)

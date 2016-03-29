@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "containers/containers.h"
 #include "array_util.h"
+#include "containers/containers.h"
 
 #define MAX_CONTAINERS 65536
 
@@ -119,7 +119,7 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
 
 // see ra_portable_serialize if you want a format that's compatible with Java
 // and Go implementations
-roaring_array_t *ra_deserialize(char *buf, uint32_t buf_len);
+roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len);
 
 /**
  * write a bitmap to a buffer. This is meant to be compatible with

@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <x86intrin.h>
 
-#include "portability.h"
 #include "../utilasm.h"
+#include "portability.h"
 #include "roaring_types.h"
 
 #ifdef USEAVX
@@ -49,7 +49,7 @@ int32_t bitset_container_serialize(bitset_container_t *container,
 
 uint32_t bitset_container_serialization_len();
 
-void *bitset_container_deserialize(char *buf, size_t buf_len);
+void *bitset_container_deserialize(const char *buf, size_t buf_len);
 
 /* Set the bit in [begin,end).  */
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,

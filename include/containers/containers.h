@@ -8,10 +8,10 @@
 #include "array.h"
 #include "bitset.h"
 #include "convert.h"
-#include "run.h"
+#include "mixed_equal.h"
 #include "mixed_intersection.h"
 #include "mixed_union.h"
-#include "mixed_equal.h"
+#include "run.h"
 
 // would enum be possible or better?
 
@@ -22,8 +22,7 @@
 // macro for pairing container type codes
 #define CONTAINER_PAIR(c1, c2) (4 * (c1) + (c2))
 
-
-static const char* container_names[] = {"bitset","array","run"};
+static const char *container_names[] = {"bitset", "array", "run"};
 /**
  * Get the container name from the typecode
  */
@@ -36,7 +35,7 @@ static inline const char *get_container_name(uint8_t typecode) {
         case RUN_CONTAINER_TYPE_CODE:
             return container_names[2];
         default:
-        	assert(0);
+            assert(0);
             return "unknown";
     }
 }
@@ -236,8 +235,7 @@ int32_t container_serialize(void *container, uint8_t typecode,
 
 uint32_t container_serialization_len(void *container, uint8_t typecode);
 
-void *container_deserialize(uint8_t typecode, char *buf, size_t buf_len);
-
+void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len);
 
 /**
  * Returns true if the two containers have the same content. Note that
@@ -523,7 +521,6 @@ static inline void *container_ior(void *c1, uint8_t type1, void *c2,
     }
     return 0;  // unreached
 }
-
 
 /**
  * Visit all values x of the container once, passing (base+x,ptr)

@@ -118,7 +118,7 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
 
 // see roaring_bitmap_portable_deserialize if you want a format that's
 // compatible with Java and Go implementations
-roaring_bitmap_t *roaring_bitmap_deserialize(char *buf, uint32_t buf_len);
+roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf, uint32_t buf_len);
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible with
