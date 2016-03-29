@@ -137,9 +137,9 @@ static inline void container_free(void *container, uint8_t typecode) {
         case RUN_CONTAINER_TYPE_CODE:
             run_container_free((run_container_t *)container);
             break;
-            //  case UNINITIALIZED_TYPE_CODE: break;
+        default:
+            __builtin_unreachable();
     }
-    __builtin_unreachable();
 }
 
 /**
