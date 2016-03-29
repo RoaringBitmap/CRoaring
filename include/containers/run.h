@@ -88,6 +88,35 @@ static inline void run_container_clear(run_container_t *run) {
     run->n_runs = 0;
 }
 
+/**
+ * Append run described by vl to the run container, possibly merging.
+ * It is assumed that the run would be inserted at the end of the container, no
+ * check is made.
+ * It is assumed that the run container has the necessary capacity: caller is
+ * responsible for checking memory capacity.
+ *
+ * This is not a safe function, it is meant for performance: use with care.
+ */
+void run_container_append(run_container_t *run, rle16_t vl);
+
+/**
+ * append a single value  given by val to the run container, possibly merging.
+ * It is assumed that the value would be inserted at the end of the container,
+ * no check is made.
+ * It is assumed that the run container has the necessary capacity: caller is
+ * responsible for checking memory capacity.
+ *
+ * This is not a safe function, it is meant for performance: use with care.
+ */
+void run_container_append_value(run_container_t *run, uint16_t val);
+
+/**
+ * increase capacity to at least min. Whether the
+ * existing data needs to be copied over depends on copy. If "copy" is false,
+ * then the new content will be uninitialized, otherwise a copy is made.
+ */
+void run_container_grow(run_container_t *run, int32_t min, bool copy);
+
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
 static inline bool run_container_is_full(const run_container_t *run) {
@@ -99,6 +128,10 @@ static inline bool run_container_is_full(const run_container_t *run) {
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
 void run_container_union(const run_container_t *src_1,
                          const run_container_t *src_2, run_container_t *dst);
+
+/* Compute the union of `src_1' and `src_2' and write the result to `src_1' */
+void run_container_union_inplace(run_container_t *src_1,
+                                 const run_container_t *src_2);
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */

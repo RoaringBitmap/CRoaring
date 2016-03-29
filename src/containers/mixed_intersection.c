@@ -95,34 +95,59 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         }
         return false;
     }
-    // we expect the answer to be a bitmap (if we are lucky)
-    bitset_container_t *answer = bitset_container_clone(src_2);
+    if (*dst == src_2) {  // we attempt in-place
+        bitset_container_t *answer = (bitset_container_t *)*dst;
+        uint16_t start = 0;
+        for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
+            rle16_t rle = src_1->runs[rlepos];
+            uint16_t end = rle.value;
+            bitset_reset_range(src_2->array, start, end);
 
-    *dst = answer;
-    if (answer == NULL) {
-        return true;
-    }
-    uint16_t start = 0;
-    for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
-        rle16_t rle = src_1->runs[rlepos];
-        uint16_t end = rle.value;
-        bitset_reset_range(answer->array, start, end);
-
-        start = end + rle.length + 1;
-    }
-    bitset_reset_range(answer->array, start, UINT32_C(1) << 16);
-    answer->cardinality = bitset_container_compute_cardinality(answer);
-    if (answer->cardinality > DEFAULT_MAX_SIZE) {
-        return true;
-    } else {
-        array_container_t *newanswer = array_container_from_bitset(answer);
-        bitset_container_free(*dst);
-        if (newanswer == NULL) {
-            *dst = NULL;
+            start = end + rle.length + 1;
+        }
+        bitset_reset_range(src_2->array, start, UINT32_C(1) << 16);
+        answer->cardinality = bitset_container_compute_cardinality(answer);
+        if (src_2->cardinality > DEFAULT_MAX_SIZE) {
+            return true;
+        } else {
+            array_container_t *newanswer = array_container_from_bitset(src_2);
+            if (newanswer == NULL) {
+                *dst = NULL;
+                return false;
+            }
+            *dst = newanswer;
             return false;
         }
-        *dst = newanswer;
-        return false;
+    } else {  // no inplace
+        // we expect the answer to be a bitmap (if we are lucky)
+        bitset_container_t *answer = bitset_container_clone(src_2);
+
+        *dst = answer;
+        if (answer == NULL) {
+            return true;
+        }
+        uint16_t start = 0;
+        for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
+            rle16_t rle = src_1->runs[rlepos];
+            uint16_t end = rle.value;
+            bitset_reset_range(answer->array, start, end);
+
+            start = end + rle.length + 1;
+        }
+        bitset_reset_range(answer->array, start, UINT32_C(1) << 16);
+        answer->cardinality = bitset_container_compute_cardinality(answer);
+        if (answer->cardinality > DEFAULT_MAX_SIZE) {
+            return true;
+        } else {
+            array_container_t *newanswer = array_container_from_bitset(answer);
+            bitset_container_free(*dst);
+            if (newanswer == NULL) {
+                *dst = NULL;
+                return false;
+            }
+            *dst = newanswer;
+            return false;
+        }
     }
 }
 

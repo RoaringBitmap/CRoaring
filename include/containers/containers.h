@@ -43,7 +43,8 @@ static inline const char *get_container_name(uint8_t typecode) {
 /**
  * Get the container cardinality (number of elements), requires a  typecode
  */
-static inline int container_get_cardinality(void *container, uint8_t typecode) {
+static inline int container_get_cardinality(const void *container,
+                                            uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_cardinality(container);
@@ -97,19 +98,19 @@ static inline int32_t container_size_in_bytes(void *container,
 /**
  * print the container (useful for debugging), requires a  typecode
  */
-void container_printf(void *container, uint8_t typecode);
+void container_printf(const void *container, uint8_t typecode);
 
 /**
  * print the content of the container as a comma-separated list of 32-bit values
  * starting at base, requires a  typecode
  */
-void container_printf_as_uint32_array(void *container, uint8_t typecode,
+void container_printf_as_uint32_array(const void *container, uint8_t typecode,
                                       uint32_t base);
 
 /**
  * Checks whether a container is not empty, requires a  typecode
  */
-static inline bool container_nonzero_cardinality(void *container,
+static inline bool container_nonzero_cardinality(const void *container,
                                                  uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
@@ -138,6 +139,7 @@ static inline void container_free(void *container, uint8_t typecode) {
             break;
             //  case UNINITIALIZED_TYPE_CODE: break;
     }
+    __builtin_unreachable();
 }
 
 /**
@@ -145,7 +147,8 @@ static inline void container_free(void *container, uint8_t typecode) {
  * "base" (most significant values)
  * Returns number of ints added.
  */
-static inline int container_to_uint32_array(uint32_t *output, void *container,
+static inline int container_to_uint32_array(uint32_t *output,
+                                            const void *container,
                                             uint8_t typecode, uint32_t base) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
@@ -189,6 +192,7 @@ static inline void *container_add(void *container, uint16_t val,
             return container;
         default:
             assert(0);
+            __builtin_unreachable();
             return NULL;
     }
 }
@@ -196,18 +200,21 @@ static inline void *container_add(void *container, uint16_t val,
 /**
  * Check whether a value is in a container, requires a  typecode
  */
-static inline bool container_contains(void *container, uint16_t val,
+static inline bool container_contains(const void *container, uint16_t val,
                                       uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return bitset_container_get((bitset_container_t *)container, val);
+            return bitset_container_get((const bitset_container_t *)container,
+                                        val);
         case ARRAY_CONTAINER_TYPE_CODE:;
-            return array_container_contains((array_container_t *)container,
-                                            val);
+            return array_container_contains(
+                (const array_container_t *)container, val);
         case RUN_CONTAINER_TYPE_CODE:
-            return run_container_contains((run_container_t *)container, val);
+            return run_container_contains((const run_container_t *)container,
+                                          val);
         default:
             assert(0);
+            __builtin_unreachable();
             return NULL;
     }
 }
@@ -216,7 +223,7 @@ static inline bool container_contains(void *container, uint16_t val,
  * Copies a container, requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
-static inline void *container_clone(void *container, uint8_t typecode) {
+static inline void *container_clone(const void *container, uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_clone((bitset_container_t *)container);
@@ -226,6 +233,7 @@ static inline void *container_clone(void *container, uint8_t typecode) {
             return run_container_clone((run_container_t *)container);
         default:
             assert(0);
+            __builtin_unreachable();
             return NULL;
     }
 }
@@ -241,8 +249,8 @@ void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len);
  * Returns true if the two containers have the same content. Note that
  * two containers having different types can be "equal" in this sense.
  */
-static inline bool container_equals(void *c1, uint8_t type1, void *c2,
-                                    uint8_t type2) {
+static inline bool container_equals(const void *c1, uint8_t type1,
+                                    const void *c2, uint8_t type2) {
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
@@ -281,6 +289,7 @@ static inline bool container_equals(void *c1, uint8_t type1, void *c2,
                                         (run_container_t *)c2);
         default:
             assert(0);
+            __builtin_unreachable();
             return NULL;
     }
 }
@@ -292,7 +301,7 @@ static inline bool container_equals(void *c1, uint8_t type1, void *c2,
  * type result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
-static inline void *container_and(void *c1, uint8_t type1, void *c2,
+static inline void *container_and(const void *c1, uint8_t type1, const void *c2,
                                   uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
@@ -350,6 +359,7 @@ static inline void *container_and(void *c1, uint8_t type1, void *c2,
             return result;
         default:
             assert(0);
+            __builtin_unreachable();
             return NULL;
     }
 }
@@ -360,7 +370,7 @@ static inline void *container_and(void *c1, uint8_t type1, void *c2,
  The type of the first container may change, in which case the old container
  will be deallocated. Returns the modified (and possibly new) container
 */
-static inline void *container_iand(void *c1, uint8_t type1, void *c2,
+static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
                                    uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
@@ -395,21 +405,36 @@ static inline void *container_iand(void *c1, uint8_t type1, void *c2,
             *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
             array_bitset_container_intersection(c1, c2, c1);
             return c1;
-#if 0
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-		return run_container_and_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
-        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-		return run_container_and_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-		return bitset_container_and_array( (bitset_container t *) c1, (array_container_t *) c2);
-         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-		return run_container_and_array( (run_container_t) c1, (array_container_t) c2);
-#else
+
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            // will attempt in-place computation
+            *result_type = run_bitset_container_intersection(c2, c1, &c1)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            *result_type = run_bitset_container_intersection(c1, c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            result = array_container_create();
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
+            array_run_container_intersection(c1, c2, result);
+            return result;
+
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            result = array_container_create();
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
+            array_run_container_intersection(c2, c1, result);
+            return result;
         default:
-            fprintf(stderr, "iand lacks support for mixing container types");
-#endif
+            assert(0);
+            __builtin_unreachable();
+            return NULL;
     }
-    return 0;  // unreached
 }
 
 /**
@@ -417,7 +442,7 @@ static inline void *container_iand(void *c1, uint8_t type1, void *c2,
  * result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
-static inline void *container_or(void *c1, uint8_t type1, void *c2,
+static inline void *container_or(const void *c1, uint8_t type1, const void *c2,
                                  uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
@@ -435,10 +460,10 @@ static inline void *container_or(void *c1, uint8_t type1, void *c2,
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
             result = run_container_create();
-            // TODO: this is not correct
             run_container_union(c1, c2, result);
             *result_type = RUN_CONTAINER_TYPE_CODE;
-            // ToDo, conversion to bitset or array
+            // todo: could be optimized since will never convert to array
+            result = convert_run_to_efficient_container(result, result_type);
             return result;
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
@@ -452,18 +477,33 @@ static inline void *container_or(void *c1, uint8_t type1, void *c2,
             array_bitset_container_union(c1, c2, result);
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return result;
-#if 0
-    case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-		return run_container_or_bitset( (run_container_t *) c2, (bitset_container_t *) c1);
-        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-		return run_container_or_bitset( (run_container_t *) c1, (bitset_container_t *) c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            result = bitset_container_create();
+            run_bitset_container_union(c2, c1, result);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            result = bitset_container_create();
+            run_bitset_container_union(c1, c2, result);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return result;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-		return run_container_or_array( (run_container_t) c2, (array_container_t) c1);
+            result = run_container_create();
+            array_run_container_union(c1, c2, result);
+            result = convert_run_to_efficient_container(result, result_type);
+            return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-		return run_container_or_array( (run_container_t) c1, (array_container_t) c2);
-#endif
+            result = run_container_create();
+            array_run_container_union(c2, c1, result);
+            result = convert_run_to_efficient_container(result, result_type);
+            return result;
+        default:
+            assert(0);
+            __builtin_unreachable();
+            return NULL;  // unreached
     }
-    return 0;  // unreached
 }
 
 /**
@@ -471,7 +511,7 @@ static inline void *container_or(void *c1, uint8_t type1, void *c2,
  * The type of the first container may change, in which case the old container
  * will be deallocated. Returns the modified (and possibly new) container
 */
-static inline void *container_ior(void *c1, uint8_t type1, void *c2,
+static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                                   uint8_t type2, uint8_t *result_type) {
     void *result;
     switch (CONTAINER_PAIR(type1, type2)) {
@@ -488,9 +528,7 @@ static inline void *container_ior(void *c1, uint8_t type1, void *c2,
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-            result = run_container_create();
-            // TODO: write in-place run container union
-            run_container_union(c1, c2, result);
+            run_container_union_inplace(c1, c2);
             return convert_run_to_efficient_container(result, result_type);
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
@@ -505,28 +543,40 @@ static inline void *container_ior(void *c1, uint8_t type1, void *c2,
             array_bitset_container_union(c1, c2, result);
             array_container_free(c1);
             return result;
-#if 0
-        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-                // todo
-        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
-                // todo
-         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-                // todo
-         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
-                // todo
-#else
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            run_bitset_container_union(c2, c1, c1);  // allowed
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            result = bitset_container_create();
+            run_bitset_container_union(c1, c2, result);
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            result = run_container_create();
+            array_run_container_union(c1, c2, result);
+            result = convert_run_to_efficient_container(result, result_type);
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            // todo:in Java, an inplace computation would be attempted
+            result = run_container_create();
+            array_run_container_union(c2, c1, result);
+            result = convert_run_to_efficient_container(result, result_type);
+            return result;
         default:
-            fprintf(stderr, "ior lacks support for run container types");
-#endif
+            assert(0);
+            __builtin_unreachable();
+            return NULL;
     }
-    return 0;  // unreached
 }
 
 /**
  * Visit all values x of the container once, passing (base+x,ptr)
  * to iterator. You need to specify a container and its type.
  */
-static inline void container_iterate(void *container, uint8_t typecode,
+static inline void container_iterate(const void *container, uint8_t typecode,
                                      uint32_t base, roaring_iterator iterator,
                                      void *ptr) {
     switch (typecode) {
@@ -540,6 +590,7 @@ static inline void container_iterate(void *container, uint8_t typecode,
             run_container_iterate(container, base, iterator, ptr);
             break;
         default:
+            assert(0);
             __builtin_unreachable();
     }
 }

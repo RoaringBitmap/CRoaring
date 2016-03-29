@@ -186,13 +186,14 @@ static inline bool bitset_container_contains(const bitset_container_t *bitset,
 }
 
 /* Get the number of bits set */
-static inline int bitset_container_cardinality(bitset_container_t *bitset) {
+static inline int bitset_container_cardinality(
+    const bitset_container_t *bitset) {
     return bitset->cardinality;
 }
 
 /* Get whether there is at least one bit set  */
 static inline bool bitset_container_nonzero_cardinality(
-    bitset_container_t *bitset) {
+    const bitset_container_t *bitset) {
     return bitset->cardinality > 0;
 }
 

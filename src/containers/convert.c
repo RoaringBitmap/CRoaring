@@ -6,15 +6,14 @@
 
 // file contains grubby stuff that must know impl. details of all container
 // types.
-
-bitset_container_t *bitset_container_from_array(array_container_t *a) {
+bitset_container_t *bitset_container_from_array(const array_container_t *a) {
     bitset_container_t *ans = bitset_container_create();
     int limit = array_container_cardinality(a);
     for (int i = 0; i < limit; ++i) bitset_container_set(ans, a->array[i]);
     return ans;
 }
 
-bitset_container_t *bitset_container_from_run(run_container_t *arr) {
+bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     int card = run_container_cardinality(arr);
     bitset_container_t *answer = bitset_container_create();
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
@@ -25,11 +24,11 @@ bitset_container_t *bitset_container_from_run(run_container_t *arr) {
     return answer;
 }
 
-array_container_t *array_container_from_bitset(bitset_container_t *bits) {
+array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     array_container_t *result =
         array_container_create_given_capacity(bits->cardinality);
     result->cardinality = bits->cardinality;
-    // todo: sse version ends up being slower here
+    //  sse version ends up being slower here
     // (bitset_extract_setbits_sse_uint16)
     // because of the sparsity of the data
     bitset_extract_setbits_uint16(bits->array, BITSET_CONTAINER_SIZE_IN_WORDS,
@@ -40,7 +39,7 @@ array_container_t *array_container_from_bitset(bitset_container_t *bits) {
 /**
  * Convert the runcontainer to either a Bitmap or an Array Container, depending
  * on the cardinality.  Frees the container.
- * Allocates and returns new container, which caller is reponsible for disposing
+ * Allocates and returns new container, which caller is responsible for freeing
  */
 
 void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
@@ -48,13 +47,9 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
     if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
-
         for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
             uint16_t run_start = r->runs[rlepos].value;
             uint16_t run_end = run_start + r->runs[rlepos].length;
-
-            // printf("run [%d %d]\n",(int) run_start, (int) run_end);
-
             for (uint16_t run_value = run_start; run_value <= run_end;
                  ++run_value) {
                 answer->array[answer->cardinality++] = run_value;
@@ -87,7 +82,6 @@ static void add_run(run_container_t *r, int s, int e) {
 /* converts a run container to either an array or a bitset, IF it saves space */
 /* If a conversion occurs, the original containers is freed and a new one
  * allocated */
-
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after) {
     int32_t size_as_run_container =

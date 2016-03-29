@@ -140,8 +140,11 @@ static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
 
 /**
  * increase capacity to at least min, and to no more than max. Whether the
- * existing data needs to be copied over depends on copy. If preserve is false,
- * then the new content will be uninitialized.
+ * existing data needs to be copied over depends on the value of the "preserve"
+ * parameter.
+ * If preserve is false,
+ * then the new content will be uninitialized, otherwise the original data is
+ * copied.
  */
 void array_container_grow(array_container_t *container, int32_t min,
                           int32_t max, bool preserve);
