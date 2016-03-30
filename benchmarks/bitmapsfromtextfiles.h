@@ -105,7 +105,7 @@ static bool hasExtension(char *filename, char *extension) {
  * read all (count) integer files in a directory. Caller is responsible
  * for memory de-allocation. In case of error, a NULL is returned.
  */
-static uint32_t **read_all_integer_files(char *dirname, char *extension,
+static uint32_t **read_all_integer_files(const char *dirname, char *extension,
                                          size_t **howmany, size_t *count) {
     struct dirent **entry_list;
 
@@ -119,7 +119,7 @@ static uint32_t **read_all_integer_files(char *dirname, char *extension,
     *howmany = malloc(sizeof(size_t) * (*count));
     uint32_t **answer = malloc(sizeof(uint32_t *) * (*count));
     size_t dirlen = strlen(dirname);
-    char *modifdirname = dirname;
+    char *modifdirname = (char *)dirname;
     if (modifdirname[dirlen - 1] != '/') {
         modifdirname = malloc(dirlen + 2);
         strcpy(modifdirname, dirname);

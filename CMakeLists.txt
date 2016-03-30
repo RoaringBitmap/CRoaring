@@ -78,6 +78,9 @@ add_test (run_container_unit unit)
 add_executable (toplevel_unit tests/toplevel_unit.c)
 target_link_libraries (toplevel_unit ${ROARING_LIB_NAME})
 add_test (toplevel_unit toplevel_unit)
+add_executable (realdata_unit tests/realdata_unit.c)
+target_link_libraries (realdata_unit ${ROARING_LIB_NAME})
+add_test (realdata_unit realdata_unit)
 add_executable (util_unit tests/util_unit.c)
 target_link_libraries (util_unit ${ROARING_LIB_NAME})
 add_test (util_unit util_unit)
@@ -95,6 +98,7 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose DEPENDS
     mixed_container_unit
     run_container_unit
     toplevel_unit
+    realdata_unit
     util_unit
     format_portability_unit)
 
