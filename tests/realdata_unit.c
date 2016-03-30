@@ -59,7 +59,6 @@ const char * datadir[] = {"census-income","census-income_srt","census1881","cens
 
 bool serialize_correctly(roaring_bitmap_t * r){
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r);
-printf("expected size = %d \n",expectedsize);
     char *serialized = malloc(expectedsize);
 	if(serialized == NULL) {
 		printf("failure to allocate memory!\n");
@@ -73,7 +72,7 @@ printf("expected size = %d \n",expectedsize);
     }
     roaring_bitmap_t * r2 = roaring_bitmap_portable_deserialize(serialized);
    free(serialized);
-    /*if(! roaring_bitmap_equals(r,r2)) {
+    if(! roaring_bitmap_equals(r,r2)) {
 		printf("Won't recover original bitmap!\n");
 		roaring_bitmap_free(r2);
 		return false;
@@ -83,7 +82,6 @@ printf("expected size = %d \n",expectedsize);
 		roaring_bitmap_free(r2);
 		return false;
     }
-    */
    roaring_bitmap_free(r2);
     return true;
 

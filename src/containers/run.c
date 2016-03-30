@@ -117,6 +117,7 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
                                                         : run->capacity * 5 / 4;
     if (newCapacity < min) newCapacity = min;
     run->capacity = newCapacity;
+    assert(run->capacity >= min);
     if (copy) {
         rle16_t *oldruns = run->runs;
         run->runs = realloc(oldruns, run->capacity * sizeof(rle16_t));
@@ -556,7 +557,7 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     (void)cardinality;
     assert(!IS_BIG_ENDIAN);  // TODO: Implement
     memcpy(&container->n_runs, buf, sizeof(uint16_t));
-    if (container->n_runs < container->capacity)
+    if (container->n_runs > container->capacity)
         run_container_grow(container, container->n_runs, false);
     memcpy(container->runs, buf + sizeof(uint16_t),
            container->n_runs * sizeof(rle16_t));
