@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "benchmark.h"
 #include "bitmapsfromtextfiles.h"
 

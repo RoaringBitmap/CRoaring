@@ -1,10 +1,7 @@
 /*
  * realdata_unit.c
  */
-
-
-
-
+#define _GNU_SOURCE
 #include "../benchmarks/bitmapsfromtextfiles.h"
 #include "config.h"
 

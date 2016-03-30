@@ -1,8 +1,5 @@
-
-
 #ifndef BITMAPSFROMTEXTFILES_H_
 #define BITMAPSFROMTEXTFILES_H_
-
 #define _GNU_SOURCE
 #include <dirent.h>
 #include <inttypes.h>
