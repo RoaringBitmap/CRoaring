@@ -6,6 +6,11 @@
 #ifndef INCLUDE_MISC_CONFIGREPORT_H_
 #define INCLUDE_MISC_CONFIGREPORT_H_
 
+
+#include <stdint.h>
+#include <stddef.h>// for size_t
+#include <stdio.h>
+
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {
