@@ -2,7 +2,6 @@
 #include "benchmark.h"
 #include "bitmapsfromtextfiles.h"
 
-
 /**
  * Once you have collected all the integers, build the bitmaps.
  */
@@ -19,7 +18,6 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
     printf("\n");
     return answer;
 }
-
 
 static void printusage(char *command) {
     printf(

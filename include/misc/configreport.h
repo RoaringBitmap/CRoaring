@@ -6,9 +6,8 @@
 #ifndef INCLUDE_MISC_CONFIGREPORT_H_
 #define INCLUDE_MISC_CONFIGREPORT_H_
 
-
 #include <stdint.h>
-#include <stddef.h>// for size_t
+#include <stddef.h>  // for size_t
 #include <stdio.h>
 
 // useful for basic info (0)

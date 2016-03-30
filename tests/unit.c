@@ -178,8 +178,8 @@ int realdatacheck(char *dirname) {
         roaring_bitmap_t *tempand =
             roaring_bitmap_and(bitmaps[i], bitmaps[i + 1]);
         uint32_t ci = roaring_bitmap_get_cardinality(tempand);
-        size_t trueci = intersect_uint32_card(numbers[i], howmany[i],
-                                              numbers[i + 1], howmany[i + 1]);
+        size_t trueci = intersection_uint32_card(
+            numbers[i], howmany[i], numbers[i + 1], howmany[i + 1]);
         if (ci != trueci) {
             printf(KRED "intersection cardinalities are wrong.\n");
             printf("c1 = %d, c2 = %d, ci = %d, trueci = %d\n", c1, c2, ci,
@@ -214,8 +214,8 @@ int realdatacheck(char *dirname) {
             bitmaps[i]);  // to test the inplace version we create a copy
         roaring_bitmap_and_inplace(CI, bitmaps[i + 1]);
         uint32_t ci = roaring_bitmap_get_cardinality(CI);
-        size_t trueci = intersect_uint32_card(numbers[i], howmany[i],
-                                              numbers[i + 1], howmany[i + 1]);
+        size_t trueci = intersection_uint32_card(
+            numbers[i], howmany[i], numbers[i + 1], howmany[i + 1]);
         if (ci != trueci) {
             printf(KRED " there is a problem with in-place intersections\n");
             return -1;

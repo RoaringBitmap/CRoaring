@@ -2,7 +2,7 @@
 #define ARRAY_UTIL_H
 
 #include <stdint.h>
-#include <stddef.h>// for size_t
+#include <stddef.h>  // for size_t
 
 int32_t binarySearch(const uint16_t *source, int32_t n, uint16_t target);
 
@@ -39,14 +39,14 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
 /**
  * Generic intersection function.
  */
-size_t intersect_uint32(const uint32_t *A, const size_t lenA, const uint32_t *B,
-                        const size_t lenB, uint32_t *out);
+size_t intersection_uint32(const uint32_t *A, const size_t lenA,
+                           const uint32_t *B, const size_t lenB, uint32_t *out);
 
 /**
  * Generic intersection function, returns just the cardinality.
  */
-size_t intersect_uint32_card(const uint32_t *A, const size_t lenA,
-                             const uint32_t *B, const size_t lenB);
+size_t intersection_uint32_card(const uint32_t *A, const size_t lenA,
+                                const uint32_t *B, const size_t lenB);
 
 /**
  * Generic union function.

@@ -166,7 +166,8 @@ void run_container_printf_as_uint32_array(const run_container_t *v,
  * Return the serialized size in bytes of a container having "num_runs" runs.
  */
 static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
-    return sizeof(uint16_t) + sizeof(rle16_t) * num_runs;  // each run requires 2 2-byte entries.
+    return sizeof(uint16_t) +
+           sizeof(rle16_t) * num_runs;  // each run requires 2 2-byte entries.
 }
 
 void run_container_iterate(const run_container_t *cont, uint32_t base,

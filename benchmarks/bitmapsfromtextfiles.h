@@ -18,7 +18,6 @@
  *******************************/
 /*********************************/
 
-
 /**
  * Read the content of a file to a char array. Caller is
  * responsible for memory de-allocation.
@@ -142,7 +141,5 @@ static uint32_t **read_all_integer_files(const char *dirname, char *extension,
     free(entry_list);
     return answer;
 }
-
-
 
 #endif /* BITMAPSFROMTEXTFILES_H_ */

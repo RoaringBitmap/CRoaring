@@ -439,8 +439,9 @@ int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
 /**
  * Generic intersection function.
  */
-size_t intersect_uint32(const uint32_t *A, const size_t lenA, const uint32_t *B,
-                        const size_t lenB, uint32_t *out) {
+size_t intersection_uint32(const uint32_t *A, const size_t lenA,
+                           const uint32_t *B, const size_t lenB,
+                           uint32_t *out) {
     const uint32_t *initout = out;
     if (lenA == 0 || lenB == 0) return 0;
     const uint32_t *endA = A + lenA;
@@ -464,8 +465,8 @@ size_t intersect_uint32(const uint32_t *A, const size_t lenA, const uint32_t *B,
     return (out - initout);  // NOTREACHED
 }
 
-size_t intersect_uint32_card(const uint32_t *A, const size_t lenA,
-                             const uint32_t *B, const size_t lenB) {
+size_t intersection_uint32_card(const uint32_t *A, const size_t lenA,
+                                const uint32_t *B, const size_t lenB) {
     if (lenA == 0 || lenB == 0) return 0;
     size_t card = 0;
     const uint32_t *endA = A + lenA;
