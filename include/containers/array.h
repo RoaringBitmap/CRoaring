@@ -32,7 +32,7 @@ typedef struct array_container_s array_container_t;
 
 /* Create a new array with default. Return NULL in case of failure. See also
  * array_container_create_given_capacity. */
-array_container_t *array_container_create();
+array_container_t *array_container_create(void);
 
 /* Create a new array with a specified capacity size. Return NULL in case of
  * failure. */

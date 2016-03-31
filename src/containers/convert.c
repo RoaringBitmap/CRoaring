@@ -101,7 +101,7 @@ void *convert_run_to_efficient_container(run_container_t *c,
     }
     if (card <= DEFAULT_MAX_SIZE) {
         // to array
-        array_container_t *answer = array_container_create(card);
+        array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
             int run_start = c->runs[rlepos].value;

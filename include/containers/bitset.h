@@ -33,7 +33,7 @@ struct bitset_container_s {
 typedef struct bitset_container_s bitset_container_t;
 
 /* Create a new bitset. Return NULL in case of failure. */
-bitset_container_t *bitset_container_create();
+bitset_container_t *bitset_container_create(void);
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset);
@@ -47,7 +47,7 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 int32_t bitset_container_serialize(bitset_container_t *container,
                                    char *buf) WARN_UNUSED;
 
-uint32_t bitset_container_serialization_len();
+uint32_t bitset_container_serialization_len(void);
 
 void *bitset_container_deserialize(const char *buf, size_t buf_len);
 
@@ -325,7 +325,7 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t *v,
 /**
  * Return the serialized size in bytes of a container.
  */
-static inline int32_t bitset_container_serialized_size_in_bytes() {
+static inline int32_t bitset_container_serialized_size_in_bytes(void) {
     return BITSET_CONTAINER_SIZE_IN_WORDS * 8;
 }
 

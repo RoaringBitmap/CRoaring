@@ -35,7 +35,7 @@ typedef struct roaring_array_s {
 /**
  * Create a new roaring array
  */
-roaring_array_t *ra_create();
+roaring_array_t *ra_create(void);
 
 /**
  * Create a new roaring array with the specified capacity

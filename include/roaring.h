@@ -18,7 +18,7 @@ typedef struct roaring_bitmap_s {
 /**
  * Creates a new bitmap (initially empty)
  */
-roaring_bitmap_t *roaring_bitmap_create();
+roaring_bitmap_t *roaring_bitmap_create(void);
 
 /**
  * Creates a new bitmap from a pointer of uint32_t integers

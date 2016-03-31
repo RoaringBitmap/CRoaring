@@ -75,35 +75,39 @@ _Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
 
 // TODO: could be more efficient
 void run_container_append(run_container_t *run, rle16_t vl) {
-    int32_t oldend;
-    // todo: next line is maybe unsafe when n_runs == 0 in the sense where we
-    // might access memory out of bounds (crash prone?)
-    if ((run->n_runs == 0) ||
-        (vl.value > (oldend = run->runs[run->n_runs - 1].value +
-                              run->runs[run->n_runs - 1].length) +
-                        1)) {  // we add a new one
+    if (run->n_runs == 0) {
         run->runs[run->n_runs] = vl;
         run->n_runs++;
         return;
     }
-    int32_t newend = vl.value + vl.length + 1;
-    if (newend > oldend) {  // we merge
+    const uint32_t previousend =
+        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    if (vl.value > previousend + 1) {  // we add a new one
+        run->runs[run->n_runs] = vl;
+        run->n_runs++;
+        return;
+    }
+    uint32_t newend = vl.value + vl.length + UINT32_C(1);
+    if (newend > previousend) {  // we merge
         run->runs[run->n_runs - 1].length =
             newend - 1 - run->runs[run->n_runs - 1].value;
     }
 }
 
 void run_container_append_value(run_container_t *run, uint16_t val) {
-    uint16_t oldend;
-    if ((run->n_runs == 0) ||
-        (val > (oldend = run->runs[run->n_runs - 1].value +
-                         run->runs[run->n_runs - 1].length) +
-                   1)) {  // we add a new one
+    if (run->n_runs == 0) {
         run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
         run->n_runs++;
         return;
     }
-    if (val + 1 == oldend) {  // we merge
+    const uint32_t previousend =
+        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    if (val > previousend + 1) {  // we add a new one
+        run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
+        run->n_runs++;
+        return;
+    }
+    if (val + UINT32_C(1) == previousend) {  // we merge
         run->runs[run->n_runs - 1].length++;
     }
 }
