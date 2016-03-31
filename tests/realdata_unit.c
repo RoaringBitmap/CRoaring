@@ -132,52 +132,157 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     return answer;
 }
 
+roaring_bitmap_t * inplace_union(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
+	roaring_bitmap_t * answer = roaring_bitmap_copy(bitmap1);
+	roaring_bitmap_or_inplace(answer,bitmap2);
+	return answer;
+}
+
+roaring_bitmap_t * inplace_intersection(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
+	roaring_bitmap_t * answer = roaring_bitmap_copy(bitmap1);
+	roaring_bitmap_and_inplace(answer,bitmap2);
+	return answer;
+}
+
+bool slow_bitmap_equals(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
+    uint32_t card1, card2;
+    uint32_t *arr1 = roaring_bitmap_to_uint32_array(bitmap1, &card1);
+    uint32_t *arr2 = roaring_bitmap_to_uint32_array(bitmap2, &card2);
+    bool answer = array_equals(arr1, card1, arr2, card2);
+    free(arr1);
+    free(arr2);
+    return answer;
+}
+
 bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
                            size_t count) {
+	roaring_bitmap_t *tempandnorun;
+	roaring_bitmap_t *tempandruns;
     for (size_t i = 0; i + 1 < count; ++i) {
-        roaring_bitmap_t *tempandnorun =
+        tempandnorun =
             roaring_bitmap_and(rnorun[i], rnorun[i + 1]);
         if (!is_intersection_correct(rnorun[i], rnorun[i + 1])) {
             printf("no run intersection incorrect\n");
             return false;
         }
-        roaring_bitmap_t *tempandruns =
+        tempandruns =
             roaring_bitmap_and(rruns[i], rruns[i + 1]);
         if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
             printf("runs intersection incorrect\n");
             return false;
         }
-        /*if (!roaring_bitmap_equals(tempandnorun, tempandruns)) {
-            printf("Intersections don't agree!\n");
+        if (!slow_bitmap_equals(tempandnorun, tempandruns)) {
+            printf("Intersections don't agree! (slow) \n");
             return false;
-        }*/
+        }
+
+        if (!roaring_bitmap_equals(tempandnorun, tempandruns)) {
+            printf("Intersections don't agree!\n");
+            printf("\n\nbitmap1:\n");
+            show_structure(tempandnorun->high_low_container);  // debug
+            printf("\n\nbitmap2:\n");
+            show_structure(tempandruns->high_low_container);  // debug
+            return false;
+        }
         roaring_bitmap_free(tempandnorun);
         roaring_bitmap_free(tempandruns);
+
+        tempandnorun =
+            inplace_intersection(rnorun[i], rnorun[i + 1]);
+        if (!is_intersection_correct(rnorun[i], rnorun[i + 1])) {
+            printf("[inplace] no run intersection incorrect\n");
+            return false;
+        }
+        tempandruns =
+        		inplace_intersection(rruns[i], rruns[i + 1]);
+        if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
+            printf("[inplace] runs intersection incorrect\n");
+            return false;
+        }
+        if (!slow_bitmap_equals(tempandnorun, tempandruns)) {
+            printf("[inplace] Intersections don't agree! (slow) \n");
+            return false;
+        }
+
+        if (!roaring_bitmap_equals(tempandnorun, tempandruns)) {
+            printf("[inplace] Intersections don't agree!\n");
+            printf("\n\nbitmap1:\n");
+            show_structure(tempandnorun->high_low_container);  // debug
+            printf("\n\nbitmap2:\n");
+            show_structure(tempandruns->high_low_container);  // debug
+            return false;
+        }
+        roaring_bitmap_free(tempandnorun);
+        roaring_bitmap_free(tempandruns);
+
     }
     return true;
 }
 
+
 bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
                     size_t count) {
+	roaring_bitmap_t *tempornorun;
+	roaring_bitmap_t *temporruns;
     for (size_t i = 0; i + 1 < count; ++i) {
-        roaring_bitmap_t *tempornorun =
+        tempornorun =
             roaring_bitmap_or(rnorun[i], rnorun[i + 1]);
         if (!is_union_correct(rnorun[i], rnorun[i + 1])) {
             printf("no-run union incorrect\n");
             return false;
         }
-        roaring_bitmap_t *temporruns =
+        temporruns =
             roaring_bitmap_or(rruns[i], rruns[i + 1]);
         if (!is_union_correct(rruns[i], rruns[i + 1])) {
             printf("runs unions incorrect\n");
             return false;
         }
-        /* if (!roaring_bitmap_equals(tempornorun, temporruns)) {
-             printf("Unions don't agree!\n");
-             return false;
-         }*/
+
+        if (!slow_bitmap_equals(tempornorun, temporruns)) {
+            printf("Unions don't agree! (slow) \n");
+            return false;
+        }
+
+        if (!roaring_bitmap_equals(tempornorun, temporruns)) {
+            printf("Unions don't agree!\n");
+            printf("\n\nbitmap1:\n");
+            show_structure(tempornorun->high_low_container);  // debug
+            printf("\n\nbitmap2:\n");
+            show_structure(temporruns->high_low_container);  // debug
+            return false;
+        }
         roaring_bitmap_free(tempornorun);
         roaring_bitmap_free(temporruns);
+
+        tempornorun =
+            inplace_union(rnorun[i], rnorun[i + 1]);
+        if (!is_union_correct(rnorun[i], rnorun[i + 1])) {
+            printf("[inplace] no-run union incorrect\n");
+            return false;
+        }
+        temporruns =
+        		inplace_union(rruns[i], rruns[i + 1]);
+        if (!is_union_correct(rruns[i], rruns[i + 1])) {
+            printf("[inplace] runs unions incorrect\n");
+            return false;
+        }
+
+        if (!slow_bitmap_equals(tempornorun, temporruns)) {
+            printf("[inplace] Unions don't agree! (slow) \n");
+            return false;
+        }
+
+        if (!roaring_bitmap_equals(tempornorun, temporruns)) {
+            printf("[inplace] Unions don't agree!\n");
+            printf("\n\nbitmap1:\n");
+            show_structure(tempornorun->high_low_container);  // debug
+            printf("\n\nbitmap2:\n");
+            show_structure(temporruns->high_low_container);  // debug
+            return false;
+        }
+        roaring_bitmap_free(tempornorun);
+        roaring_bitmap_free(temporruns);
+
     }
     return true;
 }

@@ -32,10 +32,10 @@ bool run_container_equals_array(run_container_t* container1,
         return false;
     int32_t pos = 0;
     for (int i = 0; i < container1->n_runs; ++i) {
-        uint16_t run_start = container1->runs[i].value;
-        uint16_t le = container1->runs[i].length;
+        uint32_t run_start = container1->runs[i].value;
+        uint32_t le = container1->runs[i].length;
 
-        for (uint16_t j = run_start; j <= run_start + le; ++j) {
+        for (uint32_t j = run_start; j <= run_start + le; ++j) {
             if (pos >= container2->cardinality) {
                 return false;
             }
@@ -62,13 +62,12 @@ bool run_container_equals_bitset(run_container_t* container1,
         }
     }
     for (int i = 0; i < container1->n_runs; ++i) {
-        uint16_t run_start = container1->runs[i].value;
-        uint16_t le = container1->runs[i].length;
-
-        for (uint16_t j = run_start; j <= run_start + le; ++j) {
+        uint32_t run_start = container1->runs[i].value;
+        uint32_t le = container1->runs[i].length;
+        for (uint32_t j = run_start; j <= run_start + le; ++j) {
             // todo: this code could be much faster
             if (!bitset_container_contains(container2, j)) {
-                return false;
+            	return false;
             }
         }
     }
