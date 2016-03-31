@@ -41,7 +41,7 @@ Support for legacy hardware and compiler might be added later.
 
 # Example
 
-```
+```c
 ////
 //// #include "roaring.h"
 ////
