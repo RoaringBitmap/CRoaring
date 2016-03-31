@@ -5,6 +5,8 @@
 #include "../benchmarks/bitmapsfromtextfiles.h"
 #include "config.h"
 
+void show_structure(roaring_array_t *);  // debug
+
 /**
  * Once you have collected all the integers, build the bitmaps.
  */
@@ -58,9 +60,14 @@ bool serialize_correctly(roaring_bitmap_t *r) {
 
 // arrays expected to both be sorted.
 bool array_equals(uint32_t *a1, int32_t size1, uint32_t *a2, int32_t size2) {
-    if (size1 != size2) return 0;
+    if (size1 != size2) {
+        printf("they differ since sizes differ %d %d\n", size1, size2);
+        return false;
+    }
     for (int i = 0; i < size1; ++i)
         if (a1[i] != a2[i]) {
+            printf("same sizes %d %d but they differ at %d \n", size1, size2,
+                   i);
             return false;
         }
     return true;
@@ -75,7 +82,18 @@ bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     uint32_t *buffer = (uint32_t *)malloc(sizeof(uint32_t) * (card1 + card2));
     size_t cardtrue = union_uint32(arr1, card1, arr2, card2, buffer);
     bool answer = array_equals(arr, card, buffer, cardtrue);
-
+    if (!answer) {
+        printf("\n\nbitmap1:\n");
+        show_structure(bitmap1->high_low_container);  // debug
+        printf("\n\nbitmap2:\n");
+        show_structure(bitmap2->high_low_container);  // debug
+        printf("\n\nresult:\n");
+        show_structure(temp->high_low_container);  // debug
+        roaring_bitmap_t *ca = roaring_bitmap_of_ptr(cardtrue, buffer);
+        printf("\n\ncorrect result:\n");
+        show_structure(ca->high_low_container);  // debug
+        free(ca);
+    }
     free(buffer);
     free(arr1);
     free(arr2);
@@ -94,7 +112,18 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     uint32_t *buffer = (uint32_t *)malloc(sizeof(uint32_t) * (card1 + card2));
     size_t cardtrue = intersection_uint32(arr1, card1, arr2, card2, buffer);
     bool answer = array_equals(arr, card, buffer, cardtrue);
-
+    if (!answer) {
+        printf("\n\nbitmap1:\n");
+        show_structure(bitmap1->high_low_container);  // debug
+        printf("\n\nbitmap2:\n");
+        show_structure(bitmap2->high_low_container);  // debug
+        printf("\n\nresult:\n");
+        show_structure(temp->high_low_container);  // debug
+        roaring_bitmap_t *ca = roaring_bitmap_of_ptr(cardtrue, buffer);
+        printf("\n\ncorrect result:\n");
+        show_structure(ca->high_low_container);  // debug
+        free(ca);
+    }
     free(buffer);
     free(arr1);
     free(arr2);
