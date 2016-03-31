@@ -117,7 +117,7 @@ int array_container_to_uint32_array(uint32_t *out,
                                     uint32_t base);
 
 /* Compute the number of runs */
-int32_t array_container_number_of_runs(array_container_t *a);
+int32_t array_container_number_of_runs(const array_container_t *a);
 
 /*
  * Print this container using printf (useful for debugging).

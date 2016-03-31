@@ -841,16 +841,19 @@ void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
  */
 void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
     if (start == end) return;
+    /*for(uint32_t i = start; i < end ; ++i) {
+        bitmap[i/64] |= (UINT64_C(1) << (i%64));
+    }*/
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
-        bitmap[firstword] |=
-            ((~UINT64_C(0)) << (start % 64)) & ((~UINT64_C(0)) >> (-end & 64));
+        bitmap[firstword] |= ((~UINT64_C(0)) << (start % 64)) &
+                             ((~UINT64_C(0)) >> ((-end) % 64));
         return;
     }
     bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
     for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~UINT64_C(0);
-    bitmap[endword] |= (~UINT64_C(0)) >> (-end % 64);
+    bitmap[endword] |= (~UINT64_C(0)) >> ((-end) % 64);
 }
 
 /*
@@ -873,11 +876,11 @@ void bitset_reset_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
-        bitmap[firstword] &=
-            ~((~UINT64_C(0)) << (start % 64)) & ((~UINT64_C(0)) >> (-end & 64));
+        bitmap[firstword] &= ~(((~UINT64_C(0)) << (start % 64)) &
+                               ((~UINT64_C(0)) >> ((-end) % 64)));
         return;
     }
     bitmap[firstword] &= ~((~UINT64_C(0)) << (start % 64));
     for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = UINT64_C(0);
-    bitmap[endword] &= ~((~UINT64_C(0)) >> (-end % 64));
+    bitmap[endword] &= ~((~UINT64_C(0)) >> ((-end) % 64));
 }

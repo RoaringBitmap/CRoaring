@@ -24,6 +24,21 @@ bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     return answer;
 }
 
+array_container_t *array_container_from_run(const run_container_t *arr) {
+    array_container_t *answer =
+        array_container_create_given_capacity(run_container_cardinality(arr));
+    answer->cardinality = 0;
+    for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
+        int run_start = arr->runs[rlepos].value;
+        int run_end = run_start + arr->runs[rlepos].length;
+
+        for (int run_value = run_start; run_value <= run_end; ++run_value) {
+            answer->array[answer->cardinality++] = (uint16_t)run_value;
+        }
+    }
+    return answer;
+}
+
 array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     array_container_t *result =
         array_container_create_given_capacity(bits->cardinality);
@@ -34,6 +49,35 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     bitset_extract_setbits_uint16(bits->array, BITSET_CONTAINER_SIZE_IN_WORDS,
                                   result->array, 0);
     return result;
+}
+
+/* assumes that container has adequate space.  Run from [s,e] (inclusive) */
+static void add_run(run_container_t *r, int s, int e) {
+    r->runs[r->n_runs].value = s;
+    r->runs[r->n_runs].length = e - s;
+    r->n_runs++;
+}
+
+run_container_t *run_container_from_array(const array_container_t *c) {
+    int32_t n_runs = array_container_number_of_runs(c);
+    run_container_t *answer = run_container_create_given_capacity(n_runs);
+    int prev = -2;
+    int run_start = -1;
+    int32_t card = c->cardinality;
+    if (card == 0) return answer;
+    for (int i = 0; i < card; ++i) {
+        const uint16_t cur_val = c->array[i];
+        if (cur_val != prev + 1) {
+            // new run starts; flush old one, if any
+            if (run_start != -1) add_run(answer, run_start, prev);
+            run_start = cur_val;
+        }
+        prev = c->array[i];
+    }
+    // now prev is the last seen value
+    add_run(answer, run_start, prev);
+    // assert(run_container_cardinality(answer) == c->cardinality);
+    return answer;
 }
 
 /**
@@ -70,13 +114,6 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
     *resulttype = BITSET_CONTAINER_TYPE_CODE;
     run_container_free(r);
     return answer;
-}
-
-/* assumes that container has adequate space.  Run from [s,e] (inclusive) */
-static void add_run(run_container_t *r, int s, int e) {
-    r->runs[r->n_runs].value = s;
-    r->runs[r->n_runs].length = e - s;
-    r->n_runs++;
 }
 
 /* converts a run container to either an array or a bitset, IF it saves space */

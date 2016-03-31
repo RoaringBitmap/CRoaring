@@ -107,7 +107,7 @@ void run_container_append_value(run_container_t *run, uint16_t val) {
         run->n_runs++;
         return;
     }
-    if (val + UINT32_C(1) == previousend) {  // we merge
+    if (val == previousend + 1) {  // we merge
         run->runs[run->n_runs - 1].length++;
     }
 }

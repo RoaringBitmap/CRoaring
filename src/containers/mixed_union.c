@@ -27,7 +27,8 @@ void run_bitset_container_union(const run_container_t *src_1,
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
-        bitset_set_range(dst->array, rle.value, rle.value + rle.length);
+        bitset_set_range(dst->array, rle.value,
+                         rle.value + rle.length + UINT32_C(1));
     }
     dst->cardinality = bitset_container_compute_cardinality(dst);
 }
@@ -42,12 +43,10 @@ void array_run_container_union(const array_container_t *src_1,
     run_container_grow(dst, 2 * (src_1->cardinality + src_2->n_runs), false);
     int32_t rlepos = 0;
     int32_t arraypos = 0;
-
     while ((rlepos < src_2->n_runs) && (arraypos < src_1->cardinality)) {
         if (src_2->runs[rlepos].value <= src_1->array[arraypos]) {
             run_container_append(dst, src_2->runs[rlepos]);
             rlepos++;
-
         } else {
             run_container_append_value(dst, src_1->array[arraypos]);
             arraypos++;

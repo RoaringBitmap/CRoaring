@@ -17,9 +17,16 @@ bitset_container_t *bitset_container_from_array(const array_container_t *arr);
 /* Convert a run into a bitset. The input container is not freed or modified. */
 bitset_container_t *bitset_container_from_run(const run_container_t *arr);
 
+/* Convert a run into an array. The input container is not freed or modified. */
+array_container_t *array_container_from_run(const run_container_t *arr);
+
 /* Convert a bitset into an array. The input container is not freed or modified.
  */
 array_container_t *array_container_from_bitset(const bitset_container_t *bits);
+
+/* Convert an array into a run. The input container is not freed or modified.
+ */
+run_container_t *run_container_from_array(const array_container_t *c);
 
 /* convert a run into either an array or a bitset
  * might free the container */

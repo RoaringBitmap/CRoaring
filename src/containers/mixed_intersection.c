@@ -97,10 +97,10 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
     }
     if (*dst == src_2) {  // we attempt in-place
         bitset_container_t *answer = (bitset_container_t *)*dst;
-        uint16_t start = 0;
+        uint32_t start = 0;
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
-            rle16_t rle = src_1->runs[rlepos];
-            uint16_t end = rle.value;
+            const rle16_t rle = src_1->runs[rlepos];
+            uint32_t end = rle.value;
             bitset_reset_range(src_2->array, start, end);
 
             start = end + rle.length + 1;
@@ -126,16 +126,16 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         if (answer == NULL) {
             return true;
         }
-        uint16_t start = 0;
+        uint32_t start = 0;
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
-            rle16_t rle = src_1->runs[rlepos];
-            uint16_t end = rle.value;
+            const rle16_t rle = src_1->runs[rlepos];
+            uint32_t end = rle.value;
             bitset_reset_range(answer->array, start, end);
-
             start = end + rle.length + 1;
         }
         bitset_reset_range(answer->array, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
+
         if (answer->cardinality > DEFAULT_MAX_SIZE) {
             return true;
         } else {
