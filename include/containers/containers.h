@@ -403,7 +403,7 @@ static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
             *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
-            array_bitset_container_intersection(c1, c2, c1);
+            array_bitset_container_intersection(c1, c2, c1);// allowed
             return c1;
 
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
@@ -412,7 +412,7 @@ static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
             *result_type = run_bitset_container_intersection(c2, c1, &c1)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
-            return result;
+            return c1;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
             *result_type = run_bitset_container_intersection(c1, c2, &result)
@@ -529,7 +529,7 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
             run_container_union_inplace(c1, c2);
-            return convert_run_to_efficient_container(result, result_type);
+            return convert_run_to_efficient_container(c1, result_type);
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
             array_bitset_container_union(c2, c1, c1);
@@ -547,7 +547,7 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                             RUN_CONTAINER_TYPE_CODE):
             run_bitset_container_union(c2, c1, c1);  // allowed
             *result_type = BITSET_CONTAINER_TYPE_CODE;
-            return result;
+            return c1;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
             result = bitset_container_create();
