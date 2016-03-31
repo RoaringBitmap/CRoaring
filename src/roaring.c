@@ -181,7 +181,7 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                                  &typecode2);
             void *c =
                 container_iand(c1, typecode1, c2, typecode2, &typecode_result);
-            if (c != c1) {
+            if (c != c1) {// in this instance a new container was created, and we need to free the old one
                 container_free(c1, typecode1);
             }
             if (container_nonzero_cardinality(c, typecode_result)) {
@@ -308,7 +308,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                                  &container_type_2);
             void *c = container_ior(c1, container_type_1, c2, container_type_2,
                                     &container_result_type);
-            if (c != c1) {
+            if (c != c1) { // in this instance a new container was created, and we need to free the old one
                 container_free(c1, container_type_1);
             }
 

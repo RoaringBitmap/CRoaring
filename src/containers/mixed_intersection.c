@@ -198,6 +198,5 @@ bool bitset_bitset_container_intersection_inplace(
             BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
             0);
     }
-    bitset_container_free(src_1);
     return false;  // not a bitset
 }

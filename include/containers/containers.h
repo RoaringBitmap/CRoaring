@@ -366,9 +366,12 @@ static inline void *container_and(const void *c1, uint8_t type1, const void *c2,
 
 /**
  * Compute intersection between two containers, with result in the first
- container.
- The type of the first container may change, in which case the old container
- will be deallocated. Returns the modified (and possibly new) container
+ container if possible. If the returned pointer is identical to c1,
+ then the container has been modified. If the returned pointer is different
+ from c1, then a new container has been created and the caller is responsible
+ for freeing it.
+ The type of the first container may change. Returns the modified
+ (and possibly new) container.
 */
 static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
                                    uint8_t type2, uint8_t *result_type) {
@@ -397,7 +400,6 @@ static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
             // c1 is a bitmap so no inplace possible
             result = array_container_create();
             array_bitset_container_intersection(c2, c1, result);
-            bitset_container_free(c1);
             *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
             return result;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
@@ -508,8 +510,11 @@ static inline void *container_or(const void *c1, uint8_t type1, const void *c2,
 
 /**
  * Compute the union between two containers, with result in the first container.
- * The type of the first container may change, in which case the old container
- * will be deallocated. Returns the modified (and possibly new) container
+ * If the returned pointer is identical to c1, then the container has been modified.
+ * If the returned pointer is different from c1, then a new container has been
+ * created and the caller is responsible for freeing it.
+ * The type of the first container may change. Returns the modified
+ * (and possibly new) container
 */
 static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                                   uint8_t type2, uint8_t *result_type) {
@@ -541,7 +546,6 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
             result = bitset_container_create();
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             array_bitset_container_union(c1, c2, result);
-            array_container_free(c1);
             return result;
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             RUN_CONTAINER_TYPE_CODE):

@@ -55,7 +55,7 @@ For debug release, try
 ```
 mkdir debug
 cd debug
-cmake -DCMAKE_BUILD_TYPE=Debug ...
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 make
 ```
 
@@ -91,19 +91,10 @@ To reformat your code according to the style convention (make sure that ``clang-
 ./tools/clang-format.sh
 ```
 
-# sanity todo
-- get the code to compile cleanly with -Wconversion and possibly -Weverything
-- get everything to work with valgrind cleanly
-- get everything to work cleanly with other static checkers, sanitizers and so forth
-- get everything to run cleanly with the flags ``-fsanitize=address -fno-omit-frame-pointer``
-- get everything to run cleanly with the flga ``-fsanitize=undefined``
-
-
 # References and further reading
 
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
 -  Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
-
 
 ### References about Roaring
 

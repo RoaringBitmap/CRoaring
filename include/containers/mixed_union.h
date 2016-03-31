@@ -49,7 +49,8 @@ void run_bitset_container_union(const run_container_t *src_1,
  * Same as array_array_container_union except that if the output is to
  * be an
  * array_container_t, then src_1 is modified and no allocation is made.
- * If the output is to be a bitset_container_t, then src_1 will be freed.
+ * If the output is to be a bitset_container_t, then caller is responsible
+ * to free src_1.
  * In all cases, the result is in *dst.
  */
 
