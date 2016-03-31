@@ -402,8 +402,8 @@ static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
             return result;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
-            *result_type = ARRAY_CONTAINER_TYPE_CODE;  // never bitset
-            array_bitset_container_intersection(c1, c2, c1);// allowed
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;         // never bitset
+            array_bitset_container_intersection(c1, c2, c1);  // allowed
             return c1;
 
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,

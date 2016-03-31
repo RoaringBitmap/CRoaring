@@ -67,7 +67,7 @@ bool run_container_equals_bitset(run_container_t* container1,
         for (uint32_t j = run_start; j <= run_start + le; ++j) {
             // todo: this code could be much faster
             if (!bitset_container_contains(container2, j)) {
-            	return false;
+                return false;
             }
         }
     }
