@@ -510,7 +510,8 @@ static inline void *container_or(const void *c1, uint8_t type1, const void *c2,
 
 /**
  * Compute the union between two containers, with result in the first container.
- * If the returned pointer is identical to c1, then the container has been modified.
+ * If the returned pointer is identical to c1, then the container has been
+ * modified.
  * If the returned pointer is different from c1, then a new container has been
  * created and the caller is responsible for freeing it.
  * The type of the first container may change. Returns the modified

@@ -20,7 +20,7 @@ roaring_bitmap_t *roaring_bitmap_create() {
     return ans;
 }
 
-roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, uint32_t *vals) {
+roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
     // todo: could be greatly optimized
     roaring_bitmap_t *answer = roaring_bitmap_create();
     for (size_t i = 0; i < n_args; i++) {
@@ -42,7 +42,7 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     return answer;
 }
 
-void roaring_bitmap_printf(roaring_bitmap_t *ra) {
+void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
     printf("{");
     for (int i = 0; i < ra->high_low_container->size; ++i) {
         container_printf_as_uint32_array(
@@ -54,7 +54,7 @@ void roaring_bitmap_printf(roaring_bitmap_t *ra) {
     printf("}");
 }
 
-roaring_bitmap_t *roaring_bitmap_copy(roaring_bitmap_t *r) {
+roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
     if (!ans) {
         return NULL;
@@ -106,7 +106,7 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
     }
 }
 
-bool roaring_bitmap_contains(roaring_bitmap_t *r, uint32_t val) {
+bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
     const uint16_t hb = val >> 16;
     const int i = ra_get_index(r->high_low_container, hb);
     uint8_t typecode;
@@ -120,8 +120,8 @@ bool roaring_bitmap_contains(roaring_bitmap_t *r, uint32_t val) {
 }
 
 // there should be some SIMD optimizations possible here
-roaring_bitmap_t *roaring_bitmap_and(roaring_bitmap_t *x1,
-                                     roaring_bitmap_t *x2) {
+roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     roaring_bitmap_t *answer = roaring_bitmap_create();
     const int length1 = x1->high_low_container->size,
@@ -159,6 +159,24 @@ roaring_bitmap_t *roaring_bitmap_and(roaring_bitmap_t *x1,
     return answer;
 }
 
+/**
+ * Compute the union of 'number' bitmaps.
+ */
+roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
+                                         const roaring_bitmap_t **x) {
+    if (number == 0) {
+        return NULL;
+    }
+    if (number == 1) {
+        return roaring_bitmap_copy(x[0]);
+    }
+    roaring_bitmap_t *answer = roaring_bitmap_or(x[0], x[1]);
+    for (size_t i = 2; i < number; i++) {
+        roaring_bitmap_or_inplace(answer, x[i]);
+    }
+    return answer;
+}
+
 // inplace and (modifies its first argument).
 void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                 const roaring_bitmap_t *x2) {
@@ -181,7 +199,8 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                                  &typecode2);
             void *c =
                 container_iand(c1, typecode1, c2, typecode2, &typecode_result);
-            if (c != c1) {// in this instance a new container was created, and we need to free the old one
+            if (c != c1) {  // in this instance a new container was created, and
+                            // we need to free the old one
                 container_free(c1, typecode1);
             }
             if (container_nonzero_cardinality(c, typecode_result)) {
@@ -213,8 +232,8 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
     ra_downsize(x1->high_low_container, intersection_size);
 }
 
-roaring_bitmap_t *roaring_bitmap_or(roaring_bitmap_t *x1,
-                                    roaring_bitmap_t *x2) {
+roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
+                                    const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     roaring_bitmap_t *answer = roaring_bitmap_create();
     const int length1 = x1->high_low_container->size,
@@ -308,7 +327,8 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                                  &container_type_2);
             void *c = container_ior(c1, container_type_1, c2, container_type_2,
                                     &container_result_type);
-            if (c != c1) { // in this instance a new container was created, and we need to free the old one
+            if (c != c1) {  // in this instance a new container was created, and
+                            // we need to free the old one
                 container_free(c1, container_type_1);
             }
 
@@ -345,7 +365,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     }
 }
 
-uint32_t roaring_bitmap_get_cardinality(roaring_bitmap_t *ra) {
+uint32_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra) {
     uint32_t ans = 0;
     for (int i = 0; i < ra->high_low_container->size; ++i)
         ans += container_get_cardinality(ra->high_low_container->containers[i],
@@ -353,7 +373,7 @@ uint32_t roaring_bitmap_get_cardinality(roaring_bitmap_t *ra) {
     return ans;
 }
 
-uint32_t *roaring_bitmap_to_uint32_array(roaring_bitmap_t *ra,
+uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
                                          uint32_t *cardinality) {
     uint32_t card1 = roaring_bitmap_get_cardinality(ra);
 
