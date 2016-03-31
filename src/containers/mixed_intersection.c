@@ -36,7 +36,7 @@ void array_run_container_intersection(const array_container_t *src_1,
                                       array_container_t *dst) {
     if (dst->capacity < src_1->cardinality)
         array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
-    if (src_2->n_runs) {
+    if (src_2->n_runs == 0) {
         return;
     }
     int32_t rlepos = 0;
@@ -44,7 +44,7 @@ void array_run_container_intersection(const array_container_t *src_1,
     rle16_t rle = src_2->runs[rlepos];
     int32_t newcard = 0;
     while (arraypos < src_1->cardinality) {
-        uint16_t arrayval = src_1->array[arraypos];
+        const uint16_t arrayval = src_1->array[arraypos];
         while (rle.value + rle.length <
                arrayval) {  // this will frequently be false
             ++rlepos;
