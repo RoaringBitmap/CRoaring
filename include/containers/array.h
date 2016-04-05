@@ -104,6 +104,18 @@ void array_container_intersection(const array_container_t *src_1,
 void array_container_intersection_inplace(array_container_t *src_1,
                                           const array_container_t *src_2);
 
+/* computes the negation of an array container src, writing to dst,
+ *  assumed distinct from src
+ *  moved to mixed_negation  TODO: clean me up here
+void array_container_negation(const array_container_t *src,
+                              array_container_t *dst);
+
+ TODO delete me too when mixed is ok
+* computes the negation of an array container src_dest, writing to src_dest
+ * Requires result fits* /
+void array_container_negation_inplace(array_container_t *src_dest);
+*/
+
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit
  * integers using base
