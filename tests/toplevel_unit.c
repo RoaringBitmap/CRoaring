@@ -4,6 +4,8 @@
 
 #include "roaring.h"
 
+#include "test.h"
+
 void show_structure(roaring_array_t *);  // debug
 
 // arrays expected to both be sorted.
@@ -24,7 +26,7 @@ void roaring_iterator_sumall(uint32_t value, void *param) {
 }
 
 int test_example() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
 
     ////
     //// #include "roaring.h"
@@ -110,7 +112,8 @@ int test_example() {
 }
 
 int test_printf() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     roaring_bitmap_printf(r1);  // does it crash?
@@ -120,7 +123,8 @@ int test_printf() {
 }
 
 int test_printf_withbitmap() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_printf(r1);  // does it crash?
     /* Add some values to the bitmap */
@@ -133,7 +137,8 @@ int test_printf_withbitmap() {
 }
 
 int test_printf_withrun() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_printf(r1);  // does it crash?
     /* Add some values to the bitmap */
@@ -158,7 +163,8 @@ void dummy_iterator(uint32_t VARIABLE_IS_NOT_USED value, void *param) {
 }
 
 int test_iterate() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     uint32_t num = 0;
@@ -175,7 +181,8 @@ int test_iterate() {
 }
 
 int test_iterate_empty() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     uint32_t num = 0;
 
@@ -188,7 +195,8 @@ int test_iterate_empty() {
 }
 
 int test_iterate_withbitmap() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     /* Add some values to the bitmap */
     for (int i = 0, top_val = 4097; i < top_val; i++)
@@ -203,7 +211,8 @@ int test_iterate_withbitmap() {
 }
 
 int test_iterate_withrun() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     /* Add some values to the bitmap */
     for (int i = 100, top_val = 200; i < top_val; i++)
@@ -219,7 +228,8 @@ int test_iterate_withrun() {
 
 // serialization as in Java and Go
 int test_portable_serialize() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     uint32_t serialize_len;
@@ -305,7 +315,8 @@ int test_portable_serialize() {
 }
 
 int test_serialize() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     uint32_t serialize_len;
@@ -390,7 +401,8 @@ int test_serialize() {
 }
 
 int test_add() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     assert(r1);
 
@@ -404,7 +416,8 @@ int test_add() {
 }
 
 int test_contains() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     assert(r1);
 
@@ -423,7 +436,8 @@ int test_contains() {
 }
 
 int test_intersection_array_x_array() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     assert(r1);
@@ -448,7 +462,8 @@ int test_intersection_array_x_array() {
 }
 
 int test_intersection_array_x_array_inplace() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     assert(r1);
@@ -472,7 +487,8 @@ int test_intersection_array_x_array_inplace() {
 }
 
 int test_intersection_bitset_x_bitset() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     assert(r1);
@@ -503,7 +519,8 @@ int test_intersection_bitset_x_bitset() {
 }
 
 int test_intersection_bitset_x_bitset_inplace() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     assert(r1);
@@ -531,7 +548,8 @@ int test_intersection_bitset_x_bitset_inplace() {
 }
 
 int test_union() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     assert(r1);
@@ -559,7 +577,8 @@ static roaring_bitmap_t *make_roaring_from_array(uint32_t *a, int len) {
 }
 
 int test_conversion_to_int_array() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
 
@@ -598,7 +617,8 @@ int test_conversion_to_int_array() {
 }
 
 int test_conversion_to_int_array_with_runoptimize() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
@@ -641,7 +661,8 @@ int test_conversion_to_int_array_with_runoptimize() {
 }
 
 int test_array_to_run() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
 
@@ -668,8 +689,10 @@ int test_array_to_run() {
 }
 
 int test_array_to_self() {
+    DESCRIBE_TEST;
+
     int ans_ctr = 0;
-    printf("[%s] %s\n", __FILE__, __func__);
+
 
     uint32_t *ans = calloc(100000, sizeof(int32_t));
 
@@ -696,7 +719,8 @@ int test_array_to_self() {
 }
 
 int test_bitset_to_self() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
 
@@ -723,7 +747,7 @@ int test_bitset_to_self() {
 }
 
 int test_bitset_to_run() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
 
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
@@ -753,7 +777,7 @@ int test_bitset_to_run() {
 // not sure how to get containers that are runcontainers but not efficient
 
 int test_run_to_self() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
 
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
@@ -782,7 +806,8 @@ int test_run_to_self() {
 }
 
 int test_remove_run_to_bitset() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
 
@@ -812,7 +837,7 @@ int test_remove_run_to_bitset() {
 }
 
 int test_remove_run_to_array() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
 
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
@@ -872,5 +897,6 @@ int main() {
     passed += test_remove_run_to_bitset();
     passed += test_remove_run_to_array();
     passed += test_conversion_to_int_array_with_runoptimize();
-    printf("done %d toplevel tests\n", passed);
+
+    return EXIT_SUCCESS;
 }

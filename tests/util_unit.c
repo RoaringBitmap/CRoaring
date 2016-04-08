@@ -11,9 +11,12 @@
 #include "bitset_util.h"
 #include "misc/configreport.h"
 
+#include "test.h"
+
 // returns 1 when ok
 int setandextract_uint16() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -44,7 +47,8 @@ int setandextract_uint16() {
 
 // returns 1 when ok
 int setandextract_sse_uint16() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -76,7 +80,8 @@ int setandextract_sse_uint16() {
 
 // returns 1 when ok
 int setandextract_uint32() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -107,7 +112,8 @@ int setandextract_uint32() {
 
 // returns 1 when ok
 int setandextract_avx2_uint32() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -144,6 +150,5 @@ int main() {
     if (!setandextract_uint32()) return -1;
     if (!setandextract_avx2_uint32()) return -1;
 
-    printf("[%s] your code might be ok.\n", __FILE__);
-    return 0;
+    return EXIT_SUCCESS;
 }

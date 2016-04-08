@@ -13,9 +13,12 @@
 
 #include "misc/configreport.h"
 
+#include "test.h"
+
 // returns 1 if ok.
 int array_bitset_and_or_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     array_container_t* A1 = array_container_create();
     array_container_t* A2 = array_container_create();
     array_container_t* AI = array_container_create();
@@ -80,6 +83,5 @@ int main() {
     tellmeall();
     if (!array_bitset_and_or_test()) return -1;
 
-    printf("[%s] your code might be ok.\n", __FILE__);
-    return 0;
+    return EXIT_SUCCESS;
 }

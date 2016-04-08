@@ -11,9 +11,12 @@
 #include "containers/bitset.h"
 #include "misc/configreport.h"
 
+#include "test.h"
+
 // returns 0 on error, 1 if ok.
 int printf_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     bitset_container_t* B = bitset_container_create();
     bitset_container_set(B, (uint16_t)1);
     bitset_container_set(B, (uint16_t)2);
@@ -28,9 +31,10 @@ int printf_test() {
 
 // returns 0 on error, 1 if ok.
 int set_get_test() {
+    DESCRIBE_TEST;
+
     bitset_container_t* B = bitset_container_create();
     int x;
-    printf("[%s] %s\n", __FILE__, __func__);
     if (B == NULL) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
@@ -83,13 +87,14 @@ int set_get_test() {
 
 // returns 0 on error, 1 if ok.
 int and_or_test() {
+    DESCRIBE_TEST;
+
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
     bitset_container_t* BO = bitset_container_create();
 
     int x, c, ci, co;
-    printf("[%s] %s\n", __FILE__, __func__);
     if ((B1 == NULL) || (B2 == NULL) || (BO == NULL) || (BI == NULL)) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
@@ -141,12 +146,13 @@ int and_or_test() {
 
 // returns 0 on error, 1 if ok.
 int xor_test() {
+    DESCRIBE_TEST;
+
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
 
     int x, c, cx;
-    printf("[%s] %s\n", __FILE__, __func__);
 
     for (x = 0; x < (1 << 16); x += 3) {
         bitset_container_set(B1, (uint16_t)x);
@@ -180,12 +186,13 @@ int xor_test() {
 
 // returns 0 on error, 1 if ok.
 int andnot_test() {
+    DESCRIBE_TEST;
+
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
 
     int x, c, cn;
-    printf("[%s] %s\n", __FILE__, __func__);
 
     for (x = 0; x < (1 << 16); x += 3) {
         bitset_container_set(B1, (uint16_t)x);
@@ -218,7 +225,8 @@ int andnot_test() {
 
 // returns 0 on error, 1 if ok.
 int to_uint32_array_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     for (int offset = 1; offset < 128; offset *= 2) {
         bitset_container_t* B = bitset_container_create();
         for (int k = 0; k < (1 << 16); k += offset) {
@@ -253,7 +261,5 @@ int main() {
     if (!andnot_test()) return -1;
     if (!to_uint32_array_test()) return -1;
 
-    printf("[%s] your code might be ok.\n", __FILE__);
-
-    return 0;
+    return EXIT_SUCCESS;
 }

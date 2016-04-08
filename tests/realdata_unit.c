@@ -365,5 +365,6 @@ int main() {
             return -1;
         }
     }
-    printf("done realdata tests\n");
+
+    return EXIT_SUCCESS;
 }

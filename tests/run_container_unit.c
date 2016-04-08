@@ -10,9 +10,12 @@
 #include "containers/run.h"
 #include "misc/configreport.h"
 
+#include "test.h"
+
 // returns 0 on error, 1 if ok.
 int printf_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     run_container_t* B = run_container_create();
     run_container_add(B, (uint16_t)1);
     run_container_add(B, (uint16_t)2);
@@ -27,9 +30,10 @@ int printf_test() {
 
 // returns 0 on error, 1 if ok.
 int add_contains_test() {
+    DESCRIBE_TEST;
+
     run_container_t* B = run_container_create();
     int x;
-    printf("[%s] %s\n", __FILE__, __func__);
     if (B == NULL) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
@@ -179,13 +183,14 @@ int add_contains_test() {
 
 // returns 0 on error, 1 if ok.
 int and_or_test() {
+    DESCRIBE_TEST;
+
     run_container_t* B1 = run_container_create();
     run_container_t* B2 = run_container_create();
     run_container_t* BI = run_container_create();
     run_container_t* BO = run_container_create();
 
     int x, c, ci, co;
-    printf("[%s] %s\n", __FILE__, __func__);
     if ((B1 == NULL) || (B2 == NULL) || (BO == NULL) || (BI == NULL)) {
         printf("Bug %s, line %d \n", __FILE__, __LINE__);
         return 0;
@@ -228,7 +233,8 @@ int and_or_test() {
 
 // returns 0 on error, 1 if ok.
 int to_uint32_array_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     for (int offset = 1; offset < 128; offset *= 2) {
         run_container_t* B = run_container_create();
         for (int k = 0; k < (1 << 16); k += offset) {
@@ -260,6 +266,5 @@ int main() {
     if (!and_or_test()) return -1;
     if (!to_uint32_array_test()) return -1;
 
-    printf("[%s] your code might be ok.\n", __FILE__);
-    return 0;
+    return EXIT_SUCCESS;
 }

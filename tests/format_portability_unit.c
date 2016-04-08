@@ -12,6 +12,8 @@
 #include "misc/configreport.h"
 #include "roaring.h"
 
+#include "test.h"
+
 long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");
     if (NULL == fp) {
@@ -91,7 +93,8 @@ int test_deserialize(char* filename) {
 }
 
 int test_deserialize_portable_norun() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     char filename[1024];
     strcpy(filename, TEST_DATA_DIR);
     strcat(filename, "bitmapwithoutruns.bin");
@@ -99,7 +102,8 @@ int test_deserialize_portable_norun() {
 }
 
 int test_deserialize_portable_wrun() {
-    printf("[%s] %s\n", __FILE__, __func__);
+    DESCRIBE_TEST;
+
     char filename[1024];
     strcpy(filename, TEST_DATA_DIR);
     strcat(filename, "bitmapwithruns.bin");
@@ -111,6 +115,5 @@ int main() {
     if (!test_deserialize_portable_norun()) return -1;
     if (!test_deserialize_portable_wrun()) return -1;
 
-    printf("[%s] your code might be ok.\n", __FILE__);
-    return 0;
+    return EXIT_SUCCESS;
 }
