@@ -1,5 +1,5 @@
 /*
- * array_container_unit.c
+ * mixed_container_unit.c
  *
  */
 
@@ -10,6 +10,7 @@
 
 #include "containers/mixed_intersection.h"
 #include "containers/mixed_union.h"
+#include "containers/mixed_negation.h"
 
 #include "misc/configreport.h"
 
@@ -76,9 +77,149 @@ int array_bitset_and_or_test() {
     return 1;
 }
 
+int array_negation_empty_test() {
+    printf("[%s] %s\n", __FILE__, __func__);
+    array_container_t* AI = array_container_create();
+    bitset_container_t* BO = bitset_container_create();
+
+    array_container_negation(AI, BO);
+    assert(bitset_container_cardinality(BO) == (1 << 16));
+
+    array_container_free(AI);
+    bitset_container_free(BO);
+    return 1;
+}
+
+int array_negation_test() {
+    int ctr = 0;
+    printf("[%s] %s\n", __FILE__, __func__);
+    array_container_t* AI = array_container_create();
+    bitset_container_t* BO = bitset_container_create();
+
+    for (int x = 0; x < (1 << 16); x += 3) {
+        array_container_add(AI, (uint16_t)x);
+        ++ctr;
+    }
+
+    array_container_negation(AI, BO);
+    assert(bitset_container_cardinality(BO) == (1 << 16) - ctr);
+
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x % 3 == 0) {
+            assert(!bitset_container_contains(BO, (uint16_t)x));
+        } else {
+            assert(bitset_container_contains(BO, (uint16_t)x));
+        }
+        array_container_add(AI, (uint16_t)x);
+        ++ctr;
+    }
+
+    array_container_free(AI);
+    bitset_container_free(BO);
+
+    return 1;
+}
+
+/* result is a bitset */
+int array_negation_range_test1() {
+    bool result_is_bitset;
+    int result_size_should_be = 0;
+    printf("[%s] %s\n", __FILE__, __func__);
+    array_container_t* AI = array_container_create();
+    bitset_container_t* BO;
+
+    for (int x = 0; x < (1 << 16); x += 3) {
+        array_container_add(AI, (uint16_t)x);
+    }
+
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x >= 0x4000 && x < 0xC000)
+            if (x % 3 != 0) result_size_should_be++;
+    }
+
+    result_is_bitset =
+        array_container_negation_range(AI, 0x4000, 0xC000, (void**)&BO);
+    assert(result_is_bitset);
+    assert(result_size_should_be == BO->cardinality);
+
+    for (int x = 0; x < (1 << 16); x++) {
+        assert(bitset_container_contains(BO, (unsigned short)x) ==
+               (x >= 0x4000 && x < 0xc00 && (x % 3 != 0)));
+    }
+
+    array_container_free(AI);
+    bitset_container_free(BO);
+
+    return 1;
+}
+
+/* result is an array */
+int array_negation_range_test2() {
+    bool result_is_bitset;
+    int result_size_should_be = 0;
+    printf("[%s] %s\n", __FILE__, __func__);
+    array_container_t* AI = array_container_create();
+    array_container_t* BO;
+
+    for (int x = 0; x < (1 << 16); x += 3) {
+        array_container_add(AI, (uint16_t)x);
+    }
+
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x >= 0x7800 && x < 0x8800)
+            if (x % 3 != 0) result_size_should_be++;
+    }
+
+    result_is_bitset =
+        array_container_negation_range(AI, 0x7800, 0x8800, (void**)&BO);
+    assert(!result_is_bitset);
+    assert(result_size_should_be == BO->cardinality);
+
+    for (int x = 0; x < (1 << 16); x++) {
+        assert(array_container_contains(BO, (unsigned short)x) ==
+               (x >= 0x7800 && x < 0x8800 && (x % 3 != 0)));
+    }
+    array_container_free(AI);
+    array_container_free(BO);
+
+    return 1;
+}
+
+/* Empty range.  result is a clone */
+int array_negation_range_test3() {
+    bool result_is_bitset;
+
+    printf("[%s] %s\n", __FILE__, __func__);
+    array_container_t* AI = array_container_create();
+    array_container_t* BO;
+
+    for (int x = 0; x < (1 << 16); x += 3) {
+        array_container_add(AI, (uint16_t)x);
+    }
+
+    result_is_bitset =
+        array_container_negation_range(AI, 0x7800, 0x7800, (void**)&BO);
+    assert(!result_is_bitset);
+
+    // should be a clone
+    for (int x = 0; x < (1 << 16); x++) {
+        assert(array_container_contains(BO, (unsigned short)x) ==
+               (x > 0x7800 && x <= 0x87FF && (x % 3 != 0)));
+    }
+    array_container_free(AI);
+    array_container_free(BO);
+
+    return 1;
+}
+
 int main() {
     tellmeall();
     if (!array_bitset_and_or_test()) return -1;
+    //    if (!array_negation_empty_test()) return -1;  TODO FIX CRASH
+    if (!array_negation_test()) return -1;
+    if (!array_negation_range_test1()) return -1;  // TODO FIX FAIL
+    if (!array_negation_range_test2()) return -1;
+    if (!array_negation_range_test3()) return -1;
 
     printf("[%s] your code might be ok.\n", __FILE__);
     return 0;

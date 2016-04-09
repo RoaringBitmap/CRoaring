@@ -65,8 +65,7 @@ int run_container_negation_inplace(run_container_t *src, void **dst);
  * and false for an array container.  *dst is not preallocated.
  */
 bool array_container_negation_range(const array_container_t *src,
-                                    const uint16_t range_start,
-                                    const uint16_t range_end_inclusive,
+                                    const int range_start, const int range_end,
                                     void **dst);
 
 /* Even when the result would fit, it is unclear how to make an
@@ -81,8 +80,7 @@ bool array_container_negation_range(const array_container_t *src,
  * case of failure, *dst will be NULL.
  */
 bool bitset_container_negation_range(const bitset_container_t *src,
-                                     const uint16_t range_start,
-                                     const uint16_t range_end_inclusive,
+                                     const int range_start, const int range_end,
                                      void **dst);
 
 /* inplace version */
@@ -95,9 +93,8 @@ bool bitset_container_negation_range(const bitset_container_t *src,
  * In all cases, the result is in *dst.
  */
 bool bitset_container_negation_range_inplace(bitset_container_t *src,
-                                             const uint16_t range_start,
-                                             const uint16_t range_end_inclusive,
-                                             void **dst);
+                                             const int range_start,
+                                             const int range_end, void **dst);
 
 /* Negation across a range of container
  * Compute the  negation of src  and write the result
@@ -108,8 +105,7 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
  * case of failure, *dst will be NULL.
  */
 int run_container_negation_range(const run_container_t *src,
-                                 const uint16_t range_start,
-                                 const uint16_t range_end_inclusive,
+                                 const int range_start, const int range_end,
                                  void **dst);
 
 /*
@@ -120,8 +116,7 @@ int run_container_negation_range(const run_container_t *src,
  * In all cases, the result is in *dst.
  */
 int run_container_negation_range_inplace(run_container_t *src,
-                                         const uint16_t range_start,
-                                         const uint16_t range_end_inclusive,
-                                         void **dst);
+                                         const int range_start,
+                                         const int range_end, void **dst);
 
 #endif /* INCLUDE_CONTAINERS_MIXED_NEGATION_H_ */

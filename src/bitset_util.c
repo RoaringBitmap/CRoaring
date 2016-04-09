@@ -859,6 +859,8 @@ void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
 /*
  * Flip all the bits in indexes [begin,end).
  */
+
+// TODO: AVX version
 void bitset_flip_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
     if (start == end) return;
     uint32_t firstword = start / 64;
