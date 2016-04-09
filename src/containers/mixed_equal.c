@@ -1,4 +1,4 @@
-#include "mixed_equal.h"
+#include "containers/mixed_equal.h"
 
 bool array_container_equal_bitset(array_container_t* container1,
                                   bitset_container_t* container2) {
