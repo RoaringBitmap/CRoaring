@@ -12,6 +12,7 @@
 
 /* code makes the assumption that sizeof(int) > 2
  * for ranges. Could use uint32_t instead if this is undesirable.
+ * But it seems silly to worry about 16-bit machines with this library.
  */
 
 //#include "array_util.h"
@@ -116,10 +117,10 @@ bool array_container_negation_range(const array_container_t *src,
 
     if (new_cardinality > DEFAULT_MAX_SIZE) {
         bitset_container_t *temp = bitset_container_from_array(src);
-        // TODO: use cheaper bitset not where result known
-        // to fit.
-        bitset_container_negation_range_inplace(temp, range_start, range_end,
-                                                dst);
+        bitset_flip_range(temp->array, (uint32_t)range_start,
+                          (uint32_t)range_end);
+        temp->cardinality = new_cardinality;
+        *dst = temp;
         return true;
     }
 
@@ -180,7 +181,7 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
                                              const int range_start,
                                              const int range_end, void **dst) {
     bitset_flip_range(src->array, (uint32_t)range_start, (uint32_t)range_end);
-    src->cardinality = bitset_container_cardinality(src);
+    src->cardinality = bitset_container_compute_cardinality(src);
     if (src->cardinality > DEFAULT_MAX_SIZE) {
         *dst = src;
         return true;

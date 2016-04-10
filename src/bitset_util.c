@@ -866,7 +866,7 @@ void bitset_flip_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
     bitmap[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
-    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~bitmap[i];
+    for (uint32_t i = firstword; i < endword; i++) bitmap[i] = ~bitmap[i];
     bitmap[endword] ^= ((~UINT64_C(0)) >> ((-end) % 64));
 }
 
