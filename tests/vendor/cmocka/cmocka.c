@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <malloc.h>
+#define _GNU_SOURCE
 #include <inttypes.h>
 #include <signal.h>
 
@@ -27,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 
 /*
@@ -855,10 +855,10 @@ static int value_in_set_display_error(
         if (succeeded) {
             return 1;
         }
-        cm_print_error("%" PRIu64 " is %sin the set (", value,
+        cm_print_error("%" PRIuMAX " is %sin the set (", value,
                        invert ? "" : "not ");
         for (i = 0; i < size_of_set; i++) {
-            cm_print_error("%" PRIu64 ", ", set[i]);
+            cm_print_error("%" PRIuMAX ", ", set[i]);
         }
         cm_print_error(")\n");
     }
@@ -877,7 +877,7 @@ static int integer_in_range_display_error(
     if (value >= range_min && value <= range_max) {
         return 1;
     }
-    cm_print_error("%" PRIu64 " is not within the range %" PRIu64 "-%" PRIu64 "\n",
+    cm_print_error("%" PRIuMAX " is not within the range %" PRIuMAX "-%" PRIuMAX "\n",
                    value, range_min, range_max);
     return 0;
 }
@@ -894,7 +894,7 @@ static int integer_not_in_range_display_error(
     if (value < range_min || value > range_max) {
         return 1;
     }
-    cm_print_error("%" PRIu64 " is within the range %" PRIu64 "-%" PRIu64 "\n",
+    cm_print_error("%" PRIuMAX " is within the range %" PRIuMAX "-%" PRIuMAX "\n",
                    value, range_min, range_max);
     return 0;
 }
@@ -1372,7 +1372,7 @@ void _assert_return_code(const LargestIntegralType result,
 
     if (result > valmax - 1) {
         if (error > 0) {
-            cm_print_error("%s < 0, errno(%" PRIu64 "): %s\n",
+            cm_print_error("%s < 0, errno(%" PRIuMAX "): %s\n",
                            expression, error, strerror((int)error));
         } else {
             cm_print_error("%s < 0\n", expression);
@@ -2958,4 +2958,3 @@ int _run_group_tests(const UnitTest * const tests, const size_t number_of_tests)
 
     return (int)total_failed;
 }
-
