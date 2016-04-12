@@ -9,7 +9,7 @@
 #include <string.h>
 #include <x86intrin.h>
 
-#include "run.h"
+#include "containers/run.h"
 
 extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);

@@ -9,14 +9,10 @@
 #include <stdlib.h>
 
 #include "bitset_util.h"
-#include "misc/configreport.h"
 
 #include "test.h"
 
-// returns 1 when ok
-int setandextract_uint16() {
-    DESCRIBE_TEST;
-
+void setandextract_uint16() {
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -28,27 +24,22 @@ int setandextract_uint16() {
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
+
         bitset_set_list(bitset, vals, valsize);
         uint16_t* newvals = malloc(valsize * sizeof(uint16_t));
         bitset_extract_setbits_uint16(bitset, bitset_size_in_words, newvals, 0);
+
         for (unsigned int k = 0; k < valsize; ++k) {
-            if (newvals[k] != vals[k]) {
-                printf("bug expected %d == %d at %d but got %d .\n", vals[k],
-                       k * offset, k, newvals[k]);
-                return 0;
-            }
+            assert_int_equal(newvals[k], vals[k]);
         }
+
         free(vals);
         free(newvals);
         free(bitset);
     }
-    return 1;
 }
 
-// returns 1 when ok
-int setandextract_sse_uint16() {
-    DESCRIBE_TEST;
-
+void setandextract_sse_uint16() {
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -60,28 +51,24 @@ int setandextract_sse_uint16() {
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
+
         bitset_set_list(bitset, vals, valsize);
         uint16_t* newvals = malloc(valsize * sizeof(uint16_t) + 64);
         bitset_extract_setbits_sse_uint16(bitset, bitset_size_in_words, newvals,
                                           valsize, 0);
+
         for (unsigned int k = 0; k < valsize; ++k) {
-            if (newvals[k] != vals[k]) {
-                printf("bug expected %d == %d at %d but got %d .\n", vals[k],
-                       k * offset, k, newvals[k]);
-                return 0;
-            }
+            assert_int_equal(newvals[k], vals[k]);
+
         }
+
         free(vals);
         free(newvals);
         free(bitset);
     }
-    return 1;
 }
 
-// returns 1 when ok
-int setandextract_uint32() {
-    DESCRIBE_TEST;
-
+void setandextract_uint32() {
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -90,30 +77,27 @@ int setandextract_uint32() {
         const unsigned int valsize = bitset_size / offset;
         uint16_t* vals = malloc(valsize * sizeof(uint16_t));
         uint64_t* bitset = calloc(bitset_size_in_words, sizeof(uint64_t));
+
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
+
         bitset_set_list(bitset, vals, valsize);
         uint32_t* newvals = malloc(valsize * sizeof(uint32_t));
         bitset_extract_setbits(bitset, bitset_size_in_words, newvals, 0);
+
         for (unsigned int k = 0; k < valsize; ++k) {
-            if (newvals[k] != vals[k]) {
-                printf("bug expected %d == %d at %d but got %d .\n", vals[k],
-                       k * offset, k, newvals[k]);
-                return 0;
-            }
+            assert_int_equal(newvals[k], vals[k]);
         }
+
         free(vals);
         free(newvals);
         free(bitset);
     }
-    return 1;
 }
 
 // returns 1 when ok
-int setandextract_avx2_uint32() {
-    DESCRIBE_TEST;
-
+void setandextract_avx2_uint32() {
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
         bitset_size / (sizeof(uint64_t) * 8);
@@ -122,33 +106,34 @@ int setandextract_avx2_uint32() {
         const unsigned int valsize = bitset_size / offset;
         uint16_t* vals = malloc(valsize * sizeof(uint16_t));
         uint64_t* bitset = calloc(bitset_size_in_words, sizeof(uint64_t));
+
         for (unsigned int k = 0; k < valsize; ++k) {
             vals[k] = (uint16_t)(k * offset);
         }
+
         bitset_set_list(bitset, vals, valsize);
         uint32_t* newvals = malloc(valsize * sizeof(uint32_t) + 64);
         bitset_extract_setbits_avx2(bitset, bitset_size_in_words, newvals,
                                     valsize, 0);
+
         for (unsigned int k = 0; k < valsize; ++k) {
-            if (newvals[k] != vals[k]) {
-                printf("bug expected %d == %d at %d but got %d .\n", vals[k],
-                       k * offset, k, newvals[k]);
-                return 0;
-            }
+            assert_int_equal(newvals[k], vals[k]);
         }
+
         free(vals);
         free(newvals);
         free(bitset);
     }
-    return 1;
 }
 
 int main() {
-    tellmeall();
-    if (!setandextract_uint16()) return -1;
-    if (!setandextract_sse_uint16()) return -1;
-    if (!setandextract_uint32()) return -1;
-    if (!setandextract_avx2_uint32()) return -1;
 
-    return EXIT_SUCCESS;
+    const struct CMUnitTest tests[] = {
+        cmocka_unit_test(setandextract_uint16),
+        cmocka_unit_test(setandextract_sse_uint16),
+        cmocka_unit_test(setandextract_uint32),
+        cmocka_unit_test(setandextract_avx2_uint32),
+    };
+
+    return cmocka_run_group_tests(tests, NULL, NULL);
 }

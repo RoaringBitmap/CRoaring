@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bitset.h"
-#include "containers.h"
+#include "containers/bitset.h"
+#include "containers/containers.h"
 #include "roaring_array.h"
 
 // ported from RoaringArray.java

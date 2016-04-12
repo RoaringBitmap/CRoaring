@@ -31,17 +31,7 @@
 # Debug files
 *.dSYM/
 
-# binaries
-*_benchmark
-*_unit
-unit
+tests/config.h
 
 # CMake
-CMakeCache.txt
-CMakeFiles
-cmake_install.cmake
-install_manifest.txt
-CTestTestfile.cmake
-Testing
-Makefile
-config.h
+build

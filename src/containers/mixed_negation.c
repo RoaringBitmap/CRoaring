@@ -3,7 +3,7 @@
  *
  */
 
-#include "mixed_negation.h"
+#include "containers/mixed_negation.h"
 #include <assert.h>
 
 /* commented out region to quiet warnings in master */

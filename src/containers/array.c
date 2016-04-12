@@ -9,7 +9,7 @@
 #include <string.h>
 #include <x86intrin.h>
 
-#include "array.h"
+#include "containers/array.h"
 #include "array_util.h"
 
 enum { DEFAULT_INIT_SIZE = 16 };

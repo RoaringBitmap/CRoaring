@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 #include "bitset_util.h"
-#include "containers.h"
-#include "convert.h"
+#include "containers/containers.h"
+#include "containers/convert.h"
 
 // file contains grubby stuff that must know impl. details of all container
 // types.
