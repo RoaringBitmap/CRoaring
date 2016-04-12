@@ -204,20 +204,13 @@ int array_negation_range_test3() {
 }
 
 int main() {
-<<<<<<< HEAD
-    tellmeall();
-    if (!array_bitset_and_or_test()) return -1;
-    //    if (!array_negation_empty_test()) return -1;  TODO FIX CRASH
-    if (!array_negation_test()) return -1;
-    if (!array_negation_range_test1()) return -1;
-    if (!array_negation_range_test1a()) return -1;
-    if (!array_negation_range_test2()) return -1;
-    if (!array_negation_range_test3()) return -1;
-=======
->>>>>>> master
-
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_test),
+        cmocka_unit_test(array_negation_test),
+        cmocka_unit_test(array_negation_range_test1),
+        cmocka_unit_test(array_negation_range_test1a),
+        cmocka_unit_test(array_negation_range_test2),
+        cmocka_unit_test(array_negation_range_test3),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
