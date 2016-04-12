@@ -264,6 +264,6 @@ int main() {
     if (r != 0) return -1;
     r = realdatacheck(BENCHMARK_DATA_DIR "wikileaks-noquotes_srt");
     if (r != 0) return -1;
-    printf("[%s] your code might be ok.\n", __FILE__);
-    return 0;
+
+    return EXIT_SUCCESS;
 }

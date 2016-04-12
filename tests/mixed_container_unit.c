@@ -13,11 +13,9 @@
 #include "containers/mixed_negation.h"
 #include "containers/containers.h"
 
-#include "misc/configreport.h"
+#include "test.h"
 
-// returns 1 if ok.
-int array_bitset_and_or_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
+void array_bitset_and_or_test() {
     array_container_t* A1 = array_container_create();
     array_container_t* A2 = array_container_create();
     array_container_t* AI = array_container_create();
@@ -29,54 +27,63 @@ int array_bitset_and_or_test() {
 
     // nb, array containers will be illegally big.
     for (int x = 0; x < (1 << 16); x += 3) {
-        array_container_add(A1, (uint16_t)x);
-        array_container_add(AO, (uint16_t)x);
-        bitset_container_set(B1, (uint16_t)x);
-        bitset_container_set(BO, (uint16_t)x);
+        array_container_add(A1, x);
+        array_container_add(AO, x);
+        bitset_container_set(B1, x);
+        bitset_container_set(BO, x);
     }
-    for (int x = 0; x < (1 << 16);
-         x += 62) {  // important: 62 is not divisible by 3
-        array_container_add(A2, (uint16_t)x);
-        array_container_add(AO, (uint16_t)x);
-        bitset_container_set(B2, (uint16_t)x);
-        bitset_container_set(BO, (uint16_t)x);
+
+    // important: 62 is not divisible by 3
+    for (int x = 0; x < (1 << 16); x += 62) {
+        array_container_add(A2, x);
+        array_container_add(AO, x);
+        bitset_container_set(B2, x);
+        bitset_container_set(BO, x);
     }
+
     for (int x = 0; x < (1 << 16); x += 62 * 3) {
-        array_container_add(AI, (uint16_t)x);
-        bitset_container_set(BI, (uint16_t)x);
+        array_container_add(AI, x);
+        bitset_container_set(BI, x);
     }
 
     // we interleave O and I on purpose (to trigger bugs!)
     int ci = array_container_cardinality(AI);  // expected intersection
     int co = array_container_cardinality(AO);  // expected union
-    assert(ci == bitset_container_cardinality(BI));
-    assert(co == bitset_container_cardinality(BO));
+
+    assert_int_equal(ci, bitset_container_cardinality(BI));
+    assert_int_equal(co, bitset_container_cardinality(BO));
+
     array_container_intersection(A1, A2, AI);
     array_container_union(A1, A2, AO);
     bitset_container_intersection(B1, B2, BI);
     bitset_container_union(B1, B2, BO);
-    assert(ci == bitset_container_cardinality(BI));
-    assert(co == bitset_container_cardinality(BO));
-    assert(ci == array_container_cardinality(AI));
-    assert(co == array_container_cardinality(AO));
+
+    assert_int_equal(ci, bitset_container_cardinality(BI));
+    assert_int_equal(co, bitset_container_cardinality(BO));
+    assert_int_equal(ci, array_container_cardinality(AI));
+    assert_int_equal(co, array_container_cardinality(AO));
+
     array_bitset_container_intersection(A1, B2, AI);
-    assert(ci == array_container_cardinality(AI));
+    assert_int_equal(ci, array_container_cardinality(AI));
+
     array_bitset_container_intersection(A2, B1, AI);
-    assert(ci == array_container_cardinality(AI));
+    assert_int_equal(ci, array_container_cardinality(AI));
+
     array_bitset_container_union(A1, B2, BO);
-    assert(co == bitset_container_cardinality(BO));
+    assert_int_equal(co, bitset_container_cardinality(BO));
+
     array_bitset_container_union(A2, B1, BO);
-    assert(co == bitset_container_cardinality(BO));
+    assert_int_equal(co, bitset_container_cardinality(BO));
+
     array_container_free(A1);
     array_container_free(A2);
     array_container_free(AI);
     array_container_free(AO);
+
     bitset_container_free(B1);
     bitset_container_free(B2);
     bitset_container_free(BI);
     bitset_container_free(BO);
-
-    return 1;
 }
 
 int array_negation_empty_test() {
@@ -197,6 +204,7 @@ int array_negation_range_test3() {
 }
 
 int main() {
+<<<<<<< HEAD
     tellmeall();
     if (!array_bitset_and_or_test()) return -1;
     //    if (!array_negation_empty_test()) return -1;  TODO FIX CRASH
@@ -205,7 +213,12 @@ int main() {
     if (!array_negation_range_test1a()) return -1;
     if (!array_negation_range_test2()) return -1;
     if (!array_negation_range_test3()) return -1;
+=======
+>>>>>>> master
 
-    printf("[%s] your code might be ok.\n", __FILE__);
-    return 0;
+    const struct CMUnitTest tests[] = {
+        cmocka_unit_test(array_bitset_and_or_test),
+    };
+
+    return cmocka_run_group_tests(tests, NULL, NULL);
 }

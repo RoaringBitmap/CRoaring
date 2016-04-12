@@ -3,10 +3,14 @@
  *
  */
 
+<<<<<<< HEAD
 #include "mixed_negation.h"
 #include "bitset_util.h"
 #include "array_util.h"
 #include "convert.h"
+=======
+#include "containers/mixed_negation.h"
+>>>>>>> master
 #include <assert.h>
 #include <string.h>
 
