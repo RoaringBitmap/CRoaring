@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bitset.h"
+#include "containers/bitset.h"
 #include "bitset_util.h"
 #include "utilasm.h"
 
@@ -548,7 +548,7 @@ void* bitset_container_deserialize(const char *buf, size_t buf_len) {
       free(ptr);
       return(NULL);
     }
-    
+
     memcpy(ptr->array, buf, l);
     ptr->cardinality = bitset_container_compute_cardinality(ptr);
   }
