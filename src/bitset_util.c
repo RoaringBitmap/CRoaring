@@ -721,6 +721,7 @@ uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
     uint64_t offset, load, pos;
     uint64_t shift = 6;
     const uint16_t *end = list + length;
+    if (!length) return card;
     // bts is not available as an intrinsic in GCC
     __asm volatile(
         "1:\n"
@@ -743,6 +744,7 @@ void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
     uint64_t offset, load, pos;
     uint64_t shift = 6;
     const uint16_t *end = list + length;
+    if (!length) return;
     // bts is not available as an intrinsic in GCC
     __asm volatile(
         "1:\n"
@@ -764,6 +766,7 @@ uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
     uint64_t offset, load, pos;
     uint64_t shift = 6;
     const uint16_t *end = list + length;
+    if (!length) return card;
     // btr is not available as an intrinsic in GCC
     __asm volatile(
         "1:\n"
