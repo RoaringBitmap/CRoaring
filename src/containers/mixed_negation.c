@@ -165,8 +165,24 @@ bool array_container_negation_range(const array_container_t *src,
 bool bitset_container_negation_range(const bitset_container_t *src,
                                      const int range_start, const int range_end,
                                      void **dst) {
-    return true;
-    // TODO WRITE ME
+    // TODO maybe consider density-based estimate
+    // and sometimes build result directly as array, with
+    // conversion back to bitset if wrong.  Or determine
+    // actual result cardinality, then go directly for the known final cont.
+
+    // keep computation using bitsets as long as possible.
+    bitset_container_t *t = bitset_container_clone(src);
+    bitset_flip_range(t->array, (uint32_t)range_start, (uint32_t)range_end);
+    t->cardinality = bitset_container_compute_cardinality(t);
+
+    if (t->cardinality > DEFAULT_MAX_SIZE) {
+        *dst = t;
+        return true;
+    } else {
+        *dst = array_container_from_bitset(t);
+        bitset_container_free(t);
+        return false;
+    }
 }
 
 /* inplace version */
@@ -187,8 +203,8 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
         *dst = src;
         return true;
     }
-    // TODO: write the conversion to array and freeing.
-    assert(false);
+    *dst = array_container_from_bitset(src);
+    bitset_container_free(src);
     return false;
 }
 

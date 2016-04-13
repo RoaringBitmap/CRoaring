@@ -46,7 +46,7 @@ array_container_t *array_container_create() {
 }
 
 /* Duplicate container */
-array_container_t *array_container_clone(array_container_t *src) {
+array_container_t *array_container_clone(const array_container_t *src) {
     array_container_t *new =
         array_container_create_given_capacity(src->capacity);
     if (new == NULL) return NULL;
