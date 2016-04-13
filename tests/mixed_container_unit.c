@@ -87,13 +87,12 @@ void array_bitset_and_or_test() {
 }
 
 int array_negation_empty_test() {
-    printf("[%s] %s\n", __FILE__, __func__);
     array_container_t* AI = array_container_create();
     bitset_container_t* BO = bitset_container_create();
 
     array_container_negation(AI, BO);
 
-    assert(bitset_container_cardinality(BO) == (1 << 16));
+    assert_int_equal(bitset_container_cardinality(BO), (1 << 16));
 
     array_container_free(AI);
     bitset_container_free(BO);
@@ -102,7 +101,6 @@ int array_negation_empty_test() {
 
 int array_negation_test() {
     int ctr = 0;
-    printf("[%s] %s\n", __FILE__, __func__);
     array_container_t* AI = array_container_create();
     bitset_container_t* BO = bitset_container_create();
 
@@ -112,13 +110,13 @@ int array_negation_test() {
     }
 
     array_container_negation(AI, BO);
-    assert(bitset_container_cardinality(BO) == (1 << 16) - ctr);
+    assert_int_equal(bitset_container_cardinality(BO), (1 << 16) - ctr);
 
     for (int x = 0; x < (1 << 16); x++) {
         if (x % 29 == 0) {
-            assert(!bitset_container_contains(BO, (uint16_t)x));
+            assert_false(bitset_container_contains(BO, (uint16_t)x));
         } else {
-            assert(bitset_container_contains(BO, (uint16_t)x));
+            assert_true(bitset_container_contains(BO, (uint16_t)x));
         }
         array_container_add(AI, (uint16_t)x);
         ++ctr;
@@ -161,8 +159,8 @@ static int array_negation_range_test(int r_start, int r_end, bool is_bitset) {
      * result_size_should_be, */
     /*        result_card); */
 
-    assert(is_bitset == result_is_bitset);
-    assert(result_size_should_be == result_card);
+    assert_int_equal(is_bitset, result_is_bitset);
+    assert_int_equal(result_size_should_be, result_card);
 
     for (int x = 0; x < (1 << 16); x++) {
         bool should_be_present;
@@ -175,8 +173,8 @@ static int array_negation_range_test(int r_start, int r_end, bool is_bitset) {
         /*     container_contains(BO, (uint16_t)x, result_typecode)) */
         /*     printf("oops on %d\n", x); */
 
-        assert(container_contains(BO, (uint16_t)x, result_typecode) ==
-               should_be_present);
+        assert_int_equal(container_contains(BO, (uint16_t)x, result_typecode),
+                         should_be_present);
     }
     container_free(BO, result_typecode);
     array_container_free(AI);
@@ -185,23 +183,19 @@ static int array_negation_range_test(int r_start, int r_end, bool is_bitset) {
 
 /* result is a bitset.  Range fits neatly in words */
 int array_negation_range_test1() {
-    printf("[%s] %s\n", __FILE__, __func__);
     return array_negation_range_test(0x4000, 0xc000, true);
 }
 
 /* result is a bitset.  Range begins and ends mid word */
 int array_negation_range_test1a() {
-    printf("[%s] %s\n", __FILE__, __func__);
     return array_negation_range_test(0x4010, 0xc010, true);
 }
 /* result is an array */
 int array_negation_range_test2() {
-    printf("[%s] %s\n", __FILE__, __func__);
     return array_negation_range_test(0x7f00, 0x8030, false);
 }
 /* Empty range.  result is a clone */
 int array_negation_range_test3() {
-    printf("[%s] %s\n", __FILE__, __func__);
     return array_negation_range_test(0x7800, 0x7800, false);
 }
 
@@ -210,7 +204,6 @@ int array_negation_range_test3() {
 static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
                                        bool is_bitset, bool inplace) {
     int ctr = 0;
-    printf("[%s] %s\n", __FILE__, __func__);
     bitset_container_t* BI = bitset_container_create();
     void* BO;
     bool result_is_bitset;
@@ -242,17 +235,16 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
                                                 : ARRAY_CONTAINER_TYPE_CODE);
 
     int result_card = container_get_cardinality(BO, result_typecode);
-    printf("I think size should be %d and card is %d\n", result_size_should_be,
-           result_card);
 
-    assert(is_bitset == result_is_bitset);
+    assert_int_equal(is_bitset, result_is_bitset);
 
-    if (is_bitset && inplace)
-        assert(BO == BI);  // it really is inplace
-    else
-        assert(BO != BI);  // it better not be inplace
+    if (is_bitset && inplace) {
+        assert_true(BO == BI);  // it really is inplace
+    } else {
+        assert_false(BO == BI);  // it better not be inplace
+    }
 
-    assert(result_size_should_be == result_card);
+    assert_int_equal(result_size_should_be, result_card);
 
     for (int x = 0; x < (1 << 16); x++) {
         bool should_be_present;
@@ -265,8 +257,8 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
         /*     container_contains(BO, (uint16_t)x, result_typecode)) */
         /*     printf("oops on %d\n", x); */
 
-        assert(container_contains(BO, (uint16_t)x, result_typecode) ==
-               should_be_present);
+        assert_int_equal(container_contains(BO, (uint16_t)x, result_typecode),
+                         should_be_present);
     }
     container_free(BO, result_typecode);
     if (!inplace) bitset_container_free(BI);
@@ -277,28 +269,24 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
 
 /* result is a bitset */
 int bitset_negation_range_test1() {
-    printf("[%s] %s\n", __FILE__, __func__);
     // 33% density will be a bitmap and remain so after any range negated
     return bitset_negation_range_tests(3, 0x7f00, 0x8030, true, false);
 }
 
 /* result is a array */
 int bitset_negation_range_test2() {
-    printf("[%s] %s\n", __FILE__, __func__);
     // 99% density will be a bitmap and become array when mostly flipped
     return bitset_negation_range_tests(100, 0x080, 0xff80, false, false);
 }
 
 /* inplace: result is a bitset */
 int bitset_negation_range_inplace_test1() {
-    printf("[%s] %s\n", __FILE__, __func__);
     // 33% density will be a bitmap and remain so after any range negated
     return bitset_negation_range_tests(3, 0x7f00, 0x8030, true, true);
 }
 
 /* inplace: result is a array */
 int bitset_negation_range_inplace_test2() {
-    printf("[%s] %s\n", __FILE__, __func__);
     // 99% density will be a bitmap and become array when mostly flipped
     return bitset_negation_range_tests(100, 0x080, 0xff80, false, true);
 }
