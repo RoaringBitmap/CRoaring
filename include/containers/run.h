@@ -207,4 +207,12 @@ static inline int32_t run_container_size_in_bytes(run_container_t *container) {
 bool run_container_equals(run_container_t *container1,
                           run_container_t *container2);
 
+/**
+ * Used in a start-finish scan that appends segments, for XOR and NOT
+ */
+
+void run_container_smart_append_exclusive(run_container_t *src,
+                                          const uint16_t start,
+                                          const uint16_t length);
+
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

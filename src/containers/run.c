@@ -639,3 +639,56 @@ bool run_container_equals(run_container_t *container1,
     }
     return true;
 }
+
+// TODO: write smart_append_exclusive version to match the overloaded 1 param
+// Java version (or  is it even used?)
+
+// follows the Java implementation closely
+void run_container_smart_append_exclusive(run_container_t *src,
+                                          const uint16_t start,
+                                          const uint16_t length) {
+    int old_end;
+    rle16_t *last_run = src->n_runs ? src->runs + (src->n_runs - 1) : NULL;
+    rle16_t *appended_last_run = src->runs + src->n_runs;
+
+    if (!src->n_runs ||
+        (start > (old_end = last_run->value + last_run->length + 1))) {
+        *appended_last_run = (rle16_t){.value = start, .length = length};
+        src->n_runs++;
+        return;
+    }
+    if (old_end == start) {
+        // we merge
+        last_run->length += (length + 1);
+        return;
+    }
+    int new_end = start + length + 1;
+
+    if (start == last_run->value) {
+        // wipe out previous
+        if (new_end < old_end) {
+            *last_run = (rle16_t){.value = (uint16_t)new_end,
+                                  .length = (uint16_t)(old_end - new_end - 1)};
+            return;
+        } else if (new_end > old_end) {
+            *last_run = (rle16_t){.value = (uint16_t)old_end,
+                                  .length = (uint16_t)(new_end - old_end - 1)};
+            return;
+        } else {
+            src->n_runs--;
+            return;
+        }
+    }
+    last_run->length = start - last_run->value - 1;
+    if (new_end < old_end) {
+        *appended_last_run =
+            (rle16_t){.value = (uint16_t)new_end,
+                      .length = (uint16_t)(old_end - new_end - 1)};
+        src->n_runs++;
+    } else if (new_end > old_end) {
+        *appended_last_run =
+            (rle16_t){.value = (uint16_t)old_end,
+                      .length = (uint16_t)(new_end - old_end - 1)};
+        src->n_runs++;
+    }
+}

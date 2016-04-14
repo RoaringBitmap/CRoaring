@@ -6,6 +6,8 @@
 #include "containers/mixed_negation.h"
 #include "bitset_util.h"
 #include "array_util.h"
+#include "containers/run.h"
+#include "containers/containers.h"
 #include "containers/convert.h"
 
 #include <assert.h>
@@ -13,12 +15,9 @@
 
 /* code makes the assumption that sizeof(int) > 2
  * for ranges. Could use uint32_t instead if this is undesirable.
- * But it seems silly to worry about 16-bit machines with this library.
+ * But it seems silly to worry about 16-bit platforms with this library.
  */
-
-//#include "array_util.h"
-//#include "bitset_util.h"
-//#include "convert.h"
+_Static_assert(sizeof(int) > 2, "ints too small for ranges");
 
 // TODO: make simplified and optimized negation code across
 // the full range.
@@ -218,8 +217,38 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
  */
 int run_container_negation_range(const run_container_t *src,
                                  const int range_start, const int range_end,
-                                 void **dst) {  // TODO WRITE ME
-    return 0;
+                                 void **dst) {
+    uint8_t return_typecode;
+    // follows the Java implementation
+    if (range_end <= range_start) {
+        *dst = run_container_clone(src);
+        return RUN_CONTAINER_TYPE_CODE;
+    }
+
+    run_container_t *ans = run_container_create(src->n_runs + 1);
+    int k = 0;
+    for (; k < src->n_runs && src->runs[k].value < range_start; ++k) {
+        ans->runs[k] = src->runs[k];
+        ans->n_runs++;
+    }
+
+    run_container_smart_append_exclusive(
+        ans, (uint16_t)range_start, (uint16_t)(range_end - range_start - 1));
+
+    for (; k < src->n_runs; ++k)
+        run_container_smart_append_exclusive(ans, src->runs[k].value,
+                                             src->runs[k].length);
+
+    *dst = convert_run_to_efficient_container(ans, &return_typecode);
+    switch (return_typecode) {
+        case RUN_CONTAINER_TYPE_CODE:
+            return 2;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return 1;
+        case BITSET_CONTAINER_TYPE_CODE:
+        default:
+            return 0;
+    }
 }
 
 /*
