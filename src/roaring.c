@@ -1,10 +1,10 @@
-#include "roaring.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "array_util.h"
+#include "roaring.h"
 #include "roaring_array.h"
 
 roaring_bitmap_t *roaring_bitmap_create() {
@@ -365,12 +365,12 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     }
 }
 
-uint32_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra) {
-    uint32_t ans = 0;
+uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra) {
+    uint64_t card = 0;
     for (int i = 0; i < ra->high_low_container->size; ++i)
-        ans += container_get_cardinality(ra->high_low_container->containers[i],
-                                         ra->high_low_container->typecodes[i]);
-    return ans;
+        card += container_get_cardinality(ra->high_low_container->containers[i],
+                                          ra->high_low_container->typecodes[i]);
+    return card;
 }
 
 uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
