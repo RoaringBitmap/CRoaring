@@ -2,6 +2,7 @@ set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata/")
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
                 "${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 
+
 add_c_test(bitset_container_unit)
 add_c_test(array_container_unit)
 add_c_test(mixed_container_unit)

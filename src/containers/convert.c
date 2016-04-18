@@ -132,6 +132,22 @@ void *convert_run_to_efficient_container(run_container_t *c,
         size_as_bitset_container < size_as_array_container
             ? size_as_bitset_container
             : size_as_array_container;
+
+    printf("first few elements are:");
+    int ctr = 0;
+    for (int i = 0; i < (1 << 16); ++i)
+        if (run_container_contains(c, (uint16_t)i)) {
+            printf("%d ", i);
+            if (ctr++ == 5) {
+                printf("\n");
+                break;
+            }
+        }
+
+    printf("convert run to efficient sarc=%d sabc=%d card=%d saac=%d msnr=%d\n",
+           size_as_run_container, size_as_bitset_container, card,
+           size_as_array_container, min_size_non_run);
+
     if (size_as_run_container <= min_size_non_run) {  // no conversion
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         return c;

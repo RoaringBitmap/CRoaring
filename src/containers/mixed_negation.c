@@ -64,7 +64,7 @@ bool bitset_container_negation_inplace(bitset_container_t *src, void **dst) {
 
 /* Negation across the entire range of container
  * Compute the  negation of src  and write the result
- * to *dst.  A return value of 0 indicates an array result,
+ * to *dst.  Return value of 0 indicates an array result,
  * while a 1 indicates an bitset result, and 2 indicates a
  * run result.
  *  We assume that dst is not pre-allocated. In
@@ -219,35 +219,59 @@ int run_container_negation_range(const run_container_t *src,
                                  const int range_start, const int range_end,
                                  void **dst) {
     uint8_t return_typecode;
+
     // follows the Java implementation
     if (range_end <= range_start) {
         *dst = run_container_clone(src);
-        return RUN_CONTAINER_TYPE_CODE;
+        return 2;  // not RUN_CONTAINER_TYPE_CODE;
     }
 
-    run_container_t *ans = run_container_create(src->n_runs + 1);
+    run_container_t *ans = run_container_create_given_capacity(
+        src->n_runs + 1);  // src->n_runs + 1);
     int k = 0;
     for (; k < src->n_runs && src->runs[k].value < range_start; ++k) {
         ans->runs[k] = src->runs[k];
         ans->n_runs++;
     }
 
+    // temp temp
+    // printf("temp temp check1 malloc problem");
+    void *fooo = malloc(8192);
+    free(fooo);  // survives
+
     run_container_smart_append_exclusive(
         ans, (uint16_t)range_start, (uint16_t)(range_end - range_start - 1));
 
-    for (; k < src->n_runs; ++k)
+    // temp temp
+    // printf("temp temp end check3 malloc problem");
+    void *foo77 = malloc(8192);  // survives
+    free(foo77);
+
+    for (; k < src->n_runs; ++k) {
         run_container_smart_append_exclusive(ans, src->runs[k].value,
                                              src->runs[k].length);
+        // temp temp
+        // printf("temp temp end check k=%d malloc problem", k);
+        void *foo78 = malloc(8192);
+        free(foo78);
+    }
+
+    // temp temp
+    // printf("temp temp end check2 malloc problem");
+    void *foo = malloc(8192);  // dies
+    free(foo);
 
     *dst = convert_run_to_efficient_container(ans, &return_typecode);
+    printf("return typecode value is %d\n", (int)return_typecode);
+
     switch (return_typecode) {
         case RUN_CONTAINER_TYPE_CODE:
             return 2;
         case ARRAY_CONTAINER_TYPE_CODE:
-            return 1;
+            return 0;
         case BITSET_CONTAINER_TYPE_CODE:
         default:
-            return 0;
+            return 1;
     }
 }
 
