@@ -4,7 +4,6 @@
 #ifndef BENCHMARKS_INCLUDE_BENCHMARK_H_
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
 
-#include "misc/configreport.h"
 
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
