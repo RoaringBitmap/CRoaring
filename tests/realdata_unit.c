@@ -2,8 +2,9 @@
  * realdata_unit.c
  */
 #define _GNU_SOURCE
-#include "../benchmarks/bitmapsfromtextfiles.h"
+#include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"
+#include "roaring.h"
 
 void show_structure(roaring_array_t *);  // debug
 
