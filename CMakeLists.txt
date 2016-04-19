@@ -4,7 +4,7 @@ project(RoaringBitmap)
 set(ROARING_LIB_NAME roaring)
 
 option(AVX_TUNING "Enable AVX tuning" ON)
-option(BUILD_STATIC "Build a static library" ON) # seems like a good default?
+option(BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 option(SANITIZE "Sanitize addresses" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
