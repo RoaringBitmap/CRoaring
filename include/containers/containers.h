@@ -215,7 +215,7 @@ static inline bool container_contains(const void *container, uint16_t val,
         default:
             assert(0);
             __builtin_unreachable();
-            return NULL;
+            return false;
     }
 }
 
@@ -290,7 +290,7 @@ static inline bool container_equals(const void *c1, uint8_t type1,
         default:
             assert(0);
             __builtin_unreachable();
-            return NULL;
+            return false;
     }
 }
 
