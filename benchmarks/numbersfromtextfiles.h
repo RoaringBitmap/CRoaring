@@ -35,7 +35,7 @@ static char *read_file(const char *filename) {
     fseek(fp, 0, SEEK_END);
     size_t size = (size_t)ftell(fp);
     rewind(fp);
-    char *answer = malloc(size + 1);
+    char *answer = (char *) malloc(size + 1);
     if (!answer) {
         fclose(fp);
         return NULL;
@@ -63,7 +63,7 @@ static uint32_t *read_integer_file(char *filename, size_t *howmany) {
         if (buffer[i] == ',') ++howmanyints;
     }
 
-    uint32_t *answer = malloc(howmanyints * sizeof(uint32_t));
+    uint32_t *answer = (uint32_t *) malloc(howmanyints * sizeof(uint32_t));
     if (answer == NULL) return NULL;
     size_t pos = 0;
     for (int i = 0; buffer[i] != '\0'; i++) {
@@ -111,12 +111,12 @@ static uint32_t **read_all_integer_files(const char *dirname, char *extension,
         if (hasExtension(entry_list[i]->d_name, extension)) ++truec;
     }
     *count = truec;
-    *howmany = malloc(sizeof(size_t) * (*count));
-    uint32_t **answer = malloc(sizeof(uint32_t *) * (*count));
+    *howmany = (size_t *) malloc(sizeof(size_t) * (*count));
+    uint32_t **answer = (uint32_t **) malloc(sizeof(uint32_t *) * (*count));
     size_t dirlen = strlen(dirname);
-    char *modifdirname = (char *)dirname;
+    char *modifdirname = (char *) dirname;
     if (modifdirname[dirlen - 1] != '/') {
-        modifdirname = malloc(dirlen + 2);
+        modifdirname = (char *) malloc(dirlen + 2);
         strcpy(modifdirname, dirname);
         modifdirname[dirlen] = '/';
         modifdirname[dirlen + 1] = '\0';
@@ -126,7 +126,7 @@ static uint32_t **read_all_integer_files(const char *dirname, char *extension,
          i++) { /* formerly looped while i < *count */
         if (!hasExtension(entry_list[i]->d_name, extension)) continue;
         size_t filelen = strlen(entry_list[i]->d_name);
-        char *fullpath = malloc(dirlen + filelen + 1);
+        char *fullpath = (char *) malloc(dirlen + filelen + 1);
         strcpy(fullpath, modifdirname);
         strcpy(fullpath + dirlen, entry_list[i]->d_name);
         answer[pos] = read_integer_file(fullpath, &((*howmany)[pos]));
