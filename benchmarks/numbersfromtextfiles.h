@@ -91,8 +91,8 @@ END:
 /**
  * Does the file filename ends with the given extension.
  */
-static bool hasExtension(char *filename, char *extension) {
-    char *ext = strrchr(filename, '.');
+static bool hasExtension(const char *filename, const char *extension) {
+    const char *ext = strrchr(filename, '.');
     return (ext && !strcmp(ext, extension));
 }
 
@@ -100,7 +100,7 @@ static bool hasExtension(char *filename, char *extension) {
  * read all (count) integer files in a directory. Caller is responsible
  * for memory de-allocation. In case of error, a NULL is returned.
  */
-static uint32_t **read_all_integer_files(const char *dirname, char *extension,
+static uint32_t **read_all_integer_files(const char *dirname, const char *extension,
                                          size_t **howmany, size_t *count) {
     struct dirent **entry_list;
 
