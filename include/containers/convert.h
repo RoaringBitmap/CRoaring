@@ -38,9 +38,9 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
 void *convert_run_optimize(void *c, uint8_t typecode_original,
                            uint8_t *typecode_after);
 
-/* converts a run container to either an array or a bitset, IF it saves space */
-/* If a conversion occurs, the original containers is freed and a new one
- * allocated */
+/* converts a run container to either an array or a bitset, IF it saves space. */
+/* If a conversion occurs, the caller is responsible to free the original container and
+ * he becomes reponsible to free the new one. */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after);
 
