@@ -76,6 +76,7 @@ roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, somevalues);
 uint32_t card1;
 uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
 roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
+free(arr1);
 assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
 
 // we can copy and compare bitmaps

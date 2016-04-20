@@ -99,7 +99,7 @@ bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     free(arr1);
     free(arr2);
     free(arr);
-    free(temp);
+    roaring_bitmap_free(temp);
     return answer;
 }
 
@@ -129,7 +129,7 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     free(arr1);
     free(arr2);
     free(arr);
-    free(temp);
+    roaring_bitmap_free(temp);
     return answer;
 }
 

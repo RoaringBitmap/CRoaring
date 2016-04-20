@@ -64,6 +64,7 @@ void test_example() {
     assert_non_null(arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
+    free(arr1);
     assert_non_null(r1f);
 
     // bitmaps shall be equal
