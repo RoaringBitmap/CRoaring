@@ -116,8 +116,10 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
     return answer;
 }
 
-/* Converts a run container to either an array or a bitset, IF it saves space. */
-/* If a conversion occurs, the caller is responsible to free the original container and
+/* Converts a run container to either an array or a bitset, IF it saves space.
+ */
+/* If a conversion occurs, the caller is responsible to free the original
+ * container and
  * he becomes reponsible to free the new one. */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after) {
@@ -174,7 +176,11 @@ void *convert_run_to_efficient_container(run_container_t *c,
 void *convert_run_optimize(void *c, uint8_t typecode_original,
                            uint8_t *typecode_after) {
     if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
-        return convert_run_to_efficient_container(c, typecode_after);
+        void *newc = convert_run_to_efficient_container(c, typecode_after);
+        if (newc != c) {
+            container_free(c, typecode_original);
+        }
+        return newc;
     } else if (typecode_original == ARRAY_CONTAINER_TYPE_CODE) {
         // it might need to be converted to a run container.
         array_container_t *c_qua_array = (array_container_t *)c;
