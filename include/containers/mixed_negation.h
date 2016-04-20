@@ -42,9 +42,8 @@ bool bitset_container_negation_inplace(bitset_container_t *src, void **dst);
 
 /* Negation across the entire range of container
  * Compute the  negation of src  and write the result
- * to *dst.  A return value of 0 indicates an array result,
- * while a 1 indicates an bitset result, and 2 indicates a
- * run result.
+ * to *dst.
+ * Return values are the *_TYPECODES as defined * in containers.h
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
@@ -98,9 +97,7 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
 
 /* Negation across a range of container
  * Compute the  negation of src  and write the result
- * to *dst.  A return value of 0 indicates an array result,
- * while a 1 indicates a bitset result, and 2 indicates a
- * run result.
+ * to *dst.  Return values are the *_TYPECODES as defined * in containers.h
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
