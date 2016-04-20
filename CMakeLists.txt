@@ -18,9 +18,21 @@ install(DIRECTORY include/ DESTINATION include/${ROARING_LIB_NAME})
 enable_testing()
 include(CTest)
 
+
+##################################
+#### My understanding is that variable get passed down to subdirectories, so
+#### this needs to be done here.
+set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/testdata/")
+set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/realdata/")
+MESSAGE( STATUS "BENCHMARK_DATA_DIR: " ${BENCHMARK_DATA_DIR} )
+MESSAGE( STATUS "TEST_DATA_DIR: " ${TEST_DATA_DIR} )
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h")
+#################################
+
 add_subdirectory(src)
-add_subdirectory(tests)
 add_subdirectory(benchmarks)
+add_subdirectory(tests)
 
 # Being terse is good, but knowing how the build is configured is important
 # and should not be hard to figure out.
