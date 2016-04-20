@@ -126,24 +126,26 @@ roaring_bitmap_free(r3);
 
 # Building
 
-CRoaring follows the standard cmake workflow:
+CRoaring follows the standard cmake workflow. Starting from the root directory of
+the project (CRoaring), you can do:
 
 ```
-mkdir build
+mkdir -p build
 cd build
 cmake ..
 make
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
-For a debug release, try
+For a debug release, starting from the root directory of the project (CRoaring), try
 
 ```
-mkdir debug
+mkdir -p debug
 cd debug
 cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE=ON ..
 make
 ```
+
 (Of course you can replace the ``debug`` directory with any other directory name.)
 
 
