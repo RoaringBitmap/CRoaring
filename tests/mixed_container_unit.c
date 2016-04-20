@@ -207,7 +207,7 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
     bitset_container_t* BI = bitset_container_create();
     void* BO;
     bool result_is_bitset;
-    int result_size_should_be;
+    int result_size_should_be = 0;
 
     for (int x = 0; x < (1 << 16); x++) {
         if (x % sparsity) bitset_container_add(BI, (uint16_t)x);
