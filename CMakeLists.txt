@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.7)
+if (NOT CMAKE_BUILD_TYPE)
+                message(STATUS "No build type selected, default to Release")
+                set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+endif()
 
 project(RoaringBitmap)
 set(ROARING_LIB_NAME roaring)
@@ -17,7 +21,6 @@ install(DIRECTORY include/ DESTINATION include/${ROARING_LIB_NAME})
 
 enable_testing()
 include(CTest)
-
 
 ##################################
 #### My understanding is that variable get passed down to subdirectories, so
@@ -42,4 +45,5 @@ MESSAGE( STATUS "BUILD_STATIC: " ${BUILD_STATIC} )
 MESSAGE( STATUS "SANITIZE: " ${SANITIZE} )
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} ) # important to know which compiler is used
 MESSAGE (STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} ) # important to know the flags
-
+MESSAGE( STATUS "CMAKE_C_FLAGS_DEBUG: " ${CMAKE_C_FLAGS_DEBUG} )
+MESSAGE( STATUS "CMAKE_C_FLAGS_RELEASE: " ${CMAKE_C_FLAGS_RELEASE} )
