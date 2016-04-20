@@ -177,7 +177,11 @@ void *convert_run_to_efficient_container(run_container_t *c,
 void *convert_run_optimize(void *c, uint8_t typecode_original,
                            uint8_t *typecode_after) {
     if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
-        return convert_run_to_efficient_container(c, typecode_after);
+        void *newc = convert_run_to_efficient_container(c, typecode_after);
+        if (newc != c) {
+            container_free(c, typecode_original);
+        }
+        return newc;
     } else if (typecode_original == ARRAY_CONTAINER_TYPE_CODE) {
         // it might need to be converted to a run container.
         array_container_t *c_qua_array = (array_container_t *)c;
