@@ -134,27 +134,26 @@ cd build
 cmake ..
 make
 ```
+(You can replace the ``build`` directory with any other directory name.)
 
-For debug release, try
+For a debug release, try
 
 ```
 mkdir debug
 cd debug
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE=ON ..
 make
 ```
-
-To turn on sanitizer flags, try
-```
-cmake -DSANITIZE=1
-```
+(Of course you can replace the ``debug`` directory with any other directory name.)
 
 
-To run unit tests:
+To run unit tests (you must first run ``make``):
 
 ```
 make test
 ```
+
+The detailed output of the tests can be found in ``Testing/Temporary/LastTest.log``.
 
 To run real-data benchmark
 
