@@ -52,7 +52,8 @@ void test_deserialize(char* filename) {
     char* input_buffer = readfile(filename);
     assert_non_null(input_buffer);
 
-    roaring_bitmap_t* bitmap = roaring_bitmap_portable_deserialize(input_buffer);
+    roaring_bitmap_t* bitmap =
+        roaring_bitmap_portable_deserialize(input_buffer);
     assert_non_null(bitmap);
 
     size_t expected_size = roaring_bitmap_portable_size_in_bytes(bitmap);
@@ -60,7 +61,8 @@ void test_deserialize(char* filename) {
     assert_int_equal(expected_size, filesize(filename));
 
     char* output_buffer = malloc(expected_size);
-    size_t actual_size = roaring_bitmap_portable_serialize(bitmap, output_buffer);
+    size_t actual_size =
+        roaring_bitmap_portable_serialize(bitmap, output_buffer);
 
     assert_int_equal(actual_size, expected_size);
     assert_false(compare(input_buffer, output_buffer, actual_size));
@@ -89,7 +91,6 @@ void test_deserialize_portable_wrun() {
 }
 
 int main() {
-
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_deserialize_portable_norun),
         cmocka_unit_test(test_deserialize_portable_wrun),

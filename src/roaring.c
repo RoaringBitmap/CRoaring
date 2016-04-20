@@ -301,11 +301,9 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
 }
 
 // inplace or (modifies its first argument).
-// TODO: test it....
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
-    roaring_bitmap_t *answer = roaring_bitmap_create();
     int length1 = x1->high_low_container->size;
     const int length2 = x2->high_low_container->size;
 
@@ -360,7 +358,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(answer->high_low_container, x2->high_low_container,
+        ra_append_copy_range(x1->high_low_container, x2->high_low_container,
                              pos2, length2);
     }
 }

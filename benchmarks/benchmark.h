@@ -4,8 +4,6 @@
 #ifndef BENCHMARKS_INCLUDE_BENCHMARK_H_
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
 
-#include "misc/configreport.h"
-
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
         register unsigned cyc_high, cyc_low;                                  \

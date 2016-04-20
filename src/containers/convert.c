@@ -116,9 +116,9 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
     return answer;
 }
 
-/* converts a run container to either an array or a bitset, IF it saves space */
-/* If a conversion occurs, the original containers is freed and a new one
- * allocated */
+/* Converts a run container to either an array or a bitset, IF it saves space. */
+/* If a conversion occurs, the caller is responsible to free the original container and
+ * he becomes reponsible to free the new one. */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after) {
     int32_t size_as_run_container =
@@ -165,7 +165,6 @@ void *convert_run_to_efficient_container(run_container_t *c,
             }
         }
         *typecode_after = ARRAY_CONTAINER_TYPE_CODE;
-        run_container_free(c);
         return answer;
     }
     // else to bitset
@@ -178,7 +177,6 @@ void *convert_run_to_efficient_container(run_container_t *c,
     }
     answer->cardinality = card;
     *typecode_after = BITSET_CONTAINER_TYPE_CODE;
-    run_container_free(c);
     return answer;
 }
 

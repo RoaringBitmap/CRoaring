@@ -593,7 +593,6 @@ int run_negation_range_test9() {
 
 /* now tests that negate just part of the range:  18 more... */
 // TODO
-
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_test),

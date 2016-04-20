@@ -52,7 +52,8 @@ void set_get_test() {
     }
 
     assert_int_equal(bitset_container_cardinality(B), (1 << 16) / 3 + 1);
-    assert_int_equal(bitset_container_compute_cardinality(B), (1 << 16) / 3 + 1);
+    assert_int_equal(bitset_container_compute_cardinality(B),
+                     (1 << 16) / 3 + 1);
 
     for (size_t x = 0; x < 1 << 16; x += 3) {
         bitset_container_unset(B, x);
@@ -208,14 +209,10 @@ void to_uint32_array_test() {
 }
 
 int main() {
-
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(printf_test),
-        cmocka_unit_test(set_get_test),
-        cmocka_unit_test(and_or_test),
-        cmocka_unit_test(xor_test),
-        cmocka_unit_test(andnot_test),
-        cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(printf_test), cmocka_unit_test(set_get_test),
+        cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
+        cmocka_unit_test(andnot_test), cmocka_unit_test(to_uint32_array_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

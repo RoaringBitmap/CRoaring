@@ -1,6 +1,7 @@
-set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata/")
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
-                "${CMAKE_CURRENT_SOURCE_DIR}/config.h")
+### This code is buggy because it does not ensure that all variables have been defined :
+#set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata/")
+#configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
+#                "${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 
 
 add_c_test(bitset_container_unit)

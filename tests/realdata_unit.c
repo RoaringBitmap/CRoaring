@@ -2,8 +2,9 @@
  * realdata_unit.c
  */
 #define _GNU_SOURCE
-#include "../benchmarks/bitmapsfromtextfiles.h"
+#include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"
+#include "roaring.h"
 
 void show_structure(roaring_array_t *);  // debug
 
@@ -98,7 +99,7 @@ bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     free(arr1);
     free(arr2);
     free(arr);
-    free(temp);
+    roaring_bitmap_free(temp);
     return answer;
 }
 
@@ -128,7 +129,7 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     free(arr1);
     free(arr2);
     free(arr);
-    free(temp);
+    roaring_bitmap_free(temp);
     return answer;
 }
 
@@ -278,6 +279,41 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
     return true;
 }
 
+bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
+                         size_t count) {
+    roaring_bitmap_t *tempornorun =
+        roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rnorun);
+    roaring_bitmap_t *temporruns =
+        roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rruns);
+    roaring_bitmap_t *longtempornorun;
+    roaring_bitmap_t *longtemporruns;
+    if (count == 1) {
+        longtempornorun = rnorun[0];
+        longtemporruns = rruns[0];
+    } else {
+        longtempornorun = roaring_bitmap_or(rnorun[0], rnorun[1]);
+        longtemporruns = roaring_bitmap_or(rruns[0], rruns[1]);
+        for (int i = 2; i < (int)count; ++i) {
+            roaring_bitmap_t *t1 =
+                roaring_bitmap_or(rnorun[i], longtempornorun);
+            roaring_bitmap_t *t2 = roaring_bitmap_or(rruns[i], longtemporruns);
+            roaring_bitmap_free(longtempornorun);
+            longtempornorun = t1;
+            roaring_bitmap_free(longtemporruns);
+            longtemporruns = t2;
+        }
+    }
+    if (!slow_bitmap_equals(longtempornorun, tempornorun)) {
+        printf("[compare_wide_unions] Unions don't agree! (regular) \n");
+        return false;
+    }
+    if (!slow_bitmap_equals(temporruns, longtemporruns)) {
+        printf("[compare_wide_unions] Unions don't agree! (runs) \n");
+        return false;
+    }
+    return true;
+}
+
 bool is_bitmap_equal_to_array(roaring_bitmap_t *bitmap, uint32_t *vals,
                               size_t numbers) {
     uint32_t card;
@@ -301,7 +337,7 @@ bool loadAndCheckAll(const char *dirname) {
             "I could not find or load any data file with extension %s in "
             "directory %s.\n",
             extension, dirname);
-        return -1;
+        return false;
     }
 
     roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count);
@@ -335,6 +371,9 @@ bool loadAndCheckAll(const char *dirname) {
         return false;  //  memory leaks
     }
     if (!compare_unions(bitmaps, bitmapswrun, count)) {
+        return false;  //  memory leaks
+    }
+    if (!compare_wide_unions(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
     }
 

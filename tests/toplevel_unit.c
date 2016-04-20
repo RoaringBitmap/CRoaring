@@ -30,7 +30,7 @@ void test_example() {
 
     // then we can add values
     for (uint32_t i = 100; i < 1000; i++) {
-      roaring_bitmap_add(r1, i);
+        roaring_bitmap_add(r1, i);
     }
 
     // check whether a value is contained
@@ -46,8 +46,8 @@ void test_example() {
     roaring_bitmap_run_optimize(r1);
     uint32_t compact_size = roaring_bitmap_portable_size_in_bytes(r1);
 
-    printf("size before run optimize %d bytes, and after %d bytes\n",
-           size, compact_size);
+    printf("size before run optimize %d bytes, and after %d bytes\n", size,
+           compact_size);
 
     // create a new bitmap with varargs
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
@@ -64,6 +64,7 @@ void test_example() {
     assert_non_null(arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
+    free(arr1);
     assert_non_null(r1f);
 
     // bitmaps shall be equal
@@ -149,7 +150,7 @@ void test_printf_withrun() {
 }
 
 void dummy_iterator(uint32_t value, void *param) {
-    (void) value;
+    (void)value;
 
     uint32_t *num = (uint32_t *)param;
     (*num)++;
@@ -325,7 +326,8 @@ void test_serialize() {
 
     serialize_len = run_container_serialization_len(run);
     char rbuf[serialize_len];
-    assert_int_equal((int32_t)serialize_len, run_container_serialize(run, rbuf));
+    assert_int_equal((int32_t)serialize_len,
+                     run_container_serialize(run, rbuf));
     run_container_t *run1 = run_container_deserialize(rbuf, serialize_len);
 
     run_container_free(run);
@@ -735,7 +737,8 @@ void test_remove_run_to_bitset() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
     assert_true(roaring_bitmap_run_optimize(r1));  // will make a run container
     assert_true(roaring_bitmap_remove_run_compression(r1));  // removal done
-    assert_true(roaring_bitmap_run_optimize(r1));  // there is again a run container
+    assert_true(
+        roaring_bitmap_run_optimize(r1));  // there is again a run container
 
     uint32_t card;
     uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
@@ -760,7 +763,8 @@ void test_remove_run_to_array() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
     assert_true(roaring_bitmap_run_optimize(r1));  // will make a run container
     assert_true(roaring_bitmap_remove_run_compression(r1));  // removal done
-    assert_true(roaring_bitmap_run_optimize(r1));  // there is again a run container
+    assert_true(
+        roaring_bitmap_run_optimize(r1));  // there is again a run container
 
     uint32_t card;
     uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
@@ -772,7 +776,6 @@ void test_remove_run_to_array() {
 }
 
 int main() {
-
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_example),
         cmocka_unit_test(test_printf),
@@ -799,8 +802,8 @@ int main() {
         cmocka_unit_test(test_run_to_self),
         cmocka_unit_test(test_remove_run_to_bitset),
         cmocka_unit_test(test_remove_run_to_array),
-        //cmocka_unit_test(test_run_to_bitset),
-        //cmocka_unit_test(test_run_to_array),
+        // cmocka_unit_test(test_run_to_bitset),
+        // cmocka_unit_test(test_run_to_array),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

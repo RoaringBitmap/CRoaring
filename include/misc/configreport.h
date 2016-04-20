@@ -38,10 +38,10 @@ static inline int computecacheline() {
 }
 
 // this is quite imperfect, but can be handy
-static inline char *guessprocessor() {
+static inline const char *guessprocessor() {
     unsigned eax = 1, ebx = 0, ecx = 0, edx = 0;
     native_cpuid(&eax, &ebx, &ecx, &edx);
-    char *codename;
+    const char *codename;
     switch (eax >> 4) {
         case 0x506E:
             codename = "Skylake";
