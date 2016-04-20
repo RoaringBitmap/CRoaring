@@ -59,7 +59,6 @@ void setandextract_sse_uint16() {
 
         for (unsigned int k = 0; k < valsize; ++k) {
             assert_int_equal(newvals[k], vals[k]);
-
         }
 
         free(vals);
@@ -127,7 +126,6 @@ void setandextract_avx2_uint32() {
 }
 
 int main() {
-
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(setandextract_uint16),
         cmocka_unit_test(setandextract_sse_uint16),

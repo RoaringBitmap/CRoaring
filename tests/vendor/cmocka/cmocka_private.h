@@ -22,43 +22,43 @@
 #ifdef _WIN32
 #include <windows.h>
 
-# ifdef _MSC_VER
-# include <stdio.h> /* _snprintf */
+#ifdef _MSC_VER
+#include <stdio.h> /* _snprintf */
 
-#  undef inline
-#  define inline __inline
+#undef inline
+#define inline __inline
 
-#  define strcasecmp _stricmp
-#  define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
 
-#  if defined(HAVE__SNPRINTF_S)
-#   undef snprintf
-#   define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
-#  else /* HAVE__SNPRINTF_S */
-#   if defined(HAVE__SNPRINTF)
-#     undef snprintf
-#     define snprintf _snprintf
-#   else /* HAVE__SNPRINTF */
-#    if !defined(HAVE_SNPRINTF)
-#     error "no snprintf compatible function found"
-#    endif /* HAVE_SNPRINTF */
-#   endif /* HAVE__SNPRINTF */
-#  endif /* HAVE__SNPRINTF_S */
+#if defined(HAVE__SNPRINTF_S)
+#undef snprintf
+#define snprintf(d, n, ...) _snprintf_s((d), (n), _TRUNCATE, __VA_ARGS__)
+#else /* HAVE__SNPRINTF_S */
+#if defined(HAVE__SNPRINTF)
+#undef snprintf
+#define snprintf _snprintf
+#else /* HAVE__SNPRINTF */
+#if !defined(HAVE_SNPRINTF)
+#error "no snprintf compatible function found"
+#endif /* HAVE_SNPRINTF */
+#endif /* HAVE__SNPRINTF */
+#endif /* HAVE__SNPRINTF_S */
 
-#  if defined(HAVE__VSNPRINTF_S)
-#   undef vsnprintf
-#   define vsnprintf(s, n, f, v) _vsnprintf_s((s), (n), _TRUNCATE, (f), (v))
-#  else /* HAVE__VSNPRINTF_S */
-#   if defined(HAVE__VSNPRINTF)
-#    undef vsnprintf
-#    define vsnprintf _vsnprintf
-#   else
-#    if !defined(HAVE_VSNPRINTF)
-#     error "No vsnprintf compatible function found"
-#    endif /* HAVE_VSNPRINTF */
-#   endif /* HAVE__VSNPRINTF */
-#  endif /* HAVE__VSNPRINTF_S */
-# endif /* _MSC_VER */
+#if defined(HAVE__VSNPRINTF_S)
+#undef vsnprintf
+#define vsnprintf(s, n, f, v) _vsnprintf_s((s), (n), _TRUNCATE, (f), (v))
+#else /* HAVE__VSNPRINTF_S */
+#if defined(HAVE__VSNPRINTF)
+#undef vsnprintf
+#define vsnprintf _vsnprintf
+#else
+#if !defined(HAVE_VSNPRINTF)
+#error "No vsnprintf compatible function found"
+#endif /* HAVE_VSNPRINTF */
+#endif /* HAVE__VSNPRINTF */
+#endif /* HAVE__VSNPRINTF_S */
+#endif /* _MSC_VER */
 
 /*
  * Backwards compatibility with headers shipped with Visual Studio 2005 and
@@ -67,15 +67,15 @@
 WINBASEAPI BOOL WINAPI IsDebuggerPresent(VOID);
 
 #ifndef PRIdS
-# define PRIdS "Id"
+#define PRIdS "Id"
 #endif
 
 #ifndef PRIu64
-# define PRIu64 "I64u"
+#define PRIu64 "I64u"
 #endif
 
 #ifndef PRIuMAX
-# define PRIuMAX PRIu64
+#define PRIuMAX PRIu64
 #endif
 
 #ifndef PRIxMAX
@@ -89,23 +89,23 @@ WINBASEAPI BOOL WINAPI IsDebuggerPresent(VOID);
 #else /* _WIN32 */
 
 #ifndef __PRI64_PREFIX
-# if __WORDSIZE == 64
-#  define __PRI64_PREFIX "l"
-# else
-#  define __PRI64_PREFIX "ll"
-# endif
+#if __WORDSIZE == 64
+#define __PRI64_PREFIX "l"
+#else
+#define __PRI64_PREFIX "ll"
+#endif
 #endif
 
 #ifndef PRIdS
-# define PRIdS "zd"
+#define PRIdS "zd"
 #endif
 
 #ifndef PRIu64
-# define PRIu64 __PRI64_PREFIX "u"
+#define PRIu64 __PRI64_PREFIX "u"
 #endif
 
 #ifndef PRIuMAX
-# define PRIuMAX __PRI64_PREFIX "u"
+#define PRIuMAX __PRI64_PREFIX "u"
 #endif
 
 #ifndef PRIxMAX
@@ -119,19 +119,31 @@ WINBASEAPI BOOL WINAPI IsDebuggerPresent(VOID);
 #endif /* _WIN32 */
 
 /** Free memory space */
-#define SAFE_FREE(x) do { if ((x) != NULL) {free(x); x=NULL;} } while(0)
+#define SAFE_FREE(x)       \
+    do {                   \
+        if ((x) != NULL) { \
+            free(x);       \
+            x = NULL;      \
+        }                  \
+    } while (0)
 
 /** Zero a structure */
-#define ZERO_STRUCT(x) memset((char *)&(x), 0, sizeof(x))
+#define ZERO_STRUCT(x) memset((char *) & (x), 0, sizeof(x))
 
 /** Zero a structure given a pointer to the structure */
-#define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
+#define ZERO_STRUCTP(x)                                        \
+    do {                                                       \
+        if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); \
+    } while (0)
 
 /** Get the size of an array */
-#define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 /** Overwrite the complete string with 'X' */
-#define BURN_STRING(x) do { if ((x) != NULL) memset((x), 'X', strlen((x))); } while(0)
+#define BURN_STRING(x)                                  \
+    do {                                                \
+        if ((x) != NULL) memset((x), 'X', strlen((x))); \
+    } while (0)
 
 /**
  * This is a hack to fix warnings. The idea is to use this everywhere that we

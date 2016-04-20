@@ -145,10 +145,8 @@ void to_uint32_array_test() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(printf_test),
-        cmocka_unit_test(add_contains_test),
-        cmocka_unit_test(and_or_test),
-        cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
+        cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

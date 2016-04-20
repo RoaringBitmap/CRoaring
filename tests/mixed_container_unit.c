@@ -84,7 +84,6 @@ void array_bitset_and_or_test() {
 }
 
 int main() {
-
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_test),
     };
