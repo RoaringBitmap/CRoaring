@@ -55,6 +55,12 @@ size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
                     size_t size_2, uint32_t *buffer);
 
 /**
+ * A fast SSE-based union function.
+ */
+uint32_t union_vector16(const uint16_t *set_1, uint32_t size_1,
+                        const uint16_t *set_2, uint32_t size_2,
+                        uint16_t *buffer);
+/**
  * Generic union function, returns just the cardinality.
  */
 size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
