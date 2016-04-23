@@ -159,7 +159,7 @@ void *convert_run_to_efficient_container(run_container_t *c,
     for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
         int start = c->runs[rlepos].value;
         int end = start + c->runs[rlepos].length;
-        bitset_container_set_range(answer, start, end + 1);
+        bitset_set_range(answer->array, start, end + 1);
     }
     answer->cardinality = card;
     *typecode_after = BITSET_CONTAINER_TYPE_CODE;

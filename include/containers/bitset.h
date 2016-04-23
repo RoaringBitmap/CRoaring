@@ -51,7 +51,9 @@ uint32_t bitset_container_serialization_len(void);
 
 void *bitset_container_deserialize(const char *buf, size_t buf_len);
 
-/* Set the bit in [begin,end).  */
+/* Set the bit in [begin,end). WARNING: as of April 2016, this method is slow
+ * and
+ * should not be used in performance-sensitive code. Ever.  */
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
                                 uint32_t end);
 

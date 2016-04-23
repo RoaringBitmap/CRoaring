@@ -37,6 +37,14 @@ void array_bitset_container_lazy_union(const array_container_t *src_1,
 bool array_array_container_union(const array_container_t *src_1,
                                  const array_container_t *src_2, void **dst);
 
+/*
+ * Same as array_array_container_union except that it will more eagerly produce
+ * a bitset.
+ */
+bool array_array_container_lazy_union(const array_container_t *src_1,
+                                      const array_container_t *src_2,
+                                      void **dst);
+
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. We assume that dst is a
  * valid container. The result might need to be further converted to array or
@@ -67,9 +75,18 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
  * to free src_1.
  * In all cases, the result is in *dst.
  */
+// to be implemented?
+// bool array_array_container_union_inplace(array_container_t *src_1,
+//                                       const array_container_t *src_2,
+//                                     void **dst);
 
-bool array_array_container_union_inplace(array_container_t *src_1,
-                                         const array_container_t *src_2,
-                                         void **dst);
+/**
+ * same as array_array_container_union_inplace except that it will more
+ * eagerly produce a bitset container.
+ */
+// to be implemented?
+// bool array_array_container_lazy_union_inplace(array_container_t *src_1,
+//                                       const array_container_t *src_2,
+//                                     void **dst);
 
 #endif /* INCLUDE_CONTAINERS_MIXED_UNION_H_ */

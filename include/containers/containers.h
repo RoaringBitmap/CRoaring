@@ -64,11 +64,19 @@ static inline int container_get_cardinality(const void *container,
  */
 static inline void *container_repair_after_lazy(void *container,
                                                 uint8_t *typecode) {
+    void *result;
     switch (*typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             ((bitset_container_t *)container)->cardinality =
                 bitset_container_compute_cardinality(
                     (bitset_container_t *)container);
+            if (((bitset_container_t *)container)->cardinality <=
+                DEFAULT_MAX_SIZE) {
+                result = array_container_from_bitset(container);
+                bitset_container_free(container);
+                *typecode = ARRAY_CONTAINER_TYPE_CODE;
+                return result;
+            }
             return container;
         case ARRAY_CONTAINER_TYPE_CODE:
             return container;  // nothing to do
@@ -579,7 +587,7 @@ static inline void *container_lazy_or(const void *c1, uint8_t type1,
             return result;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
-            *result_type = array_array_container_union(c1, c2, &result)
+            *result_type = array_array_container_lazy_union(c1, c2, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
@@ -753,7 +761,7 @@ static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
             // Java impl. also does not do real in-place in this case
-            *result_type = array_array_container_union(c1, c2, &result)
+            *result_type = array_array_container_lazy_union(c1, c2, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
