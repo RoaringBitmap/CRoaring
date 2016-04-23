@@ -66,23 +66,34 @@ void array_run_container_union(const array_container_t *src_1,
     run_container_grow(dst, 2 * (src_1->cardinality + src_2->n_runs), false);
     int32_t rlepos = 0;
     int32_t arraypos = 0;
+    rle16_t previousrle;
+    if (src_2->runs[rlepos].value <= src_1->array[arraypos]) {
+        previousrle = run_container_append_first(dst, src_2->runs[rlepos]);
+        rlepos++;
+    } else {
+        previousrle =
+            run_container_append_value_first(dst, src_1->array[arraypos]);
+        arraypos++;
+    }
     while ((rlepos < src_2->n_runs) && (arraypos < src_1->cardinality)) {
         if (src_2->runs[rlepos].value <= src_1->array[arraypos]) {
-            run_container_append(dst, src_2->runs[rlepos]);
+            run_container_append(dst, src_2->runs[rlepos], &previousrle);
             rlepos++;
         } else {
-            run_container_append_value(dst, src_1->array[arraypos]);
+            run_container_append_value(dst, src_1->array[arraypos],
+                                       &previousrle);
             arraypos++;
         }
     }
     if (arraypos < src_1->cardinality) {
         while (arraypos < src_1->cardinality) {
-            run_container_append_value(dst, src_1->array[arraypos]);
+            run_container_append_value(dst, src_1->array[arraypos],
+                                       &previousrle);
             arraypos++;
         }
     } else {
         while (rlepos < src_2->n_runs) {
-            run_container_append(dst, src_2->runs[rlepos]);
+            run_container_append(dst, src_2->runs[rlepos], &previousrle);
             rlepos++;
         }
     }
@@ -104,23 +115,37 @@ void array_run_container_inplace_union(const array_container_t *src_1,
     int32_t arraypos = 0;
     int src2nruns = src_2->n_runs;
     src_2->n_runs = 0;
+
+    rle16_t previousrle;
+
+    if (inputsrc2[rlepos].value <= src_1->array[arraypos]) {
+        previousrle = run_container_append_first(src_2, inputsrc2[rlepos]);
+        rlepos++;
+    } else {
+        previousrle =
+            run_container_append_value_first(src_2, src_1->array[arraypos]);
+        arraypos++;
+    }
+
     while ((rlepos < src2nruns) && (arraypos < src_1->cardinality)) {
         if (inputsrc2[rlepos].value <= src_1->array[arraypos]) {
-            run_container_append(src_2, inputsrc2[rlepos]);
+            run_container_append(src_2, inputsrc2[rlepos], &previousrle);
             rlepos++;
         } else {
-            run_container_append_value(src_2, src_1->array[arraypos]);
+            run_container_append_value(src_2, src_1->array[arraypos],
+                                       &previousrle);
             arraypos++;
         }
     }
     if (arraypos < src_1->cardinality) {
         while (arraypos < src_1->cardinality) {
-            run_container_append_value(src_2, src_1->array[arraypos]);
+            run_container_append_value(src_2, src_1->array[arraypos],
+                                       &previousrle);
             arraypos++;
         }
     } else {
         while (rlepos < src2nruns) {
-            run_container_append(src_2, inputsrc2[rlepos]);
+            run_container_append(src_2, inputsrc2[rlepos], &previousrle);
             rlepos++;
         }
     }

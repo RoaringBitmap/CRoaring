@@ -295,21 +295,32 @@ void run_container_union(const run_container_t *src_1,
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
 
+    rle16_t previousrle;
+    if (src_1->runs[rlepos].value <= src_2->runs[xrlepos].value) {
+        previousrle = run_container_append_first(dst, src_1->runs[rlepos]);
+        rlepos++;
+    } else {
+        previousrle = run_container_append_first(dst, src_2->runs[xrlepos]);
+        xrlepos++;
+    }
+
     while ((xrlepos < src_2->n_runs) && (rlepos < src_1->n_runs)) {
+        rle16_t newrl;
         if (src_1->runs[rlepos].value <= src_2->runs[xrlepos].value) {
-            run_container_append(dst, src_1->runs[rlepos]);
+            newrl = src_1->runs[rlepos];
             rlepos++;
         } else {
-            run_container_append(dst, src_2->runs[xrlepos]);
+            newrl = src_2->runs[xrlepos];
             xrlepos++;
         }
+        run_container_append(dst, newrl, &previousrle);
     }
     while (xrlepos < src_2->n_runs) {
-        run_container_append(dst, src_2->runs[xrlepos]);
+        run_container_append(dst, src_2->runs[xrlepos], &previousrle);
         xrlepos++;
     }
     while (rlepos < src_1->n_runs) {
-        run_container_append(dst, src_1->runs[rlepos]);
+        run_container_append(dst, src_1->runs[rlepos], &previousrle);
         rlepos++;
     }
 }
@@ -345,21 +356,31 @@ void run_container_union_inplace(run_container_t *src_1,
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
 
+    rle16_t previousrle;
+    if (inputsrc1[rlepos].value <= src_2->runs[xrlepos].value) {
+        previousrle = run_container_append_first(src_1, inputsrc1[rlepos]);
+        rlepos++;
+    } else {
+        previousrle = run_container_append_first(src_1, src_2->runs[xrlepos]);
+        xrlepos++;
+    }
     while ((xrlepos < src_2->n_runs) && (rlepos < input1nruns)) {
+        rle16_t newrl;
         if (inputsrc1[rlepos].value <= src_2->runs[xrlepos].value) {
-            run_container_append(src_1, inputsrc1[rlepos]);
+            newrl = inputsrc1[rlepos];
             rlepos++;
         } else {
-            run_container_append(src_1, src_2->runs[xrlepos]);
+            newrl = src_2->runs[xrlepos];
             xrlepos++;
         }
+        run_container_append(src_1, newrl, &previousrle);
     }
     while (xrlepos < src_2->n_runs) {
-        run_container_append(src_1, src_2->runs[xrlepos]);
+        run_container_append(src_1, src_2->runs[xrlepos], &previousrle);
         xrlepos++;
     }
     while (rlepos < input1nruns) {
-        run_container_append(src_1, inputsrc1[rlepos]);
+        run_container_append(src_1, inputsrc1[rlepos], &previousrle);
         rlepos++;
     }
 }
