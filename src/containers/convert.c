@@ -120,7 +120,7 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
  */
 /* If a conversion occurs, the caller is responsible to free the original
  * container and
- * he becomes reponsible to free the new one. */
+ * he becomes responsible to free the new one. */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after) {
     int32_t size_as_run_container =
@@ -163,6 +163,14 @@ void *convert_run_to_efficient_container(run_container_t *c,
     }
     answer->cardinality = card;
     *typecode_after = BITSET_CONTAINER_TYPE_CODE;
+    return answer;
+}
+
+// like convert_run_to_efficient_container but frees the old result if needed
+void *convert_run_to_efficient_container_and_free(run_container_t *c,
+                                                  uint8_t *typecode_after) {
+    void *answer = convert_run_to_efficient_container(c, typecode_after);
+    if (answer != c) run_container_free(c);
     return answer;
 }
 

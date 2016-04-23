@@ -3,6 +3,7 @@
  *
  */
 
+#include <assert.h>
 #include "containers/convert.h"
 #include "containers/mixed_union.h"
 #include "bitset_util.h"
@@ -17,13 +18,21 @@ void array_bitset_container_union(const array_container_t *src_1,
         dst->array, dst->cardinality, src_1->array, src_1->cardinality);
 }
 
+/* Compute the union of src_1 and src_2 and write the result to
+ * dst. It is allowed for src_2 to be dst.  This version does not
+ * update the cardinality of dst (it is set to BITSET_UNKNOWN_CARDINALITY). */
+void array_bitset_container_lazy_union(const array_container_t *src_1,
+                                       const bitset_container_t *src_2,
+                                       bitset_container_t *dst) {
+    if (src_2 != dst) bitset_container_copy(src_2, dst);
+    bitset_set_list(dst->array, src_1->array, src_1->cardinality);
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
+}
+
 void run_bitset_container_union(const run_container_t *src_1,
                                 const bitset_container_t *src_2,
                                 bitset_container_t *dst) {
-    if (run_container_is_full(src_1)) {
-        if (src_2 != dst) bitset_container_copy(src_2, dst);
-        return;
-    }
+    assert(!run_container_is_full(src_1));  // catch this case upstream
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
@@ -31,6 +40,19 @@ void run_bitset_container_union(const run_container_t *src_1,
                          rle.value + rle.length + UINT32_C(1));
     }
     dst->cardinality = bitset_container_compute_cardinality(dst);
+}
+
+void run_bitset_container_lazy_union(const run_container_t *src_1,
+                                     const bitset_container_t *src_2,
+                                     bitset_container_t *dst) {
+    assert(!run_container_is_full(src_1));  // catch this case upstream
+    if (src_2 != dst) bitset_container_copy(src_2, dst);
+    for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
+        rle16_t rle = src_1->runs[rlepos];
+        bitset_set_range(dst->array, rle.value,
+                         rle.value + rle.length + UINT32_C(1));
+    }
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
 void array_run_container_union(const array_container_t *src_1,
