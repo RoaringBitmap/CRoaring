@@ -97,8 +97,25 @@ static inline void run_container_clear(run_container_t *run) {
  *
  * This is not a safe function, it is meant for performance: use with care.
  */
-void run_container_append(run_container_t *run, rle16_t vl);
-
+static inline void run_container_append(run_container_t *run, rle16_t vl) {
+    if (run->n_runs == 0) {
+        run->runs[run->n_runs] = vl;
+        run->n_runs++;
+        return;
+    }
+    const uint32_t previousend =
+        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    if (vl.value > previousend + 1) {  // we add a new one
+        run->runs[run->n_runs] = vl;
+        run->n_runs++;
+        return;
+    }
+    uint32_t newend = vl.value + vl.length + UINT32_C(1);
+    if (newend > previousend) {  // we merge
+        run->runs[run->n_runs - 1].length =
+            newend - 1 - run->runs[run->n_runs - 1].value;
+    }
+}
 /**
  * append a single value  given by val to the run container, possibly merging.
  * It is assumed that the value would be inserted at the end of the container,
@@ -108,8 +125,23 @@ void run_container_append(run_container_t *run, rle16_t vl);
  *
  * This is not a safe function, it is meant for performance: use with care.
  */
-void run_container_append_value(run_container_t *run, uint16_t val);
-
+static inline void run_container_append_value(run_container_t *run, uint16_t val) {
+    if (run->n_runs == 0) {
+        run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
+        run->n_runs++;
+        return;
+    }
+    const uint32_t previousend =
+        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    if (val > previousend + 1) {  // we add a new one
+        run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
+        run->n_runs++;
+        return;
+    }
+    if (val == previousend + 1) {  // we merge
+        run->runs[run->n_runs - 1].length++;
+    }
+}
 /**
  * increase capacity to at least min. Whether the
  * existing data needs to be copied over depends on copy. If "copy" is false,

@@ -73,45 +73,6 @@ int run_container_cardinality(const run_container_t *run) {
 _Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
                "Bad struct size");  // part of C standard
 
-// TODO: could be more efficient
-void run_container_append(run_container_t *run, rle16_t vl) {
-    if (run->n_runs == 0) {
-        run->runs[run->n_runs] = vl;
-        run->n_runs++;
-        return;
-    }
-    const uint32_t previousend =
-        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
-    if (vl.value > previousend + 1) {  // we add a new one
-        run->runs[run->n_runs] = vl;
-        run->n_runs++;
-        return;
-    }
-    uint32_t newend = vl.value + vl.length + UINT32_C(1);
-    if (newend > previousend) {  // we merge
-        run->runs[run->n_runs - 1].length =
-            newend - 1 - run->runs[run->n_runs - 1].value;
-    }
-}
-
-void run_container_append_value(run_container_t *run, uint16_t val) {
-    if (run->n_runs == 0) {
-        run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
-        run->n_runs++;
-        return;
-    }
-    const uint32_t previousend =
-        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
-    if (val > previousend + 1) {  // we add a new one
-        run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
-        run->n_runs++;
-        return;
-    }
-    if (val == previousend + 1) {  // we merge
-        run->runs[run->n_runs - 1].length++;
-    }
-}
-
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =
         (run->capacity == 0)
