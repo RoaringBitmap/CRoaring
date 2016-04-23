@@ -64,7 +64,7 @@ static inline int container_get_cardinality(const void *container,
  */
 static inline void *container_repair_after_lazy(void *container,
                                                 uint8_t *typecode) {
-    void *result;
+    void *result = NULL;
     switch (*typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             ((bitset_container_t *)container)->cardinality =
@@ -344,7 +344,7 @@ static inline bool container_equals(const void *c1, uint8_t type1,
  */
 static inline void *container_and(const void *c1, uint8_t type1, const void *c2,
                                   uint8_t type2, uint8_t *result_type) {
-    void *result;
+    void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
@@ -417,7 +417,7 @@ static inline void *container_and(const void *c1, uint8_t type1, const void *c2,
 */
 static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
                                    uint8_t type2, uint8_t *result_type) {
-    void *result;
+    void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
@@ -489,7 +489,7 @@ static inline void *container_iand(void *c1, uint8_t type1, const void *c2,
  */
 static inline void *container_or(const void *c1, uint8_t type1, const void *c2,
                                  uint8_t type2, uint8_t *result_type) {
-    void *result;
+    void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
@@ -577,7 +577,7 @@ static inline void *container_or(const void *c1, uint8_t type1, const void *c2,
 static inline void *container_lazy_or(const void *c1, uint8_t type1,
                                       const void *c2, uint8_t type2,
                                       uint8_t *result_type) {
-    void *result;
+    void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
@@ -666,7 +666,7 @@ static inline void *container_lazy_or(const void *c1, uint8_t type1,
 */
 static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                                   uint8_t type2, uint8_t *result_type) {
-    void *result;
+    void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
@@ -748,7 +748,7 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
 */
 static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
                                        uint8_t type2, uint8_t *result_type) {
-    void *result;
+    void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):

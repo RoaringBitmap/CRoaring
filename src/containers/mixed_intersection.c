@@ -86,10 +86,11 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         }
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
             rle16_t rle = src_1->runs[rlepos];
-            for (uint16_t runValue = rle.value;
-                 runValue <= rle.value + rle.length; ++runValue) {
+            uint32_t endofrun = (uint32_t)rle.value + rle.length;
+            for (uint32_t runValue = rle.value; runValue <= endofrun;
+                 ++runValue) {
                 if (bitset_container_contains(src_2, runValue)) {
-                    answer->array[answer->cardinality++] = runValue;
+                    answer->array[answer->cardinality++] = (uint16_t)runValue;
                 }
             }
         }
