@@ -3,11 +3,12 @@
  *
  */
 
+#include "containers/mixed_union.h"
 #include <assert.h>
 #include <string.h>
-#include "containers/convert.h"
-#include "containers/mixed_union.h"
 #include "bitset_util.h"
+#include "containers/convert.h"
+#include "containers/perfparameters.h"
 
 /* Compute the union of src_1 and src_2 and write the result to
  * dst.  */
@@ -181,7 +182,7 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
                                       const array_container_t *src_2,
                                       void **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
-    if (totalCardinality <= DEFAULT_MAX_SIZE) {
+    if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL) array_container_union(src_1, src_2, *dst);
         return false;  // not a bitset
