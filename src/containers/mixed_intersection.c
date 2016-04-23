@@ -3,10 +3,10 @@
  *
  */
 
-#include "containers/convert.h"
 #include "containers/mixed_intersection.h"
 #include "array_util.h"
 #include "bitset_util.h"
+#include "containers/convert.h"
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst.  */
