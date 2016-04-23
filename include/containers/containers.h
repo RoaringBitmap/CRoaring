@@ -724,12 +724,9 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                                                                  result_type);
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-            // todo:in Java, an inplace computation would be attempted
-            result = run_container_create();
-            array_run_container_union(c2, c1, result);
-            result = convert_run_to_efficient_container_and_free(result,
-                                                                 result_type);
-            return result;
+            array_run_container_inplace_union(c2, c1);
+            c1 = convert_run_to_efficient_container(c1, result_type);
+            return c1;
         default:
             assert(false);
             __builtin_unreachable();
@@ -813,14 +810,12 @@ static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
             // result_type);
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
-            // todo:in Java, an inplace computation would be attempted
-            result = run_container_create();
-            array_run_container_union(c2, c1, result);
+            array_run_container_inplace_union(c2, c1);
             *result_type = RUN_CONTAINER_TYPE_CODE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container_and_free(result,
             // result_type);
-            return result;
+            return c1;
         default:
             assert(false);
             __builtin_unreachable();

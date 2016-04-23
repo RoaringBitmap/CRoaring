@@ -55,6 +55,13 @@ void array_run_container_union(const array_container_t *src_1,
                                run_container_t *dst);
 
 /* Compute the union of src_1 and src_2 and write the result to
+ * src2. The result might need to be further converted to array or
+ * bitset container,
+ * the caller is responsible for the eventual conversion. */
+void array_run_container_inplace_union(const array_container_t *src_1,
+                                       run_container_t *src_2);
+
+/* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be src_2.  */
 void run_bitset_container_union(const run_container_t *src_1,
                                 const bitset_container_t *src_2,

@@ -4,6 +4,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 #include "containers/convert.h"
 #include "containers/mixed_union.h"
 #include "bitset_util.h"
@@ -82,6 +83,44 @@ void array_run_container_union(const array_container_t *src_1,
     } else {
         while (rlepos < src_2->n_runs) {
             run_container_append(dst, src_2->runs[rlepos]);
+            rlepos++;
+        }
+    }
+}
+
+void array_run_container_inplace_union(const array_container_t *src_1,
+                                       run_container_t *src_2) {
+    if (run_container_is_full(src_2)) {
+        return;
+    }
+    const int32_t maxoutput = src_1->cardinality + src_2->n_runs;
+    const int32_t neededcapacity = maxoutput + src_2->n_runs;
+    if (src_2->capacity < neededcapacity)
+        run_container_grow(src_2, neededcapacity, true);
+    memmove(src_2->runs + maxoutput, src_2->runs,
+            src_2->n_runs * sizeof(rle16_t));
+    rle16_t *inputsrc2 = src_2->runs + maxoutput;
+    int32_t rlepos = 0;
+    int32_t arraypos = 0;
+    int src2nruns = src_2->n_runs;
+    src_2->n_runs = 0;
+    while ((rlepos < src2nruns) && (arraypos < src_1->cardinality)) {
+        if (inputsrc2[rlepos].value <= src_1->array[arraypos]) {
+            run_container_append(src_2, inputsrc2[rlepos]);
+            rlepos++;
+        } else {
+            run_container_append_value(src_2, src_1->array[arraypos]);
+            arraypos++;
+        }
+    }
+    if (arraypos < src_1->cardinality) {
+        while (arraypos < src_1->cardinality) {
+            run_container_append_value(src_2, src_1->array[arraypos]);
+            arraypos++;
+        }
+    } else {
+        while (rlepos < src2nruns) {
+            run_container_append(src_2, inputsrc2[rlepos]);
             rlepos++;
         }
     }
