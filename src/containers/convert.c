@@ -3,6 +3,7 @@
 #include "bitset_util.h"
 #include "containers/containers.h"
 #include "containers/convert.h"
+#include "containers/perfparameters.h"
 
 // file contains grubby stuff that must know impl. details of all container
 // types.
@@ -199,7 +200,8 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int32_t size_as_array_container =
             array_container_serialized_size_in_bytes(card);
 
-        if (size_as_run_container >= size_as_array_container) {
+        if (RUN_OPTI_MINIMAL_GAIN * size_as_run_container >=
+            size_as_array_container) {
             *typecode_after = ARRAY_CONTAINER_TYPE_CODE;
             return c;
         }
@@ -233,7 +235,8 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int32_t size_as_bitset_container =
             bitset_container_serialized_size_in_bytes();
 
-        if (size_as_bitset_container <= size_as_run_container) {
+        if (size_as_bitset_container <=
+            RUN_OPTI_MINIMAL_GAIN * size_as_run_container) {
             // no conversion needed.
             *typecode_after = BITSET_CONTAINER_TYPE_CODE;
             return c;
