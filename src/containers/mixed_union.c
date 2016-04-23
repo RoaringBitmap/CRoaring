@@ -128,7 +128,7 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
         bitset_container_t *ourbitset = *dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
         bitset_set_list(ourbitset->array, src_2->array, src_2->cardinality);
-        dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
+        ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
     }
     return returnval;
 }

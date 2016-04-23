@@ -67,26 +67,4 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
                                      const bitset_container_t *src_2,
                                      bitset_container_t *dst);
 
-/*
- * Same as array_array_container_union except that if the output is to
- * be an
- * array_container_t, then src_1 is modified and no allocation is made.
- * If the output is to be a bitset_container_t, then caller is responsible
- * to free src_1.
- * In all cases, the result is in *dst.
- */
-// to be implemented?
-// bool array_array_container_union_inplace(array_container_t *src_1,
-//                                       const array_container_t *src_2,
-//                                     void **dst);
-
-/**
- * same as array_array_container_union_inplace except that it will more
- * eagerly produce a bitset container.
- */
-// to be implemented?
-// bool array_array_container_lazy_union_inplace(array_container_t *src_1,
-//                                       const array_container_t *src_2,
-//                                     void **dst);
-
 #endif /* INCLUDE_CONTAINERS_MIXED_UNION_H_ */

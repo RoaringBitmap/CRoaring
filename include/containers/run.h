@@ -103,8 +103,8 @@ static inline void run_container_append(run_container_t *run, rle16_t vl) {
         run->n_runs++;
         return;
     }
-    const uint32_t previousend =
-        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    const rle16_t previousrl = run->runs[run->n_runs - 1];
+    const uint32_t previousend = previousrl.value + previousrl.length;
     if (vl.value > previousend + 1) {  // we add a new one
         run->runs[run->n_runs] = vl;
         run->n_runs++;
@@ -112,8 +112,7 @@ static inline void run_container_append(run_container_t *run, rle16_t vl) {
     }
     uint32_t newend = vl.value + vl.length + UINT32_C(1);
     if (newend > previousend) {  // we merge
-        run->runs[run->n_runs - 1].length =
-            newend - 1 - run->runs[run->n_runs - 1].value;
+        run->runs[run->n_runs - 1].length = newend - 1 - previousrl.value;
     }
 }
 /**
@@ -125,14 +124,15 @@ static inline void run_container_append(run_container_t *run, rle16_t vl) {
  *
  * This is not a safe function, it is meant for performance: use with care.
  */
-static inline void run_container_append_value(run_container_t *run, uint16_t val) {
+static inline void run_container_append_value(run_container_t *run,
+                                              uint16_t val) {
     if (run->n_runs == 0) {
         run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
         run->n_runs++;
         return;
     }
-    const uint32_t previousend =
-        run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    const rle16_t previousrl = run->runs[run->n_runs - 1];
+    const uint32_t previousend = previousrl.value + previousrl.length;
     if (val > previousend + 1) {  // we add a new one
         run->runs[run->n_runs] = (rle16_t){.value = val, .length = 0};
         run->n_runs++;
