@@ -13,5 +13,5 @@ because
 huge run containers are implemented less efficiently.
 
 */
-enum { ARRAY_LAZY_LOWERBOUND = 1024, RUN_OPTI_MINIMAL_GAIN = 8 };
+enum { ARRAY_LAZY_LOWERBOUND = 1024, RUN_OPTI_MINIMAL_GAIN = 2 };
 #endif
