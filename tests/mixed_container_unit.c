@@ -317,7 +317,7 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
                 actual_runlen = (1 << 16) - offsetx;
 
             // run_container_append does not dynamically increase its array
-            run_container_append(
+            run_container_append_first(
                 RI, (rle16_t){.value = offsetx, .length = actual_runlen - 1});
             card += actual_runlen;
             if (++runlen == k) runlen = h;  // wrap after k-1 back to h.

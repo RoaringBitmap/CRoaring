@@ -3,6 +3,7 @@
 #include "bitset_util.h"
 #include "containers/containers.h"
 #include "containers/convert.h"
+#include "containers/perfparameters.h"
 
 // file contains grubby stuff that must know impl. details of all container
 // types.
@@ -120,7 +121,7 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
  */
 /* If a conversion occurs, the caller is responsible to free the original
  * container and
- * he becomes reponsible to free the new one. */
+ * he becomes responsible to free the new one. */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after) {
     int32_t size_as_run_container =
@@ -160,10 +161,18 @@ void *convert_run_to_efficient_container(run_container_t *c,
     for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
         int start = c->runs[rlepos].value;
         int end = start + c->runs[rlepos].length;
-        bitset_container_set_range(answer, start, end + 1);
+        bitset_set_range(answer->array, start, end + 1);
     }
     answer->cardinality = card;
     *typecode_after = BITSET_CONTAINER_TYPE_CODE;
+    return answer;
+}
+
+// like convert_run_to_efficient_container but frees the old result if needed
+void *convert_run_to_efficient_container_and_free(run_container_t *c,
+                                                  uint8_t *typecode_after) {
+    void *answer = convert_run_to_efficient_container(c, typecode_after);
+    if (answer != c) run_container_free(c);
     return answer;
 }
 
@@ -192,7 +201,8 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int32_t size_as_array_container =
             array_container_serialized_size_in_bytes(card);
 
-        if (size_as_run_container >= size_as_array_container) {
+        if (RUN_OPTI_MINIMAL_GAIN * size_as_run_container >=
+            size_as_array_container) {
             *typecode_after = ARRAY_CONTAINER_TYPE_CODE;
             return c;
         }
@@ -226,7 +236,8 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int32_t size_as_bitset_container =
             bitset_container_serialized_size_in_bytes();
 
-        if (size_as_bitset_container <= size_as_run_container) {
+        if (size_as_bitset_container <=
+            RUN_OPTI_MINIMAL_GAIN * size_as_run_container) {
             // no conversion needed.
             *typecode_after = BITSET_CONTAINER_TYPE_CODE;
             return c;

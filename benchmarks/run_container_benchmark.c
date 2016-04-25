@@ -6,8 +6,8 @@
 
 #include "benchmark.h"
 #include "containers/run.h"
-#include "random.h"
 #include "misc/configreport.h"
+#include "random.h"
 
 enum { TESTSIZE = 2048 };
 

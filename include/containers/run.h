@@ -95,9 +95,33 @@ static inline void run_container_clear(run_container_t *run) {
  * It is assumed that the run container has the necessary capacity: caller is
  * responsible for checking memory capacity.
  *
+ *
  * This is not a safe function, it is meant for performance: use with care.
  */
-void run_container_append(run_container_t *run, rle16_t vl);
+static inline void run_container_append(run_container_t *run, rle16_t vl,
+                                        rle16_t *previousrl) {
+    const uint32_t previousend = previousrl->value + previousrl->length;
+    if (vl.value > previousend + 1) {  // we add a new one
+        run->runs[run->n_runs] = vl;
+        run->n_runs++;
+        *previousrl = vl;
+    }
+    uint32_t newend = vl.value + vl.length + UINT32_C(1);
+    if (newend > previousend) {  // we merge
+        previousrl->length = newend - 1 - previousrl->value;
+        run->runs[run->n_runs - 1] = *previousrl;
+    }
+}
+
+/**
+ * Like run_container_append but it is assumed that the content of run is empty.
+ */
+static inline rle16_t run_container_append_first(run_container_t *run,
+                                                 rle16_t vl) {
+    run->runs[run->n_runs] = vl;
+    run->n_runs++;
+    return vl;
+}
 
 /**
  * append a single value  given by val to the run container, possibly merging.
@@ -108,7 +132,32 @@ void run_container_append(run_container_t *run, rle16_t vl);
  *
  * This is not a safe function, it is meant for performance: use with care.
  */
-void run_container_append_value(run_container_t *run, uint16_t val);
+static inline void run_container_append_value(run_container_t *run,
+                                              uint16_t val,
+                                              rle16_t *previousrl) {
+    const uint32_t previousend = previousrl->value + previousrl->length;
+    if (val > previousend + 1) {  // we add a new one
+        *previousrl = (rle16_t){.value = val, .length = 0};
+        run->runs[run->n_runs] = *previousrl;
+        run->n_runs++;
+    }
+    if (val == previousend + 1) {  // we merge
+        previousrl->length++;
+        run->runs[run->n_runs - 1] = *previousrl;
+    }
+}
+
+/**
+ * Like run_container_append_value but it is assumed that the content of run is
+ * empty.
+ */
+static inline rle16_t run_container_append_value_first(run_container_t *run,
+                                                       uint16_t val) {
+    rle16_t newrle = (rle16_t){.value = val, .length = 0};
+    run->runs[run->n_runs] = newrle;
+    run->n_runs++;
+    return newrle;
+}
 
 /**
  * increase capacity to at least min. Whether the

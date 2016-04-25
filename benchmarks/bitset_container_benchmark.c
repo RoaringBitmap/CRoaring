@@ -7,8 +7,8 @@
 #include "benchmark.h"
 #include "containers/bitset.h"
 #include "containers/convert.h"
-#include "random.h"
 #include "misc/configreport.h"
+#include "random.h"
 
 // flushes the array of words from cache
 void bitset_cache_flush(bitset_container_t* B) {

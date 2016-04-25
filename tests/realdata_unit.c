@@ -285,22 +285,37 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rnorun);
     roaring_bitmap_t *temporruns =
         roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rruns);
+    if (!slow_bitmap_equals(tempornorun, temporruns)) {
+        printf("[compare_wide_unions] Unions don't agree! (fast run-norun) \n");
+        return false;
+    }
+    assert(roaring_bitmap_equals(tempornorun, temporruns));
+
     roaring_bitmap_t *longtempornorun;
     roaring_bitmap_t *longtemporruns;
     if (count == 1) {
         longtempornorun = rnorun[0];
         longtemporruns = rruns[0];
     } else {
+        assert(roaring_bitmap_equals(rnorun[0], rruns[0]));
+        assert(roaring_bitmap_equals(rnorun[1], rruns[1]));
         longtempornorun = roaring_bitmap_or(rnorun[0], rnorun[1]);
         longtemporruns = roaring_bitmap_or(rruns[0], rruns[1]);
+        assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
         for (int i = 2; i < (int)count; ++i) {
+            assert(roaring_bitmap_equals(rnorun[i], rruns[i]));
+            assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
+
             roaring_bitmap_t *t1 =
                 roaring_bitmap_or(rnorun[i], longtempornorun);
             roaring_bitmap_t *t2 = roaring_bitmap_or(rruns[i], longtemporruns);
+            assert(roaring_bitmap_equals(t1, t2));
+
             roaring_bitmap_free(longtempornorun);
             longtempornorun = t1;
             roaring_bitmap_free(longtemporruns);
             longtemporruns = t2;
+            assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
         }
     }
     if (!slow_bitmap_equals(longtempornorun, tempornorun)) {
@@ -311,6 +326,12 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         printf("[compare_wide_unions] Unions don't agree! (runs) \n");
         return false;
     }
+    roaring_bitmap_free(tempornorun);
+    roaring_bitmap_free(temporruns);
+
+    roaring_bitmap_free(longtempornorun);
+    roaring_bitmap_free(longtemporruns);
+
     return true;
 }
 

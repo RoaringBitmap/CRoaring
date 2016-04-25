@@ -65,7 +65,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2);
 
 /**
- * Inplace version modifies x1
+ * Inplace version of roaring_bitmap_or, modifies x1
  */
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2);
@@ -164,6 +164,33 @@ void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
  */
 bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
 
-/*
- * TODO: implement "equals", "string", serialization, contains
+/**
+ * (For expert users who seek high performance.)
+ *
+ * Computes the union between two bitmaps and returns new bitmap. The caller is
+ * responsible for memory management.
+ *
+ * The lazy version defers some computations such as the maintenance of the
+ * cardinality counts. Thus you need
+ * to call roaring_bitmap_repair_after_lazy after executing "lazy" computations.
+ * It is safe to repeatedly call roaring_bitmap_lazy_or_inplace on the result.
+ *
  */
+roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
+                                         const roaring_bitmap_t *x2);
+
+/**
+ * (For expert users who seek high performance.)
+ * Inplace version of roaring_bitmap_lazy_or, modifies x1
+ */
+void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
+                                    const roaring_bitmap_t *x2);
+
+/**
+ * (For expert users who seek high performance.)
+ *
+ * Execute maintenance operations on a bitmap created from
+ * roaring_bitmap_lazy_or
+ * or modified with roaring_bitmap_lazy_or_inplace.
+ */
+void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *x1);

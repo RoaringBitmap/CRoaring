@@ -9,8 +9,8 @@
 #include <string.h>
 #include <x86intrin.h>
 
-#include "containers/array.h"
 #include "array_util.h"
+#include "containers/array.h"
 
 enum { DEFAULT_INIT_SIZE = 16 };
 
@@ -188,11 +188,11 @@ void array_container_union(const array_container_t *array_1,
 
     // compute union with smallest array first
     if (card_1 < card_2) {
-        out->cardinality = union_uint16(array_1->array, card_1, array_2->array,
-                                        card_2, out->array);
+        out->cardinality = union_vector16(array_1->array, card_1,
+                                          array_2->array, card_2, out->array);
     } else {
-        out->cardinality = union_uint16(array_2->array, card_2, array_1->array,
-                                        card_1, out->array);
+        out->cardinality = union_vector16(array_2->array, card_2,
+                                          array_1->array, card_1, out->array);
     }
 }
 

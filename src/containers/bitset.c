@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "containers/bitset.h"
 #include "bitset_util.h"
+#include "containers/bitset.h"
 #include "utilasm.h"
 
 extern int bitset_container_cardinality(const bitset_container_t *bitset);

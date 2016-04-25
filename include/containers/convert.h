@@ -45,5 +45,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
  * he becomes reponsible to free the new one. */
 void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after);
-
+// like convert_run_to_efficient_container but frees the old result if needed
+void *convert_run_to_efficient_container_and_free(run_container_t *c,
+                                                  uint8_t *typecode_after);
 #endif /* INCLUDE_CONTAINERS_CONVERT_H_ */
