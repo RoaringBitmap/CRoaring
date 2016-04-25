@@ -551,3 +551,8 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
     }
     return true;
 }
+
+roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
+                                      uint64_t range_start,
+                                      uint64_t range_end) {
+    if (range_start >= range_end) }
