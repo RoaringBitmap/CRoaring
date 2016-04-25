@@ -91,6 +91,19 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index);
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 
+/** appends from sa to ra, ending with the greatest key that is
+ * is less or equal stopping_key
+ */
+void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t stopping_key);
+
+/** appends from sa to ra, starting with the smallest key that is
+ * is strictly greater than before_start
+ */
+
+void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t before_start);
+
 /**
  * Set the container at the corresponding index using the specified typecode.
  */

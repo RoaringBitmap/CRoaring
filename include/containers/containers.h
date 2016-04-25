@@ -10,6 +10,7 @@
 #include "convert.h"
 #include "mixed_equal.h"
 #include "mixed_intersection.h"
+#include "mixed_negation.h"
 #include "mixed_union.h"
 #include "run.h"
 
@@ -216,7 +217,8 @@ static inline void *container_add(void *container, uint16_t val,
             bitset_container_set((bitset_container_t *)container, val);
             *new_typecode = BITSET_CONTAINER_TYPE_CODE;
             return container;
-        case ARRAY_CONTAINER_TYPE_CODE:;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
             array_container_t *ac = (array_container_t *)container;
             array_container_add(ac, val);
             if (array_container_cardinality(ac) > DEFAULT_MAX_SIZE) {
@@ -247,7 +249,8 @@ static inline bool container_contains(const void *container, uint16_t val,
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_get((const bitset_container_t *)container,
                                         val);
-        case ARRAY_CONTAINER_TYPE_CODE:;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            ;
             return array_container_contains(
                 (const array_container_t *)container, val);
         case RUN_CONTAINER_TYPE_CODE:
@@ -844,6 +847,71 @@ static inline void container_iterate(const void *container, uint8_t typecode,
             assert(false);
             __builtin_unreachable();
     }
+}
+
+static inline void *container_not(const void *c, uint8_t typ,
+                                  uint8_t *result_type) {
+    void *result = NULL;
+    switch (typ) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            *result_type = bitset_container_negation(c, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            result = bitset_container_create();
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            array_container_negation(c, result);
+            return result;
+        case RUN_CONTAINER_TYPE_CODE:
+            *result_type = run_container_negation(c, &result);
+            return result;
+
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+}
+
+static inline void *container_not_range(const void *c, uint8_t typ,
+                                        uint32_t range_start,
+                                        uint32_t range_end,
+                                        uint8_t *result_type) {
+    void *result = NULL;
+    switch (typ) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            *result_type = bitset_container_negation_range(c, range_start,
+                                                           range_end, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            *result_type = array_container_negation_range(c, range_start,
+                                                          range_end, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case RUN_CONTAINER_TYPE_CODE:
+            *result_type = run_container_negation_range(c, range_start,
+                                                        range_end, &result);
+            return result;
+
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+}
+
+static inline void *container_inot(const void *c1, uint8_t type1,
+                                   uint8_t *result_type) {
+    return 0;
+}
+
+static inline void *container_inot_range(const void *c1, uint8_t type1,
+                                         uint32_t range_start,
+                                         uint32_t range_end,
+                                         uint8_t *result_type) {
+    return 0;
 }
 
 #endif

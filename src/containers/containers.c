@@ -107,3 +107,16 @@ extern void *container_and(const void *c1, uint8_t type1, const void *c2,
 
 extern void *container_or(const void *c1, uint8_t type1, const void *c2,
                           uint8_t type2, uint8_t *result_type);
+
+extern void *container_not(const void *c1, uint8_t type1, uint8_t *result_type);
+
+extern void *container_not_range(const void *c1, uint8_t type1,
+                                 uint32_t range_start, uint32_t range_end,
+                                 uint8_t *result_type);
+
+extern void *container_inot(const void *c1, uint8_t type1,
+                            uint8_t *result_type);
+
+extern void *container_inot_range(const void *c1, uint8_t type1,
+                                  uint32_t range_start, uint32_t range_end,
+                                  uint8_t *result_type);
