@@ -596,8 +596,7 @@ static inline void *container_lazy_or(const void *c1, uint8_t type1,
             run_container_union(c1, c2, result);
             *result_type = RUN_CONTAINER_TYPE_CODE;
             // we are being lazy
-            // result = convert_run_to_efficient_container(result, result_type);
-            return result;
+            result = convert_run_to_efficient_container(result, result_type);
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
             result = bitset_container_create();
@@ -765,9 +764,7 @@ static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
             run_container_union_inplace(c1, c2);
             *result_type = RUN_CONTAINER_TYPE_CODE;
-            // next line skipped since we are lazy
-            // return convert_run_to_efficient_container(c1, result_type);
-            return c1;
+            return convert_run_to_efficient_container(c1, result_type);
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
             array_bitset_container_lazy_union(c2, c1, c1);  // is lazy
