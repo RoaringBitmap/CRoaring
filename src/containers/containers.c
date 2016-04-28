@@ -120,3 +120,6 @@ extern void *container_inot(const void *c1, uint8_t type1,
 extern void *container_inot_range(const void *c1, uint8_t type1,
                                   uint32_t range_start, uint32_t range_end,
                                   uint8_t *result_type);
+
+extern void *container_range_of_ones(uint32_t range_start, uint32_t range_end,
+                                     uint8_t *result_type);

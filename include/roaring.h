@@ -194,3 +194,11 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
  * or modified with roaring_bitmap_lazy_or_inplace.
  */
 void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *x1);
+
+/**
+ * compute the negation of the roaring bitmap within a specified interval.
+ * areas outside the range are passed through unchanged.
+ */
+
+roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
+                                      uint64_t range_start, uint64_t range_end);

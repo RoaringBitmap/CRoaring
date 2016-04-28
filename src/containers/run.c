@@ -15,6 +15,8 @@ extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);
 extern void run_container_clear(run_container_t *run);
 extern int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
+extern run_container_t *run_container_create_range(uint32_t start,
+                                                   uint32_t stop);
 
 enum { DEFAULT_INIT_SIZE = 4 };
 

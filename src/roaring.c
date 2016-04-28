@@ -563,14 +563,16 @@ static void insert_flipped_container(roaring_array_t *ans_arr,
     if (i >= 0) {
         void *container_to_flip =
             ra_get_container_at_index(x1_arr, i, &ctype_in);
-        flipped_container = container_not_range(
-            container_to_flip, ctype_in, (int)lb_start, lb_end + 1, &ctype_out);
+        flipped_container =
+            container_not_range(container_to_flip, ctype_in, (uint32_t)lb_start,
+                                (uint32_t)(lb_end + 1), &ctype_out);
+
         if (container_get_cardinality(flipped_container, ctype_out))
             ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
                                        ctype_out);
     } else {
-        flipped_container =
-            container_range_of_ones((int)lb_start, lb_end + 1, &ctype_out);
+        flipped_container = container_range_of_ones(
+            (uint32_t)lb_start, (uint32_t)(lb_end + 1), &ctype_out);
         ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
                                    ctype_out);
     }
@@ -592,7 +594,7 @@ static void insert_fully_flipped_container(roaring_array_t *ans_arr,
             ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
                                        ctype_out);
     } else {
-        flipped_container = container_full_range_of_ones(&ctype_out);
+        flipped_container = container_range_of_ones(0U, 0x10000U, &ctype_out);
         ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
                                    ctype_out);
     }
@@ -610,7 +612,7 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
     roaring_bitmap_t *ans = roaring_bitmap_create();
     uint16_t hb_start = (uint16_t)(range_start >> 16);
     const uint16_t lb_start = (uint16_t)range_start;  // & 0xFFFF;
-    const uint16_t hb_end = (uint16_t)((range_end - 1) >> 16);
+    uint16_t hb_end = (uint16_t)((range_end - 1) >> 16);
     const uint16_t lb_end = (uint16_t)(range_end - 1);  // & 0xFFFF;
 
     // corresponding java code is cleaner but always uses the ranged not on all
@@ -621,14 +623,14 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
     if (hb_start == hb_end) {
         insert_flipped_container(ans->high_low_container,
                                  x1->high_low_container, hb_start, lb_start,
-                                 lb_end)
+                                 lb_end);
     } else {
         // start and end containers are distinct
         if (lb_start > 0) {
             // handle first (partial) container
             insert_flipped_container(ans->high_low_container,
                                      x1->high_low_container, hb_start, lb_start,
-                                     lb_end);
+                                     0xFFFF);
             ++hb_start;  // for the full containers.  Can't wrap.
         }
 
@@ -639,12 +641,16 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
                                            x1->high_low_container, hb);
         }
 
-        // handle a partial final block
-        if (lb_end != 0xFFFF)
+        // handle a partial final container
+        if (lb_end != 0xFFFF) {
             insert_flipped_container(ans->high_low_container,
-                                     x1->high - low_container, hb_end + 1, 0,
+                                     x1->high_low_container, hb_end + 1, 0,
                                      lb_end);
+            ++hb_end;
+        }
     }
+    ra_append_copies_after(ans->high_low_container, x1->high_low_container,
+                           hb_end);
     return ans;
 }
 

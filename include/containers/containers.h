@@ -904,6 +904,7 @@ static inline void *container_not_range(const void *c, uint8_t typ,
 
 static inline void *container_inot(const void *c1, uint8_t type1,
                                    uint8_t *result_type) {
+    // TODO write me
     return 0;
 }
 
@@ -911,7 +912,20 @@ static inline void *container_inot_range(const void *c1, uint8_t type1,
                                          uint32_t range_start,
                                          uint32_t range_end,
                                          uint8_t *result_type) {
+    // TODO write me
     return 0;
+}
+
+/**
+ * make a container with a run of ones
+ */
+/* initially always use a run container, even if an array might be marginally
+ * smaller */
+static inline void *container_range_of_ones(uint32_t range_start,
+                                            uint32_t range_end,
+                                            uint8_t *result_type) {
+    *result_type = RUN_CONTAINER_TYPE_CODE;
+    return run_container_create_range(range_start, range_end);
 }
 
 #endif

@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "roaring.h"
@@ -775,19 +777,268 @@ void test_remove_run_to_array() {
     free(ans);
 }
 
+// array in, array out
+void test_negation_array0() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+
+    roaring_bitmap_t *notted_r1 = roaring_bitmap_flip(r1, 200U, 500U);
+    assert_non_null(notted_r1);
+    assert_int_equal(300, roaring_bitmap_get_cardinality(notted_r1));
+
+    roaring_bitmap_free(notted_r1);
+    roaring_bitmap_free(r1);
+}
+
+// array in, array out
+void test_negation_array1() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+
+    roaring_bitmap_add(r1, 1);
+    roaring_bitmap_add(r1, 2);
+    // roaring_bitmap_add(r1,3);
+    roaring_bitmap_add(r1, 4);
+    roaring_bitmap_add(r1, 5);
+    roaring_bitmap_t *notted_r1 = roaring_bitmap_flip(r1, 2U, 5U);
+    assert_non_null(notted_r1);
+    assert_int_equal(3, roaring_bitmap_get_cardinality(notted_r1));
+
+    roaring_bitmap_free(notted_r1);
+    roaring_bitmap_free(r1);
+}
+
+// arrays to bitmaps and runs
+void test_negation_array2() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+
+    for (uint32_t i = 0; i < 100; ++i) {
+        roaring_bitmap_add(r1, 2 * i);
+        roaring_bitmap_add(r1, 5 * 65536 + 2 * i);
+    }
+
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 200);
+
+    // get the first batch of ones but not the second
+    roaring_bitmap_t *notted_r1 = roaring_bitmap_flip(r1, 0U, 100000U);
+    assert_non_null(notted_r1);
+
+    // lose 100 for key 0, but gain 100 for key 5
+    assert_int_equal(100000, roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip all ones and beyond
+    notted_r1 = roaring_bitmap_flip(r1, 0U, 1000000U);
+    assert_non_null(notted_r1);
+    assert_int_equal(1000000 - 200, roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // Flip some bits in the middle
+    notted_r1 = roaring_bitmap_flip(r1, 100000U, 200000U);
+    assert_non_null(notted_r1);
+    assert_int_equal(100000 + 200, roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip almost all of the bits, end at an even boundary
+    notted_r1 = roaring_bitmap_flip(r1, 1U, 65536 * 6);
+    assert_non_null(notted_r1);
+    assert_int_equal(65536 * 6 - 200 + 1,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip first bunch of the bits, end at an even boundary
+    notted_r1 = roaring_bitmap_flip(r1, 1U, 65536 * 5);
+    assert_non_null(notted_r1);
+    assert_int_equal(65536 * 5 - 100 + 1 + 100,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    roaring_bitmap_free(r1);
+}
+
+// bitmaps to bitmaps and runs
+void test_negation_bitset1() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+
+    for (uint32_t i = 0; i < 25000; ++i) {
+        roaring_bitmap_add(r1, 2 * i);
+        roaring_bitmap_add(r1, 5 * 65536 + 2 * i);
+    }
+
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 50000);
+
+    // get the first batch of ones but not the second
+    roaring_bitmap_t *notted_r1 = roaring_bitmap_flip(r1, 0U, 100000U);
+    assert_non_null(notted_r1);
+
+    // lose 25000 for key 0, but gain 25000 for key 5
+    assert_int_equal(100000, roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip all ones and beyond
+    notted_r1 = roaring_bitmap_flip(r1, 0U, 1000000U);
+    assert_non_null(notted_r1);
+    assert_int_equal(1000000 - 50000,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // Flip some bits in the middle
+    notted_r1 = roaring_bitmap_flip(r1, 100000U, 200000U);
+    assert_non_null(notted_r1);
+    assert_int_equal(100000 + 50000, roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip almost all of the bits, end at an even boundary
+    notted_r1 = roaring_bitmap_flip(r1, 1U, 65536 * 6);
+    assert_non_null(notted_r1);
+    assert_int_equal(65536 * 6 - 50000 + 1,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip first bunch of the bits, end at an even boundary
+    notted_r1 = roaring_bitmap_flip(r1, 1U, 65536 * 5);
+    assert_non_null(notted_r1);
+    assert_int_equal(65536 * 5 - 25000 + 1 + 25000,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    roaring_bitmap_free(r1);
+}
+
+void test_negation_helper(bool runopt, uint32_t gap) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+
+    for (uint32_t i = 0; i < 65536; ++i) {
+        if (i % 147 < gap) continue;
+        roaring_bitmap_add(r1, i);
+        roaring_bitmap_add(r1, 5 * 65536 + i);
+    }
+    if (runopt) {
+        bool hasrun = roaring_bitmap_run_optimize(r1);
+        assert_true(hasrun);
+    }
+
+    int orig_card = roaring_bitmap_get_cardinality(r1);
+
+    // get the first batch of ones but not the second
+    roaring_bitmap_t *notted_r1 = roaring_bitmap_flip(r1, 0U, 100000U);
+    assert_non_null(notted_r1);
+
+    // lose some for key 0, but gain same num for key 5
+    assert_int_equal(100000, roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip all ones and beyond
+    notted_r1 = roaring_bitmap_flip(r1, 0U, 1000000U);
+    assert_non_null(notted_r1);
+    assert_int_equal(1000000 - orig_card,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // Flip some bits in the middle
+    notted_r1 = roaring_bitmap_flip(r1, 100000U, 200000U);
+    assert_non_null(notted_r1);
+    assert_int_equal(100000 + orig_card,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip almost all of the bits, end at an even boundary
+    notted_r1 = roaring_bitmap_flip(r1, 1U, 65536 * 6);
+    assert_non_null(notted_r1);
+    assert_int_equal((65536 * 6 - 1) - orig_card,
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    // flip first bunch of the bits, end at an even boundary
+    notted_r1 = roaring_bitmap_flip(r1, 1U, 65536 * 5);
+    assert_non_null(notted_r1);
+    assert_int_equal(65536 * 5 - 1 - (orig_card / 2) + (orig_card / 2),
+                     roaring_bitmap_get_cardinality(notted_r1));
+    roaring_bitmap_free(notted_r1);
+
+    roaring_bitmap_free(r1);
+}
+
+// bitmaps to arrays and runs
+void test_negation_bitset2() { test_negation_helper(false, 2); }
+
+// runs to arrays
+void test_negation_run1() { test_negation_helper(true, 1); }
+
+// runs to runs
+void test_negation_run2() { test_negation_helper(true, 30); }
+
+// runs to bitmaps is hard to do.
+// TODO it
+
+// randomized flipping test
+void test_rand_flips() {
+    srand(1234);
+    const int min_runs = 1;
+    const int flip_trials = 100;
+    const int range = 2000000;
+    char *input = malloc(range);
+    char *output = malloc(range);
+
+    for (int card = 2; card < 1000000; card *= 2) {
+        printf("test_rand_flips with attempted card %d", card);
+
+        roaring_bitmap_t *r = roaring_bitmap_create();
+        memset(input, 0, range);
+        for (int i = 0; i < card; ++i) {
+            float f1 = rand() / (float)RAND_MAX;
+            float f2 = rand() / (float)RAND_MAX;
+            float f3 = rand() / (float)RAND_MAX;
+            int pos = (int)(f1 * f2 * f3 *
+                            range);  // denser at the start, sparser at end
+            roaring_bitmap_add(r, pos);
+            input[pos] = 1;
+        }
+        for (int i = 0; i < min_runs; ++i) {
+            int startpos = rand() % (range / 2);
+            for (int j = startpos; j < startpos + 65536 * 2; ++j)
+                if (j % 147 < 100) {
+                    roaring_bitmap_add(r, j);
+                    input[j] = 1;
+                }
+        }
+        roaring_bitmap_run_optimize(r);
+        printf(" and actual card = %d\n", roaring_bitmap_get_cardinality(r));
+
+        for (int i = 0; i < flip_trials; ++i) {
+            int start = rand() % (range - 1);
+            int len = rand() % (range - start);
+            roaring_bitmap_t *ans = roaring_bitmap_flip(r, start, start + len);
+            memcpy(output, input, range);
+            for (int j = start; j < start + len; ++j) output[j] = 1 - input[j];
+
+            // verify answer
+            for (int j = 0; j < range; ++j) {
+                assert_true(((bool)output[j]) ==
+                            roaring_bitmap_contains(ans, j));
+            }
+
+            roaring_bitmap_free(ans);
+        }
+        roaring_bitmap_free(r);
+    }
+    free(output);
+    free(input);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_example),
-        cmocka_unit_test(test_printf),
+        cmocka_unit_test(test_example), cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
-        cmocka_unit_test(test_printf_withrun),
-        cmocka_unit_test(test_iterate),
+        cmocka_unit_test(test_printf_withrun), cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterate_empty),
         cmocka_unit_test(test_iterate_withbitmap),
         cmocka_unit_test(test_iterate_withrun),
         cmocka_unit_test(test_serialize),
-        cmocka_unit_test(test_portable_serialize),
-        cmocka_unit_test(test_add),
+        cmocka_unit_test(test_portable_serialize), cmocka_unit_test(test_add),
         cmocka_unit_test(test_contains),
         cmocka_unit_test(test_intersection_array_x_array),
         cmocka_unit_test(test_intersection_array_x_array_inplace),
@@ -802,6 +1053,13 @@ int main() {
         cmocka_unit_test(test_run_to_self),
         cmocka_unit_test(test_remove_run_to_bitset),
         cmocka_unit_test(test_remove_run_to_array),
+        cmocka_unit_test(test_negation_array0),
+        cmocka_unit_test(test_negation_array1),
+        cmocka_unit_test(test_negation_array2),
+        cmocka_unit_test(test_negation_bitset1),
+        cmocka_unit_test(test_negation_bitset2),
+        cmocka_unit_test(test_negation_run1),
+        cmocka_unit_test(test_negation_run2), cmocka_unit_test(test_rand_flips),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
     };

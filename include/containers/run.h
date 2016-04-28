@@ -264,4 +264,15 @@ void run_container_smart_append_exclusive(run_container_t *src,
                                           const uint16_t start,
                                           const uint16_t length);
 
+/* The new container consists of a single run. Returns NULL on failure */
+static inline run_container_t *run_container_create_range(uint32_t start,
+                                                          uint32_t stop) {
+    run_container_t *rc = run_container_create_given_capacity(1);
+    if (rc)
+        run_container_append_first(
+            rc, (rle16_t){.value = (uint16_t)start,
+                          .length = (uint16_t)(stop - start - 1)});
+    return rc;
+}
+
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */
