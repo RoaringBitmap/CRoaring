@@ -597,6 +597,7 @@ static inline void *container_lazy_or(const void *c1, uint8_t type1,
             *result_type = RUN_CONTAINER_TYPE_CODE;
             // we are being lazy
             result = convert_run_to_efficient_container(result, result_type);
+            return result;
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
             result = bitset_container_create();

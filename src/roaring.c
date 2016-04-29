@@ -165,7 +165,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
                                          const roaring_bitmap_t **x) {
     if (number == 0) {
-        return NULL;
+        return roaring_bitmap_create();
     }
     if (number == 1) {
         return roaring_bitmap_copy(x[0]);
@@ -240,10 +240,10 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
     if (0 == length1) {
-        return roaring_bitmap_copy(x1);
+        return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
-        return roaring_bitmap_copy(x2);
+        return roaring_bitmap_copy(x1);
     }
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
@@ -560,10 +560,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
     if (0 == length1) {
-        return roaring_bitmap_copy(x1);
+        return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
-        return roaring_bitmap_copy(x2);
+        return roaring_bitmap_copy(x1);
     }
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;

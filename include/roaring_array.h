@@ -53,6 +53,12 @@ roaring_array_t *ra_copy(roaring_array_t *r);
 void ra_free(roaring_array_t *r);
 
 /**
+ * Frees the memory used by a roaring array, but does not free the containers
+ */
+void ra_free_without_container(roaring_array_t *r);
+
+
+/**
  * Get the index corresponding to a 16-bit key
  */
 int32_t ra_get_index(roaring_array_t *ra, uint16_t x);

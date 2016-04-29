@@ -71,7 +71,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2);
 
 /**
- * Compute the union of 'number' bitmaps. Caller is responsabile for freeing the
+ * Compute the union of 'number' bitmaps. Caller is responsible for freeing the
  * result.
  */
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,

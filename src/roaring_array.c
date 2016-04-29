@@ -104,8 +104,24 @@ static void ra_clear(roaring_array_t *ra) {
     ra->typecodes = NULL;  // paranoid
 }
 
+static void ra_clear_without_containers(roaring_array_t *ra) {
+    free(ra->keys);
+    ra->keys = NULL;  // paranoid
+    free(ra->containers);
+    ra->containers = NULL;  // paranoid
+    free(ra->typecodes);
+    ra->typecodes = NULL;  // paranoid
+}
+
+
 void ra_free(roaring_array_t *ra) {
     ra_clear(ra);
+    free(ra);
+}
+
+
+void ra_free_without_containers(roaring_array_t *ra) {
+    ra_clear_without_containers(ra);
     free(ra);
 }
 
