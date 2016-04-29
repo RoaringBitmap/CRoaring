@@ -17,6 +17,7 @@ set(ROARING_SRC
     containers/mixed_negation.c
     containers/run.c
     roaring.c
+    roaring_priority_queue.c
     roaring_array.c)
 
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})

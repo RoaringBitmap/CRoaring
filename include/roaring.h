@@ -71,12 +71,22 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2);
 
 /**
- * Compute the union of 'number' bitmaps. Caller is responsible for freeing the
+ * Compute the union of 'number' bitmaps. See also roaring_bitmap_or_many_heap.
+ * Caller is responsible for freeing the
  * result.
  */
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
                                          const roaring_bitmap_t **x);
 
+
+/**
+ * Compute the union of 'number' bitmaps using a heap. This can
+ * sometimes be faster than roaring_bitmap_or_many which uses
+ * a naive algorithm. Caller is responsible for freeing the
+ * result.
+ */
+roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
+                                              const roaring_bitmap_t **x);
 /**
  * Frees the memory.
  */
@@ -139,7 +149,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
  * How many bytes are required to serialize this bitmap (meant to be compatible
  * with Java and Go versions)
  */
-size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra);
+size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra);
 
 /**
  * write a bitmap to a char buffer. This is meant to be compatible with
@@ -147,7 +157,7 @@ size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra);
  * Java and Go versions. Returns how many bytes were written which should be
  * roaring_bitmap_portable_size_in_bytes(ra).
  */
-size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf);
+size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
 
 /**
  * Iterate over the bitmap elements. The function iterator is called once for

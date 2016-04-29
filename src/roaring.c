@@ -54,6 +54,18 @@ void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
     printf("}");
 }
 
+void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
+    printf("{");
+    for (int i = 0; i < ra->high_low_container->size; ++i) {
+    	printf("%s (%d)",get_container_name(ra->high_low_container->typecodes[i]),
+    			container_get_cardinality(ra->high_low_container->containers[i],
+    		            ra->high_low_container->typecodes[i]));
+        if (i + 1 < ra->high_low_container->size) printf(",");
+    }
+    printf("}");
+}
+
+
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
     if (!ans) {
@@ -464,7 +476,7 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
         return (ret);
 }
 
-size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra) {
+size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra) {
     return ra_portable_size_in_bytes(ra->high_low_container);
 }
 
@@ -478,7 +490,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
     return ans;
 }
 
-size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf) {
+size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf) {
     return ra_portable_serialize(ra->high_low_container, buf);
 }
 

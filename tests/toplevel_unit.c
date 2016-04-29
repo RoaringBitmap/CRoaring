@@ -84,8 +84,13 @@ void test_example() {
     const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
     roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
     assert_true(roaring_bitmap_equals(r1_2_3, bigunion));
+    roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps);
+    assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
     roaring_bitmap_free(r1_2_3);
     roaring_bitmap_free(bigunion);
+    roaring_bitmap_free(bigunionheap);
+
+
 
     // we can compute intersection two-by-two
     roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);

@@ -123,7 +123,7 @@ void ra_free_without_containers(roaring_array_t *ra) {
     free(ra);
 }
 
-static void extend_array(roaring_array_t *ra, uint16_t k) {
+void extend_array(roaring_array_t *ra, uint32_t k) {
     // corresponding Java code uses >= ??
     int desired_size = ra->size + (int)k;
     if (desired_size > ra->allocation_size) {
@@ -139,16 +139,6 @@ static void extend_array(roaring_array_t *ra, uint16_t k) {
             perror(0);
             exit(1);
         }
-
-#if 0
-    // should not be needed
-    // mark the garbage entries
-    for (int i = ra->allocation_size; i < new_capacity; ++i) {
-      ra->typecodes[i] = UNINITIALIZED_TYPE_CODE;
-      // should not be necessary
-      ra->containers[i] = ra->keys[i] = 0;
-    }
-#endif
         ra->allocation_size = new_capacity;
     }
 }
@@ -186,6 +176,20 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
         ra->keys[pos] = sa->keys[i];
         ra->containers[pos] =
             container_clone(sa->containers[i], sa->typecodes[i]);
+        ra->typecodes[pos] = sa->typecodes[i];
+        ra->size++;
+    }
+}
+
+void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+                          uint16_t start_index, uint16_t end_index) {
+    extend_array(ra, end_index - start_index);
+
+    for (uint16_t i = start_index; i < end_index; ++i) {
+        const int32_t pos = ra->size;
+
+        ra->keys[pos] = sa->keys[i];
+        ra->containers[pos] = sa->containers[i];
         ra->typecodes[pos] = sa->typecodes[i];
         ra->size++;
     }

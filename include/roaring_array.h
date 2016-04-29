@@ -55,7 +55,7 @@ void ra_free(roaring_array_t *r);
 /**
  * Frees the memory used by a roaring array, but does not free the containers
  */
-void ra_free_without_container(roaring_array_t *r);
+void ra_free_without_containers(roaring_array_t *r);
 
 /**
  * Get the index corresponding to a 16-bit key
@@ -97,10 +97,23 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 
 /**
+ * Append new key-value pairs to ra, using  values from sa as is at indexes
+ * [start_index, uint16_t end_index). Since no copy is made, this should
+ * be used with care.
+ */
+void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+                          uint16_t start_index, uint16_t end_index);
+
+/**
  * Set the container at the corresponding index using the specified typecode.
  */
 void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
                                uint8_t typecode);
+
+/**
+ * If needed, increase the capacity of the array so that it can fit k values (at least);
+ */
+void extend_array(roaring_array_t *ra, uint32_t k);
 
 static inline int32_t ra_get_size(roaring_array_t *ra) { return ra->size; }
 
