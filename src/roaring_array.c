@@ -113,12 +113,10 @@ static void ra_clear_without_containers(roaring_array_t *ra) {
     ra->typecodes = NULL;  // paranoid
 }
 
-
 void ra_free(roaring_array_t *ra) {
     ra_clear(ra);
     free(ra);
 }
-
 
 void ra_free_without_containers(roaring_array_t *ra) {
     ra_clear_without_containers(ra);

@@ -135,7 +135,8 @@ void *convert_run_to_efficient_container(run_container_t *c,
         size_as_bitset_container < size_as_array_container
             ? size_as_bitset_container
             : size_as_array_container;
-    if (size_as_run_container * RUN_OPTI_MINIMAL_GAIN <= min_size_non_run) {  // no conversion
+    if (size_as_run_container * RUN_OPTI_MINIMAL_GAIN <=
+        min_size_non_run) {  // no conversion
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         return c;
     }

@@ -57,7 +57,6 @@ void ra_free(roaring_array_t *r);
  */
 void ra_free_without_container(roaring_array_t *r);
 
-
 /**
  * Get the index corresponding to a 16-bit key
  */
