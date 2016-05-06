@@ -505,7 +505,7 @@ int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
 
 
 
-int32_t bitset_container_write(bitset_container_t *container,
+int32_t bitset_container_write(const bitset_container_t *container,
                                   char *buf) {
 if( IS_BIG_ENDIAN){
 	// forcing little endian (could be faster)

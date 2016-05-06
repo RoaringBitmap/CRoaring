@@ -346,7 +346,7 @@ void bitset_container_iterate(const bitset_container_t *cont, uint32_t base,
  * The number of bytes written should be
  * bitset_container_size_in_bytes(container).
  */
-int32_t bitset_container_write(bitset_container_t *container, char *buf);
+int32_t bitset_container_write(const bitset_container_t *container, char *buf);
 
 /**
  * Reads the instance from buf, outputs how many bytes were read.
@@ -365,7 +365,7 @@ int32_t bitset_container_read(int32_t cardinality,
  * that the cardinality of the container is already known or can be computed.
  */
 static inline int32_t bitset_container_size_in_bytes(
-    bitset_container_t *container) {
+    const bitset_container_t *container) {
     (void)container;
     return BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
 }

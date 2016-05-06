@@ -295,6 +295,9 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rnorun);
     roaring_bitmap_t *temporrunsheap =
         roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rruns);
+    //assert(slow_bitmap_equals(tempornorun, tempornorunheap));
+    //assert(slow_bitmap_equals(temporruns,temporrunsheap));
+
     assert(roaring_bitmap_equals(tempornorun, tempornorunheap));
     assert(roaring_bitmap_equals(temporruns,temporrunsheap));
 
@@ -309,20 +312,26 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         assert(roaring_bitmap_equals(rnorun[1], rruns[1]));
         longtempornorun = roaring_bitmap_or(rnorun[0], rnorun[1]);
         longtemporruns = roaring_bitmap_or(rruns[0], rruns[1]);
+        //assert(slow_bitmap_equals(longtempornorun, longtemporruns));
         assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
         for (int i = 2; i < (int)count; ++i) {
-            assert(roaring_bitmap_equals(rnorun[i], rruns[i]));
+            //assert(slow_bitmap_equals(rnorun[i], rruns[i]));
+            //assert(slow_bitmap_equals(longtempornorun, longtemporruns));
+
+        	assert(roaring_bitmap_equals(rnorun[i], rruns[i]));
             assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
 
             roaring_bitmap_t *t1 =
                 roaring_bitmap_or(rnorun[i], longtempornorun);
             roaring_bitmap_t *t2 = roaring_bitmap_or(rruns[i], longtemporruns);
+            //assert(slow_bitmap_equals(t1, t2));
             assert(roaring_bitmap_equals(t1, t2));
-
             roaring_bitmap_free(longtempornorun);
             longtempornorun = t1;
             roaring_bitmap_free(longtemporruns);
             longtemporruns = t2;
+
+            //assert(slow_bitmap_equals(longtempornorun, longtemporruns));
             assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
         }
     }

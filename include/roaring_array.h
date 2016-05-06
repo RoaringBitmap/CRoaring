@@ -30,6 +30,7 @@ typedef struct roaring_array_s {
     uint16_t *keys;
     void **containers;
     uint8_t *typecodes;
+    uint8_t *shared; /* for COW, used as a bitset*/
 } roaring_array_t;
 
 /**
@@ -69,6 +70,7 @@ int32_t ra_get_index(roaring_array_t *ra, uint16_t x);
 void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
                                 uint8_t *typecode);
 
+
 /**
  * Retrieves the key at index i
  */
@@ -86,23 +88,23 @@ void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
 void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
 
 /**
- * Append a new key-value pair to ra, cloning a value from sa at index index
+ * Append a new key-value pair to ra, cloning (in COW sense) a value from sa at index index
  */
 void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index);
 
 /**
- * Append new key-value pairs to ra, cloning  values from sa at indexes
+ * Append new key-value pairs to ra, cloning (in COW sense)  values from sa at indexes
  * [start_index, uint16_t end_index)
  */
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 
+
 /**
- * Append new key-value pairs to ra, using  values from sa as is at indexes
- * [start_index, uint16_t end_index). Since no copy is made, this should
- * be used with care.
+ * Append new key-value pairs to ra,  from sa at indexes
+ * [start_index, uint16_t end_index)
  */
-void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 
 /**
@@ -171,5 +173,6 @@ bool ra_has_run_container(roaring_array_t *ra);
  * with Java and Go versions)
  */
 uint32_t ra_portable_header_size(roaring_array_t *ra);
+
 
 #endif

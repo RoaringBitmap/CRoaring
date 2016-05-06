@@ -227,7 +227,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         array_container_free(c);
         return answer;
-    } else {  // run conversions on bitset
+    } else if (typecode_original == BITSET_CONTAINER_TYPE_CODE) {  // run conversions on bitset
         // does bitset need conversion to run?
         bitset_container_t *c_qua_bitset = (bitset_container_t *)c;
         int32_t n_runs = bitset_container_number_of_runs(c_qua_bitset);
@@ -284,5 +284,9 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
             cur_word = cur_word_with_1s & (cur_word_with_1s + 1);
         }
         return answer;
+    } else {
+    	assert(false);
+        __builtin_unreachable();
+    	return NULL;
     }
 }

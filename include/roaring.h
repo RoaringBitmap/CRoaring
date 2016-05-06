@@ -32,6 +32,11 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
 roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
 
 /**
+ * Describe the inner structure of the bitmap.
+ */
+void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra);
+
+/**
  * Creates a new bitmap from a list of uint32_t integers
  */
 roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
