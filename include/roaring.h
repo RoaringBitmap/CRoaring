@@ -13,7 +13,6 @@ typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;
 } roaring_bitmap_t;
 
-// TODO sprinkle in consts
 
 /**
  * Creates a new bitmap (initially empty)

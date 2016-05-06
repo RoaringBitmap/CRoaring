@@ -381,6 +381,11 @@ bool loadAndCheckAll(const char *dirname) {
     for (int i = 0; i < (int)count; i++) {
         bitmapswrun[i] = roaring_bitmap_copy(bitmaps[i]);
         roaring_bitmap_run_optimize(bitmapswrun[i]);
+        if(roaring_bitmap_get_cardinality(bitmaps[i]) !=
+        		roaring_bitmap_get_cardinality(bitmapswrun[i])) {
+            printf("cardinality change due to roaring_bitmap_run_optimize\n");
+            return false;
+        }
     }
     for (size_t i = 0; i < count; i++) {
         if (!is_bitmap_equal_to_array(bitmapswrun[i], numbers[i], howmany[i])) {
