@@ -10,8 +10,9 @@ When doing "run optimize", instead of converting to a run container when it
 would
 be smaller, we require that it be RUN_OPTI_MINIMAL_GAIN times smaller. That's
 because
-huge run containers are implemented less efficiently.
+huge run containers are implemented less efficiently. Note that
+RUN_OPTI_MINIMAL_GAIN = 1 means that this optimization is disabled.
 
 */
-enum { ARRAY_LAZY_LOWERBOUND = 1024, RUN_OPTI_MINIMAL_GAIN = 2 };
+enum { ARRAY_LAZY_LOWERBOUND = 1024, RUN_OPTI_MINIMAL_GAIN = 1 };
 #endif
