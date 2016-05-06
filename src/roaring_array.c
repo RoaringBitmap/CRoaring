@@ -22,7 +22,7 @@ extern int32_t ra_get_size(roaring_array_t *ra);
 
 #define INITIAL_CAPACITY 4
 
-roaring_array_t *ra_create_with_capacity(int32_t cap) {
+roaring_array_t *ra_create_with_capacity(uint32_t cap) {
     roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
     if (!new_ra) return NULL;
     new_ra->keys = NULL;
@@ -137,7 +137,6 @@ void extend_array(roaring_array_t *ra, uint32_t k) {
         if (!ra->keys || !ra->containers || !ra->typecodes) {
             fprintf(stderr, "[%s] %s\n", __FILE__, __func__);
             perror(0);
-            exit(1);
         }
         ra->allocation_size = new_capacity;
     }

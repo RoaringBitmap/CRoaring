@@ -38,9 +38,10 @@ typedef struct roaring_array_s {
 roaring_array_t *ra_create(void);
 
 /**
- * Create a new roaring array with the specified capacity
+ * Create a new roaring array with the specified capacity (in number
+ * of containers)
  */
-roaring_array_t *ra_create_with_capacity(int32_t cap);
+roaring_array_t *ra_create_with_capacity(uint32_t cap);
 
 /**
  * Copies this roaring array (caller is responsible for memory management)

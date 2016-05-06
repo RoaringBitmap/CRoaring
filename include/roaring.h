@@ -19,6 +19,13 @@ typedef struct roaring_bitmap_s {
  */
 roaring_bitmap_t *roaring_bitmap_create(void);
 
+
+/**
+ * Creates a new bitmap (initially empty) with a provided
+ * container-storage capacity (it is a performance hint).
+ */
+roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
+
 /**
  * Creates a new bitmap from a pointer of uint32_t integers
  */
