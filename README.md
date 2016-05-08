@@ -182,6 +182,10 @@ To reformat your code according to the style convention (make sure that ``clang-
 ./tools/clang-format.sh
 ```
 
+# Python Wrappers
+
+Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
+
 # References and further reading
 
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
