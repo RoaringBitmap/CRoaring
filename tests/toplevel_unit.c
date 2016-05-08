@@ -23,6 +23,20 @@ void roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
 }
 
+void can_add_to_copies() {
+    roaring_bitmap_t *bm1 = roaring_bitmap_create();
+    roaring_bitmap_add(bm1, 3);
+    roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
+    assert(roaring_bitmap_get_cardinality(bm1) == 1);
+    assert(roaring_bitmap_get_cardinality(bm2) == 1);
+    roaring_bitmap_add(bm2, 4);
+    roaring_bitmap_add(bm1, 5);
+    assert(roaring_bitmap_get_cardinality(bm1) == 2);
+    assert(roaring_bitmap_get_cardinality(bm2) == 2);
+    roaring_bitmap_free(bm1);
+    roaring_bitmap_free(bm2);
+}
+
 void test_example() {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();

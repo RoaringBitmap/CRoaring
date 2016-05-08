@@ -174,5 +174,9 @@ bool ra_has_run_container(roaring_array_t *ra);
  */
 uint32_t ra_portable_header_size(roaring_array_t *ra);
 
+/**
+ * If the container at the index i is share, unshare it (creating a local copy if needed).
+ */
+void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) ;
 
 #endif

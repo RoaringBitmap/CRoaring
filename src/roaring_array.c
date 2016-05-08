@@ -720,3 +720,15 @@ roaring_array_t *ra_portable_deserialize(const char *buf) {
 }
 
 
+
+void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) {
+	assert(i < ra->size);
+	uint8_t typecode = ra->typecodes[i];
+	if(typecode == SHARED_CONTAINER_TYPE_CODE) {
+		void * container = ra->containers[i];
+		void *underneath_container = get_writable_copy_if_shared(container,&typecode);
+		shared_container_free((shared_container_t *)container);
+		ra_set_container_at_index(ra, i, underneath_container,
+				typecode);
+	}
+}
