@@ -109,10 +109,16 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
     while (true) {
         if (s1 == s2) {
+            // todo: unsharing can be inefficient as it may create a clone where none
+            // is needed, but it has the benefit of being easy to reason about.
+            ra_unshare_container_at_index(x1->high_low_container,pos1);
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
+            assert(container_type_1 != SHARED_CONTAINER_TYPE_CODE);
+            ra_unshare_container_at_index(x2->high_low_container,pos2);
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
+            assert(container_type_2 != SHARED_CONTAINER_TYPE_CODE);
             void *c;
 
             if ((container_type_2 == BITSET_CONTAINER_TYPE_CODE) &&
@@ -120,12 +126,18 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                 c = container_lazy_ior(c2, container_type_2, c1,
                                        container_type_1,
                                        &container_result_type);
+                if ( c != c2 ) {
+                    container_free(c2, container_type_2);
+                }
                 container_free(c1, container_type_1);
 
             } else {
                 c = container_lazy_ior(c1, container_type_1, c2,
                                        container_type_2,
                                        &container_result_type);
+                if( c != c1 ) {
+                     container_free(c1, container_type_1);
+                }
                 container_free(c2, container_type_2);
             }
             // since we assume that the initial containers are non-empty, the
@@ -157,10 +169,10 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(answer->high_low_container, x2->high_low_container,
+        ra_append_move_range(answer->high_low_container, x2->high_low_container,
                              pos2, length2);
     } else if (pos2 == length2) {
-        ra_append_copy_range(answer->high_low_container, x1->high_low_container,
+        ra_append_move_range(answer->high_low_container, x1->high_low_container,
                              pos1, length1);
     }
     ra_free_without_containers(x1->high_low_container);

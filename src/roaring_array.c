@@ -195,6 +195,19 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
 }
 
 
+void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+                          uint16_t start_index, uint16_t end_index) {
+    extend_array(ra, end_index - start_index);
+
+    for (uint16_t i = start_index; i < end_index; ++i) {
+        const int32_t pos = ra->size;
+
+        ra->keys[pos] = sa->keys[i];
+        ra->containers[pos] = sa->containers[i];
+        ra->typecodes[pos] = sa->typecodes[i];
+        ra->size++;
+    }
+}
 
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index) {

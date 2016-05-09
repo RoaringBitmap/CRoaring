@@ -99,7 +99,13 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index);
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 
-
+/**
+ * Move the key-value pairs to ra from sa at indexes
+ * [start_index, uint16_t end_index), old array should not be freed
+ * (use ra_free_without_containers)
+ **/
+void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+                          uint16_t start_index, uint16_t end_index);
 /**
  * Append new key-value pairs to ra,  from sa at indexes
  * [start_index, uint16_t end_index)
