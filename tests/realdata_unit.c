@@ -291,6 +291,14 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
     }
     assert(roaring_bitmap_equals(tempornorun, temporruns));
 
+    roaring_bitmap_t *tempornorunheap =
+        roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rnorun);
+    roaring_bitmap_t *temporrunsheap =
+        roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rruns);
+    assert(roaring_bitmap_equals(tempornorun, tempornorunheap));
+    assert(roaring_bitmap_equals(temporruns,temporrunsheap));
+
+
     roaring_bitmap_t *longtempornorun;
     roaring_bitmap_t *longtemporruns;
     if (count == 1) {
@@ -373,6 +381,11 @@ bool loadAndCheckAll(const char *dirname) {
     for (int i = 0; i < (int)count; i++) {
         bitmapswrun[i] = roaring_bitmap_copy(bitmaps[i]);
         roaring_bitmap_run_optimize(bitmapswrun[i]);
+        if(roaring_bitmap_get_cardinality(bitmaps[i]) !=
+        		roaring_bitmap_get_cardinality(bitmapswrun[i])) {
+            printf("cardinality change due to roaring_bitmap_run_optimize\n");
+            return false;
+        }
     }
     for (size_t i = 0; i < count; i++) {
         if (!is_bitmap_equal_to_array(bitmapswrun[i], numbers[i], howmany[i])) {

@@ -20,6 +20,19 @@ roaring_bitmap_t *roaring_bitmap_create() {
     return ans;
 }
 
+roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
+    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
+    if (!ans) {
+        return NULL;
+    }
+    ans->high_low_container = ra_create_with_capacity(cap);
+    if (!ans->high_low_container) {
+        free(ans);
+        return NULL;
+    }
+    return ans;
+}
+
 roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
     // todo: could be greatly optimized
     roaring_bitmap_t *answer = roaring_bitmap_create();
@@ -53,6 +66,18 @@ void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
     }
     printf("}");
 }
+
+void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
+    printf("{");
+    for (int i = 0; i < ra->high_low_container->size; ++i) {
+    	printf("%s (%d)",get_container_name(ra->high_low_container->typecodes[i]),
+    			container_get_cardinality(ra->high_low_container->containers[i],
+    		            ra->high_low_container->typecodes[i]));
+        if (i + 1 < ra->high_low_container->size) printf(",");
+    }
+    printf("}");
+}
+
 
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
@@ -123,9 +148,11 @@ bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
 roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
-    roaring_bitmap_t *answer = roaring_bitmap_create();
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
+    uint32_t neededcap = length1 > length2 ?
+    		length2 : length1;
+    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
 
     int pos1 = 0, pos2 = 0;
 
@@ -165,7 +192,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
                                          const roaring_bitmap_t **x) {
     if (number == 0) {
-        return NULL;
+        return roaring_bitmap_create();
     }
     if (number == 1) {
         return roaring_bitmap_copy(x[0]);
@@ -236,14 +263,14 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
 roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
-    roaring_bitmap_t *answer = roaring_bitmap_create();
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
+    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1 + length2);
     if (0 == length1) {
-        return roaring_bitmap_copy(x1);
+        return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
-        return roaring_bitmap_copy(x2);
+        return roaring_bitmap_copy(x1);
     }
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
@@ -464,7 +491,7 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
         return (ret);
 }
 
-size_t roaring_bitmap_portable_size_in_bytes(roaring_bitmap_t *ra) {
+size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra) {
     return ra_portable_size_in_bytes(ra->high_low_container);
 }
 
@@ -478,7 +505,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
     return ans;
 }
 
-size_t roaring_bitmap_portable_serialize(roaring_bitmap_t *ra, char *buf) {
+size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf) {
     return ra_portable_serialize(ra->high_low_container, buf);
 }
 
@@ -657,14 +684,14 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                          const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
-    roaring_bitmap_t *answer = roaring_bitmap_create();
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
+    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1 + length2);
     if (0 == length1) {
-        return roaring_bitmap_copy(x1);
+        return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
-        return roaring_bitmap_copy(x2);
+        return roaring_bitmap_copy(x1);
     }
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;

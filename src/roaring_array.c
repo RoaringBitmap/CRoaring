@@ -22,7 +22,7 @@ extern int32_t ra_get_size(roaring_array_t *ra);
 
 #define INITIAL_CAPACITY 4
 
-roaring_array_t *ra_create_with_capacity(int32_t cap) {
+roaring_array_t *ra_create_with_capacity(uint32_t cap) {
     roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
     if (!new_ra) return NULL;
     new_ra->keys = NULL;
@@ -104,12 +104,26 @@ static void ra_clear(roaring_array_t *ra) {
     ra->typecodes = NULL;  // paranoid
 }
 
+static void ra_clear_without_containers(roaring_array_t *ra) {
+    free(ra->keys);
+    ra->keys = NULL;  // paranoid
+    free(ra->containers);
+    ra->containers = NULL;  // paranoid
+    free(ra->typecodes);
+    ra->typecodes = NULL;  // paranoid
+}
+
 void ra_free(roaring_array_t *ra) {
     ra_clear(ra);
     free(ra);
 }
 
-static void extend_array(roaring_array_t *ra, uint16_t k) {
+void ra_free_without_containers(roaring_array_t *ra) {
+    ra_clear_without_containers(ra);
+    free(ra);
+}
+
+void extend_array(roaring_array_t *ra, uint32_t k) {
     // corresponding Java code uses >= ??
     int desired_size = ra->size + (int)k;
     if (desired_size > ra->allocation_size) {
@@ -123,18 +137,7 @@ static void extend_array(roaring_array_t *ra, uint16_t k) {
         if (!ra->keys || !ra->containers || !ra->typecodes) {
             fprintf(stderr, "[%s] %s\n", __FILE__, __func__);
             perror(0);
-            exit(1);
         }
-
-#if 0
-    // should not be needed
-    // mark the garbage entries
-    for (int i = ra->allocation_size; i < new_capacity; ++i) {
-      ra->typecodes[i] = UNINITIALIZED_TYPE_CODE;
-      // should not be necessary
-      ra->containers[i] = ra->keys[i] = 0;
-    }
-#endif
         ra->allocation_size = new_capacity;
     }
 }
@@ -172,6 +175,20 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
         ra->keys[pos] = sa->keys[i];
         ra->containers[pos] =
             container_clone(sa->containers[i], sa->typecodes[i]);
+        ra->typecodes[pos] = sa->typecodes[i];
+        ra->size++;
+    }
+}
+
+void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+                          uint16_t start_index, uint16_t end_index) {
+    extend_array(ra, end_index - start_index);
+
+    for (uint16_t i = start_index; i < end_index; ++i) {
+        const int32_t pos = ra->size;
+
+        ra->keys[pos] = sa->keys[i];
+        ra->containers[pos] = sa->containers[i];
         ra->typecodes[pos] = sa->typecodes[i];
         ra->size++;
     }

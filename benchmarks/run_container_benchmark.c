@@ -66,6 +66,7 @@ int intersection_test(run_container_t* B1, run_container_t* B2,
     run_container_intersection(B1, B2, BO);
     return run_container_cardinality(BO);
 }
+
 int main() {
     int repeat = 500;
     int size = TESTSIZE;
@@ -111,8 +112,8 @@ int main() {
     for (int x = 0; x < 1 << 16; x += 5) {
         run_container_add(B2, (uint16_t)x);
     }
-    int32_t inputsize =
-        run_container_cardinality(B1) + run_container_cardinality(B2);
+    int32_t inputsize;
+    inputsize = B1->n_runs + B2->n_runs;
     run_container_t* BO = run_container_create();
     printf("\nUnion and intersections...\n");
     printf("\nNote:\n");
@@ -129,6 +130,7 @@ int main() {
     printf("union cardinality = %d \n", answer);
     printf("B1 card = %d B2 card = %d \n", run_container_cardinality(B1),
            run_container_cardinality(B2));
+    inputsize = B1->n_runs + B2->n_runs;
     BEST_TIME(union_test(B1, B2, BO), answer, repeat, inputsize);
     answer = intersection_test(B1, B2, BO);
     printf("intersection cardinality = %d \n", answer);
@@ -136,8 +138,10 @@ int main() {
     printf("==intersection and union test 2 \n");
     run_container_clear(B1);
     run_container_clear(B2);
-    for (int x = 0; x < 1 << 16; x += 16) {
-        run_container_add(B1, (uint16_t)x);
+    for (int x = 0; x < (1 << 16); x += 64) {
+        int length = x % 11;
+        for (int y = 0; y < length; ++y)
+            run_container_add(B1, (uint16_t)(x + y));
     }
     for (int x = 1; x < 1 << 16; x += x) {
         run_container_add(B2, (uint16_t)x);
@@ -148,6 +152,8 @@ int main() {
     printf("union cardinality = %d \n", answer);
     printf("B1 card = %d B2 card = %d \n", run_container_cardinality(B1),
            run_container_cardinality(B2));
+    inputsize = B1->n_runs + B2->n_runs;
+
     BEST_TIME(union_test(B1, B2, BO), answer, repeat, inputsize);
     answer = intersection_test(B1, B2, BO);
     printf("intersection cardinality = %d \n", answer);
