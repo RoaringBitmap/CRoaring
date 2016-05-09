@@ -105,11 +105,12 @@ static inline void run_container_append(run_container_t *run, rle16_t vl,
         run->runs[run->n_runs] = vl;
         run->n_runs++;
         *previousrl = vl;
-    }
-    uint32_t newend = vl.value + vl.length + UINT32_C(1);
-    if (newend > previousend) {  // we merge
-        previousrl->length = newend - 1 - previousrl->value;
-        run->runs[run->n_runs - 1] = *previousrl;
+    } else {
+      uint32_t newend = vl.value + vl.length + UINT32_C(1);
+      if (newend > previousend) {  // we merge
+          previousrl->length = newend - 1 - previousrl->value;
+          run->runs[run->n_runs - 1] = *previousrl;
+      }
     }
 }
 
@@ -140,8 +141,7 @@ static inline void run_container_append_value(run_container_t *run,
         *previousrl = (rle16_t){.value = val, .length = 0};
         run->runs[run->n_runs] = *previousrl;
         run->n_runs++;
-    }
-    if (val == previousend + 1) {  // we merge
+    } else if (val == previousend + 1) {  // we merge
         previousrl->length++;
         run->runs[run->n_runs - 1] = *previousrl;
     }
