@@ -125,23 +125,24 @@ extern void *container_and(const void *c1, uint8_t type1, const void *c2,
 extern void *container_or(const void *c1, uint8_t type1, const void *c2,
                           uint8_t type2, uint8_t *result_type);
 
-shared_container_t *get_shared_container(void * container, uint8_t typecode) {
+shared_container_t *get_shared_container(void * container, uint8_t * typecode) {
 	shared_container_t *shared_container;
-	if(typecode == SHARED_CONTAINER_TYPE_CODE) {
+	if(*typecode == SHARED_CONTAINER_TYPE_CODE) {
 		shared_container = (shared_container_t *) container;
 		shared_container->counter += 1;
 		return shared_container;
 	}
-	assert(typecode != SHARED_CONTAINER_TYPE_CODE);
+	assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
 
     if ((shared_container = malloc(sizeof(shared_container_t))) == NULL) {
         return NULL;
     }
 
     shared_container->container = container;
-    shared_container->typecode = typecode;
+    shared_container->typecode = *typecode;
 
     shared_container->counter = 2;
+    *typecode = SHARED_CONTAINER_TYPE_CODE;
 
     return shared_container;
 }

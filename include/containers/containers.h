@@ -47,7 +47,7 @@ typedef struct shared_container_s shared_container_t;
  * otherwise, increase the count
  * Return NULL in case of failure.
  **/
-shared_container_t *get_shared_container(void * container, uint8_t typecode);
+shared_container_t *get_shared_container(void * container, uint8_t * typecode);
 
 /* Frees a shared container (actually decrement its counter and only frees when the counter falls to zero). */
 void shared_container_free (shared_container_t * container);
