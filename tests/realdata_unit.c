@@ -300,7 +300,8 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
 
     assert(roaring_bitmap_equals(tempornorun, tempornorunheap));
     assert(roaring_bitmap_equals(temporruns,temporrunsheap));
-
+    roaring_bitmap_free(tempornorunheap);
+    roaring_bitmap_free(temporrunsheap);
 
     roaring_bitmap_t *longtempornorun;
     roaring_bitmap_t *longtemporruns;
