@@ -70,14 +70,14 @@ void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
 void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
     printf("{");
     for (int i = 0; i < ra->high_low_container->size; ++i) {
-    	printf("%s (%d)",get_container_name(ra->high_low_container->typecodes[i]),
-    			container_get_cardinality(ra->high_low_container->containers[i],
-    		            ra->high_low_container->typecodes[i]));
+        printf("%s (%d)",
+               get_container_name(ra->high_low_container->typecodes[i]),
+               container_get_cardinality(ra->high_low_container->containers[i],
+                                         ra->high_low_container->typecodes[i]));
         if (i + 1 < ra->high_low_container->size) printf(",");
     }
     printf("}");
 }
-
 
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
@@ -150,8 +150,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
-    uint32_t neededcap = length1 > length2 ?
-    		length2 : length1;
+    uint32_t neededcap = length1 > length2 ? length2 : length1;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
 
     int pos1 = 0, pos2 = 0;
@@ -265,7 +264,8 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
-    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1 + length2);
+    roaring_bitmap_t *answer =
+        roaring_bitmap_create_with_capacity(length1 + length2);
     if (0 == length1) {
         return roaring_bitmap_copy(x2);
     }
@@ -505,7 +505,8 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
     return ans;
 }
 
-size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf) {
+size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra,
+                                         char *buf) {
     return ra_portable_serialize(ra->high_low_container, buf);
 }
 
@@ -605,6 +606,34 @@ static void insert_flipped_container(roaring_array_t *ans_arr,
     }
 }
 
+static void inplace_flip_container(roaring_array_t *x1_arr, uint16_t hb,
+                                   uint16_t lb_start, uint16_t lb_end) {
+    const int i = ra_get_index(x1_arr, hb);
+    uint8_t ctype_in, ctype_out;
+    void *flipped_container = NULL;
+    if (i >= 0) {
+        void *container_to_flip =
+            ra_get_container_at_index(x1_arr, i, &ctype_in);
+        flipped_container = container_inot_range(
+            container_to_flip, ctype_in, (uint32_t)lb_start,
+            (uint32_t)(lb_end + 1), &ctype_out);
+        // if a new container was created, the old one was already freed
+        if (container_get_cardinality(flipped_container, ctype_out)) {
+            ra_set_container_at_index(x1_arr, i, hb, flipped_container,
+                                      ctype_out);
+        } else {
+            container_free(flipped_container, ctype_out);
+            ra_remove_at_index(x1_arr, i);
+        }
+
+    } else {
+        flipped_container = container_range_of_ones(
+            (uint32_t)lb_start, (uint32_t)(lb_end + 1), &ctype_out);
+        ra_insert_new_key_value_at(ans_arr, -i - 1, hb, flipped_container,
+                                   ctype_out);
+    }
+}
+
 static void insert_fully_flipped_container(roaring_array_t *ans_arr,
                                            roaring_array_t *x1_arr,
                                            uint16_t hb) {
@@ -623,6 +652,30 @@ static void insert_fully_flipped_container(roaring_array_t *ans_arr,
     } else {
         flipped_container = container_range_of_ones(0U, 0x10000U, &ctype_out);
         ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
+                                   ctype_out);
+    }
+}
+
+static void inplace_fully_flip_container(roaring_array_t *x1_arr, uint16_t hb) {
+    const int i = ra_get_index(x1_arr, hb);
+    uint8_t ctype_in, ctype_out;
+    void *flipped_container = NULL;
+    if (i >= 0) {
+        void *container_to_flip =
+            ra_get_container_at_index(x1_arr, i, &ctype_in);
+        flipped_container =
+            container_inot(container_to_flip, ctype_in, &ctype_out);
+
+        if (container_get_cardinality(flipped_container, ctype_out)) {
+            ra_set_container_at_index(ans_arr, i, flipped_container, ctype_out);
+        } else {
+            container_free(flipped_container, ctype_out);
+            ra_remove_at_index(x1_arr, i);
+        }
+
+    } else {
+        flipped_container = container_range_of_ones(0U, 0x10000U, &ctype_out);
+        ra_insert_new_key_value_at(ans_arr, -i - 1, hb, flipped_container,
                                    ctype_out);
     }
 }
@@ -681,12 +734,52 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
     return ans;
 }
 
+void roaring_bitmap_flip_inplace(const roaring_bitmap_t *x1,
+                                 uint64_t range_start, uint64_t range_end) {
+    // TODO sanity check range (appropriate for 32 bits)
+    if (range_start >= range_end) {
+        return;  // empty range
+    }
+
+    uint16_t hb_start = (uint16_t)(range_start >> 16);
+    const uint16_t lb_start = (uint16_t)range_start;
+    uint16_t hb_end = (uint16_t)((range_end - 1) >> 16);
+    const uint16_t lb_end = (uint16_t)(range_end - 1);
+
+    if (hb_start == hb_end) {
+        inplace_flip_container(x1->high_low_container, hb_start, lb_start,
+                               lb_end);
+    } else {
+        // start and end containers are distinct
+        if (lb_start > 0) {
+            // handle first (partial) container
+            inplace_flip_container(x1->high_low_container, hb_start, lb_start,
+                                   0xFFFF);
+            ++hb_start;  // for the full containers.  Can't wrap.
+        }
+
+        if (lb_end != 0xFFFF) --hb_end;
+
+        for (uint16_t hb = hb_start; hb <= hb_end; ++hb) {
+            inplace_fully_flip_container(x1->high_low_container, hb);
+        }
+
+        // handle a partial final container
+        if (lb_end != 0xFFFF) {
+            inplace_flip_container(x1->high_low_container, hb_end + 1, 0,
+                                   lb_end);
+            ++hb_end;
+        }
+    }
+}
+
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                          const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
-    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1 + length2);
+    roaring_bitmap_t *answer =
+        roaring_bitmap_create_with_capacity(length1 + length2);
     if (0 == length1) {
         return roaring_bitmap_copy(x2);
     }

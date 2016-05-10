@@ -900,18 +900,58 @@ static inline void *container_not_range(const void *c, uint8_t typ,
     }
 }
 
-static inline void *container_inot(const void *c1, uint8_t type1,
+static inline void *container_inot(const void *c, uint8_t type1,
                                    uint8_t *result_type) {
-    // TODO write me
-    return 0;
+    void *result = NULL;
+    switch (typ) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            *result_type = bitset_container_negation_inplace(c, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            // will never be inplace
+            result = bitset_container_create();
+            *result_type = BITSET_CONTAINER_TYPE_CODE;
+            array_container_negation(c, result);
+            return result;
+        case RUN_CONTAINER_TYPE_CODE:
+            *result_type = run_container_negation_inplace(c, &result);
+            return result;
+
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
 }
 
 static inline void *container_inot_range(const void *c1, uint8_t type1,
                                          uint32_t range_start,
                                          uint32_t range_end,
                                          uint8_t *result_type) {
-    // TODO write me
-    return 0;
+    void *result = NULL;
+    switch (typ) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            *result_type = bitset_container_negation_range_inplace(
+                               c, range_start, range_end, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case ARRAY_CONTAINER_TYPE_CODE:  // result not doomed to array
+            *result_type = array_container_negation_range_inplace(
+                               c, range_start, range_end, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case RUN_CONTAINER_TYPE_CODE:
+            *result_type = run_container_negation_range_inplace(
+                c, range_start, range_end, &result);
+            return result;
+
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
 }
 
 /**

@@ -80,7 +80,7 @@ int run_container_negation(const run_container_t *src, void **dst) {
  * In all cases, the result is in *dst.
  */
 int run_container_negation_inplace(run_container_t *src, void **dst) {
-    return run_container_negation_range(src, 0, (1 << 16), dst);
+    return run_container_negation_range_inplace(src, 0, (1 << 16), dst);
 }
 
 /* Negation across a range of the container.
@@ -151,6 +151,15 @@ bool array_container_negation_range(const array_container_t *src,
 /* Even when the result would fit, it is unclear how to make an
  * inplace version without inefficient copying.
  */
+
+bool array_container_negation_range_inplace(const array_container_t *src,
+                                            const int range_start,
+                                            const int range_end, void **dst) {
+    bool ans = array_container_negation_range(src, range_start, range_end, dst);
+    // TODO : try a real inplace version
+    array_container_free(src);
+    return ans;
+}
 
 /* Negation across a range of the container
  * Compute the  negation of src  and write the result
