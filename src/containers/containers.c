@@ -125,12 +125,11 @@ extern void *container_and(const void *c1, uint8_t type1, const void *c2,
 extern void *container_or(const void *c1, uint8_t type1, const void *c2,
                           uint8_t type2, uint8_t *result_type);
 
-shared_container_t *get_shared_container(void * container, uint8_t typecode, uint32_t counter) {
+shared_container_t *get_shared_container(void * container, uint8_t typecode) {
 	shared_container_t *shared_container;
-	assert(counter>1);// makes no sense to create a shared container shared once
 	if(typecode == SHARED_CONTAINER_TYPE_CODE) {
 		shared_container = (shared_container_t *) container;
-		shared_container->counter += counter;
+		shared_container->counter += 1;
 		return shared_container;
 	}
 	assert(typecode != SHARED_CONTAINER_TYPE_CODE);
@@ -142,7 +141,7 @@ shared_container_t *get_shared_container(void * container, uint8_t typecode, uin
     shared_container->container = container;
     shared_container->typecode = typecode;
 
-    shared_container->counter = counter;
+    shared_container->counter = 2;
 
     return shared_container;
 }
@@ -169,6 +168,23 @@ void *container_clone(const void *container, uint8_t typecode) {
     }
 }
 
+void * shared_container_extract_copy (shared_container_t * container, uint8_t * typecode) {
+	assert(container->counter > 0);
+	assert(container->typecode != SHARED_CONTAINER_TYPE_CODE);
+	container->counter--;
+        *typecode = container->typecode;
+        void * answer;
+	if(container->counter == 0) {
+                answer = container->container;
+		container->container = NULL; // paranoid
+		free(container);
+	} else {
+                answer = container_clone(container->container, *typecode);
+        }
+       	assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
+        return answer;
+}
+
 void shared_container_free (shared_container_t * container) {
 	assert(container->counter > 0);
 	container->counter--;
@@ -179,4 +195,3 @@ void shared_container_free (shared_container_t * container) {
 		free(container);
 	}
 }
-

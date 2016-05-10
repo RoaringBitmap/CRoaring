@@ -47,12 +47,15 @@ typedef struct shared_container_s shared_container_t;
  * otherwise, increase the count
  * Return NULL in case of failure.
  **/
-shared_container_t *get_shared_container(void * container, uint8_t typecode, uint32_t counter);
+shared_container_t *get_shared_container(void * container, uint8_t typecode);
 
 /* Frees a shared container (actually decrement its counter and only frees when the counter falls to zero). */
 void shared_container_free (shared_container_t * container);
 
-
+/* extract a copy from the shared container, freeing the shared container if there is just one instance left,
+clone instances when the counter is higher than one
+*/
+void * shared_container_extract_copy (shared_container_t * container, uint8_t * typecode);
 
 /* access to container underneath */
 static inline const void * container_unwrap_shared(const void *candidate_shared_container, uint8_t * type) {
@@ -61,6 +64,7 @@ static inline const void * container_unwrap_shared(const void *candidate_shared_
 		assert(*type != SHARED_CONTAINER_TYPE_CODE);
 		return ((shared_container_t *) candidate_shared_container)->container;
 	} else {
+		assert(*type != SHARED_CONTAINER_TYPE_CODE);
 		return candidate_shared_container;
 	}
 }
@@ -87,20 +91,7 @@ void *container_clone(const void *container, uint8_t typecode);
 /* access to container underneath, cloning it if needed */
 static inline void * get_writable_copy_if_shared(void *candidate_shared_container, uint8_t * type) {
 	if(*type == SHARED_CONTAINER_TYPE_CODE) {
-		 void * answer;
-		 shared_container_t * shared = (shared_container_t *)candidate_shared_container;
-		 assert(shared->counter > 0);
-		 assert(shared->typecode != SHARED_CONTAINER_TYPE_CODE);
-		 if(shared->counter == 1) {
-			 // it is not really shared, is it?
-			 answer = shared->container;
-			 shared->container = NULL; // make sure the shared container cannot kill it
-		 } else {
-			 // someone else is using this so we must make a copy
-			 answer = container_clone(shared->container,shared->typecode);
-		 }
-		 *type = shared->typecode;
-		 return answer;
+                 return shared_container_extract_copy(candidate_shared_container,type);
 	} else {
 		return candidate_shared_container;
 	}
@@ -193,7 +184,7 @@ static inline int container_get_cardinality(const void *container,
  */
 static inline void *container_repair_after_lazy(void *container,
                                                 uint8_t *typecode) {
-	container = (void *) container_unwrap_shared(container,typecode);
+     container = get_writable_copy_if_shared(container,typecode);
 	void *result = NULL;
     switch (*typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
@@ -214,16 +205,8 @@ static inline void *container_repair_after_lazy(void *container,
             return convert_run_to_efficient_container_and_free(container,
                                                                typecode);
         case SHARED_CONTAINER_TYPE_CODE:
-        	((shared_container_t *) container)->container = container_repair_after_lazy(
-            		((shared_container_t *) container)->container,
-					&(((shared_container_t *) container)->typecode));
-        	if(((shared_container_t *) container)->counter == 1) {
-        		*typecode = ((shared_container_t *) container)->typecode;
-        		result = ((shared_container_t *) container)->container;
-        		free(container);
-        		return result;
-        	}
-        	return container;
+            assert(false);
+
     }
     assert(false);
     __builtin_unreachable();
@@ -894,7 +877,8 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
 */
 static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
                                        uint8_t type2, uint8_t *result_type) {
-	c1 = get_writable_copy_if_shared(c1,&type1);
+  assert(type1 != SHARED_CONTAINER_TYPE_CODE);
+	//c1 = get_writable_copy_if_shared(c1,&type1);
 	c2 = container_unwrap_shared(c2,&type2);
     void *result = NULL;
     switch (CONTAINER_PAIR(type1, type2)) {

@@ -75,6 +75,10 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
     			ra->high_low_container->typecodes[i]),
     			container_get_cardinality(ra->high_low_container->containers[i],
     		            ra->high_low_container->typecodes[i]));
+        if(ra->high_low_container->typecodes[i] == SHARED_CONTAINER_TYPE_CODE) {
+          printf("(shared count = %d )",((shared_container_t*)(ra->high_low_container->containers[i]))->counter);
+        }
+
         if (i + 1 < ra->high_low_container->size) printf(", ");
     }
     printf("}");
@@ -217,7 +221,6 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
 
     // any skipped-over or newly emptied containers in x1
     // have to be freed.
-
     while (pos1 < length1 && pos2 < length2) {
         const uint16_t s1 = ra_get_key_at_index(x1->high_low_container, pos1);
         const uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
@@ -303,7 +306,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
         	void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
             //c1 = container_clone(c1, container_type_1);
-            c1 = get_shared_container(c1, container_type_1,2);
+            c1 = get_shared_container(c1, container_type_1);
 
             ra_set_container_at_index(x1->high_low_container, pos1, c1, SHARED_CONTAINER_TYPE_CODE);
             ra_append(answer->high_low_container, s1, c1, SHARED_CONTAINER_TYPE_CODE);
@@ -315,7 +318,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
         	void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             //c2 = container_clone(c2, container_type_2);
-            c2 = get_shared_container(c2, container_type_2,2);
+            c2 = get_shared_container(c2, container_type_2);
             ra_set_container_at_index(x2->high_low_container, pos2, c2, SHARED_CONTAINER_TYPE_CODE);
 
             ra_append(answer->high_low_container, s2, c2, SHARED_CONTAINER_TYPE_CODE);
@@ -383,7 +386,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         } else {  // s1 > s2
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
-            c2 = get_shared_container(c2, container_type_2, 2);
+            c2 = get_shared_container(c2, container_type_2);
             ra_set_container_at_index(x2->high_low_container, pos2, c2, SHARED_CONTAINER_TYPE_CODE);
 
             //void *c2_clone = container_clone(c2, container_type_2);
@@ -642,7 +645,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
             //c1 = container_clone(c1, container_type_1);
-            c1 = get_shared_container(c1, container_type_1,2);
+            c1 = get_shared_container(c1, container_type_1);
             ra_set_container_at_index(x1->high_low_container, pos1, c1, SHARED_CONTAINER_TYPE_CODE);
 
             ra_append(answer->high_low_container, s1, c1, SHARED_CONTAINER_TYPE_CODE);
@@ -654,7 +657,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             //c2 = container_clone(c2, container_type_2);
-            c2 = get_shared_container(c2, container_type_2,2);
+            c2 = get_shared_container(c2, container_type_2);
             ra_set_container_at_index(x2->high_low_container, pos2, c2, SHARED_CONTAINER_TYPE_CODE);
 
             ra_append(answer->high_low_container, s2, c2, SHARED_CONTAINER_TYPE_CODE);
@@ -693,6 +696,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
+            c1 = get_writable_copy_if_shared(c1,&container_type_1);
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             void *c =
@@ -721,7 +725,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             //void *c2_clone = container_clone(c2, container_type_2);
-            c2 = get_shared_container(c2, container_type_2,2);
+            c2 = get_shared_container(c2, container_type_2);
             ra_set_container_at_index(x2->high_low_container, pos2, c2, SHARED_CONTAINER_TYPE_CODE);
 
             ra_insert_new_key_value_at(x1->high_low_container, pos1, s2,
