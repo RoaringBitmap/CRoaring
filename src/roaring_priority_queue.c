@@ -126,10 +126,7 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                 c = container_lazy_ior(c2, container_type_2, c1,
                                        container_type_1,
                                        &container_result_type);
-                if ( c != c2 ) {
-                    container_free(c2, container_type_2);
-                }
-                container_free(c1, container_type_1);
+               container_free(c1, container_type_1);
                 if( c != c2) {
                    container_free(c2, container_type_2);
                 }
@@ -137,9 +134,6 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                 c = container_lazy_ior(c1, container_type_1, c2,
                                        container_type_2,
                                        &container_result_type);
-                if( c != c1 ) {
-                     container_free(c1, container_type_1);
-                }
                 container_free(c2, container_type_2);
                 if( c != c1 ) {
                    container_free(c1,container_type_1);
