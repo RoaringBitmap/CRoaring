@@ -445,7 +445,7 @@ bool roaring_bitmap_run_optimize(roaring_bitmap_t *r) {
     bool answer = false;
     for (int i = 0; i < r->high_low_container->size; i++) {
     	uint8_t typecode_original, typecode_after;
-    	ra_unshare_container_at_index(r->high_low_container, i);
+    	ra_unshare_container_at_index(r->high_low_container, i);//TODO: this introduces extra cloning!
         void *c = ra_get_container_at_index(r->high_low_container, i,
                                             &typecode_original);
         void *c1 = convert_run_optimize(c, typecode_original, &typecode_after);

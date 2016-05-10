@@ -184,7 +184,7 @@ static inline int container_get_cardinality(const void *container,
  */
 static inline void *container_repair_after_lazy(void *container,
                                                 uint8_t *typecode) {
-     container = get_writable_copy_if_shared(container,typecode);
+     container = get_writable_copy_if_shared(container,typecode);//TODO: this introduces unnecessary cloning
 	void *result = NULL;
     switch (*typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
