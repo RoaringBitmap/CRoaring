@@ -75,7 +75,7 @@ roaring_array_t *ra_copy(roaring_array_t *r) {
     // we go through the containers, turning them into shared containers...
     for(int32_t i = 0; i < s; ++i) {
     	// we know that the shared container will be used in two  bitmaps (hence the 2)
-    	r->containers[i] = get_shared_container(r->containers[i], &r->typecodes[i]);
+    	r->containers[i] = get_copy_of_container(r->containers[i], &r->typecodes[i]);
     }
     // we do a shallow copy to the other bitmap
     memcpy(new_ra->containers, r->containers, s * sizeof(void *));
@@ -165,7 +165,7 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index) {
     // old contents is junk not needing freeing
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
-	sa->containers[index] = get_shared_container(sa->containers[index], &sa->typecodes[index]);
+	sa->containers[index] = get_copy_of_container(sa->containers[index], &sa->typecodes[index]);
     ra->containers[pos] = sa->containers[index];
     ra->typecodes[pos] = sa->typecodes[index];
     //ra->containers[pos] =
@@ -181,7 +181,7 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
 
-    	sa->containers[i] = get_shared_container(sa->containers[i], &sa->typecodes[i]);
+    	sa->containers[i] = get_copy_of_container(sa->containers[i], &sa->typecodes[i]);
         ra->containers[pos] = sa->containers[i];
         ra->typecodes[pos] = sa->typecodes[i];
 
@@ -213,7 +213,7 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
     for (uint16_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
-    	sa->containers[i] = get_shared_container(sa->containers[i], &sa->typecodes[i]);
+    	sa->containers[i] = get_copy_of_container(sa->containers[i], &sa->typecodes[i]);
         ra->containers[pos] = sa->containers[i];
         ra->typecodes[pos] = sa->typecodes[i];
 
