@@ -47,7 +47,7 @@ roaring_array_t *ra_create_with_capacity(uint32_t cap);
 /**
  * Copies this roaring array (caller is responsible for memory management)
  */
-roaring_array_t *ra_copy(roaring_array_t *r);
+roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write);
 
 /**
  * Frees the memory used by a roaring array
@@ -90,14 +90,14 @@ void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
 /**
  * Append a new key-value pair to ra, cloning (in COW sense) a value from sa at index index
  */
-void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index);
+void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index, bool copy_on_write);
 
 /**
  * Append new key-value pairs to ra, cloning (in COW sense)  values from sa at indexes
  * [start_index, uint16_t end_index)
  */
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index);
+                          uint16_t start_index, uint16_t end_index, bool copy_on_write);
 
 /**
  * Move the key-value pairs to ra from sa at indexes
@@ -111,7 +111,7 @@ void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
  * [start_index, uint16_t end_index)
  */
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index);
+                          uint16_t start_index, uint16_t end_index, bool copy_on_write);
 
 /**
  * Set the container at the corresponding index using the specified typecode.

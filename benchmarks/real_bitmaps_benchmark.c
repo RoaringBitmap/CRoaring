@@ -40,6 +40,7 @@ static void printusage(char *command) {
 int main(int argc, char **argv) {
     int c;
     char *extension = ".txt";
+    bool copy_on_write = false;
     while ((c = getopt(argc, argv, "e:h")) != -1) switch (c) {
             case 'e':
                 extension = optarg;
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
     RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count; i += 2) {
         roaring_bitmap_t *CI = roaring_bitmap_copy(
-            bitmaps[i]);  // to test the inplace version we create a copy
+            bitmaps[i],copy_on_write);  // to test the inplace version we create a copy
         roaring_bitmap_free(CI);
     }
     RDTSC_FINAL(cycles_final);
@@ -105,7 +106,7 @@ int main(int argc, char **argv) {
         roaring_bitmap_free(tempand);
         RDTSC_START(cycles_start);
         roaring_bitmap_t *tempor =
-            roaring_bitmap_or(bitmaps[i], bitmaps[i + 1]);
+            roaring_bitmap_or(bitmaps[i], bitmaps[i + 1],copy_on_write);
         RDTSC_FINAL(cycles_final);
         successive_or += cycles_final - cycles_start;
 
@@ -125,7 +126,7 @@ int main(int argc, char **argv) {
 
     roaring_bitmap_t **copyofr = malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
-        copyofr[i] = roaring_bitmap_copy(bitmaps[i]);
+        copyofr[i] = roaring_bitmap_copy(bitmaps[i],copy_on_write);
     }
     RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count - 1; i++) {
@@ -139,11 +140,11 @@ int main(int argc, char **argv) {
     free(copyofr);
     copyofr = malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
-        copyofr[i] = roaring_bitmap_copy(bitmaps[i]);
+        copyofr[i] = roaring_bitmap_copy(bitmaps[i],copy_on_write);
     }
     RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count - 1; i++) {
-        roaring_bitmap_or_inplace(copyofr[i], bitmaps[i + 1]);
+        roaring_bitmap_or_inplace(copyofr[i], bitmaps[i + 1],copy_on_write);
     }
     RDTSC_FINAL(cycles_final);
     printf(" %zu successive in-place bitmaps unions took %" PRIu64 " cycles\n",

@@ -42,12 +42,13 @@ struct shared_container_s {
 typedef struct shared_container_s shared_container_t;
 
 /*
- *
+ * With copy_on_write = true
  *  Create a new shared container if the typecode is not SHARED_CONTAINER_TYPE,
  * otherwise, increase the count
+ * If copy_on_write = false, then clone.
  * Return NULL in case of failure.
  **/
-shared_container_t *get_copy_of_container(void * container, uint8_t * typecode);
+void *get_copy_of_container(void * container, uint8_t * typecode, bool copy_on_write);
 
 /* Frees a shared container (actually decrement its counter and only frees when the counter falls to zero). */
 void shared_container_free (shared_container_t * container);

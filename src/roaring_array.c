@@ -49,7 +49,7 @@ roaring_array_t *ra_create() {
     return ra_create_with_capacity(INITIAL_CAPACITY);
 }
 
-roaring_array_t *ra_copy(roaring_array_t *r) {
+roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write) {
     roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
     if (!new_ra) return NULL;
     new_ra->keys = NULL;
@@ -73,14 +73,15 @@ roaring_array_t *ra_copy(roaring_array_t *r) {
     new_ra->size = s;
     memcpy(new_ra->keys, r->keys, s * sizeof(uint16_t));
     // we go through the containers, turning them into shared containers...
+    if(copy_on_write) {
     for(int32_t i = 0; i < s; ++i) {
-    	// we know that the shared container will be used in two  bitmaps (hence the 2)
-    	r->containers[i] = get_copy_of_container(r->containers[i], &r->typecodes[i]);
+    	r->containers[i] = get_copy_of_container(r->containers[i], &r->typecodes[i], copy_on_write);
     }
     // we do a shallow copy to the other bitmap
     memcpy(new_ra->containers, r->containers, s * sizeof(void *));
     memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
-    /*memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
+  } else {
+    memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
     for (int32_t i = 0; i < s; i++) {
         new_ra->containers[i] =
             container_clone(r->containers[i], r->typecodes[i]);
@@ -94,7 +95,8 @@ roaring_array_t *ra_copy(roaring_array_t *r) {
             free(new_ra->typecodes);
             return NULL;
         }
-    }*/
+    }
+  }
     return new_ra;
 }
 
@@ -158,35 +160,42 @@ void ra_append(roaring_array_t *ra, uint16_t key, void *container,
     ra->size++;
 }
 
-void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index) {
+void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index, bool copy_on_write) {
 	extend_array(ra, 1);
     const int32_t pos = ra->size;
 
     // old contents is junk not needing freeing
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
-	sa->containers[index] = get_copy_of_container(sa->containers[index], &sa->typecodes[index]);
+    if(copy_on_write) {
+	sa->containers[index] = get_copy_of_container(sa->containers[index], &sa->typecodes[index],copy_on_write);
     ra->containers[pos] = sa->containers[index];
     ra->typecodes[pos] = sa->typecodes[index];
-    //ra->containers[pos] =
-     //   container_clone(sa->containers[index], sa->typecodes[index]);
+  } else {
+    ra->containers[pos] =
+        container_clone(sa->containers[index], sa->typecodes[index]);
+            ra->typecodes[pos] = sa->typecodes[index];
+
+      }
     ra->size++;
 }
 
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index) {
+                          uint16_t start_index, uint16_t end_index, bool copy_on_write) {
     extend_array(ra, end_index - start_index);
 
     for (uint16_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
-
-    	sa->containers[i] = get_copy_of_container(sa->containers[i], &sa->typecodes[i]);
+if(copy_on_write) {
+    	sa->containers[i] = get_copy_of_container(sa->containers[i], &sa->typecodes[i],copy_on_write);
         ra->containers[pos] = sa->containers[i];
         ra->typecodes[pos] = sa->typecodes[i];
-
-        //ra->containers[pos] =
-        //    container_clone(sa->containers[i], sa->typecodes[i]);
+} else {
+        ra->containers[pos] =
+            container_clone(sa->containers[i], sa->typecodes[i]);
+        ra->typecodes[pos] = sa->typecodes[i];
+          }
         ra->size++;
     }
 }
@@ -207,18 +216,22 @@ void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
 }
 
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index) {
+                          uint16_t start_index, uint16_t end_index, bool copy_on_write) {
     extend_array(ra, end_index - start_index);
 
     for (uint16_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
-    	sa->containers[i] = get_copy_of_container(sa->containers[i], &sa->typecodes[i]);
+        if(copy_on_write) {
+    	sa->containers[i] = get_copy_of_container(sa->containers[i], &sa->typecodes[i],copy_on_write);
         ra->containers[pos] = sa->containers[i];
         ra->typecodes[pos] = sa->typecodes[i];
+} else {
+        ra->containers[pos] =
+            container_clone(sa->containers[i], sa->typecodes[i]);
+                    ra->typecodes[pos] = sa->typecodes[i];
 
-        //ra->containers[pos] =
-        //    container_clone(sa->containers[i], sa->typecodes[i]);
+          }
         ra->size++;
     }
 }

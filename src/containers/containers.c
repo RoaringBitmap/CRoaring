@@ -125,7 +125,8 @@ extern void *container_and(const void *c1, uint8_t type1, const void *c2,
 extern void *container_or(const void *c1, uint8_t type1, const void *c2,
                           uint8_t type2, uint8_t *result_type);
 
-shared_container_t *get_copy_of_container(void * container, uint8_t * typecode) {
+void *get_copy_of_container(void * container, uint8_t * typecode, bool copy_on_write) {
+  if(copy_on_write) {
 	shared_container_t *shared_container;
 	if(*typecode == SHARED_CONTAINER_TYPE_CODE) {
 		shared_container = (shared_container_t *) container;
@@ -145,12 +146,19 @@ shared_container_t *get_copy_of_container(void * container, uint8_t * typecode) 
     *typecode = SHARED_CONTAINER_TYPE_CODE;
 
     return shared_container;
+  }//copy_on_write
+  // otherwise, no copy on write...
+  const void * actualcontainer = container_unwrap_shared((const void *)container, typecode);
+  assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
+  return container_clone(actualcontainer, *typecode);
+
 }
 /**
  * Copies a container, requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
 void *container_clone(const void *container, uint8_t typecode) {
+  	container = container_unwrap_shared(container,&typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_clone((bitset_container_t *)container);

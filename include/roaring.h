@@ -44,8 +44,11 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
 /**
  * Copies a  bitmap. This does memory allocation. The caller is responsible for
  * memory management.
+ *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
-roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r);
+roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r, bool copy_on_write);
 
 /**
  * Print the content of the bitmap.
@@ -71,23 +74,31 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
  * Computes the union between two bitmaps and returns new bitmap. The caller is
  * responsible for memory management.
  *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
 roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
-                                    const roaring_bitmap_t *x2);
+                                    const roaring_bitmap_t *x2, bool copy_on_write);
 
 /**
  * Inplace version of roaring_bitmap_or, modifies x1
+ *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
-                               const roaring_bitmap_t *x2);
+                               const roaring_bitmap_t *x2, bool copy_on_write);
 
 /**
  * Compute the union of 'number' bitmaps. See also roaring_bitmap_or_many_heap.
  * Caller is responsible for freeing the
  * result.
+ *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
-                                         const roaring_bitmap_t **x);
+                                         const roaring_bitmap_t **x, bool copy_on_write);
 
 
 /**
@@ -95,9 +106,12 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
  * sometimes be faster than roaring_bitmap_or_many which uses
  * a naive algorithm. Caller is responsible for freeing the
  * result.
+ *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
-                                              const roaring_bitmap_t **x);
+                                              const roaring_bitmap_t **x, bool copy_on_write);
 /**
  * Frees the memory.
  */
@@ -196,16 +210,22 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
  * to call roaring_bitmap_repair_after_lazy after executing "lazy" computations.
  * It is safe to repeatedly call roaring_bitmap_lazy_or_inplace on the result.
  *
+ *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
-                                         const roaring_bitmap_t *x2);
+                                         const roaring_bitmap_t *x2, bool copy_on_write);
 
 /**
  * (For expert users who seek high performance.)
  * Inplace version of roaring_bitmap_lazy_or, modifies x1
+ *
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
+ * copies but needs more care in a threaded context.
  */
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
-                                    const roaring_bitmap_t *x2);
+                                    const roaring_bitmap_t *x2, bool copy_on_write);
 
 /**
  * (For expert users who seek high performance.)
