@@ -189,12 +189,12 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
  * result.
  */
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
-		const roaring_bitmap_t **x, bool copy_on_write) {
+		const roaring_bitmap_t **x) {
 	if (number == 0) {
 		return roaring_bitmap_create();
 	}
 	if (number == 1) {
-		return roaring_bitmap_copy(x[0],copy_on_write);
+		return roaring_bitmap_copy(x[0]);
 	}
 	roaring_pq_t *pq = create_pq(x, number);
 	while (pq->size > 1) {
@@ -209,17 +209,17 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 					true, .bitmap = newb };
 			pq_add(pq, &newelement);
 		} else if (x2.is_temporary) {
-                        roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap,copy_on_write);
+                        roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap);
 			x2.size = roaring_bitmap_portable_size_in_bytes(x2.bitmap);
 			pq_add(pq, &x2);
 		} else if (x1.is_temporary) {
-			roaring_bitmap_lazy_or_inplace(x1.bitmap, x2.bitmap,copy_on_write);
+			roaring_bitmap_lazy_or_inplace(x1.bitmap, x2.bitmap);
 			x1.size = roaring_bitmap_portable_size_in_bytes(x1.bitmap);
 
 			pq_add(pq, &x1);
 		} else {
-		roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
-					x2.bitmap,copy_on_write);
+		  roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
+					x2.bitmap);
 			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
 			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =
 					true, .bitmap = newb };

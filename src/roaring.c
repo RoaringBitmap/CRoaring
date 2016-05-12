@@ -8,7 +8,7 @@
 #include "roaring_array.h"
 
 roaring_bitmap_t *roaring_bitmap_create() {
-    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
+    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
@@ -17,11 +17,12 @@ roaring_bitmap_t *roaring_bitmap_create() {
         free(ans);
         return NULL;
     }
+    ans->copy_on_write = false;
     return ans;
 }
 
 roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
-    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
+    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
@@ -30,6 +31,7 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
         free(ans);
         return NULL;
     }
+    ans->copy_on_write = false;
     return ans;
 }
 
@@ -85,23 +87,24 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
 }
 
 
-roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r, bool copy_on_write) {
-    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
+roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
+    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
-    ans->high_low_container = ra_copy(r->high_low_container,copy_on_write);
+    ans->high_low_container = ra_copy(r->high_low_container,r->copy_on_write);
     if (!ans->high_low_container) {
         free(ans);
         return NULL;
     }
+    ans->copy_on_write = r->copy_on_write;
     return ans;
 }
 
 static void roaring_bitmap_overwrite(roaring_bitmap_t *dest,
-                              const roaring_bitmap_t *src, bool copy_on_write) {
+                              const roaring_bitmap_t *src) {
     ra_free(dest->high_low_container);
-    dest->high_low_container = ra_copy(src->high_low_container,copy_on_write);
+    dest->high_low_container = ra_copy(src->high_low_container,src->copy_on_write);
     // TODO any better error handling
     assert(dest->high_low_container);
 }
@@ -160,6 +163,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
     uint32_t neededcap = length1 > length2 ?
     		length2 : length1;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
+    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
 
     int pos1 = 0, pos2 = 0;
 
@@ -197,16 +201,16 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
  * Compute the union of 'number' bitmaps.
  */
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
-                                         const roaring_bitmap_t **x, bool copy_on_write) {
+                                         const roaring_bitmap_t **x) {
     if (number == 0) {
         return roaring_bitmap_create();
     }
     if (number == 1) {
-        return roaring_bitmap_copy(x[0],copy_on_write);
+        return roaring_bitmap_copy(x[0]);
     }
-    roaring_bitmap_t *answer = roaring_bitmap_lazy_or(x[0], x[1],copy_on_write);
+    roaring_bitmap_t *answer = roaring_bitmap_lazy_or(x[0], x[1]);
     for (size_t i = 2; i < number; i++) {
-        roaring_bitmap_lazy_or_inplace(answer, x[i],copy_on_write);
+        roaring_bitmap_lazy_or_inplace(answer, x[i]);
     }
     roaring_bitmap_repair_after_lazy(answer);
     return answer;
@@ -268,16 +272,17 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
 }
 
 roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
-                                    const roaring_bitmap_t *x2, bool copy_on_write) {
+                                    const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1 + length2);
+    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
     if (0 == length1) {
-        return roaring_bitmap_copy(x2,copy_on_write);
+        return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
-        return roaring_bitmap_copy(x1,copy_on_write);
+        return roaring_bitmap_copy(x1);
     }
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
@@ -303,12 +308,13 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
             s2 = ra_get_key_at_index(x2->high_low_container, pos2);
 
         } else if (s1 < s2) {  // s1 < s2
-        	void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
+            void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
             //c1 = container_clone(c1, container_type_1);
-            c1 = get_copy_of_container(c1, & container_type_1,copy_on_write);
-
-            if(copy_on_write) ra_set_container_at_index(x1->high_low_container, pos1, c1, container_type_1);
+            c1 = get_copy_of_container(c1, & container_type_1,x1->copy_on_write);
+            if(x1->copy_on_write) {
+              ra_set_container_at_index(x1->high_low_container, pos1, c1, container_type_1);
+            }
             ra_append(answer->high_low_container, s1, c1, container_type_1);
             pos1++;
             if (pos1 == length1) break;
@@ -318,9 +324,10 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
         	void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             //c2 = container_clone(c2, container_type_2);
-            c2 = get_copy_of_container(c2, &container_type_2,copy_on_write);
-            if(copy_on_write) ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
-
+            c2 = get_copy_of_container(c2, &container_type_2,x2->copy_on_write);
+            if(x2->copy_on_write) {
+              ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
+            }
             ra_append(answer->high_low_container, s2, c2, container_type_2);
             pos2++;
             if (pos2 == length2) break;
@@ -329,17 +336,17 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(answer->high_low_container, x2->high_low_container,
-                             pos2, length2, copy_on_write);
+                             pos2, length2, x2->copy_on_write);
     } else if (pos2 == length2) {
         ra_append_copy_range(answer->high_low_container, x1->high_low_container,
-                             pos1, length1, copy_on_write);
+                             pos1, length1, x1->copy_on_write);
     }
     return answer;
 }
 
 // inplace or (modifies its first argument).
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
-                               const roaring_bitmap_t *x2, bool copy_on_write) {
+                               const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     int length1 = x1->high_low_container->size;
     const int length2 = x2->high_low_container->size;
@@ -347,7 +354,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2, copy_on_write);
+        roaring_bitmap_overwrite(x1, x2);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -386,8 +393,10 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         } else {  // s1 > s2
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
-            c2 = get_copy_of_container(c2,  &container_type_2,copy_on_write);
-            if(copy_on_write) ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
+            c2 = get_copy_of_container(c2,  &container_type_2,x2->copy_on_write);
+            if(x2->copy_on_write) {
+              ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
+            }
 
             //void *c2_clone = container_clone(c2, container_type_2);
             ra_insert_new_key_value_at(x1->high_low_container, pos1, s2,
@@ -401,7 +410,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(x1->high_low_container, x2->high_low_container,
-                             pos2, length2, copy_on_write);
+                             pos2, length2, x2->copy_on_write);
     }
 }
 
@@ -521,12 +530,13 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra) {
 }
 
 roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
-    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(*ans));
+    roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
     if (ans == NULL) {
         return NULL;
     }
     ans->high_low_container =
         ra_portable_deserialize(buf);  // todo: handle the case where it is NULL
+    ans->copy_on_write = false;
     return ans;
 }
 
@@ -560,7 +570,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
 
         if (len != buf_len) return (NULL);
 
-        b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
+        b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
         if (b) {
             b->high_low_container =
                 ra_deserialize((const char *)buf + 4, buf_len - 4);
@@ -569,6 +579,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
                 b = NULL;
             }
         }
+        b->copy_on_write = false;
 
         return (b);
     }
@@ -606,16 +617,17 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
 }
 
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
-                                         const roaring_bitmap_t *x2, bool copy_on_write) {
+                                         const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1 + length2);
+    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
     if (0 == length1) {
-        return roaring_bitmap_copy(x2,copy_on_write);
+        return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
-        return roaring_bitmap_copy(x1,copy_on_write);
+        return roaring_bitmap_copy(x1);
     }
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
@@ -645,9 +657,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
             //c1 = container_clone(c1, container_type_1);
-            c1 = get_copy_of_container(c1, &container_type_1,copy_on_write);
-            if(copy_on_write) ra_set_container_at_index(x1->high_low_container, pos1, c1, container_type_1);
-
+            c1 = get_copy_of_container(c1, &container_type_1,x1->copy_on_write);
+            if(x1->copy_on_write) {
+              ra_set_container_at_index(x1->high_low_container, pos1, c1, container_type_1);
+            }
             ra_append(answer->high_low_container, s1, c1, container_type_1);
             pos1++;
             if (pos1 == length1) break;
@@ -657,9 +670,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             //c2 = container_clone(c2, container_type_2);
-            c2 = get_copy_of_container(c2, &container_type_2,copy_on_write);
-            if(copy_on_write) ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
-
+            c2 = get_copy_of_container(c2, &container_type_2,x2->copy_on_write);
+            if(x2->copy_on_write) {
+              ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
+            }
             ra_append(answer->high_low_container, s2, c2, container_type_2);
             pos2++;
             if (pos2 == length2) break;
@@ -668,16 +682,16 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(answer->high_low_container, x2->high_low_container,
-                             pos2, length2, copy_on_write);
+                             pos2, length2, x2->copy_on_write);
     } else if (pos2 == length2) {
         ra_append_copy_range(answer->high_low_container, x1->high_low_container,
-                             pos1, length1, copy_on_write);
+                             pos1, length1, x1->copy_on_write);
     }
     return answer;
 }
 
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
-                                    const roaring_bitmap_t *x2, bool copy_on_write) {
+                                    const roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
     int length1 = x1->high_low_container->size;
     const int length2 = x2->high_low_container->size;
@@ -685,7 +699,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2, copy_on_write);
+        roaring_bitmap_overwrite(x1, x2);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -725,9 +739,10 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             //void *c2_clone = container_clone(c2, container_type_2);
-            c2 = get_copy_of_container(c2, &container_type_2,copy_on_write);
-            if(copy_on_write) ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
-
+            c2 = get_copy_of_container(c2, &container_type_2,x2->copy_on_write);
+            if(x2->copy_on_write) {
+              ra_set_container_at_index(x2->high_low_container, pos2, c2, container_type_2);
+            }
             ra_insert_new_key_value_at(x1->high_low_container, pos1, s2,
                                        c2, container_type_2);
             pos1++;
@@ -739,7 +754,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(x1->high_low_container, x2->high_low_container,
-                             pos2, length2, copy_on_write);
+                             pos2, length2, x2->copy_on_write);
     }
 }
 

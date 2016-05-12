@@ -74,15 +74,15 @@ roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write) {
     memcpy(new_ra->keys, r->keys, s * sizeof(uint16_t));
     // we go through the containers, turning them into shared containers...
     if(copy_on_write) {
-    for(int32_t i = 0; i < s; ++i) {
-    	r->containers[i] = get_copy_of_container(r->containers[i], &r->typecodes[i], copy_on_write);
-    }
-    // we do a shallow copy to the other bitmap
-    memcpy(new_ra->containers, r->containers, s * sizeof(void *));
-    memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
-  } else {
-    memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
-    for (int32_t i = 0; i < s; i++) {
+      for(int32_t i = 0; i < s; ++i) {
+        r->containers[i] = get_copy_of_container(r->containers[i], &r->typecodes[i], copy_on_write);
+      }
+      // we do a shallow copy to the other bitmap
+      memcpy(new_ra->containers, r->containers, s * sizeof(void *));
+      memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
+    } else {
+      memcpy(new_ra->typecodes, r->typecodes, s * sizeof(uint8_t));
+      for (int32_t i = 0; i < s; i++) {
         new_ra->containers[i] =
             container_clone(r->containers[i], r->typecodes[i]);
         if (new_ra->containers[i] == NULL) {
@@ -95,8 +95,8 @@ roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write) {
             free(new_ra->typecodes);
             return NULL;
         }
+      }
     }
-  }
     return new_ra;
 }
 

@@ -7,7 +7,7 @@
  * Once you have collected all the integers, build the bitmaps.
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
-                                             uint32_t **numbers, size_t count) {
+                                             uint32_t **numbers, size_t count, bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -15,6 +15,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
+        answer[i]->copy_on_write = copy_on_write;
     }
     printf("\n");
     return answer;
@@ -72,7 +73,7 @@ int main(int argc, char **argv) {
     uint64_t cycles_start = 0, cycles_final = 0;
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count);
+    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count, copy_on_write);
     RDTSC_FINAL(cycles_final);
     if (bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n", (int)count, dirname);
@@ -83,7 +84,7 @@ int main(int argc, char **argv) {
     RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count; i += 2) {
         roaring_bitmap_t *CI = roaring_bitmap_copy(
-            bitmaps[i],copy_on_write);  // to test the inplace version we create a copy
+            bitmaps[i]);  // to test the inplace version we create a copy
         roaring_bitmap_free(CI);
     }
     RDTSC_FINAL(cycles_final);
@@ -106,7 +107,7 @@ int main(int argc, char **argv) {
         roaring_bitmap_free(tempand);
         RDTSC_START(cycles_start);
         roaring_bitmap_t *tempor =
-            roaring_bitmap_or(bitmaps[i], bitmaps[i + 1],copy_on_write);
+            roaring_bitmap_or(bitmaps[i], bitmaps[i + 1]);
         RDTSC_FINAL(cycles_final);
         successive_or += cycles_final - cycles_start;
 
@@ -126,7 +127,7 @@ int main(int argc, char **argv) {
 
     roaring_bitmap_t **copyofr = malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
-        copyofr[i] = roaring_bitmap_copy(bitmaps[i],copy_on_write);
+        copyofr[i] = roaring_bitmap_copy(bitmaps[i]);
     }
     RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count - 1; i++) {
@@ -140,11 +141,11 @@ int main(int argc, char **argv) {
     free(copyofr);
     copyofr = malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
-        copyofr[i] = roaring_bitmap_copy(bitmaps[i],copy_on_write);
+        copyofr[i] = roaring_bitmap_copy(bitmaps[i]);
     }
     RDTSC_START(cycles_start);
     for (int i = 0; i < (int)count - 1; i++) {
-        roaring_bitmap_or_inplace(copyofr[i], bitmaps[i + 1],copy_on_write);
+        roaring_bitmap_or_inplace(copyofr[i], bitmaps[i + 1]);
     }
     RDTSC_FINAL(cycles_final);
     printf(" %zu successive in-place bitmaps unions took %" PRIu64 " cycles\n",

@@ -25,8 +25,9 @@ void roaring_iterator_sumall(uint32_t value, void *param) {
 
 void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
+    bm1->copy_on_write = copy_on_write;
     roaring_bitmap_add(bm1, 3);
-    roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1,copy_on_write);
+    roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
     assert(roaring_bitmap_get_cardinality(bm1) == 1);
     assert(roaring_bitmap_get_cardinality(bm2) == 1);
     roaring_bitmap_add(bm2, 4);
@@ -40,6 +41,7 @@ void can_add_to_copies(bool copy_on_write) {
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
     assert_non_null(r1);
 
     // then we can add values
@@ -72,6 +74,7 @@ void test_example(bool copy_on_write) {
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
+    r3->copy_on_write = copy_on_write;
 
     // we can also go in reverse and go from arrays to bitmaps
     uint32_t card1;
@@ -87,20 +90,22 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(r1f);
 
     // we can copy and compare bitmaps
-    roaring_bitmap_t *z = roaring_bitmap_copy(r3,copy_on_write);
+    roaring_bitmap_t *z = roaring_bitmap_copy(r3);
+    z->copy_on_write = copy_on_write;
     assert_true(roaring_bitmap_equals(r3, z));
 
     roaring_bitmap_free(z);
 
     // we can compute union two-by-two
-    roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2,copy_on_write);
-    roaring_bitmap_or_inplace(r1_2_3, r3,copy_on_write);
+    roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
+    r1_2_3->copy_on_write = copy_on_write;
+    roaring_bitmap_or_inplace(r1_2_3, r3);
 
     // we can compute a big union
     const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
-    roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps,copy_on_write);
+    roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
     assert_true(roaring_bitmap_equals(r1_2_3, bigunion));
-    roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps,copy_on_write);
+    roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps);
     assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
     roaring_bitmap_free(r1_2_3);
     roaring_bitmap_free(bigunion);
@@ -533,8 +538,10 @@ void test_intersection_bitset_x_bitset_inplace() {
 
 void test_union(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
     assert(r1);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
     assert(r2);
 
     for (uint32_t i = 0; i < 100; ++i) {
@@ -544,7 +551,8 @@ void test_union(bool copy_on_write) {
         assert_int_equal(roaring_bitmap_get_cardinality(r1), i + 1);
     }
 
-    roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2,copy_on_write);
+    roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
+    r1_or_r2->copy_on_write = copy_on_write;
     assert_int_equal(roaring_bitmap_get_cardinality(r1_or_r2), 166);
 
     roaring_bitmap_free(r1_or_r2);

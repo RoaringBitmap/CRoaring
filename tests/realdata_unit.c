@@ -12,7 +12,7 @@ void show_structure(roaring_array_t *);  // debug
  * Once you have collected all the integers, build the bitmaps.
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
-                                             uint32_t **numbers, size_t count) {
+                                             uint32_t **numbers, size_t count, bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -20,6 +20,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
+        answer[i]->copy_on_write = copy_on_write;
     }
     printf("\n");
     return answer;
@@ -74,8 +75,8 @@ bool array_equals(uint32_t *a1, int32_t size1, uint32_t *a2, int32_t size2) {
     return true;
 }
 
-bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2, bool copy_on_write) {
-    roaring_bitmap_t *temp = roaring_bitmap_or(bitmap1, bitmap2,copy_on_write);
+bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
+    roaring_bitmap_t *temp = roaring_bitmap_or(bitmap1, bitmap2);
     uint32_t card1, card2, card;
     uint32_t *arr1 = roaring_bitmap_to_uint32_array(bitmap1, &card1);
     uint32_t *arr2 = roaring_bitmap_to_uint32_array(bitmap2, &card2);
@@ -134,15 +135,15 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
 }
 
 roaring_bitmap_t *inplace_union(roaring_bitmap_t *bitmap1,
-                                roaring_bitmap_t *bitmap2, bool copy_on_write) {
-    roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1,copy_on_write);
-    roaring_bitmap_or_inplace(answer, bitmap2,copy_on_write);
+                                roaring_bitmap_t *bitmap2) {
+    roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1);
+    roaring_bitmap_or_inplace(answer, bitmap2);
     return answer;
 }
 
 roaring_bitmap_t *inplace_intersection(roaring_bitmap_t *bitmap1,
-                                       roaring_bitmap_t *bitmap2, bool copy_on_write) {
-    roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1,copy_on_write);
+                                       roaring_bitmap_t *bitmap2) {
+    roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1);
     roaring_bitmap_and_inplace(answer, bitmap2);
     return answer;
 }
@@ -158,7 +159,7 @@ bool slow_bitmap_equals(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
 }
 
 bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
-                           size_t count, bool copy_on_write) {
+                           size_t count) {
     roaring_bitmap_t *tempandnorun;
     roaring_bitmap_t *tempandruns;
     for (size_t i = 0; i + 1 < count; ++i) {
@@ -188,12 +189,12 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         roaring_bitmap_free(tempandnorun);
         roaring_bitmap_free(tempandruns);
 
-        tempandnorun = inplace_intersection(rnorun[i], rnorun[i + 1],copy_on_write);
+        tempandnorun = inplace_intersection(rnorun[i], rnorun[i + 1]);
         if (!is_intersection_correct(rnorun[i], rnorun[i + 1])) {
             printf("[inplace] no run intersection incorrect\n");
             return false;
         }
-        tempandruns = inplace_intersection(rruns[i], rruns[i + 1],copy_on_write);
+        tempandruns = inplace_intersection(rruns[i], rruns[i + 1]);
         if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
             printf("[inplace] runs intersection incorrect\n");
             return false;
@@ -218,17 +219,17 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
 }
 
 bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
-                    size_t count, bool copy_on_write) {
+                    size_t count) {
     roaring_bitmap_t *tempornorun;
     roaring_bitmap_t *temporruns;
     for (size_t i = 0; i + 1 < count; ++i) {
-        tempornorun = roaring_bitmap_or(rnorun[i], rnorun[i + 1],copy_on_write);
-        if (!is_union_correct(rnorun[i], rnorun[i + 1],copy_on_write)) {
+        tempornorun = roaring_bitmap_or(rnorun[i], rnorun[i + 1]);
+        if (!is_union_correct(rnorun[i], rnorun[i + 1])) {
             printf("no-run union incorrect\n");
             return false;
         }
-        temporruns = roaring_bitmap_or(rruns[i], rruns[i + 1],copy_on_write);
-        if (!is_union_correct(rruns[i], rruns[i + 1],copy_on_write)) {
+        temporruns = roaring_bitmap_or(rruns[i], rruns[i + 1]);
+        if (!is_union_correct(rruns[i], rruns[i + 1])) {
             printf("runs unions incorrect\n");
             return false;
         }
@@ -247,13 +248,13 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         }
         roaring_bitmap_free(tempornorun);
         roaring_bitmap_free(temporruns);
-        tempornorun = inplace_union(rnorun[i], rnorun[i + 1],copy_on_write);
-        if (!is_union_correct(rnorun[i], rnorun[i + 1],copy_on_write)) {
+        tempornorun = inplace_union(rnorun[i], rnorun[i + 1]);
+        if (!is_union_correct(rnorun[i], rnorun[i + 1])) {
             printf("[inplace] no-run union incorrect\n");
             return false;
         }
-        temporruns = inplace_union(rruns[i], rruns[i + 1],copy_on_write);
-        if (!is_union_correct(rruns[i], rruns[i + 1],copy_on_write)) {
+        temporruns = inplace_union(rruns[i], rruns[i + 1]);
+        if (!is_union_correct(rruns[i], rruns[i + 1])) {
             printf("[inplace] runs unions incorrect\n");
             return false;
         }
@@ -278,11 +279,11 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
 }
 
 bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
-                         size_t count, bool copy_on_write) {
+                         size_t count) {
     roaring_bitmap_t *tempornorun =
-        roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rnorun,copy_on_write);
+        roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rnorun);
     roaring_bitmap_t *temporruns =
-        roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rruns,copy_on_write);
+        roaring_bitmap_or_many(count, (const roaring_bitmap_t **)rruns);
     if (!slow_bitmap_equals(tempornorun, temporruns)) {
         printf("[compare_wide_unions] Unions don't agree! (fast run-norun) \n");
         return false;
@@ -290,9 +291,9 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
     assert(roaring_bitmap_equals(tempornorun, temporruns));
 
     roaring_bitmap_t *tempornorunheap =
-        roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rnorun,copy_on_write);
+        roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rnorun);
     roaring_bitmap_t *temporrunsheap =
-        roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rruns,copy_on_write);
+        roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rruns);
     //assert(slow_bitmap_equals(tempornorun, tempornorunheap));
     //assert(slow_bitmap_equals(temporruns,temporrunsheap));
 
@@ -309,28 +310,21 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
     } else {
         assert(roaring_bitmap_equals(rnorun[0], rruns[0]));
         assert(roaring_bitmap_equals(rnorun[1], rruns[1]));
-        longtempornorun = roaring_bitmap_or(rnorun[0], rnorun[1],copy_on_write);
-        longtemporruns = roaring_bitmap_or(rruns[0], rruns[1],copy_on_write);
-        //assert(slow_bitmap_equals(longtempornorun, longtemporruns));
+        longtempornorun = roaring_bitmap_or(rnorun[0], rnorun[1]);
+        longtemporruns = roaring_bitmap_or(rruns[0], rruns[1]);
         assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
         for (int i = 2; i < (int)count; ++i) {
-            //assert(slow_bitmap_equals(rnorun[i], rruns[i]));
-            //assert(slow_bitmap_equals(longtempornorun, longtemporruns));
-
-        	assert(roaring_bitmap_equals(rnorun[i], rruns[i]));
+            assert(roaring_bitmap_equals(rnorun[i], rruns[i]));
             assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
 
             roaring_bitmap_t *t1 =
-                roaring_bitmap_or(rnorun[i], longtempornorun,copy_on_write);
-            roaring_bitmap_t *t2 = roaring_bitmap_or(rruns[i], longtemporruns,copy_on_write);
-            //assert(slow_bitmap_equals(t1, t2));
+                roaring_bitmap_or(rnorun[i], longtempornorun);
+            roaring_bitmap_t *t2 = roaring_bitmap_or(rruns[i], longtemporruns);
             assert(roaring_bitmap_equals(t1, t2));
             roaring_bitmap_free(longtempornorun);
             longtempornorun = t1;
             roaring_bitmap_free(longtemporruns);
             longtemporruns = t2;
-
-            //assert(slow_bitmap_equals(longtempornorun, longtemporruns));
             assert(roaring_bitmap_equals(longtempornorun, longtemporruns));
         }
     }
@@ -377,7 +371,7 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
         return false;
     }
 
-    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count);
+    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count, copy_on_write);
     for (size_t i = 0; i < count; i++) {
         if (!is_bitmap_equal_to_array(bitmaps[i], numbers[i], howmany[i])) {
             printf("arrays don't agree with set values\n");
@@ -387,7 +381,7 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
 
     roaring_bitmap_t **bitmapswrun = malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
-        bitmapswrun[i] = roaring_bitmap_copy(bitmaps[i],copy_on_write);
+        bitmapswrun[i] = roaring_bitmap_copy(bitmaps[i]);
         roaring_bitmap_run_optimize(bitmapswrun[i]);
         if(roaring_bitmap_get_cardinality(bitmaps[i]) !=
         		roaring_bitmap_get_cardinality(bitmapswrun[i])) {
@@ -409,13 +403,13 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
             return false;  //  memory leaks
         }
     }
-    if (!compare_intersections(bitmaps, bitmapswrun, count, copy_on_write)) {
+    if (!compare_intersections(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
     }
-    if (!compare_unions(bitmaps, bitmapswrun, count, copy_on_write)) {
+    if (!compare_unions(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
     }
-    if (!compare_wide_unions(bitmaps, bitmapswrun, count, copy_on_write)) {
+    if (!compare_wide_unions(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
     }
 
