@@ -79,24 +79,23 @@ roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
 free(arr1);
 assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
 
-bool copy_on_write = false; // whether you want to use copy-on-write
 
 // we can copy and compare bitmaps
-roaring_bitmap_t *z = roaring_bitmap_copy(r3, copy_on_write);
+roaring_bitmap_t *z = roaring_bitmap_copy(r3);
 assert(roaring_bitmap_equals(r3, z));  // what we recover is equal
 roaring_bitmap_free(z);
 
 // we can compute union two-by-two
-roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2, copy_on_write);
+roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
 roaring_bitmap_or_inplace(r1_2_3, r3);
 
 // we can compute a big union
 const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
-roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps, copy_on_write);
+roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
 assert(
     roaring_bitmap_equals(r1_2_3, bigunion));  // what we recover is equal
 // can also do the big union with a heap
-roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps, copy_on_write);
+roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps);
 assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
 
 roaring_bitmap_free(r1_2_3);
