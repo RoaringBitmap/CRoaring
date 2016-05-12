@@ -45,8 +45,8 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
  * Copies a  bitmap. This does memory allocation. The caller is responsible for
  * memory management.
  *
- * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
- * copies but needs more care in a threaded context.
+ * copy_on_write: whether you want to use copy-on-write (saves memory and avoids
+ * copies but needs more care in a threaded context).
  */
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r, bool copy_on_write);
 
@@ -81,6 +81,23 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2, bool copy_on_write);
 
 /**
+* short-hand for roaring_bitmap_or with copy-on-write.
+*/
+static inline roaring_bitmap_t *roaring_bitmap_or_cow(const roaring_bitmap_t *x1,
+                                    const roaring_bitmap_t *x2) {
+    return roaring_bitmap_or(x1,x2,true);
+}
+
+/**
+* short-hand for roaring_bitmap_or without copy-on-write.
+*/
+static inline roaring_bitmap_t *roaring_bitmap_or_hard(const roaring_bitmap_t *x1,
+                                    const roaring_bitmap_t *x2) {
+  return roaring_bitmap_or(x1,x2,false);
+}
+
+
+/**
  * Inplace version of roaring_bitmap_or, modifies x1
  *
  * copy_on_write: whether you want to use copy-on-write (saves memory and avoid
@@ -88,6 +105,23 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
  */
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2, bool copy_on_write);
+
+/**
+* short-hand for roaring_bitmap_or_inplace with copy-on-write
+*/
+static inline void roaring_bitmap_or_inplace_cow(roaring_bitmap_t *x1,
+                                    const roaring_bitmap_t *x2) {
+    roaring_bitmap_or_inplace(x1,x2,true);
+}
+
+/**
+* short-hand for roaring_bitmap_or_inplace without copy-on-write
+*/
+static inline void roaring_bitmap_or_inplace_hard(roaring_bitmap_t *x1,
+                                    const roaring_bitmap_t *x2) {
+    roaring_bitmap_or_inplace(x1,x2,false);
+}
+
 
 /**
  * Compute the union of 'number' bitmaps. See also roaring_bitmap_or_many_heap.
@@ -102,6 +136,23 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
 
 
 /**
+* short-hand for roaring_bitmap_or_many with copy-on-write
+*/
+static inline roaring_bitmap_t *roaring_bitmap_or_many_cow(size_t number,
+                                         const roaring_bitmap_t **x) {
+    return roaring_bitmap_or_many(number,x,true);
+}
+
+/**
+* short-hand for roaring_bitmap_or_many without copy-on-write
+*/
+static inline roaring_bitmap_t *roaring_bitmap_or_many_hard(size_t number,
+                                         const roaring_bitmap_t **x) {
+  return roaring_bitmap_or_many(number,x,false);
+}
+
+
+/**
  * Compute the union of 'number' bitmaps using a heap. This can
  * sometimes be faster than roaring_bitmap_or_many which uses
  * a naive algorithm. Caller is responsible for freeing the
@@ -112,6 +163,25 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
  */
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
                                               const roaring_bitmap_t **x, bool copy_on_write);
+
+
+/**
+* short-hand for roaring_bitmap_or_many_heap with copy-on-write
+*/
+static inline roaring_bitmap_t *roaring_bitmap_or_many_heap_cow(size_t number,
+                                         const roaring_bitmap_t **x) {
+    return roaring_bitmap_or_many_heap(number,x,true);
+}
+
+/**
+* short-hand for roaring_bitmap_or_many_heap without copy-on-write
+*/
+static inline roaring_bitmap_t *roaring_bitmap_or_many_heap_hard(size_t number,
+                                         const roaring_bitmap_t **x) {
+  return roaring_bitmap_or_many_heap(number,x,false);
+}
+
+
 /**
  * Frees the memory.
  */
