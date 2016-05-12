@@ -32,12 +32,12 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 # Requirements
 
 - 64-bit Linux-like operating system (including MacOS)
-- Recent Intel processor: Haswell (2013) or better.
+- Recent Intel processor: Haswell (2013) or better. For legacy Intel processors without AVX support, build the project with ``-DAVX_TUNING=OFF``.
 - Recent C compiler (GCC 4.8 or better)
 - CMake
 - clang-format (optional)
 
-Support for legacy hardware and compiler might be added later.
+Support for non-Intel hardware  and other compilers might be added later. Contributions are invited.
 
 # Example
 
