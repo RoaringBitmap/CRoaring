@@ -900,8 +900,7 @@ static inline void *container_not_range(const void *c, uint8_t typ,
     }
 }
 
-static inline void *container_inot(const void *c, uint8_t type1,
-                                   uint8_t *result_type) {
+static inline void *container_inot(void *c, uint8_t typ, uint8_t *result_type) {
     void *result = NULL;
     switch (typ) {
         case BITSET_CONTAINER_TYPE_CODE:
@@ -925,7 +924,7 @@ static inline void *container_inot(const void *c, uint8_t type1,
     }
 }
 
-static inline void *container_inot_range(const void *c1, uint8_t type1,
+static inline void *container_inot_range(void *c, uint8_t typ,
                                          uint32_t range_start,
                                          uint32_t range_end,
                                          uint8_t *result_type) {
@@ -937,9 +936,10 @@ static inline void *container_inot_range(const void *c1, uint8_t type1,
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
-        case ARRAY_CONTAINER_TYPE_CODE:  // result not doomed to array
-            *result_type = array_container_negation_range_inplace(
-                               c, range_start, range_end, &result)
+        case ARRAY_CONTAINER_TYPE_CODE:  // result not doomed to array, but not
+                                         // easy to do inplace
+            *result_type = array_container_negation_range(c, range_start,
+                                                          range_end, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;

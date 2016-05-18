@@ -125,7 +125,8 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
                                uint8_t typecode);
 
 /**
- * If needed, increase the capacity of the array so that it can fit k values (at least);
+ * If needed, increase the capacity of the array so that it can fit k values (at
+ * least);
  */
 void extend_array(roaring_array_t *ra, uint32_t k);
 
@@ -184,5 +185,16 @@ bool ra_has_run_container(roaring_array_t *ra);
  * with Java and Go versions)
  */
 uint32_t ra_portable_header_size(roaring_array_t *ra);
+
+/**
+ * remove at index i, sliding over all entries after i
+ */
+void ra_remove_at_index(roaring_array_t *ra, int32_t i);
+
+/**
+ * remove a chunk of indices, sliding over entries after it
+   Is this used??
+ */
+// void ra_remove_index_range(roaring_array_t *ra, int32_t begin, int32_t end);
 
 #endif

@@ -152,7 +152,7 @@ bool array_container_negation_range(const array_container_t *src,
  * inplace version without inefficient copying.
  */
 
-bool array_container_negation_range_inplace(const array_container_t *src,
+bool array_container_negation_range_inplace(array_container_t *src,
                                             const int range_start,
                                             const int range_end, void **dst) {
     bool ans = array_container_negation_range(src, range_start, range_end, dst);
@@ -228,7 +228,7 @@ int run_container_negation_range(const run_container_t *src,
     // follows the Java implementation
     if (range_end <= range_start) {
         *dst = run_container_clone(src);
-        return 2;  // not RUN_CONTAINER_TYPE_CODE;
+        return RUN_CONTAINER_TYPE_CODE;
     }
 
     run_container_t *ans = run_container_create_given_capacity(
@@ -263,6 +263,68 @@ int run_container_negation_range(const run_container_t *src,
 int run_container_negation_range_inplace(run_container_t *src,
                                          const int range_start,
                                          const int range_end, void **dst) {
-    // TODO WRITE
-    return 0;
+    uint8_t return_typecode;
+
+    if (range_end <= range_start) {
+        *dst = src;
+        return RUN_CONTAINER_TYPE_CODE;
+    }
+
+    // TODO: efficient special case when range is 0 to 65535 inclusive
+
+    if (src->capacity == src->n_runs) {
+        // no excess room.  More checking to see if result can fit
+        bool last_val_before_range = false;
+        bool first_val_in_range = false;
+        bool last_val_in_range = false;
+        bool first_val_past_range = false;
+
+        if (range_start > 0)
+            last_val_before_range =
+                run_container_contains(src, (uint16_t)(range_start - 1));
+        first_val_in_range = run_container_contains(src, (uint16_t)range_start);
+        if (last_val_before_range == first_val_in_range) {
+            last_val_in_range =
+                run_container_contains(src, (uint16_t)(range_end - 1));
+            if (range_end != 0x10000)
+                first_val_past_range =
+                    run_container_contains(src, (uint16_t)range_end);
+            if (last_val_in_range ==
+                first_val_past_range)  // no space for inplace
+                return run_container_negation_range(src, range_start, range_end,
+                                                    dst);
+        }
+    }
+    // all other cases: result will fit
+
+    run_container_t *ans = src;
+    int my_nbr_runs = src->n_runs;
+
+    ans->n_runs = 0;
+    int k = 0;
+    for (; k < my_nbr_runs && src->runs[k].value < range_start; ++k) {
+        // ans->runs[k] = src->runs[k]; (would be self-copy)
+        ans->n_runs++;
+    }
+
+    // as with Java implementation, use locals to give self a buffer of depth 1
+    rle16_t buffered = (rle16_t){.value = (uint16_t)0, .length = (uint16_t)0};
+    rle16_t next = buffered;
+    if (k < my_nbr_runs) next = src->runs[k];
+
+    run_container_smart_append_exclusive(
+        ans, (uint16_t)range_start, (uint16_t)(range_end - range_start - 1));
+
+    for (; k < my_nbr_runs; ++k) {
+        if (k + 1 < my_nbr_runs) next = src->runs[k + 1];
+
+        run_container_smart_append_exclusive(ans, buffered.value,
+                                             buffered.length);
+        buffered = next;
+    }
+
+    *dst = convert_run_to_efficient_container(ans, &return_typecode);
+    if (return_typecode != RUN_CONTAINER_TYPE_CODE) run_container_free(ans);
+
+    return return_typecode;
 }
