@@ -283,34 +283,49 @@ int run_container_negation_range_inplace(run_container_t *src,
             last_val_before_range =
                 run_container_contains(src, (uint16_t)(range_start - 1));
         first_val_in_range = run_container_contains(src, (uint16_t)range_start);
+
+        //    printf("rcneg inpl: lastb4 %d first %d\n",
+        //    (int)last_val_before_range,
+        //     (int)first_val_in_range);
+
         if (last_val_before_range == first_val_in_range) {
             last_val_in_range =
                 run_container_contains(src, (uint16_t)(range_end - 1));
             if (range_end != 0x10000)
                 first_val_past_range =
                     run_container_contains(src, (uint16_t)range_end);
+
+            //  printf("rcneg inpl: last %d firstpst %d\n",
+            //  (int)last_val_in_range,
+            //     (int)first_val_past_range);
             if (last_val_in_range ==
-                first_val_past_range)  // no space for inplace
-                return run_container_negation_range(src, range_start, range_end,
-                                                    dst);
+                first_val_past_range) {  // no space for inplace
+                int ans = run_container_negation_range(src, range_start,
+                                                       range_end, dst);
+                run_container_free(src);
+                return ans;
+            }
         }
     }
     // all other cases: result will fit
+
+    //    printf("rcneg inpl: guaranteed to fit\n");
 
     run_container_t *ans = src;
     int my_nbr_runs = src->n_runs;
 
     ans->n_runs = 0;
     int k = 0;
-    for (; k < my_nbr_runs && src->runs[k].value < range_start; ++k) {
+    for (; (k < my_nbr_runs) && (src->runs[k].value < range_start); ++k) {
         // ans->runs[k] = src->runs[k]; (would be self-copy)
+        // printf("noncopy at %d\n", k);  // temp temp
         ans->n_runs++;
     }
 
     // as with Java implementation, use locals to give self a buffer of depth 1
     rle16_t buffered = (rle16_t){.value = (uint16_t)0, .length = (uint16_t)0};
     rle16_t next = buffered;
-    if (k < my_nbr_runs) next = src->runs[k];
+    if (k < my_nbr_runs) buffered = src->runs[k];
 
     run_container_smart_append_exclusive(
         ans, (uint16_t)range_start, (uint16_t)(range_end - range_start - 1));

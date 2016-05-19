@@ -359,11 +359,13 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
 #ifndef UNVERBOSE_MIXED_CONTAINER
         if (container_contains(BO, (uint16_t)x, result_typecode) !=
             result_should_be[x])
-            printf("problem at index %d\n", x);
+            printf("problem at index %d should be (but isnt) %d\n", x,
+                   (int)result_should_be[x]);
 #endif
         assert_int_equal(container_contains(BO, (uint16_t)x, result_typecode),
                          result_should_be[x]);
     }
+    // assert_int_equal(result_size_should_be, result_card);
     container_free(BO, result_typecode);
     if (!inplace) run_container_free(RI);
     // for inplace: input is either output, or it was already freed internally
@@ -371,17 +373,115 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
     return 1;
 }
 
-/* return result types are NOT consistent with typecodes in
-   containers.h (should they be?) so that 0=array, 1=bitset for
-   the other negations is preserved.
-*/
+/* Version that does not check whether return types and inplaceness are right */
+
+static int run_negation_range_tests_simpler(int k, int h, int start_offset,
+                                            int r_start, int r_end,
+                                            bool inplace) {
+    // printf("rnrts k=%d h=%d so=%d rs=%d re=%d inpl=%d\n", k, h, start_offset,
+    // r_start, r_end, (int)inplace);
+
+    int card = 0;
+    run_container_t* RI =
+        run_container_create_given_capacity((1 << 16) / k + 1);
+    void* BO;
+    int returned_type;
+    int result_size_should_be;
+    bool result_should_be[1 << 16];
+
+    assert(h < k);
+
+    int runlen = h;
+    for (int x = 0; x < (1 << 16) - start_offset; x++) {
+        int offsetx = x + start_offset;
+        if (x % k == 0) {
+            int actual_runlen = runlen;
+            if (offsetx + runlen > (1 << 16))
+                actual_runlen = (1 << 16) - offsetx;
+
+            run_container_append_first(
+                RI, (rle16_t){.value = offsetx, .length = actual_runlen - 1});
+            card += actual_runlen;
+            if (++runlen == k) runlen = h;
+        }
+    }
+
+    result_size_should_be = 0;
+
+    for (int i = 0; i < (1 << 16); ++i) {
+        bool in_zone = (i >= r_start && i < r_end);
+        if (run_container_contains(RI, (uint16_t)i) ^ in_zone) {
+            result_should_be[i] = true;
+            ++result_size_should_be;
+        } else
+            result_should_be[i] = false;
+    }
+    if (inplace)
+        returned_type = run_container_negation_range_inplace(RI, r_start, r_end,
+                                                             (void**)&BO);
+    else
+        returned_type =
+            run_container_negation_range(RI, r_start, r_end, (void**)&BO);
+
+    uint8_t result_typecode = (uint8_t)returned_type;
+
+    int result_card = container_get_cardinality(BO, result_typecode);
+
+    assert_int_equal(result_size_should_be, result_card);
+
+    for (int x = 0; x < (1 << 16); x++) {
+#ifndef UNVERBOSE_MIXED_CONTAINER
+        if (container_contains(BO, (uint16_t)x, result_typecode) !=
+            result_should_be[x])
+            printf("problem at index %d should be (but isnt) %d\n", x,
+                   (int)result_should_be[x]);
+#endif
+        assert_int_equal(container_contains(BO, (uint16_t)x, result_typecode),
+                         result_should_be[x]);
+    }
+    container_free(BO, result_typecode);
+    if (!inplace) run_container_free(RI);
+    return 1;
+}
+
+static int run_many_negation_range_tests_simpler(bool inplace) {
+    for (int h = 1; h < 100; h *= 3) {
+        printf("h=%d\n", h);
+        for (int k = h + 1; k < 100; k = k * 1.5 + 1) {
+            printf("  k=%d\n", k);
+            for (int start_offset = 0; start_offset < 1000;
+                 start_offset = start_offset * 2.7 + 1) {
+                printf("    so=%d\n", start_offset);
+                for (int r_start = 0; r_start < 65535; r_start += 10013)
+                    for (int span = 0; r_start + span < 65536;
+                         span = span * 3 + 1) {
+                        run_negation_range_tests_simpler(
+                            k, h, start_offset, r_start, r_start + span,
+                            inplace);
+                    }
+            }
+        }
+    }
+    return 1;
+}
+
+int run_many_negation_range_tests_simpler_notinplace() {
+    return run_many_negation_range_tests_simpler(false);
+}
+
+int run_many_negation_range_tests_simpler_inplace() {
+    return run_many_negation_range_tests_simpler(true\);
+}
 
 /* result is a bitset */
 int run_negation_range_inplace_test1() {
-    // runs of length 7, 8, 9 begin every 10 starting at 0.
+    // runs of length 7, 8, 9 begin every 10
+    // starting at 0.
     // (should not have been run encoded, but...)
-    // last run starts at 65530 hence we end in a run
-    // negation over whole range.  Result should be bitset
+    // last run starts at 65530 hence we end in a
+    // run
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, true,
@@ -389,9 +489,12 @@ int run_negation_range_inplace_test1() {
 }
 
 int run_negation_range_inplace_test2() {
-    // runs of length 7, 8, 9 begin every 10 starting at 1.
-    // last run starts at 65531 hence we end in a run
-    // negation over whole range.  Result should be bitset
+    // runs of length 7, 8, 9 begin every 10
+    // starting at 1.
+    // last run starts at 65531 hence we end in a
+    // run
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, true,
@@ -399,10 +502,13 @@ int run_negation_range_inplace_test2() {
 }
 
 int run_negation_range_inplace_test3() {
-    // runs of length 2,3,..9 begin every 10 starting at 1.
-    // last run starts at 65531. Run length is (6553 % 8)+2 = 3.
+    // runs of length 2,3,..9 begin every 10
+    // starting at 1.
+    // last run starts at 65531. Run length is (6553
+    // % 8)+2 = 3.
     // So 65535 stores 0.
-    // negation over whole range.  Result should be bitset
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, true,
@@ -411,8 +517,10 @@ int run_negation_range_inplace_test3() {
 
 /* Results are going to be arrays*/
 int run_negation_range_inplace_test4() {
-    // runs of length 999 begin every 1000 starting at 0.
-    // last run starts at 65000 hence we end in a run
+    // runs of length 999 begin every 1000 starting
+    // at 0.
+    // last run starts at 65000 hence we end in a
+    // run
     // negation over whole range.
     // Result should be array
 
@@ -422,9 +530,12 @@ int run_negation_range_inplace_test4() {
 }
 
 int run_negation_range_inplace_test5() {
-    // runs of length 999 begin every 10000 starting at 1.
-    // last run starts at 65001 hence we end in a run.
-    // negation over whole range.  Result should be bitset
+    // runs of length 999 begin every 10000 starting
+    // at 1.
+    // last run starts at 65001 hence we end in a
+    // run.
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(1000, 999, 1, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, true,
@@ -432,10 +543,12 @@ int run_negation_range_inplace_test5() {
 }
 
 int run_negation_range_inplace_test6() {
-    // runs of length 999 begin every 10000 starting at 536
+    // runs of length 999 begin every 10000 starting
+    // at 536
     // last run starts at 64536.
     // So 65535 stores 0.
-    // negation over whole range except some initial.  Result should be array
+    // negation over whole range except some
+    // initial.  Result should be array
 
     return run_negation_range_tests(1000, 999, 536, 530, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, true,
@@ -444,9 +557,12 @@ int run_negation_range_inplace_test6() {
 
 /* Results are going to be runs*/
 int run_negation_range_inplace_test7() {
-    // short runs of length 2, 3, .. 67 begin every 1000 starting at 550.
-    // last run starts at 65550 hence we end in a run.
-    // negation over whole range.  Result should be run.
+    // short runs of length 2, 3, .. 67 begin every
+    // 1000 starting at 550.
+    // last run starts at 65550 hence we end in a
+    // run.
+    // negation over whole range.  Result should be
+    // run.
     // should always fit in the previous space
 
     return run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
@@ -455,9 +571,12 @@ int run_negation_range_inplace_test7() {
 }
 
 int run_negation_range_inplace_test8() {
-    // runs of length 2..67 begin every 10000 starting at 0.
-    // last run starts at 65000 hence we end outside a run
-    // negation over whole range.  Result should be run and will fit.
+    // runs of length 2..67 begin every 10000
+    // starting at 0.
+    // last run starts at 65000 hence we end outside
+    // a run
+    // negation over whole range.  Result should be
+    // run and will fit.
 
     return run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, true,
@@ -465,44 +584,56 @@ int run_negation_range_inplace_test8() {
 }
 
 int run_negation_range_inplace_test9() {
-    // runs of length 2..67 begin every 10000 starting at 1
+    // runs of length 2..67 begin every 10000
+    // starting at 1
     // last run starts at 64001.
     // So 65535 stores 0.
-    // negation over whole range.  Result should be have one run
-    // more than original, but we think buffer will usually have space  :)
+    // negation over whole range.  Result should
+    // have one run
+    // more than original, and buffer happens to not
+    // have any extra space.
 
     return run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, true,
-                                    true);  // request, get inplace
+                                    false);  // request, but not get, inplace
 }
 
 // now, 9 more tests that do not request inplace.
 
 /* result is a bitset */
 int run_negation_range_test1() {
-    // runs of length 7, 8, 9 begin every 10 starting at 0.
+    // runs of length 7, 8, 9 begin every 10
+    // starting at 0.
     // (should not have been run encoded, but...)
-    // last run starts at 65530 hence we end in a run
-    // negation over whole range.  Result should be bitset
+    // last run starts at 65530 hence we end in a
+    // run
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, false, false);
 }
 
 int run_negation_range_test2() {
-    // runs of length 7, 8, 9 begin every 10 starting at 1.
-    // last run starts at 65531 hence we end in a run
-    // negation over whole range.  Result should be bitset
+    // runs of length 7, 8, 9 begin every 10
+    // starting at 1.
+    // last run starts at 65531 hence we end in a
+    // run
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, false, false);
 }
 
 int run_negation_range_test3() {
-    // runs of length 2,3,..9 begin every 10 starting at 1.
-    // last run starts at 65531. Run length is (6553 % 8)+2 = 3.
+    // runs of length 2,3,..9 begin every 10
+    // starting at 1.
+    // last run starts at 65531. Run length is (6553
+    // % 8)+2 = 3.
     // So 65535 stores 0.
-    // negation over whole range.  Result should be bitset
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, false,
@@ -511,28 +642,36 @@ int run_negation_range_test3() {
 
 /* Results are going to be arrays*/
 int run_negation_range_test4() {
-    // runs of length 999 begin every 1000 starting at 0.
-    // last run starts at 65000 hence we end in a run
-    // negation over whole range.  Result should be array
+    // runs of length 999 begin every 1000 starting
+    // at 0.
+    // last run starts at 65000 hence we end in a
+    // run
+    // negation over whole range.  Result should be
+    // array
 
     return run_negation_range_tests(1000, 999, 0, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, false, false);
 }
 
 int run_negation_range_test5() {
-    // runs of length 999 begin every 10000 starting at 1.
-    // last run starts at 65001 hence we end in a run
-    // negation over whole range.  Result should be bitset
+    // runs of length 999 begin every 10000 starting
+    // at 1.
+    // last run starts at 65001 hence we end in a
+    // run
+    // negation over whole range.  Result should be
+    // bitset
 
     return run_negation_range_tests(1000, 999, 1, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, false, false);
 }
 
 int run_negation_range_test6() {
-    // runs of length 999 begin every 10000 starting at 536
+    // runs of length 999 begin every 10000 starting
+    // at 536
     // last run starts at 64536.
     // So 65535 stores 0.
-    // negation over whole range except initial fragment. Result should be array
+    // negation over whole range except initial
+    // fragment. Result should be array
 
     return run_negation_range_tests(1000, 999, 536, 530, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, false, false);
@@ -540,9 +679,12 @@ int run_negation_range_test6() {
 
 /* Results are going to be runs*/
 int run_negation_range_test7() {
-    // short runs of length 2, 3, .. 67 begin every 1000 starting at 550.
-    // last run starts at 65550 hence we end in a run.
-    // negation over whole range.  Result should be run.
+    // short runs of length 2, 3, .. 67 begin every
+    // 1000 starting at 550.
+    // last run starts at 65550 hence we end in a
+    // run.
+    // negation over whole range.  Result should be
+    // run.
     // should always fit in the previous space
 
     return run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
@@ -550,26 +692,33 @@ int run_negation_range_test7() {
 }
 
 int run_negation_range_test8() {
-    // runs of length 2..67 begin every 10000 starting at 0.
-    // last run starts at 65000 hence we end outside a run
-    // negation over whole range.  Result should be run and will fit.
+    // runs of length 2..67 begin every 10000
+    // starting at 0.
+    // last run starts at 65000 hence we end outside
+    // a run
+    // negation over whole range.  Result should be
+    // run and will fit.
 
     return run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, false, false);
 }
 
 int run_negation_range_test9() {
-    // runs of length 2..67 begin every 10000 starting at 1
+    // runs of length 2..67 begin every 10000
+    // starting at 1
     // last run starts at 64001.
     // So 65535 stores 0.
-    // negation over whole range.  Result should be have one run
-    // more than original, but we think buffer will usually have space  :)
+    // negation over whole range.  Result should be
+    // have one run
+    // more than original, but we think buffer will
+    // usually have space  :)
 
     return run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, false, false);
 }
 
-/* now tests that negate just part of the range:  18 more... */
+/* now tests that negate just part of the range:  18
+ * more... */
 // TODO
 int main() {
     const struct CMUnitTest tests[] = {
@@ -584,16 +733,15 @@ int main() {
         cmocka_unit_test(bitset_negation_range_test2),
         cmocka_unit_test(bitset_negation_range_inplace_test1),
         cmocka_unit_test(bitset_negation_range_inplace_test2),
-        /*        cmocka_unit_test(run_negation_range_inplace_test1),
-                cmocka_unit_test(run_negation_range_inplace_test2),
-                cmocka_unit_test(run_negation_range_inplace_test3),
-                cmocka_unit_test(run_negation_range_inplace_test4),
-                cmocka_unit_test(run_negation_range_inplace_test5),
-                cmocka_unit_test(run_negation_range_inplace_test6),
-                cmocka_unit_test(run_negation_range_inplace_test7),
-                cmocka_unit_test(run_negation_range_inplace_test8),
-                cmocka_unit_test(run_negation_range_inplace_test9),
-        */
+        cmocka_unit_test(run_negation_range_inplace_test1),
+        cmocka_unit_test(run_negation_range_inplace_test2),
+        cmocka_unit_test(run_negation_range_inplace_test3),
+        cmocka_unit_test(run_negation_range_inplace_test4),
+        cmocka_unit_test(run_negation_range_inplace_test5),
+        cmocka_unit_test(run_negation_range_inplace_test6),
+        cmocka_unit_test(run_negation_range_inplace_test7),
+        cmocka_unit_test(run_negation_range_inplace_test8),
+        cmocka_unit_test(run_negation_range_inplace_test9),
         cmocka_unit_test(run_negation_range_test1),
         cmocka_unit_test(run_negation_range_test2),
         cmocka_unit_test(run_negation_range_test3),
@@ -603,6 +751,14 @@ int main() {
         cmocka_unit_test(run_negation_range_test7),
         cmocka_unit_test(run_negation_range_test8),
         cmocka_unit_test(run_negation_range_test9),
+        /* two very expensive tests that probably should usually be omitted
+
+        cmocka_unit_test(
+            run_many_negation_range_tests_simpler_notinplace),  // lots of
+                                                                // partial
+                                                                // ranges,
+        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),
+        */
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
