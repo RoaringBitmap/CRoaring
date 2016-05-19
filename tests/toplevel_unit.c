@@ -120,7 +120,7 @@ void test_example() {
     roaring_bitmap_free(r3);
 }
 
-void check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
+bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     roaring_bitmap_t *result = roaring_bitmap_from_range(min, max, step);
     assert_non_null(result);
     roaring_bitmap_t *expected = roaring_bitmap_create();
@@ -128,22 +128,29 @@ void check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     for(uint32_t value = min ; value < max ; value += step) {
         roaring_bitmap_add(expected, value);
     }
-    assert_true(roaring_bitmap_equals(expected, result));
+    bool is_equal = roaring_bitmap_equals(expected, result);
+    if(!is_equal) {
+        fprintf(stderr, "[ERROR] check_bitmap_from_range(%u, %u, %u)\n",
+            (unsigned)min, (unsigned)max, (unsigned)step);
+    }
+    return is_equal;
 }
 
 void test_bitmap_from_range() {
     assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
-    check_bitmap_from_range(5, 1, 3); // empty range
+    bool no_error = true;
+    no_error = check_bitmap_from_range(5, 1, 3) && no_error; // empty range
     for(uint32_t i = 16 ; i < 1<<18 ; i*= 2) {
         uint32_t min = i-10;
         uint32_t max = i+400;
         for(uint32_t step = 1 ; step <= 64 ; step*=2) { // check powers of 2
-            check_bitmap_from_range(min, max, step);
+            no_error = check_bitmap_from_range(min, max, step) && no_error;
         }
         for(uint32_t step = 1 ; step <= 81 ; step*=3) { // check powers of 3
-            check_bitmap_from_range(min, max, step);
+            no_error = check_bitmap_from_range(min, max, step) && no_error;
         }
     }
+    assert_true(no_error);
 }
 
 void test_printf() {

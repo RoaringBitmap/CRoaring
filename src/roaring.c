@@ -55,13 +55,41 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     return answer;
 }
 
+static inline int32_t minimum(uint32_t a, uint32_t b) { return (a < b) ? a : b; }
+
+static inline int32_t next_container_bound(uint32_t value) {
+    return (1<<16)*(value/(1<<16)) + (1<<16);
+}
+
 roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     if(step == 0)
         return NULL;
     roaring_bitmap_t *answer = roaring_bitmap_create();
-    for(uint32_t value = min ; value < max ; value += step) {
-            roaring_bitmap_add(answer, value);
+    if(max <= min)
+        return answer;
+    if(step >= (1<<16)) {
+        for(uint32_t value = min ; value < max ; value += step) {
+                roaring_bitmap_add(answer, value);
+        }
+        return answer;
     }
+    uint32_t min_tmp = min, max_tmp = next_container_bound(min);
+    do {
+        uint16_t key = min_tmp/(1<<16);
+        uint32_t real_max = minimum(max, max_tmp)-1;
+        uint32_t size = (real_max-min_tmp)/step;
+        if(size < 4096) { // array container
+            array_container_t * array = array_container_create_given_capacity(size);
+            array_container_add_from_range(array, min_tmp-key*(1<<16), real_max-key*(1<<16), (uint16_t)step);
+            ra_append(answer->high_low_container, key, array, ARRAY_CONTAINER_TYPE_CODE);
+        }
+        else { // bitset container
+            // // TODO
+            return NULL;
+        }
+        min_tmp += (size+1)*step;
+        max_tmp = next_container_bound(min_tmp);
+    } while(min_tmp < max);
     return answer;
 }
 

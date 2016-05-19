@@ -73,6 +73,11 @@ static inline bool array_container_nonzero_cardinality(
 /* Copy one container into another. We assume that they are distinct. */
 void array_container_copy(const array_container_t *src, array_container_t *dst);
 
+/*  Add all the values between min and max (included) at a distance k*step from min..
+    The container must have a size less to 4096 after this addition. s*/
+void array_container_add_from_range(array_container_t *arr, uint16_t min, uint16_t max,
+                                    uint16_t step);
+
 /* Set the cardinality to zero (does not release memory). */
 static inline void array_container_clear(array_container_t *array) {
     array->cardinality = 0;
