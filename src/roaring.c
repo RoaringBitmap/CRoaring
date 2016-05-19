@@ -55,6 +55,16 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     return answer;
 }
 
+roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
+    if(step == 0)
+        return NULL;
+    roaring_bitmap_t *answer = roaring_bitmap_create();
+    for(uint32_t value = min ; value < max ; value += step) {
+            roaring_bitmap_add(answer, value);
+    }
+    return answer;
+}
+
 void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
     printf("{");
     for (int i = 0; i < ra->high_low_container->size; ++i) {

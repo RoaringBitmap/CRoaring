@@ -120,6 +120,32 @@ void test_example() {
     roaring_bitmap_free(r3);
 }
 
+void check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
+    roaring_bitmap_t *result = roaring_bitmap_from_range(min, max, step);
+    assert_non_null(result);
+    roaring_bitmap_t *expected = roaring_bitmap_create();
+    assert_non_null(expected);
+    for(uint32_t value = min ; value < max ; value += step) {
+        roaring_bitmap_add(expected, value);
+    }
+    assert_true(roaring_bitmap_equals(expected, result));
+}
+
+void test_bitmap_from_range() {
+    assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
+    check_bitmap_from_range(5, 1, 3); // empty range
+    for(uint32_t i = 16 ; i < 1<<18 ; i*= 2) {
+        uint32_t min = i-10;
+        uint32_t max = i+400;
+        for(uint32_t step = 1 ; step <= 64 ; step*=2) { // check powers of 2
+            check_bitmap_from_range(min, max, step);
+        }
+        for(uint32_t step = 1 ; step <= 81 ; step*=3) { // check powers of 3
+            check_bitmap_from_range(min, max, step);
+        }
+    }
+}
+
 void test_printf() {
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
@@ -783,6 +809,7 @@ void test_remove_run_to_array() {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_example),
+        cmocka_unit_test(test_bitmap_from_range),
         cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
         cmocka_unit_test(test_printf_withrun),
