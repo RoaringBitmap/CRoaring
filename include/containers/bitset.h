@@ -203,6 +203,10 @@ static inline bool bitset_container_nonzero_cardinality(
 void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest);
 
+/*  Add all the values between min and max (included) at a distance k*step from min. */
+void bitset_container_add_from_range(bitset_container_t *bitset, uint16_t min, uint16_t max,
+                                   uint16_t step);
+
 /* Get the number of bits set (force computation). This does not modify bitset.
  * To update the cardinality, you should do
  * bitset->cardinality =  bitset_container_compute_cardinality(bitset).*/
