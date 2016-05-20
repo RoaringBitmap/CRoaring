@@ -470,7 +470,7 @@ int run_many_negation_range_tests_simpler_notinplace() {
 }
 
 int run_many_negation_range_tests_simpler_inplace() {
-    return run_many_negation_range_tests_simpler(true\);
+    return run_many_negation_range_tests_simpler(true);
 }
 
 /* result is a bitset */

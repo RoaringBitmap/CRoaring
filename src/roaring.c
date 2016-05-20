@@ -733,8 +733,8 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
     return ans;
 }
 
-void roaring_bitmap_flip_inplace(const roaring_bitmap_t *x1,
-                                 uint64_t range_start, uint64_t range_end) {
+void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
+                                 uint64_t range_end) {
     // TODO sanity check range (appropriate for 32 bits)
     if (range_start >= range_end) {
         return;  // empty range
