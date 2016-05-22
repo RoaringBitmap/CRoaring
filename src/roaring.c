@@ -75,19 +75,13 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t
     }
     uint32_t min_tmp = min, max_tmp = next_container_bound(min);
     do {
-        uint16_t key = min_tmp/(1<<16);
+        uint16_t key = min_tmp>>16;
         uint32_t real_max = minimum(max, max_tmp)-1;
+        int type;
+        void *container = container_from_range(&type, min_tmp-(key<<16), real_max-(key<<16),
+                                                          (uint16_t)step);
+        ra_append(answer->high_low_container, key, container, type);
         uint32_t size = (real_max-min_tmp)/step;
-        if(size < 4096) { // array container
-            array_container_t * array = array_container_create_given_capacity(size);
-            array_container_add_from_range(array, min_tmp-key*(1<<16), real_max-key*(1<<16), (uint16_t)step);
-            ra_append(answer->high_low_container, key, array, ARRAY_CONTAINER_TYPE_CODE);
-        }
-        else { // bitset container
-            bitset_container_t *bitset = bitset_container_create();
-            bitset_container_add_from_range(bitset, min_tmp-key*(1<<16), real_max-key*(1<<16), (uint16_t)step);
-            ra_append(answer->high_low_container, key, bitset, BITSET_CONTAINER_TYPE_CODE);
-        }
         min_tmp += (size+1)*step;
         max_tmp = next_container_bound(min_tmp);
     } while(min_tmp < max);
