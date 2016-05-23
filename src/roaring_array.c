@@ -425,7 +425,7 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
     uint32_t off, l,
         cardinality = 0,
         tot_len =
-            4 /* tot_len */ + sizeof(roaring_array_t) +
+            1 /* initial byte type */ +4 /* tot_len */ + sizeof(roaring_array_t) +
             ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
     char *out;
     uint16_t *lens;
@@ -462,8 +462,11 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
     } else
         *serialize_len = tot_len;
 
+    /* Leave room for the first byte */
+    out[0] = SERIALIZATION_CONTAINER, off = 1;
+
     /* Total lenght (first 4 bytes of the serialization) */
-    memcpy(out, &tot_len, 4), off = 4;
+    memcpy(&out[off], &tot_len, 4), off += 4;
 
     l = sizeof(roaring_array_t);
     uint32_t saved_allocation_size = ra->allocation_size;
