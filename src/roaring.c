@@ -483,9 +483,9 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
            the necessary amount. So we shift data of one byte to mark it as
            a "non-standard serialization" instead of reallocating all the memory
         */
-        *serialize_len = cardinality * sizeof(uint32_t);
+        *serialize_len = 1 + cardinality * sizeof(uint32_t);
         memmove(&a[1], a, *serialize_len);
-        a[0] = 0xFF, *serialize_len += 1;
+        a[0] = SERIALIZATION_ARRAY_UINT32, *serialize_len += 1;
         return ((char *)a);
     } else
         return (ret);
@@ -516,7 +516,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
 
     if (buf_len < 4) return (NULL);
 
-    if (*(const unsigned char *)buf == 0xFF) {
+    if (*(const unsigned char *)buf == SERIALIZATION_ARRAY_UINT32) {
         /* This looks like a compressed set of uint32_t elements */
         uint32_t i, card = (buf_len - 1) / sizeof(uint32_t);
         const uint32_t *elems = (const uint32_t *)((const char *)buf + 1);
@@ -529,17 +529,17 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
             roaring_bitmap_add(b, val);
         }
         return (b);
-    } else {
+    } else if (*(const unsigned char *)buf == SERIALIZATION_CONTAINER) {
         uint32_t len;
 
-        memcpy(&len, buf, 4);
+        memcpy(&len, &((const unsigned char *)buf)[1], 4);
 
         if (len != buf_len) return (NULL);
 
         b = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t *));
         if (b) {
             b->high_low_container =
-                ra_deserialize((const char *)buf + 4, buf_len - 4);
+                ra_deserialize((const char *)buf + 5, buf_len - 5);
             if (b->high_low_container == NULL) {
                 free(b);
                 b = NULL;
@@ -547,7 +547,8 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
         }
 
         return (b);
-    }
+    } else
+      return(NULL);
 }
 
 void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,

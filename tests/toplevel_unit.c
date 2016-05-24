@@ -375,6 +375,18 @@ void test_serialize() {
     free(serialized);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
+
+    /* ******* */
+    roaring_bitmap_t *old_bm = roaring_bitmap_create();
+    for(unsigned i = 0 ; i < 102 ; i++)
+      roaring_bitmap_add(old_bm, i);
+    uint32_t size;
+    char *buff = roaring_bitmap_serialize(old_bm, &size);
+    roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff, size);
+    assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) == (unsigned int)roaring_bitmap_get_cardinality(new_bm));
+    assert_true(roaring_bitmap_equals(old_bm, new_bm));    
+    roaring_bitmap_free(old_bm);
+    roaring_bitmap_free(new_bm);
 }
 
 void test_add() {

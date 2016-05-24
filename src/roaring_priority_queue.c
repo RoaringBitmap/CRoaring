@@ -121,12 +121,17 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                                        container_type_1,
                                        &container_result_type);
                 container_free(c1, container_type_1);
-
+                if( c != c2) {
+                   container_free(c2, container_type_2);
+                }
             } else {
                 c = container_lazy_ior(c1, container_type_1, c2,
                                        container_type_2,
                                        &container_result_type);
                 container_free(c2, container_type_2);
+                if( c != c1 ) {
+                   container_free(c1,container_type_1);
+                }
             }
             // since we assume that the initial containers are non-empty, the
             // result here
@@ -157,10 +162,10 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(answer->high_low_container, x2->high_low_container,
+        ra_append_move_range(answer->high_low_container, x2->high_low_container,
                              pos2, length2);
     } else if (pos2 == length2) {
-        ra_append_copy_range(answer->high_low_container, x1->high_low_container,
+        ra_append_move_range(answer->high_low_container, x1->high_low_container,
                              pos1, length1);
     }
     ra_free_without_containers(x1->high_low_container);
@@ -191,15 +196,14 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 		roaring_pq_element_t x2 = pq_poll(pq);
 
 		if (x1.is_temporary && x2.is_temporary) {
-			roaring_bitmap_t *newb = lazy_or_from_lazy_inputs(x1.bitmap,
+                        roaring_bitmap_t *newb =lazy_or_from_lazy_inputs(x1.bitmap,
 					x2.bitmap);
 			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
 			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =
 					true, .bitmap = newb };
-
 			pq_add(pq, &newelement);
 		} else if (x2.is_temporary) {
-			roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap);
+                        roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap);
 			x2.size = roaring_bitmap_portable_size_in_bytes(x2.bitmap);
 			pq_add(pq, &x2);
 		} else if (x1.is_temporary) {
@@ -208,8 +212,7 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 
 			pq_add(pq, &x1);
 		} else {
-
-			roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
+		roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
 					x2.bitmap);
 			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
 			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =
