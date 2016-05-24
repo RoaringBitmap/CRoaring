@@ -30,6 +30,12 @@ void bitset_container_clear(bitset_container_t *bitset) {
     bitset->cardinality = 0;
 }
 
+void bitset_container_set_all(bitset_container_t *bitset) {
+    memset(bitset->array, INT64_C(-1),
+           sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    bitset->cardinality = (1 << 16);
+}
+
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create() {
     bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));

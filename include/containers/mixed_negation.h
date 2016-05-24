@@ -42,9 +42,8 @@ bool bitset_container_negation_inplace(bitset_container_t *src, void **dst);
 
 /* Negation across the entire range of container
  * Compute the  negation of src  and write the result
- * to *dst.  A return value of 0 indicates an array result,
- * while a 1 indicates an bitset result, and 2 indicates a
- * run result.
+ * to *dst.
+ * Return values are the *_TYPECODES as defined * in containers.h
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
@@ -65,13 +64,16 @@ int run_container_negation_inplace(run_container_t *src, void **dst);
  * and false for an array container.  *dst is not preallocated.
  */
 bool array_container_negation_range(const array_container_t *src,
-                                    const uint16_t range_start,
-                                    const uint16_t range_end_inclusive,
+                                    const int range_start, const int range_end,
                                     void **dst);
 
 /* Even when the result would fit, it is unclear how to make an
- * inplace version without inefficient copying.
+ * inplace version without inefficient copying.  Thus this routine
+ * may be a wrapper for the non-in-place version
  */
+bool array_container_negation_range_inplace(array_container_t *src,
+                                            const int range_start,
+                                            const int range_end, void **dst);
 
 /* Negation across a range of the container
  * Compute the  negation of src  and write the result
@@ -81,8 +83,7 @@ bool array_container_negation_range(const array_container_t *src,
  * case of failure, *dst will be NULL.
  */
 bool bitset_container_negation_range(const bitset_container_t *src,
-                                     const uint16_t range_start,
-                                     const uint16_t range_end_inclusive,
+                                     const int range_start, const int range_end,
                                      void **dst);
 
 /* inplace version */
@@ -95,21 +96,17 @@ bool bitset_container_negation_range(const bitset_container_t *src,
  * In all cases, the result is in *dst.
  */
 bool bitset_container_negation_range_inplace(bitset_container_t *src,
-                                             const uint16_t range_start,
-                                             const uint16_t range_end_inclusive,
-                                             void **dst);
+                                             const int range_start,
+                                             const int range_end, void **dst);
 
 /* Negation across a range of container
  * Compute the  negation of src  and write the result
- * to *dst.  A return value of 0 indicates an array result,
- * while a 1 indicates a bitset result, and 2 indicates a
- * run result.
+ * to *dst.  Return values are the *_TYPECODES as defined * in containers.h
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
 int run_container_negation_range(const run_container_t *src,
-                                 const uint16_t range_start,
-                                 const uint16_t range_end_inclusive,
+                                 const int range_start, const int range_end,
                                  void **dst);
 
 /*
@@ -120,8 +117,7 @@ int run_container_negation_range(const run_container_t *src,
  * In all cases, the result is in *dst.
  */
 int run_container_negation_range_inplace(run_container_t *src,
-                                         const uint16_t range_start,
-                                         const uint16_t range_end_inclusive,
-                                         void **dst);
+                                         const int range_start,
+                                         const int range_end, void **dst);
 
 #endif /* INCLUDE_CONTAINERS_MIXED_NEGATION_H_ */

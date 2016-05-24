@@ -42,7 +42,7 @@ array_container_t *array_container_create_given_capacity(int32_t size);
 void array_container_free(array_container_t *array);
 
 /* Duplicate container */
-array_container_t *array_container_clone(array_container_t *src);
+array_container_t *array_container_clone(const array_container_t *src);
 
 int32_t array_container_serialize(array_container_t *container,
                                   char *buf) WARN_UNUSED;

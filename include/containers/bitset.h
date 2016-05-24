@@ -41,6 +41,9 @@ void bitset_container_free(bitset_container_t *bitset);
 /* Clear bitset (sets bits to 0). */
 void bitset_container_clear(bitset_container_t *bitset);
 
+/* Set all bits to 1. */
+void bitset_container_set_all(bitset_container_t *bitset);
+
 /* Duplicate bitset */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 

@@ -13,7 +13,6 @@ typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;
 } roaring_bitmap_t;
 
-
 /**
  * Creates a new bitmap (initially empty)
  */
@@ -88,7 +87,6 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
  */
 roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
                                          const roaring_bitmap_t **x);
-
 
 /**
  * Compute the union of 'number' bitmaps using a heap. This can
@@ -215,3 +213,20 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
  * or modified with roaring_bitmap_lazy_or_inplace.
  */
 void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *x1);
+
+/**
+ * compute the negation of the roaring bitmap within a specified interval.
+ * areas outside the range are passed through unchanged.
+ */
+
+roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
+                                      uint64_t range_start, uint64_t range_end);
+
+/**
+ * compute (in place) the negation of the roaring bitmap within a specified
+ * interval.
+ * areas outside the range are passed through unchanged.
+ */
+
+void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
+                                 uint64_t range_end);

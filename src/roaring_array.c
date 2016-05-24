@@ -194,28 +194,42 @@ void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
     }
 }
 
-#if 0
-// if actually used, should be documented and part of header file
 void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
-                       uint16_t before_start) {
-  int start_location = ra_get_index(sa, before_start);
-  if (start_location >= 0)
-    ++start_location;
-  else
-    start_location = -start_location -1;
+                            uint16_t before_start) {
+    int start_location = ra_get_index(sa, before_start);
+    if (start_location >= 0)
+        ++start_location;
+    else
+        start_location = -start_location - 1;
 
-  extend_array(ra, sa->size - start_location);
+    extend_array(ra, sa->size - start_location);
 
-  for (uint16_t i = start_location; i < sa->size; ++i) {
-    const int32_t pos = ra->size;
+    for (uint16_t i = start_location; i < sa->size; ++i) {
+        const int32_t pos = ra->size;
 
-    ra->keys[pos] = sa->keys[i];
-    ra->containers[pos] = container_clone(sa->containers[i], sa->typecodes[i]);
-    ra->typecodes[pos] = sa->typecodes[i];
-    ra->size++;
-  }
+        ra->keys[pos] = sa->keys[i];
+        ra->containers[pos] =
+            container_clone(sa->containers[i], sa->typecodes[i]);
+        ra->typecodes[pos] = sa->typecodes[i];
+        ra->size++;
+    }
 }
-#endif
+
+void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t stopping_key) {
+    for (uint16_t i = 0; i < sa->size; ++i) {
+        if (sa->keys[i] >= stopping_key) break;
+
+        extend_array(ra, 1);
+        const int32_t pos = ra->size;
+
+        ra->keys[pos] = sa->keys[i];
+        ra->containers[pos] =
+            container_clone(sa->containers[i], sa->typecodes[i]);
+        ra->typecodes[pos] = sa->typecodes[i];
+        ra->size++;
+    }
+}
 
 #if 0
 // a form of deep equality. Keys must match and containers must test as equal in
@@ -425,7 +439,7 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
     uint32_t off, l,
         cardinality = 0,
         tot_len =
-            4 /* tot_len */ + sizeof(roaring_array_t) +
+            1 /* initial byte type */ +4 /* tot_len */ + sizeof(roaring_array_t) +
             ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
     char *out;
     uint16_t *lens;
@@ -462,8 +476,11 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
     } else
         *serialize_len = tot_len;
 
+    /* Leave room for the first byte */
+    out[0] = SERIALIZATION_CONTAINER, off = 1;
+
     /* Total lenght (first 4 bytes of the serialization) */
-    memcpy(out, &tot_len, 4), off = 4;
+    memcpy(&out[off], &tot_len, 4), off += 4;
 
     l = sizeof(roaring_array_t);
     uint32_t saved_allocation_size = ra->allocation_size;

@@ -8,6 +8,10 @@
 
 #define MAX_CONTAINERS 65536
 
+#define SERIALIZATION_ARRAY_UINT32  1
+#define SERIALIZATION_CONTAINER     2
+
+
 enum {
     SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
     SERIAL_COOKIE = 12347,
@@ -97,6 +101,19 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index);
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 
+/** appends from sa to ra, ending with the greatest key that is
+ * is less or equal stopping_key
+ */
+void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t stopping_key);
+
+/** appends from sa to ra, starting with the smallest key that is
+ * is strictly greater than before_start
+ */
+
+void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t before_start);
+
 /**
  * Append new key-value pairs to ra, using  values from sa as is at indexes
  * [start_index, uint16_t end_index). Since no copy is made, this should
@@ -112,7 +129,8 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
                                uint8_t typecode);
 
 /**
- * If needed, increase the capacity of the array so that it can fit k values (at least);
+ * If needed, increase the capacity of the array so that it can fit k values (at
+ * least);
  */
 void extend_array(roaring_array_t *ra, uint32_t k);
 
@@ -171,5 +189,16 @@ bool ra_has_run_container(roaring_array_t *ra);
  * with Java and Go versions)
  */
 uint32_t ra_portable_header_size(roaring_array_t *ra);
+
+/**
+ * remove at index i, sliding over all entries after i
+ */
+void ra_remove_at_index(roaring_array_t *ra, int32_t i);
+
+/**
+ * remove a chunk of indices, sliding over entries after it
+   Is this used??
+ */
+// void ra_remove_index_range(roaring_array_t *ra, int32_t begin, int32_t end);
 
 #endif
