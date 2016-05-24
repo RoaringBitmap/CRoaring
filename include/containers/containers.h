@@ -61,7 +61,7 @@ static inline int container_get_cardinality(const void *container,
 
 /*  Create a container with all the values between min and max (included) at a
     distance k*step from min. */
-static inline void *container_from_range(int *type, uint16_t min, uint16_t max,
+static inline void *container_from_range(uint8_t *type, uint16_t min, uint16_t max,
                                                   uint16_t step) {
     uint16_t size = (max-min)/step;
     if(size < 4096) { // array container

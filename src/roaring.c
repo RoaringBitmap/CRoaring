@@ -64,9 +64,9 @@ static inline int32_t next_container_bound(uint32_t value) {
 roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     if(step == 0)
         return NULL;
-    roaring_bitmap_t *answer = roaring_bitmap_create();
     if(max <= min)
-        return answer;
+        return NULL;
+    roaring_bitmap_t *answer = roaring_bitmap_create();
     if(step >= (1<<16)) {
         for(uint32_t value = min ; value < max ; value += step) {
                 roaring_bitmap_add(answer, value);
@@ -77,7 +77,7 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t
     do {
         uint16_t key = min_tmp>>16;
         uint32_t real_max = minimum(max, max_tmp)-1;
-        int type;
+        uint8_t type;
         void *container = container_from_range(&type, min_tmp-(key<<16), real_max-(key<<16),
                                                           (uint16_t)step);
         ra_append(answer->high_low_container, key, container, type);

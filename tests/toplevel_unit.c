@@ -138,8 +138,8 @@ bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
 
 void test_bitmap_from_range() {
     assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
+    assert_true(roaring_bitmap_from_range(5, 1, 3) == NULL); // empty range
     bool no_error = true;
-    no_error = check_bitmap_from_range(5, 1, 3) && no_error; // empty range
     for(uint32_t i = 16 ; i < 1<<18 ; i*= 2) {
         uint32_t min = i-10;
         for(uint32_t delta = 16 ; delta < 1<<18 ; delta*=2) {
