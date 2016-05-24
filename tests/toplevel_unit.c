@@ -382,6 +382,7 @@ void test_serialize() {
     uint32_t size;
     char *buff = roaring_bitmap_serialize(old_bm, &size);
     roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff, size);
+    free(buff);
     assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) == (unsigned int)roaring_bitmap_get_cardinality(new_bm));
     assert_true(roaring_bitmap_equals(old_bm, new_bm));    
     roaring_bitmap_free(old_bm);
