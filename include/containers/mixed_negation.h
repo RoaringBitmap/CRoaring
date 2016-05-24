@@ -68,8 +68,12 @@ bool array_container_negation_range(const array_container_t *src,
                                     void **dst);
 
 /* Even when the result would fit, it is unclear how to make an
- * inplace version without inefficient copying.
+ * inplace version without inefficient copying.  Thus this routine
+ * may be a wrapper for the non-in-place version
  */
+bool array_container_negation_range_inplace(array_container_t *src,
+                                            const int range_start,
+                                            const int range_end, void **dst);
 
 /* Negation across a range of the container
  * Compute the  negation of src  and write the result

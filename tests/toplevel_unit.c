@@ -1055,6 +1055,7 @@ void test_inplace_negation_array2() {
     assert_non_null(r1);
     assert_int_equal(65536 * 5 - 100 + 1 + 100,
                      roaring_bitmap_get_cardinality(r1));
+    /* */
     roaring_bitmap_free(r1_orig);
     roaring_bitmap_free(r1);
 }
@@ -1300,6 +1301,7 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+
         cmocka_unit_test(test_example), cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
         cmocka_unit_test(test_printf_withrun), cmocka_unit_test(test_iterate),

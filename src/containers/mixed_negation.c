@@ -284,10 +284,6 @@ int run_container_negation_range_inplace(run_container_t *src,
                 run_container_contains(src, (uint16_t)(range_start - 1));
         first_val_in_range = run_container_contains(src, (uint16_t)range_start);
 
-        //    printf("rcneg inpl: lastb4 %d first %d\n",
-        //    (int)last_val_before_range,
-        //     (int)first_val_in_range);
-
         if (last_val_before_range == first_val_in_range) {
             last_val_in_range =
                 run_container_contains(src, (uint16_t)(range_end - 1));
@@ -295,9 +291,6 @@ int run_container_negation_range_inplace(run_container_t *src,
                 first_val_past_range =
                     run_container_contains(src, (uint16_t)range_end);
 
-            //  printf("rcneg inpl: last %d firstpst %d\n",
-            //  (int)last_val_in_range,
-            //     (int)first_val_past_range);
             if (last_val_in_range ==
                 first_val_past_range) {  // no space for inplace
                 int ans = run_container_negation_range(src, range_start,
@@ -309,8 +302,6 @@ int run_container_negation_range_inplace(run_container_t *src,
     }
     // all other cases: result will fit
 
-    //    printf("rcneg inpl: guaranteed to fit\n");
-
     run_container_t *ans = src;
     int my_nbr_runs = src->n_runs;
 
@@ -318,7 +309,6 @@ int run_container_negation_range_inplace(run_container_t *src,
     int k = 0;
     for (; (k < my_nbr_runs) && (src->runs[k].value < range_start); ++k) {
         // ans->runs[k] = src->runs[k]; (would be self-copy)
-        // printf("noncopy at %d\n", k);  // temp temp
         ans->n_runs++;
     }
 

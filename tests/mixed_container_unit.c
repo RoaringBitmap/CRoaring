@@ -378,9 +378,6 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
 static int run_negation_range_tests_simpler(int k, int h, int start_offset,
                                             int r_start, int r_end,
                                             bool inplace) {
-    // printf("rnrts k=%d h=%d so=%d rs=%d re=%d inpl=%d\n", k, h, start_offset,
-    // r_start, r_end, (int)inplace);
-
     int card = 0;
     run_container_t* RI =
         run_container_create_given_capacity((1 << 16) / k + 1);
@@ -451,7 +448,6 @@ static int run_many_negation_range_tests_simpler(bool inplace) {
             printf("  k=%d\n", k);
             for (int start_offset = 0; start_offset < 1000;
                  start_offset = start_offset * 2.7 + 1) {
-                printf("    so=%d\n", start_offset);
                 for (int r_start = 0; r_start < 65535; r_start += 10013)
                     for (int span = 0; r_start + span < 65536;
                          span = span * 3 + 1) {
@@ -751,14 +747,14 @@ int main() {
         cmocka_unit_test(run_negation_range_test7),
         cmocka_unit_test(run_negation_range_test8),
         cmocka_unit_test(run_negation_range_test9),
-        /* two very expensive tests that probably should usually be omitted
+        /* two very expensive tests that probably should usually be omitted */
 
         cmocka_unit_test(
             run_many_negation_range_tests_simpler_notinplace),  // lots of
                                                                 // partial
                                                                 // ranges,
         cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),
-        */
+        /* */
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

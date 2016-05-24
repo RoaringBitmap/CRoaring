@@ -913,6 +913,7 @@ static inline void *container_inot(void *c, uint8_t typ, uint8_t *result_type) {
             result = bitset_container_create();
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             array_container_negation(c, result);
+            array_container_free(c);
             return result;
         case RUN_CONTAINER_TYPE_CODE:
             *result_type = run_container_negation_inplace(c, &result);
@@ -936,10 +937,9 @@ static inline void *container_inot_range(void *c, uint8_t typ,
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
-        case ARRAY_CONTAINER_TYPE_CODE:  // result not doomed to array, but not
-                                         // easy to do inplace
-            *result_type = array_container_negation_range(c, range_start,
-                                                          range_end, &result)
+        case ARRAY_CONTAINER_TYPE_CODE:
+            *result_type = array_container_negation_range_inplace(
+                               c, range_start, range_end, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
