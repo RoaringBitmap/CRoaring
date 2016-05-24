@@ -1199,12 +1199,12 @@ void test_inplace_negation_run2() { test_inplace_negation_helper(true, 30); }
 void test_rand_flips() {
     srand(1234);
     const int min_runs = 1;
-    const int flip_trials = 100;
+    const int flip_trials = 5;// these are expensive tests
     const int range = 2000000;
     char *input = malloc(range);
     char *output = malloc(range);
 
-    for (int card = 2; card < 1000000; card *= 2) {
+    for (int card = 2; card < 1000000; card *= 8) {
         printf("test_rand_flips with attempted card %d", card);
 
         roaring_bitmap_t *r = roaring_bitmap_create();
@@ -1255,12 +1255,12 @@ void test_rand_flips() {
 void test_inplace_rand_flips() {
     srand(1234);
     const int min_runs = 1;
-    const int flip_trials = 100;
+    const int flip_trials = 5; // these are expensive tests
     const int range = 2000000;
     char *input = malloc(range);
     char *output = malloc(range);
 
-    for (int card = 2; card < 1000000; card *= 2) {
+    for (int card = 2; card < 1000000; card *= 8) {
         printf("test_inplace_rand_flips with attempted card %d", card);
 
         roaring_bitmap_t *r = roaring_bitmap_create();

@@ -88,7 +88,7 @@ void array_bitset_and_or_test() {
     bitset_container_free(BO);
 }
 
-int array_negation_empty_test() {
+void array_negation_empty_test() {
     array_container_t* AI = array_container_create();
     bitset_container_t* BO = bitset_container_create();
 
@@ -98,10 +98,9 @@ int array_negation_empty_test() {
 
     array_container_free(AI);
     bitset_container_free(BO);
-    return 1;
 }
 
-int array_negation_test() {
+void array_negation_test() {
     int ctr = 0;
     array_container_t* AI = array_container_create();
     bitset_container_t* BO = bitset_container_create();
@@ -127,7 +126,6 @@ int array_negation_test() {
     array_container_free(AI);
     bitset_container_free(BO);
 
-    return 1;
 }
 
 static int array_negation_range_test(int r_start, int r_end, bool is_bitset) {
@@ -182,21 +180,21 @@ static int array_negation_range_test(int r_start, int r_end, bool is_bitset) {
 }
 
 /* result is a bitset.  Range fits neatly in words */
-int array_negation_range_test1() {
-    return array_negation_range_test(0x4000, 0xc000, true);
+void array_negation_range_test1() {
+    array_negation_range_test(0x4000, 0xc000, true);
 }
 
 /* result is a bitset.  Range begins and ends mid word */
-int array_negation_range_test1a() {
-    return array_negation_range_test(0x4010, 0xc010, true);
+void array_negation_range_test1a() {
+    array_negation_range_test(0x4010, 0xc010, true);
 }
 /* result is an array */
-int array_negation_range_test2() {
-    return array_negation_range_test(0x7f00, 0x8030, false);
+void array_negation_range_test2() {
+    array_negation_range_test(0x7f00, 0x8030, false);
 }
 /* Empty range.  result is a clone */
-int array_negation_range_test3() {
-    return array_negation_range_test(0x7800, 0x7800, false);
+void array_negation_range_test3() {
+    array_negation_range_test(0x7800, 0x7800, false);
 }
 
 /* sparsity parameter 1=empty; k: every kth is NOT set; k=100 will negate to
@@ -269,27 +267,27 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
 }
 
 /* result is a bitset */
-int bitset_negation_range_test1() {
+void bitset_negation_range_test1() {
     // 33% density will be a bitmap and remain so after any range negated
-    return bitset_negation_range_tests(3, 0x7f00, 0x8030, true, false);
+    bitset_negation_range_tests(3, 0x7f00, 0x8030, true, false);
 }
 
 /* result is a array */
-int bitset_negation_range_test2() {
+void bitset_negation_range_test2() {
     // 99% density will be a bitmap and become array when mostly flipped
-    return bitset_negation_range_tests(100, 0x080, 0xff80, false, false);
+    bitset_negation_range_tests(100, 0x080, 0xff80, false, false);
 }
 
 /* inplace: result is a bitset */
-int bitset_negation_range_inplace_test1() {
+void bitset_negation_range_inplace_test1() {
     // 33% density will be a bitmap and remain so after any range negated
-    return bitset_negation_range_tests(3, 0x7f00, 0x8030, true, true);
+    bitset_negation_range_tests(3, 0x7f00, 0x8030, true, true);
 }
 
 /* inplace: result is a array */
-int bitset_negation_range_inplace_test2() {
+void bitset_negation_range_inplace_test2() {
     // 99% density will be a bitmap and become array when mostly flipped
-    return bitset_negation_range_tests(100, 0x080, 0xff80, false, true);
+    bitset_negation_range_tests(100, 0x080, 0xff80, false, true);
 }
 
 /* specify how often runs start (k).  Runs are length h, h+1, .. k-1, 1, 2...*/
@@ -461,16 +459,16 @@ static int run_many_negation_range_tests_simpler(bool inplace) {
     return 1;
 }
 
-int run_many_negation_range_tests_simpler_notinplace() {
-    return run_many_negation_range_tests_simpler(false);
+void run_many_negation_range_tests_simpler_notinplace() {
+    run_many_negation_range_tests_simpler(false);
 }
 
-int run_many_negation_range_tests_simpler_inplace() {
-    return run_many_negation_range_tests_simpler(true);
+void run_many_negation_range_tests_simpler_inplace() {
+    run_many_negation_range_tests_simpler(true);
 }
 
 /* result is a bitset */
-int run_negation_range_inplace_test1() {
+void run_negation_range_inplace_test1() {
     // runs of length 7, 8, 9 begin every 10
     // starting at 0.
     // (should not have been run encoded, but...)
@@ -479,12 +477,12 @@ int run_negation_range_inplace_test1() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
+    run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, true,
                                     false);  // request but don't get inplace
 }
 
-int run_negation_range_inplace_test2() {
+void run_negation_range_inplace_test2() {
     // runs of length 7, 8, 9 begin every 10
     // starting at 1.
     // last run starts at 65531 hence we end in a
@@ -492,12 +490,12 @@ int run_negation_range_inplace_test2() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
+    run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, true,
                                     false);  // request but don't get inplace
 }
 
-int run_negation_range_inplace_test3() {
+void run_negation_range_inplace_test3() {
     // runs of length 2,3,..9 begin every 10
     // starting at 1.
     // last run starts at 65531. Run length is (6553
@@ -506,13 +504,13 @@ int run_negation_range_inplace_test3() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
+    run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, true,
                                     false);  // request but don't get inplace
 }
 
 /* Results are going to be arrays*/
-int run_negation_range_inplace_test4() {
+void run_negation_range_inplace_test4() {
     // runs of length 999 begin every 1000 starting
     // at 0.
     // last run starts at 65000 hence we end in a
@@ -520,12 +518,12 @@ int run_negation_range_inplace_test4() {
     // negation over whole range.
     // Result should be array
 
-    return run_negation_range_tests(1000, 999, 0, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 999, 0, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, true,
                                     false);  // request but don't get inplace
 }
 
-int run_negation_range_inplace_test5() {
+void run_negation_range_inplace_test5() {
     // runs of length 999 begin every 10000 starting
     // at 1.
     // last run starts at 65001 hence we end in a
@@ -533,12 +531,12 @@ int run_negation_range_inplace_test5() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(1000, 999, 1, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 999, 1, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, true,
                                     false);  // request but don't get inplace
 }
 
-int run_negation_range_inplace_test6() {
+void run_negation_range_inplace_test6() {
     // runs of length 999 begin every 10000 starting
     // at 536
     // last run starts at 64536.
@@ -546,13 +544,13 @@ int run_negation_range_inplace_test6() {
     // negation over whole range except some
     // initial.  Result should be array
 
-    return run_negation_range_tests(1000, 999, 536, 530, 0x10000,
+    run_negation_range_tests(1000, 999, 536, 530, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, true,
                                     false);  // request but don't get inplace
 }
 
 /* Results are going to be runs*/
-int run_negation_range_inplace_test7() {
+void run_negation_range_inplace_test7() {
     // short runs of length 2, 3, .. 67 begin every
     // 1000 starting at 550.
     // last run starts at 65550 hence we end in a
@@ -561,12 +559,12 @@ int run_negation_range_inplace_test7() {
     // run.
     // should always fit in the previous space
 
-    return run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, true,
                                     true);  // request and  get inplace
 }
 
-int run_negation_range_inplace_test8() {
+void run_negation_range_inplace_test8() {
     // runs of length 2..67 begin every 10000
     // starting at 0.
     // last run starts at 65000 hence we end outside
@@ -574,12 +572,12 @@ int run_negation_range_inplace_test8() {
     // negation over whole range.  Result should be
     // run and will fit.
 
-    return run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, true,
                                     true);  // request, get inplace
 }
 
-int run_negation_range_inplace_test9() {
+void run_negation_range_inplace_test9() {
     // runs of length 2..67 begin every 10000
     // starting at 1
     // last run starts at 64001.
@@ -589,7 +587,7 @@ int run_negation_range_inplace_test9() {
     // more than original, and buffer happens to not
     // have any extra space.
 
-    return run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, true,
                                     false);  // request, but not get, inplace
 }
@@ -597,7 +595,7 @@ int run_negation_range_inplace_test9() {
 // now, 9 more tests that do not request inplace.
 
 /* result is a bitset */
-int run_negation_range_test1() {
+void run_negation_range_test1() {
     // runs of length 7, 8, 9 begin every 10
     // starting at 0.
     // (should not have been run encoded, but...)
@@ -606,11 +604,11 @@ int run_negation_range_test1() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
+    run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, false, false);
 }
 
-int run_negation_range_test2() {
+void run_negation_range_test2() {
     // runs of length 7, 8, 9 begin every 10
     // starting at 1.
     // last run starts at 65531 hence we end in a
@@ -618,11 +616,11 @@ int run_negation_range_test2() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
+    run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, false, false);
 }
 
-int run_negation_range_test3() {
+void run_negation_range_test3() {
     // runs of length 2,3,..9 begin every 10
     // starting at 1.
     // last run starts at 65531. Run length is (6553
@@ -631,13 +629,13 @@ int run_negation_range_test3() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
+    run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
                                     BITSET_CONTAINER_TYPE_CODE, false,
                                     false);  // request but don't get inplace
 }
 
 /* Results are going to be arrays*/
-int run_negation_range_test4() {
+void run_negation_range_test4() {
     // runs of length 999 begin every 1000 starting
     // at 0.
     // last run starts at 65000 hence we end in a
@@ -645,11 +643,11 @@ int run_negation_range_test4() {
     // negation over whole range.  Result should be
     // array
 
-    return run_negation_range_tests(1000, 999, 0, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 999, 0, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, false, false);
 }
 
-int run_negation_range_test5() {
+void run_negation_range_test5() {
     // runs of length 999 begin every 10000 starting
     // at 1.
     // last run starts at 65001 hence we end in a
@@ -657,11 +655,11 @@ int run_negation_range_test5() {
     // negation over whole range.  Result should be
     // bitset
 
-    return run_negation_range_tests(1000, 999, 1, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 999, 1, 0x0000, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, false, false);
 }
 
-int run_negation_range_test6() {
+void run_negation_range_test6() {
     // runs of length 999 begin every 10000 starting
     // at 536
     // last run starts at 64536.
@@ -669,12 +667,12 @@ int run_negation_range_test6() {
     // negation over whole range except initial
     // fragment. Result should be array
 
-    return run_negation_range_tests(1000, 999, 536, 530, 0x10000,
+    run_negation_range_tests(1000, 999, 536, 530, 0x10000,
                                     ARRAY_CONTAINER_TYPE_CODE, false, false);
 }
 
 /* Results are going to be runs*/
-int run_negation_range_test7() {
+void run_negation_range_test7() {
     // short runs of length 2, 3, .. 67 begin every
     // 1000 starting at 550.
     // last run starts at 65550 hence we end in a
@@ -683,11 +681,11 @@ int run_negation_range_test7() {
     // run.
     // should always fit in the previous space
 
-    return run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, false, false);
 }
 
-int run_negation_range_test8() {
+void run_negation_range_test8() {
     // runs of length 2..67 begin every 10000
     // starting at 0.
     // last run starts at 65000 hence we end outside
@@ -695,11 +693,11 @@ int run_negation_range_test8() {
     // negation over whole range.  Result should be
     // run and will fit.
 
-    return run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, false, false);
 }
 
-int run_negation_range_test9() {
+void run_negation_range_test9() {
     // runs of length 2..67 begin every 10000
     // starting at 1
     // last run starts at 64001.
@@ -709,13 +707,12 @@ int run_negation_range_test9() {
     // more than original, but we think buffer will
     // usually have space  :)
 
-    return run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
+    run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
                                     RUN_CONTAINER_TYPE_CODE, false, false);
 }
 
 /* now tests that negate just part of the range:  18
  * more... */
-// TODO
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_test),
@@ -749,11 +746,11 @@ int main() {
         cmocka_unit_test(run_negation_range_test9),
         /* two very expensive tests that probably should usually be omitted */
 
-        cmocka_unit_test(
+        /*cmocka_unit_test(
             run_many_negation_range_tests_simpler_notinplace),  // lots of
                                                                 // partial
                                                                 // ranges,
-        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),
+        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),*/
         /* */
     };
 
