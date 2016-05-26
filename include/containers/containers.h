@@ -188,11 +188,12 @@ static inline int container_get_cardinality(const void *container,
     distance k*step from min. */
 static inline void *container_from_range(uint8_t *type, uint32_t min, uint32_t max,
                                                   uint16_t step) {
+    if(step == 0) return NULL; // being paranoid
     if(step == 1) {
        *type = RUN_CONTAINER_TYPE_CODE;
        return run_container_create_range(min, max);
     }
-    uint32_t size = (max-min+step-1)/step;
+    int size = (max-min+step-1)/step;
     if(size < 4096) { // array container
         *type = ARRAY_CONTAINER_TYPE_CODE;
         array_container_t * array = array_container_create_given_capacity(size);
