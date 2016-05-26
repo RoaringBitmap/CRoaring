@@ -37,7 +37,7 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
 }
 
 /* Create a new run container. Return NULL in case of failure. */
-run_container_t *run_container_create() {
+run_container_t *run_container_create(void) {
     return run_container_create_given_capacity(DEFAULT_INIT_SIZE);
 }
 

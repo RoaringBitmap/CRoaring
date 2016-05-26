@@ -206,8 +206,8 @@ static inline bool bitset_container_nonzero_cardinality(
 void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest);
 
-/*  Add all the values between min and max (included) at a distance k*step from min. */
-void bitset_container_add_from_range(bitset_container_t *bitset, uint16_t min, uint16_t max,
+/*  Add all the values [min,max) at a distance k*step from min: min, min+step,.... */
+void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min, uint32_t max,
                                    uint16_t step);
 
 /* Get the number of bits set (force computation). This does not modify bitset.

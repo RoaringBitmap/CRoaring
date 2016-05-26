@@ -43,11 +43,11 @@ struct run_container_s {
 typedef struct run_container_s run_container_t;
 
 /* Create a new run container. Return NULL in case of failure. */
-run_container_t *run_container_create();
+run_container_t *run_container_create(void);
 
 /* Create a new run container with given capacity. Return NULL in case of
  * failure. */
-run_container_t *run_container_create_given_capacity();
+run_container_t *run_container_create_given_capacity(int32_t size);
 
 /* Free memory owned by `run'. */
 void run_container_free(run_container_t *run);
@@ -87,6 +87,8 @@ void run_container_copy(const run_container_t *src, run_container_t *dst);
 static inline void run_container_clear(run_container_t *run) {
     run->n_runs = 0;
 }
+
+
 
 /**
  * Append run described by vl to the run container, possibly merging.

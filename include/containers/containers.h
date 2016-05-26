@@ -184,21 +184,27 @@ static inline int container_get_cardinality(const void *container,
     return 0;  // unreached
 }
 
-/*  Create a container with all the values between min and max (included) at a
+/*  Create a container with all the values between in [min,max) at a
     distance k*step from min. */
-static inline void *container_from_range(uint8_t *type, uint16_t min, uint16_t max,
+static inline void *container_from_range(uint8_t *type, uint32_t min, uint32_t max,
                                                   uint16_t step) {
-    uint16_t size = (max-min)/step;
+    if(step == 1) {
+       *type = RUN_CONTAINER_TYPE_CODE;
+       return run_container_create_range(min, max);
+    }
+    uint32_t size = (max-min+step-1)/step;
     if(size < 4096) { // array container
         *type = ARRAY_CONTAINER_TYPE_CODE;
         array_container_t * array = array_container_create_given_capacity(size);
         array_container_add_from_range(array, min, max, step);
+        assert(array->cardinality == size);
         return array;
     }
     else { // bitset container
         *type = BITSET_CONTAINER_TYPE_CODE;
         bitset_container_t *bitset = bitset_container_create();
         bitset_container_add_from_range(bitset, min, max, step);
+        assert(bitset->cardinality == size);
         return bitset;
     }
 }

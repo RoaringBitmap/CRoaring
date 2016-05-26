@@ -129,9 +129,9 @@ static void array_container_append(array_container_t *arr, uint16_t pos) {
     arr->array[arr->cardinality++] = pos;
 }
 
-void array_container_add_from_range(array_container_t *arr, uint16_t min, uint16_t max,
+void array_container_add_from_range(array_container_t *arr, uint32_t min, uint32_t max,
                                     uint16_t step) {
-    for(uint32_t value = min ; value <= max ; value += step) {
+    for(uint32_t value = min ; value < max ; value += step) {
         array_container_append(arr, value);
     }
 }

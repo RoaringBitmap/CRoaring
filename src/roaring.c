@@ -59,10 +59,6 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
 
 static inline int32_t minimum(uint32_t a, uint32_t b) { return (a < b) ? a : b; }
 
-static inline int32_t next_container_bound(uint32_t value) {
-    return (1<<16)*(value/(1<<16)) + (1<<16);
-}
-
 roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     if(step == 0)
         return NULL;
@@ -75,18 +71,19 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t
         }
         return answer;
     }
-    uint32_t min_tmp = min, max_tmp = next_container_bound(min);
+    uint32_t min_tmp = min;
     do {
-        uint16_t key = min_tmp>>16;
-        uint32_t real_max = minimum(max, max_tmp)-1;
+        uint32_t key = min_tmp>>16;
+        uint32_t container_min = min_tmp & 0xFFFF;
+        uint32_t container_max = minimum(max-(key<<16),1<<16);
         uint8_t type;
-        void *container = container_from_range(&type, min_tmp-(key<<16), real_max-(key<<16),
+        void *container = container_from_range(&type, container_min, container_max,
                                                           (uint16_t)step);
         ra_append(answer->high_low_container, key, container, type);
-        uint32_t size = (real_max-min_tmp)/step;
-        min_tmp += (size+1)*step;
-        max_tmp = next_container_bound(min_tmp);
+        uint32_t gap = container_max - container_min + step - 1;
+        min_tmp += gap - (gap % step);
     } while(min_tmp < max);
+    // cardinality of bitmap will be ((uint64_t) max - min + step - 1 ) / step
     return answer;
 }
 
