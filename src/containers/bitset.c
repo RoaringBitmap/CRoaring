@@ -62,6 +62,32 @@ void bitset_container_copy(const bitset_container_t *source,
            sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
+void bitset_container_add_from_range(bitset_container_t *bitset, uint16_t min, uint16_t max,
+                                   uint16_t step) {
+    if(64%step == 0) {
+       uint64_t mask = 0;
+        for(uint64_t value = min%step ; value < 64 ; value += step) {
+            mask |= ((uint64_t)1<<value);
+        }
+        uint32_t firstword = min / 64;
+        uint32_t endword = (max - 1) / 64;
+        bitset->cardinality = (max-min+1)/step + ((max-min+1)%step!=0);
+        if (firstword == endword) {
+            bitset->array[firstword] |= mask&((~UINT64_C(0)) << (min % 64)) &
+            ((~UINT64_C(0)) >> ((-max) % 64));
+            return;
+        }
+        bitset->array[firstword] |= mask&((~UINT64_C(0)) << (min % 64));
+        for (uint32_t i = firstword + 1; i < endword; i++) bitset->array[i] = mask;
+        bitset->array[endword] |= mask&((~UINT64_C(0)) >> ((-max-1) % 64));
+    }
+    else {
+        for(uint32_t value = min ; value <= max ; value += step) {
+            bitset_container_add(bitset, value);
+        }
+    }
+}
+
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     free(bitset->array);
