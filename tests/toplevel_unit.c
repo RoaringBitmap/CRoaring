@@ -149,6 +149,41 @@ void test_example_false() {
   test_example(false);
 }
 
+bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
+    roaring_bitmap_t *result = roaring_bitmap_from_range(min, max, step);
+    assert_non_null(result);
+    roaring_bitmap_t *expected = roaring_bitmap_create();
+    assert_non_null(expected);
+    for(uint32_t value = min ; value < max ; value += step) {
+        roaring_bitmap_add(expected, value);
+    }
+    bool is_equal = roaring_bitmap_equals(expected, result);
+    if(!is_equal) {
+        fprintf(stderr, "[ERROR] check_bitmap_from_range(%u, %u, %u)\n",
+            (unsigned)min, (unsigned)max, (unsigned)step);
+    }
+    return is_equal;
+}
+
+void test_bitmap_from_range() {
+    assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
+    assert_true(roaring_bitmap_from_range(5, 1, 3) == NULL); // empty range
+    bool no_error = true;
+    for(uint32_t i = 16 ; i < 1<<18 ; i*= 2) {
+        uint32_t min = i-10;
+        for(uint32_t delta = 16 ; delta < 1<<18 ; delta*=2) {
+            uint32_t max = i+delta;
+            for(uint32_t step = 1 ; step <= 64 ; step*=2) { // check powers of 2
+                no_error = check_bitmap_from_range(min, max, step) && no_error;
+            }
+            for(uint32_t step = 1 ; step <= 81 ; step*=3) { // check powers of 3
+                no_error = check_bitmap_from_range(min, max, step) && no_error;
+            }
+        }
+    }
+    assert_true(no_error);
+}
+
 void test_printf() {
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
@@ -1356,6 +1391,7 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
+        cmocka_unit_test(test_bitmap_from_range),
         cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
         cmocka_unit_test(test_printf_withrun), cmocka_unit_test(test_iterate),
