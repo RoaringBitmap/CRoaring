@@ -12,7 +12,7 @@ void show_structure(roaring_array_t *);  // debug
  * Once you have collected all the integers, build the bitmaps.
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
-                                             uint32_t **numbers, size_t count) {
+                                             uint32_t **numbers, size_t count, bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -20,6 +20,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
+        answer[i]->copy_on_write = copy_on_write;
     }
     printf("\n");
     return answer;
@@ -232,7 +233,6 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
             printf("runs unions incorrect\n");
             return false;
         }
-
         if (!slow_bitmap_equals(tempornorun, temporruns)) {
             printf("Unions don't agree! (slow) \n");
             return false;
@@ -248,7 +248,6 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         }
         roaring_bitmap_free(tempornorun);
         roaring_bitmap_free(temporruns);
-
         tempornorun = inplace_union(rnorun[i], rnorun[i + 1]);
         if (!is_union_correct(rnorun[i], rnorun[i + 1])) {
             printf("[inplace] no-run union incorrect\n");
@@ -295,6 +294,9 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rnorun);
     roaring_bitmap_t *temporrunsheap =
         roaring_bitmap_or_many_heap(count, (const roaring_bitmap_t **)rruns);
+    //assert(slow_bitmap_equals(tempornorun, tempornorunheap));
+    //assert(slow_bitmap_equals(temporruns,temporrunsheap));
+
     assert(roaring_bitmap_equals(tempornorun, tempornorunheap));
     assert(roaring_bitmap_equals(temporruns,temporrunsheap));
     roaring_bitmap_free(tempornorunheap);
@@ -319,7 +321,6 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
                 roaring_bitmap_or(rnorun[i], longtempornorun);
             roaring_bitmap_t *t2 = roaring_bitmap_or(rruns[i], longtemporruns);
             assert(roaring_bitmap_equals(t1, t2));
-
             roaring_bitmap_free(longtempornorun);
             longtempornorun = t1;
             roaring_bitmap_free(longtemporruns);
@@ -353,8 +354,8 @@ bool is_bitmap_equal_to_array(roaring_bitmap_t *bitmap, uint32_t *vals,
     return answer;
 }
 
-bool loadAndCheckAll(const char *dirname) {
-    printf("[%s] %s datadir=%s\n", __FILE__, __func__, dirname);
+bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
+    printf("[%s] %s datadir=%s %s\n", __FILE__, __func__, dirname, copy_on_write ? "copy-on-write":"hard-copies");
 
     char *extension = ".txt";
     size_t count;
@@ -370,7 +371,7 @@ bool loadAndCheckAll(const char *dirname) {
         return false;
     }
 
-    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count);
+    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count, copy_on_write);
     for (size_t i = 0; i < count; i++) {
         if (!is_bitmap_equal_to_array(bitmaps[i], numbers[i], howmany[i])) {
             printf("arrays don't agree with set values\n");
@@ -434,10 +435,15 @@ int main() {
     strcpy(dirbuffer, BENCHMARK_DATA_DIR);
     for (size_t i = 0; i < sizeof(datadir) / sizeof(const char *); i++) {
         strcpy(dirbuffer + bddl, datadir[i]);
-        if (!loadAndCheckAll(dirbuffer)) {
+        if (!loadAndCheckAll(dirbuffer,false)) {
             printf("failure\n");
             return -1;
         }
+        if (!loadAndCheckAll(dirbuffer,true)) {
+            printf("failure\n");
+            return -1;
+        }
+
     }
 
     return EXIT_SUCCESS;

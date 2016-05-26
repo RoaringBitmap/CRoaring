@@ -313,7 +313,7 @@ int32_t array_container_serialize(array_container_t *container, char *buf) {
  * array_container_size_in_bytes(container).
  *
  */
-int32_t array_container_write(array_container_t *container, char *buf) {
+int32_t array_container_write(const array_container_t *container, char *buf) {
     if (IS_BIG_ENDIAN) {
         // forcing little endian (could be faster)
         for (int32_t i = 0; i < container->cardinality; i++) {

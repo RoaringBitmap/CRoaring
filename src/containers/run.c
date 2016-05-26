@@ -553,7 +553,7 @@ int32_t run_container_serialize(run_container_t *container, char *buf) {
     return (off + l);
 }
 
-int32_t run_container_write(run_container_t *container, char *buf) {
+int32_t run_container_write(const run_container_t *container, char *buf) {
     if (IS_BIG_ENDIAN) {
         // forcing little endian (could be faster)
         buf[0] = (uint8_t)(container->n_runs);

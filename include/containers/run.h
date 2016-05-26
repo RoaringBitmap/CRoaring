@@ -228,7 +228,7 @@ void run_container_iterate(const run_container_t *cont, uint32_t base,
  * Roaring.
  * The number of bytes written should be run_container_size_in_bytes(container).
  */
-int32_t run_container_write(run_container_t *container, char *buf);
+int32_t run_container_write(const run_container_t *container, char *buf);
 
 /**
  * Reads the instance from buf, outputs how many bytes were read.
@@ -246,7 +246,7 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
  * Return the serialized size in bytes of a container (see run_container_write).
  * This is meant to be compatible with the Java and Go versions of Roaring.
  */
-static inline int32_t run_container_size_in_bytes(run_container_t *container) {
+static inline int32_t run_container_size_in_bytes(const run_container_t *container) {
     return run_container_serialized_size_in_bytes(container->n_runs);
 }
 

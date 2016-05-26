@@ -109,10 +109,16 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
     while (true) {
         if (s1 == s2) {
+            // todo: unsharing can be inefficient as it may create a clone where none
+            // is needed, but it has the benefit of being easy to reason about.
+            ra_unshare_container_at_index(x1->high_low_container,pos1);
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
+            assert(container_type_1 != SHARED_CONTAINER_TYPE_CODE);
+            ra_unshare_container_at_index(x2->high_low_container,pos2);
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
+            assert(container_type_2 != SHARED_CONTAINER_TYPE_CODE);
             void *c;
 
             if ((container_type_2 == BITSET_CONTAINER_TYPE_CODE) &&
@@ -120,7 +126,7 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                 c = container_lazy_ior(c2, container_type_2, c1,
                                        container_type_1,
                                        &container_result_type);
-                container_free(c1, container_type_1);
+               container_free(c1, container_type_1);
                 if( c != c2) {
                    container_free(c2, container_type_2);
                 }
@@ -212,7 +218,7 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 
 			pq_add(pq, &x1);
 		} else {
-		roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
+		  roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
 					x2.bitmap);
 			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
 			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =

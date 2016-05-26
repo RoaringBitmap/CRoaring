@@ -79,6 +79,7 @@ roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
 free(arr1);
 assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
 
+
 // we can copy and compare bitmaps
 roaring_bitmap_t *z = roaring_bitmap_copy(r3);
 assert(roaring_bitmap_equals(r3, z));  // what we recover is equal
@@ -181,6 +182,10 @@ To reformat your code according to the style convention (make sure that ``clang-
 ```
 ./tools/clang-format.sh
 ```
+
+# Python Wrappers
+
+Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
 
 # References and further reading
 

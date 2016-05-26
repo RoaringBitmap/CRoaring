@@ -34,6 +34,7 @@ typedef struct roaring_array_s {
     uint16_t *keys;
     void **containers;
     uint8_t *typecodes;
+    uint8_t *shared; /* for COW, used as a bitset*/
 } roaring_array_t;
 
 /**
@@ -50,7 +51,7 @@ roaring_array_t *ra_create_with_capacity(uint32_t cap);
 /**
  * Copies this roaring array (caller is responsible for memory management)
  */
-roaring_array_t *ra_copy(roaring_array_t *r);
+roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write);
 
 /**
  * Frees the memory used by a roaring array
@@ -73,6 +74,7 @@ int32_t ra_get_index(roaring_array_t *ra, uint16_t x);
 void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
                                 uint8_t *typecode);
 
+
 /**
  * Retrieves the key at index i
  */
@@ -90,37 +92,43 @@ void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
 void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
 
 /**
- * Append a new key-value pair to ra, cloning a value from sa at index index
+ * Append a new key-value pair to ra, cloning (in COW sense) a value from sa at index index
  */
-void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index);
+void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index, bool copy_on_write);
 
 /**
- * Append new key-value pairs to ra, cloning  values from sa at indexes
+ * Append new key-value pairs to ra, cloning (in COW sense)  values from sa at indexes
  * [start_index, uint16_t end_index)
  */
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index);
+                          uint16_t start_index, uint16_t end_index, bool copy_on_write);
 
 /** appends from sa to ra, ending with the greatest key that is
  * is less or equal stopping_key
  */
 void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
-                            uint16_t stopping_key);
+                            uint16_t stopping_key, bool copy_on_write);
 
 /** appends from sa to ra, starting with the smallest key that is
  * is strictly greater than before_start
  */
 
 void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
-                            uint16_t before_start);
+                            uint16_t before_start, bool copy_on_write);
 
 /**
- * Append new key-value pairs to ra, using  values from sa as is at indexes
- * [start_index, uint16_t end_index). Since no copy is made, this should
- * be used with care.
- */
+ * Move the key-value pairs to ra from sa at indexes
+ * [start_index, uint16_t end_index), old array should not be freed
+ * (use ra_free_without_containers)
+ **/
 void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
+/**
+ * Append new key-value pairs to ra,  from sa at indexes
+ * [start_index, uint16_t end_index)
+ */
+void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
+                          uint16_t start_index, uint16_t end_index, bool copy_on_write);
 
 /**
  * Set the container at the corresponding index using the specified typecode.
@@ -191,13 +199,17 @@ bool ra_has_run_container(roaring_array_t *ra);
 uint32_t ra_portable_header_size(roaring_array_t *ra);
 
 /**
+ * If the container at the index i is share, unshare it (creating a local copy if needed).
+ */
+void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) ;
+
+/**
  * remove at index i, sliding over all entries after i
  */
 void ra_remove_at_index(roaring_array_t *ra, int32_t i);
 
 /**
  * remove a chunk of indices, sliding over entries after it
-   Is this used??
  */
 // void ra_remove_index_range(roaring_array_t *ra, int32_t begin, int32_t end);
 

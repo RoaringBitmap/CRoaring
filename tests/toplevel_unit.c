@@ -25,9 +25,25 @@ void roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
 }
 
-void test_example() {
+void can_add_to_copies(bool copy_on_write) {
+    roaring_bitmap_t *bm1 = roaring_bitmap_create();
+    bm1->copy_on_write = copy_on_write;
+    roaring_bitmap_add(bm1, 3);
+    roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
+    assert(roaring_bitmap_get_cardinality(bm1) == 1);
+    assert(roaring_bitmap_get_cardinality(bm2) == 1);
+    roaring_bitmap_add(bm2, 4);
+    roaring_bitmap_add(bm1, 5);
+    assert(roaring_bitmap_get_cardinality(bm1) == 2);
+    assert(roaring_bitmap_get_cardinality(bm2) == 2);
+    roaring_bitmap_free(bm1);
+    roaring_bitmap_free(bm2);
+}
+
+void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
     assert_non_null(r1);
 
     // then we can add values
@@ -54,11 +70,13 @@ void test_example() {
     // create a new bitmap with varargs
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
     assert_non_null(r2);
+
     roaring_bitmap_printf(r2);
 
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
+    r3->copy_on_write = copy_on_write;
 
     // we can also go in reverse and go from arrays to bitmaps
     uint32_t card1;
@@ -75,11 +93,14 @@ void test_example() {
 
     // we can copy and compare bitmaps
     roaring_bitmap_t *z = roaring_bitmap_copy(r3);
+    z->copy_on_write = copy_on_write;
     assert_true(roaring_bitmap_equals(r3, z));
+
     roaring_bitmap_free(z);
 
     // we can compute union two-by-two
     roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
+    r1_2_3->copy_on_write = copy_on_write;
     roaring_bitmap_or_inplace(r1_2_3, r3);
 
     // we can compute a big union
@@ -119,6 +140,13 @@ void test_example() {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
     roaring_bitmap_free(r3);
+}
+void test_example_true() {
+  test_example(true);
+}
+
+void test_example_false() {
+  test_example(false);
 }
 
 void test_printf() {
@@ -385,7 +413,7 @@ void test_serialize() {
     roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff, size);
     free(buff);
     assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) == (unsigned int)roaring_bitmap_get_cardinality(new_bm));
-    assert_true(roaring_bitmap_equals(old_bm, new_bm));    
+    assert_true(roaring_bitmap_equals(old_bm, new_bm));
     roaring_bitmap_free(old_bm);
     roaring_bitmap_free(new_bm);
 }
@@ -522,10 +550,12 @@ void test_intersection_bitset_x_bitset_inplace() {
     roaring_bitmap_free(r1);
 }
 
-void test_union() {
+void test_union(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
     assert(r1);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
     assert(r2);
 
     for (uint32_t i = 0; i < 100; ++i) {
@@ -536,12 +566,22 @@ void test_union() {
     }
 
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
+    r1_or_r2->copy_on_write = copy_on_write;
     assert_int_equal(roaring_bitmap_get_cardinality(r1_or_r2), 166);
 
     roaring_bitmap_free(r1_or_r2);
     roaring_bitmap_free(r2);
     roaring_bitmap_free(r1);
 }
+
+void test_union_true() {
+  test_union(true);
+}
+
+void test_union_false() {
+  test_union(false);
+}
+
 
 static roaring_bitmap_t *make_roaring_from_array(uint32_t *a, int len) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -1314,8 +1354,9 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-
-        cmocka_unit_test(test_example), cmocka_unit_test(test_printf),
+        cmocka_unit_test(test_example_true),
+        cmocka_unit_test(test_example_false),
+        cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
         cmocka_unit_test(test_printf_withrun), cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterate_empty),
@@ -1328,7 +1369,8 @@ int main() {
         cmocka_unit_test(test_intersection_array_x_array_inplace),
         cmocka_unit_test(test_intersection_bitset_x_bitset),
         cmocka_unit_test(test_intersection_bitset_x_bitset_inplace),
-        cmocka_unit_test(test_union),
+        cmocka_unit_test(test_union_true),
+        cmocka_unit_test(test_union_false),
         cmocka_unit_test(test_conversion_to_int_array),
         cmocka_unit_test(test_array_to_run),
         cmocka_unit_test(test_array_to_self),

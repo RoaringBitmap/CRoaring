@@ -172,7 +172,7 @@ void array_container_iterate(const array_container_t *cont, uint32_t base,
  * array_container_size_in_bytes(container).
  *
  */
-int32_t array_container_write(array_container_t *container, char *buf);
+int32_t array_container_write(const array_container_t *container, char *buf);
 /**
  * Reads the instance from buf, outputs how many bytes were read.
  * This is meant to be byte-by-byte compatible with the Java and Go versions of
@@ -192,7 +192,7 @@ int32_t array_container_read(int32_t cardinality, array_container_t *container,
  *
  */
 static inline int32_t array_container_size_in_bytes(
-    array_container_t *container) {
+    const array_container_t *container) {
     return container->cardinality * sizeof(uint16_t);
 }
 
