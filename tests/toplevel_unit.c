@@ -141,6 +141,7 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(r2);
     roaring_bitmap_free(r3);
 }
+
 void test_example_true() {
   test_example(true);
 }
@@ -166,6 +167,18 @@ bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     roaring_bitmap_free(result);
     return is_equal;
 }
+
+
+void test_silly_range() {
+    check_bitmap_from_range(0,1,1);
+    check_bitmap_from_range(0,2,1);
+    roaring_bitmap_t *bm1 = roaring_bitmap_from_range(0, 1, 1);
+    roaring_bitmap_t *bm2 = roaring_bitmap_from_range(0, 2, 1);
+    assert_false(roaring_bitmap_equals(bm1, bm2));
+    roaring_bitmap_free(bm1);
+    roaring_bitmap_free(bm2);
+}
+
 
 void test_bitmap_from_range() {
     assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
@@ -1392,6 +1405,7 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_silly_range)
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_bitmap_from_range),

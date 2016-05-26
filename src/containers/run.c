@@ -649,7 +649,7 @@ bool run_container_equals(run_container_t *container1,
     if (container1->n_runs != container2->n_runs) {
         return false;
     }
-    for (int32_t i = 1; i < container1->n_runs; ++i) {
+    for (int32_t i = 0; i < container1->n_runs; ++i) {
         if ((container1->runs[i].value != container2->runs[i].value) ||
             (container1->runs[i].length != container2->runs[i].length))
             return false;
