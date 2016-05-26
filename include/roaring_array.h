@@ -103,6 +103,19 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index, bo
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index, bool copy_on_write);
 
+/** appends from sa to ra, ending with the greatest key that is
+ * is less or equal stopping_key
+ */
+void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t stopping_key, bool copy_on_write);
+
+/** appends from sa to ra, starting with the smallest key that is
+ * is strictly greater than before_start
+ */
+
+void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t before_start, bool copy_on_write);
+
 /**
  * Move the key-value pairs to ra from sa at indexes
  * [start_index, uint16_t end_index), old array should not be freed
@@ -124,7 +137,8 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
                                uint8_t typecode);
 
 /**
- * If needed, increase the capacity of the array so that it can fit k values (at least);
+ * If needed, increase the capacity of the array so that it can fit k values (at
+ * least);
  */
 void extend_array(roaring_array_t *ra, uint32_t k);
 
@@ -188,5 +202,15 @@ uint32_t ra_portable_header_size(roaring_array_t *ra);
  * If the container at the index i is share, unshare it (creating a local copy if needed).
  */
 void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) ;
+
+/**
+ * remove at index i, sliding over all entries after i
+ */
+void ra_remove_at_index(roaring_array_t *ra, int32_t i);
+
+/**
+ * remove a chunk of indices, sliding over entries after it
+ */
+// void ra_remove_index_range(roaring_array_t *ra, int32_t begin, int32_t end);
 
 #endif

@@ -160,24 +160,33 @@ void ra_append(roaring_array_t *ra, uint16_t key, void *container,
     ra->size++;
 }
 
+
 void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index, bool copy_on_write) {
-	extend_array(ra, 1);
+    extend_array(ra, 1);
     const int32_t pos = ra->size;
 
     // old contents is junk not needing freeing
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
     if(copy_on_write) {
-	sa->containers[index] = get_copy_of_container(sa->containers[index], &sa->typecodes[index],copy_on_write);
-    ra->containers[pos] = sa->containers[index];
-    ra->typecodes[pos] = sa->typecodes[index];
-  } else {
-    ra->containers[pos] =
+      sa->containers[index] = get_copy_of_container(sa->containers[index], &sa->typecodes[index],copy_on_write);
+      ra->containers[pos] = sa->containers[index];
+      ra->typecodes[pos] = sa->typecodes[index];
+    } else {
+      ra->containers[pos] =
         container_clone(sa->containers[index], sa->typecodes[index]);
             ra->typecodes[pos] = sa->typecodes[index];
-
       }
     ra->size++;
+}
+
+
+void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t stopping_key, bool copy_on_write) {
+    for (uint16_t i = 0; i < sa->size; ++i) {
+        if (sa->keys[i] >= stopping_key) break;
+        ra_append_copy(ra, sa, i, copy_on_write);
+    }
 }
 
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
@@ -200,6 +209,15 @@ if(copy_on_write) {
     }
 }
 
+void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
+                            uint16_t before_start, bool copy_on_write) {
+    int start_location = ra_get_index(sa, before_start);
+    if (start_location >= 0)
+        ++start_location;
+    else
+        start_location = -start_location - 1;
+    ra_append_copy_range(ra, sa, start_location,sa->size,copy_on_write);
+}
 
 void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index) {
@@ -230,7 +248,6 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
         ra->containers[pos] =
             container_clone(sa->containers[i], sa->typecodes[i]);
                     ra->typecodes[pos] = sa->typecodes[i];
-
           }
         ra->size++;
     }
