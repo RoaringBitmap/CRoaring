@@ -74,7 +74,7 @@ static inline bool array_container_nonzero_cardinality(
 void array_container_copy(const array_container_t *src, array_container_t *dst);
 
 /*  Add all the values in [min,max) (included) at a distance k*step from min.
-    The container must have a size less to 4096 after this addition. */
+    The container must have a size less or equal to DEFAULT_MAX_SIZE after this addition. */
 void array_container_add_from_range(array_container_t *arr, uint32_t min, uint32_t max,
                                     uint16_t step);
 

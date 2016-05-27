@@ -194,7 +194,7 @@ static inline void *container_from_range(uint8_t *type, uint32_t min, uint32_t m
        return run_container_create_range(min, max);
     }
     int size = (max-min+step-1)/step;
-    if(size < 4096) { // array container
+    if(size <= DEFAULT_MAX_SIZE) { // array container
         *type = ARRAY_CONTAINER_TYPE_CODE;
         array_container_t * array = array_container_create_given_capacity(size);
         array_container_add_from_range(array, min, max, step);

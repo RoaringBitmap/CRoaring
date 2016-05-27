@@ -179,6 +179,17 @@ void test_silly_range() {
     roaring_bitmap_free(bm2);
 }
 
+void test_range_and_serialize() {
+    roaring_bitmap_t *old_bm = roaring_bitmap_from_range(65520, 131057, 16);
+    size_t size = roaring_bitmap_portable_size_in_bytes(old_bm);
+    char *buff = malloc(size);
+    roaring_bitmap_portable_serialize(old_bm, buff);
+    roaring_bitmap_t *new_bm = roaring_bitmap_portable_deserialize(buff);
+    assert_true(roaring_bitmap_equals(old_bm, new_bm));
+    roaring_bitmap_free(old_bm);
+    roaring_bitmap_free(new_bm);
+    free(buff);
+}
 
 void test_bitmap_from_range() {
     assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
@@ -1405,6 +1416,7 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_range_and_serialize), 
         cmocka_unit_test(test_silly_range),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
