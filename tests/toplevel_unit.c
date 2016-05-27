@@ -1405,7 +1405,7 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_silly_range)
+        cmocka_unit_test(test_silly_range),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_bitmap_from_range),
