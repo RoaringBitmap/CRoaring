@@ -4,6 +4,9 @@ An implementation of Roaring Bitmaps in C.
 
 #ifndef ROARING_H
 #define ROARING_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdbool.h>
 #include "roaring_array.h"
@@ -144,7 +147,6 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);
  */
 uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
                                          uint32_t *cardinality);
-#endif
 
 /**
  *  Remove run-length encoding even when it is more space efficient
@@ -251,3 +253,9 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
                                  uint64_t range_end);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

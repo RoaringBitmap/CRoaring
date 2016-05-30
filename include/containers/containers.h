@@ -93,7 +93,7 @@ void *container_clone(const void *container, uint8_t typecode);
 /* access to container underneath, cloning it if needed */
 static inline void * get_writable_copy_if_shared(void *candidate_shared_container, uint8_t * type) {
 	if(*type == SHARED_CONTAINER_TYPE_CODE) {
-                 return shared_container_extract_copy(candidate_shared_container,type);
+                 return shared_container_extract_copy((shared_container_t*) candidate_shared_container,type);
 	} else {
 		return candidate_shared_container;
 	}
@@ -1174,17 +1174,17 @@ static inline void *container_not(const void *c, uint8_t typ,
     void *result = NULL;
     switch (typ) {
         case BITSET_CONTAINER_TYPE_CODE:
-            *result_type = bitset_container_negation(c, &result)
+            *result_type = bitset_container_negation((const bitset_container_t*)c, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case ARRAY_CONTAINER_TYPE_CODE:
             result = bitset_container_create();
             *result_type = BITSET_CONTAINER_TYPE_CODE;
-            array_container_negation(c, result);
+            array_container_negation((const array_container_t*)c, (bitset_container_t*)result);
             return result;
         case RUN_CONTAINER_TYPE_CODE:
-            *result_type = run_container_negation(c, &result);
+            *result_type = run_container_negation((const run_container_t*)c, &result);
             return result;
 
         default:
@@ -1200,19 +1200,19 @@ static inline void *container_not_range(const void *c, uint8_t typ,
     void *result = NULL;
     switch (typ) {
         case BITSET_CONTAINER_TYPE_CODE:
-            *result_type = bitset_container_negation_range(c, range_start,
+            *result_type = bitset_container_negation_range((const bitset_container_t*)c, range_start,
                                                            range_end, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case ARRAY_CONTAINER_TYPE_CODE:
-            *result_type = array_container_negation_range(c, range_start,
+            *result_type = array_container_negation_range((const array_container_t*)c, range_start,
                                                           range_end, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case RUN_CONTAINER_TYPE_CODE:
-            *result_type = run_container_negation_range(c, range_start,
+            *result_type = run_container_negation_range((const run_container_t*)c, range_start,
                                                         range_end, &result);
             return result;
 
@@ -1226,7 +1226,7 @@ static inline void *container_inot(void *c, uint8_t typ, uint8_t *result_type) {
     void *result = NULL;
     switch (typ) {
         case BITSET_CONTAINER_TYPE_CODE:
-            *result_type = bitset_container_negation_inplace(c, &result)
+            *result_type = bitset_container_negation_inplace((bitset_container_t*)c, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
@@ -1234,11 +1234,11 @@ static inline void *container_inot(void *c, uint8_t typ, uint8_t *result_type) {
             // will never be inplace
             result = bitset_container_create();
             *result_type = BITSET_CONTAINER_TYPE_CODE;
-            array_container_negation(c, result);
-            array_container_free(c);
+            array_container_negation((array_container_t*)c, (bitset_container_t*)result);
+            array_container_free((array_container_t*)c);
             return result;
         case RUN_CONTAINER_TYPE_CODE:
-            *result_type = run_container_negation_inplace(c, &result);
+            *result_type = run_container_negation_inplace((run_container_t*)c, &result);
             return result;
 
         default:
@@ -1255,19 +1255,19 @@ static inline void *container_inot_range(void *c, uint8_t typ,
     switch (typ) {
         case BITSET_CONTAINER_TYPE_CODE:
             *result_type = bitset_container_negation_range_inplace(
-                               c, range_start, range_end, &result)
+                               (bitset_container_t*)c, range_start, range_end, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case ARRAY_CONTAINER_TYPE_CODE:
             *result_type = array_container_negation_range_inplace(
-                               c, range_start, range_end, &result)
+                               (array_container_t*)c, range_start, range_end, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
             return result;
         case RUN_CONTAINER_TYPE_CODE:
             *result_type = run_container_negation_range_inplace(
-                c, range_start, range_end, &result);
+                (run_container_t*)c, range_start, range_end, &result);
             return result;
 
         default:

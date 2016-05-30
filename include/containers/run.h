@@ -140,7 +140,10 @@ static inline void run_container_append_value(run_container_t *run,
                                               rle16_t *previousrl) {
     const uint32_t previousend = previousrl->value + previousrl->length;
     if (val > previousend + 1) {  // we add a new one
-        *previousrl = (rle16_t){.value = val, .length = 0};
+        //*previousrl = (rle16_t){.value = val, .length = 0};// requires C99
+        previousrl->value = val;
+        previousrl->length = 0;
+
         run->runs[run->n_runs] = *previousrl;
         run->n_runs++;
     } else if (val == previousend + 1) {  // we merge
@@ -155,7 +158,11 @@ static inline void run_container_append_value(run_container_t *run,
  */
 static inline rle16_t run_container_append_value_first(run_container_t *run,
                                                        uint16_t val) {
-    rle16_t newrle = (rle16_t){.value = val, .length = 0};
+    //rle16_t newrle = (rle16_t){.value = val, .length = 0};// requires C99
+    rle16_t newrle;
+    newrle.value = val;
+    newrle.length = 0;
+
     run->runs[run->n_runs] = newrle;
     run->n_runs++;
     return newrle;
@@ -270,10 +277,13 @@ void run_container_smart_append_exclusive(run_container_t *src,
 static inline run_container_t *run_container_create_range(uint32_t start,
                                                           uint32_t stop) {
     run_container_t *rc = run_container_create_given_capacity(1);
-    if (rc)
+    if (rc) {
+        rle16_t r;
+        r.value = (uint16_t)start;
+        r.length = (uint16_t)(stop - start - 1);
         run_container_append_first(
-            rc, (rle16_t){.value = (uint16_t)start,
-                          .length = (uint16_t)(stop - start - 1)});
+            rc, r);
+    }
     return rc;
 }
 
