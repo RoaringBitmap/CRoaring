@@ -411,6 +411,41 @@ static inline void *container_add(void *container, uint16_t val,
 }
 
 /**
+ * Remove a value from a container, requires a  typecode, fills in new_typecode and
+ * return (possibly different) container.
+ * This function may allocate a new container, and caller is responsible for
+ * memory deallocation
+ */
+static inline void *container_remove(void *container, uint16_t val,
+                                  uint8_t typecode, uint8_t *new_typecode) {
+	container = get_writable_copy_if_shared(container,&typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            if(bitset_container_remove((bitset_container_t *)container,
+                                                  val)) {
+               if(bitset_container_cardinality((bitset_container_t *)container) <= DEFAULT_MAX_SIZE)  {
+                 return array_container_from_bitset((bitset_container_t *)container);
+               }
+            }
+            *new_typecode = typecode;
+            return container;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            *new_typecode = typecode;
+            array_container_remove((array_container_t *)container,val);
+            return container;
+        case RUN_CONTAINER_TYPE_CODE:
+            // per Java, no container type adjustments are done (revisit?)
+            run_container_remove((run_container_t *)container, val);
+            *new_typecode = RUN_CONTAINER_TYPE_CODE;
+            return container;
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return NULL;
+    }
+}
+
+/**
  * Check whether a value is in a container, requires a  typecode
  */
 static inline bool container_contains(const void *container, uint16_t val,

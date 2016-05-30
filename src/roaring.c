@@ -170,6 +170,33 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
     }
 }
 
+void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t val) {
+    const uint16_t hb = val >> 16;
+    const int i = ra_get_index(r->high_low_container, hb);
+    uint8_t typecode;
+    if (i >= 0) {
+    	ra_unshare_container_at_index(r->high_low_container, i);
+        void *container =
+            ra_get_container_at_index(r->high_low_container, i, &typecode);
+        uint8_t newtypecode = typecode;
+        void *container2 =
+            container_remove(container, val & 0xFFFF, typecode, &newtypecode);
+        if (container2 != container) {
+            container_free(container, typecode);
+            ra_set_container_at_index(r->high_low_container, i, container2,
+                                      newtypecode);
+        }
+        if (container_get_cardinality(container2, newtypecode) != 0) {
+            ra_set_container_at_index(r->high_low_container, i, container2,
+                                              newtypecode);
+        } else {
+            container_free(container2, newtypecode);
+            ra_remove_at_index(r->high_low_container, i);
+        }
+    }
+}
+
+
 bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
     const uint16_t hb = val >> 16;
     const int i = ra_get_index(r->high_low_container, hb);
@@ -482,8 +509,8 @@ uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r) {
     bool answer = false;
     for (int i = 0; i < r->high_low_container->size; i++) {
-    	uint8_t typecode_original, typecode_after;
-    	ra_unshare_container_at_index(r->high_low_container, i);//TODO: this introduces extra cloning!
+        uint8_t typecode_original, typecode_after;
+        ra_unshare_container_at_index(r->high_low_container, i);//TODO: this introduces extra cloning!
         void *c = ra_get_container_at_index(r->high_low_container, i,
                                             &typecode_original);
         void *c1 = convert_run_optimize(c, typecode_original, &typecode_after);

@@ -40,6 +40,8 @@ void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
+
+
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -149,6 +151,40 @@ void test_example_true() {
 void test_example_false() {
   test_example(false);
 }
+
+
+
+void can_remove_from_copies(bool copy_on_write) {
+    roaring_bitmap_t *bm1 = roaring_bitmap_create();
+    bm1->copy_on_write = copy_on_write;
+    roaring_bitmap_add(bm1, 3);
+    roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
+    assert(roaring_bitmap_get_cardinality(bm1) == 1);
+    assert(roaring_bitmap_get_cardinality(bm2) == 1);
+    roaring_bitmap_add(bm2, 4);
+    roaring_bitmap_add(bm1, 5);
+    assert(roaring_bitmap_get_cardinality(bm1) == 2);
+    assert(roaring_bitmap_get_cardinality(bm2) == 2);
+    roaring_bitmap_remove(bm1, 5);
+    assert(roaring_bitmap_get_cardinality(bm1) == 1);
+    roaring_bitmap_remove(bm1, 4);
+    assert(roaring_bitmap_get_cardinality(bm1) == 1);
+    assert(roaring_bitmap_get_cardinality(bm2) == 2);
+    roaring_bitmap_remove(bm2, 4);
+    assert(roaring_bitmap_get_cardinality(bm2) == 1);
+    roaring_bitmap_free(bm1);
+    roaring_bitmap_free(bm2);
+}
+
+
+void test_remove_from_copies_true() {
+  can_remove_from_copies(true);
+}
+
+void test_remove_from_copies_false() {
+  can_remove_from_copies(true);
+}
+
 
 bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     roaring_bitmap_t *result = roaring_bitmap_from_range(min, max, step);
@@ -307,6 +343,23 @@ void test_iterate_withrun() {
     assert_int_equal(roaring_bitmap_get_cardinality(r1), num);
     roaring_bitmap_free(r1);
 }
+
+void test_remove_withrun() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+    /* Add some values to the bitmap */
+    for (int i = 100, top_val = 20000; i < top_val; i++)
+        roaring_bitmap_add(r1, i);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100);
+    roaring_bitmap_remove(r1, 1000);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100-1);
+    roaring_bitmap_run_optimize(r1);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100-1);
+    roaring_bitmap_remove(r1, 2000);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100-1-1);
+    roaring_bitmap_free(r1);
+}
+
 
 void test_portable_serialize() {
     roaring_bitmap_t *r1 =
@@ -1416,7 +1469,10 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_range_and_serialize), 
+        cmocka_unit_test(test_remove_withrun),
+        cmocka_unit_test(test_remove_from_copies_true),
+        cmocka_unit_test(test_remove_from_copies_false),
+        cmocka_unit_test(test_range_and_serialize),
         cmocka_unit_test(test_silly_range),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),

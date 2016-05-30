@@ -118,9 +118,15 @@ void roaring_bitmap_free(roaring_bitmap_t *r);
 /**
  * Add value x
  *
- * TODO: add a way to remove values
  */
 void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x);
+
+/**
+ * Remove value x
+ *
+ */
+void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
+
 
 /**
  * Check if value x is present
