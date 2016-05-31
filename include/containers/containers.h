@@ -424,6 +424,7 @@ static inline void *container_remove(void *container, uint16_t val,
             if(bitset_container_remove((bitset_container_t *)container,
                                                   val)) {
                if(bitset_container_cardinality((bitset_container_t *)container) <= DEFAULT_MAX_SIZE)  {
+                 *new_typecode = ARRAY_CONTAINER_TYPE_CODE;
                  return array_container_from_bitset((bitset_container_t *)container);
                }
             }

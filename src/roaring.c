@@ -477,6 +477,11 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra) {
     return card;
 }
 
+bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra) {
+    return ra->high_low_container->size == 0;
+}
+
+
 uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
                                          uint32_t *cardinality) {
     uint32_t card1 = roaring_bitmap_get_cardinality(ra);

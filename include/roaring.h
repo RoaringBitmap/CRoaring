@@ -142,6 +142,11 @@ bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t x);
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);
 
 /**
+* Returns true if the bitmap is empty (cardinality is zero).
+*/
+bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
+
+/**
  * Convert the bitmap to an array. Array is allocated and caller is responsible
  * for eventually freeing it.
  */
