@@ -177,12 +177,18 @@ void can_remove_from_copies(bool copy_on_write) {
 }
 
 
+void test_basic_add() {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    roaring_bitmap_add(bm, 0);
+    roaring_bitmap_remove(bm, 0);
+}
+
 void test_remove_from_copies_true() {
   can_remove_from_copies(true);
 }
 
 void test_remove_from_copies_false() {
-  can_remove_from_copies(true);
+  can_remove_from_copies(false);
 }
 
 
@@ -1469,6 +1475,7 @@ void test_inplace_rand_flips() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_basic_add),
         cmocka_unit_test(test_remove_withrun),
         cmocka_unit_test(test_remove_from_copies_true),
         cmocka_unit_test(test_remove_from_copies_false),
