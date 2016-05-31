@@ -181,6 +181,7 @@ void test_basic_add() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     roaring_bitmap_add(bm, 0);
     roaring_bitmap_remove(bm, 0);
+    roaring_bitmap_free(bm);
 }
 
 void test_remove_from_copies_true() {
