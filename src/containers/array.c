@@ -7,8 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "portability.h"
+#ifndef IS_X64
 #include <x86intrin.h>
-
+#endif
 #include "array_util.h"
 #include "containers/array.h"
 
@@ -192,7 +194,7 @@ void array_container_union(const array_container_t *array_1,
 
     if (out->capacity < max_cardinality)
         array_container_grow(out, max_cardinality, INT32_MAX, false);
-
+#ifdef IS_X64
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = union_vector16(array_1->array, card_1,
@@ -201,6 +203,16 @@ void array_container_union(const array_container_t *array_1,
         out->cardinality = union_vector16(array_2->array, card_2,
                                           array_1->array, card_1, out->array);
     }
+#else
+    // compute union with smallest array first
+    if (card_1 < card_2) {
+        out->cardinality = union_uint16(array_1->array, card_1,
+                                          array_2->array, card_2, out->array);
+    } else {
+        out->cardinality = union_uint16(array_2->array, card_2,
+                                          array_1->array, card_1, out->array);
+    }
+#endif
 }
 
 static inline int32_t minimum(int32_t a, int32_t b) { return (a < b) ? a : b; }

@@ -3,7 +3,9 @@
 
 #ifndef BENCHMARKS_INCLUDE_BENCHMARK_H_
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
+#include "portability.h"
 
+#ifdef IS_X64
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
         register unsigned cyc_high, cyc_low;                                  \
@@ -27,6 +29,25 @@
             : "=r"(cyc_high), "=r"(cyc_low)::"%rax", "%rbx", "%rcx", "%rdx"); \
         (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                      \
     } while (0)
+#elif defined(__arm__)
+
+/**
+* ARM does not support rdtscp ?
+*/
+#include <time.h>
+
+#define RDTSC_START(cycles)                \
+    do {                                   \
+       cycles = clock();                   \
+     } while(0)
+
+#define RDTSC_FINAL(cycles)                \
+    do {                                   \
+       cycles = clock();                   \
+     } while(0)
+
+
+#endif
 
 /*
  * Prints the best number of operations per cycle where

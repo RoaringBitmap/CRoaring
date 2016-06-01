@@ -8,9 +8,11 @@
 #include "containers/run.h"
 #include "misc/configreport.h"
 #include "random.h"
+#include "portability.h"
 
 enum { TESTSIZE = 2048 };
 
+#ifdef IS_X64
 // flushes the array from cache
 void run_cache_flush(run_container_t* B) {
     const int32_t CACHELINESIZE =
@@ -20,11 +22,19 @@ void run_cache_flush(run_container_t* B) {
         __builtin_ia32_clflush(B->runs + k);
     }
 }
+#else
+void run_cache_flush() {
+}
+#endif
 
 // tries to put array in cache
 void run_cache_prefetch(run_container_t* B) {
+#ifdef IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
+#else 
+    const int32_t CACHELINESIZE = 64;
+#endif
     for (int32_t k = 0; k < B->n_runs * 2;
          k += CACHELINESIZE / (int32_t)sizeof(uint16_t)) {
         __builtin_prefetch(B->runs + k);

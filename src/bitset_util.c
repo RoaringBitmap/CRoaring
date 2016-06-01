@@ -3,12 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <x86intrin.h>
 
 #include "bitset_util.h"
 #include "portability.h"
 #include "utilasm.h"
 
+#ifdef IS_X64
+#include <x86intrin.h>
+#endif
+
+
+#ifdef USEAVX
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
     2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -591,6 +596,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
     }
     return out - initout;
 }
+#endif // USEAVX
 
 size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
                               uint32_t base) {
@@ -626,6 +632,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
     return outpos;
 }
 
+#ifdef IS_X64
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out" as 16-bit integers, values start at "base" (can
@@ -688,6 +695,8 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
     }
     return out - initout;
 }
+#endif 
+
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position

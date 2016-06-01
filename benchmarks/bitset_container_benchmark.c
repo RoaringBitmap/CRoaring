@@ -9,7 +9,9 @@
 #include "containers/convert.h"
 #include "misc/configreport.h"
 #include "random.h"
+#include "portability.h"
 
+#ifdef IS_X64
 // flushes the array of words from cache
 void bitset_cache_flush(bitset_container_t* B) {
     const int32_t CACHELINESIZE =
@@ -19,11 +21,20 @@ void bitset_cache_flush(bitset_container_t* B) {
         __builtin_ia32_clflush(B->array + k);
     }
 }
+#else
+void bitset_cache_flush() {
+}
+
+#endif
 
 // tries to put array of words in cache
 void bitset_cache_prefetch(bitset_container_t* B) {
+#ifdef IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
+#else
+    const int32_t CACHELINESIZE = 64;
+#endif
     for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_prefetch(B->array + k);
@@ -100,7 +111,7 @@ int main() {
                bitset_container_cardinality(Bt));
         int card = bitset_container_cardinality(Bt);
         uint32_t* out =
-            malloc(sizeof(uint32_t) * (unsigned)card + sizeof(__m256i));
+            malloc(sizeof(uint32_t) * (unsigned)card + 32);
         BEST_TIME(bitset_container_to_uint32_array(out, Bt, 1234), card, repeat,
                   card);
         free(out);

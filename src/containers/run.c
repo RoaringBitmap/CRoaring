@@ -7,9 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <x86intrin.h>
 
 #include "containers/run.h"
+#include "portability.h"
+#ifdef IS_X64
+#include <x86intrin.h>
+#endif
 
 extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);

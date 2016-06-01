@@ -43,13 +43,12 @@ bitset_container_t *bitset_container_create(void) {
     if (!bitset) {
         return NULL;
     }
-
-    if (posix_memalign((void *)&bitset->array, sizeof(__m256i),
+    // sizeof(__m256i) == 32
+    if (posix_memalign((void **)&bitset->array, 32,
                        sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) {
         free(bitset);
         return NULL;
     }
-
     bitset_container_clear(bitset);
     return bitset;
 }
@@ -103,8 +102,8 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     if (!bitset) {
         return NULL;
     }
-
-    if (posix_memalign((void *)&bitset->array, sizeof(__m256i),
+    // sizeof(__m256i) == 32
+    if (posix_memalign((void **)&bitset->array, 32,
                        sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) {
         free(bitset);
         return NULL;
@@ -179,10 +178,10 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const uint64_t *array = bitset->array;
     int32_t sum = 0;
     for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
-        sum += _mm_popcnt_u64(array[i]);
-        sum += _mm_popcnt_u64(array[i + 1]);
-        sum += _mm_popcnt_u64(array[i + 2]);
-        sum += _mm_popcnt_u64(array[i + 3]);
+        sum += hamming(array[i]);
+        sum += hamming(array[i + 1]);
+        sum += hamming(array[i + 2]);
+        sum += hamming(array[i + 3]);
     }
     return sum;
 }
@@ -402,8 +401,8 @@ int bitset_container_##opname(const bitset_container_t *src_1,            \
                        word_2 = (array_1[i + 1])opsymbol(array_2[i + 1]); \
         out[i] = word_1;                                                  \
         out[i + 1] = word_2;                                              \
-        sum += _mm_popcnt_u64(word_1);                                    \
-        sum += _mm_popcnt_u64(word_2);                                    \
+        sum += hamming(word_1);                                    \
+        sum += hamming(word_2);                                    \
     }                                                                     \
     dst->cardinality = sum;                                               \
     return dst->cardinality;                                              \
@@ -427,8 +426,8 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1,   \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
         const uint64_t word_1 = (array_1[i])opsymbol(array_2[i]),         \
                        word_2 = (array_1[i + 1])opsymbol(array_2[i + 1]); \
-        sum += _mm_popcnt_u64(word_1);                                    \
-        sum += _mm_popcnt_u64(word_2);                                    \
+        sum += hamming(word_1);                                    \
+        sum += hamming(word_2);                                    \
     }                                                                     \
     return sum;                                                           \
 }
@@ -520,11 +519,11 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS-1; ++i) {
     uint64_t word = next_word;
     next_word = b->array[i+1];
-    num_runs += _mm_popcnt_u64((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
+    num_runs += hamming((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
   }
 
   uint64_t word = next_word;
-  num_runs += _mm_popcnt_u64((~word) & (word << 1));
+  num_runs += hamming((~word) & (word << 1));
   if((word & 0x8000000000000000ULL) != 0)
     num_runs++;
   return num_runs;
@@ -576,8 +575,8 @@ void* bitset_container_deserialize(const char *buf, size_t buf_len) {
 
   if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
     memcpy(ptr, buf, sizeof(bitset_container_t));
-
-    if(posix_memalign((void *)&ptr->array, sizeof(__m256i), l)) {
+    // sizeof(__m256i) == 32
+    if(posix_memalign((void **)&ptr->array, 32, l)) {
       free(ptr);
       return(NULL);
     }

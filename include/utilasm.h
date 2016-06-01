@@ -6,6 +6,9 @@
 #ifndef INCLUDE_UTILASM_H_
 #define INCLUDE_UTILASM_H_
 
+#include "portability.h"
+
+#ifdef IS_X64
 #define ASMBITMANIPOPTIMIZATION  // optimization flag
 
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
@@ -62,4 +65,5 @@
         "r"(testBit)   /* read only */     \
         )
 
+#endif // IS_X64
 #endif /* INCLUDE_UTILASM_H_ */

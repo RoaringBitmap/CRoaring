@@ -39,6 +39,7 @@ void setandextract_uint16() {
     }
 }
 
+#ifdef IS_X64
 void setandextract_sse_uint16() {
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
@@ -66,6 +67,7 @@ void setandextract_sse_uint16() {
         free(bitset);
     }
 }
+#endif
 
 void setandextract_uint32() {
     const unsigned int bitset_size = 1 << 16;
@@ -95,6 +97,7 @@ void setandextract_uint32() {
     }
 }
 
+#ifdef USE_AVX
 // returns 1 when ok
 void setandextract_avx2_uint32() {
     const unsigned int bitset_size = 1 << 16;
@@ -124,13 +127,18 @@ void setandextract_avx2_uint32() {
         free(bitset);
     }
 }
+#endif
 
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(setandextract_uint16),
+#ifdef IS_X64
         cmocka_unit_test(setandextract_sse_uint16),
+#endif
         cmocka_unit_test(setandextract_uint32),
+#ifdef USE_AVX
         cmocka_unit_test(setandextract_avx2_uint32),
+#endif
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

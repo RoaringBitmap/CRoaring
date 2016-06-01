@@ -10,6 +10,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "portability.h"
+
+#ifdef IS_X64
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {
@@ -123,8 +126,8 @@ static inline void tellmeall() {
 #endif
 
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
-        printf("number of bytes: int = %lu long = %lu \n", sizeof(size_t),
-               sizeof(int));
+        printf("number of bytes: int = %lu long = %lu \n", (long unsigned int) sizeof(size_t),
+               (long unsigned int) sizeof(int));
     }
 #if __LITTLE_ENDIAN__
 // This is what we expect!
@@ -139,5 +142,32 @@ static inline void tellmeall() {
     if (computecacheline() != 64)
         printf("cache line: %d bytes\n", computecacheline());
 }
+#else
+
+static inline void tellmeall() {
+    printf("Non-X64  processor\n");
+#ifdef __arm__
+    printf("ARM processor detected\n");
+#endif
+#ifdef __VERSION__
+    printf(" compiler version: %s\t", __VERSION__);
+#endif
+    if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
+        printf("number of bytes: int = %lu long = %lu \n", (long unsigned int) sizeof(size_t),
+               (long unsigned int) sizeof(int));
+    }
+#if __LITTLE_ENDIAN__
+// This is what we expect!
+// printf("you have little endian machine");
+#endif
+#if __BIG_ENDIAN__
+    printf("you have a big endian machine");
+#endif
+#if __CHAR_BIT__
+    if (__CHAR_BIT__ != 8) printf("on your machine, chars don't have 8bits???");
+#endif
+}
+
+#endif
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */
