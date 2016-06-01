@@ -8,12 +8,7 @@
 #include "portability.h"
 #include "utilasm.h"
 
-#ifdef IS_X64
-#include <x86intrin.h>
-#endif
 
-
-#ifdef USEAVX
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
     2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -27,6 +22,7 @@ static uint8_t lengthTable[256] = {
     4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 
+#ifdef USEAVX
 static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
     {1, 0, 0, 0, 0, 0, 0, 0}, /* 0x01 (00000001) */
@@ -286,6 +282,9 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
+#endif // #ifdef USEAVX
+
+#ifdef IS_X64
 // same as vecDecodeTable but in 16 bits
 static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
@@ -546,6 +545,10 @@ static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
+#endif
+
+#if USEAVX
+
 size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
                                    uint32_t *out, size_t outcapacity,
                                    uint32_t base) {
@@ -695,7 +698,7 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
     }
     return out - initout;
 }
-#endif 
+#endif
 
 
 /*

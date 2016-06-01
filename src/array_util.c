@@ -9,10 +9,6 @@
 #include "portability.h"
 #include "utilasm.h"
 
-#ifdef IS_X64
-#include <x86intrin.h>
-#endif 
-
 
 // good old bin. search
 int32_t binarySearch(const uint16_t *array, int32_t lenarray, uint16_t ikey) {

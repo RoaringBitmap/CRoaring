@@ -29,10 +29,10 @@
             : "=r"(cyc_high), "=r"(cyc_low)::"%rax", "%rbx", "%rcx", "%rdx"); \
         (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                      \
     } while (0)
-#elif defined(__arm__)
+#else
 
 /**
-* ARM does not support rdtscp ?
+* Other architectures do not support rdtsc ?
 */
 #include <time.h>
 

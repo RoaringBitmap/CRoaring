@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(USEAVX) || defined(__x86_64__) || defined(_M_X64)
 #define IS_X64
 #include <x86intrin.h>
 #endif
@@ -31,11 +31,11 @@
 
 
 static inline int hamming(uint64_t x) {
-#ifdef __POPCNT__
-  return _mm_popcnt_u64(x);
-#else 
+#if defined(IS_X64) && defined(__POPCNT__)
+ return _mm_popcnt_u64(x);
+#else
   return __builtin_popcountl(x);
-#endif 
+#endif
 }
 
 #endif /* INCLUDE_PORTABILITY_H_ */

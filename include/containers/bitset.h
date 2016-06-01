@@ -11,9 +11,6 @@
 #include "../utilasm.h"
 #include "portability.h"
 #include "roaring_types.h"
-#ifdef IS_X64
-#include <x86intrin.h>
-#endif
 
 #ifdef USEAVX
 #define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
