@@ -8,9 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "portability.h"
-#ifndef IS_X64
-#include <x86intrin.h>
-#endif
 #include "array_util.h"
 #include "containers/array.h"
 
