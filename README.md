@@ -1,11 +1,5 @@
 # CRoaring
-Roaring bitmaps in C
-
-# Current status
-
-This library is being actively developed. For the time being, this library is not **usable for anything but
- _research_**. **Do not attempt to use this library in production systems**. See http://roaringbitmap.org for
-a list of supported libraries.
+Roaring bitmaps in C (and C++)
 
 # Introduction
 
@@ -32,12 +26,10 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 # Requirements
 
 - 64-bit Linux-like operating system (including MacOS)
-- Recent Intel processor: Haswell (2013) or better. For legacy Intel processors without AVX support, build the project with ``-DAVX_TUNING=OFF``.
-- Recent C compiler (GCC 4.8 or better)
+- Recent Intel processor: Haswell (2013) or better. For 64-bit processors without AVX support (including ARM processors), build the project with ``-DAVX_TUNING=OFF``.
+- Recent C compiler (GCC 4.8 or better), the code is also compatible with C++
 - CMake
 - clang-format (optional)
-
-Support for non-Intel hardware  and other compilers might be added later. Contributions are invited.
 
 # Example
 
@@ -200,13 +192,4 @@ Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016
 http://arxiv.org/abs/1402.6407 This paper used data from http://lemire.me/data/realroaring2014.html
 - Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience (accepted in 2016, to appear) http://arxiv.org/abs/1603.06549
 
-# Issues to consider
 
-AVX operations take a while before they warm up to their best speed
-as documented by Agner Fog and others.
-
-There is a trade-off between throughput and latency. For example,
-prefetching might improve latency, but at the expense of throughput
-on a multicore system.
-
-Some instructions, like POPCNT,  take a serious hit under hyperthreading.
