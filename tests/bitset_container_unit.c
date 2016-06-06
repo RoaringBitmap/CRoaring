@@ -208,11 +208,34 @@ void to_uint32_array_test() {
     }
 }
 
+void get_element_of_rank_test() {
+    bitset_container_t* B = bitset_container_create();
+    assert_non_null(B);
+    uint16_t base = 27;
+    for(uint16_t value = base; value < base+200 ; value += 5) {
+        bitset_container_add(B, value);
+    }
+    uint32_t i = 0;
+    uint32_t element=0;
+    uint32_t start_rank;
+    for(uint16_t value = base; value < base+200 ; value += 5) {
+        start_rank = 12;
+        assert_true(bitset_get_element_of_rank(B, &start_rank, i+12, &element));
+        assert_int_equal(element, value);
+        i++;
+    }
+    start_rank = 12;
+    assert_false(bitset_get_element_of_rank(B, &start_rank, i+12, &element));
+    assert_int_equal(start_rank, i+12);
+    bitset_container_free(B);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(printf_test), cmocka_unit_test(set_get_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
         cmocka_unit_test(andnot_test), cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(get_element_of_rank_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

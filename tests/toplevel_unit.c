@@ -201,7 +201,7 @@ void test_addremoverun() {
     for(uint32_t value = 33057 ; value < 147849 ; value += 8) {
         roaring_bitmap_add(bm, value);
     }
-    roaring_bitmap_run_optimize(bm); 
+    roaring_bitmap_run_optimize(bm);
     for(uint32_t value = 33057 ; value < 147849 ; value += 8) {
         roaring_bitmap_remove(bm, value);
     }
@@ -1500,6 +1500,58 @@ void test_inplace_rand_flips() {
     free(input);
 }
 
+// randomized test for rank query
+void get_element_of_rank_tests() {
+    srand(1234);
+    const int min_runs = 1;
+    const uint32_t range = 2000000;
+    char *input = malloc(range);
+
+    for (int card = 2; card < 1000000; card *= 8) {
+        printf("get_element_of_rank_tests with attempted card %d", card);
+
+        roaring_bitmap_t *r = roaring_bitmap_create();
+        memset(input, 0, range);
+        for (int i = 0; i < card; ++i) {
+            float f1 = rand() / (float)RAND_MAX;
+            float f2 = rand() / (float)RAND_MAX;
+            float f3 = rand() / (float)RAND_MAX;
+            int pos = (int)(f1 * f2 * f3 *
+                            range);  // denser at the start, sparser at end
+            roaring_bitmap_add(r, pos);
+            input[pos] = 1;
+        }
+        for (int i = 0; i < min_runs; ++i) {
+            int startpos = rand() % (range / 2);
+            for (int j = startpos; j < startpos + 65536 * 2; ++j)
+                if (j % 147 < 100) {
+                    roaring_bitmap_add(r, j);
+                    input[j] = 1;
+                }
+        }
+        roaring_bitmap_run_optimize(r);
+        uint32_t true_card = roaring_bitmap_get_cardinality(r);
+        printf(" and actual card = %u\n",
+               (unsigned)true_card);
+
+        uint32_t rank=0;
+        uint32_t element;
+        for(uint32_t i = 0 ; i < true_card ; i++) {
+            if(input[i]) {
+                assert_true(roaring_bitmap_get_element_of_rank(r, rank, &element));
+                assert_int_equal(i, element);
+                rank++;
+            }
+        }
+        for(uint32_t n = 0 ; n < 10 ; n++) {
+            assert_false(roaring_bitmap_get_element_of_rank(r, true_card+n, &element));
+        }
+
+        roaring_bitmap_free(r);
+    }
+    free(input);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_addremove),
@@ -1551,6 +1603,7 @@ int main() {
         cmocka_unit_test(test_inplace_negation_run1),
         cmocka_unit_test(test_inplace_negation_run2),
         cmocka_unit_test(test_inplace_rand_flips),
+        cmocka_unit_test(get_element_of_rank_tests),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
     };

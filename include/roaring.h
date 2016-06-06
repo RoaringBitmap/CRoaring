@@ -259,6 +259,14 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
 void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
                                  uint64_t range_end);
 
+/**
+ * If the size of the roaring bitmap is strictly greater than rank, then this
+   function returns true and set element to the element of given rank.
+   Otherwise, it returns false.
+ */
+bool roaring_bitmap_get_element_of_rank(roaring_bitmap_t *ra, uint32_t rank,
+                                        uint32_t *element);
+
 #ifdef __cplusplus
 }
 #endif

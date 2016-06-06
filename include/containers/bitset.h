@@ -381,4 +381,12 @@ static inline int32_t bitset_container_size_in_bytes(
 bool bitset_container_equals(bitset_container_t *container1,
                              bitset_container_t *container2);
 
+/**
+ * If the element of given rank is in this container, supposing that the first
+ * element has rank start_rank, then the function returns true and sets element
+ * accordingly.
+ * Otherwise, it returns false and update start_rank.
+ */
+bool bitset_get_element_of_rank(bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
+
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */
