@@ -1019,7 +1019,7 @@ void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *ra) {
     }
 }
 
-bool roaring_bitmap_select(roaring_bitmap_t *bm, uint32_t rank, uint32_t *element) {
+bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank, uint32_t *element) {
     void *container;
     uint8_t typecode;
     uint16_t key;

@@ -213,7 +213,7 @@ bool array_container_equals(array_container_t *container1,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-static inline bool array_container_select(array_container_t *container,
+static inline bool array_container_select(const array_container_t *container,
                                           uint32_t *start_rank, uint32_t rank, uint32_t *element) {
     int card = array_container_cardinality(container);
     if(*start_rank + card <= rank) {

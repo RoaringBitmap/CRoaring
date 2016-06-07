@@ -616,7 +616,7 @@ bool bitset_container_equals(bitset_container_t *container1, bitset_container_t 
 	return true;
 }
 
-bool bitset_container_select(bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+bool bitset_container_select(const bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
     int card = bitset_container_cardinality(container);
     if(rank >= *start_rank + card) {
         *start_rank += card;

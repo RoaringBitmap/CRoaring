@@ -293,6 +293,6 @@ static inline run_container_t *run_container_create_range(uint32_t start,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-bool run_container_select(run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
+bool run_container_select(const run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */
