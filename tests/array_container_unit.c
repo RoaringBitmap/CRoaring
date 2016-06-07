@@ -152,10 +152,33 @@ void to_uint32_array_test() {
     }
 }
 
+void select_test() {
+    array_container_t* B = array_container_create();
+    assert_non_null(B);
+    uint16_t base = 27;
+    for(uint16_t value = base; value < base+200 ; value += 5) {
+        array_container_add(B, value);
+    }
+    uint32_t i = 0;
+    uint32_t element=0;
+    uint32_t start_rank;
+    for(uint16_t value = base; value < base+200 ; value += 5) {
+        start_rank = 12;
+        assert_true(array_container_select(B, &start_rank, i+12, &element));
+        assert_int_equal(element, value);
+        i++;
+    }
+    start_rank = 12;
+    assert_false(array_container_select(B, &start_rank, i+12, &element));
+    assert_int_equal(start_rank, i+12);
+    array_container_free(B);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(select_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

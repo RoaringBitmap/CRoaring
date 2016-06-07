@@ -1018,3 +1018,26 @@ void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *ra) {
         ra->high_low_container->typecodes[i] = new_typecode;
     }
 }
+
+bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank, uint32_t *element) {
+    void *container;
+    uint8_t typecode;
+    uint16_t key;
+    uint32_t start_rank = 0;
+    int i=0;
+    bool valid = false;
+    while(!valid && i < bm->high_low_container->size) {
+        container = bm->high_low_container->containers[i];
+        typecode = bm->high_low_container->typecodes[i];
+        valid = container_select(container, typecode, &start_rank, rank, element) ;
+        i++;
+    }
+
+    if(valid) {
+        key = bm->high_low_container->keys[i-1];
+        *element |= (key << 16);
+        return true;
+    }
+    else
+        return false;
+}

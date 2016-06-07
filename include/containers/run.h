@@ -287,4 +287,12 @@ static inline run_container_t *run_container_create_range(uint32_t start,
     return rc;
 }
 
+/**
+ * If the element of given rank is in this container, supposing that the first
+ * element has rank start_rank, then the function returns true and sets element
+ * accordingly.
+ * Otherwise, it returns false and update start_rank.
+ */
+bool run_container_select(const run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
+
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

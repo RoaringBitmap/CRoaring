@@ -207,4 +207,23 @@ static inline int32_t array_container_size_in_bytes(
 bool array_container_equals(array_container_t *container1,
                             array_container_t *container2);
 
+/**
+ * If the element of given rank is in this container, supposing that the first
+ * element has rank start_rank, then the function returns true and sets element
+ * accordingly.
+ * Otherwise, it returns false and update start_rank.
+ */
+static inline bool array_container_select(const array_container_t *container,
+                                          uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+    int card = array_container_cardinality(container);
+    if(*start_rank + card <= rank) {
+        *start_rank += card;
+        return false;
+    }
+    else {
+        *element = container->array[rank-*start_rank];
+        return true;
+    }
+}
+
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

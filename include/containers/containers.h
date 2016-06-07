@@ -1289,4 +1289,26 @@ static inline void *container_range_of_ones(uint32_t range_start,
     return run_container_create_range(range_start, range_end);
 }
 
+/**
+ * If the element of given rank is in this container, supposing that the first
+ * element has rank start_rank, then the function returns true and sets element
+ * accordingly.
+ * Otherwise, it returns false and update start_rank.
+ */
+static inline bool container_select(const void *container, uint8_t typecode,
+                                                uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_select((bitset_container_t *)container, start_rank, rank, element);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_select((array_container_t *)container, start_rank, rank, element);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_select((run_container_t *)container, start_rank, rank, element);
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+}
+
 #endif

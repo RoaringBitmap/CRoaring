@@ -615,3 +615,34 @@ bool bitset_container_equals(bitset_container_t *container1, bitset_container_t 
 	}
 	return true;
 }
+
+bool bitset_container_select(const bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+    int card = bitset_container_cardinality(container);
+    if(rank >= *start_rank + card) {
+        *start_rank += card;
+        return false;
+    }
+    const uint64_t *array = container->array;
+    int32_t size;
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 1) {
+        size = hamming(array[i]);
+        if(rank <= *start_rank + size) {
+            uint64_t w = container->array[i];
+            uint16_t base = i*64;
+            while (w != 0) {
+                uint64_t t = w & -w;
+                int r = __builtin_ctzl(w);
+                if(*start_rank == rank) {
+                    *element = r+base;
+                    return true;
+                }
+                w ^= t;
+                *start_rank += 1;
+            }
+        }
+        else
+            *start_rank += size;
+    }
+    assert(false);
+    __builtin_unreachable();
+}

@@ -712,3 +712,17 @@ void run_container_smart_append_exclusive(run_container_t *src,
         src->n_runs++;
     }
 }
+
+bool run_container_select(const run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+    for(int i = 0; i < container->n_runs; i++) {
+        uint16_t length = container->runs[i].length;
+        if(rank <= *start_rank + length) {
+            uint16_t value = container->runs[i].value;
+            *element = value + rank-(*start_rank);
+            return true;
+        }
+        else
+            *start_rank += length+1;
+    }
+    return false;
+}
