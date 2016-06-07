@@ -1019,7 +1019,7 @@ void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *ra) {
     }
 }
 
-bool roaring_bitmap_get_element_of_rank(roaring_bitmap_t *bm, uint32_t rank, uint32_t *element) {
+bool roaring_bitmap_select(roaring_bitmap_t *bm, uint32_t rank, uint32_t *element) {
     void *container;
     uint8_t typecode;
     uint16_t key;
@@ -1029,7 +1029,7 @@ bool roaring_bitmap_get_element_of_rank(roaring_bitmap_t *bm, uint32_t rank, uin
     while(!valid && i < bm->high_low_container->size) {
         container = bm->high_low_container->containers[i];
         typecode = bm->high_low_container->typecodes[i];
-        valid = container_get_element_of_rank(container, typecode, &start_rank, rank, element) ;
+        valid = container_select(container, typecode, &start_rank, rank, element) ;
         i++;
     }
 

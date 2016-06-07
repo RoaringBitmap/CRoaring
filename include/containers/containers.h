@@ -1295,15 +1295,15 @@ static inline void *container_range_of_ones(uint32_t range_start,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-static inline bool container_get_element_of_rank(void *container, uint8_t typecode,
+static inline bool container_select(void *container, uint8_t typecode,
                                                 uint32_t *start_rank, uint32_t rank, uint32_t *element) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return bitset_get_element_of_rank((bitset_container_t *)container, start_rank, rank, element);
+            return bitset_container_select((bitset_container_t *)container, start_rank, rank, element);
         case ARRAY_CONTAINER_TYPE_CODE:
-            return array_get_element_of_rank((array_container_t *)container, start_rank, rank, element);
+            return array_container_select((array_container_t *)container, start_rank, rank, element);
         case RUN_CONTAINER_TYPE_CODE:
-            return run_get_element_of_rank((run_container_t *)container, start_rank, rank, element);
+            return run_container_select((run_container_t *)container, start_rank, rank, element);
         default:
             assert(false);
             __builtin_unreachable();

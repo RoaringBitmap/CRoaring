@@ -264,7 +264,7 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
    function returns true and set element to the element of given rank.
    Otherwise, it returns false.
  */
-bool roaring_bitmap_get_element_of_rank(roaring_bitmap_t *ra, uint32_t rank,
+bool roaring_bitmap_select(roaring_bitmap_t *ra, uint32_t rank,
                                         uint32_t *element);
 
 #ifdef __cplusplus

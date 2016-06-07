@@ -1501,7 +1501,7 @@ void test_inplace_rand_flips() {
 }
 
 // randomized test for rank query
-void get_element_of_rank_tests() {
+void select_test() {
     srand(1234);
     const int min_runs = 1;
     const uint32_t range = 2000000;
@@ -1538,13 +1538,13 @@ void get_element_of_rank_tests() {
         uint32_t element;
         for(uint32_t i = 0 ; i < true_card ; i++) {
             if(input[i]) {
-                assert_true(roaring_bitmap_get_element_of_rank(r, rank, &element));
+                assert_true(roaring_bitmap_select(r, rank, &element));
                 assert_int_equal(i, element);
                 rank++;
             }
         }
         for(uint32_t n = 0 ; n < 10 ; n++) {
-            assert_false(roaring_bitmap_get_element_of_rank(r, true_card+n, &element));
+            assert_false(roaring_bitmap_select(r, true_card+n, &element));
         }
 
         roaring_bitmap_free(r);
@@ -1603,7 +1603,7 @@ int main() {
         cmocka_unit_test(test_inplace_negation_run1),
         cmocka_unit_test(test_inplace_negation_run2),
         cmocka_unit_test(test_inplace_rand_flips),
-        cmocka_unit_test(get_element_of_rank_tests),
+        cmocka_unit_test(select_test),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
     };

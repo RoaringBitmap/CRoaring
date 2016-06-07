@@ -713,7 +713,7 @@ void run_container_smart_append_exclusive(run_container_t *src,
     }
 }
 
-bool run_get_element_of_rank(run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+bool run_container_select(run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
     for(int i = 0; i < container->n_runs; i++) {
         uint16_t length = container->runs[i].length;
         if(rank <= *start_rank + length) {

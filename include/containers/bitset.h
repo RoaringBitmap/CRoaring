@@ -387,6 +387,6 @@ bool bitset_container_equals(bitset_container_t *container1,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-bool bitset_get_element_of_rank(bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
+bool bitset_container_select(bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */
