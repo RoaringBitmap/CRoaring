@@ -1295,8 +1295,9 @@ static inline void *container_range_of_ones(uint32_t range_start,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-static inline bool container_select(void *container, uint8_t typecode,
+static inline bool container_select(const void *container, uint8_t typecode,
                                                 uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+    container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_select((bitset_container_t *)container, start_rank, rank, element);

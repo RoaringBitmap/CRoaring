@@ -1508,7 +1508,7 @@ void select_test() {
     char *input = malloc(range);
 
     for (int card = 2; card < 1000000; card *= 8) {
-        printf("get_element_of_rank_tests with attempted card %d", card);
+        printf("select_test with attempted card %d", card);
 
         roaring_bitmap_t *r = roaring_bitmap_create();
         memset(input, 0, range);
@@ -1534,20 +1534,27 @@ void select_test() {
         printf(" and actual card = %u\n",
                (unsigned)true_card);
 
-        uint32_t rank=0;
-        uint32_t element;
-        for(uint32_t i = 0 ; i < true_card ; i++) {
-            if(input[i]) {
-                assert_true(roaring_bitmap_select(r, rank, &element));
-                assert_int_equal(i, element);
-                rank++;
+        r->copy_on_write = 1;
+        roaring_bitmap_t *r_copy = roaring_bitmap_copy(r);
+
+        void* bitmaps[] = {r, r_copy};
+        for(unsigned i_bm = 0 ; i_bm < 2 ; i_bm ++) {
+            uint32_t rank=0;
+            uint32_t element;
+            for(uint32_t i = 0 ; i < true_card ; i++) {
+                if(input[i]) {
+                    assert_true(roaring_bitmap_select(bitmaps[i_bm], rank, &element));
+                    assert_int_equal(i, element);
+                    rank++;
+                }
             }
-        }
-        for(uint32_t n = 0 ; n < 10 ; n++) {
-            assert_false(roaring_bitmap_select(r, true_card+n, &element));
+            for(uint32_t n = 0 ; n < 10 ; n++) {
+                assert_false(roaring_bitmap_select(bitmaps[i_bm], true_card+n, &element));
+            }
         }
 
         roaring_bitmap_free(r);
+        roaring_bitmap_free(r_copy);
     }
     free(input);
 }
