@@ -116,6 +116,67 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
     printf("}");
 }
 
+
+typedef struct min_max_sum_s {
+  uint32_t min;
+  uint32_t max;
+  uint64_t sum;
+} min_max_sum_t;
+
+static void min_max_sum_fnc(uint32_t value, void *param) {
+  min_max_sum_t * mms = (min_max_sum_t * ) param;
+  if(value > mms->max) mms->max = value;
+  if(value < mms->min) mms->min = value;
+  mms->sum += value;
+}
+
+
+/**
+*  (For advanced users.)
+* Collect statistics about the bitmap
+*/
+void roaring_bitmap_statistics(const roaring_bitmap_t *ra, roaring_statistics_t * stat) {
+  memset(stat, 0, sizeof (*stat));
+  stat->n_containers = ra->high_low_container->size;
+  stat->cardinality = roaring_bitmap_get_cardinality(ra);
+  min_max_sum_t mms;
+  mms.min = UINT32_C(0xFFFFFFFF); mms.max = UINT32_C(0); mms.sum = 0;
+  roaring_iterate(ra,&min_max_sum_fnc,&mms);
+  stat->min_value = mms.min;
+  stat->max_value = mms.max;
+  stat->sum_value = mms.sum;
+
+  for (int i = 0; i < ra->high_low_container->size; ++i) {
+    uint8_t truetype =  get_container_type(ra->high_low_container->containers[i],
+      ra->high_low_container->typecodes[i]);
+    uint32_t card = container_get_cardinality(ra->high_low_container->containers[i],
+      ra->high_low_container->typecodes[i]);
+    uint32_t sbytes =  container_size_in_bytes(ra->high_low_container->containers[i],
+      ra->high_low_container->typecodes[i]);
+    switch (truetype) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            stat->n_bitset_containers++;
+            stat->n_values_bitset_containers += card;
+            stat->n_bytes_bitset_containers += sbytes;
+            break;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            stat->n_array_containers++;
+            stat->n_values_array_containers += card;
+            stat->n_bytes_array_containers += sbytes;
+            break;
+        case RUN_CONTAINER_TYPE_CODE:
+            stat->n_run_containers++;
+            stat->n_values_run_containers += card;
+            stat->n_bytes_run_containers += sbytes;
+            break;
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+  }
+}
+
+
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans = (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
     if (!ans) {
@@ -647,7 +708,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
       return(NULL);
 }
 
-void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
+void roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr) {
     for (int i = 0; i < ra->high_low_container->size; ++i)
         container_iterate(ra->high_low_container->containers[i],

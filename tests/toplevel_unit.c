@@ -40,7 +40,26 @@ void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
+void test_stats() {
+    // create a new empty bitmap
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+    // then we can add values
+    for (uint32_t i = 100; i < 1000; i++) {
+        roaring_bitmap_add(r1, i);
+    }
+    for (uint32_t i = 1000; i < 100000; i+=10) {
+        roaring_bitmap_add(r1, i);
+    }
+    roaring_bitmap_add(r1, 100000);
 
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(r1,&stats);
+    assert_true(stats.cardinality == roaring_bitmap_get_cardinality(r1));
+    assert_true(stats.min_value == 100);
+    assert_true(stats.max_value == 100000);
+    roaring_bitmap_free(r1);
+}
 
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
@@ -1561,9 +1580,10 @@ void select_test() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_stats),
         cmocka_unit_test(test_addremove),
         cmocka_unit_test(test_addremoverun),
-         cmocka_unit_test(test_basic_add),
+        cmocka_unit_test(test_basic_add),
         cmocka_unit_test(test_remove_withrun),
         cmocka_unit_test(test_remove_from_copies_true),
         cmocka_unit_test(test_remove_from_copies_false),

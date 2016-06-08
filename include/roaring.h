@@ -202,7 +202,7 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
  *  roaring_iterator is simply a pointer to a function that returns void,
  *  and takes (uint32_t,void*) as inputs.
  */
-void roaring_iterate(roaring_bitmap_t *ra, roaring_iterator iterator,
+void roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr);
 
 /**
@@ -266,6 +266,17 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
  */
 bool roaring_bitmap_select(const roaring_bitmap_t *ra, uint32_t rank,
                                         uint32_t *element);
+
+
+
+
+/**
+*  (For advanced users.)
+* Collect statistics about the bitmap, see roaring_types.h for
+* a description of roaring_statistics_t
+*/
+void roaring_bitmap_statistics(const roaring_bitmap_t *ra, roaring_statistics_t * stat);
+
 
 #ifdef __cplusplus
 }
