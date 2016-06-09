@@ -100,9 +100,12 @@ void test_example(bool copy_on_write) {
     r3->copy_on_write = copy_on_write;
 
     // we can also go in reverse and go from arrays to bitmaps
-    uint32_t card1;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-    assert_non_null(arr1);
+    uint64_t card1 = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    assert(arr1  != NULL);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    arr1 = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
     free(arr1);
@@ -431,9 +434,14 @@ void test_portable_serialize() {
     r2 = roaring_bitmap_portable_deserialize(serialized);
     assert_non_null(r2);
 
-    uint32_t card1, card2;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-    uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+
+    uint64_t card1 = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr1);
+
+    uint64_t card2 = roaring_bitmap_get_cardinality(r2);
+    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
@@ -453,8 +461,13 @@ void test_portable_serialize() {
     r2 = roaring_bitmap_portable_deserialize(serialized);
     assert_non_null(r2);
 
-    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+    card1 = roaring_bitmap_get_cardinality(r1);
+    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr1);
+
+    card2 = roaring_bitmap_get_cardinality(r2);
+    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
@@ -480,8 +493,13 @@ void test_portable_serialize() {
     r2 = roaring_bitmap_portable_deserialize(serialized);
     assert_non_null(r2);
 
-    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+    card1 = roaring_bitmap_get_cardinality(r1);
+    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr1);
+
+    card2 = roaring_bitmap_get_cardinality(r2);
+    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert(array_equals(arr1, card1, arr2, card2));
     assert(roaring_bitmap_equals(r1, r2));
@@ -509,9 +527,13 @@ void test_serialize() {
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
     assert_non_null(r2);
 
-    uint32_t card1, card2;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-    uint32_t *arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+    uint64_t card1 = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr1);
+
+    uint64_t card2 = roaring_bitmap_get_cardinality(r2);
+    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
@@ -539,10 +561,17 @@ void test_serialize() {
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
     assert_non_null(r2);
-    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+
+    card1 = roaring_bitmap_get_cardinality(r1);
+    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
     assert_non_null(arr1);
-    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+    roaring_bitmap_to_uint32_array(r1, arr1);
+
+    card2 = roaring_bitmap_get_cardinality(r2);
+    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
     assert_non_null(arr2);
+    roaring_bitmap_to_uint32_array(r2, arr2);
+
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
@@ -560,8 +589,15 @@ void test_serialize() {
     serialized = roaring_bitmap_serialize(r1, &serialize_len);
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
 
-    arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-    arr2 = roaring_bitmap_to_uint32_array(r2, &card2);
+    card1 = roaring_bitmap_get_cardinality(r1);
+    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    assert_non_null(arr1);
+    roaring_bitmap_to_uint32_array(r1, arr1);
+
+    card2 = roaring_bitmap_get_cardinality(r2);
+    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    assert_non_null(arr2);
+    roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
@@ -782,8 +818,10 @@ void test_conversion_to_int_array() {
 
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
+
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -820,8 +858,9 @@ void test_conversion_to_int_array_with_runoptimize() {
     r1 = make_roaring_from_array(ans, ans_ctr);
     assert_true(roaring_bitmap_run_optimize(r1));
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -843,8 +882,9 @@ void test_array_to_run() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
     assert_true(roaring_bitmap_run_optimize(r1));
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -867,8 +907,9 @@ void test_array_to_self() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
     assert_false(roaring_bitmap_run_optimize(r1));
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -890,8 +931,9 @@ void test_bitset_to_self() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
     assert_false(roaring_bitmap_run_optimize(r1));
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -913,8 +955,9 @@ void test_bitset_to_run() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
     assert(roaring_bitmap_run_optimize(r1));
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -940,8 +983,9 @@ void test_run_to_self() {
     b = roaring_bitmap_run_optimize(r1);       // we hope it will keep it
     assert_true(b);  // still true there is a runcontainer
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -966,8 +1010,9 @@ void test_remove_run_to_bitset() {
     assert_true(
         roaring_bitmap_run_optimize(r1));  // there is again a run container
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -992,8 +1037,9 @@ void test_remove_run_to_array() {
     assert_true(
         roaring_bitmap_run_optimize(r1));  // there is again a run container
 
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(r1, &card);
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);

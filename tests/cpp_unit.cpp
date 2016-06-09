@@ -54,9 +54,10 @@ void test_example(bool copy_on_write) {
     r3->copy_on_write = copy_on_write;
 
     // we can also go in reverse and go from arrays to bitmaps
-    uint32_t card1;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
+    uint64_t card1 = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
     assert(arr1  != NULL);
+    roaring_bitmap_to_uint32_array(r1, arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
     free(arr1);

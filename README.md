@@ -70,9 +70,10 @@ uint32_t somevalues[] = {2, 3, 4};
 roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, somevalues);
 
 // we can also go in reverse and go from arrays to bitmaps
-uint32_t card1;
-uint32_t *arr1 = roaring_bitmap_to_uint32_array(r1, &card1);
-roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
+uint64_t card1 = roaring_bitmap_get_cardinality(r1);
+uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+assert(arr1  != NULL);
+roaring_bitmap_to_uint32_array(r1, arr1);
 free(arr1);
 assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
 
@@ -196,5 +197,3 @@ Better bitmap performance with Roaring bitmaps,
 Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016
 http://arxiv.org/abs/1402.6407 This paper used data from http://lemire.me/data/realroaring2014.html
 - Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience (accepted in 2016, to appear) http://arxiv.org/abs/1603.06549
-
-

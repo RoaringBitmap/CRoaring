@@ -77,10 +77,25 @@ bool array_equals(uint32_t *a1, int32_t size1, uint32_t *a2, int32_t size2) {
 
 bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_or(bitmap1, bitmap2);
-    uint32_t card1, card2, card;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(bitmap1, &card1);
-    uint32_t *arr2 = roaring_bitmap_to_uint32_array(bitmap2, &card2);
-    uint32_t *arr = roaring_bitmap_to_uint32_array(temp, &card);
+    uint64_t card1, card2, card;
+    card1 = roaring_bitmap_get_cardinality(bitmap1);
+    card2 = roaring_bitmap_get_cardinality(bitmap2);
+    card = roaring_bitmap_get_cardinality(temp);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+
+    if((arr1 == NULL) || (arr2 == NULL) || (arr == NULL)) {
+      free(arr1);
+      free(arr2);
+      free(arr);
+      return false;
+    }
+
+    roaring_bitmap_to_uint32_array(bitmap1, arr1);
+    roaring_bitmap_to_uint32_array(bitmap2, arr2);
+    roaring_bitmap_to_uint32_array(temp, arr);
+
     uint32_t *buffer = (uint32_t *)malloc(sizeof(uint32_t) * (card1 + card2));
     size_t cardtrue = union_uint32(arr1, card1, arr2, card2, buffer);
     bool answer = array_equals(arr, card, buffer, cardtrue);
@@ -107,10 +122,25 @@ bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
 bool is_intersection_correct(roaring_bitmap_t *bitmap1,
                              roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_and(bitmap1, bitmap2);
-    uint32_t card1, card2, card;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(bitmap1, &card1);
-    uint32_t *arr2 = roaring_bitmap_to_uint32_array(bitmap2, &card2);
-    uint32_t *arr = roaring_bitmap_to_uint32_array(temp, &card);
+    uint64_t card1, card2, card;
+    card1 = roaring_bitmap_get_cardinality(bitmap1);
+    card2 = roaring_bitmap_get_cardinality(bitmap2);
+    card = roaring_bitmap_get_cardinality(temp);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+
+    if((arr1 == NULL) || (arr2 == NULL) || (arr == NULL)) {
+      free(arr1);
+      free(arr2);
+      free(arr);
+      return false;
+    }
+
+    roaring_bitmap_to_uint32_array(bitmap1, arr1);
+    roaring_bitmap_to_uint32_array(bitmap2, arr2);
+    roaring_bitmap_to_uint32_array(temp, arr);
+
     uint32_t *buffer = (uint32_t *)malloc(sizeof(uint32_t) * (card1 + card2));
     size_t cardtrue = intersection_uint32(arr1, card1, arr2, card2, buffer);
     bool answer = array_equals(arr, card, buffer, cardtrue);
@@ -149,9 +179,13 @@ roaring_bitmap_t *inplace_intersection(roaring_bitmap_t *bitmap1,
 }
 
 bool slow_bitmap_equals(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
-    uint32_t card1, card2;
-    uint32_t *arr1 = roaring_bitmap_to_uint32_array(bitmap1, &card1);
-    uint32_t *arr2 = roaring_bitmap_to_uint32_array(bitmap2, &card2);
+    uint64_t card1, card2;
+    card1 = roaring_bitmap_get_cardinality(bitmap1);
+    card2 = roaring_bitmap_get_cardinality(bitmap2);
+    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(bitmap1, arr1);
+    roaring_bitmap_to_uint32_array(bitmap2, arr2);
     bool answer = array_equals(arr1, card1, arr2, card2);
     free(arr1);
     free(arr2);
@@ -347,12 +381,16 @@ bool compare_wide_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
 
 bool is_bitmap_equal_to_array(roaring_bitmap_t *bitmap, uint32_t *vals,
                               size_t numbers) {
-    uint32_t card;
-    uint32_t *arr = roaring_bitmap_to_uint32_array(bitmap, &card);
+    uint64_t card;
+    card = roaring_bitmap_get_cardinality(bitmap);
+    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(bitmap, arr);
     bool answer = array_equals(arr, card, vals, numbers);
     free(arr);
     return answer;
 }
+
+
 
 bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
     printf("[%s] %s datadir=%s %s\n", __FILE__, __func__, dirname, copy_on_write ? "copy-on-write":"hard-copies");

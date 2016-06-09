@@ -543,15 +543,8 @@ bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra) {
 }
 
 
-uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
-                                         uint32_t *cardinality) {
-    uint32_t card1 = roaring_bitmap_get_cardinality(ra);
-
-    uint32_t *ans = malloc((card1 + 10) * sizeof(uint32_t));  //+20??
-    // TODO Valgrind reports we write beyond the end of this array (?) with an
-    // 8-byte write (?)
-    // but it may just be an AVX2 instruction needing a little extra space.  Add
-    // 40 bytes...seems to fix problem, but adding 8 didn't
+void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
+                                         uint32_t *ans) {
     uint32_t ctr = 0;
 
     for (int i = 0; i < ra->high_low_container->size; ++i) {
@@ -561,9 +554,6 @@ uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
             ((uint32_t)ra->high_low_container->keys[i]) << 16);
         ctr += num_added;
     }
-    assert(ctr == card1);
-    *cardinality = ctr;
-    return ans;
 }
 
 /** convert array and bitmap containers to run containers when it is more
@@ -629,18 +619,14 @@ char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len) {
            as an array of uint32_t rather than a serialized bitmap.
         */
         free(ret);
-        uint32_t cardinality;
-        unsigned char *a =
-            (unsigned char *)roaring_bitmap_to_uint32_array(ra, &cardinality);
+        uint64_t cardinality = roaring_bitmap_get_cardinality(ra);
 
-        /*
-           In roaring_bitmap_to_uint32_array() the allocated memory is more than
-           the necessary amount. So we shift data of one byte to mark it as
-           a "non-standard serialization" instead of reallocating all the memory
-        */
+        unsigned char *a = (unsigned char *) malloc(cardinality * sizeof(uint32_t) + 1);
+        if(a == NULL) return NULL;
         *serialize_len = 1 + cardinality * sizeof(uint32_t);
-        memmove(&a[1], a, *serialize_len);
-        a[0] = SERIALIZATION_ARRAY_UINT32, *serialize_len += 1;
+        roaring_bitmap_to_uint32_array(ra,(uint32_t *) a);
+        memmove(a+1, a, cardinality * sizeof(uint32_t));
+        a[0] = SERIALIZATION_ARRAY_UINT32;
         return ((char *)a);
     } else
         return (ret);

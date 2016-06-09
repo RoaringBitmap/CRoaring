@@ -147,11 +147,14 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);
 bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
 
 /**
- * Convert the bitmap to an array. Array is allocated and caller is responsible
- * for eventually freeing it.
+ * Convert the bitmap to an array. Write the output to "ans",
+ * caller is responsible to ensure that there is enough memory
+ * allocated
+ * (e.g., ans = malloc(roaring_bitmap_get_cardinality(mybitmap)
+ *   * sizeof(uint32_t))
  */
-uint32_t *roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
-                                         uint32_t *cardinality);
+void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
+                                         uint32_t *ans);
 
 /**
  *  Remove run-length encoding even when it is more space efficient
