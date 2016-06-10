@@ -558,8 +558,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
     __m256i add8 = _mm256_set1_epi32(8);
     uint32_t *safeout = out + outcapacity;
     size_t i = 0;
-    const int numberofbytes = 2;  // process two bytes at a time
-    for (; (i < length) && (out + numberofbytes * 8 <= safeout); ++i) {
+    for (; (i < length) && (out + 64 <= safeout); ++i) {
         uint64_t w = array[i];
         if (w == 0) {
             baseVec = _mm256_add_epi32(baseVec, incVec);
