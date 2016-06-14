@@ -192,7 +192,7 @@ void to_uint32_array_test() {
 
         int card = bitset_container_cardinality(B);
 
-        uint32_t* out = malloc(sizeof(uint32_t) * (card + sizeof(__m256i)));
+        uint32_t* out = malloc(sizeof(uint32_t) * card );
         assert_non_null(out);
 
         int nc = bitset_container_to_uint32_array(out, B, 0);
