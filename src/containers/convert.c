@@ -261,7 +261,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
                 return answer;
             }
 
-            int local_run_start = __builtin_ctzl(cur_word);
+            int local_run_start = __builtin_ctzll(cur_word);
             int run_start = local_run_start + 64 * long_ctr;
             uint64_t cur_word_with_1s = cur_word | (cur_word - 1);
 
@@ -277,7 +277,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
                 *typecode_after = RUN_CONTAINER_TYPE_CODE;
                 return answer;
             }
-            int local_run_end = __builtin_ctzl(~cur_word_with_1s);
+            int local_run_end = __builtin_ctzll(~cur_word_with_1s);
             run_end = local_run_end + long_ctr * 64;
             add_run(answer, run_start, run_end - 1);
             run_count++;

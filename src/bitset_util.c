@@ -589,7 +589,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
         uint64_t w = array[i];
         while ((w != 0) && (out < safeout)) {
             uint64_t t = w & -w;
-            int r = __builtin_ctzl(w);
+            int r = __builtin_ctzll(w);
             *out = r + base;
             out++;
             w ^= t;
@@ -607,7 +607,7 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
         uint64_t w = bitset[i];
         while (w != 0) {
             uint64_t t = w & -w;
-            int r = __builtin_ctzl(w);
+            int r = __builtin_ctzll(w);
             out[outpos++] = r + base;
             w ^= t;
         }
@@ -625,7 +625,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
         uint64_t w = bitset1[i] & bitset2[i];
         while (w != 0) {
             uint64_t t = w & -w;
-            int r = __builtin_ctzl(w);
+            int r = __builtin_ctzll(w);
             out[outpos++] = r + base;
             w ^= t;
         }
@@ -688,7 +688,7 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
         uint64_t w = bitset[i];
         while ((w != 0) && (out < safeout)) {
             uint64_t t = w & -w;
-            int r = __builtin_ctzl(w);
+            int r = __builtin_ctzll(w);
             *out = r + base;
             out++;
             w ^= t;
@@ -716,7 +716,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
         uint64_t w = bitset[i];
         while (w != 0) {
             uint64_t t = w & -w;
-            int r = __builtin_ctzl(w);
+            int r = __builtin_ctzll(w);
             out[outpos++] = r + base;
             w ^= t;
         }

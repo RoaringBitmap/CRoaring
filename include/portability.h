@@ -8,8 +8,8 @@
 
 #include <stdint.h>
 
-#if __SIZEOF_LONG__ == 4
-#error This code assumes  64-bit longs (by use of the GCC intrinsics). Your system is not currently supported.
+#if __SIZEOF_LONG_LONG__ != 8
+#error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
 
 #if defined(USEAVX) || defined(__x86_64__) || defined(_M_X64)
@@ -38,7 +38,7 @@ static inline int hamming(uint64_t x) {
 #if defined(IS_X64) && defined(__POPCNT__)
  return _mm_popcnt_u64(x);
 #else
-  return __builtin_popcountl(x);
+  return __builtin_popcountll(x);
 #endif
 }
 

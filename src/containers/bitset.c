@@ -473,7 +473,7 @@ void bitset_container_printf(const bitset_container_t * v) {
 		uint64_t w = v->array[i];
 		while (w != 0) {
 			uint64_t t = w & -w;
-			int r = __builtin_ctzl(w);
+			int r = __builtin_ctzll(w);
 			if(iamfirst) {// predicted to be false
 				printf("%d",base + r);
 				iamfirst = false;
@@ -497,7 +497,7 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 		uint64_t w = v->array[i];
 		while (w != 0) {
 			uint64_t t = w & -w;
-			int r = __builtin_ctzl(w);
+			int r = __builtin_ctzll(w);
 			if(iamfirst) {// predicted to be false
 				printf("%d", r + base);
 				iamfirst = false;
@@ -593,7 +593,7 @@ void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
     uint64_t w = cont->array[i];
     while (w != 0) {
       uint64_t t = w & -w;
-      int r = __builtin_ctzl(w);
+      int r = __builtin_ctzll(w);
       iterator(r + base, ptr);
       w ^= t;
     }
@@ -631,7 +631,7 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
             uint16_t base = i*64;
             while (w != 0) {
                 uint64_t t = w & -w;
-                int r = __builtin_ctzl(w);
+                int r = __builtin_ctzll(w);
                 if(*start_rank == rank) {
                     *element = r+base;
                     return true;
