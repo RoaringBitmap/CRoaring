@@ -23,7 +23,8 @@ void array_cache_flush(array_container_t* B) {
 }
 #else
 // no cache flush on other architectures? 
-void array_cache_flush() {
+void array_cache_flush(array_container_t* B) {
+  (void) B;
 }
 #endif
 

@@ -23,7 +23,8 @@ void run_cache_flush(run_container_t* B) {
     }
 }
 #else
-void run_cache_flush() {
+void run_cache_flush(run_container_t* B) {
+  (void) B;
 }
 #endif
 

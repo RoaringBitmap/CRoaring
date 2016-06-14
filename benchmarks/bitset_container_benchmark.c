@@ -22,7 +22,8 @@ void bitset_cache_flush(bitset_container_t* B) {
     }
 }
 #else
-void bitset_cache_flush() {
+void bitset_cache_flush(bitset_container_t* B) {
+  (void) B;
 }
 
 #endif
