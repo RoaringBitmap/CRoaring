@@ -31,7 +31,7 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 # Requirements
 
 - 64-bit Linux-like operating system (including MacOS)
-- Recent Intel processor: Haswell (2013) or better. For 64-bit processors without AVX support (including ARM processors), build the project with ``-DAVX_TUNING=OFF``.
+- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better. For x64/x86 processors without AVX support, invoke ``cmake'' with  ``-DAVX_TUNING=OFF`` to disable AVX support. The library should build without problem on ARM processors.
 - Recent C compiler (GCC 4.8 or better), the code is also compatible with C++
 - CMake
 - clang-format (optional)
@@ -141,6 +141,17 @@ make
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
+If wish to build an x64/x86 version without AVX support, you can do the following :
+
+````
+mkdir -p buildnoavx
+cd buildnoavx
+cmake -DAVX_TUNING=OFF .. 
+make
+```
+
+On x64 processors, it is highly recommended to enable ``AVX_TUNING`` however, even if it limits your binary code to recent Intel/AMD processors.
+
 For a debug release, starting from the root directory of the project (CRoaring), try
 
 ```
@@ -149,6 +160,8 @@ cd debug
 cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE=ON ..
 make
 ```
+
+(Again, you can use the ``-DAVX_TUNING=OFF`` flag if you need it.)
 
 (Of course you can replace the ``debug`` directory with any other directory name.)
 
@@ -197,3 +210,5 @@ Better bitmap performance with Roaring bitmaps,
 Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016
 http://arxiv.org/abs/1402.6407 This paper used data from http://lemire.me/data/realroaring2014.html
 - Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience (accepted in 2016, to appear) http://arxiv.org/abs/1603.06549
+-  Samy Chambi, Daniel Lemire, Robert Godin, Kamel Boukhalfa, Charles Allen, Fangjin Yang, Optimizing Druid with Roaring bitmaps, IDEAS 2016, 2016. http://r-libre.teluq.ca/950/
+-  
