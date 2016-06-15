@@ -137,7 +137,7 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t x);
 
 /**
- * Get the cardinality of the bitmap (number elements).
+ * Get the cardinality of the bitmap (number of elements).
  */
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);
 
