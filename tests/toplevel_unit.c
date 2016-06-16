@@ -48,13 +48,13 @@ void test_stats() {
     for (uint32_t i = 100; i < 1000; i++) {
         roaring_bitmap_add(r1, i);
     }
-    for (uint32_t i = 1000; i < 100000; i+=10) {
+    for (uint32_t i = 1000; i < 100000; i += 10) {
         roaring_bitmap_add(r1, i);
     }
     roaring_bitmap_add(r1, 100000);
 
     roaring_statistics_t stats;
-    roaring_bitmap_statistics(r1,&stats);
+    roaring_bitmap_statistics(r1, &stats);
     assert_true(stats.cardinality == roaring_bitmap_get_cardinality(r1));
     assert_true(stats.min_value == 100);
     assert_true(stats.max_value == 100000);
@@ -101,8 +101,8 @@ void test_example(bool copy_on_write) {
 
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
-    assert(arr1  != NULL);
+    uint32_t *arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
+    assert(arr1 != NULL);
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
@@ -136,6 +136,19 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(bigunion);
     roaring_bitmap_free(bigunionheap);
 
+    // we can compute xor two-by-two
+    roaring_bitmap_t *rx1_2_3 = roaring_bitmap_xor(r1, r2);
+    rx1_2_3->copy_on_write = copy_on_write;
+    roaring_bitmap_xor_inplace(rx1_2_3, r3);
+
+    // we can compute a big xor
+    const roaring_bitmap_t *allmybitmaps_x[] = {r1, r2, r3};
+    roaring_bitmap_t *bigxor = roaring_bitmap_xor_many(3, allmybitmaps);
+    assert_true(roaring_bitmap_equals(rx1_2_3, bigxor));
+
+    roaring_bitmap_free(rx1_2_3);
+    roaring_bitmap_free(bigxor);
+
     // we can compute intersection two-by-two
     roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);
     roaring_bitmap_free(i1_2);
@@ -164,15 +177,9 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(r3);
 }
 
-void test_example_true() {
-  test_example(true);
-}
+void test_example_true() { test_example(true); }
 
-void test_example_false() {
-  test_example(false);
-}
-
-
+void test_example_false() { test_example(false); }
 
 void can_remove_from_copies(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
@@ -196,7 +203,6 @@ void can_remove_from_copies(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
-
 void test_basic_add() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     roaring_bitmap_add(bm, 0);
@@ -206,10 +212,10 @@ void test_basic_add() {
 
 void test_addremove() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
-    for(uint32_t value = 33057 ; value < 147849 ; value += 8) {
+    for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_add(bm, value);
     }
-    for(uint32_t value = 33057 ; value < 147849 ; value += 8) {
+    for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_remove(bm, value);
     }
     assert_true(roaring_bitmap_is_empty(bm));
@@ -218,49 +224,42 @@ void test_addremove() {
 
 void test_addremoverun() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
-    for(uint32_t value = 33057 ; value < 147849 ; value += 8) {
+    for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_add(bm, value);
     }
     roaring_bitmap_run_optimize(bm);
-    for(uint32_t value = 33057 ; value < 147849 ; value += 8) {
+    for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_remove(bm, value);
     }
     assert_true(roaring_bitmap_is_empty(bm));
     roaring_bitmap_free(bm);
 }
 
+void test_remove_from_copies_true() { can_remove_from_copies(true); }
 
-void test_remove_from_copies_true() {
-  can_remove_from_copies(true);
-}
-
-void test_remove_from_copies_false() {
-  can_remove_from_copies(false);
-}
-
+void test_remove_from_copies_false() { can_remove_from_copies(false); }
 
 bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
     roaring_bitmap_t *result = roaring_bitmap_from_range(min, max, step);
     assert_non_null(result);
     roaring_bitmap_t *expected = roaring_bitmap_create();
     assert_non_null(expected);
-    for(uint32_t value = min ; value < max ; value += step) {
+    for (uint32_t value = min; value < max; value += step) {
         roaring_bitmap_add(expected, value);
     }
     bool is_equal = roaring_bitmap_equals(expected, result);
-    if(!is_equal) {
+    if (!is_equal) {
         fprintf(stderr, "[ERROR] check_bitmap_from_range(%u, %u, %u)\n",
-            (unsigned)min, (unsigned)max, (unsigned)step);
+                (unsigned)min, (unsigned)max, (unsigned)step);
     }
     roaring_bitmap_free(expected);
     roaring_bitmap_free(result);
     return is_equal;
 }
 
-
 void test_silly_range() {
-    check_bitmap_from_range(0,1,1);
-    check_bitmap_from_range(0,2,1);
+    check_bitmap_from_range(0, 1, 1);
+    check_bitmap_from_range(0, 2, 1);
     roaring_bitmap_t *bm1 = roaring_bitmap_from_range(0, 1, 1);
     roaring_bitmap_t *bm2 = roaring_bitmap_from_range(0, 2, 1);
     assert_false(roaring_bitmap_equals(bm1, bm2));
@@ -281,22 +280,26 @@ void test_range_and_serialize() {
 }
 
 void test_bitmap_from_range() {
-    assert_true(roaring_bitmap_from_range(1, 10, 0) == NULL); // undefined range
-    assert_true(roaring_bitmap_from_range(5, 1, 3) == NULL); // empty range
-    for(uint32_t i = 16 ; i < 1<<18 ; i*= 2) {
-        uint32_t min = i-10;
-        for(uint32_t delta = 16 ; delta < 1<<18 ; delta*=2) {
-            uint32_t max = i+delta;
-            for(uint32_t step = 1 ; step <= 64 ; step*=2) { // check powers of 2
+    assert_true(roaring_bitmap_from_range(1, 10, 0) ==
+                NULL);                                        // undefined range
+    assert_true(roaring_bitmap_from_range(5, 1, 3) == NULL);  // empty range
+    for (uint32_t i = 16; i < 1 << 18; i *= 2) {
+        uint32_t min = i - 10;
+        for (uint32_t delta = 16; delta < 1 << 18; delta *= 2) {
+            uint32_t max = i + delta;
+            for (uint32_t step = 1; step <= 64;
+                 step *= 2) {  // check powers of 2
                 assert_true(check_bitmap_from_range(min, max, step));
             }
-            for(uint32_t step = 1 ; step <= 81 ; step*=3) { // check powers of 3
+            for (uint32_t step = 1; step <= 81;
+                 step *= 3) {  // check powers of 3
                 assert_true(check_bitmap_from_range(min, max, step));
             }
-            for(uint32_t step = 1 ; step <= 125 ; step*=5) { // check powers of 5
+            for (uint32_t step = 1; step <= 125;
+                 step *= 5) {  // check powers of 5
                 assert_true(check_bitmap_from_range(min, max, step));
             }
-         }
+        }
     }
 }
 
@@ -403,16 +406,15 @@ void test_remove_withrun() {
     /* Add some values to the bitmap */
     for (int i = 100, top_val = 20000; i < top_val; i++)
         roaring_bitmap_add(r1, i);
-    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000 - 100);
     roaring_bitmap_remove(r1, 1000);
-    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100-1);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000 - 100 - 1);
     roaring_bitmap_run_optimize(r1);
-    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100-1);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000 - 100 - 1);
     roaring_bitmap_remove(r1, 2000);
-    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000-100-1-1);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 20000 - 100 - 1 - 1);
     roaring_bitmap_free(r1);
 }
-
 
 void test_portable_serialize() {
     roaring_bitmap_t *r1 =
@@ -432,13 +434,12 @@ void test_portable_serialize() {
     r2 = roaring_bitmap_portable_deserialize(serialized);
     assert_non_null(r2);
 
-
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    uint32_t *arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     uint64_t card2 = roaring_bitmap_get_cardinality(r2);
-    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    uint32_t *arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
@@ -460,11 +461,11 @@ void test_portable_serialize() {
     assert_non_null(r2);
 
     card1 = roaring_bitmap_get_cardinality(r1);
-    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     card2 = roaring_bitmap_get_cardinality(r2);
-    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
@@ -492,11 +493,11 @@ void test_portable_serialize() {
     assert_non_null(r2);
 
     card1 = roaring_bitmap_get_cardinality(r1);
-    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     card2 = roaring_bitmap_get_cardinality(r2);
-    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert(array_equals(arr1, card1, arr2, card2));
@@ -526,11 +527,11 @@ void test_serialize() {
     assert_non_null(r2);
 
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    uint32_t *arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     uint64_t card2 = roaring_bitmap_get_cardinality(r2);
-    uint32_t *arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    uint32_t *arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r2, arr2);
 
     assert_true(array_equals(arr1, card1, arr2, card2));
@@ -561,15 +562,14 @@ void test_serialize() {
     assert_non_null(r2);
 
     card1 = roaring_bitmap_get_cardinality(r1);
-    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     assert_non_null(arr1);
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     card2 = roaring_bitmap_get_cardinality(r2);
-    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     assert_non_null(arr2);
     roaring_bitmap_to_uint32_array(r2, arr2);
-
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
@@ -588,12 +588,12 @@ void test_serialize() {
     r2 = roaring_bitmap_deserialize(serialized, serialize_len);
 
     card1 = roaring_bitmap_get_cardinality(r1);
-    arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
+    arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     assert_non_null(arr1);
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     card2 = roaring_bitmap_get_cardinality(r2);
-    arr2 = (uint32_t *) malloc(card2 * sizeof(uint32_t));
+    arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     assert_non_null(arr2);
     roaring_bitmap_to_uint32_array(r2, arr2);
 
@@ -607,13 +607,13 @@ void test_serialize() {
 
     /* ******* */
     roaring_bitmap_t *old_bm = roaring_bitmap_create();
-    for(unsigned i = 0 ; i < 102 ; i++)
-      roaring_bitmap_add(old_bm, i);
+    for (unsigned i = 0; i < 102; i++) roaring_bitmap_add(old_bm, i);
     uint32_t size;
     char *buff = roaring_bitmap_serialize(old_bm, &size);
     roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff, size);
     free(buff);
-    assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) == (unsigned int)roaring_bitmap_get_cardinality(new_bm));
+    assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) ==
+                (unsigned int)roaring_bitmap_get_cardinality(new_bm));
     assert_true(roaring_bitmap_equals(old_bm, new_bm));
     roaring_bitmap_free(old_bm);
     roaring_bitmap_free(new_bm);
@@ -775,14 +775,374 @@ void test_union(bool copy_on_write) {
     roaring_bitmap_free(r1);
 }
 
-void test_union_true() {
-  test_union(true);
+void test_union_true() { test_union(true); }
+
+void test_union_false() { test_union(false); }
+
+// density factor changes as one gets further into bitmap
+static roaring_bitmap_t *gen_bitmap(double start_density,
+                                    double density_gradient, int run_length,
+                                    int blank_range_start, int blank_range_end,
+                                    int universe_size) {
+    srand(2345);
+    roaring_bitmap_t *ans = roaring_bitmap_create();
+    double d = start_density;
+
+    for (int i = 0; i < universe_size; i += run_length) {
+        d = start_density + i * density_gradient;
+        double r = rand() / (double)RAND_MAX;
+        if (r < d && !(i >= blank_range_start && i < blank_range_end))
+            for (int j = 0; j < run_length; ++j) roaring_bitmap_add(ans, i + j);
+    }
+    roaring_bitmap_run_optimize(ans);
+    return ans;
 }
 
-void test_union_false() {
-  test_union(false);
+static roaring_bitmap_t *synthesized_xor(roaring_bitmap_t *r1,
+                                         roaring_bitmap_t *r2,
+                                         int universe_size) {
+    roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
+    roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
+    roaring_bitmap_t *r1_nand_r2 =
+        roaring_bitmap_flip(r1_and_r2, 0U, (unsigned)universe_size);
+    roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_and(r1_or_r2, r1_nand_r2);
+    roaring_bitmap_free(r1_or_r2);
+    roaring_bitmap_free(r1_and_r2);
+    roaring_bitmap_free(r1_nand_r2);
+    return r1_xor_r2;
 }
 
+// only for valid for universe < 10M
+static void show_difference(roaring_bitmap_t *result,
+                            roaring_bitmap_t *hopedfor) {
+    int out_ctr = 0;
+    for (int i = 0; i < 10000000; ++i) {
+        if (roaring_bitmap_contains(result, i) &&
+            !roaring_bitmap_contains(hopedfor, i)) {
+            printf("result incorrectly has %d\n", i);
+            ++out_ctr;
+        }
+        if (!roaring_bitmap_contains(result, i) &&
+            roaring_bitmap_contains(hopedfor, i)) {
+            printf("result incorrectly omits %d\n", i);
+            ++out_ctr;
+        }
+        if (out_ctr > 20) {
+            printf("20 errors seen, stopping comparison\n");
+            break;
+        }
+    }
+}
+
+void test_xor(bool copy_on_write) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
+
+    for (uint32_t i = 0; i < 300; ++i) {
+        if (i % 2 == 0) roaring_bitmap_add(r1, i);
+        if (i % 3 == 0) roaring_bitmap_add(r2, i);
+    }
+
+    roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_xor(r1, r2);
+    r1_xor_r2->copy_on_write = copy_on_write;
+
+    int ansctr = 0;
+    for (int i = 0; i < 300; ++i) {
+        if (((i % 2 == 0) || (i % 3 == 0)) && (i % 6 != 0)) {
+            ansctr++;
+            if (!roaring_bitmap_contains(r1_xor_r2, i))
+                printf("missing %d\n", i);
+        } else if (roaring_bitmap_contains(r1_xor_r2, i))
+            printf("surplus %d\n", i);
+    }
+
+    assert_int_equal(roaring_bitmap_get_cardinality(r1_xor_r2), ansctr);
+
+    roaring_bitmap_free(r1_xor_r2);
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+
+    // some tougher tests on synthetic data
+
+    roaring_bitmap_t *r[] = {
+        // ascending density, last containers might be runs
+        gen_bitmap(0.0, 1e-6, 1, 0, 0, 1000000),
+        // descending density, first containers might be runs
+        gen_bitmap(1.0, -1e-6, 1, 0, 0, 1000000),
+        // uniformly rather sparse
+        gen_bitmap(1e-5, 0.0, 1, 0, 0, 2000000),
+        // uniformly rather sparse with runs
+        gen_bitmap(1e-5, 0.0, 3, 0, 0, 2000000),
+        // uniformly rather dense
+        gen_bitmap(1e-1, 0.0, 1, 0, 0, 2000000),
+        // ascending density but never too dense
+        gen_bitmap(0.001, 1e-7, 1, 0, 0, 1000000),
+        // ascending density but very sparse
+        gen_bitmap(0.0, 1e-10, 1, 0, 0, 1000000),
+        // descending with a gap
+        gen_bitmap(0.5, -1e-6, 1, 600000, 800000, 1000000),
+        //  gap elsewhere
+        gen_bitmap(1, -1e-6, 1, 300000, 500000, 1000000),
+        0  // sentinel
+    };
+
+    for (int i = 0; r[i]; ++i) {
+        for (int j = i; r[j]; ++j) {
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+            roaring_bitmap_t *result = roaring_bitmap_xor(r[i], r[j]);
+
+            bool is_equal = roaring_bitmap_equals(expected, result);
+
+            assert_true(is_equal);
+            roaring_bitmap_free(expected);
+            roaring_bitmap_free(result);
+        }
+    }
+    for (int i = 0; r[i]; ++i) roaring_bitmap_free(r[i]);
+}
+
+void test_xor_true() { test_xor(true); }
+
+void test_xor_false() { test_xor(false); }
+
+void test_xor_inplace(bool copy_on_write) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
+
+    for (uint32_t i = 0; i < 300; ++i) {
+        if (i % 2 == 0) roaring_bitmap_add(r1, i);
+        if (i % 3 == 0) roaring_bitmap_add(r2, i);
+    }
+    roaring_bitmap_xor_inplace(r1, r2);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), 166 - 16);
+
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+
+    // some tougher tests on synthetic data
+
+    roaring_bitmap_t *r[] = {
+        // ascending density, last containers might be runs
+        gen_bitmap(0.0, 1e-6, 1, 0, 0, 1000000),
+        // descending density, first containers might be runs
+        gen_bitmap(1.0, -1e-6, 1, 0, 0, 1000000),
+        // uniformly rather sparse
+        gen_bitmap(1e-5, 0.0, 1, 0, 0, 2000000),
+        // uniformly rather sparse with runs
+        gen_bitmap(1e-5, 0.0, 3, 0, 0, 2000000),
+        // uniformly rather dense
+        gen_bitmap(1e-1, 0.0, 1, 0, 0, 2000000),
+        // ascending density but never too dense
+        gen_bitmap(0.001, 1e-7, 1, 0, 0, 1000000),
+        // ascending density but very sparse
+        gen_bitmap(0.0, 1e-10, 1, 0, 0, 1000000),
+        // descending with a gap
+        gen_bitmap(0.5, -1e-6, 1, 600000, 800000, 1000000),
+        //  gap elsewhere
+        gen_bitmap(1, -1e-6, 1, 300000, 500000, 1000000),
+        0  // sentinel
+    };
+
+    for (int i = 0; r[i]; ++i) {
+        for (int j = i + 1; r[j]; ++j) {
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+            roaring_bitmap_t *copy = roaring_bitmap_copy(r[i]);
+            copy->copy_on_write = copy_on_write;
+
+            roaring_bitmap_xor_inplace(copy, r[j]);
+
+            bool is_equal = roaring_bitmap_equals(expected, copy);
+            if (!is_equal) {
+                printf("problem with i=%d j=%d\n", i, j);
+                printf("copy's cardinality  is %d and expected's is %d\n",
+                       (int)roaring_bitmap_get_cardinality(copy),
+                       (int)roaring_bitmap_get_cardinality(expected));
+                show_difference(copy, expected);
+            }
+
+            assert_true(is_equal);
+            roaring_bitmap_free(expected);
+            roaring_bitmap_free(copy);
+        }
+    }
+    for (int i = 0; r[i]; ++i) roaring_bitmap_free(r[i]);
+}
+
+void test_xor_inplace_true() { test_xor_inplace(true); }
+
+void test_xor_inplace_false() { test_xor_inplace(false); }
+
+void test_xor_lazy(bool copy_on_write) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
+
+    for (uint32_t i = 0; i < 300; ++i) {
+        if (i % 2 == 0) roaring_bitmap_add(r1, i);
+        if (i % 3 == 0) roaring_bitmap_add(r2, i);
+    }
+
+    roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_lazy_xor(r1, r2);
+    roaring_bitmap_repair_after_lazy(r1_xor_r2);
+
+    r1_xor_r2->copy_on_write = copy_on_write;
+
+    int ansctr = 0;
+    for (int i = 0; i < 300; ++i) {
+        if (((i % 2 == 0) || (i % 3 == 0)) && (i % 6 != 0)) {
+            ansctr++;
+            if (!roaring_bitmap_contains(r1_xor_r2, i))
+                printf("missing %d\n", i);
+        } else if (roaring_bitmap_contains(r1_xor_r2, i))
+            printf("surplus %d\n", i);
+    }
+
+    assert_int_equal(roaring_bitmap_get_cardinality(r1_xor_r2), ansctr);
+
+    roaring_bitmap_free(r1_xor_r2);
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+
+    // some tougher tests on synthetic data
+    roaring_bitmap_t *r[] = {
+        // ascending density, last containers might be runs
+        gen_bitmap(0.0, 1e-6, 1, 0, 0, 1000000),
+        // descending density, first containers might be runs
+        gen_bitmap(1.0, -1e-6, 1, 0, 0, 1000000),
+        // uniformly rather sparse
+        gen_bitmap(1e-5, 0.0, 1, 0, 0, 2000000),
+        // uniformly rather sparse with runs
+        gen_bitmap(1e-5, 0.0, 3, 0, 0, 2000000),
+        // uniformly rather dense
+        gen_bitmap(1e-1, 0.0, 1, 0, 0, 2000000),
+        // ascending density but never too dense
+        gen_bitmap(0.001, 1e-7, 1, 0, 0, 1000000),
+        // ascending density but very sparse
+        gen_bitmap(0.0, 1e-10, 1, 0, 0, 1000000),
+        // descending with a gap
+        gen_bitmap(0.5, -1e-6, 1, 600000, 800000, 1000000),
+        //  gap elsewhere
+        gen_bitmap(1, -1e-6, 1, 300000, 500000, 1000000),
+        0  // sentinel
+    };
+
+    for (int i = 0; r[i]; ++i) {
+        for (int j = i; r[j]; ++j) {
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+
+            roaring_bitmap_t *result = roaring_bitmap_lazy_xor(r[i], r[j]);
+            roaring_bitmap_repair_after_lazy(result);
+
+            bool is_equal = roaring_bitmap_equals(expected, result);
+            if (!is_equal) {
+                printf("problem with i=%d j=%d\n", i, j);
+                printf("result's cardinality  is %d and expected's is %d\n",
+                       (int)roaring_bitmap_get_cardinality(result),
+                       (int)roaring_bitmap_get_cardinality(expected));
+                show_difference(result, expected);
+            }
+
+            assert_true(is_equal);
+            roaring_bitmap_free(expected);
+            roaring_bitmap_free(result);
+        }
+    }
+    for (int i = 0; r[i]; ++i) roaring_bitmap_free(r[i]);
+}
+
+void test_xor_lazy_true() { test_xor_lazy(true); }
+
+void test_xor_lazy_false() { test_xor_lazy(false); }
+
+void test_xor_lazy_inplace(bool copy_on_write) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
+
+    for (uint32_t i = 0; i < 300; ++i) {
+        if (i % 2 == 0) roaring_bitmap_add(r1, i);
+        if (i % 3 == 0) roaring_bitmap_add(r2, i);
+    }
+
+    roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_copy(r1);
+    r1_xor_r2->copy_on_write = copy_on_write;
+
+    roaring_bitmap_lazy_xor_inplace(r1_xor_r2, r2);
+    roaring_bitmap_repair_after_lazy(r1_xor_r2);
+
+    int ansctr = 0;
+    for (int i = 0; i < 300; ++i) {
+        if (((i % 2 == 0) || (i % 3 == 0)) && (i % 6 != 0)) {
+            ansctr++;
+            if (!roaring_bitmap_contains(r1_xor_r2, i))
+                printf("missing %d\n", i);
+        } else if (roaring_bitmap_contains(r1_xor_r2, i))
+            printf("surplus %d\n", i);
+    }
+
+    assert_int_equal(roaring_bitmap_get_cardinality(r1_xor_r2), ansctr);
+
+    roaring_bitmap_free(r1_xor_r2);
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+
+    // some tougher tests on synthetic data
+    roaring_bitmap_t *r[] = {
+        // ascending density, last containers might be runs
+        gen_bitmap(0.0, 1e-6, 1, 0, 0, 1000000),
+        // descending density, first containers might be runs
+        gen_bitmap(1.0, -1e-6, 1, 0, 0, 1000000),
+        // uniformly rather sparse
+        gen_bitmap(1e-5, 0.0, 1, 0, 0, 2000000),
+        // uniformly rather sparse with runs
+        gen_bitmap(1e-5, 0.0, 3, 0, 0, 2000000),
+        // uniformly rather dense
+        gen_bitmap(1e-1, 0.0, 1, 0, 0, 2000000),
+        // ascending density but never too dense
+        gen_bitmap(0.001, 1e-7, 1, 0, 0, 1000000),
+        // ascending density but very sparse
+        gen_bitmap(0.0, 1e-10, 1, 0, 0, 1000000),
+        // descending with a gap
+        gen_bitmap(0.5, -1e-6, 1, 600000, 800000, 1000000),
+        //  gap elsewhere
+        gen_bitmap(1, -1e-6, 1, 300000, 500000, 1000000),
+        0  // sentinel
+    };
+
+    for (int i = 0; r[i]; ++i) {
+        for (int j = i; r[j]; ++j) {
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+
+            roaring_bitmap_t *result = roaring_bitmap_copy(r[i]);
+            roaring_bitmap_lazy_xor_inplace(result, r[j]);
+            roaring_bitmap_repair_after_lazy(result);
+
+            bool is_equal = roaring_bitmap_equals(expected, result);
+            if (!is_equal) {
+                printf("problem with i=%d j=%d\n", i, j);
+                printf("result's cardinality  is %d and expected's is %d\n",
+                       (int)roaring_bitmap_get_cardinality(result),
+                       (int)roaring_bitmap_get_cardinality(expected));
+                show_difference(result, expected);
+            }
+
+            assert_true(is_equal);
+            roaring_bitmap_free(expected);
+            roaring_bitmap_free(result);
+        }
+    }
+    for (int i = 0; r[i]; ++i) roaring_bitmap_free(r[i]);
+}
+
+void test_xor_lazy_inplace_true() { test_xor_lazy_inplace(true); }
+
+void test_xor_lazy_inplace_false() { test_xor_lazy_inplace(false); }
 
 static roaring_bitmap_t *make_roaring_from_array(uint32_t *a, int len) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -817,9 +1177,8 @@ void test_conversion_to_int_array() {
     roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
-
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
     roaring_bitmap_free(r1);
@@ -857,7 +1216,7 @@ void test_conversion_to_int_array_with_runoptimize() {
     assert_true(roaring_bitmap_run_optimize(r1));
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -881,7 +1240,7 @@ void test_array_to_run() {
     assert_true(roaring_bitmap_run_optimize(r1));
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -906,7 +1265,7 @@ void test_array_to_self() {
     assert_false(roaring_bitmap_run_optimize(r1));
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -930,7 +1289,7 @@ void test_bitset_to_self() {
     assert_false(roaring_bitmap_run_optimize(r1));
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -954,7 +1313,7 @@ void test_bitset_to_run() {
     assert(roaring_bitmap_run_optimize(r1));
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -982,7 +1341,7 @@ void test_run_to_self() {
     assert_true(b);  // still true there is a runcontainer
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -1009,7 +1368,7 @@ void test_remove_run_to_bitset() {
         roaring_bitmap_run_optimize(r1));  // there is again a run container
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -1036,7 +1395,7 @@ void test_remove_run_to_array() {
         roaring_bitmap_run_optimize(r1));  // there is again a run container
 
     uint64_t card = roaring_bitmap_get_cardinality(r1);
-    uint32_t *arr = (uint32_t *) malloc(card * sizeof(uint32_t));
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
     assert_true(array_equals(arr, card, ans, ans_ctr));
@@ -1239,7 +1598,8 @@ void test_negation_run1() { test_negation_helper(true, 1); }
 // runs to runs
 void test_negation_run2() { test_negation_helper(true, 30); }
 
-/* Now, same thing except inplace.  At this level, cannot really know if inplace
+/* Now, same thing except inplace.  At this level, cannot really know if
+ * inplace
  * done */
 
 // array in, array out
@@ -1451,7 +1811,7 @@ void test_inplace_negation_run2() { test_inplace_negation_helper(true, 30); }
 void test_rand_flips() {
     srand(1234);
     const int min_runs = 1;
-    const int flip_trials = 5;// these are expensive tests
+    const int flip_trials = 5;  // these are expensive tests
     const int range = 2000000;
     char *input = malloc(range);
     char *output = malloc(range);
@@ -1507,7 +1867,7 @@ void test_rand_flips() {
 void test_inplace_rand_flips() {
     srand(1234);
     const int min_runs = 1;
-    const int flip_trials = 5; // these are expensive tests
+    const int flip_trials = 5;  // these are expensive tests
     const int range = 2000000;
     char *input = malloc(range);
     char *output = malloc(range);
@@ -1594,25 +1954,26 @@ void select_test() {
         }
         roaring_bitmap_run_optimize(r);
         uint32_t true_card = roaring_bitmap_get_cardinality(r);
-        printf(" and actual card = %u\n",
-               (unsigned)true_card);
+        printf(" and actual card = %u\n", (unsigned)true_card);
 
         r->copy_on_write = 1;
         roaring_bitmap_t *r_copy = roaring_bitmap_copy(r);
 
-        void* bitmaps[] = {r, r_copy};
-        for(unsigned i_bm = 0 ; i_bm < 2 ; i_bm ++) {
-            uint32_t rank=0;
+        void *bitmaps[] = {r, r_copy};
+        for (unsigned i_bm = 0; i_bm < 2; i_bm++) {
+            uint32_t rank = 0;
             uint32_t element;
-            for(uint32_t i = 0 ; i < true_card ; i++) {
-                if(input[i]) {
-                    assert_true(roaring_bitmap_select(bitmaps[i_bm], rank, &element));
+            for (uint32_t i = 0; i < true_card; i++) {
+                if (input[i]) {
+                    assert_true(
+                        roaring_bitmap_select(bitmaps[i_bm], rank, &element));
                     assert_int_equal(i, element);
                     rank++;
                 }
             }
-            for(uint32_t n = 0 ; n < 10 ; n++) {
-                assert_false(roaring_bitmap_select(bitmaps[i_bm], true_card+n, &element));
+            for (uint32_t n = 0; n < 10; n++) {
+                assert_false(roaring_bitmap_select(bitmaps[i_bm], true_card + n,
+                                                   &element));
             }
         }
 
@@ -1624,19 +1985,15 @@ void select_test() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_stats),
-        cmocka_unit_test(test_addremove),
-        cmocka_unit_test(test_addremoverun),
-        cmocka_unit_test(test_basic_add),
+        cmocka_unit_test(test_stats), cmocka_unit_test(test_addremove),
+        cmocka_unit_test(test_addremoverun), cmocka_unit_test(test_basic_add),
         cmocka_unit_test(test_remove_withrun),
         cmocka_unit_test(test_remove_from_copies_true),
         cmocka_unit_test(test_remove_from_copies_false),
         cmocka_unit_test(test_range_and_serialize),
-        cmocka_unit_test(test_silly_range),
-        cmocka_unit_test(test_example_true),
+        cmocka_unit_test(test_silly_range), cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
-        cmocka_unit_test(test_bitmap_from_range),
-        cmocka_unit_test(test_printf),
+        cmocka_unit_test(test_bitmap_from_range), cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
         cmocka_unit_test(test_printf_withrun), cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterate_empty),
@@ -1649,8 +2006,15 @@ int main() {
         cmocka_unit_test(test_intersection_array_x_array_inplace),
         cmocka_unit_test(test_intersection_bitset_x_bitset),
         cmocka_unit_test(test_intersection_bitset_x_bitset_inplace),
-        cmocka_unit_test(test_union_true),
-        cmocka_unit_test(test_union_false),
+        cmocka_unit_test(test_union_true), cmocka_unit_test(test_union_false),
+        cmocka_unit_test(test_xor_false),
+        cmocka_unit_test(test_xor_inplace_false),
+        cmocka_unit_test(test_xor_lazy_false),
+        cmocka_unit_test(test_xor_lazy_inplace_false),
+        cmocka_unit_test(test_xor_true),
+        cmocka_unit_test(test_xor_inplace_true),
+        cmocka_unit_test(test_xor_lazy_true),
+        cmocka_unit_test(test_xor_lazy_inplace_true),
         cmocka_unit_test(test_conversion_to_int_array),
         cmocka_unit_test(test_array_to_run),
         cmocka_unit_test(test_array_to_self),

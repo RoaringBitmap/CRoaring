@@ -88,8 +88,6 @@ static inline void run_container_clear(run_container_t *run) {
     run->n_runs = 0;
 }
 
-
-
 /**
  * Append run described by vl to the run container, possibly merging.
  * It is assumed that the run would be inserted at the end of the container, no
@@ -108,11 +106,11 @@ static inline void run_container_append(run_container_t *run, rle16_t vl,
         run->n_runs++;
         *previousrl = vl;
     } else {
-      uint32_t newend = vl.value + vl.length + UINT32_C(1);
-      if (newend > previousend) {  // we merge
-          previousrl->length = newend - 1 - previousrl->value;
-          run->runs[run->n_runs - 1] = *previousrl;
-      }
+        uint32_t newend = vl.value + vl.length + UINT32_C(1);
+        if (newend > previousend) {  // we merge
+            previousrl->length = newend - 1 - previousrl->value;
+            run->runs[run->n_runs - 1] = *previousrl;
+        }
     }
 }
 
@@ -158,7 +156,7 @@ static inline void run_container_append_value(run_container_t *run,
  */
 static inline rle16_t run_container_append_value_first(run_container_t *run,
                                                        uint16_t val) {
-    //rle16_t newrle = (rle16_t){.value = val, .length = 0};// requires C99
+    // rle16_t newrle = (rle16_t){.value = val, .length = 0};// requires C99
     rle16_t newrle;
     newrle.value = val;
     newrle.length = 0;
@@ -196,6 +194,12 @@ void run_container_union_inplace(run_container_t *src_1,
 void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst);
+
+/* Compute the symmetric difference of `src_1' and `src_2' and write the result
+ * to `dst'
+ * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
+void run_container_xor(const run_container_t *src_1,
+                       const run_container_t *src_2, run_container_t *dst);
 
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit
@@ -255,7 +259,8 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
  * Return the serialized size in bytes of a container (see run_container_write).
  * This is meant to be compatible with the Java and Go versions of Roaring.
  */
-static inline int32_t run_container_size_in_bytes(const run_container_t *container) {
+static inline int32_t run_container_size_in_bytes(
+    const run_container_t *container) {
     return run_container_serialized_size_in_bytes(container->n_runs);
 }
 
@@ -281,8 +286,7 @@ static inline run_container_t *run_container_create_range(uint32_t start,
         rle16_t r;
         r.value = (uint16_t)start;
         r.length = (uint16_t)(stop - start - 1);
-        run_container_append_first(
-            rc, r);
+        run_container_append_first(rc, r);
     }
     return rc;
 }

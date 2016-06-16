@@ -126,11 +126,13 @@ void *convert_run_to_efficient_container(run_container_t *c,
                                          uint8_t *typecode_after) {
     int32_t size_as_run_container =
         run_container_serialized_size_in_bytes(c->n_runs);
+
     int32_t size_as_bitset_container =
         bitset_container_serialized_size_in_bytes();
     int32_t card = run_container_cardinality(c);
     int32_t size_as_array_container =
         array_container_serialized_size_in_bytes(card);
+
     int32_t min_size_non_run =
         size_as_bitset_container < size_as_array_container
             ? size_as_bitset_container
@@ -155,6 +157,7 @@ void *convert_run_to_efficient_container(run_container_t *c,
         *typecode_after = ARRAY_CONTAINER_TYPE_CODE;
         return answer;
     }
+
     // else to bitset
     bitset_container_t *answer = bitset_container_create();
 
@@ -227,7 +230,8 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         array_container_free(c);
         return answer;
-    } else if (typecode_original == BITSET_CONTAINER_TYPE_CODE) {  // run conversions on bitset
+    } else if (typecode_original ==
+               BITSET_CONTAINER_TYPE_CODE) {  // run conversions on bitset
         // does bitset need conversion to run?
         bitset_container_t *c_qua_bitset = (bitset_container_t *)c;
         int32_t n_runs = bitset_container_number_of_runs(c_qua_bitset);
@@ -285,8 +289,8 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         }
         return answer;
     } else {
-    	assert(false);
+        assert(false);
         __builtin_unreachable();
-    	return NULL;
+        return NULL;
     }
 }

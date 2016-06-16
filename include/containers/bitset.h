@@ -194,24 +194,29 @@ static inline int bitset_container_cardinality(
     return bitset->cardinality;
 }
 
-/* Get whether there is at least one bit set  */
-static inline bool bitset_container_nonzero_cardinality(
-    const bitset_container_t *bitset) {
-    return bitset->cardinality > 0;
-}
-
 /* Copy one container into another. We assume that they are distinct. */
 void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest);
 
-/*  Add all the values [min,max) at a distance k*step from min: min, min+step,.... */
-void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min, uint32_t max,
-                                   uint16_t step);
+/*  Add all the values [min,max) at a distance k*step from min: min,
+ * min+step,.... */
+void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
+                                     uint32_t max, uint16_t step);
 
 /* Get the number of bits set (force computation). This does not modify bitset.
  * To update the cardinality, you should do
  * bitset->cardinality =  bitset_container_compute_cardinality(bitset).*/
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
+
+/* Get whether there is at least one bit set  */
+static inline bool bitset_container_nonzero_cardinality(
+    bitset_container_t *bitset) {
+    // account for laziness
+    if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY)
+        // could bail early instead with a nonzero result
+        bitset->cardinality = bitset_container_compute_cardinality(bitset);
+    return bitset->cardinality > 0;
+}
 
 /* Computes the union of bitsets `src_1' and `src_2' into `dst'  and return the
  * cardinality. */
@@ -387,6 +392,8 @@ bool bitset_container_equals(bitset_container_t *container1,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-bool bitset_container_select(const bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
+bool bitset_container_select(const bitset_container_t *container,
+                             uint32_t *start_rank, uint32_t rank,
+                             uint32_t *element);
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

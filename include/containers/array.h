@@ -74,9 +74,10 @@ static inline bool array_container_nonzero_cardinality(
 void array_container_copy(const array_container_t *src, array_container_t *dst);
 
 /*  Add all the values in [min,max) (included) at a distance k*step from min.
-    The container must have a size less or equal to DEFAULT_MAX_SIZE after this addition. */
-void array_container_add_from_range(array_container_t *arr, uint32_t min, uint32_t max,
-                                    uint16_t step);
+    The container must have a size less or equal to DEFAULT_MAX_SIZE after this
+   addition. */
+void array_container_add_from_range(array_container_t *arr, uint32_t min,
+                                    uint32_t max, uint16_t step);
 
 /* Set the cardinality to zero (does not release memory). */
 static inline void array_container_clear(array_container_t *array) {
@@ -96,6 +97,11 @@ static inline bool array_container_full(const array_container_t *array) {
 void array_container_union(const array_container_t *src_1,
                            const array_container_t *src_2,
                            array_container_t *dst);
+
+/* symmetric difference, see array_container_union */
+void array_container_xor(const array_container_t *array_1,
+                         const array_container_t *array_2,
+                         array_container_t *out);
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */

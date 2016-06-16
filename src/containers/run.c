@@ -423,6 +423,46 @@ void run_container_union_inplace(run_container_t *src_1,
     }
 }
 
+/* Compute the symmetric difference of `src_1' and `src_2' and write the result
+ * to `dst'
+ * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
+void run_container_xor(const run_container_t *src_1,
+                       const run_container_t *src_2, run_container_t *dst) {
+    // don't bother to convert xor with full range into negation
+    // since negation is implemented similarly
+
+    const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
+    if (dst->capacity < neededcapacity)
+        run_container_grow(dst, neededcapacity, false);
+
+    int32_t pos1 = 0;
+    int32_t pos2 = 0;
+    dst->n_runs = 0;
+
+    while ((pos1 < src_1->n_runs) && (pos2 < src_2->n_runs)) {
+        if (src_1->runs[pos1].value <= src_2->runs[pos2].value) {
+            run_container_smart_append_exclusive(dst, src_1->runs[pos1].value,
+                                                 src_1->runs[pos1].length);
+            pos1++;
+        } else {
+            run_container_smart_append_exclusive(dst, src_2->runs[pos2].value,
+                                                 src_2->runs[pos2].length);
+            pos2++;
+        }
+    }
+    while (pos1 < src_1->n_runs) {
+        run_container_smart_append_exclusive(dst, src_1->runs[pos1].value,
+                                             src_1->runs[pos1].length);
+        pos1++;
+    }
+
+    while (pos2 < src_2->n_runs) {
+        run_container_smart_append_exclusive(dst, src_2->runs[pos2].value,
+                                             src_2->runs[pos2].length);
+        pos2++;
+    }
+}
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
 void run_container_intersection(const run_container_t *src_1,
@@ -664,6 +704,7 @@ bool run_container_equals(run_container_t *container1,
 // Java version (or  is it even used?)
 
 // follows the Java implementation closely
+// length is the rle-value.  Ie, run [10,12) uses a length value 1.
 void run_container_smart_append_exclusive(run_container_t *src,
                                           const uint16_t start,
                                           const uint16_t length) {

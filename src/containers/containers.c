@@ -11,9 +11,12 @@ extern void *container_iand(void *c1, uint8_t type1, const void *c2,
 extern void *container_ior(void *c1, uint8_t type1, const void *c2,
                            uint8_t type2, uint8_t *result_type);
 
+extern void *container_ixor(void *c1, uint8_t type1, const void *c2,
+                            uint8_t type2, uint8_t *result_type);
+
 void container_printf(const void *container, uint8_t typecode) {
-	container = container_unwrap_shared(container,&typecode);
-	switch (typecode) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             bitset_container_printf(container);
             return;
@@ -30,8 +33,8 @@ void container_printf(const void *container, uint8_t typecode) {
 
 void container_printf_as_uint32_array(const void *container, uint8_t typecode,
                                       uint32_t base) {
-	container = container_unwrap_shared(container,&typecode);
-	switch (typecode) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             bitset_container_printf_as_uint32_array(container, base);
             return;
@@ -47,9 +50,10 @@ void container_printf_as_uint32_array(const void *container, uint8_t typecode,
     }
 }
 
-int32_t container_serialize(const void *container, uint8_t typecode, char *buf) {
-	container = container_unwrap_shared(container,&typecode);
-	switch (typecode) {
+int32_t container_serialize(const void *container, uint8_t typecode,
+                            char *buf) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return (bitset_container_serialize((bitset_container_t *)container,
                                                buf));
@@ -66,7 +70,7 @@ int32_t container_serialize(const void *container, uint8_t typecode, char *buf) 
 }
 
 uint32_t container_serialization_len(const void *container, uint8_t typecode) {
-	container = container_unwrap_shared(container,&typecode);
+    container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_serialization_len();
@@ -92,8 +96,8 @@ void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len) {
         case RUN_CONTAINER_TYPE_CODE:
             return (run_container_deserialize(buf, buf_len));
         case SHARED_CONTAINER_TYPE_CODE:
-        	printf("this should never happen.\n");
-			assert(0);
+            printf("this should never happen.\n");
+            assert(0);
             __builtin_unreachable();
             return (NULL);
         default:
@@ -125,40 +129,44 @@ extern void *container_and(const void *c1, uint8_t type1, const void *c2,
 extern void *container_or(const void *c1, uint8_t type1, const void *c2,
                           uint8_t type2, uint8_t *result_type);
 
-void *get_copy_of_container(void * container, uint8_t * typecode, bool copy_on_write) {
-  if(copy_on_write) {
-	shared_container_t *shared_container;
-	if(*typecode == SHARED_CONTAINER_TYPE_CODE) {
-		shared_container = (shared_container_t *) container;
-		shared_container->counter += 1;
-		return shared_container;
-	}
-	assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
+extern void *container_xor(const void *c1, uint8_t type1, const void *c2,
+                           uint8_t type2, uint8_t *result_type);
 
-    if ((shared_container = malloc(sizeof(shared_container_t))) == NULL) {
-        return NULL;
-    }
+void *get_copy_of_container(void *container, uint8_t *typecode,
+                            bool copy_on_write) {
+    if (copy_on_write) {
+        shared_container_t *shared_container;
+        if (*typecode == SHARED_CONTAINER_TYPE_CODE) {
+            shared_container = (shared_container_t *)container;
+            shared_container->counter += 1;
+            return shared_container;
+        }
+        assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
 
-    shared_container->container = container;
-    shared_container->typecode = *typecode;
+        if ((shared_container = malloc(sizeof(shared_container_t))) == NULL) {
+            return NULL;
+        }
 
-    shared_container->counter = 2;
-    *typecode = SHARED_CONTAINER_TYPE_CODE;
+        shared_container->container = container;
+        shared_container->typecode = *typecode;
 
-    return shared_container;
-  }//copy_on_write
-  // otherwise, no copy on write...
-  const void * actualcontainer = container_unwrap_shared((const void *)container, typecode);
-  assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
-  return container_clone(actualcontainer, *typecode);
+        shared_container->counter = 2;
+        *typecode = SHARED_CONTAINER_TYPE_CODE;
 
+        return shared_container;
+    }  // copy_on_write
+    // otherwise, no copy on write...
+    const void *actualcontainer =
+        container_unwrap_shared((const void *)container, typecode);
+    assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
+    return container_clone(actualcontainer, *typecode);
 }
 /**
  * Copies a container, requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
 void *container_clone(const void *container, uint8_t typecode) {
-  	container = container_unwrap_shared(container,&typecode);
+    container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
             return bitset_container_clone((bitset_container_t *)container);
@@ -167,7 +175,7 @@ void *container_clone(const void *container, uint8_t typecode) {
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_clone((run_container_t *)container);
         case SHARED_CONTAINER_TYPE_CODE:
-        	printf("shared containers are not cloneable\n");
+            printf("shared containers are not cloneable\n");
             assert(false);
             return NULL;
         default:
@@ -177,32 +185,33 @@ void *container_clone(const void *container, uint8_t typecode) {
     }
 }
 
-void * shared_container_extract_copy (shared_container_t * container, uint8_t * typecode) {
-	assert(container->counter > 0);
-	assert(container->typecode != SHARED_CONTAINER_TYPE_CODE);
-	container->counter--;
-        *typecode = container->typecode;
-        void * answer;
-	if(container->counter == 0) {
-                answer = container->container;
-		container->container = NULL; // paranoid
-		free(container);
-	} else {
-                answer = container_clone(container->container, *typecode);
-        }
-       	assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
-        return answer;
+void *shared_container_extract_copy(shared_container_t *container,
+                                    uint8_t *typecode) {
+    assert(container->counter > 0);
+    assert(container->typecode != SHARED_CONTAINER_TYPE_CODE);
+    container->counter--;
+    *typecode = container->typecode;
+    void *answer;
+    if (container->counter == 0) {
+        answer = container->container;
+        container->container = NULL;  // paranoid
+        free(container);
+    } else {
+        answer = container_clone(container->container, *typecode);
+    }
+    assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
+    return answer;
 }
 
-void shared_container_free (shared_container_t * container) {
-	assert(container->counter > 0);
-	container->counter--;
-	if(container->counter == 0) {
-		assert(container->typecode != SHARED_CONTAINER_TYPE_CODE);
-		container_free(container->container,container->typecode);
-		container->container = NULL; // paranoid
-		free(container);
-	}
+void shared_container_free(shared_container_t *container) {
+    assert(container->counter > 0);
+    container->counter--;
+    if (container->counter == 0) {
+        assert(container->typecode != SHARED_CONTAINER_TYPE_CODE);
+        container_free(container->container, container->typecode);
+        container->container = NULL;  // paranoid
+        free(container);
+    }
 }
 
 extern void *container_not(const void *c1, uint8_t type1, uint8_t *result_type);
@@ -218,3 +227,10 @@ extern void *container_inot_range(void *c1, uint8_t type1, uint32_t range_start,
 
 extern void *container_range_of_ones(uint32_t range_start, uint32_t range_end,
                                      uint8_t *result_type);
+
+// where are the correponding things for union and intersection??
+extern void *container_lazy_xor(const void *c1, uint8_t type1, const void *c2,
+                                uint8_t type2, uint8_t *result_type);
+
+extern void *container_lazy_ixor(void *c1, uint8_t type1, const void *c2,
+                                 uint8_t type2, uint8_t *result_type);

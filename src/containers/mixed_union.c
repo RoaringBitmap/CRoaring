@@ -57,6 +57,7 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
+// why do we leave the result as a run container??
 void array_run_container_union(const array_container_t *src_1,
                                const run_container_t *src_2,
                                run_container_t *dst) {
@@ -64,6 +65,7 @@ void array_run_container_union(const array_container_t *src_1,
         run_container_copy(src_2, dst);
         return;
     }
+    // TODO: see whether the "2*" is spurious
     run_container_grow(dst, 2 * (src_1->cardinality + src_2->n_runs), false);
     int32_t rlepos = 0;
     int32_t arraypos = 0;

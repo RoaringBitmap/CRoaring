@@ -15,8 +15,7 @@
 #include "utilasm.h"
 
 extern int bitset_container_cardinality(const bitset_container_t *bitset);
-extern bool bitset_container_nonzero_cardinality(
-    const bitset_container_t *bitset);
+extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_get(const bitset_container_t *bitset,
@@ -63,31 +62,32 @@ void bitset_container_copy(const bitset_container_t *source,
            sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
-void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min, uint32_t max,
-                                   uint16_t step) {
-    if(step == 0) return; // refuse to crash
-    if( ( 64 % step ) == 0) {// step divides 64
-        uint64_t mask = 0;// construct the repeated mask
-        for(uint32_t value = (min % step) ; value < 64 ; value += step) {
+void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
+                                     uint32_t max, uint16_t step) {
+    if (step == 0) return;   // refuse to crash
+    if ((64 % step) == 0) {  // step divides 64
+        uint64_t mask = 0;   // construct the repeated mask
+        for (uint32_t value = (min % step); value < 64; value += step) {
             mask |= ((uint64_t)1 << value);
         }
         uint32_t firstword = min / 64;
         uint32_t endword = (max - 1) / 64;
-        bitset->cardinality = (max-min+step-1)/step;
+        bitset->cardinality = (max - min + step - 1) / step;
         if (firstword == endword) {
-            bitset->array[firstword] |= mask&(((~UINT64_C(0)) << (min % 64)) &
-            ((~UINT64_C(0)) >> ((-max) % 64)));
+            bitset->array[firstword] |=
+                mask & (((~UINT64_C(0)) << (min % 64)) &
+                        ((~UINT64_C(0)) >> ((-max) % 64)));
             return;
         }
-        bitset->array[firstword] = mask&((~UINT64_C(0)) << (min % 64));
-        for (uint32_t i = firstword + 1; i < endword; i++) bitset->array[i] = mask;
-        bitset->array[endword] = mask&((~UINT64_C(0)) >> ((-max) % 64));
-    }
-    else {
-        for(uint32_t value = min ; value < max ; value += step) {
+        bitset->array[firstword] = mask & ((~UINT64_C(0)) << (min % 64));
+        for (uint32_t i = firstword + 1; i < endword; i++)
+            bitset->array[i] = mask;
+        bitset->array[endword] = mask & ((~UINT64_C(0)) >> ((-max) % 64));
+    } else {
+        for (uint32_t value = min; value < max; value += step) {
             bitset_container_add(bitset, value);
         }
-   }
+    }
 }
 
 /* Free memory. */

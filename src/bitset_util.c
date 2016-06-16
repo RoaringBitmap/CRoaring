@@ -8,8 +8,8 @@
 #include "portability.h"
 #include "utilasm.h"
 
-
 #if defined(IS_X64) || defined(USEAVX)
+
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
     2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -284,7 +284,7 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
-#endif // #ifdef USEAVX
+#endif  // #ifdef USEAVX
 
 #ifdef IS_X64
 // same as vecDecodeTable but in 16 bits
@@ -600,7 +600,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
     }
     return out - initout;
 }
-#endif // USEAVX
+#endif  // USEAVX
 
 size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
                               uint32_t base) {
@@ -700,7 +700,6 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
     return out - initout;
 }
 #endif
-
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
@@ -851,6 +850,42 @@ void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
 }
 
 #endif
+
+/* flip specified bits */
+/* TODO: consider whether worthwhile to make an asm version */
+
+uint64_t bitset_flip_list_withcard(void *bitset, uint64_t card,
+                                   const uint16_t *list, uint64_t length) {
+    uint64_t offset, load, newload, pos, index;
+    const uint16_t *end = list + length;
+    while (list != end) {
+        pos = *(const uint16_t *)list;
+        offset = pos >> 6;
+        index = pos % 64;
+        load = ((uint64_t *)bitset)[offset];
+        newload = load ^ (UINT64_C(1) << index);
+        // todo: is a branch here all that bad?
+        card +=
+            (1 - 2 * (((UINT64_C(1) << index) & load) >> index));  // +1 or -1
+        ((uint64_t *)bitset)[offset] = newload;
+        list++;
+    }
+    return card;
+}
+
+void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length) {
+    uint64_t offset, load, newload, pos, index;
+    const uint16_t *end = list + length;
+    while (list != end) {
+        pos = *(const uint16_t *)list;
+        offset = pos >> 6;
+        index = pos % 64;
+        load = ((uint64_t *)bitset)[offset];
+        newload = load ^ (UINT64_C(1) << index);
+        ((uint64_t *)bitset)[offset] = newload;
+        list++;
+    }
+}
 
 /*
  * Set all bits in indexes [begin,end) to true.

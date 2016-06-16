@@ -110,7 +110,7 @@ void array_container_grow(array_container_t *container, int32_t min,
 void array_container_copy(const array_container_t *src,
                           array_container_t *dst) {
     const int32_t cardinality = src->cardinality;
-    if (cardinality < dst->capacity) {
+    if (cardinality > dst->capacity) {
         array_container_grow(dst, cardinality, INT32_MAX, false);
     }
 
@@ -128,9 +128,9 @@ static void array_container_append(array_container_t *arr, uint16_t pos) {
     arr->array[arr->cardinality++] = pos;
 }
 
-void array_container_add_from_range(array_container_t *arr, uint32_t min, uint32_t max,
-                                    uint16_t step) {
-    for(uint32_t value = min ; value < max ; value += step) {
+void array_container_add_from_range(array_container_t *arr, uint32_t min,
+                                    uint32_t max, uint16_t step) {
+    for (uint32_t value = min; value < max; value += step) {
         array_container_append(arr, value);
     }
 }
@@ -203,13 +203,55 @@ void array_container_union(const array_container_t *array_1,
 #else
     // compute union with smallest array first
     if (card_1 < card_2) {
-        out->cardinality = union_uint16(array_1->array, card_1,
-                                          array_2->array, card_2, out->array);
+        out->cardinality = union_uint16(array_1->array, card_1, array_2->array,
+                                        card_2, out->array);
     } else {
-        out->cardinality = union_uint16(array_2->array, card_2,
-                                          array_1->array, card_1, out->array);
+        out->cardinality = union_uint16(array_2->array, card_2, array_1->array,
+                                        card_1, out->array);
     }
 #endif
+}
+
+/* Computes the symmetric difference of array1 and array2 and write the result
+ * to arrayout.
+ * It is assumed that arrayout is distinct from both array1 and array2.
+ */
+void array_container_xor(const array_container_t *array_1,
+                         const array_container_t *array_2,
+                         array_container_t *out) {
+    const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
+    const int32_t max_cardinality = card_1 + card_2;
+
+    if (out->capacity < max_cardinality)
+        array_container_grow(out, max_cardinality, INT32_MAX, false);
+
+    // TODO something clever like the AVX union in array_util.c
+    // except where *both* occurrences of a duplicate in a sorted sequence
+    // are removed.
+
+    // just a merge for now (see TODO)
+    int pos1 = 0, pos2 = 0, pos_out = 0;
+    while (pos1 < card_1 && pos2 < card_2) {
+        const uint16_t v1 = array_1->array[pos1];
+        const uint16_t v2 = array_2->array[pos2];
+        if (v1 == v2) {
+            ++pos1;
+            ++pos2;
+            continue;
+        }
+        if (v1 < v2) {
+            out->array[pos_out++] = v1;
+            ++pos1;
+        } else {
+            out->array[pos_out++] = v2;
+            ++pos2;
+        }
+    }
+    // todo: memcpys instead
+    while (pos1 < card_1) out->array[pos_out++] = array_1->array[pos1++];
+    while (pos2 < card_2) out->array[pos_out++] = array_2->array[pos2++];
+
+    out->cardinality = pos_out;
 }
 
 static inline int32_t minimum(int32_t a, int32_t b) { return (a < b) ? a : b; }

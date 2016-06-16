@@ -14,9 +14,9 @@ extern "C" {
 
 typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;
-    bool copy_on_write;  /* copy_on_write: whether you want to use copy-on-write
-                          (saves memory and avoids
-                          copies but needs more care in a threaded context). */
+    bool copy_on_write; /* copy_on_write: whether you want to use copy-on-write
+                         (saves memory and avoids
+                         copies but needs more care in a threaded context). */
 } roaring_bitmap_t;
 
 /**
@@ -28,7 +28,8 @@ roaring_bitmap_t *roaring_bitmap_create(void);
  * Add all the values between min (included) and max (excluded) that are at a
  * distance k*step from min.
 */
-roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step);
+roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max,
+                                            uint32_t step);
 
 /**
  * Creates a new bitmap (initially empty) with a provided
@@ -73,7 +74,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2);
 
 /**
- * Inplace version modifies x1
+ * Inplace version modifies x1.  TODO: decide whether x1 == x2 allowed
  */
 void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                 const roaring_bitmap_t *x2);
@@ -86,12 +87,12 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2);
 
 /**
- * Inplace version of roaring_bitmap_or, modifies x1
+ * Inplace version of roaring_bitmap_or, modifies x1. TDOO: decide whether x1 ==
+ *x2 ok
  *
  */
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2);
-
 
 /**
  * Compute the union of 'number' bitmaps. See also roaring_bitmap_or_many_heap.
@@ -112,6 +113,39 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
                                               const roaring_bitmap_t **x);
 
+/**
+ * Computes the symmetric difference (xor) between two bitmaps
+ * and returns new bitmap. The caller is responsible for memory management.
+ */
+roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+/**
+ * Inplace version of roaring_bitmap_or, modifies x1. x1 != x2.
+ *
+ */
+void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
+                                const roaring_bitmap_t *x2);
+
+/**
+ * Compute the xor of 'number' bitmaps. See also roaring_bitmap_xor_many_heap.
+ * Caller is responsible for freeing the
+ * result.
+ *
+ */
+roaring_bitmap_t *roaring_bitmap_xor_many(size_t number,
+                                          const roaring_bitmap_t **x);
+
+/**
+ * Compute the xor of 'number' bitmaps using a heap. This can
+ * sometimes be faster than roaring_bitmap_xor_many which uses
+ * a naive algorithm. Caller is responsible for freeing the
+ * result.
+ *
+ * TODO: consider implementing
+ * roaring_bitmap_t *roaring_bitmap_xor_many_heap(uint32_t number,
+ *                                              const roaring_bitmap_t **x);
+ */
 
 /**
  * Frees the memory.
@@ -129,7 +163,6 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x);
  *
  */
 void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
-
 
 /**
  * Check if value x is present
@@ -153,8 +186,7 @@ bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
  * (e.g., ans = malloc(roaring_bitmap_get_cardinality(mybitmap)
  *   * sizeof(uint32_t))
  */
-void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra,
-                                         uint32_t *ans);
+void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra, uint32_t *ans);
 
 /**
  *  Remove run-length encoding even when it is more space efficient
@@ -246,6 +278,27 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
 void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *x1);
 
 /**
+ * Computes the union between two bitmaps and returns new bitmap. The caller is
+ * responsible for memory management.
+ *
+ * The lazy version defers some computations such as the maintenance of the
+ * cardinality counts. Thus you need
+ * to call roaring_bitmap_repair_after_lazy after executing "lazy" computations.
+ * It is safe to repeatedly call roaring_bitmap_lazy_xor_inplace on the result.
+ *
+ */
+roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
+                                          const roaring_bitmap_t *x2);
+
+/**
+ * (For expert users who seek high performance.)
+ * Inplace version of roaring_bitmap_lazy_xor, modifies x1. x1 != x2
+ *
+ */
+void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+/**
  * compute the negation of the roaring bitmap within a specified interval.
  * areas outside the range are passed through unchanged.
  */
@@ -268,18 +321,15 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
    Otherwise, it returns false.
  */
 bool roaring_bitmap_select(const roaring_bitmap_t *ra, uint32_t rank,
-                                        uint32_t *element);
-
-
-
+                           uint32_t *element);
 
 /**
 *  (For advanced users.)
 * Collect statistics about the bitmap, see roaring_types.h for
 * a description of roaring_statistics_t
 */
-void roaring_bitmap_statistics(const roaring_bitmap_t *ra, roaring_statistics_t * stat);
-
+void roaring_bitmap_statistics(const roaring_bitmap_t *ra,
+                               roaring_statistics_t *stat);
 
 #ifdef __cplusplus
 }

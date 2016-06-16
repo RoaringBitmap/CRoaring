@@ -15,6 +15,7 @@ set(ROARING_SRC
     containers/mixed_union.c
     containers/mixed_equal.c
     containers/mixed_negation.c
+    containers/mixed_xor.c
     containers/run.c
     roaring.c
     roaring_priority_queue.c

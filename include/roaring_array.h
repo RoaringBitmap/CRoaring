@@ -8,9 +8,8 @@
 
 #define MAX_CONTAINERS 65536
 
-#define SERIALIZATION_ARRAY_UINT32  1
-#define SERIALIZATION_CONTAINER     2
-
+#define SERIALIZATION_ARRAY_UINT32 1
+#define SERIALIZATION_CONTAINER 2
 
 enum {
     SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
@@ -74,7 +73,6 @@ int32_t ra_get_index(roaring_array_t *ra, uint16_t x);
 void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
                                 uint8_t *typecode);
 
-
 /**
  * Retrieves the key at index i
  */
@@ -92,16 +90,20 @@ void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
 void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
 
 /**
- * Append a new key-value pair to ra, cloning (in COW sense) a value from sa at index index
+ * Append a new key-value pair to ra, cloning (in COW sense) a value from sa
+ * at index index
  */
-void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index, bool copy_on_write);
+void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index,
+                    bool copy_on_write);
 
 /**
- * Append new key-value pairs to ra, cloning (in COW sense)  values from sa at indexes
+ * Append new key-value pairs to ra, cloning (in COW sense)  values from sa
+ * at indexes
  * [start_index, uint16_t end_index)
  */
 void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index, bool copy_on_write);
+                          uint16_t start_index, uint16_t end_index,
+                          bool copy_on_write);
 
 /** appends from sa to ra, ending with the greatest key that is
  * is less or equal stopping_key
@@ -128,16 +130,19 @@ void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
  * [start_index, uint16_t end_index)
  */
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index, bool copy_on_write);
+                     uint16_t start_index, uint16_t end_index,
+                     bool copy_on_write);
 
 /**
- * Set the container at the corresponding index using the specified typecode.
+ * Set the container at the corresponding index using the specified
+ * typecode.
  */
 void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
                                uint8_t typecode);
 
 /**
- * If needed, increase the capacity of the array so that it can fit k values (at
+ * If needed, increase the capacity of the array so that it can fit k values
+ * (at
  * least);
  */
 void extend_array(roaring_array_t *ra, uint32_t k);
@@ -157,12 +162,14 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
                                            uint16_t key, void *c,
                                            uint8_t typecode);
 
-// see ra_portable_serialize if you want a format that's compatible with Java
+// see ra_portable_serialize if you want a format that's compatible with
+// Java
 // and Go implementations
 char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
                    uint8_t *retry_with_array);
 
-// see ra_portable_serialize if you want a format that's compatible with Java
+// see ra_portable_serialize if you want a format that's compatible with
+// Java
 // and Go implementations
 roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len);
 
@@ -175,14 +182,16 @@ roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len);
 size_t ra_portable_serialize(roaring_array_t *ra, char *buf);
 
 /**
- * read a bitmap from a serialized version. This is meant to be compatible with
+ * read a bitmap from a serialized version. This is meant to be compatible
+ * with
  * the
  * Java and Go versions.
  */
 roaring_array_t *ra_portable_deserialize(const char *buf);
 
 /**
- * How many bytes are required to serialize this bitmap (meant to be compatible
+ * How many bytes are required to serialize this bitmap (meant to be
+ * compatible
  * with Java and Go versions)
  */
 size_t ra_portable_size_in_bytes(roaring_array_t *ra);
@@ -199,14 +208,20 @@ bool ra_has_run_container(roaring_array_t *ra);
 uint32_t ra_portable_header_size(roaring_array_t *ra);
 
 /**
- * If the container at the index i is share, unshare it (creating a local copy if needed).
+ * If the container at the index i is share, unshare it (creating a local
+ * copy if needed).
  */
-void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) ;
+void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i);
 
 /**
  * remove at index i, sliding over all entries after i
  */
 void ra_remove_at_index(roaring_array_t *ra, int32_t i);
+
+/**
+ * remove at index i, sliding over all entries after i. Free removed container.
+ */
+void ra_remove_at_index_and_free(roaring_array_t *ra, int32_t i);
 
 /**
  * remove a chunk of indices, sliding over entries after it
