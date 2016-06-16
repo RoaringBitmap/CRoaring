@@ -143,7 +143,7 @@ void test_example(bool copy_on_write) {
 
     // we can compute a big xor
     const roaring_bitmap_t *allmybitmaps_x[] = {r1, r2, r3};
-    roaring_bitmap_t *bigxor = roaring_bitmap_xor_many(3, allmybitmaps);
+    roaring_bitmap_t *bigxor = roaring_bitmap_xor_many(3, allmybitmaps_x);
     assert_true(roaring_bitmap_equals(rx1_2_3, bigxor));
 
     roaring_bitmap_free(rx1_2_3);
