@@ -23,7 +23,7 @@
 
 #if defined(USEAVX)
 #define USE_BMI //we assume that AVX2 and BMI go hand and hand
-#endif 
+#endif
 
 #if defined(_MSC_VER)
 #define ALIGNED(x) __declspec(align(x))
@@ -49,5 +49,13 @@ static inline int hamming(uint64_t x) {
   return __builtin_popcountll(x);
 #endif
 }
+
+#ifndef UINT64_C
+#define UINT64_C(c) (c ## ULL)
+#endif
+
+#ifndef UINT32_C
+#define UINT32_C(c) (c ## UL)
+#endif
 
 #endif /* INCLUDE_PORTABILITY_H_ */
