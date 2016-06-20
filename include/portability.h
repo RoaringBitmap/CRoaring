@@ -17,6 +17,10 @@
 #include <x86intrin.h>
 #endif
 
+#if defined(USEAVX)
+#define USE_BMI //we assume that AVX2 and BMI go hand and hand
+#endif 
+
 #if defined(_MSC_VER)
 #define ALIGNED(x) __declspec(align(x))
 #else

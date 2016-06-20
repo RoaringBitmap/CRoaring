@@ -8,7 +8,7 @@
 
 #include "portability.h"
 
-#ifdef IS_X64
+#if defined(USE_BMI) 
 #define ASMBITMANIPOPTIMIZATION  // optimization flag
 
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \

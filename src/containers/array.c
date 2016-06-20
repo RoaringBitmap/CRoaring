@@ -191,7 +191,7 @@ void array_container_union(const array_container_t *array_1,
 
     if (out->capacity < max_cardinality)
         array_container_grow(out, max_cardinality, INT32_MAX, false);
-#ifdef IS_X64
+#ifdef ROARING_VECTOR_UNION_ENABLED
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = union_vector16(array_1->array, card_1,

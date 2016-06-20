@@ -60,7 +60,7 @@ void *shared_container_extract_copy(shared_container_t *container,
                                     uint8_t *typecode);
 
 /* access to container underneath */
-static inline const void *container_unwrap_shared(
+static const void *container_unwrap_shared(
     const void *candidate_shared_container, uint8_t *type) {
     if (*type == SHARED_CONTAINER_TYPE_CODE) {
         *type =
