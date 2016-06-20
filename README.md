@@ -31,7 +31,7 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 # Requirements
 
 - 64-bit Linux-like operating system (including MacOS)
-- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better. For x64/x86 processors without AVX support, invoke ``cmake'' with  ``-DAVX_TUNING=OFF`` to disable AVX support. The library should build without problem on ARM processors.
+- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library should build without problem on ARM processors.
 - Recent C compiler (GCC 4.8 or better), the code is also compatible with C++
 - CMake
 - clang-format (optional)
@@ -141,7 +141,7 @@ make
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
-If wish to build an x64/x86 version without AVX support, you can do the following :
+If wish to build an x64/x86 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
 
 ````
 mkdir -p buildnoavx
@@ -149,9 +149,6 @@ cd buildnoavx
 cmake -DAVX_TUNING=OFF .. 
 make
 ```
-
-On x64 processors, it is highly recommended to enable ``AVX_TUNING`` however, even if it limits your binary code to recent Intel/AMD processors.
-
 For a debug release, starting from the root directory of the project (CRoaring), try
 
 ```
