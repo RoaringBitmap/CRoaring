@@ -12,6 +12,10 @@
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
 
+#if defined(USEAVX) && ((!defined(__AVX2__)) || (!defined(__BMI2__)))
+#undef USEAVX
+#endif
+
 #if defined(USEAVX) || defined(__x86_64__) || defined(_M_X64)
 #define IS_X64
 #include <x86intrin.h>
