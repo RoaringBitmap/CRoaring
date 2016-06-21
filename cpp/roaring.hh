@@ -6,7 +6,9 @@ A C++ header for Roaring Bitmaps.
 
 #include <stdarg.h>
 
+#include <algorithm>
 #include <new>
+#include <stdexcept>
 #include "roaring.h"
 
 class Roaring {
@@ -16,6 +18,9 @@ public:
 	 */
 	Roaring () : roaring(NULL) {
 		roaring = roaring_bitmap_create();
+		if(roaring == NULL) {
+			throw std::runtime_error("failed memory alloc in constructor");
+		}
 	}
 
 	/**
@@ -23,17 +28,25 @@ public:
 	 */
 	Roaring(const Roaring & r) : roaring(NULL) {
 		roaring = roaring_bitmap_copy(r.roaring);
+		if(roaring == NULL) {
+			throw std::runtime_error("failed memory alloc in constructor");
+		}
 	}
 
 
 
 	/**
-	 * Construct a roaring object from the C struct
+	 * Construct a roaring object from the C struct.
+	 *
+	 * Passing a NULL point is unsafe.
 	 */
 	Roaring(roaring_bitmap_t * s) : roaring(s) {
-
 	}
 
+
+	/**
+	 * Construct a bitmap from a list of integer values.
+	 */
 	static Roaring bitmapOf(size_t n, ...) {
 		Roaring ans;
 	    va_list vl;
@@ -45,6 +58,9 @@ public:
 	    return ans;
 	}
 
+	/**
+	 * Construct a bitmap from a list of integer values.
+	 */
 	static Roaring fromUint32Array(size_t n, const uint32_t * data) {
 		Roaring ans;
 	    for (size_t i = 0; i < n; i++) {
@@ -82,27 +98,58 @@ public:
 		roaring_bitmap_free(roaring);
 	}
 
+	/**
+	 * Copies the content of the provided bitmap, and
+	 * discard the current content.
+	 */
 	Roaring& operator=(const Roaring & r) {
 		roaring_bitmap_free(roaring);
 		roaring = roaring_bitmap_copy(r.roaring);
+		if(roaring == NULL) {
+			throw std::runtime_error("failed memory alloc in assignement");
+		}
 		return *this;
     }
 
+	/**
+	 * Compute the intersection between the current bitmap and the provided bitmap,
+	 * writing the result in the current bitmap. The provided bitmap is not modified.
+	 */
 	Roaring& operator&=(const Roaring & r) {
 		roaring_bitmap_and_inplace(roaring,r.roaring);
 		return *this;
 	}
 
+
+	/**
+	 * Compute the union between the current bitmap and the provided bitmap,
+	 * writing the result in the current bitmap. The provided bitmap is not modified.
+	 *
+	 * See also the fastunion function to aggregate many bitmaps more quickly.
+	 */
 	Roaring& operator|=(const Roaring & r) {
 		roaring_bitmap_or_inplace(roaring,r.roaring);
 		return *this;
 	}
 
 
+	/**
+	 * Compute the symmetric union between the current bitmap and the provided bitmap,
+	 * writing the result in the current bitmap. The provided bitmap is not modified.
+	 */
 	Roaring& operator^=(const Roaring & r) {
 		roaring_bitmap_xor_inplace(roaring,r.roaring);
 		return *this;
 	}
+
+
+	/**
+	 * Exchange the content of this bitmap with another.
+	 */
+	void swap(Roaring & r) {
+		std::swap(r.roaring, roaring);
+	}
+
 	/**
 	 * Get the cardinality of the bitmap (number of elements).
 	 */
@@ -198,9 +245,11 @@ public:
 	 * Java and Go versions.
 	 */
 	static Roaring read(const char *buf) {
-		Roaring ans;
-		roaring_bitmap_free(ans.roaring);
+		Roaring ans(NULL);
 		ans.roaring = roaring_bitmap_portable_deserialize(buf);
+		if(ans.roaring == NULL) {
+			throw std::runtime_error("failed memory alloc while reading");
+		}
 		return ans;
 	}
 
@@ -215,26 +264,41 @@ public:
 
 	/**
 	 * Computes the intersection between two bitmaps and returns new bitmap.
+	 * The current bitmap and the provided bitmap are unchanged.
 	 */
 	Roaring operator&(const Roaring & o) const {
-		return Roaring(roaring_bitmap_and(roaring,
-                o.roaring));
+		roaring_bitmap_t * r = roaring_bitmap_and(roaring,
+                o.roaring);
+		if(r == NULL) {
+			throw std::runtime_error("failed materalization in and");
+		}
+		return Roaring(r);
 	}
 
 	/**
 	 * Computes the union between two bitmaps and returns new bitmap.
+	 * The current bitmap and the provided bitmap are unchanged.
 	 */
 	Roaring operator|(const Roaring & o) const {
-		return Roaring(roaring_bitmap_or(roaring,
-                o.roaring));
+		roaring_bitmap_t * r = roaring_bitmap_or(roaring,
+                o.roaring);
+		if(r == NULL) {
+			throw std::runtime_error("failed materalization in or");
+		}
+		return Roaring(r);
 	}
 
 	/**
 	 * Computes the symmetric union between two bitmaps and returns new bitmap.
+	 * The current bitmap and the provided bitmap are unchanged.
 	 */
 	Roaring operator^(const Roaring & o) const {
-		return Roaring(roaring_bitmap_xor(roaring,
-                o.roaring));
+		roaring_bitmap_t * r = roaring_bitmap_xor(roaring,
+                o.roaring);
+		if(r == NULL) {
+			throw std::runtime_error("failed materalization in xor");
+		}
+		return Roaring(r);
 	}
 
 
@@ -268,12 +332,17 @@ public:
 	static Roaring fastunion(size_t n, const Roaring **inputs) {
 		const roaring_bitmap_t **x = (const roaring_bitmap_t **) malloc(n
 				* sizeof(roaring_bitmap_t *));
+		if(x == NULL) {
+			throw std::runtime_error("failed memory alloc in fastunion");
+		}
 		for(size_t k = 0 ; k < n; ++k)
 			x[k] = inputs[k]->roaring;
 
-		Roaring ans;
-		roaring_bitmap_free(ans.roaring);
+		Roaring ans(NULL);
 		ans.roaring = roaring_bitmap_or_many(n,x);
+		if(ans.roaring == NULL) {
+			throw std::runtime_error("failed memory alloc in fastunion");
+		}
 	    free(x);
 		return ans;
 	}
