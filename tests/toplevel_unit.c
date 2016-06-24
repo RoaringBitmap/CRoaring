@@ -1923,31 +1923,31 @@ void test_inplace_rand_flips() {
     free(input);
 }
 
-void test_flip_array_container_removeal() {
+void test_flip_array_container_removal() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
-    for(unsigned val=0; val<100; val++) {
+    for (unsigned val = 0; val < 100; val++) {
         roaring_bitmap_add(bm, val);
     }
     roaring_bitmap_flip_inplace(bm, 0, 100);
     roaring_bitmap_free(bm);
 }
 
-void test_flip_bitset_container_removeal() {
+void test_flip_bitset_container_removal() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
-    for(unsigned val=0; val<10000; val++) {
+    for (unsigned val = 0; val < 10000; val++) {
         roaring_bitmap_add(bm, val);
     }
     roaring_bitmap_flip_inplace(bm, 0, 10000);
     roaring_bitmap_free(bm);
 }
 
-void test_flip_run_container_removeal() {
+void test_flip_run_container_removal() {
     roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 10000, 1);
     roaring_bitmap_flip_inplace(bm, 0, 10000);
     roaring_bitmap_free(bm);
 }
 
-void test_flip_run_container_removeal2(){
+void test_flip_run_container_removal2() {
     roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 66002, 1);
     roaring_bitmap_flip_inplace(bm, 0, 987653576);
     roaring_bitmap_free(bm);
@@ -2013,7 +2013,6 @@ void select_test() {
     free(input);
 }
 
-
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_stats), cmocka_unit_test(test_addremove),
@@ -2069,10 +2068,10 @@ int main() {
         cmocka_unit_test(test_inplace_negation_run1),
         cmocka_unit_test(test_inplace_negation_run2),
         cmocka_unit_test(test_inplace_rand_flips),
-        cmocka_unit_test(test_flip_array_container_removeal),
-        cmocka_unit_test(test_flip_bitset_container_removeal),
-        cmocka_unit_test(test_flip_run_container_removeal),
-        cmocka_unit_test(test_flip_run_container_removeal2),
+        cmocka_unit_test(test_flip_array_container_removal),
+        cmocka_unit_test(test_flip_bitset_container_removal),
+        cmocka_unit_test(test_flip_run_container_removal),
+        cmocka_unit_test(test_flip_run_container_removal2),
         cmocka_unit_test(select_test),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
