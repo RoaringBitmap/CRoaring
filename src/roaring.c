@@ -966,7 +966,7 @@ static void inplace_flip_container(roaring_array_t *x1_arr, uint16_t hb,
             ra_set_container_at_index(x1_arr, i, flipped_container, ctype_out);
         } else {
             container_free(flipped_container, ctype_out);
-            ra_remove_at_index_and_free(x1_arr, i);
+            ra_remove_at_index(x1_arr, i);
         }
 
     } else {
@@ -1016,7 +1016,7 @@ static void inplace_fully_flip_container(roaring_array_t *x1_arr, uint16_t hb) {
             ra_set_container_at_index(x1_arr, i, flipped_container, ctype_out);
         } else {
             container_free(flipped_container, ctype_out);
-            ra_remove_at_index_and_free(x1_arr, i);
+            ra_remove_at_index(x1_arr, i);
         }
 
     } else {
