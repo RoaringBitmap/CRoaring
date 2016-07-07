@@ -228,4 +228,11 @@ void ra_remove_at_index_and_free(roaring_array_t *ra, int32_t i);
  */
 // void ra_remove_index_range(roaring_array_t *ra, int32_t begin, int32_t end);
 
+// used in inplace andNot only, to slide left the containers from
+// the mutated RoaringBitmap that are after the largest container of
+// the argument RoaringBitmap.  It is followed by a call to resize.
+//
+void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
+                   uint32_t new_begin);
+
 #endif

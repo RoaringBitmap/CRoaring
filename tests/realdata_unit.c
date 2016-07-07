@@ -142,6 +142,21 @@ static roaring_bitmap_t *synthesized_xor(roaring_bitmap_t *r1,
     return r1_xor_r2;
 }
 
+static roaring_bitmap_t *synthesized_andnot(roaring_bitmap_t *r1,
+                                            roaring_bitmap_t *r2) {
+    unsigned universe_size = 0;
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(r1, &stats);
+    universe_size = stats.max_value;
+    roaring_bitmap_statistics(r2, &stats);
+    if (stats.max_value > universe_size) universe_size = stats.max_value;
+
+    roaring_bitmap_t *not_r2 = roaring_bitmap_flip(r2, 0U, universe_size + 1U);
+    roaring_bitmap_t *r1_andnot_r2 = roaring_bitmap_and(r1, not_r2);
+    roaring_bitmap_free(not_r2);
+    return r1_andnot_r2;
+}
+
 bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_xor(bitmap1, bitmap2);
     roaring_bitmap_t *expected = synthesized_xor(bitmap1, bitmap2);
@@ -155,6 +170,44 @@ bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
         show_structure(temp->high_low_container);  // debug
         printf("\n\ncorrect result:\n");
         show_structure(expected->high_low_container);  // debug
+    }
+    roaring_bitmap_free(temp);
+    roaring_bitmap_free(expected);
+    return answer;
+}
+
+// for debug
+static void print_container(int which_container, roaring_bitmap_t *r) {
+    int runprev = -2;
+    for (int i = which_container * 65536; i < (which_container + 1) * 65536;
+         ++i)
+        if (roaring_bitmap_contains(r, i)) {
+            if (i == runprev + 1)
+                runprev++;
+            else {
+                if (runprev != -2) printf("%d, ", runprev);
+                printf("%d - ", i);
+                runprev = i;
+            }
+        }
+}
+
+bool is_andnot_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
+    roaring_bitmap_t *temp = roaring_bitmap_andnot(bitmap1, bitmap2);
+    roaring_bitmap_t *expected = synthesized_andnot(bitmap1, bitmap2);
+    bool answer = roaring_bitmap_equals(temp, expected);
+    if (!answer) {
+        printf("Bad ANDNOT\n\nbitmap1:\n");
+        show_structure(bitmap1->high_low_container);  // debug
+        // print_container(3, bitmap1);
+        printf("\n\nbitmap2:\n");
+        show_structure(bitmap2->high_low_container);  // debug
+        printf("\n\nresult:\n");
+        show_structure(temp->high_low_container);  // debug
+        printf("\n\ncorrect result:\n");
+        show_structure(expected->high_low_container);  // debug
+        printf("difference is ");
+        roaring_bitmap_printf(roaring_bitmap_xor(temp, expected));
     }
     roaring_bitmap_free(temp);
     roaring_bitmap_free(expected);
@@ -251,6 +304,13 @@ roaring_bitmap_t *inplace_xor(roaring_bitmap_t *bitmap1,
                               roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1);
     roaring_bitmap_xor_inplace(answer, bitmap2);
+    return answer;
+}
+
+roaring_bitmap_t *inplace_andnot(roaring_bitmap_t *bitmap1,
+                                 roaring_bitmap_t *bitmap2) {
+    roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1);
+    roaring_bitmap_andnot_inplace(answer, bitmap2);
     return answer;
 }
 
@@ -436,6 +496,66 @@ bool compare_xors(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
 
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("[inplace] Xors don't agree!\n");
+            printf("\n\nbitmap1:\n");
+            show_structure(tempornorun->high_low_container);  // debug
+            printf("\n\nbitmap2:\n");
+            show_structure(temporruns->high_low_container);  // debug
+            return false;
+        }
+        roaring_bitmap_free(tempornorun);
+        roaring_bitmap_free(temporruns);
+    }
+    return true;
+}
+
+bool compare_andnots(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
+                     size_t count) {
+    roaring_bitmap_t *tempornorun;
+    roaring_bitmap_t *temporruns;
+    for (size_t i = 0; i + 1 < count; ++i) {
+        tempornorun = roaring_bitmap_andnot(rnorun[i], rnorun[i + 1]);
+        if (!is_andnot_correct(rnorun[i], rnorun[i + 1])) {
+            printf("no-run andnot incorrect\n");
+            return false;
+        }
+        temporruns = roaring_bitmap_andnot(rruns[i], rruns[i + 1]);
+        if (!is_andnot_correct(rruns[i], rruns[i + 1])) {
+            printf("runs andnots incorrect\n");
+            return false;
+        }
+        if (!slow_bitmap_equals(tempornorun, temporruns)) {
+            printf("Andnots don't agree! (slow) \n");
+            return false;
+        }
+
+        if (!roaring_bitmap_equals(tempornorun, temporruns)) {
+            printf("Andnots don't agree!\n");
+            printf("\n\nbitmap1:\n");
+            show_structure(tempornorun->high_low_container);  // debug
+            printf("\n\nbitmap2:\n");
+            show_structure(temporruns->high_low_container);  // debug
+            return false;
+        }
+        roaring_bitmap_free(tempornorun);
+        roaring_bitmap_free(temporruns);
+        tempornorun = inplace_andnot(rnorun[i], rnorun[i + 1]);
+        if (!is_andnot_correct(rnorun[i], rnorun[i + 1])) {
+            printf("[inplace] no-run andnot incorrect\n");
+            return false;
+        }
+        temporruns = inplace_andnot(rruns[i], rruns[i + 1]);
+        if (!is_andnot_correct(rruns[i], rruns[i + 1])) {
+            printf("[inplace] runs andnots incorrect\n");
+            return false;
+        }
+
+        if (!slow_bitmap_equals(tempornorun, temporruns)) {
+            printf("[inplace] Andnots don't agree! (slow) \n");
+            return false;
+        }
+
+        if (!roaring_bitmap_equals(tempornorun, temporruns)) {
+            printf("[inplace] Andnots don't agree!\n");
             printf("\n\nbitmap1:\n");
             show_structure(tempornorun->high_low_container);  // debug
             printf("\n\nbitmap2:\n");
@@ -664,6 +784,11 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
     if (!compare_xors(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
     }
+
+    if (!compare_andnots(bitmaps, bitmapswrun, count)) {
+        return false;  //  memory leaks
+    }
+
     if (!compare_wide_xors(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
     }

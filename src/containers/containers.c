@@ -14,6 +14,9 @@ extern void *container_ior(void *c1, uint8_t type1, const void *c2,
 extern void *container_ixor(void *c1, uint8_t type1, const void *c2,
                             uint8_t type2, uint8_t *result_type);
 
+extern void *container_iandnot(void *c1, uint8_t type1, const void *c2,
+                               uint8_t type2, uint8_t *result_type);
+
 void container_printf(const void *container, uint8_t typecode) {
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
@@ -234,3 +237,6 @@ extern void *container_lazy_xor(const void *c1, uint8_t type1, const void *c2,
 
 extern void *container_lazy_ixor(void *c1, uint8_t type1, const void *c2,
                                  uint8_t type2, uint8_t *result_type);
+
+extern void *container_andnot(const void *c1, uint8_t type1, const void *c2,
+                              uint8_t type2, uint8_t *result_type);

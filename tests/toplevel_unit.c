@@ -799,12 +799,18 @@ static roaring_bitmap_t *gen_bitmap(double start_density,
 }
 
 static roaring_bitmap_t *synthesized_xor(roaring_bitmap_t *r1,
-                                         roaring_bitmap_t *r2,
-                                         int universe_size) {
+                                         roaring_bitmap_t *r2) {
+    unsigned universe_size = 0;
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(r1, &stats);
+    universe_size = stats.max_value;
+    roaring_bitmap_statistics(r2, &stats);
+    if (stats.max_value > universe_size) universe_size = stats.max_value;
+
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
     roaring_bitmap_t *r1_nand_r2 =
-        roaring_bitmap_flip(r1_and_r2, 0U, (unsigned)universe_size);
+        roaring_bitmap_flip(r1_and_r2, 0U, universe_size + 1U);
     roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_and(r1_or_r2, r1_nand_r2);
     roaring_bitmap_free(r1_or_r2);
     roaring_bitmap_free(r1_and_r2);
@@ -812,7 +818,22 @@ static roaring_bitmap_t *synthesized_xor(roaring_bitmap_t *r1,
     return r1_xor_r2;
 }
 
-// only for valid for universe < 10M
+static roaring_bitmap_t *synthesized_andnot(roaring_bitmap_t *r1,
+                                            roaring_bitmap_t *r2) {
+    unsigned universe_size = 0;
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(r1, &stats);
+    universe_size = stats.max_value;
+    roaring_bitmap_statistics(r2, &stats);
+    if (stats.max_value > universe_size) universe_size = stats.max_value;
+
+    roaring_bitmap_t *not_r2 = roaring_bitmap_flip(r2, 0U, universe_size + 1U);
+    roaring_bitmap_t *r1_andnot_r2 = roaring_bitmap_and(r1, not_r2);
+    roaring_bitmap_free(not_r2);
+    return r1_andnot_r2;
+}
+
+// only for valid for universe < 10M, could adapt with roaring_bitmap_statistics
 static void show_difference(roaring_bitmap_t *result,
                             roaring_bitmap_t *hopedfor) {
     int out_ctr = 0;
@@ -890,7 +911,7 @@ void test_xor(bool copy_on_write) {
 
     for (int i = 0; r[i]; ++i) {
         for (int j = i; r[j]; ++j) {
-            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j]);
             roaring_bitmap_t *result = roaring_bitmap_xor(r[i], r[j]);
 
             bool is_equal = roaring_bitmap_equals(expected, result);
@@ -949,7 +970,7 @@ void test_xor_inplace(bool copy_on_write) {
 
     for (int i = 0; r[i]; ++i) {
         for (int j = i + 1; r[j]; ++j) {
-            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j]);
             roaring_bitmap_t *copy = roaring_bitmap_copy(r[i]);
             copy->copy_on_write = copy_on_write;
 
@@ -1033,7 +1054,7 @@ void test_xor_lazy(bool copy_on_write) {
 
     for (int i = 0; r[i]; ++i) {
         for (int j = i; r[j]; ++j) {
-            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j]);
 
             roaring_bitmap_t *result = roaring_bitmap_lazy_xor(r[i], r[j]);
             roaring_bitmap_repair_after_lazy(result);
@@ -1117,7 +1138,7 @@ void test_xor_lazy_inplace(bool copy_on_write) {
 
     for (int i = 0; r[i]; ++i) {
         for (int j = i; r[j]; ++j) {
-            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j], 2000000);
+            roaring_bitmap_t *expected = synthesized_xor(r[i], r[j]);
 
             roaring_bitmap_t *result = roaring_bitmap_copy(r[i]);
             roaring_bitmap_lazy_xor_inplace(result, r[j]);
@@ -1143,6 +1164,339 @@ void test_xor_lazy_inplace(bool copy_on_write) {
 void test_xor_lazy_inplace_true() { test_xor_lazy_inplace(true); }
 
 void test_xor_lazy_inplace_false() { test_xor_lazy_inplace(false); }
+
+static roaring_bitmap_t *roaring_from_sentinel_array(int *data,
+                                                     bool copy_on_write) {
+    roaring_bitmap_t *ans = roaring_bitmap_create();
+    ans->copy_on_write = copy_on_write;
+
+    for (; *data != -1; ++data) {
+        roaring_bitmap_add(ans, *data);
+    }
+    return ans;
+}
+
+void test_andnot(bool copy_on_write) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
+
+    int data1[] = {1, 2, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
+                   65536 * 3 + 2, 65536 * 10 + 1, 65536 * 10 + 2,
+                   65536 * 16 + 1, 65536 * 16 + 2, 65536 * 20 + 1,
+                   65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1 = roaring_from_sentinel_array(data1, copy_on_write);
+    int data2[] = {2, 3, 65536 * 10 + 2, 65536 * 10 + 3, 65536 * 12 + 2,
+                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
+                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    roaring_bitmap_t *rb2 = roaring_from_sentinel_array(data2, copy_on_write);
+
+    int data3[] = {2, 3, 65536 * 10 + 1, 65536 * 10 + 2, 65536 * 12 + 2,
+                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
+                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    roaring_bitmap_t *rb3 = roaring_from_sentinel_array(data3, copy_on_write);
+    int d1_minus_d2[] = {1, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
+                         65536 * 3 + 2, 65536 * 10 + 1, 65536 * 16 + 1,
+                         65536 * 20 + 1, 65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1_minus_rb2 =
+        roaring_from_sentinel_array(d1_minus_d2, copy_on_write);
+
+    int d1_minus_d3[] = {1, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
+                         65536 * 3 + 2,
+                         // 65536*10+1,
+                         65536 * 16 + 1, 65536 * 20 + 1, 65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1_minus_rb3 =
+        roaring_from_sentinel_array(d1_minus_d3, copy_on_write);
+
+    int d2_minus_d1[] = {3, 65536 * 10 + 3, 65536 * 12 + 2, 65536 * 12 + 3,
+                         65536 * 14 + 2, 65536 * 14 + 3, 65536 * 16 + 3, -1};
+
+    roaring_bitmap_t *rb2_minus_rb1 =
+        roaring_from_sentinel_array(d2_minus_d1, copy_on_write);
+
+    int d3_minus_d1[] = {3,
+                         // 65536*10+3,
+                         65536 * 12 + 2, 65536 * 12 + 3, 65536 * 14 + 2,
+                         65536 * 14 + 3, 65536 * 16 + 3, -1};
+    roaring_bitmap_t *rb3_minus_rb1 =
+        roaring_from_sentinel_array(d3_minus_d1, copy_on_write);
+
+    int d3_minus_d2[] = {65536 * 10 + 1, -1};
+    roaring_bitmap_t *rb3_minus_rb2 =
+        roaring_from_sentinel_array(d3_minus_d2, copy_on_write);
+
+    roaring_bitmap_t *temp = roaring_bitmap_andnot(rb1, rb2);
+    assert_true(roaring_bitmap_equals(rb1_minus_rb2, temp));
+    roaring_bitmap_free(temp);
+
+    temp = roaring_bitmap_andnot(rb1, rb3);
+    assert_true(roaring_bitmap_equals(rb1_minus_rb3, temp));
+    roaring_bitmap_free(temp);
+
+    temp = roaring_bitmap_andnot(rb2, rb1);
+    assert_true(roaring_bitmap_equals(rb2_minus_rb1, temp));
+    roaring_bitmap_free(temp);
+
+    temp = roaring_bitmap_andnot(rb3, rb1);
+    assert_true(roaring_bitmap_equals(rb3_minus_rb1, temp));
+    roaring_bitmap_free(temp);
+
+    temp = roaring_bitmap_andnot(rb3, rb2);
+    assert_true(roaring_bitmap_equals(rb3_minus_rb2, temp));
+    roaring_bitmap_free(temp);
+
+    roaring_bitmap_t *large_run_bitmap =
+        roaring_bitmap_from_range(2, 11 * 65536 + 27, 1);
+    temp = roaring_bitmap_andnot(rb1, large_run_bitmap);
+
+    int d1_minus_largerun[] = {1, 65536 * 16 + 1, 65536 * 16 + 2,
+                               65536 * 20 + 1, 65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1_minus_largerun =
+        roaring_from_sentinel_array(d1_minus_largerun, copy_on_write);
+    assert_true(roaring_bitmap_equals(rb1_minus_largerun, temp));
+    roaring_bitmap_free(temp);
+
+    roaring_bitmap_free(rb1);
+    roaring_bitmap_free(rb2);
+    roaring_bitmap_free(rb3);
+    roaring_bitmap_free(rb1_minus_rb2);
+    roaring_bitmap_free(rb1_minus_rb3);
+    roaring_bitmap_free(rb2_minus_rb1);
+    roaring_bitmap_free(rb3_minus_rb1);
+    roaring_bitmap_free(rb3_minus_rb2);
+    roaring_bitmap_free(rb1_minus_largerun);
+    roaring_bitmap_free(large_run_bitmap);
+
+    for (uint32_t i = 0; i < 300; ++i) {
+        if (i % 2 == 0) roaring_bitmap_add(r1, i);
+        if (i % 3 == 0) roaring_bitmap_add(r2, i);
+    }
+
+    roaring_bitmap_t *r1_andnot_r2 = roaring_bitmap_andnot(r1, r2);
+    r1_andnot_r2->copy_on_write = copy_on_write;
+
+    int ansctr = 0;
+    for (int i = 0; i < 300; ++i) {
+        if ((i % 2 == 0) && (i % 3 != 0)) {
+            ansctr++;
+            if (!roaring_bitmap_contains(r1_andnot_r2, i))
+                printf("missing %d\n", i);
+        } else if (roaring_bitmap_contains(r1_andnot_r2, i))
+            printf("surplus %d\n", i);
+    }
+
+    assert_int_equal(roaring_bitmap_get_cardinality(r1_andnot_r2), ansctr);
+    roaring_bitmap_free(r1_andnot_r2);
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+
+    // some tougher tests on synthetic data
+
+    roaring_bitmap_t *r[] = {
+        // ascending density, last containers might be runs
+        gen_bitmap(0.0, 1e-6, 1, 0, 0, 1000000),
+        // descending density, first containers might be runs
+        gen_bitmap(1.0, -1e-6, 1, 0, 0, 1000000),
+        // uniformly rather sparse
+        gen_bitmap(1e-5, 0.0, 1, 0, 0, 2000000),
+        // uniformly rather sparse with runs
+        gen_bitmap(1e-5, 0.0, 3, 0, 0, 2000000),
+        // uniformly rather dense
+        gen_bitmap(1e-1, 0.0, 1, 0, 0, 2000000),
+        // ascending density but never too dense
+        gen_bitmap(0.001, 1e-7, 1, 0, 0, 1000000),
+        // ascending density but very sparse
+        gen_bitmap(0.0, 1e-10, 1, 0, 0, 1000000),
+        // descending with a gap
+        gen_bitmap(0.5, -1e-6, 1, 600000, 800000, 1000000),
+        //  gap elsewhere
+        gen_bitmap(1, -1e-6, 1, 300000, 500000, 1000000),
+        0  // sentinel
+    };
+
+    for (int i = 0; r[i]; ++i) {
+        for (int j = i; r[j]; ++j) {
+            roaring_bitmap_t *expected = synthesized_andnot(r[i], r[j]);
+            roaring_bitmap_t *result = roaring_bitmap_andnot(r[i], r[j]);
+
+            bool is_equal = roaring_bitmap_equals(expected, result);
+
+            assert_true(is_equal);
+            roaring_bitmap_free(expected);
+            roaring_bitmap_free(result);
+        }
+    }
+    for (int i = 0; r[i]; ++i) roaring_bitmap_free(r[i]);
+}
+
+void test_andnot_true() { test_andnot(true); }
+
+void test_andnot_false() { test_andnot(false); }
+
+void test_andnot_inplace(bool copy_on_write) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    r2->copy_on_write = copy_on_write;
+
+    int data1[] = {1, 2, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
+                   65536 * 3 + 2, 65536 * 10 + 1, 65536 * 10 + 2,
+                   65536 * 16 + 1, 65536 * 16 + 2, 65536 * 20 + 1,
+                   65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1 = roaring_from_sentinel_array(data1, copy_on_write);
+    int data2[] = {2, 3, 65536 * 10 + 2, 65536 * 10 + 3, 65536 * 12 + 2,
+                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
+                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    roaring_bitmap_t *rb2 = roaring_from_sentinel_array(data2, copy_on_write);
+
+    int data3[] = {2, 3, 65536 * 10 + 1, 65536 * 10 + 2, 65536 * 12 + 2,
+                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
+                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    roaring_bitmap_t *rb3 = roaring_from_sentinel_array(data3, copy_on_write);
+    int d1_minus_d2[] = {1, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
+                         65536 * 3 + 2, 65536 * 10 + 1, 65536 * 16 + 1,
+                         65536 * 20 + 1, 65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1_minus_rb2 =
+        roaring_from_sentinel_array(d1_minus_d2, copy_on_write);
+
+    int d1_minus_d3[] = {1, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
+                         65536 * 3 + 2,
+                         // 65536*10+1,
+                         65536 * 16 + 1, 65536 * 20 + 1, 65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1_minus_rb3 =
+        roaring_from_sentinel_array(d1_minus_d3, copy_on_write);
+
+    int d2_minus_d1[] = {3, 65536 * 10 + 3, 65536 * 12 + 2, 65536 * 12 + 3,
+                         65536 * 14 + 2, 65536 * 14 + 3, 65536 * 16 + 3, -1};
+
+    roaring_bitmap_t *rb2_minus_rb1 =
+        roaring_from_sentinel_array(d2_minus_d1, copy_on_write);
+
+    int d3_minus_d1[] = {3,
+                         // 65536*10+3,
+                         65536 * 12 + 2, 65536 * 12 + 3, 65536 * 14 + 2,
+                         65536 * 14 + 3, 65536 * 16 + 3, -1};
+    roaring_bitmap_t *rb3_minus_rb1 =
+        roaring_from_sentinel_array(d3_minus_d1, copy_on_write);
+
+    int d3_minus_d2[] = {65536 * 10 + 1, -1};
+    roaring_bitmap_t *rb3_minus_rb2 =
+        roaring_from_sentinel_array(d3_minus_d2, copy_on_write);
+
+    roaring_bitmap_t *cpy = roaring_bitmap_copy(rb1);
+    roaring_bitmap_andnot_inplace(cpy, rb2);
+    assert_true(roaring_bitmap_equals(rb1_minus_rb2, cpy));
+    roaring_bitmap_free(cpy);
+
+    cpy = roaring_bitmap_copy(rb1);
+    roaring_bitmap_andnot_inplace(cpy, rb3);
+    assert_true(roaring_bitmap_equals(rb1_minus_rb3, cpy));
+    roaring_bitmap_free(cpy);
+
+    cpy = roaring_bitmap_copy(rb2);
+    roaring_bitmap_andnot_inplace(cpy, rb1);
+    assert_true(roaring_bitmap_equals(rb2_minus_rb1, cpy));
+    roaring_bitmap_free(cpy);
+
+    cpy = roaring_bitmap_copy(rb3);
+    roaring_bitmap_andnot_inplace(cpy, rb1);
+    assert_true(roaring_bitmap_equals(rb3_minus_rb1, cpy));
+    roaring_bitmap_free(cpy);
+
+    cpy = roaring_bitmap_copy(rb3);
+    roaring_bitmap_andnot_inplace(cpy, rb2);
+    assert_true(roaring_bitmap_equals(rb3_minus_rb2, cpy));
+    roaring_bitmap_free(cpy);
+
+    roaring_bitmap_t *large_run_bitmap =
+        roaring_bitmap_from_range(2, 11 * 65536 + 27, 1);
+
+    cpy = roaring_bitmap_copy(rb1);
+    roaring_bitmap_andnot_inplace(cpy, large_run_bitmap);
+
+    int d1_minus_largerun[] = {1, 65536 * 16 + 1, 65536 * 16 + 2,
+                               65536 * 20 + 1, 65536 * 21 + 1, -1};
+    roaring_bitmap_t *rb1_minus_largerun =
+        roaring_from_sentinel_array(d1_minus_largerun, copy_on_write);
+    assert_true(roaring_bitmap_equals(rb1_minus_largerun, cpy));
+    roaring_bitmap_free(cpy);
+
+    roaring_bitmap_free(rb1);
+    roaring_bitmap_free(rb2);
+    roaring_bitmap_free(rb3);
+    roaring_bitmap_free(rb1_minus_rb2);
+    roaring_bitmap_free(rb1_minus_rb3);
+    roaring_bitmap_free(rb2_minus_rb1);
+    roaring_bitmap_free(rb3_minus_rb1);
+    roaring_bitmap_free(rb3_minus_rb2);
+    roaring_bitmap_free(rb1_minus_largerun);
+    roaring_bitmap_free(large_run_bitmap);
+
+    int diff_cardinality = 0;
+    for (uint32_t i = 0; i < 300; ++i) {
+        if (i % 2 == 0) roaring_bitmap_add(r1, i);
+        if (i % 3 == 0) roaring_bitmap_add(r2, i);
+        if ((i % 2 == 0) && (i % 3 != 0)) ++diff_cardinality;
+    }
+    roaring_bitmap_andnot_inplace(r1, r2);
+    assert_int_equal(roaring_bitmap_get_cardinality(r1), diff_cardinality);
+
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+
+    // some tougher tests on synthetic data
+
+    roaring_bitmap_t *r[] = {
+        // ascending density, last containers might be runs
+        gen_bitmap(0.0, 1e-6, 1, 0, 0, 1000000),
+        // descending density, first containers might be runs
+        gen_bitmap(1.0, -1e-6, 1, 0, 0, 1000000),
+        // uniformly rather sparse
+        gen_bitmap(1e-5, 0.0, 1, 0, 0, 2000000),
+        // uniformly rather sparse with runs
+        gen_bitmap(1e-5, 0.0, 3, 0, 0, 2000000),
+        // uniformly rather dense
+        gen_bitmap(1e-1, 0.0, 1, 0, 0, 2000000),
+        // ascending density but never too dense
+        gen_bitmap(0.001, 1e-7, 1, 0, 0, 1000000),
+        // ascending density but very sparse
+        gen_bitmap(0.0, 1e-10, 1, 0, 0, 1000000),
+        // descending with a gap
+        gen_bitmap(0.5, -1e-6, 1, 600000, 800000, 1000000),
+        //  gap elsewhere
+        gen_bitmap(1, -1e-6, 1, 300000, 500000, 1000000),
+        0  // sentinel
+    };
+
+    for (int i = 0; r[i]; ++i) {
+        for (int j = i + 1; r[j]; ++j) {
+            roaring_bitmap_t *expected = synthesized_andnot(r[i], r[j]);
+            roaring_bitmap_t *copy = roaring_bitmap_copy(r[i]);
+            copy->copy_on_write = copy_on_write;
+
+            roaring_bitmap_andnot_inplace(copy, r[j]);
+
+            bool is_equal = roaring_bitmap_equals(expected, copy);
+            if (!is_equal) {
+                printf("problem with i=%d j=%d\n", i, j);
+                printf("copy's cardinality  is %d and expected's is %d\n",
+                       (int)roaring_bitmap_get_cardinality(copy),
+                       (int)roaring_bitmap_get_cardinality(expected));
+                show_difference(copy, expected);
+            }
+
+            assert_true(is_equal);
+            roaring_bitmap_free(expected);
+            roaring_bitmap_free(copy);
+        }
+    }
+    for (int i = 0; r[i]; ++i) roaring_bitmap_free(r[i]);
+}
+
+void test_andnot_inplace_true() { test_andnot_inplace(true); }
+
+void test_andnot_inplace_false() { test_xor_inplace(false); }
 
 static roaring_bitmap_t *make_roaring_from_array(uint32_t *a, int len) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -2045,6 +2399,10 @@ int main() {
         cmocka_unit_test(test_xor_inplace_true),
         cmocka_unit_test(test_xor_lazy_true),
         cmocka_unit_test(test_xor_lazy_inplace_true),
+        cmocka_unit_test(test_andnot_false),
+        cmocka_unit_test(test_andnot_inplace_false),
+        cmocka_unit_test(test_andnot_true),
+        cmocka_unit_test(test_andnot_inplace_true),
         cmocka_unit_test(test_conversion_to_int_array),
         cmocka_unit_test(test_array_to_run),
         cmocka_unit_test(test_array_to_self),

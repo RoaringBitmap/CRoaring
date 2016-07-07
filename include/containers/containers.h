@@ -13,6 +13,7 @@
 #include "mixed_negation.h"
 #include "mixed_union.h"
 #include "mixed_xor.h"
+#include "mixed_andnot.h"
 #include "run.h"
 
 // would enum be possible or better?
@@ -1439,6 +1440,198 @@ static inline void *container_lazy_ixor(void *c1, uint8_t type1, const void *c2,
         // could see the corresponding code for union
         default:
             return container_ixor(c1, type1, c2, type2, result_type);
+    }
+}
+
+/**
+ * Compute difference (andnot) between two containers, generate a new
+ * container (having type result_type), requires a typecode. This allocates new
+ * memory, caller is responsible for deallocation.
+ */
+static inline void *container_andnot(const void *c1, uint8_t type1,
+                                     const void *c2, uint8_t type2,
+                                     uint8_t *result_type) {
+    c1 = container_unwrap_shared(c1, &type1);
+    c2 = container_unwrap_shared(c2, &type2);
+    void *result = NULL;
+    switch (CONTAINER_PAIR(type1, type2)) {
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            *result_type = bitset_bitset_container_andnot(
+                               (const bitset_container_t *)c1,
+                               (const bitset_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            result = array_container_create();
+            array_array_container_andnot((const array_container_t *)c1,
+                                         (const array_container_t *)c2,
+                                         (array_container_t *)result);
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            if (run_container_is_full((const run_container_t *)c2)) {
+                result = array_container_create();
+                *result_type = ARRAY_CONTAINER_TYPE_CODE;
+                return result;
+            }
+            *result_type =
+                run_run_container_andnot((const run_container_t *)c1,
+                                         (const run_container_t *)c2, &result);
+            return result;
+
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            *result_type = bitset_array_container_andnot(
+                               (const bitset_container_t *)c1,
+                               (const array_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            result = array_container_create();
+            array_bitset_container_andnot((const array_container_t *)c1,
+                                          (const bitset_container_t *)c2,
+                                          (array_container_t *)result);
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            if (run_container_is_full((const run_container_t *)c2)) {
+                result = array_container_create();
+                *result_type = ARRAY_CONTAINER_TYPE_CODE;
+                return result;
+            }
+            *result_type = bitset_run_container_andnot(
+                               (const bitset_container_t *)c1,
+                               (const run_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+
+            *result_type = run_bitset_container_andnot(
+                               (const run_container_t *)c1,
+                               (const bitset_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            if (run_container_is_full((const run_container_t *)c2)) {
+                result = array_container_create();
+                *result_type = ARRAY_CONTAINER_TYPE_CODE;
+                return result;
+            }
+            result = array_container_create();
+            array_run_container_andnot((const array_container_t *)c1,
+                                       (const run_container_t *)c2,
+                                       (array_container_t *)result);
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            *result_type = run_array_container_andnot(
+                (const run_container_t *)c1, (const array_container_t *)c2,
+                &result);
+            return result;
+
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return NULL;  // unreached
+    }
+}
+
+/**
+ * Compute the andnot between two containers, with result in the first
+ * container.
+ * If the returned pointer is identical to c1, then the container has been
+ * modified.
+ * If the returned pointer is different from c1, then a new container has been
+ * created and the caller is responsible for freeing it.
+ * The type of the first container may change. Returns the modified
+ * (and possibly new) container
+*/
+static inline void *container_iandnot(void *c1, uint8_t type1, const void *c2,
+                                      uint8_t type2, uint8_t *result_type) {
+    c1 = get_writable_copy_if_shared(c1, &type1);
+    c2 = container_unwrap_shared(c2, &type2);
+    void *result = NULL;
+    switch (CONTAINER_PAIR(type1, type2)) {
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            *result_type = bitset_bitset_container_iandnot(
+                               (bitset_container_t *)c1,
+                               (const bitset_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            array_array_container_iandnot((array_container_t *)c1,
+                                          (const array_container_t *)c2);
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+            return c1;
+
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            *result_type = run_run_container_iandnot(
+                (run_container_t *)c1, (const run_container_t *)c2, &result);
+            return result;
+
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            *result_type = bitset_array_container_iandnot(
+                               (bitset_container_t *)c1,
+                               (const array_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+            return result;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+
+            array_bitset_container_iandnot((array_container_t *)c1,
+                                           (const bitset_container_t *)c2);
+            return c1;
+
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            *result_type = bitset_run_container_iandnot(
+                               (bitset_container_t *)c1,
+                               (const run_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+
+            return result;
+
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            *result_type = run_bitset_container_iandnot(
+                               (run_container_t *)c1,
+                               (const bitset_container_t *)c2, &result)
+                               ? BITSET_CONTAINER_TYPE_CODE
+                               : ARRAY_CONTAINER_TYPE_CODE;
+
+            return result;
+
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            *result_type = ARRAY_CONTAINER_TYPE_CODE;
+            array_run_container_iandnot((array_container_t *)c1,
+                                        (const run_container_t *)c2);
+            return c1;
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            *result_type = run_array_container_iandnot(
+                (run_container_t *)c1, (const array_container_t *)c2, &result);
+            return result;
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return NULL;
     }
 }
 

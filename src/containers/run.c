@@ -542,6 +542,69 @@ void run_container_intersection(const run_container_t *src_1,
     }
 }
 
+/* Compute the difference of src_1 and src_2 and write the result to
+ * dst. It is assumed that dst is distinct from both src_1 and src_2. */
+void run_container_andnot(const run_container_t *src_1,
+                          const run_container_t *src_2, run_container_t *dst) {
+    // following Java implementation as of June 2016
+
+    if (dst->capacity < src_1->n_runs + src_2->n_runs)
+        run_container_grow(dst, src_1->n_runs + src_2->n_runs, false);
+
+    dst->n_runs = 0;
+
+    int rlepos1 = 0;
+    int rlepos2 = 0;
+    int32_t start = src_1->runs[rlepos1].value;
+    int32_t end = start + src_1->runs[rlepos1].length + 1;
+    int32_t start2 = src_2->runs[rlepos2].value;
+    int32_t end2 = start2 + src_2->runs[rlepos2].length + 1;
+
+    while ((rlepos1 < src_1->n_runs) && (rlepos2 < src_2->n_runs)) {
+        if (end <= start2) {
+            // output the first run
+            dst->runs[dst->n_runs++] =
+                (rle16_t){.value = start, .length = (end - start - 1)};
+            rlepos1++;
+            if (rlepos1 < src_1->n_runs) {
+                start = src_1->runs[rlepos1].value;
+                end = start + src_1->runs[rlepos1].length + 1;
+            }
+        } else if (end2 <= start) {
+            // exit the second run
+            rlepos2++;
+            if (rlepos2 < src_2->n_runs) {
+                start2 = src_2->runs[rlepos2].value;
+                end2 = start2 + src_2->runs[rlepos2].length + 1;
+            }
+        } else {
+            if (start < start2) {
+                dst->runs[dst->n_runs++] =
+                    (rle16_t){.value = start, .length = (start2 - start - 1)};
+            }
+            if (end2 < end) {
+                start = end2;
+            } else {
+                rlepos1++;
+                if (rlepos1 < src_1->n_runs) {
+                    start = src_1->runs[rlepos1].value;
+                    end = start + src_1->runs[rlepos1].length + 1;
+                }
+            }
+        }
+    }
+    if (rlepos1 < src_1->n_runs) {
+        dst->runs[dst->n_runs++] =
+            (rle16_t){.value = start, .length = (end - start - 1)};
+        rlepos1++;
+        if (rlepos1 < src_1->n_runs) {
+            memcpy(dst->runs + dst->n_runs, src_1->runs + rlepos1,
+                   sizeof(rle16_t) * (src_1->n_runs - rlepos1));
+            dst->n_runs += src_1->n_runs - rlepos1;
+        }
+    }
+}
+
 int run_container_to_uint32_array(uint32_t *out, const run_container_t *cont,
                                   uint32_t base) {
     int outpos = 0;
@@ -754,16 +817,17 @@ void run_container_smart_append_exclusive(run_container_t *src,
     }
 }
 
-bool run_container_select(const run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
-    for(int i = 0; i < container->n_runs; i++) {
+bool run_container_select(const run_container_t *container,
+                          uint32_t *start_rank, uint32_t rank,
+                          uint32_t *element) {
+    for (int i = 0; i < container->n_runs; i++) {
         uint16_t length = container->runs[i].length;
-        if(rank <= *start_rank + length) {
+        if (rank <= *start_rank + length) {
             uint16_t value = container->runs[i].value;
-            *element = value + rank-(*start_rank);
+            *element = value + rank - (*start_rank);
             return true;
-        }
-        else
-            *start_rank += length+1;
+        } else
+            *start_rank += length + 1;
     }
     return false;
 }

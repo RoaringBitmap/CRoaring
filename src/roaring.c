@@ -725,6 +725,161 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
     }
 }
 
+roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
+                                        const roaring_bitmap_t *x2) {
+    uint8_t container_result_type = 0;
+    const int length1 = x1->high_low_container->size,
+              length2 = x2->high_low_container->size;
+    if (0 == length1) {
+        roaring_bitmap_t *empty_bitmap = roaring_bitmap_create();
+        empty_bitmap->copy_on_write = x1->copy_on_write && x2->copy_on_write;
+        return empty_bitmap;
+    }
+    if (0 == length2) {
+        return roaring_bitmap_copy(x1);
+    }
+    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1);
+    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
+
+    int pos1 = 0, pos2 = 0;
+    uint8_t container_type_1, container_type_2;
+    uint16_t s1 = 0;
+    uint16_t s2 = 0;
+    while (true) {
+        s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+        s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+
+        if (s1 == s2) {
+            void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
+                                                 &container_type_1);
+            void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
+                                                 &container_type_2);
+            void *c =
+                container_andnot(c1, container_type_1, c2, container_type_2,
+                                 &container_result_type);
+
+            if (container_nonzero_cardinality(c, container_result_type)) {
+                ra_append(answer->high_low_container, s1, c,
+                          container_result_type);
+            } else {
+                container_free(c, container_result_type);
+            }
+            ++pos1;
+            ++pos2;
+            if (pos1 == length1) break;
+            if (pos2 == length2) break;
+        } else if (s1 < s2) {  // s1 < s2
+            const int next_pos1 =
+                ra_advance_until(x1->high_low_container, s2, pos1);
+            ra_append_copy_range(answer->high_low_container,
+                                 x1->high_low_container, pos1, next_pos1,
+                                 x1->copy_on_write);
+            // TODO : perhaps some of the copy_on_write should be based on
+            // answer rather than x1 (more stringent?).  Many similar cases
+            pos1 = next_pos1;
+            if (pos1 == length1) break;
+        } else {  // s1 > s2
+            pos2 = ra_advance_until(x2->high_low_container, s1, pos2);
+            if (pos2 == length2) break;
+        }
+    }
+    if (pos2 == length2) {
+        ra_append_copy_range(answer->high_low_container, x1->high_low_container,
+                             pos1, length1, x1->copy_on_write);
+    }
+    return answer;
+}
+
+// inplace andnot (modifies its first argument).
+
+void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
+                                   const roaring_bitmap_t *x2) {
+    assert(x1 != x2);
+
+    uint8_t container_result_type = 0;
+    int length1 = x1->high_low_container->size;
+    const int length2 = x2->high_low_container->size;
+    int intersection_size = 0;
+
+    if (0 == length2) return;
+
+    if (0 == length1) {
+        roaring_bitmap_t *empty_bitmap = roaring_bitmap_create();
+        roaring_bitmap_overwrite(x1, empty_bitmap);
+        roaring_bitmap_free(empty_bitmap);
+        return;
+    }
+
+    int pos1 = 0, pos2 = 0;
+    uint8_t container_type_1, container_type_2;
+    uint16_t s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+    uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+    while (true) {
+        if (s1 == s2) {
+            void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
+                                                 &container_type_1);
+            c1 = get_writable_copy_if_shared(c1, &container_type_1);
+
+            void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
+                                                 &container_type_2);
+            void *c =
+                container_iandnot(c1, container_type_1, c2, container_type_2,
+                                  &container_result_type);
+
+            if (container_nonzero_cardinality(c, container_result_type)) {
+                ra_replace_key_and_container_at_index(x1->high_low_container,
+                                                      intersection_size++, s1,
+                                                      c, container_result_type);
+            } else {
+                container_free(c, container_result_type);
+            }
+
+            ++pos1;
+            ++pos2;
+            if (pos1 == length1) break;
+            if (pos2 == length2) break;
+            s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+            s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+
+        } else if (s1 < s2) {  // s1 < s2
+            if (pos1 != intersection_size) {
+                void *c1 = ra_get_container_at_index(x1->high_low_container,
+                                                     pos1, &container_type_1);
+
+                ra_replace_key_and_container_at_index(x1->high_low_container,
+                                                      intersection_size, s1, c1,
+                                                      container_type_1);
+            }
+            intersection_size++;
+            pos1++;
+            if (pos1 == length1) break;
+            s1 = ra_get_key_at_index(x1->high_low_container, pos1);
+
+        } else {  // s1 > s2
+            pos2 = ra_advance_until(x2->high_low_container, s1, pos2);
+            if (pos2 == length2) break;
+            s2 = ra_get_key_at_index(x2->high_low_container, pos2);
+        }
+    }
+
+    if (pos1 < length1) {
+        // all containers between intersection_size and
+        // pos1 are junk.  However, they have either been moved
+        // (thus still referenced) or involved in an iandnot
+        // that will clean up all containers that could not be reused.
+        // Thus we should not free the junk containers between
+        // intersection_size and pos1.
+        if (pos1 > intersection_size) {
+            // left slide of remaining items
+            ra_copy_range(x1->high_low_container, pos1, length1,
+                          intersection_size);
+        }
+        // else current placement is fine
+        intersection_size += (length1 - pos1);
+    }
+    ra_downsize(x1->high_low_container, intersection_size);
+}
+
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra) {
     uint64_t card = 0;
     for (int i = 0; i < ra->high_low_container->size; ++i)
@@ -1265,10 +1420,6 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
 
 roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
                                           const roaring_bitmap_t *x2) {
-    // printf("two bitmaps xored hav cards %d and %d\n",
-    //  (int)roaring_bitmap_get_cardinality(x1),
-    //   (int)roaring_bitmap_get_cardinality(x2));
-
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;

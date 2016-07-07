@@ -12,23 +12,28 @@
 #include "containers/mixed_union.h"
 #include "containers/mixed_negation.h"
 #include "containers/mixed_xor.h"
+#include "containers/mixed_andnot.h"
 #include "containers/containers.h"
 
 #include "test.h"
 
 //#define UNVERBOSE_MIXED_CONTAINER
 
-void array_bitset_and_or_xor_test() {
+void array_bitset_and_or_xor_andnot_test() {
     array_container_t* A1 = array_container_create();
     array_container_t* A2 = array_container_create();
     array_container_t* AI = array_container_create();
     array_container_t* AO = array_container_create();
     array_container_t* AX = array_container_create();
+    array_container_t* AM = array_container_create();
+    array_container_t* AM1 = array_container_create();
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
     bitset_container_t* BO = bitset_container_create();
     bitset_container_t* BX = bitset_container_create();
+    bitset_container_t* BM = bitset_container_create();
+    bitset_container_t* BM1 = bitset_container_create();
 
     // nb, array containers will be illegally big.
     for (int x = 0; x < (1 << 16); x += 3) {
@@ -51,16 +56,27 @@ void array_bitset_and_or_xor_test() {
         bitset_container_set(BI, x);
     }
 
-    for (int x = 0; x < (1 << 16); x++)
+    for (int x = 0; x < (1 << 16); x++) {
         if ((x % 62 == 0) ^ (x % 3 == 0)) {
             array_container_add(AX, x);
             bitset_container_set(BX, x);
         }
-
+        if ((x % 3 == 0) && !(x % 62 == 0)) {
+            array_container_add(AM, x);
+            bitset_container_set(BM, x);
+        }
+        if ((x % 62 == 0) && !(x % 3 == 0)) {
+            array_container_add(AM1, x);
+            bitset_container_set(BM1, x);
+        }
+    }
     // we interleave O and I on purpose (to trigger bugs!)
     int ci = array_container_cardinality(AI);  // expected intersection
     int co = array_container_cardinality(AO);  // expected union
     int cx = array_container_cardinality(AX);  // expected xor
+    int cm = array_container_cardinality(AM);  // expected minus (andNot)
+    int cm1 =
+        array_container_cardinality(AM1);  // expected minus (andNot) reversed
 
     assert_int_equal(ci, bitset_container_cardinality(BI));
     assert_int_equal(co, bitset_container_cardinality(BO));
@@ -68,16 +84,24 @@ void array_bitset_and_or_xor_test() {
     array_container_intersection(A1, A2, AI);
     array_container_union(A1, A2, AO);
     array_container_xor(A1, A2, AX);
+    array_container_andnot(A1, A2, AM);
+    array_container_andnot(A2, A1, AM1);
     bitset_container_intersection(B1, B2, BI);
     bitset_container_union(B1, B2, BO);
-    array_container_xor(A1, A2, AX);
+    bitset_container_xor(B1, B2, BX);
+    bitset_container_andnot(B1, B2, BM);
+    bitset_container_andnot(B2, B1, BM1);
 
     assert_int_equal(ci, bitset_container_cardinality(BI));
     assert_int_equal(co, bitset_container_cardinality(BO));
     assert_int_equal(cx, bitset_container_cardinality(BX));
+    assert_int_equal(cm, bitset_container_cardinality(BM));
+    assert_int_equal(cm1, bitset_container_cardinality(BM1));
     assert_int_equal(ci, array_container_cardinality(AI));
     assert_int_equal(co, array_container_cardinality(AO));
     assert_int_equal(cx, array_container_cardinality(AX));
+    assert_int_equal(cm, array_container_cardinality(AM));
+    assert_int_equal(cm1, array_container_cardinality(AM1));
 
     array_bitset_container_intersection(A1, B2, AI);
     assert_int_equal(ci, array_container_cardinality(AI));
@@ -115,32 +139,94 @@ void array_bitset_and_or_xor_test() {
     BX_1 = NULL;
     // xoring something with itself, getting array
     assert_false(array_bitset_container_xor(A2, B2, &BX_1));
-    assert_int_equal(0, bitset_container_cardinality(BX_1));
+    assert_int_equal(0, array_container_cardinality(BX_1));
 
-    bitset_container_free(BX_1);
+    array_container_free(BX_1);
     BX_1 = NULL;
     // xoring array with itself, getting array
     assert_false(array_array_container_xor(A2, A2, &BX_1));
-    assert_int_equal(0, bitset_container_cardinality(BX_1));
+    assert_int_equal(0, array_container_cardinality(BX_1));
 
-    bitset_container_free(BX_1);
+    array_container_free(BX_1);
     BX_1 = NULL;
     // xoring bitset with itself, getting array
     assert_false(bitset_bitset_container_xor(B2, B2, &BX_1));
-    assert_int_equal(0, bitset_container_cardinality(BX_1));
+    assert_int_equal(0, array_container_cardinality(BX_1));
+
+    array_container_free(BX_1);
+    BX_1 = NULL;
+
+    array_bitset_container_andnot(A1, B2, AM);
+    assert_int_equal(cm, array_container_cardinality(AM));
+
+    array_bitset_container_andnot(A2, B1, AM1);
+    assert_int_equal(cm1, array_container_cardinality(AM1));
+
+    array_array_container_andnot(A2, A1, AM1);
+    assert_int_equal(cm1, array_container_cardinality(AM1));
+
+    array_array_container_andnot(A1, A2, AM);
+    assert_int_equal(cm, array_container_cardinality(AM));
+
+    void* some_container = NULL;  // sometimes bitmap, sometimes array.
+
+    assert_true(bitset_bitset_container_andnot(B1, B2, &some_container));
+    assert_int_equal(cm, bitset_container_cardinality(some_container));
+    bitset_container_free(some_container);
+    some_container = NULL;
+
+    assert_true(bitset_array_container_andnot(B1, A2, &some_container));
+    assert_int_equal(cm, bitset_container_cardinality(some_container));
+    bitset_container_free(some_container);
+    some_container = NULL;
+
+    // Hopefully density means it will be an array
+    assert_false(bitset_bitset_container_andnot(B2, B1, &some_container));
+    assert_int_equal(cm1, array_container_cardinality(some_container));
+    array_container_free(some_container);
+    some_container = NULL;
+
+    // Hopefully density means it will be an array
+    assert_false(bitset_array_container_andnot(B2, A1, &some_container));
+    assert_int_equal(cm1, array_container_cardinality(some_container));
+    array_container_free(some_container);
+    some_container = NULL;
+
+    // subtracting something with itself, getting array
+    array_bitset_container_andnot(A2, B2, AM1);
+    assert_int_equal(0, array_container_cardinality(AM1));
+
+    // subtracting something with itself, getting array
+    bitset_array_container_andnot(B2, A2, &some_container);
+    assert_int_equal(0, array_container_cardinality(some_container));
+    array_container_free(some_container);
+    some_container = NULL;
+
+    // subtracting array with itself, getting array
+    array_array_container_andnot(A2, A2, AM1);
+    assert_int_equal(0, array_container_cardinality(AM1));
+
+    // subtracting bitset with itself, getting array
+    assert_false(bitset_bitset_container_andnot(B2, B2, &some_container));
+    assert_int_equal(0, array_container_cardinality(some_container));
+    array_container_free(some_container);
 
     array_container_free(A1);
     array_container_free(A2);
     array_container_free(AI);
     array_container_free(AO);
     array_container_free(AX);
+    array_container_free(AM);
+    array_container_free(AM1);
 
     bitset_container_free(B1);
     bitset_container_free(B2);
     bitset_container_free(BI);
     bitset_container_free(BO);
     bitset_container_free(BX);
-    bitset_container_free(BX_1);
+    bitset_container_free(BM);
+    bitset_container_free(BM1);
+    // bitset_container_free(BX_1);
 }
 
 // all xor routines with lazy option
@@ -312,6 +398,109 @@ void array_bitset_ixor_test() {
     bitset_container_free(BX_1);
 }
 
+void array_bitset_iandnot_test() {
+    array_container_t* A1 = array_container_create();
+    array_container_t* AM = array_container_create();
+    array_container_t* AM1 = array_container_create();
+    array_container_t* A1copy = array_container_create();
+    array_container_t* A2copy = array_container_create();
+    array_container_t* A1mod = array_container_create();
+    array_container_t* A2 = array_container_create();
+    bitset_container_t* B1 = bitset_container_create();
+    bitset_container_t* BM = bitset_container_create();
+    bitset_container_t* BM1 = bitset_container_create();
+    bitset_container_t* B1copy = bitset_container_create();
+    bitset_container_t* B1mod = bitset_container_create();
+    bitset_container_t* B2 = bitset_container_create();
+    bitset_container_t* B2copy = bitset_container_create();
+
+    // nb, array containers will be illegally big.
+    for (int x = 0; x < (1 << 16); x += 3) {
+        array_container_add(A1, x);
+        bitset_container_set(B1, x);
+    }
+
+    // important: 62 is not divisible by 3
+    for (int x = 0; x < (1 << 16); x += 62) {
+        array_container_add(A2, x);
+        bitset_container_set(B2, x);
+    }
+
+    for (int x = 0; x < (1 << 16); x++) {
+        if ((x % 3 == 0) && !(x % 62 == 0)) {
+            array_container_add(AM, x);
+            bitset_container_set(BM, x);
+        }
+        if ((x % 62 == 0) && !(x % 3 == 0)) {
+            array_container_add(AM1, x);
+            bitset_container_set(BM1, x);
+        }
+    }
+
+    array_container_copy(A1, A1copy);
+    array_container_copy(A2, A2copy);
+    bitset_container_copy(B1, B1copy);
+    bitset_container_copy(B2, B2copy);
+    array_container_copy(A1, A1mod);
+    array_container_add(A1mod, 2);
+    bitset_container_copy(B1, B1mod);
+    bitset_container_add(B1mod, 2);
+
+    int cm = array_container_cardinality(AM);    // expected difference
+    int cm1 = array_container_cardinality(AM1);  // expected reverse difference
+
+    void* some_container = NULL;
+
+    assert_false(bitset_array_container_iandnot(B2, A1, &some_container));
+    assert_int_equal(cm1, array_container_cardinality(some_container));
+    // this case, result is not inplace
+    assert_ptr_not_equal(some_container, B2);
+    B2 = bitset_container_create();  // since B2 had been destroyed.
+    array_container_free(some_container);
+    bitset_container_copy(B2copy, B2);
+
+    assert_true(bitset_array_container_iandnot(B1, A2, &some_container));
+    assert_int_equal(cm, bitset_container_cardinality(some_container));
+    // this case, result is inplace
+    assert_ptr_equal(some_container, B1);
+    bitset_container_copy(B1copy, B1);
+
+    array_bitset_container_iandnot(A2, B1);
+    assert_int_equal(cm1, array_container_cardinality(A2));
+    array_container_copy(A2copy, A2);
+
+    // subtracting something from itself, getting array
+    array_bitset_container_iandnot(A1, B1);
+    assert_int_equal(0, array_container_cardinality(A1));
+    array_container_copy(A1copy, A1);
+
+    // B1mod and B1copy differ in position 2 only (B1mod has it)
+    assert_false(
+        bitset_bitset_container_iandnot(B1mod, B1copy, &some_container));
+    assert_int_equal(1, array_container_cardinality(some_container));
+    array_container_free(some_container);
+    some_container = NULL;
+
+    array_array_container_iandnot(A1mod, A1copy);
+    assert_int_equal(1, array_container_cardinality(A1mod));
+    // A1 mod now corrupted
+
+    array_container_free(A1);
+    array_container_free(A2);
+    array_container_free(AM);
+    array_container_free(AM1);
+    array_container_free(A1copy);
+    array_container_free(A2copy);
+    array_container_free(A1mod);
+
+    bitset_container_free(B1);
+    bitset_container_free(B1copy);
+    bitset_container_free(B2);
+    bitset_container_free(B2copy);
+    bitset_container_free(BM);
+    bitset_container_free(BM1);
+}
+
 // routines where one of the containers is a run container
 void run_xor_test() {
     array_container_t* A1 = array_container_create();
@@ -387,7 +576,8 @@ void run_xor_test() {
     array_container_free(BX_1);
     BX_1 = NULL;
 
-    // both run coding and array coding have same serialized size for empty
+    // both run coding and array coding have same serialized size for
+    // empty
     assert_int_equal(RUN_CONTAINER_TYPE_CODE,
                      run_run_container_xor(R1, R1, &BX_1));
     assert_int_equal(0, run_container_cardinality(BX_1));
@@ -472,6 +662,223 @@ void run_xor_test() {
     run_container_free(R2);
     run_container_free(R3);
     run_container_free(R4);
+}
+
+// routines where one of the containers is a run container, copied from xor code
+void run_andnot_test() {
+    array_container_t* A1 = array_container_create();
+    array_container_t* A2 = array_container_create();
+    array_container_t* A3 = array_container_create();
+    array_container_t* A4 = array_container_create();
+    array_container_t* AM = array_container_create();
+    bitset_container_t* B1 = bitset_container_create();
+    bitset_container_t* B2 = bitset_container_create();
+    bitset_container_t* B3 = bitset_container_create();
+    bitset_container_t* B4 = bitset_container_create();
+    bitset_container_t* BM = bitset_container_create();
+    run_container_t* R1 = run_container_create();
+    run_container_t* R2 = run_container_create();
+    run_container_t* R3 = run_container_create();
+    run_container_t* R4 = run_container_create();
+
+    // B/A1 minus  R1 is empty (array or run, I guess)
+    // B/A1 minus R2 is probably best left as runs
+    // B/A3 minus R1 is best as an array.
+    // B/A3 minus R4 is best as a bitmap
+
+    // nb, array containers will be illegally big.
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x % 5 < 3) {
+            array_container_add(A1, x);
+            bitset_container_set(B1, x);
+            run_container_add(R1, x);
+        }
+    }
+
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x % 62 < 37) {
+            array_container_add(A2, x);
+            bitset_container_set(B2, x);
+            run_container_add(R2, x);
+        }
+    }
+
+    for (int x = 0; x < (1 << 16); x++)
+        if ((x % 5 < 3) && !(x % 62 < 37)) {
+            array_container_add(AM, x);
+            bitset_container_set(BM, x);
+        }
+
+    // the elements x%5 == 2 differ for less than 10k, otherwise same)
+    for (int x = 0; x < (1 << 16); x++) {
+        if ((x % 5 < 2) || ((x % 5 < 3) && (x > 10000))) {
+            array_container_add(A3, x);
+            bitset_container_set(B3, x);
+            run_container_add(R3, x);
+        }
+    }
+
+    int randstate = 1;  // for Oakenfull RNG, hope LSBits are nice
+    for (int x = 0; x < (1 << 16); x++) {
+        if (randstate % 4) {
+            run_container_add(R4, x);
+            array_container_add(A4, x);
+            bitset_container_add(B4, x);
+        }
+        randstate = (3432 * randstate + 6789) % 9973;
+    }
+
+    int cm12 = array_container_cardinality(AM);
+
+    void* BM_1 = NULL;
+
+    assert_false(run_bitset_container_andnot(R1, B1, &BM_1));
+    assert_int_equal(0, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_run_container_andnot(A1, R1, AM);
+    assert_int_equal(0, array_container_cardinality(AM));
+
+    // both run coding and array coding have same serialized size for
+    // empty
+    assert_int_equal(RUN_CONTAINER_TYPE_CODE,
+                     run_run_container_andnot(R1, R1, &BM_1));
+    assert_int_equal(0, run_container_cardinality(BM_1));
+    run_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_false(run_bitset_container_andnot(R1, B3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_false(bitset_run_container_andnot(B1, R3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_run_container_andnot(A1, R3, AM);
+    assert_int_equal(2000, array_container_cardinality(AM));
+
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE,
+                     run_array_container_andnot(R1, A3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE,
+                     run_run_container_andnot(R1, R3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_true(run_bitset_container_andnot(R1, B2, &BM_1));
+    assert_int_equal(cm12, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_run_container_andnot(A1, R2, AM);
+    assert_int_equal(cm12, array_container_cardinality(AM));
+
+    array_container_t* A_small = array_container_create();
+    for (int i = 990; i < 1000; ++i) array_container_add(A_small, i);
+
+    run_container_t* R_small = run_container_create();
+    for (int i = 990; i < 1000; ++i) run_container_add(R_small, i);
+
+    array_run_container_andnot(A_small, R2, AM);
+    assert_int_equal(2,                                 // something like that
+                     array_container_cardinality(AM));  // hopefully right...
+
+    assert_false(run_bitset_container_andnot(R_small, B2, &BM_1));
+    assert_int_equal(2, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    // note, result is equally small as an array or a run
+    assert_int_equal(RUN_CONTAINER_TYPE_CODE,
+                     run_array_container_andnot(R_small, A2, &BM_1));
+    assert_int_equal(2, run_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    // test with more complicated small run structure (to do)
+    run_container_t* R_small_complex = run_container_create();
+    array_container_t* temp_ac = array_container_create();
+
+    for (int i = 0; i < 3; ++i) run_container_add(R_small_complex, i);
+    for (int i = 10; i < 12; ++i) run_container_add(R_small_complex, i);
+    for (int i = 990; i < 995; ++i) run_container_add(R_small_complex, i);
+    for (int i = 10000; i < 10003; ++i) run_container_add(R_small_complex, i);
+    for (int i = 20000; i < 20002; ++i) run_container_add(R_small_complex, i);
+
+    array_container_add(temp_ac, 993);
+    array_container_add(temp_ac, 994);
+    array_container_add(temp_ac, 2000);
+
+    assert_int_equal(
+        RUN_CONTAINER_TYPE_CODE,
+        run_array_container_andnot(R_small_complex, temp_ac, &BM_1));
+    assert_int_equal(13, run_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_container_free(temp_ac);
+    run_container_free(R_small_complex);
+
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE,
+                     run_array_container_andnot(R1, A3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_int_equal(BITSET_CONTAINER_TYPE_CODE,
+                     run_run_container_andnot(R1, R2, &BM_1));
+    assert_int_equal(cm12, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    // compute the true card for cont4 - cont3 assuming that
+    // bitset-bitset implementation is known correct
+    assert_true(bitset_bitset_container_andnot(B4, B3, &BM_1));
+    int card_4_3 = bitset_container_cardinality(BM_1);
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_true(run_bitset_container_andnot(R4, B3, &BM_1));
+    assert_int_equal(card_4_3, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_run_container_andnot(A4, R3, AM);
+    // if this fails, either this bitset is wrong or the previous one...
+    assert_int_equal(card_4_3, array_container_cardinality(AM));
+
+    assert_int_equal(BITSET_CONTAINER_TYPE_CODE,
+                     run_run_container_andnot(R4, R3, &BM_1));
+    assert_int_equal(card_4_3, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_container_free(A1);
+    array_container_free(A2);
+    array_container_free(A3);
+    array_container_free(A4);
+    array_container_free(AM);
+    array_container_free(A_small);
+
+    bitset_container_free(B1);
+    bitset_container_free(B2);
+    bitset_container_free(B3);
+    bitset_container_free(B4);
+    bitset_container_free(BM);
+
+    run_container_free(R1);
+    run_container_free(R2);
+    run_container_free(R3);
+    run_container_free(R4);
+    run_container_free(R_small);
 }
 
 // routines where one of the containers is a run container
@@ -567,7 +974,8 @@ void run_ixor_test() {
     array_container_free(BX_1);
     BX_1 = NULL;
 
-    // both run coding and array coding have same serialized size for empty
+    // both run coding and array coding have same serialized size for
+    // empty
     temp_r = run_container_clone(R1);
     int ret_type = run_run_container_ixor(temp_r, R1, &BX_1);
     assert_int_not_equal(BITSET_CONTAINER_TYPE_CODE, ret_type);
@@ -701,6 +1109,261 @@ void run_ixor_test() {
     run_container_free(R4);
 }
 
+void run_iandnot_test() {
+    array_container_t* A1 = array_container_create();
+    array_container_t* A2 = array_container_create();
+    array_container_t* A3 = array_container_create();
+    array_container_t* A4 = array_container_create();
+    array_container_t* AM = array_container_create();
+    bitset_container_t* B1 = bitset_container_create();
+    bitset_container_t* B2 = bitset_container_create();
+    bitset_container_t* B3 = bitset_container_create();
+    bitset_container_t* B4 = bitset_container_create();
+    bitset_container_t* BM = bitset_container_create();
+    run_container_t* R1 = run_container_create();
+    run_container_t* R2 = run_container_create();
+    run_container_t* R3 = run_container_create();
+    run_container_t* R4 = run_container_create();
+
+    // nb, array containers will be illegally big.
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x % 5 < 3) {
+            array_container_add(A1, x);
+            bitset_container_set(B1, x);
+            run_container_add(R1, x);
+        }
+    }
+
+    for (int x = 0; x < (1 << 16); x++) {
+        if (x % 62 < 37) {
+            array_container_add(A2, x);
+            bitset_container_set(B2, x);
+            run_container_add(R2, x);
+        }
+    }
+
+    for (int x = 0; x < (1 << 16); x++)
+        if ((x % 5 < 3) && !(x % 62 < 37)) {
+            array_container_add(AM, x);
+            bitset_container_set(BM, x);
+        }
+
+    // the elements x%5 == 2 differ for less than 10k, otherwise same)
+    for (int x = 0; x < (1 << 16); x++) {
+        if ((x % 5 < 2) || ((x % 5 < 3) && (x > 10000))) {
+            array_container_add(A3, x);
+            bitset_container_set(B3, x);
+            run_container_add(R3, x);
+        }
+    }
+
+    int randstate = 1;  // for Oakenfull RNG, hope LSBits are nice
+    for (int x = 0; x < (1 << 16); x++) {
+        if (randstate % 4) {
+            run_container_add(R4, x);
+            array_container_add(A4, x);
+            bitset_container_add(B4, x);
+        }
+        randstate = (3432 * randstate + 6789) % 9973;
+    }
+
+    int cm12 = array_container_cardinality(AM);  // expected xor for ?1 and ?2
+
+    void* BM_1 = NULL;
+
+    run_container_t* temp_r = run_container_clone(R1);
+    assert_false(run_bitset_container_iandnot(temp_r, B1, &BM_1));
+    assert_int_equal(0, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    bitset_container_t* temp_b = bitset_container_create();
+    bitset_container_copy(B1, temp_b);
+    assert_false(bitset_run_container_iandnot(temp_b, R1, &BM_1));
+    assert_int_equal(0, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_container_t* temp_a = array_container_clone(A1);
+    array_run_container_iandnot(temp_a, R1);
+    assert_int_equal(0, array_container_cardinality(temp_a));
+    array_container_free(temp_a);
+
+    temp_r = run_container_clone(R1);
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE,
+                     run_array_container_iandnot(temp_r, A1, &BM_1));
+    assert_int_equal(0, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    // both run coding and array coding have same serialized size for
+    // empty
+    temp_r = run_container_clone(R1);
+    int ret_type = run_run_container_iandnot(temp_r, R1, &BM_1);
+    assert_int_not_equal(BITSET_CONTAINER_TYPE_CODE, ret_type);
+    if (ret_type == RUN_CONTAINER_TYPE_CODE) {
+        assert_int_equal(0, run_container_cardinality(BM_1));
+        run_container_free(BM_1);
+    } else {
+        assert_int_equal(0, array_container_cardinality(BM_1));
+        array_container_free(BM_1);
+    }
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R1);
+    assert_false(run_bitset_container_iandnot(temp_r, B3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_a = array_container_clone(A1);
+    array_run_container_iandnot(temp_a, R3);
+    assert_int_equal(2000, array_container_cardinality(temp_a));
+    array_container_free(temp_a);
+
+    temp_b = bitset_container_create();
+    bitset_container_copy(B1, temp_b);
+    assert_false(bitset_run_container_iandnot(temp_b, R3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R1);
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE,
+                     run_array_container_iandnot(temp_r, A3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R1);
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE,
+                     run_run_container_iandnot(temp_r, R3, &BM_1));
+    assert_int_equal(2000, array_container_cardinality(BM_1));
+    array_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R1);
+    assert_true(run_bitset_container_iandnot(temp_r, B2, &BM_1));
+    assert_int_equal(cm12, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_a = array_container_clone(A1);
+    array_run_container_iandnot(temp_a, R2);
+    assert_int_equal(cm12, array_container_cardinality(temp_a));
+    array_container_free(temp_a);
+
+    temp_b = bitset_container_create();
+    bitset_container_copy(B1, temp_b);
+    assert_true(bitset_run_container_iandnot(temp_b, R2, &BM_1));
+    assert_int_equal(cm12, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R1);
+    assert_int_equal(BITSET_CONTAINER_TYPE_CODE,
+                     run_array_container_iandnot(temp_r, A2, &BM_1));
+    assert_int_equal(cm12, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R1);
+    assert_int_equal(BITSET_CONTAINER_TYPE_CODE,
+                     run_run_container_iandnot(temp_r, R2, &BM_1));
+    assert_int_equal(cm12, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    assert_true(bitset_bitset_container_andnot(B4, B3, &BM_1));
+    int card_4_3 = bitset_container_cardinality(BM_1);
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R4);
+    assert_true(run_bitset_container_iandnot(temp_r, B3, &BM_1));
+    assert_int_equal(card_4_3, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_a = array_container_clone(A4);
+    array_run_container_iandnot(temp_a, R3);
+    // if this fails, either this bitset is wrong or the previous one...
+    assert_int_equal(card_4_3, array_container_cardinality(temp_a));
+    array_container_free(temp_a);
+
+    temp_b = bitset_container_create();
+    bitset_container_copy(B4, temp_b);
+    assert_true(bitset_run_container_iandnot(temp_b, R3, &BM_1));
+    assert_int_equal(card_4_3, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R4);
+    assert_int_equal(BITSET_CONTAINER_TYPE_CODE,
+                     run_array_container_iandnot(temp_r, A3, &BM_1));
+    assert_int_equal(card_4_3, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    temp_r = run_container_clone(R4);
+    assert_int_equal(BITSET_CONTAINER_TYPE_CODE,
+                     run_run_container_iandnot(temp_r, R3, &BM_1));
+    assert_int_equal(card_4_3, bitset_container_cardinality(BM_1));
+    bitset_container_free(BM_1);
+    BM_1 = NULL;
+
+    array_container_free(A1);
+    array_container_free(A2);
+    array_container_free(A3);
+    array_container_free(AM);
+    array_container_free(A4);
+
+    bitset_container_free(B1);
+    bitset_container_free(B2);
+    bitset_container_free(B3);
+    bitset_container_free(B4);
+    bitset_container_free(BM);
+
+    run_container_free(R1);
+    run_container_free(R2);
+    run_container_free(R3);
+    run_container_free(R4);
+}
+
+/* test replicating bug seen on real data */
+void run_array_andnot_bug_test() {
+    int runcontents[] = {
+        196608, 196611, 196612, 196613, 196616, 196619, 196621, 196623, 196628,
+        196629, 196630, 196631, 196632, 196633, 196634, 196635, 196636, 196638,
+        196639, 196640, 196641, 196642, 196644, 196645, 196646, 196647, 196648,
+        196649, 196650, 196652, 196653, 196654, 196656, 196658, 196659, 196660,
+        196662, 196663, 196664, 196665, 196666, 196667, 196669, 196670, 196671,
+        196672, 196673, 196674, 196675, 196677, 196678, 196679, 196680, 196682,
+        196684, 196685, 196686, 196688, 196689, 196690, 196691, 196692, 196693,
+        196694, 196695, 196697, 196698, 196699, 196700, 196701, 196702, 196703,
+        196704, 196705, 196706, 196707, 196708, 196709, 196710, 196711, 196712,
+        196713, 196714, 196715, 196717, 196719, 196720, 196722, 196723, 196725,
+        196726, 196727, 196728, 196729, -1};
+    int arraycontents[] = {196722, 196824, 196989, -1};
+
+    run_container_t* r = run_container_create();
+    array_container_t* a = array_container_create();
+
+    for (int* p = runcontents; *p != -1; ++p) run_container_add(r, *p % 65536);
+    for (int* p = arraycontents; *p != -1; ++p)
+        array_container_add(a, *p % 65536);
+
+    int kindofresult;
+    void* result = 0;
+    kindofresult = run_array_container_andnot(r, a, &result);
+    assert_int_equal(ARRAY_CONTAINER_TYPE_CODE, kindofresult);
+    assert_false(array_container_contains(result, 196722 % 65536));
+
+    run_container_free(r);
+    array_container_free(a);
+    array_container_free(result);
+}
+
 void array_negation_empty_test() {
     array_container_t* AI = array_container_create();
     bitset_container_t* BO = bitset_container_create();
@@ -809,7 +1472,8 @@ void array_negation_range_test3() {
     array_negation_range_test(0x7800, 0x7800, false);
 }
 
-/* sparsity parameter 1=empty; k: every kth is NOT set; k=100 will negate to
+/* sparsity parameter 1=empty; k: every kth is NOT set; k=100 will
+ * negate to
  * sparse */
 static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
                                        bool is_bitset, bool inplace) {
@@ -873,14 +1537,16 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
     }
     container_free(BO, result_typecode);
     if (!inplace) bitset_container_free(BI);
-    // for inplace: input is either output, or it was already freed internally
+    // for inplace: input is either output, or it was already freed
+    // internally
 
     return 1;
 }
 
 /* result is a bitset */
 void bitset_negation_range_test1() {
-    // 33% density will be a bitmap and remain so after any range negated
+    // 33% density will be a bitmap and remain so after any range
+    // negated
     bitset_negation_range_tests(3, 0x7f00, 0x8030, true, false);
 }
 
@@ -892,7 +1558,8 @@ void bitset_negation_range_test2() {
 
 /* inplace: result is a bitset */
 void bitset_negation_range_inplace_test1() {
-    // 33% density will be a bitmap and remain so after any range negated
+    // 33% density will be a bitmap and remain so after any range
+    // negated
     bitset_negation_range_tests(3, 0x7f00, 0x8030, true, true);
 }
 
@@ -902,8 +1569,9 @@ void bitset_negation_range_inplace_test2() {
     bitset_negation_range_tests(100, 0x080, 0xff80, false, true);
 }
 
-/* specify how often runs start (k).  Runs are length h, h+1, .. k-1, 1, 2...*/
-/* start_offset allows for data that begins outside a run                  */
+/* specify how often runs start (k).  Runs are length h, h+1, .. k-1, 1,
+ * 2...*/
+/* start_offset allows for data that begins outside a run */
 
 static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
                                     int r_end, int expected_type, bool inplace,
@@ -926,7 +1594,8 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
             if (offsetx + runlen > (1 << 16))
                 actual_runlen = (1 << 16) - offsetx;
 
-            // run_container_append does not dynamically increase its array
+            // run_container_append does not dynamically increase its
+            // array
             run_container_append_first(
                 RI, (rle16_t){.value = offsetx, .length = actual_runlen - 1});
             card += actual_runlen;
@@ -978,12 +1647,14 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
     // assert_int_equal(result_size_should_be, result_card);
     container_free(BO, result_typecode);
     if (!inplace) run_container_free(RI);
-    // for inplace: input is either output, or it was already freed internally
+    // for inplace: input is either output, or it was already freed
+    // internally
 
     return 1;
 }
 
-/* Version that does not check whether return types and inplaceness are right */
+/* Version that does not check whether return types and inplaceness are
+ * right */
 
 static int run_negation_range_tests_simpler(int k, int h, int start_offset,
                                             int r_start, int r_end,
@@ -1325,10 +1996,13 @@ void run_negation_range_test9() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(array_bitset_and_or_xor_test),
+        cmocka_unit_test(array_bitset_and_or_xor_andnot_test),
         cmocka_unit_test(array_bitset_run_lazy_xor_test),
         cmocka_unit_test(run_xor_test), cmocka_unit_test(run_ixor_test),
+        cmocka_unit_test(run_andnot_test), cmocka_unit_test(run_iandnot_test),
+        cmocka_unit_test(run_array_andnot_bug_test),
         cmocka_unit_test(array_bitset_ixor_test),
+        cmocka_unit_test(array_bitset_iandnot_test),
         cmocka_unit_test(array_negation_empty_test),
         cmocka_unit_test(array_negation_test),
         cmocka_unit_test(array_negation_range_test1),
@@ -1357,12 +2031,16 @@ int main() {
         cmocka_unit_test(run_negation_range_test7),
         cmocka_unit_test(run_negation_range_test8),
         cmocka_unit_test(run_negation_range_test9),
-        /* two very expensive tests that probably should usually be omitted */
+        /* two very expensive tests that probably should usually be
+           omitted */
 
         /*cmocka_unit_test(
-            run_many_negation_range_tests_simpler_notinplace),  // lots of
-                                                                // partial
-                                                                // ranges,
+            run_many_negation_range_tests_simpler_notinplace),  // lots
+        of
+                                                                //
+        partial
+                                                                //
+        ranges,
         cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),*/
         /* */
     };

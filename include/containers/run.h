@@ -297,6 +297,14 @@ static inline run_container_t *run_container_create_range(uint32_t start,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
-bool run_container_select(const run_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element);
+bool run_container_select(const run_container_t *container,
+                          uint32_t *start_rank, uint32_t rank,
+                          uint32_t *element);
+
+/* Compute the difference of src_1 and src_2 and write the result to
+ * dst. It is assumed that dst is distinct from both src_1 and src_2. */
+
+void run_container_andnot(const run_container_t *src_1,
+                          const run_container_t *src_2, run_container_t *dst);
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

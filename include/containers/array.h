@@ -220,16 +220,24 @@ bool array_container_equals(array_container_t *container1,
  * Otherwise, it returns false and update start_rank.
  */
 static inline bool array_container_select(const array_container_t *container,
-                                          uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+                                          uint32_t *start_rank, uint32_t rank,
+                                          uint32_t *element) {
     int card = array_container_cardinality(container);
-    if(*start_rank + card <= rank) {
+    if (*start_rank + card <= rank) {
         *start_rank += card;
         return false;
-    }
-    else {
-        *element = container->array[rank-*start_rank];
+    } else {
+        *element = container->array[rank - *start_rank];
         return true;
     }
 }
+
+/* Computes the  difference of array1 and array2 and write the result
+ * to array out.
+ * Array out does not need to be distinct from array_1
+ */
+void array_container_andnot(const array_container_t *array_1,
+                            const array_container_t *array_2,
+                            array_container_t *out);
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

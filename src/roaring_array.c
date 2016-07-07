@@ -300,7 +300,6 @@ int32_t ra_get_index(roaring_array_t *ra, uint16_t x) {
 
 extern int32_t ra_advance_until(roaring_array_t *ra, uint16_t x, int32_t pos);
 
-/////////////////
 // everything skipped over is freed
 int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos) {
     while (pos < ra->size && ra->keys[pos] < x) {
@@ -353,21 +352,17 @@ void ra_remove_at_index_and_free(roaring_array_t *ra, int32_t i) {
 
 // used in inplace andNot only, to slide left the containers from
 // the mutated RoaringBitmap that are after the largest container of
-// the argument RoaringBitmap.  It is followed by a call to resize.
+// the argument RoaringBitmap.  In use it should be followed by a call to
+// downsize.
 //
 void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
                    uint32_t new_begin) {
-    static bool warned_em = false;
-    if (!warned_em) {
-        fprintf(stderr, "[Warning] potential memory leak in ra_copy_range");
-        warned_em = true;
-    }
     assert(begin <= end);
     assert(new_begin < begin);
 
     const int range = end - begin;
 
-    // TODO: there is a memory leak here, for any overwritten containers
+    // We ensure to previously have freed overwritten containers
     // that are not copied elsewhere
 
     memmove(&(ra->containers[new_begin]), &(ra->containers[begin]),
@@ -381,10 +376,6 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
 void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
                                uint8_t typecode) {
     assert(i < ra->size);
-    // valid container there already
-    // container_free(ra->containers[i], ra->typecodes[i]);// too eager!
-    // is there a possible memory leak here?
-
     ra->containers[i] = c;
     ra->typecodes[i] = typecode;
 }
@@ -393,15 +384,6 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
                                            uint16_t key, void *c,
                                            uint8_t typecode) {
     assert(i < ra->size);
-    // container_free(ra->containers[i], ra->typecodes[i]);//too eager!
-    // is there a possible memory leak here, then?
-
-    // anyone calling this is responsible for making sure we have freed the
-    // container currently at the index,
-    // (unless it is the same one we are writing in)
-
-    // possibly we just need to avoid free if c == ra->containers[i] but
-    // otherwise do it.
 
     ra->keys[i] = key;
     ra->containers[i] = c;
