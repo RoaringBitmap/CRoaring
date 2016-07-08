@@ -74,9 +74,10 @@ uint64_t card1 = roaring_bitmap_get_cardinality(r1);
 uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
 assert(arr1  != NULL);
 roaring_bitmap_to_uint32_array(r1, arr1);
+roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
 free(arr1);
 assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
-
+roaring_bitmap_free(r1f);
 
 // we can copy and compare bitmaps
 roaring_bitmap_t *z = roaring_bitmap_copy(r3);
