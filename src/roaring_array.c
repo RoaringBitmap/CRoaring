@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "containers/bitset.h"
-#include "containers/containers.h"
-#include "roaring_array.h"
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/containers.h>
+#include <roaring/roaring_array.h>
 
 // ported from RoaringArray.java
 // Todo: optimization (eg branchless binary search)

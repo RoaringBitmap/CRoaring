@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
-#include "roaring.h"
+#include <roaring/roaring.h>
 
+#include "config.h"
 #include "test.h"
 
 long filesize(char const* path) {

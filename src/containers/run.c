@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "containers/run.h"
-#include "portability.h"
+#include <roaring/containers/run.h>
+#include <roaring/portability.h>
 #ifdef IS_X64
 #include <x86intrin.h>
 #endif

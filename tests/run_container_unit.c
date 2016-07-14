@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "containers/run.h"
+#include <roaring/containers/run.h>
 
 #include "test.h"
 

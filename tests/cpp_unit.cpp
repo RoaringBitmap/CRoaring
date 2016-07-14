@@ -8,7 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <iostream>
-#include "roaring.h"
+#include <roaring/roaring.h>
 #include "roaring.hh"
 
 

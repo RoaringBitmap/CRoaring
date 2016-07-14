@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "portability.h"
+#include <roaring/portability.h>
 
 #ifdef IS_X64
 // useful for basic info (0)

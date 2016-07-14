@@ -8,9 +8,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "../utilasm.h"
-#include "portability.h"
-#include "roaring_types.h"
+#include <roaring/utilasm.h>
+#include <roaring/portability.h>
+#include <roaring/roaring_types.h>
 
 #ifdef USEAVX
 #define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))

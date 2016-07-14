@@ -8,12 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "containers/mixed_intersection.h"
-#include "containers/mixed_union.h"
-#include "containers/mixed_negation.h"
-#include "containers/mixed_xor.h"
-#include "containers/mixed_andnot.h"
-#include "containers/containers.h"
+#include <roaring/containers/mixed_intersection.h>
+#include <roaring/containers/mixed_union.h>
+#include <roaring/containers/mixed_negation.h>
+#include <roaring/containers/mixed_xor.h>
+#include <roaring/containers/mixed_andnot.h>
+#include <roaring/containers/containers.h>
 
 #include "test.h"
 

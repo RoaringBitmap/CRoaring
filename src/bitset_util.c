@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bitset_util.h"
-#include "portability.h"
-#include "utilasm.h"
+#include <roaring/bitset_util.h>
+#include <roaring/portability.h>
+#include <roaring/utilasm.h>
 
 #if defined(IS_X64) || defined(USEAVX)
 

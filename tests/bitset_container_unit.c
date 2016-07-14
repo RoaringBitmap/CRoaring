@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "containers/bitset.h"
-#include "misc/configreport.h"
+#include <roaring/containers/bitset.h>
+#include <roaring/misc/configreport.h>
 
 #include "test.h"
 
