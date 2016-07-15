@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bitset_util.h"
+#include <roaring/bitset_util.h>
 
 #include "test.h"
 

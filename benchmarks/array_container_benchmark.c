@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <roaring/containers/array.h>
+#include <roaring/misc/configreport.h>
+#include <roaring/portability.h>
+
 #include "benchmark.h"
-#include "containers/array.h"
-#include "misc/configreport.h"
 #include "random.h"
-#include "portability.h"
 
 enum { TESTSIZE = 2048 };
 // flushes the array from cache

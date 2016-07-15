@@ -6,9 +6,9 @@
 #ifndef CONTAINERS_MIXED_EQUAL_H_
 #define CONTAINERS_MIXED_EQUAL_H_
 
-#include "array.h"
-#include "bitset.h"
-#include "run.h"
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
 
 /**
  * Return true if the two containers have the same content.

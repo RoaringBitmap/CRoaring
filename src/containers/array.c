@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "portability.h"
-#include "array_util.h"
-#include "containers/array.h"
+#include <roaring/portability.h>
+#include <roaring/array_util.h>
+#include <roaring/containers/array.h>
 
 enum { DEFAULT_INIT_SIZE = 16 };
 

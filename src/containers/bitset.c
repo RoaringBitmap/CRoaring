@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bitset_util.h"
-#include "containers/bitset.h"
-#include "utilasm.h"
+#include <roaring/bitset_util.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/utilasm.h>
 
 extern int bitset_container_cardinality(const bitset_container_t *bitset);
 extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);

@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-#include "bitset_util.h"
-#include "containers/containers.h"
-#include "containers/convert.h"
-#include "containers/perfparameters.h"
+#include <roaring/bitset_util.h>
+#include <roaring/containers/containers.h>
+#include <roaring/containers/convert.h>
+#include <roaring/containers/perfparameters.h>
 
 // file contains grubby stuff that must know impl. details of all container
 // types.

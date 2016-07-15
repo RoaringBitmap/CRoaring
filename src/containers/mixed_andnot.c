@@ -3,14 +3,15 @@
  * except no "wide" andnot , so no lazy options motivated.
  */
 
-#include "containers/mixed_andnot.h"
 #include <assert.h>
 #include <string.h>
-#include "bitset_util.h"
-#include "array_util.h"
-#include "containers/convert.h"
-#include "containers/perfparameters.h"
-#include "containers/containers.h"
+
+#include <roaring/containers/mixed_andnot.h>
+#include <roaring/bitset_util.h>
+#include <roaring/array_util.h>
+#include <roaring/containers/convert.h>
+#include <roaring/containers/perfparameters.h>
+#include <roaring/containers/containers.h>
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/

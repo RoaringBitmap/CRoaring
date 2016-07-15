@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "roaring_array.h"
-#include "roaring_types.h"
+#include <roaring/roaring_array.h>
+#include <roaring/roaring_types.h>
 
 typedef struct roaring_bitmap_s {
     roaring_array_t *high_low_container;

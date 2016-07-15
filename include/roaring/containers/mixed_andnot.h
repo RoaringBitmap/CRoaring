@@ -4,9 +4,9 @@
 #ifndef INCLUDE_CONTAINERS_MIXED_ANDNOT_H_
 #define INCLUDE_CONTAINERS_MIXED_ANDNOT_H_
 
-#include "array.h"
-#include "bitset.h"
-#include "run.h"
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/

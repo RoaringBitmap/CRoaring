@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "array_util.h"
-#include "portability.h"
-#include "utilasm.h"
+#include <roaring/array_util.h>
+#include <roaring/portability.h>
+#include <roaring/utilasm.h>
 
 
 // good old bin. search

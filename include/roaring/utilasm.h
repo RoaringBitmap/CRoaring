@@ -6,7 +6,7 @@
 #ifndef INCLUDE_UTILASM_H_
 #define INCLUDE_UTILASM_H_
 
-#include "portability.h"
+#include <roaring/portability.h>
 
 #if defined(USE_BMI) 
 #define ASMBITMANIPOPTIMIZATION  // optimization flag

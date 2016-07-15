@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/convert.h>
+#include <roaring/misc/configreport.h>
+#include <roaring/portability.h>
+
 #include "benchmark.h"
-#include "containers/bitset.h"
-#include "containers/convert.h"
-#include "misc/configreport.h"
 #include "random.h"
-#include "portability.h"
 
 #ifdef IS_X64
 // flushes the array of words from cache

@@ -17,9 +17,9 @@
  * (They are not truly in place.)
  */
 
-#include "array.h"
-#include "bitset.h"
-#include "run.h"
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
 
 //#include "containers.h"
 

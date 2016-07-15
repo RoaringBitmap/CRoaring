@@ -3,15 +3,15 @@
  *
  */
 
-#include "containers/mixed_negation.h"
-#include "bitset_util.h"
-#include "array_util.h"
-#include "containers/run.h"
-#include "containers/containers.h"
-#include "containers/convert.h"
-
 #include <assert.h>
 #include <string.h>
+
+#include <roaring/containers/mixed_negation.h>
+#include <roaring/bitset_util.h>
+#include <roaring/array_util.h>
+#include <roaring/containers/run.h>
+#include <roaring/containers/containers.h>
+#include <roaring/containers/convert.h>
 
 /* code makes the assumption that sizeof(int) > 2
  * for ranges. Could use uint32_t instead if this is undesirable.

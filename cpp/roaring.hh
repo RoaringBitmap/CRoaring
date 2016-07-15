@@ -9,7 +9,7 @@ A C++ header for Roaring Bitmaps.
 #include <algorithm>
 #include <new>
 #include <stdexcept>
-#include "roaring.h"
+#include <roaring/roaring.h>
 
 class Roaring {
 public:

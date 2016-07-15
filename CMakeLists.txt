@@ -22,7 +22,7 @@ find_package(CTargets)
 find_package(Options)
 
 include_directories(include)
-install(DIRECTORY include/ DESTINATION include/${ROARING_LIB_NAME})
+install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
 
 enable_testing()
 include(CTest)

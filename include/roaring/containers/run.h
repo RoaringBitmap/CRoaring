@@ -9,8 +9,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "portability.h"
-#include "roaring_types.h"
+#include <roaring/portability.h>
+#include <roaring/roaring_types.h>
 
 /* struct rle16_s - run length pair
  *

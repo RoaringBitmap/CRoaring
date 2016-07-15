@@ -2,10 +2,11 @@
  * realdata_unit.c
  */
 #define _GNU_SOURCE
+#include <roaring/roaring.h>
+#include <roaring/roaring_types.h>
+
 #include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"
-#include "roaring.h"
-#include "roaring_types.h"
 
 void show_structure(roaring_array_t *);  // debug
 

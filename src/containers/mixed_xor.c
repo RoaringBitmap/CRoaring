@@ -2,13 +2,14 @@
  * mixed_xor.c
  */
 
-#include "containers/mixed_xor.h"
 #include <assert.h>
 #include <string.h>
-#include "bitset_util.h"
-#include "containers/convert.h"
-#include "containers/perfparameters.h"
-#include "containers/containers.h"
+
+#include <roaring/containers/mixed_xor.h>
+#include <roaring/bitset_util.h>
+#include <roaring/containers/convert.h>
+#include <roaring/containers/perfparameters.h>
+#include <roaring/containers/containers.h>
 
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst (which has no container initially).

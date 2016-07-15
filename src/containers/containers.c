@@ -1,5 +1,5 @@
 
-#include "containers/containers.h"
+#include <roaring/containers/containers.h>
 
 extern const char *get_container_name(uint8_t typecode);
 

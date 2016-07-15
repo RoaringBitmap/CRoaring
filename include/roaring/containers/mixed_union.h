@@ -11,9 +11,9 @@
  * to have the same type as the inputs.  Eg, bitset unions
  */
 
-#include "array.h"
-#include "bitset.h"
-#include "run.h"
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
 
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.   */

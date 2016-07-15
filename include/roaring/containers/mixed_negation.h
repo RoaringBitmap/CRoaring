@@ -6,9 +6,9 @@
 #ifndef INCLUDE_CONTAINERS_MIXED_NEGATION_H_
 #define INCLUDE_CONTAINERS_MIXED_NEGATION_H_
 
-#include "array.h"
-#include "bitset.h"
-#include "run.h"
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
 
 /* Negation across the entire range of the container.
  * Compute the  negation of src  and write the result

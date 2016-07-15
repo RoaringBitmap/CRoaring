@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "array_util.h"
-#include "containers/containers.h"
+#include <roaring/array_util.h>
+#include <roaring/containers/containers.h>
 
 #define MAX_CONTAINERS 65536
 

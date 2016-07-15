@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "roaring.h"
+#include <roaring/roaring.h>
 
 #include "test.h"
 

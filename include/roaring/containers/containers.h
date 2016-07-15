@@ -5,16 +5,16 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "array.h"
-#include "bitset.h"
-#include "convert.h"
-#include "mixed_equal.h"
-#include "mixed_intersection.h"
-#include "mixed_negation.h"
-#include "mixed_union.h"
-#include "mixed_xor.h"
-#include "mixed_andnot.h"
-#include "run.h"
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/convert.h>
+#include <roaring/containers/mixed_equal.h>
+#include <roaring/containers/mixed_intersection.h>
+#include <roaring/containers/mixed_negation.h>
+#include <roaring/containers/mixed_union.h>
+#include <roaring/containers/mixed_xor.h>
+#include <roaring/containers/mixed_andnot.h>
+#include <roaring/containers/run.h>
 
 // would enum be possible or better?
 

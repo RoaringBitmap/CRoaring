@@ -3,7 +3,7 @@
 
 #ifndef BENCHMARKS_INCLUDE_BENCHMARK_H_
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
-#include "portability.h"
+#include <roaring/portability.h>
 
 #ifdef IS_X64
 #define RDTSC_START(cycles)                                                   \

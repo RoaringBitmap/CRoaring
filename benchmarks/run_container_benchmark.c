@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <roaring/containers/run.h>
+#include <roaring/misc/configreport.h>
+#include <roaring/portability.h>
+
 #include "benchmark.h"
-#include "containers/run.h"
-#include "misc/configreport.h"
 #include "random.h"
-#include "portability.h"
 
 enum { TESTSIZE = 2048 };
 

@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "portability.h"
-#include "roaring_types.h"
+#include <roaring/portability.h>
+#include <roaring/roaring_types.h>
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };

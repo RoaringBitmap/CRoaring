@@ -1,11 +1,11 @@
-#include "roaring.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "array_util.h"
-#include "roaring_array.h"
+#include <roaring/roaring.h>
+#include <roaring/array_util.h>
+#include <roaring/roaring_array.h>
 
 roaring_bitmap_t *roaring_bitmap_create() {
     roaring_bitmap_t *ans =
