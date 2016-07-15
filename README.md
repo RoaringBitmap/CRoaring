@@ -40,7 +40,7 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 
 ```c
 ////
-//// #include "roaring.h"
+//// #include <roaring/roaring.h>
 ////
 
 // create a new empty bitmap
@@ -227,6 +227,7 @@ mkdir -p build
 cd build
 cmake ..
 make
+# you can also type 'make install' to install the library on your system
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
