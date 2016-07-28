@@ -21,7 +21,7 @@ extern int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
 extern run_container_t *run_container_create_range(uint32_t start,
                                                    uint32_t stop);
 
-enum { DEFAULT_INIT_SIZE = 4 };
+enum { RUN_DEFAULT_INIT_SIZE = 4 };
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create_given_capacity(int32_t size) {
@@ -41,7 +41,7 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create(void) {
-    return run_container_create_given_capacity(DEFAULT_INIT_SIZE);
+    return run_container_create_given_capacity(RUN_DEFAULT_INIT_SIZE);
 }
 
 run_container_t *run_container_clone(const run_container_t *src) {
@@ -114,7 +114,7 @@ _Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =
         (run->capacity == 0)
-            ? DEFAULT_INIT_SIZE
+            ? RUN_DEFAULT_INIT_SIZE
             : run->capacity < 64 ? run->capacity * 2
                                  : run->capacity < 1024 ? run->capacity * 3 / 2
                                                         : run->capacity * 5 / 4;

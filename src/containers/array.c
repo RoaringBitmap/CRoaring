@@ -11,7 +11,7 @@
 #include <roaring/array_util.h>
 #include <roaring/containers/array.h>
 
-enum { DEFAULT_INIT_SIZE = 16 };
+enum { ARRAY_DEFAULT_INIT_SIZE = 16 };
 
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
@@ -41,7 +41,7 @@ array_container_t *array_container_create_given_capacity(int32_t size) {
 
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create() {
-    return array_container_create_given_capacity(DEFAULT_INIT_SIZE);
+    return array_container_create_given_capacity(ARRAY_DEFAULT_INIT_SIZE);
 }
 
 /* Duplicate container */
@@ -65,7 +65,7 @@ void array_container_free(array_container_t *arr) {
 }
 
 static inline int32_t grow_capacity(int32_t capacity) {
-    return (capacity <= 0) ? DEFAULT_INIT_SIZE
+    return (capacity <= 0) ? ARRAY_DEFAULT_INIT_SIZE
                            : capacity < 64 ? capacity * 2
                                            : capacity < 1024 ? capacity * 3 / 2
                                                              : capacity * 5 / 4;
