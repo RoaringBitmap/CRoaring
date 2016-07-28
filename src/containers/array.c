@@ -325,7 +325,7 @@ void array_container_xor(const array_container_t *array_1,
     out->cardinality = pos_out;
 }
 
-static inline int32_t minimum(int32_t a, int32_t b) { return (a < b) ? a : b; }
+static inline int32_t minimum_int32(int32_t a, int32_t b) { return (a < b) ? a : b; }
 
 /* computes the intersection of array1 and array2 and write the result to
  * arrayout.
@@ -335,7 +335,7 @@ void array_container_intersection(const array_container_t *array1,
                                   const array_container_t *array2,
                                   array_container_t *out) {
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
-            min_card = minimum(card_1, card_2);
+            min_card = minimum_int32(card_1, card_2);
     const int threshold = 64;  // subject to tuning
 #ifdef USEAVX
     min_card += sizeof(__m128i) / sizeof(uint16_t);

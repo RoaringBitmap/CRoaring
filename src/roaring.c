@@ -59,7 +59,7 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     return answer;
 }
 
-static inline int32_t minimum(uint32_t a, uint32_t b) {
+static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
     return (a < b) ? a : b;
 }
 
@@ -78,7 +78,7 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max,
     do {
         uint32_t key = min_tmp >> 16;
         uint32_t container_min = min_tmp & 0xFFFF;
-        uint32_t container_max = minimum(max - (key << 16), 1 << 16);
+        uint32_t container_max = minimum_uint32(max - (key << 16), 1 << 16);
         uint8_t type;
         void *container = container_from_range(&type, container_min,
                                                container_max, (uint16_t)step);
