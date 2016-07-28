@@ -21,13 +21,13 @@ void container_printf(const void *container, uint8_t typecode) {
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            bitset_container_printf(container);
+            bitset_container_printf((const bitset_container_t *) container);
             return;
         case ARRAY_CONTAINER_TYPE_CODE:
-            array_container_printf(container);
+            array_container_printf((const array_container_t *) container);
             return;
         case RUN_CONTAINER_TYPE_CODE:
-            run_container_printf(container);
+            run_container_printf((const run_container_t *) container);
             return;
         default:
             __builtin_unreachable();
@@ -39,13 +39,13 @@ void container_printf_as_uint32_array(const void *container, uint8_t typecode,
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            bitset_container_printf_as_uint32_array(container, base);
+            bitset_container_printf_as_uint32_array((const bitset_container_t *) container, base);
             return;
         case ARRAY_CONTAINER_TYPE_CODE:
-            array_container_printf_as_uint32_array(container, base);
+            array_container_printf_as_uint32_array((const array_container_t *) container, base);
             return;
         case RUN_CONTAINER_TYPE_CODE:
-            run_container_printf_as_uint32_array(container, base);
+            run_container_printf_as_uint32_array((const run_container_t *) container, base);
             return;
             return;
         default:
@@ -146,7 +146,7 @@ void *get_copy_of_container(void *container, uint8_t *typecode,
         }
         assert(*typecode != SHARED_CONTAINER_TYPE_CODE);
 
-        if ((shared_container = malloc(sizeof(shared_container_t))) == NULL) {
+        if ((shared_container = (shared_container_t *) malloc(sizeof(shared_container_t))) == NULL) {
             return NULL;
         }
 

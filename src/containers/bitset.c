@@ -39,7 +39,7 @@ void bitset_container_set_all(bitset_container_t *bitset) {
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(void) {
-    bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
+    bitset_container_t *bitset = (bitset_container_t *) calloc(1, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;
@@ -99,7 +99,7 @@ void bitset_container_free(bitset_container_t *bitset) {
 
 /* duplicate container. */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
-    bitset_container_t *bitset = calloc(1, sizeof(bitset_container_t));
+    bitset_container_t *bitset = (bitset_container_t *) calloc(1, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;

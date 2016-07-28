@@ -27,10 +27,10 @@ enum { RUN_DEFAULT_INIT_SIZE = 4 };
 run_container_t *run_container_create_given_capacity(int32_t size) {
     run_container_t *run;
     /* Allocate the run container itself. */
-    if ((run = malloc(sizeof(run_container_t))) == NULL) {
+    if ((run = (run_container_t *) malloc(sizeof(run_container_t))) == NULL) {
         return NULL;
     }
-    if ((run->runs = malloc(sizeof(rle16_t) * size)) == NULL) {
+    if ((run->runs = (rle16_t *) malloc(sizeof(rle16_t) * size)) == NULL) {
         free(run);
         return NULL;
     }
@@ -123,11 +123,11 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     assert(run->capacity >= min);
     if (copy) {
         rle16_t *oldruns = run->runs;
-        run->runs = realloc(oldruns, run->capacity * sizeof(rle16_t));
+        run->runs = (rle16_t *) realloc(oldruns, run->capacity * sizeof(rle16_t));
         if (run->runs == NULL) free(oldruns);
     } else {
         free(run->runs);
-        run->runs = malloc(run->capacity * sizeof(rle16_t));
+        run->runs = (rle16_t *) malloc(run->capacity * sizeof(rle16_t));
     }
     // TODO: handle the case where realloc fails
     if (run->runs == NULL) {
@@ -564,7 +564,7 @@ void run_container_andnot(const run_container_t *src_1,
         if (end <= start2) {
             // output the first run
             dst->runs[dst->n_runs++] =
-                (rle16_t){.value = start, .length = (end - start - 1)};
+                (rle16_t){.value = (uint16_t) start, .length = (uint16_t) (end - start - 1)};
             rlepos1++;
             if (rlepos1 < src_1->n_runs) {
                 start = src_1->runs[rlepos1].value;
@@ -580,7 +580,7 @@ void run_container_andnot(const run_container_t *src_1,
         } else {
             if (start < start2) {
                 dst->runs[dst->n_runs++] =
-                    (rle16_t){.value = start, .length = (start2 - start - 1)};
+                    (rle16_t){.value = (uint16_t) start, .length = (uint16_t) (start2 - start - 1)};
             }
             if (end2 < end) {
                 start = end2;
@@ -595,7 +595,7 @@ void run_container_andnot(const run_container_t *src_1,
     }
     if (rlepos1 < src_1->n_runs) {
         dst->runs[dst->n_runs++] =
-            (rle16_t){.value = start, .length = (end - start - 1)};
+            (rle16_t){.value = (uint16_t) start, .length = (uint16_t) (end - start - 1)};
         rlepos1++;
         if (rlepos1 < src_1->n_runs) {
             memcpy(dst->runs + dst->n_runs, src_1->runs + rlepos1,
@@ -704,7 +704,7 @@ void *run_container_deserialize(const char *buf, size_t buf_len) {
     else
         buf_len -= 8;
 
-    if ((ptr = malloc(sizeof(run_container_t))) != NULL) {
+    if ((ptr = (run_container_t *) malloc(sizeof(run_container_t))) != NULL) {
         size_t len;
         int32_t off;
 
@@ -719,7 +719,7 @@ void *run_container_deserialize(const char *buf, size_t buf_len) {
             return (NULL);
         }
 
-        if ((ptr->runs = malloc(len)) == NULL) {
+        if ((ptr->runs = (rle16_t *) malloc(len)) == NULL) {
             free(ptr);
             return (NULL);
         }

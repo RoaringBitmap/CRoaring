@@ -288,7 +288,7 @@ int run_array_container_andnot(const run_container_t *src_1,
             if (end <= xstart) {
                 // output the first run
                 answer->runs[answer->n_runs++] =
-                    (rle16_t){.value = start, .length = end - start - 1};
+                    (rle16_t){.value = (uint16_t) start, .length = (uint16_t) (end - start - 1)};
                 rlepos++;
                 if (rlepos < src_1->n_runs) {
                     start = src_1->runs[rlepos].value;
@@ -303,7 +303,7 @@ int run_array_container_andnot(const run_container_t *src_1,
             } else {
                 if (start < xstart) {
                     answer->runs[answer->n_runs++] =
-                        (rle16_t){.value = start, .length = xstart - start - 1};
+                        (rle16_t){.value = (uint16_t) start, .length = (uint16_t) (xstart - start - 1)};
                 }
                 if (xstart + 1 < end) {
                     start = xstart + 1;
@@ -318,7 +318,7 @@ int run_array_container_andnot(const run_container_t *src_1,
         }
         if (rlepos < src_1->n_runs) {
             answer->runs[answer->n_runs++] =
-                (rle16_t){.value = start, .length = end - start - 1};
+                (rle16_t){.value = (uint16_t) start, .length = (uint16_t) (end - start - 1)};
             rlepos++;
             if (rlepos < src_1->n_runs) {
                 memcpy(answer->runs + answer->n_runs, src_1->runs + rlepos,

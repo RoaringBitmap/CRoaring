@@ -160,13 +160,13 @@ bool array_array_container_union(const array_container_t *src_1,
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        if (*dst != NULL) array_container_union(src_1, src_2, *dst);
+        if (*dst != NULL) array_container_union(src_1, src_2, (array_container_t *) *dst);
         return false;  // not a bitset
     }
     *dst = bitset_container_create();
     bool returnval = true;  // expect a bitset
     if (*dst != NULL) {
-        bitset_container_t *ourbitset = *dst;
+        bitset_container_t *ourbitset = (bitset_container_t *) *dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
         ourbitset->cardinality =
             bitset_set_list_withcard(ourbitset->array, src_1->cardinality,
@@ -187,13 +187,13 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        if (*dst != NULL) array_container_union(src_1, src_2, *dst);
+        if (*dst != NULL) array_container_union(src_1, src_2, (array_container_t *) *dst);
         return false;  // not a bitset
     }
     *dst = bitset_container_create();
     bool returnval = true;  // expect a bitset
     if (*dst != NULL) {
-        bitset_container_t *ourbitset = *dst;
+        bitset_container_t *ourbitset = (bitset_container_t *)*dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
         bitset_set_list(ourbitset->array, src_2->array, src_2->cardinality);
         ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;

@@ -62,8 +62,8 @@ static void percolate_down(roaring_pq_t *pq, uint32_t i) {
 }
 
 static roaring_pq_t *create_pq(const roaring_bitmap_t **arr, uint32_t length) {
-    roaring_pq_t *answer = malloc(sizeof(roaring_pq_t));
-    answer->elements = malloc(sizeof(roaring_pq_element_t) * length);
+    roaring_pq_t *answer = (roaring_pq_t *) malloc(sizeof(roaring_pq_t));
+    answer->elements = (roaring_pq_element_t *) malloc(sizeof(roaring_pq_element_t) * length);
     answer->size = length;
     for (uint32_t i = 0; i < length; i++) {
         answer->elements[i].bitmap = (roaring_bitmap_t *) arr[i];

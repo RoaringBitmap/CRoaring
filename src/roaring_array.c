@@ -23,16 +23,16 @@ extern int32_t ra_get_size(roaring_array_t *ra);
 #define INITIAL_CAPACITY 4
 
 roaring_array_t *ra_create_with_capacity(uint32_t cap) {
-    roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
+    roaring_array_t *new_ra = (roaring_array_t *) malloc(sizeof(roaring_array_t));
     if (!new_ra) return NULL;
     new_ra->keys = NULL;
     new_ra->containers = NULL;
     new_ra->typecodes = NULL;
 
     new_ra->allocation_size = cap;
-    new_ra->keys = malloc(cap * sizeof(uint16_t));
-    new_ra->containers = malloc(cap * sizeof(void *));
-    new_ra->typecodes = malloc(cap * sizeof(uint8_t));
+    new_ra->keys = (uint16_t *) malloc(cap * sizeof(uint16_t));
+    new_ra->containers = (void **) malloc(cap * sizeof(void *));
+    new_ra->typecodes = (uint8_t *) malloc(cap * sizeof(uint8_t));
     if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
         free(new_ra);
         free(new_ra->keys);
@@ -50,7 +50,7 @@ roaring_array_t *ra_create() {
 }
 
 roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write) {
-    roaring_array_t *new_ra = malloc(sizeof(roaring_array_t));
+    roaring_array_t *new_ra = (roaring_array_t *) malloc(sizeof(roaring_array_t));
     if (!new_ra) return NULL;
     new_ra->keys = NULL;
     new_ra->containers = NULL;
@@ -58,10 +58,10 @@ roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write) {
 
     const int32_t allocsize = r->allocation_size;
     new_ra->allocation_size = allocsize;
-    new_ra->keys = malloc(allocsize * sizeof(uint16_t));
+    new_ra->keys = (uint16_t *) malloc(allocsize * sizeof(uint16_t));
     new_ra->containers =
-        calloc(allocsize, sizeof(void *));  // setting pointers to zero
-    new_ra->typecodes = malloc(allocsize * sizeof(uint8_t));
+        (void **) calloc(allocsize, sizeof(void *));  // setting pointers to zero
+    new_ra->typecodes = (uint8_t *) malloc(allocsize * sizeof(uint8_t));
     if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
         free(new_ra);
         free(new_ra->keys);
@@ -139,9 +139,9 @@ void extend_array(roaring_array_t *ra, uint32_t k) {
         int new_capacity =
             (ra->size < 1024) ? 2 * desired_size : 5 * desired_size / 4;
 
-        ra->keys = realloc(ra->keys, sizeof(uint16_t) * new_capacity);
-        ra->containers = realloc(ra->containers, sizeof(void *) * new_capacity);
-        ra->typecodes = realloc(ra->typecodes, sizeof(uint8_t) * new_capacity);
+        ra->keys = (uint16_t *) realloc(ra->keys, sizeof(uint16_t) * new_capacity);
+        ra->containers = (void **) realloc(ra->containers, sizeof(void *) * new_capacity);
+        ra->typecodes = (uint8_t *) realloc(ra->typecodes, sizeof(uint8_t) * new_capacity);
         if (!ra->keys || !ra->containers || !ra->typecodes) {
             fprintf(stderr, "[%s] %s\n", __FILE__, __func__);
             perror(0);
@@ -519,18 +519,18 @@ roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len) {
 
     memcpy(ra_copy, bufaschar, off = sizeof(roaring_array_t));
 
-    if ((ra_copy->keys = malloc(size * sizeof(uint16_t))) == NULL) {
+    if ((ra_copy->keys = (uint16_t *) malloc(size * sizeof(uint16_t))) == NULL) {
         free(ra_copy);
         return (NULL);
     }
 
-    if ((ra_copy->containers = malloc(size * sizeof(void *))) == NULL) {
+    if ((ra_copy->containers = (void **) malloc(size * sizeof(void *))) == NULL) {
         free(ra_copy->keys);
         free(ra_copy);
         return (NULL);
     }
 
-    if ((ra_copy->typecodes = malloc(size * sizeof(uint8_t))) == NULL) {
+    if ((ra_copy->typecodes = (uint8_t *) malloc(size * sizeof(uint8_t))) == NULL) {
         free(ra_copy->containers);
         free(ra_copy->keys);
         free(ra_copy);
@@ -615,7 +615,7 @@ size_t ra_portable_serialize(roaring_array_t *ra, char *buf) {
         memcpy(buf, &cookie, sizeof(cookie));
         buf += sizeof(cookie);
         uint32_t s = (ra->size + 7) / 8;
-        uint8_t *bitmapOfRunContainers = calloc(s, 1);
+        uint8_t *bitmapOfRunContainers = (uint8_t *) calloc(s, 1);
         assert(bitmapOfRunContainers != NULL);  // todo: handle
         for (int32_t i = 0; i < ra->size; ++i) {
             if (get_container_type(ra->containers[i], ra->typecodes[i]) ==
@@ -695,15 +695,15 @@ roaring_array_t *ra_portable_deserialize(const char *buf) {
     bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
     if (hasrun) {
         int32_t s = (size + 7) / 8;
-        bitmapOfRunContainers = malloc((size + 7) / 8);
+        bitmapOfRunContainers = (char *) malloc((size + 7) / 8);
         assert(bitmapOfRunContainers != NULL);  // todo: handle
         memcpy(bitmapOfRunContainers, buf, s);
         buf += s;
     }
     uint16_t *keys = answer->keys;
-    int32_t *cardinalities = malloc(size * sizeof(int32_t));
+    int32_t *cardinalities = (int32_t *) malloc(size * sizeof(int32_t));
     assert(cardinalities != NULL);  // todo: handle
-    bool *isBitmap = malloc(size * sizeof(bool));
+    bool *isBitmap = (bool *) malloc(size * sizeof(bool));
     assert(isBitmap != NULL);  // todo: handle
     uint16_t tmp;
     for (int32_t k = 0; k < size; ++k) {

@@ -105,6 +105,8 @@ ALLCPPHEADERS="cpp/roaring.hh"
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_HH}"
 {
     echo "#include \"${AMAL_H}\""
+    echo "#include \"${AMAL_C}\""
+
     for h in ${ALLCPPHEADERS}; do
         dofile $h
     done
@@ -142,4 +144,4 @@ echo "Try :"
 echo "cc -march=native -O3 -std=c11  -o ${CBIN} ${DEMOC} -Wshadow -Wextra -pedantic && ./${CBIN} "
 echo
 echo "For C++, try :"
-echo "cc -march=native -O3 -std=c11  -c ${AMAL_C} -Wshadow -Wextra -pedantic -flto && c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP} ${AMAL_C%%.*}.o -Wshadow -Wextra -pedantic  -flto && ./${CPPBIN} "
+echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  -Wshadow -Wextra -pedantic  && ./${CPPBIN} "

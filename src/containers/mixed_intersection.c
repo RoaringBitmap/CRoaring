@@ -141,7 +141,7 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
             return true;
         } else {
             array_container_t *newanswer = array_container_from_bitset(answer);
-            bitset_container_free(*dst);
+            bitset_container_free((bitset_container_t *) *dst);
             if (newanswer == NULL) {
                 *dst = NULL;
                 return false;
@@ -164,7 +164,7 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
     if (newCardinality > DEFAULT_MAX_SIZE) {
         *dst = bitset_container_create();
         if (*dst != NULL) {
-            bitset_container_and_nocard(src_1, src_2, *dst);
+            bitset_container_and_nocard(src_1, src_2, (bitset_container_t *) *dst);
             ((bitset_container_t *)*dst)->cardinality = newCardinality;
         }
         return true;  // it is a bitset

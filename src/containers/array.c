@@ -24,11 +24,11 @@ extern bool array_container_full(const array_container_t *array);
 array_container_t *array_container_create_given_capacity(int32_t size) {
     array_container_t *container;
 
-    if ((container = malloc(sizeof(array_container_t))) == NULL) {
+    if ((container = (array_container_t *) malloc(sizeof(array_container_t))) == NULL) {
         return NULL;
     }
 
-    if ((container->array = malloc(sizeof(uint16_t) * size)) == NULL) {
+    if ((container->array = (uint16_t *) malloc(sizeof(uint16_t) * size)) == NULL) {
         free(container);
         return NULL;
     }
@@ -46,15 +46,15 @@ array_container_t *array_container_create() {
 
 /* Duplicate container */
 array_container_t *array_container_clone(const array_container_t *src) {
-    array_container_t *new =
+    array_container_t *newcontainer =
         array_container_create_given_capacity(src->capacity);
-    if (new == NULL) return NULL;
+    if (newcontainer == NULL) return NULL;
 
-    new->cardinality = src->cardinality;
+    newcontainer->cardinality = src->cardinality;
 
-    memcpy(new->array, src->array, src->cardinality * sizeof(uint16_t));
+    memcpy(newcontainer->array, src->array, src->cardinality * sizeof(uint16_t));
 
-    return new;
+    return newcontainer;
 }
 
 /* Free memory. */
@@ -95,11 +95,11 @@ void array_container_grow(array_container_t *container, int32_t min,
     uint16_t *array = container->array;
 
     if (preserve) {
-        container->array = realloc(array, new_capacity * sizeof(uint16_t));
+        container->array = (uint16_t *) realloc(array, new_capacity * sizeof(uint16_t));
         if (container->array == NULL) free(array);
     } else {
         free(array);
-        container->array = malloc(new_capacity * sizeof(uint16_t));
+        container->array = (uint16_t *) malloc(new_capacity * sizeof(uint16_t));
     }
 
     // TODO: handle the case where realloc fails
@@ -495,7 +495,7 @@ void *array_container_deserialize(const char *buf, size_t buf_len) {
     else
         buf_len -= 2;
 
-    if ((ptr = malloc(sizeof(array_container_t))) != NULL) {
+    if ((ptr = (array_container_t *) malloc(sizeof(array_container_t))) != NULL) {
         size_t len;
         int32_t off;
         uint16_t cardinality;
@@ -510,7 +510,7 @@ void *array_container_deserialize(const char *buf, size_t buf_len) {
             return (NULL);
         }
 
-        if ((ptr->array = malloc(sizeof(uint16_t) * ptr->capacity)) == NULL) {
+        if ((ptr->array = (uint16_t *) malloc(sizeof(uint16_t) * ptr->capacity)) == NULL) {
             free(ptr);
             return (NULL);
         }

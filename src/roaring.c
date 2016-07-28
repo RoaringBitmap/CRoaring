@@ -938,18 +938,18 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
             RUN_CONTAINER_TYPE_CODE) {
             answer = true;
             if (typecode_original == SHARED_CONTAINER_TYPE_CODE) {
-                void *truec = ((shared_container_t *)c)->container;
+                run_container_t *truec = (run_container_t *) ((shared_container_t *)c)->container;
                 int32_t card = run_container_cardinality(truec);
                 void *c1 = convert_to_bitset_or_array_container(
                     truec, card, &typecode_after);
-                shared_container_free(c);
+                shared_container_free((shared_container_t *) c);
                 ra_set_container_at_index(r->high_low_container, i, c1,
                                           typecode_after);
 
             } else {
-                int32_t card = run_container_cardinality(c);
+                int32_t card = run_container_cardinality((run_container_t *) c);
                 void *c1 = convert_to_bitset_or_array_container(
-                    c, card, &typecode_after);
+                		(run_container_t *) c, card, &typecode_after);
                 ra_set_container_at_index(r->high_low_container, i, c1,
                                           typecode_after);
             }

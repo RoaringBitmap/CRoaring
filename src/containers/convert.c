@@ -189,7 +189,7 @@ void *convert_run_to_efficient_container_and_free(run_container_t *c,
 void *convert_run_optimize(void *c, uint8_t typecode_original,
                            uint8_t *typecode_after) {
     if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
-        void *newc = convert_run_to_efficient_container(c, typecode_after);
+        void *newc = convert_run_to_efficient_container((run_container_t *)c, typecode_after);
         if (newc != c) {
             container_free(c, typecode_original);
         }
@@ -197,10 +197,10 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
     } else if (typecode_original == ARRAY_CONTAINER_TYPE_CODE) {
         // it might need to be converted to a run container.
         array_container_t *c_qua_array = (array_container_t *)c;
-        int32_t n_runs = array_container_number_of_runs(c);
+        int32_t n_runs = array_container_number_of_runs(c_qua_array);
         int32_t size_as_run_container =
             run_container_serialized_size_in_bytes(n_runs);
-        int32_t card = array_container_cardinality(c);
+        int32_t card = array_container_cardinality(c_qua_array);
         int32_t size_as_array_container =
             array_container_serialized_size_in_bytes(card);
 
@@ -228,7 +228,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         // now prev is the last seen value
         add_run(answer, run_start, prev);
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
-        array_container_free(c);
+        array_container_free(c_qua_array);
         return answer;
     } else if (typecode_original ==
                BITSET_CONTAINER_TYPE_CODE) {  // run conversions on bitset
@@ -260,7 +260,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
                 cur_word = c_qua_bitset->array[++long_ctr];
 
             if (cur_word == UINT64_C(0)) {
-                bitset_container_free(c);
+                bitset_container_free(c_qua_bitset);
                 *typecode_after = RUN_CONTAINER_TYPE_CODE;
                 return answer;
             }
@@ -277,7 +277,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
             if (cur_word_with_1s == UINT64_C(-1)) {
                 run_end = 64 + long_ctr * 64;  // exclusive, I guess
                 add_run(answer, run_start, run_end - 1);
-                bitset_container_free(c);
+                bitset_container_free(c_qua_bitset);
                 *typecode_after = RUN_CONTAINER_TYPE_CODE;
                 return answer;
             }
