@@ -14,12 +14,14 @@ SET(AVX_TUNING OFF) # for ARM processors, there is no hope of having AVX support
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
 
 option(BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+option(BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(SANITIZE "Sanitize addresses" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 find_package(CTargets)
 find_package(Options)
+find_package(LTO)
 
 include_directories(include)
 install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
@@ -48,6 +50,7 @@ MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} ) # this tends to be "sticky" so you can remain unknowingly in debug mode
 MESSAGE( STATUS "AVX_TUNING: " ${AVX_TUNING} ) # options in cmake a "sticky" so old options can remain even if that is counterintuitive
 MESSAGE( STATUS "BUILD_STATIC: " ${BUILD_STATIC} )
+MESSAGE( STATUS "BUILD_LTO: " ${BUILD_LTO} )
 MESSAGE( STATUS "SANITIZE: " ${SANITIZE} )
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} ) # important to know which compiler is used
 MESSAGE (STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} ) # important to know the flags
