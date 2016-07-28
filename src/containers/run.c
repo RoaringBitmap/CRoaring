@@ -3,10 +3,8 @@
  *
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <roaring/containers/run.h>
 #include <roaring/portability.h>
@@ -21,7 +19,54 @@ extern int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
 extern run_container_t *run_container_create_range(uint32_t start,
                                                    uint32_t stop);
 
-enum { RUN_DEFAULT_INIT_SIZE = 4 };
+bool run_container_add(run_container_t *run, uint16_t pos) {
+    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
+    if (index >= 0) return false;  // already there
+    index = -index - 2;            // points to preceding value, possibly -1
+    if (index >= 0) {              // possible match
+        int32_t offset = pos - run->runs[index].value;
+        int32_t le = run->runs[index].length;
+        if (offset <= le) return false;  // already there
+        if (offset == le + 1) {
+            // we may need to fuse
+            if (index + 1 < run->n_runs) {
+                if (run->runs[index + 1].value == pos + 1) {
+                    // indeed fusion is needed
+                    run->runs[index].length = run->runs[index + 1].value +
+                                              run->runs[index + 1].length -
+                                              run->runs[index].value;
+                    recoverRoomAtIndex(run, index + 1);
+                    return true;
+                }
+            }
+            run->runs[index].length++;
+            return true;
+        }
+        if (index + 1 < run->n_runs) {
+            // we may need to fuse
+            if (run->runs[index + 1].value == pos + 1) {
+                // indeed fusion is needed
+                run->runs[index + 1].value = pos;
+                run->runs[index + 1].length = run->runs[index + 1].length + 1;
+                return true;
+            }
+        }
+    }
+    if (index == -1) {
+        // we may need to extend the first run
+        if (0 < run->n_runs) {
+            if (run->runs[0].value == pos + 1) {
+                run->runs[0].length++;
+                run->runs[0].value--;
+                return true;
+            }
+        }
+    }
+    makeRoomAtIndex(run, index + 1);
+    run->runs[index + 1].value = pos;
+    run->runs[index + 1].length = 0;
+    return true;
+}
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create_given_capacity(int32_t size) {
@@ -130,28 +175,9 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
         run->runs = (rle16_t *) malloc(run->capacity * sizeof(rle16_t));
     }
     // TODO: handle the case where realloc fails
-    if (run->runs == NULL) {
-        printf(
-            "Well, that's unfortunate. Did I say you could use this code in "
-            "production?\n");
-    }
-}
-static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
-    /* This function calls realloc + memmove sequentially to move by one index.
-     * Potentially copying twice the array.
-     */
-    if (run->n_runs + 1 > run->capacity)
-        run_container_grow(run, run->n_runs + 1, true);
-    memmove(run->runs + 1 + index, run->runs + index,
-            (run->n_runs - index) * sizeof(rle16_t));
-    run->n_runs++;
+    assert(run->runs != NULL);
 }
 
-static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
-    memmove(run->runs + index, run->runs + (1 + index),
-            (run->n_runs - index - 1) * sizeof(rle16_t));
-    run->n_runs--;
-}
 
 /* copy one container into another */
 void run_container_copy(const run_container_t *src, run_container_t *dst) {
@@ -163,149 +189,6 @@ void run_container_copy(const run_container_t *src, run_container_t *dst) {
     memcpy(dst->runs, src->runs, sizeof(rle16_t) * n_runs);
 }
 
-#ifdef RUNBRANCHLESSBINSEARCH
-
-/**
-* the branchless approach is inspired by
-*  Array layouts for comparison-based searching
-*  http://arxiv.org/pdf/1509.05053.pdf
-*/
-// could potentially use SIMD-based bin. search
-// values are interleaved with lengths
-static int32_t interleavedBinarySearch(const rle16_t *source, int32_t n,
-                                       uint16_t target) {
-    const rle16_t *base = source;
-    if (n == 0) return -1;
-    if (target > source[n - 1].value)
-        return -n - 1;  // without this, buffer overrun
-    while (n > 1) {
-        int32_t half = n >> 1;
-        base = (base[half].value < target) ? base + half : base;
-        n -= half;
-    }
-    base += (base->value < target);
-    return (base->value == target) ? (base - source) : (source - base) - 1;
-}
-#else
-// good old bin. search
-static int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
-                                       uint16_t ikey) {
-    int32_t low = 0;
-    int32_t high = lenarray - 1;
-    while (low <= high) {
-        int32_t middleIndex = (low + high) >> 1;
-        uint16_t middleValue = array[middleIndex].value;
-        if (middleValue < ikey) {
-            low = middleIndex + 1;
-        } else if (middleValue > ikey) {
-            high = middleIndex - 1;
-        } else {
-            return middleIndex;
-        }
-    }
-    return -(low + 1);
-}
-#endif
-
-/* Add `pos' to `run'. Returns true if `pos' was not present. */
-bool run_container_add(run_container_t *run, uint16_t pos) {
-    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
-    if (index >= 0) return false;  // already there
-    index = -index - 2;            // points to preceding value, possibly -1
-    if (index >= 0) {              // possible match
-        int32_t offset = pos - run->runs[index].value;
-        int32_t le = run->runs[index].length;
-        if (offset <= le) return false;  // already there
-        if (offset == le + 1) {
-            // we may need to fuse
-            if (index + 1 < run->n_runs) {
-                if (run->runs[index + 1].value == pos + 1) {
-                    // indeed fusion is needed
-                    run->runs[index].length = run->runs[index + 1].value +
-                                              run->runs[index + 1].length -
-                                              run->runs[index].value;
-                    recoverRoomAtIndex(run, index + 1);
-                    return true;
-                }
-            }
-            run->runs[index].length++;
-            return true;
-        }
-        if (index + 1 < run->n_runs) {
-            // we may need to fuse
-            if (run->runs[index + 1].value == pos + 1) {
-                // indeed fusion is needed
-                run->runs[index + 1].value = pos;
-                run->runs[index + 1].length = run->runs[index + 1].length + 1;
-                return true;
-            }
-        }
-    }
-    if (index == -1) {
-        // we may need to extend the first run
-        if (0 < run->n_runs) {
-            if (run->runs[0].value == pos + 1) {
-                run->runs[0].length++;
-                run->runs[0].value--;
-                return true;
-            }
-        }
-    }
-    makeRoomAtIndex(run, index + 1);
-    run->runs[index + 1].value = pos;
-    run->runs[index + 1].length = 0;
-    return true;
-}
-
-/* Remove `pos' from `run'. Returns true if `pos' was present. */
-bool run_container_remove(run_container_t *run, uint16_t pos) {
-    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
-    if (index >= 0) {
-        int32_t le = run->runs[index].length;
-        if (le == 0) {
-            recoverRoomAtIndex(run, index);
-        } else {
-            run->runs[index].value++;
-            run->runs[index].length--;
-        }
-        return true;
-    }
-    index = -index - 2;  // points to preceding value, possibly -1
-    if (index >= 0) {    // possible match
-        int32_t offset = pos - run->runs[index].value;
-        int32_t le = run->runs[index].length;
-        if (offset < le) {
-            // need to break in two
-            run->runs[index].length = offset - 1;
-            // need to insert
-            uint16_t newvalue = pos + 1;
-            int32_t newlength = le - offset - 1;
-            makeRoomAtIndex(run, index + 1);
-            run->runs[index + 1].value = newvalue;
-            run->runs[index + 1].length = newlength;
-            return true;
-
-        } else if (offset == le) {
-            run->runs[index].length--;
-            return true;
-        }
-    }
-    // no match
-    return false;
-}
-
-/* Check whether `pos' is present in `run'.  */
-bool run_container_contains(const run_container_t *run, uint16_t pos) {
-    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
-    if (index >= 0) return true;
-    index = -index - 2;  // points to preceding value, possibly -1
-    if (index != -1) {   // possible match
-        int32_t offset = pos - run->runs[index].value;
-        int32_t le = run->runs[index].length;
-        if (offset <= le) return true;
-    }
-    return false;
-}
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */

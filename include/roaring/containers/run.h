@@ -6,11 +6,15 @@
 #ifndef INCLUDE_CONTAINERS_RUN_H_
 #define INCLUDE_CONTAINERS_RUN_H_
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
+#include <roaring/containers/perfparameters.h>
+
 
 /* struct rle16_s - run length pair
  *
@@ -25,7 +29,9 @@ struct rle16_s {
     uint16_t length;
 };
 
+
 typedef struct rle16_s rle16_t;
+
 
 /* struct run_container_s - run container bitmap
  *
@@ -62,14 +68,110 @@ uint32_t run_container_serialization_len(run_container_t *container);
 
 void *run_container_deserialize(const char *buf, size_t buf_len);
 
+/*
+ * Effectively deletes the value at index index, repacking data.
+ */
+static void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
+    memmove(run->runs + index, run->runs + (1 + index),
+            (run->n_runs - index - 1) * sizeof(rle16_t));
+    run->n_runs--;
+}
+
+/**
+ * Good old binary search through rle data
+ */
+static inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
+                                       uint16_t ikey) {
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t middleValue = array[middleIndex].value;
+        if (middleValue < ikey) {
+            low = middleIndex + 1;
+        } else if (middleValue > ikey) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    return -(low + 1);
+}
+
+
+/**
+ * increase capacity to at least min. Whether the
+ * existing data needs to be copied over depends on copy. If "copy" is false,
+ * then the new content will be uninitialized, otherwise a copy is made.
+ */
+void run_container_grow(run_container_t *run, int32_t min, bool copy);
+
+/**
+ * Moves the data so that we can write data at index
+ */
+static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
+    /* This function calls realloc + memmove sequentially to move by one index.
+     * Potentially copying twice the array.
+     */
+    if (run->n_runs + 1 > run->capacity)
+        run_container_grow(run, run->n_runs + 1, true);
+    memmove(run->runs + 1 + index, run->runs + index,
+            (run->n_runs - index) * sizeof(rle16_t));
+    run->n_runs++;
+}
+
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
-bool run_container_add(run_container_t *run, uint16_t pos);
+bool run_container_add(run_container_t *run, uint16_t pos) ;
 
 /* Remove `pos' from `run'. Returns true if `pos' was present. */
-bool run_container_remove(run_container_t *run, uint16_t pos);
+static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
+    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
+    if (index >= 0) {
+        int32_t le = run->runs[index].length;
+        if (le == 0) {
+            recoverRoomAtIndex(run, index);
+        } else {
+            run->runs[index].value++;
+            run->runs[index].length--;
+        }
+        return true;
+    }
+    index = -index - 2;  // points to preceding value, possibly -1
+    if (index >= 0) {    // possible match
+        int32_t offset = pos - run->runs[index].value;
+        int32_t le = run->runs[index].length;
+        if (offset < le) {
+            // need to break in two
+            run->runs[index].length = offset - 1;
+            // need to insert
+            uint16_t newvalue = pos + 1;
+            int32_t newlength = le - offset - 1;
+            makeRoomAtIndex(run, index + 1);
+            run->runs[index + 1].value = newvalue;
+            run->runs[index + 1].length = newlength;
+            return true;
+
+        } else if (offset == le) {
+            run->runs[index].length--;
+            return true;
+        }
+    }
+    // no match
+    return false;
+}
 
 /* Check whether `pos' is present in `run'.  */
-bool run_container_contains(const run_container_t *run, uint16_t pos);
+static inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
+    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
+    if (index >= 0) return true;
+    index = -index - 2;  // points to preceding value, possibly -1
+    if (index != -1) {   // possible match
+        int32_t offset = pos - run->runs[index].value;
+        int32_t le = run->runs[index].length;
+        if (offset <= le) return true;
+    }
+    return false;
+}
 
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run);
@@ -166,12 +268,6 @@ static inline rle16_t run_container_append_value_first(run_container_t *run,
     return newrle;
 }
 
-/**
- * increase capacity to at least min. Whether the
- * existing data needs to be copied over depends on copy. If "copy" is false,
- * then the new content will be uninitialized, otherwise a copy is made.
- */
-void run_container_grow(run_container_t *run, int32_t min, bool copy);
 
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */

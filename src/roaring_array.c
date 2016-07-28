@@ -265,12 +265,8 @@ void *ra_get_container(roaring_array_t *ra, uint16_t x, uint8_t *typecode) {
     return ra->containers[i];
 }
 
-void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
-                                uint8_t *typecode) {
-    assert(i < ra->size);
-    *typecode = ra->typecodes[i];
-    return ra->containers[i];
-}
+extern void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
+                                uint8_t *typecode);
 
 void *ra_get_writable_container(roaring_array_t *ra, uint16_t x,
                                 uint8_t *typecode) {
@@ -291,12 +287,7 @@ uint16_t ra_get_key_at_index(roaring_array_t *ra, uint16_t i) {
     return ra->keys[i];
 }
 
-int32_t ra_get_index(roaring_array_t *ra, uint16_t x) {
-    // TODO: next line is possibly unsafe
-    if ((ra->size == 0) || ra->keys[ra->size - 1] == x) return ra->size - 1;
-
-    return binarySearch(ra->keys, (int32_t)ra->size, x);
-}
+extern int32_t ra_get_index(roaring_array_t *ra, uint16_t x) ;
 
 extern int32_t ra_advance_until(roaring_array_t *ra, uint16_t x, int32_t pos);
 

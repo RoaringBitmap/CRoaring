@@ -9,9 +9,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
+#include <roaring/array_util.h>
+#include <roaring/containers/perfparameters.h>
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -51,14 +54,7 @@ uint32_t array_container_serialization_len(array_container_t *container);
 
 void *array_container_deserialize(const char *buf, size_t buf_len);
 
-/* Add `pos' to `array'. Returns true if `pos' was not present. */
-bool array_container_add(array_container_t *array, uint16_t pos);
 
-/* Remove `pos' from `array'. Returns true if `pos' was present. */
-bool array_container_remove(array_container_t *array, uint16_t pos);
-
-/* Check whether `pos' is present in `array'.  */
-bool array_container_contains(const array_container_t *array, uint16_t pos);
 
 /* Get the cardinality of `array'. */
 static inline int array_container_cardinality(const array_container_t *array) {
@@ -239,5 +235,64 @@ static inline bool array_container_select(const array_container_t *container,
 void array_container_andnot(const array_container_t *array_1,
                             const array_container_t *array_2,
                             array_container_t *out);
+
+/* Append x to the set. Assumes that the value is larger than any preceding values.  */
+static void array_container_append(array_container_t *arr, uint16_t pos) {
+    const int32_t capacity = arr->capacity;
+
+    if (array_container_full(arr)) {
+        array_container_grow(arr, capacity + 1, INT32_MAX, true);
+    }
+
+    arr->array[arr->cardinality++] = pos;
+}
+
+
+/* Add x to the set. Returns true if x was not already present.  */
+static inline bool array_container_add(array_container_t *arr, uint16_t pos) {
+    const int32_t cardinality = arr->cardinality;
+
+    // best case, we can append.
+    if (array_container_empty(arr) || (arr->array[cardinality - 1] < pos)) {
+        array_container_append(arr, pos);
+        return true;
+    }
+
+    const int32_t loc = binarySearch(arr->array, cardinality, pos);
+    const bool not_found = loc < 0;
+
+    if (not_found) {
+        if (array_container_full(arr)) {
+            array_container_grow(arr, arr->capacity + 1, INT32_MAX, true);
+        }
+        const int32_t insert_idx = -loc - 1;
+        memmove(arr->array + insert_idx + 1, arr->array + insert_idx,
+                (cardinality - insert_idx) * sizeof(uint16_t));
+        arr->array[insert_idx] = pos;
+        arr->cardinality++;
+    }
+
+    return not_found;
+}
+
+/* Remove x from the set. Returns true if x was present.  */
+static inline bool array_container_remove(array_container_t *arr, uint16_t pos) {
+    const int32_t idx = binarySearch(arr->array, arr->cardinality, pos);
+    const bool is_present = idx >= 0;
+    if (is_present) {
+        memmove(arr->array + idx, arr->array + idx + 1,
+                (arr->cardinality - idx - 1) * sizeof(uint16_t));
+        arr->cardinality--;
+    }
+
+    return is_present;
+}
+
+/* Check whether x is present.  */
+static inline bool array_container_contains(const array_container_t *arr, uint16_t pos) {
+    return binarySearch(arr->array, arr->cardinality, pos) >= 0;
+}
+
+
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

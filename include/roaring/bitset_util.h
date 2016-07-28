@@ -6,17 +6,68 @@
 /*
  * Set all bits in indexes [begin,end) to true.
  */
-void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end);
+static inline void bitset_set_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
+    if (start == end) return;
+    uint32_t firstword = start / 64;
+    uint32_t endword = (end - 1) / 64;
+    if (firstword == endword) {
+        bitmap[firstword] |= ((~UINT64_C(0)) << (start % 64)) &
+                             ((~UINT64_C(0)) >> ((-end) % 64));
+        return;
+    }
+    bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
+    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~UINT64_C(0);
+    bitmap[endword] |= (~UINT64_C(0)) >> ((-end) % 64);
+}
+
+/*
+ * Set all bits in indexes [begin,begin+lenminusone] to true.
+ */
+static inline void bitset_set_lenrange(uint64_t *bitmap, uint32_t start, uint32_t lenminusone) {
+    uint32_t firstword = start / 64;
+    uint32_t endword = (start + lenminusone) / 64;
+    if (firstword == endword) {
+        bitmap[firstword] |= ((~UINT64_C(0)) >> ((63 - lenminusone)))
+                             << (start % 64);
+        return;
+    }
+    uint64_t temp = bitmap[endword];
+    bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
+    for (uint32_t i = firstword + 1; i < endword; i += 2)
+        bitmap[i] = bitmap[i + 1] = ~UINT64_C(0);
+    bitmap[endword] =
+        temp | (~UINT64_C(0)) >> ((-start - lenminusone - 1) % 64);
+}
+
 
 /*
  * Flip all the bits in indexes [begin,end).
  */
-void bitset_flip_range(uint64_t *bitmap, uint32_t start, uint32_t end);
+static inline void bitset_flip_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
+    if (start == end) return;
+    uint32_t firstword = start / 64;
+    uint32_t endword = (end - 1) / 64;
+    bitmap[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
+    for (uint32_t i = firstword; i < endword; i++) bitmap[i] = ~bitmap[i];
+    bitmap[endword] ^= ((~UINT64_C(0)) >> ((-end) % 64));
+}
 
 /*
  * Set all bits in indexes [begin,end) to false.
  */
-void bitset_reset_range(uint64_t *bitmap, uint32_t start, uint32_t end);
+static inline void bitset_reset_range(uint64_t *bitmap, uint32_t start, uint32_t end) {
+    if (start == end) return;
+    uint32_t firstword = start / 64;
+    uint32_t endword = (end - 1) / 64;
+    if (firstword == endword) {
+        bitmap[firstword] &= ~(((~UINT64_C(0)) << (start % 64)) &
+                               ((~UINT64_C(0)) >> ((-end) % 64)));
+        return;
+    }
+    bitmap[firstword] &= ~((~UINT64_C(0)) << (start % 64));
+    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = UINT64_C(0);
+    bitmap[endword] &= ~((~UINT64_C(0)) >> ((-end) % 64));
+}
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
@@ -133,3 +184,5 @@ uint64_t bitset_flip_list_withcard(void *bitset, uint64_t card,
 void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length);
 
 #endif
+
+

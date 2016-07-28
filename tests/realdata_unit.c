@@ -177,21 +177,6 @@ bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     return answer;
 }
 
-// for debug
-static void print_container(int which_container, roaring_bitmap_t *r) {
-    int runprev = -2;
-    for (int i = which_container * 65536; i < (which_container + 1) * 65536;
-         ++i)
-        if (roaring_bitmap_contains(r, i)) {
-            if (i == runprev + 1)
-                runprev++;
-            else {
-                if (runprev != -2) printf("%d, ", runprev);
-                printf("%d - ", i);
-                runprev = i;
-            }
-        }
-}
 
 bool is_andnot_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_andnot(bitmap1, bitmap2);

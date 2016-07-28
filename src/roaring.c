@@ -268,18 +268,7 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t val) {
     }
 }
 
-bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
-    const uint16_t hb = val >> 16;
-    const int i = ra_get_index(r->high_low_container, hb);
-    uint8_t typecode;
-    if (i >= 0) {
-        void *container =
-            ra_get_container_at_index(r->high_low_container, i, &typecode);
-        return container_contains(container, val & 0xFFFF, typecode);
-    } else {
-        return false;
-    }
-}
+extern bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
 
 // there should be some SIMD optimizations possible here
 roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,

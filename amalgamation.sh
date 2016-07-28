@@ -5,7 +5,7 @@
 ########################################################################
 
 echo "We are about to amalgamate all CRoaring files into one source file. "
-echo "See https://www.sqlite.org/amalgamation.html for rationale. "
+echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale. "
 
 AMAL_H="roaring.h"
 AMAL_C="roaring.c"
@@ -20,7 +20,6 @@ include/roaring/array_util.h
 include/roaring/roaring_types.h
 include/roaring/roaring_array.h
 include/roaring/utilasm.h
-include/roaring/roaring.h
 include/roaring/bitset_util.h
 include/roaring/containers/array.h
 include/roaring/containers/bitset.h
@@ -35,6 +34,7 @@ include/roaring/containers/mixed_xor.h
 include/roaring/containers/containers.h
 include/roaring/containers/perfparameters.h
 include/roaring/misc/configreport.h
+include/roaring/roaring.h
 "
 
 for i in ${ALLCHEADERS} ${ALLCFILES}; do

@@ -65,13 +65,22 @@ void ra_free_without_containers(roaring_array_t *r);
 /**
  * Get the index corresponding to a 16-bit key
  */
-int32_t ra_get_index(roaring_array_t *ra, uint16_t x);
+static inline int32_t ra_get_index(roaring_array_t *ra, uint16_t x) {
+    if ((ra->size == 0) || ra->keys[ra->size - 1] == x) return ra->size - 1;
+
+    return binarySearch(ra->keys, (int32_t)ra->size, x);
+}
+
 
 /**
  * Retrieves the container at index i, filling in the typecode
  */
-void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
-                                uint8_t *typecode);
+static inline void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
+                                uint8_t *typecode) {
+    *typecode = ra->typecodes[i];
+    return ra->containers[i];
+}
+
 
 /**
  * Retrieves the key at index i

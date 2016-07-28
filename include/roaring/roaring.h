@@ -181,7 +181,18 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value x is present
  */
-bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t x);
+static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+    const uint16_t hb = val >> 16;
+    const int i = ra_get_index(r->high_low_container, hb);
+    uint8_t typecode;
+    if (i >= 0) {
+        void *container =
+            ra_get_container_at_index(r->high_low_container, i, &typecode);
+        return container_contains(container, val & 0xFFFF, typecode);
+    } else {
+        return false;
+    }
+}
 
 /**
  * Get the cardinality of the bitmap (number of elements).
