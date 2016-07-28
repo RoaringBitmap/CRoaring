@@ -33,8 +33,26 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 - 64-bit Linux-like operating system (including MacOS)
 - Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library should build without problem on ARM processors.
 - Recent C compiler (GCC 4.8 or better), there is also an optional C++ class that requires a C++ compiler
-- CMake
+- CMake (to contribute to the project, users can rely on amalgamation)
 - clang-format (optional)
+
+# Amalgamation
+
+The CRoaring library can be amalgamated into a single source file that makes it easier
+for integration into other projects. Moreover, by making it possible to compile
+all the critical code into one compilation unit, it can improve the performance. For
+the rationale, please see the SQLite documentation : https://www.sqlite.org/amalgamation.html
+Users who choose this route, do not need to rely on CRoaring's build system (based on CMake).
+
+To generate the amalgamated files, you can invoke a bash script...
+
+```bash
+./amalgamation.sh
+```
+
+It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``almagamation_demo.c``... as well as some brief instructions. The ``almagamation_demo.c`` file is a short example, whereas ``roaring.h`` and ``roaring.c`` are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files ``roaring.h`` and ``roaring.c`` into your project and be ready to go! No need to produce a library! See the ``almagamation_demo.c`` file.
+
+The script will also generate C++ files for C++ users, including an example.
 
 # Example (C)
 
