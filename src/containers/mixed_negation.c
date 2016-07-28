@@ -13,12 +13,6 @@
 #include <roaring/containers/containers.h>
 #include <roaring/containers/convert.h>
 
-/* code makes the assumption that sizeof(int) > 2
- * for ranges. Could use uint32_t instead if this is undesirable.
- * But it seems silly to worry about 16-bit platforms with this library.
- */
-_Static_assert(sizeof(int) > 2, "ints too small for ranges");
-
 // TODO: make simplified and optimized negation code across
 // the full range.
 

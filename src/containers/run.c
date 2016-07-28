@@ -147,9 +147,6 @@ int run_container_cardinality(const run_container_t *run) {
     return sum;
 }
 #endif
-// with some luck: sizeof(struct valuelength_s) = 2 *sizeof(uint16_t) = 4
-_Static_assert(sizeof(rle16_t) == 2 * sizeof(uint16_t),
-               "Bad struct size");  // part of C standard
 
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =

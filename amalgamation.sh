@@ -141,7 +141,7 @@ CPPBIN=${DEMOCPP%%.*}
 
 echo
 echo "Try :"
-echo "cc -march=native -O3 -std=c11  -o ${CBIN} ${DEMOC} -Wshadow -Wextra -pedantic && ./${CBIN} "
+echo "cc -march=native -O3 -std=c11  -o ${CBIN} ${DEMOC}  && ./${CBIN} "
 echo
 echo "For C++, try :"
-echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  -Wshadow -Wextra -pedantic  && ./${CPPBIN} "
+echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} "
