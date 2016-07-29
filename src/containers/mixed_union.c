@@ -51,8 +51,7 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
-        bitset_set_range(dst->array, rle.value,
-                         rle.value + rle.length + UINT32_C(1));
+        bitset_set_lenrange(dst->array, rle.value,rle.length);
     }
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }

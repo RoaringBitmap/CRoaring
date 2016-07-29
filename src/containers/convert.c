@@ -19,7 +19,7 @@ bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     bitset_container_t *answer = bitset_container_create();
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         rle16_t vl = arr->runs[rlepos];
-        bitset_set_range(answer->array, vl.value, vl.value + vl.length + 1);
+        bitset_set_lenrange(answer->array, vl.value, vl.length);
     }
     answer->cardinality = card;
     return answer;
@@ -108,8 +108,7 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
     bitset_container_t *answer = bitset_container_create();
     for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
         uint16_t run_start = r->runs[rlepos].value;
-        uint16_t run_end = run_start + r->runs[rlepos].length;
-        bitset_set_range(answer->array, run_start, run_end + 1);
+        bitset_set_lenrange(answer->array, run_start, r->runs[rlepos].length);
     }
     answer->cardinality = card;
     *resulttype = BITSET_CONTAINER_TYPE_CODE;
