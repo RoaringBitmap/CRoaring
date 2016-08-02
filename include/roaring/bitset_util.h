@@ -196,7 +196,7 @@ void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length);
  * Compute the population count of a 256-bit word
  * This is not especially fast, but it is convenient as part of other functions.
  */
-static __m256i popcount256(__m256i v) {
+static inline __m256i popcount256(__m256i v) {
 
     const __m256i lookuppos = _mm256_setr_epi8(
         /* 0 */ 4 + 0, /* 1 */ 4 + 1, /* 2 */ 4 + 1, /* 3 */ 4 + 2,
@@ -244,7 +244,7 @@ static inline void CSA(__m256i* h, __m256i* l, __m256i a, __m256i b, __m256i c) 
 /**
  * Fast Harley-Seal AVX population count function
  */
-static uint64_t avx2_harley_seal_popcount256(const __m256i* data, const uint64_t size) {
+inline static uint64_t avx2_harley_seal_popcount256(const __m256i* data, const uint64_t size) {
   __m256i total     = _mm256_setzero_si256();
   __m256i ones      = _mm256_setzero_si256();
   __m256i twos      = _mm256_setzero_si256();
@@ -292,7 +292,7 @@ static uint64_t avx2_harley_seal_popcount256(const __m256i* data, const uint64_t
 }
 
 #define AVXPOPCNTFNC(opname,  avx_intrinsic)            \
-static uint64_t avx2_harley_seal_popcount256_##opname(const __m256i* data1,\
+static inline uint64_t avx2_harley_seal_popcount256_##opname(const __m256i* data1,\
 		const __m256i* data2, const uint64_t size) {\
 	__m256i total     = _mm256_setzero_si256();\
 	__m256i ones      = _mm256_setzero_si256();\
@@ -352,7 +352,7 @@ static uint64_t avx2_harley_seal_popcount256_##opname(const __m256i* data1,\
 			+ (uint64_t)(_mm256_extract_epi64(total, 2))\
 			+ (uint64_t)(_mm256_extract_epi64(total, 3));\
 }\
-static uint64_t avx2_harley_seal_popcount256andstore_##opname(const __m256i*restrict data1,\
+static inline uint64_t avx2_harley_seal_popcount256andstore_##opname(const __m256i*restrict data1,\
 		const __m256i*restrict data2, __m256i*restrict out,\
 		const uint64_t size) {\
 	__m256i total     = _mm256_setzero_si256();\
