@@ -3,6 +3,7 @@
 # Generates an "amalgamation build" for roaring. Inspired by similar
 # script used by whefs.
 ########################################################################
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 echo "We are about to amalgamate all CRoaring files into one source file. "
 echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale. "
@@ -11,30 +12,30 @@ AMAL_H="roaring.h"
 AMAL_C="roaring.c"
 
 # order does not matter
-ALLCFILES=$(find src -name '*.c' )
+ALLCFILES=$(find $SCRIPTPATH/src -name '*.c' )
 
 # order matters
 ALLCHEADERS="
-include/roaring/portability.h
-include/roaring/array_util.h
-include/roaring/roaring_types.h
-include/roaring/roaring_array.h
-include/roaring/utilasm.h
-include/roaring/bitset_util.h
-include/roaring/containers/array.h
-include/roaring/containers/bitset.h
-include/roaring/containers/run.h
-include/roaring/containers/convert.h
-include/roaring/containers/mixed_equal.h
-include/roaring/containers/mixed_andnot.h
-include/roaring/containers/mixed_intersection.h
-include/roaring/containers/mixed_negation.h
-include/roaring/containers/mixed_union.h
-include/roaring/containers/mixed_xor.h
-include/roaring/containers/containers.h
-include/roaring/containers/perfparameters.h
-include/roaring/misc/configreport.h
-include/roaring/roaring.h
+$SCRIPTPATH/include/roaring/portability.h
+$SCRIPTPATH/include/roaring/array_util.h
+$SCRIPTPATH/include/roaring/roaring_types.h
+$SCRIPTPATH/include/roaring/roaring_array.h
+$SCRIPTPATH/include/roaring/utilasm.h
+$SCRIPTPATH/include/roaring/bitset_util.h
+$SCRIPTPATH/include/roaring/containers/array.h
+$SCRIPTPATH/include/roaring/containers/bitset.h
+$SCRIPTPATH/include/roaring/containers/run.h
+$SCRIPTPATH/include/roaring/containers/convert.h
+$SCRIPTPATH/include/roaring/containers/mixed_equal.h
+$SCRIPTPATH/include/roaring/containers/mixed_andnot.h
+$SCRIPTPATH/include/roaring/containers/mixed_intersection.h
+$SCRIPTPATH/include/roaring/containers/mixed_negation.h
+$SCRIPTPATH/include/roaring/containers/mixed_union.h
+$SCRIPTPATH/include/roaring/containers/mixed_xor.h
+$SCRIPTPATH/include/roaring/containers/containers.h
+$SCRIPTPATH/include/roaring/containers/perfparameters.h
+$SCRIPTPATH/include/roaring/misc/configreport.h
+$SCRIPTPATH/include/roaring/roaring.h
 "
 
 for i in ${ALLCHEADERS} ${ALLCFILES}; do
@@ -101,7 +102,7 @@ echo "Done with C amalgamation. Proceeding with C++ wrap."
 AMAL_HH="roaring.hh"
 
 echo "Creating ${AMAL_HH}..."
-ALLCPPHEADERS="cpp/roaring.hh"
+ALLCPPHEADERS="$SCRIPTPATH/cpp/roaring.hh"
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_HH}"
 {
     echo "#include \"${AMAL_H}\""
@@ -128,13 +129,15 @@ int main() {
   return 0;
 }
 ' >>  "${DEMOCPP}"
-
-ls -la ${AMAL_C} ${AMAL_H} ${AMAL_HH}  ${DEMOC} ${DEMOCPP}
-
-
 echo "Done with C++."
 
-echo "Done with all files generation, giving final instructions: "
+echo "Done with all files generation. "
+
+echo "Files have been written to current directory: $PWD "
+ls -la ${AMAL_C} ${AMAL_H} ${AMAL_HH}  ${DEMOC} ${DEMOCPP}
+
+echo "Giving final instructions:"
+
 
 CBIN=${DEMOC%%.*}
 CPPBIN=${DEMOCPP%%.*}

@@ -51,6 +51,9 @@ To generate the amalgamated files, you can invoke a bash script...
 ./amalgamation.sh
 ```
 
+It is not necessary to invoke the script in the CRoaring directory. You can invoke
+it from any directory where you want the amalgamation files to be written.
+
 It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``almagamation_demo.c``... as well as some brief instructions. The ``almagamation_demo.c`` file is a short example, whereas ``roaring.h`` and ``roaring.c`` are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files ``roaring.h`` and ``roaring.c`` into your project and be ready to go! No need to produce a library! See the ``almagamation_demo.c`` file.
 
 The script will also generate C++ files for C++ users, including an example.
