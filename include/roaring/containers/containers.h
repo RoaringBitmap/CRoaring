@@ -109,6 +109,31 @@ static const char *container_names[] = {"bitset", "array", "run", "shared"};
 static const char *shared_container_names[] = {
     "bitset (shared)", "array (shared)", "run (shared)"};
 
+
+// no matter what the initial container was, convert it to a bitset
+// if a new container is produced, caller responsible for freeing the previous one
+// container should not be a shared container
+static inline void *container_to_bitset(void *container,
+                                                uint8_t typecode) {
+    bitset_container_t *result = NULL;
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return container;// nothing to do
+        case ARRAY_CONTAINER_TYPE_CODE:
+            result = bitset_container_from_array((array_container_t*)container);
+            return result;
+        case RUN_CONTAINER_TYPE_CODE:
+            result = bitset_container_from_run((run_container_t*)container);
+            return result;
+        case SHARED_CONTAINER_TYPE_CODE:
+            assert(false);
+    }
+    assert(false);
+    __builtin_unreachable();
+    return 0;  // unreached
+}
+
+
 /**
  * Get the container name from the typecode
  */

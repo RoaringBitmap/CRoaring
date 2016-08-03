@@ -209,17 +209,17 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 					true, .bitmap = newb };
 			pq_add(pq, &newelement);
 		} else if (x2.is_temporary) {
-                        roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap);
+                        roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap, false);
 			x2.size = roaring_bitmap_portable_size_in_bytes(x2.bitmap);
 			pq_add(pq, &x2);
 		} else if (x1.is_temporary) {
-			roaring_bitmap_lazy_or_inplace(x1.bitmap, x2.bitmap);
+			roaring_bitmap_lazy_or_inplace(x1.bitmap, x2.bitmap, false);
 			x1.size = roaring_bitmap_portable_size_in_bytes(x1.bitmap);
 
 			pq_add(pq, &x1);
 		} else {
 		  roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
-					x2.bitmap);
+					x2.bitmap, false);
 			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
 			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =
 					true, .bitmap = newb };

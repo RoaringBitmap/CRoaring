@@ -280,18 +280,22 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
  * cardinality counts. Thus you need
  * to call roaring_bitmap_repair_after_lazy after executing "lazy" computations.
  * It is safe to repeatedly call roaring_bitmap_lazy_or_inplace on the result.
- *
- */
+ * The bitsetconversion conversion is a flag which determines
+ * whether container-container operations force a bitset conversion.
+ **/
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
-                                         const roaring_bitmap_t *x2);
+                                         const roaring_bitmap_t *x2,
+										 const bool bitsetconversion);
 
 /**
  * (For expert users who seek high performance.)
  * Inplace version of roaring_bitmap_lazy_or, modifies x1
- *
+ * The bitsetconversion conversion is a flag which determines
+ * whether container-container operations force a bitset conversion.
  */
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
-                                    const roaring_bitmap_t *x2);
+                                    const roaring_bitmap_t *x2,
+									const bool bitsetconversion);
 
 /**
  * (For expert users who seek high performance.)

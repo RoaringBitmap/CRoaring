@@ -323,9 +323,9 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
     if (number == 1) {
         return roaring_bitmap_copy(x[0]);
     }
-    roaring_bitmap_t *answer = roaring_bitmap_lazy_or(x[0], x[1]);
+    roaring_bitmap_t *answer = roaring_bitmap_lazy_or(x[0], x[1], LAZY_OR_BITSET_CONVERSION);
     for (size_t i = 2; i < number; i++) {
-        roaring_bitmap_lazy_or_inplace(answer, x[i]);
+        roaring_bitmap_lazy_or_inplace(answer, x[i], LAZY_OR_BITSET_CONVERSION);
     }
     roaring_bitmap_repair_after_lazy(answer);
     return answer;
@@ -1260,7 +1260,8 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
 }
 
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
-                                         const roaring_bitmap_t *x2) {
+                                         const roaring_bitmap_t *x2,
+										 const bool bitsetconversion) {
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
@@ -1283,9 +1284,24 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                                  &container_type_1);
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
-            void *c =
-                container_lazy_or(c1, container_type_1, c2, container_type_2,
-                                  &container_result_type);
+            void *c;
+            if(bitsetconversion &&
+            		(get_container_type(c1, container_type_1) != BITSET_CONTAINER_TYPE_CODE) &&
+            		(get_container_type(c2, container_type_2) != BITSET_CONTAINER_TYPE_CODE)) {
+                void * newc1 = (void *) container_unwrap_shared(c1,&container_type_1);
+                newc1 = container_to_bitset(newc1,container_type_1);
+                container_type_1 = BITSET_CONTAINER_TYPE_CODE;
+                c =
+                    container_lazy_ior(newc1, container_type_1, c2, container_type_2,
+                                      &container_result_type);
+                if(c != newc1) {// should not happen
+                	container_free(newc1, container_type_1);
+                }
+            } else {
+                c =
+                    container_lazy_or(c1, container_type_1, c2, container_type_2,
+                                      &container_result_type);
+            }
             // since we assume that the initial containers are non-empty,
             // the
             // result here
@@ -1338,7 +1354,8 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
 }
 
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
-                                    const roaring_bitmap_t *x2) {
+                                    const roaring_bitmap_t *x2,
+									const bool bitsetconversion) {
     uint8_t container_result_type = 0;
     int length1 = x1->high_low_container->size;
     const int length2 = x2->high_low_container->size;
@@ -1357,7 +1374,20 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
-            c1 = get_writable_copy_if_shared(c1, &container_type_1);
+            if((bitsetconversion == false) ||
+            		(get_container_type(c1, container_type_1) == BITSET_CONTAINER_TYPE_CODE))
+            {
+                c1 = get_writable_copy_if_shared(c1, &container_type_1);
+            } else {
+                // convert to bitset
+            	void * oldc1 = c1;
+            	uint8_t oldt1 = container_type_1;
+                c1 = (void *) container_unwrap_shared(c1,&container_type_1);
+                c1 = container_to_bitset(c1,container_type_1);
+                container_free(oldc1,oldt1);
+                container_type_1 = BITSET_CONTAINER_TYPE_CODE;
+            }
+
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             void *c =
