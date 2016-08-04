@@ -8,9 +8,9 @@ endif()
 project(RoaringBitmap)
 set(ROARING_LIB_NAME roaring)
 
-option(AVX_TUNING "Enable AVX tuning" ON)
+option(DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm") 
-SET(AVX_TUNING OFF) # for ARM processors, there is no hope of having AVX support
+SET(DISABLE_AVX OFF) # for ARM processors, there is no hope of having AVX support
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
 
 option(BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
@@ -48,7 +48,7 @@ add_subdirectory(tests)
 # and should not be hard to figure out.
 MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} ) # this tends to be "sticky" so you can remain unknowingly in debug mode
-MESSAGE( STATUS "AVX_TUNING: " ${AVX_TUNING} ) # options in cmake a "sticky" so old options can remain even if that is counterintuitive
+MESSAGE( STATUS "DISABLE_AVX: " ${DISABLE_AVX} ) # options in cmake a "sticky" so old options can remain even if that is counterintuitive
 MESSAGE( STATUS "BUILD_STATIC: " ${BUILD_STATIC} )
 MESSAGE( STATUS "BUILD_LTO: " ${BUILD_LTO} )
 MESSAGE( STATUS "SANITIZE: " ${SANITIZE} )

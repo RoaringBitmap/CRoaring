@@ -65,5 +65,5 @@
         "r"(testBit)   /* read only */     \
         )
 
-#endif // IS_X64
+#endif // USE_BMI
 #endif /* INCLUDE_UTILASM_H_ */

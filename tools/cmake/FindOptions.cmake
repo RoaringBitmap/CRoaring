@@ -4,12 +4,12 @@ if(SANITIZE)
 endif()
 
 set(OPT_FLAGS "-march=native")
-if(AVX_TUNING)
-  # even if AVX_TUNING is enabled, the code can still disable it if __AVX2__ or __BMI2__ are undefined
-  set (OPT_FLAGS "${OPT_FLAGS} -DUSEAVX  ${OPT_FLAGS}" )
+if(DISABLE_AVX)
+  # we can manually disable AVX by defining DISABLEAVX
+  set (OPT_FLAGS "${OPT_FLAGS} -DDISABLEAVX" )
 endif()
 
-if(FORCE_AVX) # some compilers like clang do not automatigically define __AVX2__ and __BMI2__ even when the hardware supports it 
+if(FORCE_AVX) # some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it 
    set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi2")
 endif()
 

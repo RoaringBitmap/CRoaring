@@ -258,9 +258,10 @@ If wish to build an x64/x86 version while disabling AVX2 and BMI2 support at the
 ````
 mkdir -p buildnoavx
 cd buildnoavx
-cmake -DAVX_TUNING=OFF ..
+cmake -DDISABLE_AVX=OFF ..
 make
 ```
+
 For a debug release, starting from the root directory of the project (CRoaring), try
 
 ```
@@ -270,7 +271,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE=ON ..
 make
 ```
 
-(Again, you can use the ``-DAVX_TUNING=OFF`` flag if you need it.)
+(Again, you can use the ``-DDISABLE_AVX=ON`` flag if you need it.)
 
 (Of course you can replace the ``debug`` directory with any other directory name.)
 
