@@ -69,7 +69,6 @@ static const void *container_unwrap_shared(
         assert(*type != SHARED_CONTAINER_TYPE_CODE);
         return ((shared_container_t *)candidate_shared_container)->container;
     } else {
-        assert(*type != SHARED_CONTAINER_TYPE_CODE);
         return candidate_shared_container;
     }
 }
@@ -482,7 +481,6 @@ static inline bool container_contains(const void *container, uint16_t val,
             return bitset_container_get((const bitset_container_t *)container,
                                         val);
         case ARRAY_CONTAINER_TYPE_CODE:
-            ;
             return array_container_contains(
                 (const array_container_t *)container, val);
         case RUN_CONTAINER_TYPE_CODE:
