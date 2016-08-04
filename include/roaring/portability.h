@@ -13,7 +13,7 @@
 #endif
 
 // unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
-#if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && (!defined(__BMI2__))
+#if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && (defined(__BMI2__))
 #define USEAVX
 #endif
 

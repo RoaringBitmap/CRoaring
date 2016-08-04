@@ -547,7 +547,7 @@ static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
 
 #endif
 
-#if USEAVX
+#ifdef USEAVX
 
 size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
                                    uint32_t *out, size_t outcapacity,
@@ -798,7 +798,6 @@ uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
 }
 
 #else
-
 uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
                            uint64_t length) {
     uint64_t offset, load, newload, pos, index;
