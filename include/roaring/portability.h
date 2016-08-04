@@ -38,7 +38,12 @@
 // if we have AVX, then we use BMI optimizations
 #if defined(USEAVX)
 #define USE_BMI //we assume that AVX2 and BMI go hand and hand
+#define USEAVX2FORDECODING// optimization
+#define ROARING_VECTOR_UNION_ENABLED // vector unions (optimization)
 #endif
+
+
+
 
 #if defined(_MSC_VER)
 #define ALIGNED(x) __declspec(align(x))

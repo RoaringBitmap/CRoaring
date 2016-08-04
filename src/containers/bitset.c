@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <roaring/portability.h>
 #include <roaring/bitset_util.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/utilasm.h>
@@ -324,9 +325,6 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 // clang-format On
 
 
-#ifdef USEAVX
-#define USEAVX2FORDECODING// optimization
-#endif
 
 int bitset_container_to_uint32_array( uint32_t *out, const bitset_container_t *cont, uint32_t base) {
 #ifdef USEAVX2FORDECODING

@@ -485,7 +485,6 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
 
 #if defined(USE_BMI)
 
-#define ROARING_VECTOR_UNION_ENABLED
 /***
  * start of the SIMD 16-bit union code
  *
