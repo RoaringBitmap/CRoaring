@@ -18,9 +18,16 @@
 
 // would enum be possible or better?
 
-#define ARRAY_CONTAINER_TYPE_CODE 1
-#define RUN_CONTAINER_TYPE_CODE 2
-#define BITSET_CONTAINER_TYPE_CODE 3
+/**
+ * The switch case statements follow
+ * BITSET_CONTAINER_TYPE_CODE -- ARRAY_CONTAINER_TYPE_CODE -- RUN_CONTAINER_TYPE_CODE
+ * so it makes more sense to number them 1, 2, 3 (in the vague hope that the
+ * compiler might exploit this ordering).
+ */
+
+#define BITSET_CONTAINER_TYPE_CODE 1
+#define ARRAY_CONTAINER_TYPE_CODE 2
+#define RUN_CONTAINER_TYPE_CODE 3
 #define SHARED_CONTAINER_TYPE_CODE 4
 
 // macro for pairing container type codes
