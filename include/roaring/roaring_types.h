@@ -5,7 +5,7 @@
 #ifndef ROARING_TYPES_H
 #define ROARING_TYPES_H
 
-typedef void (*roaring_iterator)(uint32_t value, void *param);
+typedef bool (*roaring_iterator)(uint32_t value, void *param);
 
 
 /**

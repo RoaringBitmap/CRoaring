@@ -140,8 +140,9 @@ free(serializedbytes);
 uint32_t counter = 0;
 roaring_iterate(r1, roaring_iterator_sumall, &counter);
 /**
- * void roaring_iterator_sumall(uint32_t value, void *param) {
+ * bool roaring_iterator_sumall(uint32_t value, void *param) {
  *        *(uint32_t *) param += value;
+ *        return true; //iterate till the end
  *  }
  *
  */
@@ -230,8 +231,9 @@ delete[] serializedbytes;
 uint32_t counter = 0;
 r1.iterate(roaring_iterator_sumall, &counter);
     /**
-     * void roaring_iterator_sumall(uint32_t value, void *param) {
+     * bool roaring_iterator_sumall(uint32_t value, void *param) {
      *        *(uint32_t *) param += value;
+     *        return true; // iterate till the end
      *  }
      *
      */

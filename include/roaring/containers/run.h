@@ -328,7 +328,7 @@ static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
            sizeof(rle16_t) * num_runs;  // each run requires 2 2-byte entries.
 }
 
-void run_container_iterate(const run_container_t *cont, uint32_t base,
+bool run_container_iterate(const run_container_t *cont, uint32_t base,
                            roaring_iterator iterator, void *ptr);
 
 /**

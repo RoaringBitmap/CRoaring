@@ -1661,24 +1661,22 @@ static inline void *container_iandnot(void *c1, uint8_t type1, const void *c2,
 /**
  * Visit all values x of the container once, passing (base+x,ptr)
  * to iterator. You need to specify a container and its type.
+ * Returns true if the iteration should continue.
  */
-static inline void container_iterate(const void *container, uint8_t typecode,
+static inline bool container_iterate(const void *container, uint8_t typecode,
                                      uint32_t base, roaring_iterator iterator,
                                      void *ptr) {
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            bitset_container_iterate((const bitset_container_t *)container,
+            return bitset_container_iterate((const bitset_container_t *)container,
                                      base, iterator, ptr);
-            break;
         case ARRAY_CONTAINER_TYPE_CODE:
-            array_container_iterate((const array_container_t *)container, base,
+            return array_container_iterate((const array_container_t *)container, base,
                                     iterator, ptr);
-            break;
         case RUN_CONTAINER_TYPE_CODE:
-            run_container_iterate((const run_container_t *)container, base,
+            return run_container_iterate((const run_container_t *)container, base,
                                   iterator, ptr);
-            break;
         default:
             assert(false);
             __builtin_unreachable();

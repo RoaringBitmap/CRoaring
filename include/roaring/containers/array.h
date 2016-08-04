@@ -168,7 +168,7 @@ static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
 void array_container_grow(array_container_t *container, int32_t min,
                           int32_t max, bool preserve);
 
-void array_container_iterate(const array_container_t *cont, uint32_t base,
+bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr);
 
 /**

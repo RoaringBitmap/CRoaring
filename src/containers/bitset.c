@@ -463,17 +463,18 @@ void* bitset_container_deserialize(const char *buf, size_t buf_len) {
   return((void*)ptr);
 }
 
-void bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
+bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->array[i];
     while (w != 0) {
       uint64_t t = w & -w;
       int r = __builtin_ctzll(w);
-      iterator(r + base, ptr);
+      if(!iterator(r + base, ptr)) return false;
       w ^= t;
     }
     base += 64;
   }
+  return true;
 }
 
 

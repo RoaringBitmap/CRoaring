@@ -12,8 +12,9 @@
 #include "roaring.hh"
 
 
-void roaring_iterator_sumall(uint32_t value, void *param) {
+bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
+    return true; // we always process all values
 }
 
 void test_example(bool copy_on_write) {

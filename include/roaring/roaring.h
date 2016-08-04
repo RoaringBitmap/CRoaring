@@ -259,10 +259,14 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
  * Iterate over the bitmap elements. The function iterator is called once for
  *  all the values with ptr (can be NULL) as the second parameter of each call.
  *
- *  roaring_iterator is simply a pointer to a function that returns void,
+ *  roaring_iterator is simply a pointer to a function that returns bool
+ *  (true means that the iteration should continue while false means that it should stop),
  *  and takes (uint32_t,void*) as inputs.
+ *
+ *  Returns true if the roaring_iterator returned true throughout (so that
+ *  all data points were necessarily visited).
  */
-void roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
+bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr);
 
 /**

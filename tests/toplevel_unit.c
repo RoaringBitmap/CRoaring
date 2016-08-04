@@ -21,8 +21,9 @@ static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
     return 1;
 }
 
-void roaring_iterator_sumall(uint32_t value, void *param) {
+bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
+    return true; // continue till the end
 }
 
 void can_add_to_copies(bool copy_on_write) {
@@ -166,8 +167,9 @@ void test_example(bool copy_on_write) {
     uint32_t counter = 0;
     roaring_iterate(r1, roaring_iterator_sumall, &counter);
     /**
-     * void roaring_iterator_sumall(uint32_t value, void *param) {
+     * bool roaring_iterator_sumall(uint32_t value, void *param) {
      *        *(uint32_t *) param += value;
+     *        return true; // continue till the end
      *  }
      *
      */
@@ -337,11 +339,12 @@ void test_printf_withrun() {
     printf("\n");
 }
 
-void dummy_iterator(uint32_t value, void *param) {
+bool dummy_iterator(uint32_t value, void *param) {
     (void)value;
 
     uint32_t *num = (uint32_t *)param;
     (*num)++;
+    return true;
 }
 
 void test_iterate() {

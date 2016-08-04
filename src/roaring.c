@@ -129,11 +129,12 @@ typedef struct min_max_sum_s {
     uint64_t sum;
 } min_max_sum_t;
 
-static void min_max_sum_fnc(uint32_t value, void *param) {
+static bool min_max_sum_fnc(uint32_t value, void *param) {
     min_max_sum_t *mms = (min_max_sum_t *)param;
     if (value > mms->max) mms->max = value;
     if (value < mms->min) mms->min = value;
     mms->sum += value;
+    return true; // we always process all data points
 }
 
 /**
@@ -1035,13 +1036,16 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
         return (NULL);
 }
 
-void roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
+bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr) {
     for (int i = 0; i < ra->high_low_container->size; ++i)
-        container_iterate(ra->high_low_container->containers[i],
+        if(! container_iterate(ra->high_low_container->containers[i],
                           ra->high_low_container->typecodes[i],
                           ((uint32_t)ra->high_low_container->keys[i]) << 16,
-                          iterator, ptr);
+                          iterator, ptr)) {
+        	return false;
+        }
+    return true;
 }
 
 bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
