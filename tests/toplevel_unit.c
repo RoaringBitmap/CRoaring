@@ -23,7 +23,7 @@ static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
 
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
-    return true; // continue till the end
+    return true;  // continue till the end
 }
 
 void can_add_to_copies(bool copy_on_write) {
@@ -1185,23 +1185,55 @@ void test_andnot(bool copy_on_write) {
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     r2->copy_on_write = copy_on_write;
 
-    int data1[] = {1, 2, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
-                   65536 * 3 + 2, 65536 * 10 + 1, 65536 * 10 + 2,
-                   65536 * 16 + 1, 65536 * 16 + 2, 65536 * 20 + 1,
-                   65536 * 21 + 1, -1};
+    int data1[] = {1,
+                   2,
+                   65536 * 2 + 1,
+                   65536 * 2 + 2,
+                   65536 * 3 + 1,
+                   65536 * 3 + 2,
+                   65536 * 10 + 1,
+                   65536 * 10 + 2,
+                   65536 * 16 + 1,
+                   65536 * 16 + 2,
+                   65536 * 20 + 1,
+                   65536 * 21 + 1,
+                   -1};
     roaring_bitmap_t *rb1 = roaring_from_sentinel_array(data1, copy_on_write);
-    int data2[] = {2, 3, 65536 * 10 + 2, 65536 * 10 + 3, 65536 * 12 + 2,
-                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
-                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    int data2[] = {2,
+                   3,
+                   65536 * 10 + 2,
+                   65536 * 10 + 3,
+                   65536 * 12 + 2,
+                   65536 * 12 + 3,
+                   65536 * 14 + 2,
+                   65536 * 14 + 3,
+                   65536 * 16 + 2,
+                   65536 * 16 + 3,
+                   -1};
     roaring_bitmap_t *rb2 = roaring_from_sentinel_array(data2, copy_on_write);
 
-    int data3[] = {2, 3, 65536 * 10 + 1, 65536 * 10 + 2, 65536 * 12 + 2,
-                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
-                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    int data3[] = {2,
+                   3,
+                   65536 * 10 + 1,
+                   65536 * 10 + 2,
+                   65536 * 12 + 2,
+                   65536 * 12 + 3,
+                   65536 * 14 + 2,
+                   65536 * 14 + 3,
+                   65536 * 16 + 2,
+                   65536 * 16 + 3,
+                   -1};
     roaring_bitmap_t *rb3 = roaring_from_sentinel_array(data3, copy_on_write);
-    int d1_minus_d2[] = {1, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
-                         65536 * 3 + 2, 65536 * 10 + 1, 65536 * 16 + 1,
-                         65536 * 20 + 1, 65536 * 21 + 1, -1};
+    int d1_minus_d2[] = {1,
+                         65536 * 2 + 1,
+                         65536 * 2 + 2,
+                         65536 * 3 + 1,
+                         65536 * 3 + 2,
+                         65536 * 10 + 1,
+                         65536 * 16 + 1,
+                         65536 * 20 + 1,
+                         65536 * 21 + 1,
+                         -1};
     roaring_bitmap_t *rb1_minus_rb2 =
         roaring_from_sentinel_array(d1_minus_d2, copy_on_write);
 
@@ -1212,8 +1244,14 @@ void test_andnot(bool copy_on_write) {
     roaring_bitmap_t *rb1_minus_rb3 =
         roaring_from_sentinel_array(d1_minus_d3, copy_on_write);
 
-    int d2_minus_d1[] = {3, 65536 * 10 + 3, 65536 * 12 + 2, 65536 * 12 + 3,
-                         65536 * 14 + 2, 65536 * 14 + 3, 65536 * 16 + 3, -1};
+    int d2_minus_d1[] = {3,
+                         65536 * 10 + 3,
+                         65536 * 12 + 2,
+                         65536 * 12 + 3,
+                         65536 * 14 + 2,
+                         65536 * 14 + 3,
+                         65536 * 16 + 3,
+                         -1};
 
     roaring_bitmap_t *rb2_minus_rb1 =
         roaring_from_sentinel_array(d2_minus_d1, copy_on_write);
@@ -1253,8 +1291,8 @@ void test_andnot(bool copy_on_write) {
         roaring_bitmap_from_range(2, 11 * 65536 + 27, 1);
     temp = roaring_bitmap_andnot(rb1, large_run_bitmap);
 
-    int d1_minus_largerun[] = {1, 65536 * 16 + 1, 65536 * 16 + 2,
-                               65536 * 20 + 1, 65536 * 21 + 1, -1};
+    int d1_minus_largerun[] = {
+        1, 65536 * 16 + 1, 65536 * 16 + 2, 65536 * 20 + 1, 65536 * 21 + 1, -1};
     roaring_bitmap_t *rb1_minus_largerun =
         roaring_from_sentinel_array(d1_minus_largerun, copy_on_write);
     assert_true(roaring_bitmap_equals(rb1_minus_largerun, temp));
@@ -1343,23 +1381,55 @@ void test_andnot_inplace(bool copy_on_write) {
     roaring_bitmap_t *r2 = roaring_bitmap_create();
     r2->copy_on_write = copy_on_write;
 
-    int data1[] = {1, 2, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
-                   65536 * 3 + 2, 65536 * 10 + 1, 65536 * 10 + 2,
-                   65536 * 16 + 1, 65536 * 16 + 2, 65536 * 20 + 1,
-                   65536 * 21 + 1, -1};
+    int data1[] = {1,
+                   2,
+                   65536 * 2 + 1,
+                   65536 * 2 + 2,
+                   65536 * 3 + 1,
+                   65536 * 3 + 2,
+                   65536 * 10 + 1,
+                   65536 * 10 + 2,
+                   65536 * 16 + 1,
+                   65536 * 16 + 2,
+                   65536 * 20 + 1,
+                   65536 * 21 + 1,
+                   -1};
     roaring_bitmap_t *rb1 = roaring_from_sentinel_array(data1, copy_on_write);
-    int data2[] = {2, 3, 65536 * 10 + 2, 65536 * 10 + 3, 65536 * 12 + 2,
-                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
-                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    int data2[] = {2,
+                   3,
+                   65536 * 10 + 2,
+                   65536 * 10 + 3,
+                   65536 * 12 + 2,
+                   65536 * 12 + 3,
+                   65536 * 14 + 2,
+                   65536 * 14 + 3,
+                   65536 * 16 + 2,
+                   65536 * 16 + 3,
+                   -1};
     roaring_bitmap_t *rb2 = roaring_from_sentinel_array(data2, copy_on_write);
 
-    int data3[] = {2, 3, 65536 * 10 + 1, 65536 * 10 + 2, 65536 * 12 + 2,
-                   65536 * 12 + 3, 65536 * 14 + 2, 65536 * 14 + 3,
-                   65536 * 16 + 2, 65536 * 16 + 3, -1};
+    int data3[] = {2,
+                   3,
+                   65536 * 10 + 1,
+                   65536 * 10 + 2,
+                   65536 * 12 + 2,
+                   65536 * 12 + 3,
+                   65536 * 14 + 2,
+                   65536 * 14 + 3,
+                   65536 * 16 + 2,
+                   65536 * 16 + 3,
+                   -1};
     roaring_bitmap_t *rb3 = roaring_from_sentinel_array(data3, copy_on_write);
-    int d1_minus_d2[] = {1, 65536 * 2 + 1, 65536 * 2 + 2, 65536 * 3 + 1,
-                         65536 * 3 + 2, 65536 * 10 + 1, 65536 * 16 + 1,
-                         65536 * 20 + 1, 65536 * 21 + 1, -1};
+    int d1_minus_d2[] = {1,
+                         65536 * 2 + 1,
+                         65536 * 2 + 2,
+                         65536 * 3 + 1,
+                         65536 * 3 + 2,
+                         65536 * 10 + 1,
+                         65536 * 16 + 1,
+                         65536 * 20 + 1,
+                         65536 * 21 + 1,
+                         -1};
     roaring_bitmap_t *rb1_minus_rb2 =
         roaring_from_sentinel_array(d1_minus_d2, copy_on_write);
 
@@ -1370,8 +1440,14 @@ void test_andnot_inplace(bool copy_on_write) {
     roaring_bitmap_t *rb1_minus_rb3 =
         roaring_from_sentinel_array(d1_minus_d3, copy_on_write);
 
-    int d2_minus_d1[] = {3, 65536 * 10 + 3, 65536 * 12 + 2, 65536 * 12 + 3,
-                         65536 * 14 + 2, 65536 * 14 + 3, 65536 * 16 + 3, -1};
+    int d2_minus_d1[] = {3,
+                         65536 * 10 + 3,
+                         65536 * 12 + 2,
+                         65536 * 12 + 3,
+                         65536 * 14 + 2,
+                         65536 * 14 + 3,
+                         65536 * 16 + 3,
+                         -1};
 
     roaring_bitmap_t *rb2_minus_rb1 =
         roaring_from_sentinel_array(d2_minus_d1, copy_on_write);
@@ -1418,8 +1494,8 @@ void test_andnot_inplace(bool copy_on_write) {
     cpy = roaring_bitmap_copy(rb1);
     roaring_bitmap_andnot_inplace(cpy, large_run_bitmap);
 
-    int d1_minus_largerun[] = {1, 65536 * 16 + 1, 65536 * 16 + 2,
-                               65536 * 20 + 1, 65536 * 21 + 1, -1};
+    int d1_minus_largerun[] = {
+        1, 65536 * 16 + 1, 65536 * 16 + 2, 65536 * 20 + 1, 65536 * 21 + 1, -1};
     roaring_bitmap_t *rb1_minus_largerun =
         roaring_from_sentinel_array(d1_minus_largerun, copy_on_write);
     assert_true(roaring_bitmap_equals(rb1_minus_largerun, cpy));
@@ -2372,28 +2448,35 @@ void select_test() {
 
 int main() {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_stats), cmocka_unit_test(test_addremove),
-        cmocka_unit_test(test_addremoverun), cmocka_unit_test(test_basic_add),
+        cmocka_unit_test(test_stats),
+        cmocka_unit_test(test_addremove),
+        cmocka_unit_test(test_addremoverun),
+        cmocka_unit_test(test_basic_add),
         cmocka_unit_test(test_remove_withrun),
         cmocka_unit_test(test_remove_from_copies_true),
         cmocka_unit_test(test_remove_from_copies_false),
         cmocka_unit_test(test_range_and_serialize),
-        cmocka_unit_test(test_silly_range), cmocka_unit_test(test_example_true),
+        cmocka_unit_test(test_silly_range),
+        cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
-        cmocka_unit_test(test_bitmap_from_range), cmocka_unit_test(test_printf),
+        cmocka_unit_test(test_bitmap_from_range),
+        cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
-        cmocka_unit_test(test_printf_withrun), cmocka_unit_test(test_iterate),
+        cmocka_unit_test(test_printf_withrun),
+        cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterate_empty),
         cmocka_unit_test(test_iterate_withbitmap),
         cmocka_unit_test(test_iterate_withrun),
         cmocka_unit_test(test_serialize),
-        cmocka_unit_test(test_portable_serialize), cmocka_unit_test(test_add),
+        cmocka_unit_test(test_portable_serialize),
+        cmocka_unit_test(test_add),
         cmocka_unit_test(test_contains),
         cmocka_unit_test(test_intersection_array_x_array),
         cmocka_unit_test(test_intersection_array_x_array_inplace),
         cmocka_unit_test(test_intersection_bitset_x_bitset),
         cmocka_unit_test(test_intersection_bitset_x_bitset_inplace),
-        cmocka_unit_test(test_union_true), cmocka_unit_test(test_union_false),
+        cmocka_unit_test(test_union_true),
+        cmocka_unit_test(test_union_false),
         cmocka_unit_test(test_xor_false),
         cmocka_unit_test(test_xor_inplace_false),
         cmocka_unit_test(test_xor_lazy_false),
@@ -2420,7 +2503,8 @@ int main() {
         cmocka_unit_test(test_negation_bitset1),
         cmocka_unit_test(test_negation_bitset2),
         cmocka_unit_test(test_negation_run1),
-        cmocka_unit_test(test_negation_run2), cmocka_unit_test(test_rand_flips),
+        cmocka_unit_test(test_negation_run2),
+        cmocka_unit_test(test_rand_flips),
         cmocka_unit_test(test_inplace_negation_array0),
         cmocka_unit_test(test_inplace_negation_array1),
         cmocka_unit_test(test_inplace_negation_array2),

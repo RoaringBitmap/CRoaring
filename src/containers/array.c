@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <roaring/containers/array.h>
 
-
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
@@ -20,11 +19,13 @@ extern bool array_container_full(const array_container_t *array);
 array_container_t *array_container_create_given_capacity(int32_t size) {
     array_container_t *container;
 
-    if ((container = (array_container_t *) malloc(sizeof(array_container_t))) == NULL) {
+    if ((container = (array_container_t *)malloc(sizeof(array_container_t))) ==
+        NULL) {
         return NULL;
     }
 
-    if ((container->array = (uint16_t *) malloc(sizeof(uint16_t) * size)) == NULL) {
+    if ((container->array = (uint16_t *)malloc(sizeof(uint16_t) * size)) ==
+        NULL) {
         free(container);
         return NULL;
     }
@@ -48,7 +49,8 @@ array_container_t *array_container_clone(const array_container_t *src) {
 
     newcontainer->cardinality = src->cardinality;
 
-    memcpy(newcontainer->array, src->array, src->cardinality * sizeof(uint16_t));
+    memcpy(newcontainer->array, src->array,
+           src->cardinality * sizeof(uint16_t));
 
     return newcontainer;
 }
@@ -91,11 +93,12 @@ void array_container_grow(array_container_t *container, int32_t min,
     uint16_t *array = container->array;
 
     if (preserve) {
-        container->array = (uint16_t *) realloc(array, new_capacity * sizeof(uint16_t));
+        container->array =
+            (uint16_t *)realloc(array, new_capacity * sizeof(uint16_t));
         if (container->array == NULL) free(array);
     } else {
         free(array);
-        container->array = (uint16_t *) malloc(new_capacity * sizeof(uint16_t));
+        container->array = (uint16_t *)malloc(new_capacity * sizeof(uint16_t));
     }
 
     // TODO: handle the case where realloc fails
@@ -113,7 +116,6 @@ void array_container_copy(const array_container_t *src,
     dst->cardinality = cardinality;
     memcpy(dst->array, src->array, cardinality * sizeof(uint16_t));
 }
-
 
 void array_container_add_from_range(array_container_t *arr, uint32_t min,
                                     uint32_t max, uint16_t step) {
@@ -267,7 +269,9 @@ void array_container_xor(const array_container_t *array_1,
     out->cardinality = pos_out;
 }
 
-static inline int32_t minimum_int32(int32_t a, int32_t b) { return (a < b) ? a : b; }
+static inline int32_t minimum_int32(int32_t a, int32_t b) {
+    return (a < b) ? a : b;
+}
 
 /* computes the intersection of array1 and array2 and write the result to
  * arrayout.
@@ -437,7 +441,8 @@ void *array_container_deserialize(const char *buf, size_t buf_len) {
     else
         buf_len -= 2;
 
-    if ((ptr = (array_container_t *) malloc(sizeof(array_container_t))) != NULL) {
+    if ((ptr = (array_container_t *)malloc(sizeof(array_container_t))) !=
+        NULL) {
         size_t len;
         int32_t off;
         uint16_t cardinality;
@@ -452,7 +457,8 @@ void *array_container_deserialize(const char *buf, size_t buf_len) {
             return (NULL);
         }
 
-        if ((ptr->array = (uint16_t *) malloc(sizeof(uint16_t) * ptr->capacity)) == NULL) {
+        if ((ptr->array = (uint16_t *)malloc(sizeof(uint16_t) *
+                                             ptr->capacity)) == NULL) {
             free(ptr);
             return (NULL);
         }
@@ -476,6 +482,6 @@ void *array_container_deserialize(const char *buf, size_t buf_len) {
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr) {
     for (int i = 0; i < cont->cardinality; i++)
-        if(!iterator(cont->array[i] + base, ptr)) return false;
+        if (!iterator(cont->array[i] + base, ptr)) return false;
     return true;
 }

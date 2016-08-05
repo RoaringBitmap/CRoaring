@@ -181,22 +181,27 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value x is present
  */
-static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
+                                           uint32_t val) {
     const uint16_t hb = val >> 16;
     /*
      * here it is possible to bypass the binary search and the ra_get_index
      * call with the following call that might often come true
      */
     int i;
-    if((r->high_low_container->size > hb) && (r->high_low_container->keys[hb] == hb))
-    	i = hb;
+    if ((r->high_low_container->size > hb) &&
+        (r->high_low_container->keys[hb] == hb))
+        i = hb;  // we got lucky!
     else {
-    	i = ra_get_index(r->high_low_container, hb);
-    	if( i < 0 ) return false;
+        // next call involves a binary search (maybe expensive)
+        i = ra_get_index(r->high_low_container, hb);
+        if (i < 0) return false;
     }
     uint8_t typecode;
+    // next call ought to be cheap
     void *container =
-            ra_get_container_at_index(r->high_low_container, i, &typecode);
+        ra_get_container_at_index(r->high_low_container, i, &typecode);
+    // rest might be a tad expensive
     return container_contains(container, val & 0xFFFF, typecode);
 }
 
@@ -266,7 +271,8 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
  *  all the values with ptr (can be NULL) as the second parameter of each call.
  *
  *  roaring_iterator is simply a pointer to a function that returns bool
- *  (true means that the iteration should continue while false means that it should stop),
+ *  (true means that the iteration should continue while false means that it
+ * should stop),
  *  and takes (uint32_t,void*) as inputs.
  *
  *  Returns true if the roaring_iterator returned true throughout (so that
@@ -295,7 +301,7 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
  **/
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                          const roaring_bitmap_t *x2,
-										 const bool bitsetconversion);
+                                         const bool bitsetconversion);
 
 /**
  * (For expert users who seek high performance.)
@@ -305,7 +311,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
  */
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2,
-									const bool bitsetconversion);
+                                    const bool bitsetconversion);
 
 /**
  * (For expert users who seek high performance.)

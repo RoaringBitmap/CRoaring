@@ -7,7 +7,8 @@
  * Once you have collected all the integers, build the bitmaps.
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
-                                             uint32_t **numbers, size_t count, bool copy_on_write) {
+                                             uint32_t **numbers, size_t count,
+                                             bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -73,7 +74,8 @@ int main(int argc, char **argv) {
     uint64_t cycles_start = 0, cycles_final = 0;
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t **bitmaps = create_all_bitmaps(howmany, numbers, count, copy_on_write);
+    roaring_bitmap_t **bitmaps =
+        create_all_bitmaps(howmany, numbers, count, copy_on_write);
     RDTSC_FINAL(cycles_final);
     if (bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n", (int)count, dirname);

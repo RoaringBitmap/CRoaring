@@ -71,16 +71,14 @@ static inline int32_t ra_get_index(roaring_array_t *ra, uint16_t x) {
     return binarySearch(ra->keys, (int32_t)ra->size, x);
 }
 
-
 /**
  * Retrieves the container at index i, filling in the typecode
  */
 static inline void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
-                                uint8_t *typecode) {
+                                              uint8_t *typecode) {
     *typecode = ra->typecodes[i];
     return ra->containers[i];
 }
-
 
 /**
  * Retrieves the key at index i

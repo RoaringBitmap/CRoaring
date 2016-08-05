@@ -40,7 +40,8 @@ void bitset_container_set_all(bitset_container_t *bitset) {
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(void) {
-    bitset_container_t *bitset = (bitset_container_t *) calloc(1, sizeof(bitset_container_t));
+    bitset_container_t *bitset =
+        (bitset_container_t *)calloc(1, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;
@@ -100,7 +101,8 @@ void bitset_container_free(bitset_container_t *bitset) {
 
 /* duplicate container. */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
-    bitset_container_t *bitset = (bitset_container_t *) calloc(1, sizeof(bitset_container_t));
+    bitset_container_t *bitset =
+        (bitset_container_t *)calloc(1, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;
@@ -133,8 +135,9 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
 #endif
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
-    return avx2_harley_seal_popcount256((const __m256i*) bitset->array,
-    		BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
+    return avx2_harley_seal_popcount256(
+        (const __m256i *)bitset->array,
+        BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
 }
 #else
 
@@ -161,7 +164,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 #endif
 #define LOOP_SIZE                    \
     BITSET_CONTAINER_SIZE_IN_WORDS / \
-        ((WORDS_IN_AVX2_REG) * BITSET_CONTAINER_FN_REPEAT)
+        ((WORDS_IN_AVX2_REG)*BITSET_CONTAINER_FN_REPEAT)
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
    result to bitsetout */

@@ -23,10 +23,8 @@ void array_cache_flush(array_container_t* B) {
     }
 }
 #else
-// no cache flush on other architectures? 
-void array_cache_flush(array_container_t* B) {
-  (void) B;
-}
+// no cache flush on other architectures?
+void array_cache_flush(array_container_t* B) { (void)B; }
 #endif
 
 // tries to put the array in cache
@@ -34,7 +32,7 @@ void array_cache_prefetch(array_container_t* B) {
 #ifdef IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
-#else 
+#else
     const int32_t CACHELINESIZE = 64;
 #endif
     for (int32_t k = 0; k < B->cardinality;

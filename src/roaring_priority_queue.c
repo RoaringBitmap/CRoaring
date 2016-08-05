@@ -49,7 +49,7 @@ static void percolate_down(roaring_pq_t *pq, uint32_t i) {
         if (r < size) {
             if (compare(pq->elements + r, &bestc)) {
                 l = r;
-                bestc = pq->elements [r];
+                bestc = pq->elements[r];
             }
         }
         if (!compare(&bestc, &ai)) {
@@ -62,11 +62,12 @@ static void percolate_down(roaring_pq_t *pq, uint32_t i) {
 }
 
 static roaring_pq_t *create_pq(const roaring_bitmap_t **arr, uint32_t length) {
-    roaring_pq_t *answer = (roaring_pq_t *) malloc(sizeof(roaring_pq_t));
-    answer->elements = (roaring_pq_element_t *) malloc(sizeof(roaring_pq_element_t) * length);
+    roaring_pq_t *answer = (roaring_pq_t *)malloc(sizeof(roaring_pq_t));
+    answer->elements =
+        (roaring_pq_element_t *)malloc(sizeof(roaring_pq_element_t) * length);
     answer->size = length;
     for (uint32_t i = 0; i < length; i++) {
-        answer->elements[i].bitmap = (roaring_bitmap_t *) arr[i];
+        answer->elements[i].bitmap = (roaring_bitmap_t *)arr[i];
         answer->elements[i].is_temporary = false;
         answer->elements[i].size =
             roaring_bitmap_portable_size_in_bytes(arr[i]);
@@ -81,10 +82,10 @@ static roaring_pq_element_t pq_poll(roaring_pq_t *pq) {
     roaring_pq_element_t ans = *pq->elements;
     if (pq->size > 1) {
         pq->elements[0] = pq->elements[--pq->size];
-        percolate_down( pq, 0);
+        percolate_down(pq, 0);
     } else
         --pq->size;
-    //memmove(pq->elements,pq->elements+1,(pq->size-1)*sizeof(roaring_pq_element_t));--pq->size;
+    // memmove(pq->elements,pq->elements+1,(pq->size-1)*sizeof(roaring_pq_element_t));--pq->size;
     return ans;
 }
 
@@ -109,13 +110,14 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     uint16_t s2 = ra_get_key_at_index(x2->high_low_container, pos2);
     while (true) {
         if (s1 == s2) {
-            // todo: unsharing can be inefficient as it may create a clone where none
+            // todo: unsharing can be inefficient as it may create a clone where
+            // none
             // is needed, but it has the benefit of being easy to reason about.
-            ra_unshare_container_at_index(x1->high_low_container,pos1);
+            ra_unshare_container_at_index(x1->high_low_container, pos1);
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
             assert(container_type_1 != SHARED_CONTAINER_TYPE_CODE);
-            ra_unshare_container_at_index(x2->high_low_container,pos2);
+            ra_unshare_container_at_index(x2->high_low_container, pos2);
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             assert(container_type_2 != SHARED_CONTAINER_TYPE_CODE);
@@ -126,17 +128,17 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                 c = container_lazy_ior(c2, container_type_2, c1,
                                        container_type_1,
                                        &container_result_type);
-               container_free(c1, container_type_1);
-                if( c != c2) {
-                   container_free(c2, container_type_2);
+                container_free(c1, container_type_1);
+                if (c != c2) {
+                    container_free(c2, container_type_2);
                 }
             } else {
                 c = container_lazy_ior(c1, container_type_1, c2,
                                        container_type_2,
                                        &container_result_type);
                 container_free(c2, container_type_2);
-                if( c != c1 ) {
-                   container_free(c1,container_type_1);
+                if (c != c1) {
+                    container_free(c1, container_type_1);
                 }
             }
             // since we assume that the initial containers are non-empty, the
@@ -181,7 +183,6 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     return answer;
 }
 
-
 /**
  * Compute the union of 'number' bitmaps using a heap. This can
  * sometimes be faster than roaring_bitmap_or_many which uses
@@ -189,48 +190,47 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
  * result.
  */
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
-		const roaring_bitmap_t **x) {
-	if (number == 0) {
-		return roaring_bitmap_create();
-	}
-	if (number == 1) {
-		return roaring_bitmap_copy(x[0]);
-	}
-	roaring_pq_t *pq = create_pq(x, number);
-	while (pq->size > 1) {
-		roaring_pq_element_t x1 = pq_poll(pq);
-		roaring_pq_element_t x2 = pq_poll(pq);
+                                              const roaring_bitmap_t **x) {
+    if (number == 0) {
+        return roaring_bitmap_create();
+    }
+    if (number == 1) {
+        return roaring_bitmap_copy(x[0]);
+    }
+    roaring_pq_t *pq = create_pq(x, number);
+    while (pq->size > 1) {
+        roaring_pq_element_t x1 = pq_poll(pq);
+        roaring_pq_element_t x2 = pq_poll(pq);
 
-		if (x1.is_temporary && x2.is_temporary) {
-                        roaring_bitmap_t *newb =lazy_or_from_lazy_inputs(x1.bitmap,
-					x2.bitmap);
-			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
-			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =
-					true, .bitmap = newb };
-			pq_add(pq, &newelement);
-		} else if (x2.is_temporary) {
-                        roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap, false);
-			x2.size = roaring_bitmap_portable_size_in_bytes(x2.bitmap);
-			pq_add(pq, &x2);
-		} else if (x1.is_temporary) {
-			roaring_bitmap_lazy_or_inplace(x1.bitmap, x2.bitmap, false);
-			x1.size = roaring_bitmap_portable_size_in_bytes(x1.bitmap);
+        if (x1.is_temporary && x2.is_temporary) {
+            roaring_bitmap_t *newb =
+                lazy_or_from_lazy_inputs(x1.bitmap, x2.bitmap);
+            uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
+            roaring_pq_element_t newelement = {
+                .size = bsize, .is_temporary = true, .bitmap = newb};
+            pq_add(pq, &newelement);
+        } else if (x2.is_temporary) {
+            roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap, false);
+            x2.size = roaring_bitmap_portable_size_in_bytes(x2.bitmap);
+            pq_add(pq, &x2);
+        } else if (x1.is_temporary) {
+            roaring_bitmap_lazy_or_inplace(x1.bitmap, x2.bitmap, false);
+            x1.size = roaring_bitmap_portable_size_in_bytes(x1.bitmap);
 
-			pq_add(pq, &x1);
-		} else {
-		  roaring_bitmap_t *newb = roaring_bitmap_lazy_or(x1.bitmap,
-					x2.bitmap, false);
-			uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
-			roaring_pq_element_t newelement = { .size = bsize, .is_temporary =
-					true, .bitmap = newb };
+            pq_add(pq, &x1);
+        } else {
+            roaring_bitmap_t *newb =
+                roaring_bitmap_lazy_or(x1.bitmap, x2.bitmap, false);
+            uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
+            roaring_pq_element_t newelement = {
+                .size = bsize, .is_temporary = true, .bitmap = newb};
 
-			pq_add(pq, &newelement);
-		}
-
-	}
-	roaring_pq_element_t X = pq_poll(pq);
-	roaring_bitmap_t *answer = X.bitmap;
-	roaring_bitmap_repair_after_lazy(answer);
-	pq_free(pq);
-	return answer;
+            pq_add(pq, &newelement);
+        }
+    }
+    roaring_pq_element_t X = pq_poll(pq);
+    roaring_bitmap_t *answer = X.bitmap;
+    roaring_bitmap_repair_after_lazy(answer);
+    pq_free(pq);
+    return answer;
 }

@@ -136,8 +136,7 @@ void *convert_run_to_efficient_container(run_container_t *c,
         size_as_bitset_container < size_as_array_container
             ? size_as_bitset_container
             : size_as_array_container;
-    if (size_as_run_container <=
-        min_size_non_run) {  // no conversion
+    if (size_as_run_container <= min_size_non_run) {  // no conversion
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         return c;
     }
@@ -188,7 +187,8 @@ void *convert_run_to_efficient_container_and_free(run_container_t *c,
 void *convert_run_optimize(void *c, uint8_t typecode_original,
                            uint8_t *typecode_after) {
     if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
-        void *newc = convert_run_to_efficient_container((run_container_t *)c, typecode_after);
+        void *newc = convert_run_to_efficient_container((run_container_t *)c,
+                                                        typecode_after);
         if (newc != c) {
             container_free(c, typecode_original);
         }
@@ -203,8 +203,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int32_t size_as_array_container =
             array_container_serialized_size_in_bytes(card);
 
-        if (size_as_run_container >=
-            size_as_array_container) {
+        if (size_as_run_container >= size_as_array_container) {
             *typecode_after = ARRAY_CONTAINER_TYPE_CODE;
             return c;
         }
@@ -239,8 +238,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int32_t size_as_bitset_container =
             bitset_container_serialized_size_in_bytes();
 
-        if (size_as_bitset_container <=
-            size_as_run_container) {
+        if (size_as_bitset_container <= size_as_run_container) {
             // no conversion needed.
             *typecode_after = BITSET_CONTAINER_TYPE_CODE;
             return c;

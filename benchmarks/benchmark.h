@@ -36,16 +36,15 @@
 */
 #include <time.h>
 
-#define RDTSC_START(cycles)                \
-    do {                                   \
-       cycles = clock();                   \
-     } while(0)
+#define RDTSC_START(cycles) \
+    do {                    \
+        cycles = clock();   \
+    } while (0)
 
-#define RDTSC_FINAL(cycles)                \
-    do {                                   \
-       cycles = clock();                   \
-     } while(0)
-
+#define RDTSC_FINAL(cycles) \
+    do {                    \
+        cycles = clock();   \
+    } while (0)
 
 #endif
 

@@ -134,7 +134,7 @@ static bool min_max_sum_fnc(uint32_t value, void *param) {
     if (value > mms->max) mms->max = value;
     if (value < mms->min) mms->min = value;
     mms->sum += value;
-    return true; // we always process all data points
+    return true;  // we always process all data points
 }
 
 /**
@@ -324,7 +324,8 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
     if (number == 1) {
         return roaring_bitmap_copy(x[0]);
     }
-    roaring_bitmap_t *answer = roaring_bitmap_lazy_or(x[0], x[1], LAZY_OR_BITSET_CONVERSION);
+    roaring_bitmap_t *answer =
+        roaring_bitmap_lazy_or(x[0], x[1], LAZY_OR_BITSET_CONVERSION);
     for (size_t i = 2; i < number; i++) {
         roaring_bitmap_lazy_or_inplace(answer, x[i], LAZY_OR_BITSET_CONVERSION);
     }
@@ -928,18 +929,19 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
             RUN_CONTAINER_TYPE_CODE) {
             answer = true;
             if (typecode_original == SHARED_CONTAINER_TYPE_CODE) {
-                run_container_t *truec = (run_container_t *) ((shared_container_t *)c)->container;
+                run_container_t *truec =
+                    (run_container_t *)((shared_container_t *)c)->container;
                 int32_t card = run_container_cardinality(truec);
                 void *c1 = convert_to_bitset_or_array_container(
                     truec, card, &typecode_after);
-                shared_container_free((shared_container_t *) c);
+                shared_container_free((shared_container_t *)c);
                 ra_set_container_at_index(r->high_low_container, i, c1,
                                           typecode_after);
 
             } else {
-                int32_t card = run_container_cardinality((run_container_t *) c);
+                int32_t card = run_container_cardinality((run_container_t *)c);
                 void *c1 = convert_to_bitset_or_array_container(
-                		(run_container_t *) c, card, &typecode_after);
+                    (run_container_t *)c, card, &typecode_after);
                 ra_set_container_at_index(r->high_low_container, i, c1,
                                           typecode_after);
             }
@@ -1039,11 +1041,12 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf,
 bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr) {
     for (int i = 0; i < ra->high_low_container->size; ++i)
-        if(! container_iterate(ra->high_low_container->containers[i],
-                          ra->high_low_container->typecodes[i],
-                          ((uint32_t)ra->high_low_container->keys[i]) << 16,
-                          iterator, ptr)) {
-        	return false;
+        if (!container_iterate(
+                ra->high_low_container->containers[i],
+                ra->high_low_container->typecodes[i],
+                ((uint32_t)ra->high_low_container->keys[i]) << 16, iterator,
+                ptr)) {
+            return false;
         }
     return true;
 }
@@ -1265,7 +1268,7 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
 
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                          const roaring_bitmap_t *x2,
-										 const bool bitsetconversion) {
+                                         const bool bitsetconversion) {
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container->size,
               length2 = x2->high_low_container->size;
@@ -1289,22 +1292,23 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             void *c2 = ra_get_container_at_index(x2->high_low_container, pos2,
                                                  &container_type_2);
             void *c;
-            if(bitsetconversion &&
-            		(get_container_type(c1, container_type_1) != BITSET_CONTAINER_TYPE_CODE) &&
-            		(get_container_type(c2, container_type_2) != BITSET_CONTAINER_TYPE_CODE)) {
-                void * newc1 = (void *) container_unwrap_shared(c1,&container_type_1);
-                newc1 = container_to_bitset(newc1,container_type_1);
+            if (bitsetconversion && (get_container_type(c1, container_type_1) !=
+                                     BITSET_CONTAINER_TYPE_CODE) &&
+                (get_container_type(c2, container_type_2) !=
+                 BITSET_CONTAINER_TYPE_CODE)) {
+                void *newc1 =
+                    (void *)container_unwrap_shared(c1, &container_type_1);
+                newc1 = container_to_bitset(newc1, container_type_1);
                 container_type_1 = BITSET_CONTAINER_TYPE_CODE;
-                c =
-                    container_lazy_ior(newc1, container_type_1, c2, container_type_2,
-                                      &container_result_type);
-                if(c != newc1) {// should not happen
-                	container_free(newc1, container_type_1);
+                c = container_lazy_ior(newc1, container_type_1, c2,
+                                       container_type_2,
+                                       &container_result_type);
+                if (c != newc1) {  // should not happen
+                    container_free(newc1, container_type_1);
                 }
             } else {
-                c =
-                    container_lazy_or(c1, container_type_1, c2, container_type_2,
-                                      &container_result_type);
+                c = container_lazy_or(c1, container_type_1, c2,
+                                      container_type_2, &container_result_type);
             }
             // since we assume that the initial containers are non-empty,
             // the
@@ -1359,7 +1363,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2,
-									const bool bitsetconversion) {
+                                    const bool bitsetconversion) {
     uint8_t container_result_type = 0;
     int length1 = x1->high_low_container->size;
     const int length2 = x2->high_low_container->size;
@@ -1378,17 +1382,17 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(x1->high_low_container, pos1,
                                                  &container_type_1);
-            if((bitsetconversion == false) ||
-            		(get_container_type(c1, container_type_1) == BITSET_CONTAINER_TYPE_CODE))
-            {
+            if ((bitsetconversion == false) ||
+                (get_container_type(c1, container_type_1) ==
+                 BITSET_CONTAINER_TYPE_CODE)) {
                 c1 = get_writable_copy_if_shared(c1, &container_type_1);
             } else {
                 // convert to bitset
-            	void * oldc1 = c1;
-            	uint8_t oldt1 = container_type_1;
-                c1 = (void *) container_unwrap_shared(c1,&container_type_1);
-                c1 = container_to_bitset(c1,container_type_1);
-                container_free(oldc1,oldt1);
+                void *oldc1 = c1;
+                uint8_t oldt1 = container_type_1;
+                c1 = (void *)container_unwrap_shared(c1, &container_type_1);
+                c1 = container_to_bitset(c1, container_type_1);
+                container_free(oldc1, oldt1);
                 container_type_1 = BITSET_CONTAINER_TYPE_CODE;
             }
 

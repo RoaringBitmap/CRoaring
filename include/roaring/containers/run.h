@@ -15,7 +15,6 @@
 #include <roaring/roaring_types.h>
 #include <roaring/containers/perfparameters.h>
 
-
 /* struct rle16_s - run length pair
  *
  * @value:  start position of the run
@@ -29,9 +28,7 @@ struct rle16_s {
     uint16_t length;
 };
 
-
 typedef struct rle16_s rle16_t;
-
 
 /* struct run_container_s - run container bitmap
  *
@@ -80,8 +77,8 @@ static void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 /**
  * Good old binary search through rle data
  */
-static inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
-                                       uint16_t ikey) {
+static inline int32_t interleavedBinarySearch(const rle16_t *array,
+                                              int32_t lenarray, uint16_t ikey) {
     int32_t low = 0;
     int32_t high = lenarray - 1;
     while (low <= high) {
@@ -97,7 +94,6 @@ static inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lena
     }
     return -(low + 1);
 }
-
 
 /**
  * increase capacity to at least min. Whether the
@@ -121,7 +117,7 @@ static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
 }
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
-bool run_container_add(run_container_t *run, uint16_t pos) ;
+bool run_container_add(run_container_t *run, uint16_t pos);
 
 /* Remove `pos' from `run'. Returns true if `pos' was present. */
 static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
@@ -161,7 +157,8 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
 }
 
 /* Check whether `pos' is present in `run'.  */
-static inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
+static inline bool run_container_contains(const run_container_t *run,
+                                          uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
     if (index >= 0) return true;
     index = -index - 2;  // points to preceding value, possibly -1
@@ -267,7 +264,6 @@ static inline rle16_t run_container_append_value_first(run_container_t *run,
     run->n_runs++;
     return newrle;
 }
-
 
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */

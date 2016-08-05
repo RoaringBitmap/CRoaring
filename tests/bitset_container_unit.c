@@ -192,7 +192,7 @@ void to_uint32_array_test() {
 
         int card = bitset_container_cardinality(B);
 
-        uint32_t* out = malloc(sizeof(uint32_t) * card );
+        uint32_t* out = malloc(sizeof(uint32_t) * card);
         assert_non_null(out);
 
         int nc = bitset_container_to_uint32_array(out, B, 0);
@@ -212,21 +212,21 @@ void select_test() {
     bitset_container_t* B = bitset_container_create();
     assert_non_null(B);
     uint16_t base = 27;
-    for(uint16_t value = base; value < base+200 ; value += 5) {
+    for (uint16_t value = base; value < base + 200; value += 5) {
         bitset_container_add(B, value);
     }
     uint32_t i = 0;
-    uint32_t element=0;
+    uint32_t element = 0;
     uint32_t start_rank;
-    for(uint16_t value = base; value < base+200 ; value += 5) {
+    for (uint16_t value = base; value < base + 200; value += 5) {
         start_rank = 12;
-        assert_true(bitset_container_select(B, &start_rank, i+12, &element));
+        assert_true(bitset_container_select(B, &start_rank, i + 12, &element));
         assert_int_equal(element, value);
         i++;
     }
     start_rank = 12;
-    assert_false(bitset_container_select(B, &start_rank, i+12, &element));
-    assert_int_equal(start_rank, i+12);
+    assert_false(bitset_container_select(B, &start_rank, i + 12, &element));
+    assert_int_equal(start_rank, i + 12);
     bitset_container_free(B);
 }
 

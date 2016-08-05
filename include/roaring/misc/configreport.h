@@ -126,8 +126,9 @@ static inline void tellmeall() {
 #endif
 
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
-        printf("number of bytes: int = %lu long = %lu \n", (long unsigned int) sizeof(size_t),
-               (long unsigned int) sizeof(int));
+        printf("number of bytes: int = %lu long = %lu \n",
+               (long unsigned int)sizeof(size_t),
+               (long unsigned int)sizeof(int));
     }
 #if __LITTLE_ENDIAN__
 // This is what we expect!
@@ -153,8 +154,9 @@ static inline void tellmeall() {
     printf(" compiler version: %s\t", __VERSION__);
 #endif
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
-        printf("number of bytes: int = %lu long = %lu \n", (long unsigned int) sizeof(size_t),
-               (long unsigned int) sizeof(int));
+        printf("number of bytes: int = %lu long = %lu \n",
+               (long unsigned int)sizeof(size_t),
+               (long unsigned int)sizeof(int));
     }
 #if __LITTLE_ENDIAN__
 // This is what we expect!

@@ -177,7 +177,6 @@ bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     return answer;
 }
 
-
 bool is_andnot_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_andnot(bitmap1, bitmap2);
     roaring_bitmap_t *expected = synthesized_andnot(bitmap1, bitmap2);

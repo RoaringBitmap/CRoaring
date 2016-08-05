@@ -39,7 +39,7 @@ void run_bitset_container_union(const run_container_t *src_1,
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
-        bitset_set_lenrange(dst->array, rle.value,rle.length);
+        bitset_set_lenrange(dst->array, rle.value, rle.length);
     }
     dst->cardinality = bitset_container_compute_cardinality(dst);
 }
@@ -51,7 +51,7 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
-        bitset_set_lenrange(dst->array, rle.value,rle.length);
+        bitset_set_lenrange(dst->array, rle.value, rle.length);
     }
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
@@ -158,13 +158,14 @@ bool array_array_container_union(const array_container_t *src_1,
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        if (*dst != NULL) array_container_union(src_1, src_2, (array_container_t *) *dst);
+        if (*dst != NULL)
+            array_container_union(src_1, src_2, (array_container_t *)*dst);
         return false;  // not a bitset
     }
     *dst = bitset_container_create();
     bool returnval = true;  // expect a bitset
     if (*dst != NULL) {
-        bitset_container_t *ourbitset = (bitset_container_t *) *dst;
+        bitset_container_t *ourbitset = (bitset_container_t *)*dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
         ourbitset->cardinality =
             bitset_set_list_withcard(ourbitset->array, src_1->cardinality,
@@ -185,7 +186,8 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        if (*dst != NULL) array_container_union(src_1, src_2, (array_container_t *) *dst);
+        if (*dst != NULL)
+            array_container_union(src_1, src_2, (array_container_t *)*dst);
         return false;  // not a bitset
     }
     *dst = bitset_container_create();

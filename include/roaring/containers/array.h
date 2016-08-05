@@ -54,8 +54,6 @@ uint32_t array_container_serialization_len(array_container_t *container);
 
 void *array_container_deserialize(const char *buf, size_t buf_len);
 
-
-
 /* Get the cardinality of `array'. */
 static inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;
@@ -236,7 +234,8 @@ void array_container_andnot(const array_container_t *array_1,
                             const array_container_t *array_2,
                             array_container_t *out);
 
-/* Append x to the set. Assumes that the value is larger than any preceding values.  */
+/* Append x to the set. Assumes that the value is larger than any preceding
+ * values.  */
 static void array_container_append(array_container_t *arr, uint16_t pos) {
     const int32_t capacity = arr->capacity;
 
@@ -246,7 +245,6 @@ static void array_container_append(array_container_t *arr, uint16_t pos) {
 
     arr->array[arr->cardinality++] = pos;
 }
-
 
 /* Add x to the set. Returns true if x was not already present.  */
 static inline bool array_container_add(array_container_t *arr, uint16_t pos) {
@@ -276,7 +274,8 @@ static inline bool array_container_add(array_container_t *arr, uint16_t pos) {
 }
 
 /* Remove x from the set. Returns true if x was present.  */
-static inline bool array_container_remove(array_container_t *arr, uint16_t pos) {
+static inline bool array_container_remove(array_container_t *arr,
+                                          uint16_t pos) {
     const int32_t idx = binarySearch(arr->array, arr->cardinality, pos);
     const bool is_present = idx >= 0;
     if (is_present) {
@@ -289,10 +288,9 @@ static inline bool array_container_remove(array_container_t *arr, uint16_t pos) 
 }
 
 /* Check whether x is present.  */
-static inline bool array_container_contains(const array_container_t *arr, uint16_t pos) {
+static inline bool array_container_contains(const array_container_t *arr,
+                                            uint16_t pos) {
     return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }
-
-
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

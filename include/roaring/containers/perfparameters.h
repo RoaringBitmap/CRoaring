@@ -21,5 +21,4 @@ enum { ARRAY_DEFAULT_INIT_SIZE = 16 };
 #define LAZY_OR_BITSET_CONVERSION true
 #endif
 
-
 #endif

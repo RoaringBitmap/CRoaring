@@ -724,7 +724,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
     return outpos;
 }
 
-#if defined(ASMBITMANIPOPTIMIZATION) 
+#if defined(ASMBITMANIPOPTIMIZATION)
 
 uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
@@ -883,4 +883,3 @@ void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length) {
         list++;
     }
 }
-

@@ -24,9 +24,7 @@ void run_cache_flush(run_container_t* B) {
     }
 }
 #else
-void run_cache_flush(run_container_t* B) {
-  (void) B;
-}
+void run_cache_flush(run_container_t* B) { (void)B; }
 #endif
 
 // tries to put array in cache
@@ -34,7 +32,7 @@ void run_cache_prefetch(run_container_t* B) {
 #ifdef IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
-#else 
+#else
     const int32_t CACHELINESIZE = 64;
 #endif
     for (int32_t k = 0; k < B->n_runs * 2;

@@ -1998,8 +1998,10 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_xor_andnot_test),
         cmocka_unit_test(array_bitset_run_lazy_xor_test),
-        cmocka_unit_test(run_xor_test), cmocka_unit_test(run_ixor_test),
-        cmocka_unit_test(run_andnot_test), cmocka_unit_test(run_iandnot_test),
+        cmocka_unit_test(run_xor_test),
+        cmocka_unit_test(run_ixor_test),
+        cmocka_unit_test(run_andnot_test),
+        cmocka_unit_test(run_iandnot_test),
         cmocka_unit_test(run_array_andnot_bug_test),
         cmocka_unit_test(array_bitset_ixor_test),
         cmocka_unit_test(array_bitset_iandnot_test),

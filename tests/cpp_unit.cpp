@@ -11,14 +11,12 @@
 #include <roaring/roaring.h>
 #include "roaring.hh"
 
-
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
-    return true; // we always process all values
+    return true;  // we always process all values
 }
 
 void test_example(bool copy_on_write) {
-
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     r1->copy_on_write = copy_on_write;
@@ -52,7 +50,6 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_printf(r2);
     printf("\n");
 
-
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
@@ -61,7 +58,7 @@ void test_example(bool copy_on_write) {
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
     uint32_t *arr1 = new uint32_t[card1];
-    assert(arr1  != NULL);
+    assert(arr1 != NULL);
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
@@ -101,7 +98,7 @@ void test_example(bool copy_on_write) {
 
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
-    char *serializedbytes = (char *) malloc(expectedsize);
+    char *serializedbytes = (char *)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
     assert(roaring_bitmap_equals(r1, t));
@@ -146,8 +143,7 @@ void test_example_cpp(bool copy_on_write) {
     uint32_t compact_size = r1.getSizeInBytes();
 
     std::cout << "size before run optimize " << size << " bytes, and after "
-    		<<  compact_size << " bytes." << std::endl;
-
+              << compact_size << " bytes." << std::endl;
 
     // create a new bitmap with varargs
     Roaring r2 = Roaring::bitmapOf(5, 1, 2, 3, 5, 6);
@@ -163,7 +159,7 @@ void test_example_cpp(bool copy_on_write) {
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = r1.cardinality();
     uint32_t *arr1 = new uint32_t[card1];
-    assert(arr1  != NULL);
+    assert(arr1 != NULL);
     r1.toUint32Array(arr1);
     Roaring r1f = Roaring::fromUint32Array(card1, arr1);
     delete[] arr1;
@@ -172,7 +168,7 @@ void test_example_cpp(bool copy_on_write) {
     assert(r1 == r1f);
 
     // we can copy and compare bitmaps
-    Roaring z (r3);
+    Roaring z(r3);
     z.setCopyOnWrite(copy_on_write);
     assert(r3 == z);
 
@@ -192,7 +188,7 @@ void test_example_cpp(bool copy_on_write) {
     // we can write a bitmap to a pointer and recover it later
 
     uint32_t expectedsize = r1.getSizeInBytes();
-    char *serializedbytes = new char [expectedsize];
+    char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
     Roaring t = Roaring::read(serializedbytes);
     assert(r1 == t);
@@ -207,16 +203,13 @@ void test_example_cpp(bool copy_on_write) {
      *  }
      *
      */
-
 }
 
-
-
 int main() {
-  test_example(true);
-  test_example(false);
-  test_example_cpp(true);
-  test_example_cpp(false);
+    test_example(true);
+    test_example(false);
+    test_example_cpp(true);
+    test_example_cpp(false);
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

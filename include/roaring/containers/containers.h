@@ -20,7 +20,8 @@
 
 /**
  * The switch case statements follow
- * BITSET_CONTAINER_TYPE_CODE -- ARRAY_CONTAINER_TYPE_CODE -- RUN_CONTAINER_TYPE_CODE
+ * BITSET_CONTAINER_TYPE_CODE -- ARRAY_CONTAINER_TYPE_CODE --
+ * RUN_CONTAINER_TYPE_CODE
  * so it makes more sense to number them 1, 2, 3 (in the vague hope that the
  * compiler might exploit this ordering).
  */
@@ -115,21 +116,21 @@ static const char *container_names[] = {"bitset", "array", "run", "shared"};
 static const char *shared_container_names[] = {
     "bitset (shared)", "array (shared)", "run (shared)"};
 
-
 // no matter what the initial container was, convert it to a bitset
-// if a new container is produced, caller responsible for freeing the previous one
+// if a new container is produced, caller responsible for freeing the previous
+// one
 // container should not be a shared container
-static inline void *container_to_bitset(void *container,
-                                                uint8_t typecode) {
+static inline void *container_to_bitset(void *container, uint8_t typecode) {
     bitset_container_t *result = NULL;
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return container;// nothing to do
+            return container;  // nothing to do
         case ARRAY_CONTAINER_TYPE_CODE:
-            result = bitset_container_from_array((array_container_t*)container);
+            result =
+                bitset_container_from_array((array_container_t *)container);
             return result;
         case RUN_CONTAINER_TYPE_CODE:
-            result = bitset_container_from_run((run_container_t*)container);
+            result = bitset_container_from_run((run_container_t *)container);
             return result;
         case SHARED_CONTAINER_TYPE_CODE:
             assert(false);
@@ -138,7 +139,6 @@ static inline void *container_to_bitset(void *container,
     __builtin_unreachable();
     return 0;  // unreached
 }
-
 
 /**
  * Get the container name from the typecode
@@ -1676,14 +1676,14 @@ static inline bool container_iterate(const void *container, uint8_t typecode,
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return bitset_container_iterate((const bitset_container_t *)container,
-                                     base, iterator, ptr);
+            return bitset_container_iterate(
+                (const bitset_container_t *)container, base, iterator, ptr);
         case ARRAY_CONTAINER_TYPE_CODE:
-            return array_container_iterate((const array_container_t *)container, base,
-                                    iterator, ptr);
+            return array_container_iterate((const array_container_t *)container,
+                                           base, iterator, ptr);
         case RUN_CONTAINER_TYPE_CODE:
-            return run_container_iterate((const run_container_t *)container, base,
-                                  iterator, ptr);
+            return run_container_iterate((const run_container_t *)container,
+                                         base, iterator, ptr);
         default:
             assert(false);
             __builtin_unreachable();

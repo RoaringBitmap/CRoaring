@@ -23,9 +23,7 @@ void bitset_cache_flush(bitset_container_t* B) {
     }
 }
 #else
-void bitset_cache_flush(bitset_container_t* B) {
-  (void) B;
-}
+void bitset_cache_flush(bitset_container_t* B) { (void)B; }
 
 #endif
 
@@ -112,8 +110,7 @@ int main() {
         printf("\n number of values in container = %d\n",
                bitset_container_cardinality(Bt));
         int card = bitset_container_cardinality(Bt);
-        uint32_t* out =
-            malloc(sizeof(uint32_t) * (unsigned)card + 32);
+        uint32_t* out = malloc(sizeof(uint32_t) * (unsigned)card + 32);
         BEST_TIME(bitset_container_to_uint32_array(out, Bt, 1234), card, repeat,
                   card);
         free(out);

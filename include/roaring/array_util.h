@@ -7,7 +7,8 @@
 /*
  *  good old binary search
  */
-static inline int32_t binarySearch(const uint16_t *array, int32_t lenarray, uint16_t ikey) {
+static inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
+                                   uint16_t ikey) {
     int32_t low = 0;
     int32_t high = lenarray - 1;
     while (low <= high) {
@@ -27,8 +28,8 @@ static inline int32_t binarySearch(const uint16_t *array, int32_t lenarray, uint
 /**
  * Galloping search
  */
-static inline int32_t advanceUntil(const uint16_t *array, int32_t pos, int32_t length,
-                     uint16_t min) {
+static inline int32_t advanceUntil(const uint16_t *array, int32_t pos,
+                                   int32_t length, uint16_t min) {
     int32_t lower = pos + 1;
 
     if ((lower >= length) || (array[lower] >= min)) {
@@ -71,7 +72,6 @@ static inline int32_t advanceUntil(const uint16_t *array, int32_t pos, int32_t l
     }
     return upper;
 }
-
 
 /**
  * From Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
