@@ -142,6 +142,8 @@ echo "Giving final instructions:"
 CBIN=${DEMOC%%.*}
 CPPBIN=${DEMOCPP%%.*}
 
+echo 
+echo "The interface is found in the file 'include/roaring/roaring.h'."
 echo
 echo "Try :"
 echo "cc -march=native -O3 -std=c11  -o ${CBIN} ${DEMOC}  && ./${CBIN} "

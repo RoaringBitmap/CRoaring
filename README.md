@@ -58,6 +58,10 @@ It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``alm
 
 The script will also generate C++ files for C++ users, including an example.
 
+# API
+
+The interface is found in the file ``include/roaring/roaring.h``.
+
 # Example (C)
 
 ```c
