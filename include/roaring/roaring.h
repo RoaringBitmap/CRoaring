@@ -181,7 +181,7 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value x is present
  */
-static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
+inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
                                            uint32_t val) {
     const uint16_t hb = val >> 16;
     /*

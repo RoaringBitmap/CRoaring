@@ -288,7 +288,7 @@ static inline bool array_container_remove(array_container_t *arr,
 }
 
 /* Check whether x is present.  */
-static inline bool array_container_contains(const array_container_t *arr,
+inline bool array_container_contains(const array_container_t *arr,
                                             uint16_t pos) {
     return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }

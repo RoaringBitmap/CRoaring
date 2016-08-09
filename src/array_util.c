@@ -8,6 +8,8 @@
 #include <roaring/array_util.h>
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
+extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
+                                    uint16_t ikey);
 
 #ifdef IS_X64
 
@@ -996,14 +998,14 @@ static uint8_t uniqshuf[] = {
 
 // write vector new, while omitting repeated values assuming that previously
 // written vector was "old"
-static inline int store_unique(__m128i old, __m128i new, uint16_t *output) {
-    __m128i vecTmp = _mm_alignr_epi8(new, old, 16 - 2);
+static inline int store_unique(__m128i old, __m128i newval, uint16_t *output) {
+    __m128i vecTmp = _mm_alignr_epi8(newval, old, 16 - 2);
     // lots of high latency instructions follow (optimize?)
-    int M = _mm_movemask_epi8(_mm_cmpeq_epi16(vecTmp, new));
+    int M = _mm_movemask_epi8(_mm_cmpeq_epi16(vecTmp, newval));
     M = _pext_u32(M, 0x5555);
     int numberofnewvalues = 8 - _mm_popcnt_u32(M);
     __m128i key = _mm_lddqu_si128((const __m128i *)uniqshuf + M);
-    __m128i val = _mm_shuffle_epi8(new, key);
+    __m128i val = _mm_shuffle_epi8(newval, key);
     _mm_storeu_si128((__m128i *)output, val);
     return numberofnewvalues;
 }

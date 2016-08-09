@@ -382,8 +382,8 @@ inline static uint64_t avx2_harley_seal_popcount256(const __m256i *data,
                (uint64_t)(_mm256_extract_epi64(total, 3));                     \
     }                                                                          \
     static inline uint64_t avx2_harley_seal_popcount256andstore_##opname(      \
-        const __m256i *restrict data1, const __m256i *restrict data2,          \
-        __m256i *restrict out, const uint64_t size) {                          \
+        const __m256i *__restrict__ data1, const __m256i *__restrict__ data2,          \
+        __m256i *__restrict__ out, const uint64_t size) {                          \
         __m256i total = _mm256_setzero_si256();                                \
         __m256i ones = _mm256_setzero_si256();                                 \
         __m256i twos = _mm256_setzero_si256();                                 \

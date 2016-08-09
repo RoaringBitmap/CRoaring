@@ -12,6 +12,10 @@
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
 
+#if defined(_MSC_VER)
+#define __restrict__ __restrict
+#endif
+
 // unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
 #if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && \
     (defined(__BMI2__))

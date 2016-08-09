@@ -1,6 +1,9 @@
 
 #include <roaring/containers/containers.h>
 
+extern  inline const void *container_unwrap_shared(
+       const void *candidate_shared_container, uint8_t *type);
+
 extern const char *get_container_name(uint8_t typecode);
 
 extern int container_get_cardinality(const void *container, uint8_t typecode);
@@ -16,6 +19,26 @@ extern void *container_ixor(void *c1, uint8_t type1, const void *c2,
 
 extern void *container_iandnot(void *c1, uint8_t type1, const void *c2,
                                uint8_t type2, uint8_t *result_type);
+
+void container_free(void *container, uint8_t typecode) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            bitset_container_free((bitset_container_t *)container);
+            break;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            array_container_free((array_container_t *)container);
+            break;
+        case RUN_CONTAINER_TYPE_CODE:
+            run_container_free((run_container_t *)container);
+            break;
+        case SHARED_CONTAINER_TYPE_CODE:
+            shared_container_free((shared_container_t *)container);
+            break;
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+}
 
 void container_printf(const void *container, uint8_t typecode) {
     container = container_unwrap_shared(container, &typecode);
@@ -124,7 +147,7 @@ extern int container_to_uint32_array(uint32_t *output, const void *container,
 extern void *container_add(void *container, uint16_t val, uint8_t typecode,
                            uint8_t *new_typecode);
 
-extern bool container_contains(const void *container, uint16_t val,
+extern inline bool container_contains(const void *container, uint16_t val,
                                uint8_t typecode);
 
 extern void *container_clone(const void *container, uint8_t typecode);

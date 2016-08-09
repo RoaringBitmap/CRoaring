@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <roaring/containers/array.h>
 
+extern inline bool array_container_contains(const array_container_t *arr,
+                                             uint16_t pos);
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);

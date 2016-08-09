@@ -69,7 +69,7 @@ void *shared_container_extract_copy(shared_container_t *container,
                                     uint8_t *typecode);
 
 /* access to container underneath */
-static const void *container_unwrap_shared(
+inline const void *container_unwrap_shared(
     const void *candidate_shared_container, uint8_t *type) {
     if (*type == SHARED_CONTAINER_TYPE_CODE) {
         *type =
@@ -357,25 +357,7 @@ static inline bool container_nonzero_cardinality(const void *container,
 /**
  * Recover memory from a container, requires a  typecode
  */
-static inline void container_free(void *container, uint8_t typecode) {
-    switch (typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
-            bitset_container_free((bitset_container_t *)container);
-            break;
-        case ARRAY_CONTAINER_TYPE_CODE:
-            array_container_free((array_container_t *)container);
-            break;
-        case RUN_CONTAINER_TYPE_CODE:
-            run_container_free((run_container_t *)container);
-            break;
-        case SHARED_CONTAINER_TYPE_CODE:
-            shared_container_free((shared_container_t *)container);
-            break;
-        default:
-            assert(false);
-            __builtin_unreachable();
-    }
-}
+void container_free(void *container, uint8_t typecode);
 
 /**
  * Convert a container to an array of values, requires a  typecode as well as a
@@ -480,7 +462,7 @@ static inline void *container_remove(void *container, uint16_t val,
 /**
  * Check whether a value is in a container, requires a  typecode
  */
-static inline bool container_contains(const void *container, uint16_t val,
+inline bool container_contains(const void *container, uint16_t val,
                                       uint8_t typecode) {
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {

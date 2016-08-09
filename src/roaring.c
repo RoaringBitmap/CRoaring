@@ -7,6 +7,8 @@
 #include <roaring/array_util.h>
 #include <roaring/roaring_array.h>
 
+extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
+
 roaring_bitmap_t *roaring_bitmap_create() {
     roaring_bitmap_t *ans =
         (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));

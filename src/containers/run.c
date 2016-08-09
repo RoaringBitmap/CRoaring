@@ -7,6 +7,10 @@
 #include <x86intrin.h>
 #endif
 
+extern inline int32_t interleavedBinarySearch(const rle16_t *array,
+                                      int32_t lenarray, uint16_t ikey);
+extern inline bool run_container_contains(const run_container_t *run,
+                                           uint16_t pos);
 extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);
 extern void run_container_clear(run_container_t *run);
