@@ -310,9 +310,14 @@ To reformat your code according to the style convention (make sure that ``clang-
 ./tools/clang-format.sh
 ```
 
-# Python Wrappers
+# Python Wrapper
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
+
+
+# Go (golang) Wrapper
+
+There is a Go (golang) wrapper available at https://github.com/RoaringBitmap/gocroaring
 
 # References and further reading
 
