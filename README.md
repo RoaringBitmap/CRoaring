@@ -319,6 +319,10 @@ Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/P
 
 There is a Go (golang) wrapper available at https://github.com/RoaringBitmap/gocroaring
 
+# Rust Wrapper
+
+Saulius Grigaliunas wrote a Rust wrapper available at https://github.com/saulius/croaring-rs
+
 # References and further reading
 
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
