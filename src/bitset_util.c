@@ -737,6 +737,7 @@ uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
     uint64_t shift = 6;
     const uint16_t *end = list + length;
     if (!length) return card;
+    // TODO: could unroll for performance, see bitset_set_list
     // bts is not available as an intrinsic in GCC
     __asm volatile(
         "1:\n"
@@ -756,24 +757,59 @@ uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
 }
 
 void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
-    uint64_t offset, load, pos;
-    uint64_t shift = 6;
+    uint64_t  pos;
     const uint16_t *end = list + length;
-    if (!length) return;
-    // bts is not available as an intrinsic in GCC
+
+    uint64_t shift = 6;
+    uint64_t offset;
+    uint64_t load;
+    for(;list + 3 < end; list += 4) {
+      pos =  list[0];
     __asm volatile(
-        "1:\n"
-        "movzwq (%[list]), %[pos]\n"
         "shrx %[shift], %[pos], %[offset]\n"
         "mov (%[bitset],%[offset],8), %[load]\n"
         "bts %[pos], %[load]\n"
-        "mov %[load], (%[bitset],%[offset],8)\n"
-        "add $2, %[list]\n"
-        "cmp %[list], %[end]\n"
-        "jnz 1b"
-        : [list] "+&r"(list), [load] "=&r"(load), [pos] "=&r"(pos),
-          [offset] "=&r"(offset)
-        : [end] "r"(end), [bitset] "r"(bitset), [shift] "r"(shift));
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      pos =  list[1];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      pos =  list[2];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      pos =  list[3];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+    }
+
+    while(list != end) {
+      pos =  list[0];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      list ++;
+    }
+
 }
 
 uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
