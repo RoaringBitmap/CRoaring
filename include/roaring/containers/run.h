@@ -301,7 +301,7 @@ void run_container_xor(const run_container_t *src_1,
  * The function returns the number of values written.
  * The caller is responsible for allocating enough memory in out.
  */
-int run_container_to_uint32_array(uint32_t *out, const run_container_t *cont,
+int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base);
 
 /*

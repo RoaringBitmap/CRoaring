@@ -129,7 +129,7 @@ void array_container_negation_inplace(array_container_t *src_dest);
  * The function returns the number of values written.
  * The caller is responsible for allocating enough memory in out.
  */
-int array_container_to_uint32_array(uint32_t *out,
+int array_container_to_uint32_array(void *vout,
                                     const array_container_t *cont,
                                     uint32_t base);
 

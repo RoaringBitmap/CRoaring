@@ -220,9 +220,16 @@ class Roaring {
      * the
      * Java and Go versions. Returns how many bytes were written which should be
      * getSizeInBytes().
+     *
+     * Setting the portable flag to false enable a custom format that
+     * can save space compared to the portable format (e.g., for very
+     * sparse bitmaps).
      */
-    size_t write(char *buf) const {
-        return roaring_bitmap_portable_serialize(roaring, buf);
+    size_t write(char *buf, bool portable = true) const {
+        if(portable)
+          return roaring_bitmap_portable_serialize(roaring, buf);
+        else
+          return roaring_bitmap_serialize(roaring, buf);
     }
 
     /**
@@ -230,10 +237,17 @@ class Roaring {
      * with
      * the
      * Java and Go versions.
+     *
+     * Setting the portable flag to false enable a custom format that
+     * can save space compared to the portable format (e.g., for very
+     * sparse bitmaps).
      */
-    static Roaring read(const char *buf) {
+    static Roaring read(const char *buf, bool portable = true) {
         Roaring ans(NULL);
-        ans.roaring = roaring_bitmap_portable_deserialize(buf);
+        if(portable)
+          ans.roaring = roaring_bitmap_portable_deserialize(buf);
+        else
+          ans.roaring = roaring_bitmap_deserialize(buf);
         if (ans.roaring == NULL) {
             throw std::runtime_error("failed memory alloc while reading");
         }
@@ -244,10 +258,19 @@ class Roaring {
      * How many bytes are required to serialize this bitmap (meant to be
      * compatible
      * with Java and Go versions)
+     *
+     * Setting the portable flag to false enable a custom format that
+     * can save space compared to the portable format (e.g., for very
+     * sparse bitmaps).
      */
-    size_t getSizeInBytes() const {
+    size_t getSizeInBytes(bool portable = true) const {
+      if(portable)
         return roaring_bitmap_portable_size_in_bytes(roaring);
+      else
+        return roaring_bitmap_size_in_bytes(roaring);
     }
+
+
 
     /**
      * Computes the intersection between two bitmaps and returns new bitmap.

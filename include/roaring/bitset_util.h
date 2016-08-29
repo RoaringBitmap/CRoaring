@@ -91,7 +91,7 @@ static inline void bitset_reset_range(uint64_t *bitmap, uint32_t start,
  * This function uses AVX2 decoding.
  */
 size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length,
-                                   uint32_t *out, size_t outcapacity,
+                                   void *vout, size_t outcapacity,
                                    uint32_t base);
 
 /*
@@ -103,7 +103,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length,
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
+size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
                               uint32_t base);
 
 /*

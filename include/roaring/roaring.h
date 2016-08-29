@@ -237,13 +237,32 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
 */
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 
+//
+// write the bitmap to an output pointer, this output buffer should refer to
+// at least roaring_bitmap_size_in_bytes(ra) allocated bytes.
+//
 // see roaring_bitmap_portable_serialize if you want a format that's compatible
 // with Java and Go implementations
-char *roaring_bitmap_serialize(roaring_bitmap_t *ra, uint32_t *serialize_len);
+//
+// this format has the benefit of being sometimes more space efficient than roaring_bitmap_portable_serialize
+// e.g., when the data is sparse.
+//
+// Returns how many bytes were written which should be
+// roaring_bitmap_size_in_bytes(ra).
+size_t roaring_bitmap_serialize(roaring_bitmap_t *ra, char *buf);
 
+//  use with roaring_bitmap_serialize
 // see roaring_bitmap_portable_deserialize if you want a format that's
 // compatible with Java and Go implementations
-roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf, uint32_t buf_len);
+roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf);
+
+
+/**
+ * How many bytes are required to serialize this bitmap (NOT compatible
+ * with Java and Go versions)
+ */
+size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *ra);
+
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible with
@@ -252,6 +271,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf, uint32_t buf_len);
  */
 roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
 
+
 /**
  * How many bytes are required to serialize this bitmap (meant to be compatible
  * with Java and Go versions)
@@ -259,7 +279,9 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
 size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra);
 
 /**
- * write a bitmap to a char buffer. This is meant to be compatible with
+ * write a bitmap to a char buffer.  The output buffer should refer to at least
+ *  roaring_bitmap_portable_size_in_bytes(ra) bytes of allocated memory.
+ * This is meant to be compatible with
  * the
  * Java and Go versions. Returns how many bytes were written which should be
  * roaring_bitmap_portable_size_in_bytes(ra).

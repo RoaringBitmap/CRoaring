@@ -485,13 +485,18 @@ void run_container_andnot(const run_container_t *src_1,
     }
 }
 
-int run_container_to_uint32_array(uint32_t *out, const run_container_t *cont,
+int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
     int outpos = 0;
+    uint32_t * out = (uint32_t *) vout;
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
-        for (int j = 0; j <= le; ++j) out[outpos++] = run_start + j;
+        for (int j = 0; j <= le; ++j) {
+          uint32_t val = run_start + j;
+          memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
+          outpos++;
+        }
     }
     return outpos;
 }

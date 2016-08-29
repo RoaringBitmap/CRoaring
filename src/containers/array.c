@@ -327,12 +327,15 @@ void array_container_intersection_inplace(array_container_t *src_1,
     }
 }
 
-int array_container_to_uint32_array(uint32_t *out,
+int array_container_to_uint32_array(void *vout,
                                     const array_container_t *cont,
                                     uint32_t base) {
     int outpos = 0;
+    uint32_t * out = (uint32_t *) vout;
     for (int i = 0; i < cont->cardinality; ++i) {
-        out[outpos++] = base + cont->array[i];
+        const uint32_t val = base + cont->array[i];
+        memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
+        outpos ++;
     }
     return outpos;
 }

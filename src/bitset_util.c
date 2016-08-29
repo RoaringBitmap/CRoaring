@@ -550,8 +550,9 @@ static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
 #ifdef USEAVX
 
 size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
-                                   uint32_t *out, size_t outcapacity,
+                                   void *vout, size_t outcapacity,
                                    uint32_t base) {
+    uint32_t *out = (uint32_t *) vout;
     uint32_t *initout = out;
     __m256i baseVec = _mm256_set1_epi32(base - 1);
     __m256i incVec = _mm256_set1_epi32(64);
@@ -590,7 +591,8 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
         while ((w != 0) && (out < safeout)) {
             uint64_t t = w & -w;
             int r = __builtin_ctzll(w);
-            *out = r + base;
+            uint32_t val = r + base;
+            memcpy(out, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
             out++;
             w ^= t;
         }
@@ -600,15 +602,18 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
 }
 #endif  // USEAVX
 
-size_t bitset_extract_setbits(uint64_t *bitset, size_t length, uint32_t *out,
+size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
                               uint32_t base) {
     int outpos = 0;
+    uint32_t * out = (uint32_t *) vout;
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = bitset[i];
         while (w != 0) {
             uint64_t t = w & -w;
             int r = __builtin_ctzll(w);
-            out[outpos++] = r + base;
+            uint32_t val = r + base;
+            memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
+            outpos ++;
             w ^= t;
         }
         base += 64;

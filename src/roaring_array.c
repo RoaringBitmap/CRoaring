@@ -20,7 +20,7 @@
 
 extern inline int32_t ra_get_size(roaring_array_t *ra);
 extern inline int32_t ra_get_index(roaring_array_t *ra, uint16_t x);
-extern inline void *ra_get_container_at_index(roaring_array_t *ra, 
+extern inline void *ra_get_container_at_index(roaring_array_t *ra,
       uint16_t i, uint8_t *typecode);
 #define INITIAL_CAPACITY 4
 
@@ -401,22 +401,51 @@ void show_structure(roaring_array_t *ra) {
     }
 }
 
-char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
-                   uint8_t *retry_with_array) {
-    uint32_t off, l,
+
+size_t ra_size_in_bytes(roaring_array_t *ra) {
+    size_t cardinality = 0;
+    size_t
+        tot_len =
+            1 /* initial byte type */ + 4 /* tot_len */ +
+            sizeof(roaring_array_t) +
+            ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
+    for (int32_t i = 0; i < ra->size; i++) {
+        tot_len += (container_serialization_len(ra->containers[i], ra->typecodes[i]) + sizeof(uint16_t));
+        cardinality +=
+            container_get_cardinality(ra->containers[i], ra->typecodes[i]);
+    }
+
+    if ((cardinality * sizeof(uint32_t) + sizeof(uint32_t)) < tot_len) {
+        return cardinality * sizeof(uint32_t) + 1 + sizeof(uint32_t);
+    }
+    return tot_len;
+}
+
+
+
+void ra_to_uint32_array(roaring_array_t *ra, uint32_t *ans) {
+    size_t ctr = 0;
+    for (int i = 0; i < ra->size; ++i) {
+        int num_added = container_to_uint32_array(
+            ans + ctr, ra->containers[i],
+            ra->typecodes[i],
+            ((uint32_t)ra->keys[i]) << 16);
+        ctr += num_added;
+    }
+}
+
+size_t ra_serialize(roaring_array_t *ra, char *buf) {
+    size_t off, l,
         cardinality = 0,
         tot_len =
             1 /* initial byte type */ + 4 /* tot_len */ +
             sizeof(roaring_array_t) +
             ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
-    char *out;
     uint16_t *lens;
-
-    (*retry_with_array) = 0;
     /* [ 32 bit length ] [ serialization bytes ] */
     if ((lens = (uint16_t *)malloc(sizeof(int16_t) * ra->size)) == NULL) {
-        *serialize_len = 0;
-        return (NULL);
+        fprintf(stderr, "Failed to allocate memory early on. Bailing out.\n");
+        return 0;
     }
 
     for (int32_t i = 0; i < ra->size; i++) {
@@ -429,65 +458,47 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
             container_get_cardinality(ra->containers[i], ra->typecodes[i]);
     }
 
-    if ((cardinality * sizeof(uint32_t)) < tot_len) {
-        *retry_with_array = 1;
+    if ((cardinality * sizeof(uint32_t) + sizeof(uint32_t)) < tot_len) {
         free(lens);
-        return (NULL);
+        buf[0] = SERIALIZATION_ARRAY_UINT32;
+        memcpy(buf + 1, &cardinality, sizeof(uint32_t));
+        ra_to_uint32_array(ra, (uint32_t *)(buf + 1 + sizeof(uint32_t)));
+        return 1 + sizeof(uint32_t) + cardinality * sizeof(uint32_t);
     }
 
-    out = (char *)malloc(tot_len);
-
-    if (out == NULL) {
-        free(lens);
-        *serialize_len = 0;
-        return (NULL);
-    } else
-        *serialize_len = tot_len;
-
     /* Leave room for the first byte */
-    out[0] = SERIALIZATION_CONTAINER, off = 1;
+    buf[0] = SERIALIZATION_CONTAINER, off = 1;
 
     /* Total lenght (first 4 bytes of the serialization) */
-    memcpy(out + off, &tot_len, 4), off += 4;
+    memcpy(buf + off, &tot_len, 4), off += 4;
 
     l = sizeof(roaring_array_t);
     uint32_t saved_allocation_size = ra->allocation_size;
 
     ra->allocation_size = ra->size;
-    memcpy(&out[off], ra, l);
+    memcpy(&buf[off], ra, l);
     ra->allocation_size = saved_allocation_size;
     off += l;
 
     l = ra->size * sizeof(uint16_t);
-    memcpy(&out[off], ra->keys, l);
+    memcpy(&buf[off], ra->keys, l);
     off += l;
 
     l = ra->size * sizeof(void *);
-    memcpy(&out[off], ra->containers, l);
+    memcpy(&buf[off], ra->containers, l);
     off += l;
 
     l = ra->size * sizeof(uint8_t);
-    memcpy(&out[off], ra->typecodes, l);
+    memcpy(&buf[off], ra->typecodes, l);
     off += l;
 
     for (int32_t i = 0; i < ra->size; i++) {
         int32_t serialized_bytes;
 
-        memcpy(&out[off], &lens[i], sizeof(lens[i]));
+        memcpy(&buf[off], &lens[i], sizeof(lens[i]));
         off += sizeof(lens[i]);
         serialized_bytes =
-            container_serialize(ra->containers[i], ra->typecodes[i], &out[off]);
-
-        if (serialized_bytes != lens[i]) {
-            for (int32_t j = 0; j <= i; j++)
-                container_free(ra->containers[j], ra->typecodes[j]);
-
-            free(lens);
-            free(out);
-            assert(serialized_bytes != lens[i]);
-            return (NULL);
-        }
-
+            container_serialize(ra->containers[i], ra->typecodes[i], &buf[off]);
         off += serialized_bytes;
     }
 
@@ -497,20 +508,17 @@ char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
 
     free(lens);
 
-    return (out);
+    return tot_len;
 }
 
-roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len) {
+// assumes that it is not an array (see roaring_bitmap_deserialize)
+roaring_array_t *ra_deserialize(const void *buf) {
     int32_t size;
     const char *bufaschar = (const char *)buf;
     memcpy(&size, bufaschar, sizeof(int32_t));
     roaring_array_t *ra_copy;
     uint32_t off, l;
-    uint32_t expected_len =
-        sizeof(roaring_array_t) +
-        size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
 
-    if (buf_len < expected_len) return (NULL);
 
     if ((ra_copy = (roaring_array_t *)malloc(sizeof(roaring_array_t))) == NULL)
         return (NULL);

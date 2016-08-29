@@ -169,16 +169,25 @@ void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
                                            uint16_t key, void *c,
                                            uint8_t typecode);
 
-// see ra_portable_serialize if you want a format that's compatible with
-// Java
-// and Go implementations
-char *ra_serialize(roaring_array_t *ra, uint32_t *serialize_len,
-                   uint8_t *retry_with_array);
+// write set bits to an array
+void ra_to_uint32_array(roaring_array_t *ra, uint32_t *ans);
 
 // see ra_portable_serialize if you want a format that's compatible with
 // Java
 // and Go implementations
-roaring_array_t *ra_deserialize(const void *buf, uint32_t buf_len);
+size_t ra_serialize(roaring_array_t *ra, char *buf);
+
+// see ra_portable_serialize if you want a format that's compatible with
+// Java
+// and Go implementations
+roaring_array_t *ra_deserialize(const void *buf);
+
+/**
+ * How many bytes are required to serialize this bitmap (NOT
+ * compatible
+ * with Java and Go versions)
+ */
+size_t ra_size_in_bytes(roaring_array_t *ra) ;
 
 /**
  * write a bitmap to a buffer. This is meant to be compatible with

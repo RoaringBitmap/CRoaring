@@ -157,7 +157,8 @@ void test_example(bool copy_on_write) {
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     char *serializedbytes = malloc(expectedsize);
-    roaring_bitmap_portable_serialize(r1, serializedbytes);
+    size_t actualsize = roaring_bitmap_portable_serialize(r1, serializedbytes);
+    assert_int_equal(actualsize, expectedsize);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
     assert_true(roaring_bitmap_equals(r1, t));
     roaring_bitmap_free(t);
@@ -273,7 +274,8 @@ void test_range_and_serialize() {
     roaring_bitmap_t *old_bm = roaring_bitmap_from_range(65520, 131057, 16);
     size_t size = roaring_bitmap_portable_size_in_bytes(old_bm);
     char *buff = malloc(size);
-    roaring_bitmap_portable_serialize(old_bm, buff);
+    size_t actualsize = roaring_bitmap_portable_serialize(old_bm, buff);
+    assert_int_equal(actualsize, size);
     roaring_bitmap_t *new_bm = roaring_bitmap_portable_deserialize(buff);
     assert_true(roaring_bitmap_equals(old_bm, new_bm));
     roaring_bitmap_free(old_bm);
@@ -434,6 +436,7 @@ void test_portable_serialize() {
     char *serialized = malloc(expectedsize);
     serialize_len = roaring_bitmap_portable_serialize(r1, serialized);
     assert_int_equal(serialize_len, expectedsize);
+    assert_int_equal(serialize_len, expectedsize);
     r2 = roaring_bitmap_portable_deserialize(serialized);
     assert_non_null(r2);
 
@@ -458,6 +461,7 @@ void test_portable_serialize() {
     expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     serialized = malloc(expectedsize);
     serialize_len = roaring_bitmap_portable_serialize(r1, serialized);
+    assert_int_equal(serialize_len, expectedsize);
     assert_int_equal(serialize_len, expectedsize);
 
     r2 = roaring_bitmap_portable_deserialize(serialized);
@@ -524,9 +528,10 @@ void test_serialize() {
     /* Add some values to the bitmap */
     for (int i = 0, top_val = 384000; i < top_val; i++)
         roaring_bitmap_add(r1, 3 * i);
-
-    serialized = roaring_bitmap_serialize(r1, &serialize_len);
-    r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+    serialized = malloc(roaring_bitmap_size_in_bytes(r1));
+    serialize_len = roaring_bitmap_serialize(r1, serialized);
+    assert_int_equal(serialize_len, roaring_bitmap_size_in_bytes(r1));
+    r2 = roaring_bitmap_deserialize(serialized);
     assert_non_null(r2);
 
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
@@ -560,8 +565,11 @@ void test_serialize() {
 
     r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
                            19866827);
-    serialized = roaring_bitmap_serialize(r1, &serialize_len);
-    r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+
+    serialized = malloc(roaring_bitmap_size_in_bytes(r1));
+    serialize_len = roaring_bitmap_serialize(r1, serialized);
+    assert_int_equal(serialize_len, roaring_bitmap_size_in_bytes(r1));
+    r2 = roaring_bitmap_deserialize(serialized);
     assert_non_null(r2);
 
     card1 = roaring_bitmap_get_cardinality(r1);
@@ -587,8 +595,10 @@ void test_serialize() {
         roaring_bitmap_add(r1, k);
     }
     roaring_bitmap_run_optimize(r1);
-    serialized = roaring_bitmap_serialize(r1, &serialize_len);
-    r2 = roaring_bitmap_deserialize(serialized, serialize_len);
+    serialized = malloc(roaring_bitmap_size_in_bytes(r1));
+    serialize_len = roaring_bitmap_serialize(r1, serialized);
+    assert_int_equal(serialize_len, roaring_bitmap_size_in_bytes(r1));
+    r2 = roaring_bitmap_deserialize(serialized);
 
     card1 = roaring_bitmap_get_cardinality(r1);
     arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
@@ -611,9 +621,10 @@ void test_serialize() {
     /* ******* */
     roaring_bitmap_t *old_bm = roaring_bitmap_create();
     for (unsigned i = 0; i < 102; i++) roaring_bitmap_add(old_bm, i);
-    uint32_t size;
-    char *buff = roaring_bitmap_serialize(old_bm, &size);
-    roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff, size);
+    char *buff = malloc(roaring_bitmap_size_in_bytes(old_bm));
+    uint32_t size = roaring_bitmap_serialize(old_bm, buff);
+    assert_int_equal(size, roaring_bitmap_size_in_bytes(old_bm));
+    roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff);
     free(buff);
     assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) ==
                 (unsigned int)roaring_bitmap_get_cardinality(new_bm));
