@@ -1,6 +1,7 @@
 #ifndef INCLUDE_ROARING_ARRAY_H
 #define INCLUDE_ROARING_ARRAY_H
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <roaring/array_util.h>
@@ -227,7 +228,12 @@ uint32_t ra_portable_header_size(roaring_array_t *ra);
  * If the container at the index i is share, unshare it (creating a local
  * copy if needed).
  */
-void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i);
+static inline void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) {
+    assert(i < ra->size);
+    ra->containers[i] =
+        get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+}
+
 
 /**
  * remove at index i, sliding over all entries after i

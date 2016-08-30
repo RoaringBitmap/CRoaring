@@ -22,6 +22,7 @@ extern inline int32_t ra_get_size(roaring_array_t *ra);
 extern inline int32_t ra_get_index(roaring_array_t *ra, uint16_t x);
 extern inline void *ra_get_container_at_index(roaring_array_t *ra,
       uint16_t i, uint8_t *typecode);
+extern inline void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i);
 #define INITIAL_CAPACITY 4
 
 roaring_array_t *ra_create_with_capacity(uint32_t cap) {
@@ -760,8 +761,3 @@ roaring_array_t *ra_portable_deserialize(const char *buf) {
     return answer;
 }
 
-void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) {
-    assert(i < ra->size);
-    ra->containers[i] =
-        get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
-}
