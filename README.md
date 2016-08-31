@@ -58,6 +58,12 @@ It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``alm
 
 The script will also generate C++ files for C++ users, including an example.
 
+If you prefer a silent output, you can use the following command to redirect ``stdout`` :
+
+```bash
+./amalgamation.sh > /dev/null
+```
+
 # API
 
 The interface is found in the file ``include/roaring/roaring.h``.
