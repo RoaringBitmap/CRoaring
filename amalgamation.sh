@@ -152,7 +152,7 @@ echo "For C++, try :"
 echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} "
 
 lowercase(){
-    echo "$1" | sed "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/"
+    echo "$1" | tr 'A-Z' 'a-z'
 }
 
 OS=`lowercase \`uname\``
