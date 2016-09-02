@@ -179,19 +179,19 @@ uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
 /**
  * Add a new key-value pair at index i
  */
-void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
+bool ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
                                 void *container, uint8_t typecode);
 
 /**
  * Append a new key-value pair
  */
-void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
+bool ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
 
 /**
  * Append a new key-value pair to ra, cloning (in COW sense) a value from sa
  * at index index
  */
-void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index,
+bool ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index,
                     bool copy_on_write);
 
 /**
@@ -199,14 +199,14 @@ void ra_append_copy(roaring_array_t *ra, roaring_array_t *sa, uint16_t index,
  * at indexes
  * [start_index, uint16_t end_index)
  */
-void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
+bool ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index,
                           bool copy_on_write);
 
 /** appends from sa to ra, ending with the greatest key that is
  * is less or equal stopping_key
  */
-void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
+bool ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
                             uint16_t stopping_key, bool copy_on_write);
 
 
@@ -214,7 +214,7 @@ void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
  * is strictly greater than before_start
  */
 
-void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
+bool ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
                             uint16_t before_start, bool copy_on_write);
 
 /**
@@ -222,13 +222,13 @@ void ra_append_copies_after(roaring_array_t *ra, roaring_array_t *sa,
  * [start_index, uint16_t end_index), old array should not be freed
  * (use ra_free_without_containers)
  **/
-void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+bool ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
                           uint16_t start_index, uint16_t end_index);
 /**
  * Append new key-value pairs to ra,  from sa at indexes
  * [start_index, uint16_t end_index)
  */
-void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
+bool ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
                      uint16_t start_index, uint16_t end_index,
                      bool copy_on_write);
 
@@ -307,7 +307,7 @@ size_t ra_portable_size_in_bytes(roaring_array_t *ra);
 /**
  * return true if it contains at least one run container.
  */
-bool ra_has_run_container(roaring_array_t *ra) __attribute__((warn_unused_result));
+bool ra_has_run_container(const roaring_array_t *ra) __attribute__((warn_unused_result));
 
 /**
  * Size of the header when serializing (meant to be compatible

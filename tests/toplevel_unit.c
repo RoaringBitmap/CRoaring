@@ -8,7 +8,6 @@
 
 #include "test.h"
 
-void show_structure(roaring_array_t *);  // debug
 
 // arrays expected to both be sorted.
 static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,

@@ -176,8 +176,8 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         ra_append_move_range(& answer->high_low_container, & x1->high_low_container,
                              pos1, length1);
     }
-    ra_free_without_containers(& x1->high_low_container);
-    ra_free_without_containers(& x2->high_low_container);
+    ra_clear_without_containers(& x1->high_low_container);
+    ra_clear_without_containers(& x2->high_low_container);
     free(x1);
     free(x2);
     return answer;

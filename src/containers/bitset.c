@@ -522,6 +522,5 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
         else
             *start_rank += size;
     }
-    assert(false);
-    __builtin_unreachable();
+    return false;
 }

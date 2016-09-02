@@ -10,6 +10,9 @@
 #include <iostream>
 #include <roaring/roaring.h>
 #include "roaring.hh"
+extern "C" {
+#include "test.h"
+}
 
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
@@ -20,7 +23,7 @@ void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     r1->copy_on_write = copy_on_write;
-    assert(r1 != NULL);
+    assert_ptr_not_equal(r1, NULL);
 
     // then we can add values
     for (uint32_t i = 100; i < 1000; i++) {
@@ -28,7 +31,7 @@ void test_example(bool copy_on_write) {
     }
 
     // check whether a value is contained
-    assert(roaring_bitmap_contains(r1, 500));
+    assert_true(roaring_bitmap_contains(r1, 500));
 
     // compute how many bits there are:
     uint32_t cardinality = roaring_bitmap_get_cardinality(r1);
@@ -45,7 +48,7 @@ void test_example(bool copy_on_write) {
 
     // create a new bitmap with varargs
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
-    assert(r2 != NULL);
+    assert_ptr_not_equal(r2, NULL);
 
     roaring_bitmap_printf(r2);
     printf("\n");
@@ -58,21 +61,21 @@ void test_example(bool copy_on_write) {
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
     uint32_t *arr1 = new uint32_t[card1];
-    assert(arr1 != NULL);
+    assert_ptr_not_equal(arr1, NULL);
     roaring_bitmap_to_uint32_array(r1, arr1);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
     delete[] arr1;
-    assert(r1f != NULL);
+    assert_ptr_not_equal(r1f, NULL);
 
     // bitmaps shall be equal
-    assert(roaring_bitmap_equals(r1, r1f));
+    assert_true(roaring_bitmap_equals(r1, r1f));
     roaring_bitmap_free(r1f);
 
     // we can copy and compare bitmaps
     roaring_bitmap_t *z = roaring_bitmap_copy(r3);
     z->copy_on_write = copy_on_write;
-    assert(roaring_bitmap_equals(r3, z));
+    assert_true(roaring_bitmap_equals(r3, z));
 
     roaring_bitmap_free(z);
 
@@ -84,10 +87,10 @@ void test_example(bool copy_on_write) {
     // we can compute a big union
     const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
     roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
-    assert(roaring_bitmap_equals(r1_2_3, bigunion));
+    assert_true(roaring_bitmap_equals(r1_2_3, bigunion));
     roaring_bitmap_t *bigunionheap =
         roaring_bitmap_or_many_heap(3, allmybitmaps);
-    assert(roaring_bitmap_equals(r1_2_3, bigunionheap));
+    assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
     roaring_bitmap_free(r1_2_3);
     roaring_bitmap_free(bigunion);
     roaring_bitmap_free(bigunionheap);
@@ -101,7 +104,7 @@ void test_example(bool copy_on_write) {
     char *serializedbytes = (char *)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
-    assert(roaring_bitmap_equals(r1, t));
+    assert_true(roaring_bitmap_equals(r1, t));
     roaring_bitmap_free(t);
     free(serializedbytes);
 
@@ -130,7 +133,7 @@ void test_example_cpp(bool copy_on_write) {
     }
 
     // check whether a value is contained
-    assert(r1.contains(500));
+    assert_true(r1.contains(500));
 
     // compute how many bits there are:
     uint32_t cardinality = r1.cardinality();
@@ -159,18 +162,18 @@ void test_example_cpp(bool copy_on_write) {
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = r1.cardinality();
     uint32_t *arr1 = new uint32_t[card1];
-    assert(arr1 != NULL);
+    assert_true(arr1 != NULL);
     r1.toUint32Array(arr1);
     Roaring r1f = Roaring::fromUint32Array(card1, arr1);
     delete[] arr1;
 
     // bitmaps shall be equal
-    assert(r1 == r1f);
+    assert_true(r1 == r1f);
 
     // we can copy and compare bitmaps
     Roaring z(r3);
     z.setCopyOnWrite(copy_on_write);
-    assert(r3 == z);
+    assert_true(r3 == z);
 
     // we can compute union two-by-two
     Roaring r1_2_3 = r1 | r2;
@@ -180,7 +183,7 @@ void test_example_cpp(bool copy_on_write) {
     // we can compute a big union
     const Roaring *allmybitmaps[] = {&r1, &r2, &r3};
     Roaring bigunion = Roaring::fastunion(3, allmybitmaps);
-    assert(r1_2_3 == bigunion);
+    assert_true(r1_2_3 == bigunion);
 
     // we can compute intersection two-by-two
     Roaring i1_2 = r1 & r2;
@@ -191,7 +194,7 @@ void test_example_cpp(bool copy_on_write) {
     char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
     Roaring t = Roaring::read(serializedbytes);
-    assert(r1 == t);
+    assert_true(r1 == t);
     delete[] serializedbytes;
 
     // we can iterate over all values using custom functions
@@ -205,11 +208,29 @@ void test_example_cpp(bool copy_on_write) {
      */
 }
 
-int main() {
+void test_example_true(void **) {
     test_example(true);
-    test_example(false);
-    test_example_cpp(true);
-    test_example_cpp(false);
+}
 
-    return EXIT_SUCCESS;
+void test_example_false(void **) {
+    test_example(false);
+}
+
+void test_example_cpp_true(void **) {
+    test_example_cpp(true);
+}
+
+void test_example_cpp_false(void **) {
+    test_example_cpp(false);
+}
+
+int main() {
+    const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_example_true),
+        cmocka_unit_test(test_example_false),
+        cmocka_unit_test(test_example_cpp_true),
+        cmocka_unit_test(test_example_cpp_false)
+    };
+
+    return cmocka_run_group_tests(tests, NULL, NULL);
 }
