@@ -34,7 +34,6 @@ typedef struct roaring_array_s {
     uint16_t *keys;
     void **containers;
     uint8_t *typecodes;
-    uint8_t *shared; /* for COW, used as a bitset*/
 } roaring_array_t;
 
 /**
