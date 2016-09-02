@@ -27,6 +27,18 @@
 #undef USEAVX
 #endif
 
+/* we use struct packing only on x86 or x64 platforms */
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_X86))
+#define ROARING_PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#elif  (defined(__x86_64__) || defined(__i386__))
+#define ROARING_PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#else
+#define ROARING_PACK( __Declaration__ ) __Declaration__
+#endif
+
+
+
+
 #if defined(USEAVX) || defined(__x86_64__) || defined(_M_X64)
 // we have an x64 processor
 #define IS_X64

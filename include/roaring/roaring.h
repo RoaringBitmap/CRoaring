@@ -13,7 +13,7 @@ extern "C" {
 #include <roaring/roaring_types.h>
 
 typedef struct roaring_bitmap_s {
-    roaring_array_t *high_low_container;
+    roaring_array_t high_low_container; /* we could use a pointer, but it requires an extra alloc */
     bool copy_on_write; /* copy_on_write: whether you want to use copy-on-write
                          (saves memory and avoids
                          copies but needs more care in a threaded context). */
@@ -57,7 +57,7 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
  * memory management.
  *
  */
-roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r);
+roaring_bitmap_t *roaring_bitmap_copy(roaring_bitmap_t *r);
 
 /**
  * Print the content of the bitmap.
@@ -184,23 +184,12 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
                                            uint32_t val) {
     const uint16_t hb = val >> 16;
-    /*
-     * here it is possible to bypass the binary search and the ra_get_index
-     * call with the following call that might often come true
-     */
-    int i;
-    if ((r->high_low_container->size > hb) &&
-        (r->high_low_container->keys[hb] == hb))
-        i = hb;  // we got lucky!
-    else {
-        // next call involves a binary search (maybe expensive)
-        i = ra_get_index(r->high_low_container, hb);
-        if (i < 0) return false;
-    }
+    int32_t i = ra_get_index(& r->high_low_container, hb);
+    if (i < 0) return false;
     uint8_t typecode;
     // next call ought to be cheap
     void *container =
-        ra_get_container_at_index(r->high_low_container, i, &typecode);
+        ra_get_container_at_index(& r->high_low_container, i, &typecode);
     // rest might be a tad expensive
     return container_contains(container, val & 0xFFFF, typecode);
 }
@@ -364,7 +353,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
  *
  */
 void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
-                                     const roaring_bitmap_t *x2);
+                                     roaring_bitmap_t *x2);
 
 /**
  * compute the negation of the roaring bitmap within a specified interval.

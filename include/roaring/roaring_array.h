@@ -23,68 +23,158 @@ enum {
  * and 16-bit integer keys. A roaring bitmap  might be implemented as such.
  */
 
-// parallel arrays.  Element sizes quite different.
-// Alternative is array
-// of structs.  Which would have better
-// cache performance through binary searches?
+
+/**
+* An array of struct is probably more efficient
+* than a struct of array. We often access key, typecode,
+* and container in one go. And we rarely use SIMD instructions
+* on keys (for example).
+*/
+typedef struct key_container_s {
+    void *container;
+    uint16_t key;
+    uint8_t typecode;
+} key_container_t;
+/* sizeof(key_container_t) should be 16 bytes without packing,
+ down to 11 bytes with packing... except that accessing 11-byte elements is
+ likely to hurt performance.
+ */
+
 
 typedef struct roaring_array_s {
-    int32_t size;
-    int32_t allocation_size;
-    uint16_t *keys;
-    void **containers;
-    uint8_t *typecodes;
-    uint8_t *shared; /* for COW, used as a bitset*/
+    key_container_t *keys_containers;
+    int32_t size; // actual
+    int32_t allocation_size;// capacity
 } roaring_array_t;
+
+
+
+/*
+ *  good old binary search over key_container_t arrays, assume sorted by key
+ *  and lenarray > 0
+ */
+inline int32_t key_container_binary_search(const key_container_t *array, int32_t lenarray,
+                                   uint16_t ikey) {
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t middleValue = array[middleIndex].key;
+        if (middleValue < ikey) {
+            low = middleIndex + 1;
+        } else if (middleValue > ikey) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    return -(low + 1);
+}
+
+/**
+ * Galloping search over key_container_t arrays, search for key value, assume sorted
+ */
+static inline int32_t key_container_advance_until(const key_container_t *array, int32_t pos,
+                                   int32_t length, uint16_t min) {
+    int32_t lower = pos + 1;
+
+    if ((lower >= length) || (array[lower].key >= min)) {
+        return lower;
+    }
+
+    int32_t spansize = 1;
+
+    while ((lower + spansize < length) && (array[lower + spansize].key < min)) {
+        spansize <<= 1;
+    }
+    int32_t upper = (lower + spansize < length) ? lower + spansize : length - 1;
+
+    if (array[upper].key == min) {
+        return upper;
+    }
+    if (array[upper].key < min) {
+        // means
+        // array
+        // has no
+        // item
+        // >= min
+        // pos = array.length;
+        return length;
+    }
+
+    // we know that the next-smallest span was too small
+    lower += (spansize >> 1);
+
+    int32_t mid = 0;
+    while (lower + 1 != upper) {
+        mid = (lower + upper) >> 1;
+        if (array[mid].key == min) {
+            return mid;
+        } else if (array[mid].key < min) {
+            lower = mid;
+        } else {
+            upper = mid;
+        }
+    }
+    return upper;
+}
 
 /**
  * Create a new roaring array
  */
-roaring_array_t *ra_create(void);
+bool ra_init(roaring_array_t *) __attribute__((warn_unused_result));
 
 /**
  * Create a new roaring array with the specified capacity (in number
  * of containers)
  */
-roaring_array_t *ra_create_with_capacity(uint32_t cap);
+bool ra_init_with_capacity(roaring_array_t *, uint32_t cap) __attribute__((warn_unused_result));
 
 /**
- * Copies this roaring array (caller is responsible for memory management)
+ * Copies this roaring array
  */
-roaring_array_t *ra_copy(roaring_array_t *r, bool copy_on_write);
+bool *ra_copy(const roaring_array_t *source, roaring_array_t *dest, bool copy_on_write) __attribute__((warn_unused_result));
 
 /**
  * Frees the memory used by a roaring array
  */
-void ra_free(roaring_array_t *r);
+void ra_clear(roaring_array_t *r);
+
 
 /**
  * Frees the memory used by a roaring array, but does not free the containers
  */
-void ra_free_without_containers(roaring_array_t *r);
+void ra_clear_without_containers(roaring_array_t *r);
 
 /**
  * Get the index corresponding to a 16-bit key
  */
-inline int32_t ra_get_index(roaring_array_t *ra, uint16_t x) {
-    if ((ra->size == 0) || ra->keys[ra->size - 1] == x) return ra->size - 1;
-
-    return binarySearch(ra->keys, (int32_t)ra->size, x);
+inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
+    if (ra->size == 0) return ra->size - 1;
+    return key_container_binary_search(ra->keys_containers, (int32_t)ra->size, x);
 }
 
 /**
  * Retrieves the container at index i, filling in the typecode
  */
-inline void *ra_get_container_at_index(roaring_array_t *ra, uint16_t i,
+inline void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
                                               uint8_t *typecode) {
-    *typecode = ra->typecodes[i];
-    return ra->containers[i];
+	key_container_t * kt = ra->keys_containers + i;
+    *typecode = kt->typecode;
+    return kt->container;
+}
+
+/**
+ * Retrieves the key-container at index i
+ */
+inline key_container_t * ra_key_container_at(const roaring_array_t *ra, uint16_t i) {
+	return ra->keys_containers + i;
 }
 
 /**
  * Retrieves the key at index i
  */
-uint16_t ra_get_key_at_index(roaring_array_t *ra, uint16_t i);
+uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
 
 /**
  * Add a new key-value pair at index i
@@ -118,6 +208,7 @@ void ra_append_copy_range(roaring_array_t *ra, roaring_array_t *sa,
  */
 void ra_append_copies_until(roaring_array_t *ra, roaring_array_t *sa,
                             uint16_t stopping_key, bool copy_on_write);
+
 
 /** appends from sa to ra, starting with the smallest key that is
  * is strictly greater than before_start
@@ -153,13 +244,13 @@ void ra_set_container_at_index(roaring_array_t *ra, int32_t i, void *c,
  * (at
  * least);
  */
-void extend_array(roaring_array_t *ra, uint32_t k);
+bool extend_array(roaring_array_t *ra, uint32_t k) __attribute__((warn_unused_result));
 
-inline int32_t ra_get_size(roaring_array_t *ra) { return ra->size; }
+inline int32_t ra_get_size(const roaring_array_t *ra) { return ra->size; }
 
-static inline int32_t ra_advance_until(roaring_array_t *ra, uint16_t x,
+static inline int32_t ra_advance_until(const roaring_array_t *ra, uint16_t x,
                                        int32_t pos) {
-    return advanceUntil(ra->keys, pos, ra->size, x);
+    return key_container_advance_until(ra->keys_containers, pos, ra->size, x);
 }
 
 int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos);
@@ -176,12 +267,12 @@ void ra_to_uint32_array(roaring_array_t *ra, uint32_t *ans);
 // see ra_portable_serialize if you want a format that's compatible with
 // Java
 // and Go implementations
-size_t ra_serialize(roaring_array_t *ra, char *buf);
+size_t ra_serialize(const roaring_array_t *ra, char *buf);
 
 // see ra_portable_serialize if you want a format that's compatible with
 // Java
 // and Go implementations
-roaring_array_t *ra_deserialize(const void *buf);
+bool ra_deserialize(roaring_array_t *, const void *buf);
 
 /**
  * How many bytes are required to serialize this bitmap (NOT
@@ -196,7 +287,7 @@ size_t ra_size_in_bytes(roaring_array_t *ra) ;
  * Java and Go versions. Return the size in bytes of the serialized
  * output (which should be ra_portable_size_in_bytes(ra)).
  */
-size_t ra_portable_serialize(roaring_array_t *ra, char *buf);
+size_t ra_portable_serialize(const roaring_array_t *ra, char *buf);
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible
@@ -204,7 +295,7 @@ size_t ra_portable_serialize(roaring_array_t *ra, char *buf);
  * the
  * Java and Go versions.
  */
-roaring_array_t *ra_portable_deserialize(const char *buf);
+bool ra_portable_deserialize(roaring_array_t * dest, const char *buf) __attribute__((warn_unused_result));
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be
@@ -216,7 +307,7 @@ size_t ra_portable_size_in_bytes(roaring_array_t *ra);
 /**
  * return true if it contains at least one run container.
  */
-bool ra_has_run_container(roaring_array_t *ra);
+bool ra_has_run_container(roaring_array_t *ra) __attribute__((warn_unused_result));
 
 /**
  * Size of the header when serializing (meant to be compatible
@@ -230,8 +321,8 @@ uint32_t ra_portable_header_size(roaring_array_t *ra);
  */
 static inline void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) {
     assert(i < ra->size);
-    ra->containers[i] =
-        get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+    ra->keys_containers[i].container =
+        get_writable_copy_if_shared(ra->keys_containers[i].container, &ra->keys_containers[i].typecode);
 }
 
 
