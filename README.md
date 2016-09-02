@@ -36,6 +36,8 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds)
 - clang-format (optional)
 
+Serialization on big endian hardware may not be compatible with serialization on little endian hardware. 
+
 # Amalgamation/Unity Build
 
 The CRoaring library can be amalgamated into a single source file that makes it easier

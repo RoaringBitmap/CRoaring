@@ -189,6 +189,7 @@ static inline const char *get_full_container_name(void *container,
             return "unknown";
     }
     __builtin_unreachable();
+    return NULL;
 }
 
 /**
@@ -1670,6 +1671,9 @@ static inline bool container_iterate(const void *container, uint8_t typecode,
             assert(false);
             __builtin_unreachable();
     }
+    assert(false);
+    __builtin_unreachable();
+    return false;
 }
 
 static inline void *container_not(const void *c, uint8_t typ,
@@ -1698,6 +1702,9 @@ static inline void *container_not(const void *c, uint8_t typ,
             assert(false);
             __builtin_unreachable();
     }
+    assert(false);
+    __builtin_unreachable();
+    return NULL;
 }
 
 static inline void *container_not_range(const void *c, uint8_t typ,
@@ -1730,6 +1737,9 @@ static inline void *container_not_range(const void *c, uint8_t typ,
             assert(false);
             __builtin_unreachable();
     }
+    assert(false);
+    __builtin_unreachable();
+    return NULL;
 }
 
 static inline void *container_inot(void *c, uint8_t typ, uint8_t *result_type) {
@@ -1759,6 +1769,9 @@ static inline void *container_inot(void *c, uint8_t typ, uint8_t *result_type) {
             assert(false);
             __builtin_unreachable();
     }
+    assert(false);
+    __builtin_unreachable();
+    return NULL;
 }
 
 static inline void *container_inot_range(void *c, uint8_t typ,
@@ -1791,6 +1804,9 @@ static inline void *container_inot_range(void *c, uint8_t typ,
             assert(false);
             __builtin_unreachable();
     }
+    assert(false);
+    __builtin_unreachable();
+    return NULL;
 }
 
 /**
@@ -1832,6 +1848,9 @@ static inline bool container_select(const void *container, uint8_t typecode,
             assert(false);
             __builtin_unreachable();
     }
+    assert(false);
+    __builtin_unreachable();
+    return false;
 }
 
 #endif

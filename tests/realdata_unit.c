@@ -8,7 +8,6 @@
 #include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"
 
-void show_structure(roaring_array_t *);  // debug
 
 /**
  * Once you have collected all the integers, build the bitmaps.
@@ -104,14 +103,14 @@ bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     bool answer = array_equals(arr, card, buffer, cardtrue);
     if (!answer) {
         printf("\n\nbitmap1:\n");
-        show_structure(bitmap1->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap1);  // debug
         printf("\n\nbitmap2:\n");
-        show_structure(bitmap2->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap2);  // debug
         printf("\n\nresult:\n");
-        show_structure(temp->high_low_container);  // debug
+        roaring_bitmap_printf_describe(temp);  // debug
         roaring_bitmap_t *ca = roaring_bitmap_of_ptr(cardtrue, buffer);
         printf("\n\ncorrect result:\n");
-        show_structure(ca->high_low_container);  // debug
+        roaring_bitmap_printf_describe(ca);  // debug
         free(ca);
     }
     free(buffer);
@@ -164,13 +163,13 @@ bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     bool answer = roaring_bitmap_equals(temp, expected);
     if (!answer) {
         printf("Bad XOR\n\nbitmap1:\n");
-        show_structure(bitmap1->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap1);  // debug
         printf("\n\nbitmap2:\n");
-        show_structure(bitmap2->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap2);  // debug
         printf("\n\nresult:\n");
-        show_structure(temp->high_low_container);  // debug
+        roaring_bitmap_printf_describe(temp);  // debug
         printf("\n\ncorrect result:\n");
-        show_structure(expected->high_low_container);  // debug
+        roaring_bitmap_printf_describe(expected);  // debug
     }
     roaring_bitmap_free(temp);
     roaring_bitmap_free(expected);
@@ -183,14 +182,14 @@ bool is_andnot_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     bool answer = roaring_bitmap_equals(temp, expected);
     if (!answer) {
         printf("Bad ANDNOT\n\nbitmap1:\n");
-        show_structure(bitmap1->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap1);  // debug
         // print_container(3, bitmap1);
         printf("\n\nbitmap2:\n");
-        show_structure(bitmap2->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap2);  // debug
         printf("\n\nresult:\n");
-        show_structure(temp->high_low_container);  // debug
+        roaring_bitmap_printf_describe(temp);  // debug
         printf("\n\ncorrect result:\n");
-        show_structure(expected->high_low_container);  // debug
+        roaring_bitmap_printf_describe(expected);  // debug
         printf("difference is ");
         roaring_bitmap_printf(roaring_bitmap_xor(temp, expected));
     }
@@ -216,9 +215,9 @@ bool is_negation_correct(roaring_bitmap_t *bitmap) {
 
     if (!answer) {
         printf("Bad flip\n\nbitmap1:\n");
-        show_structure(bitmap->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap);  // debug
         printf("\n\nflipped:\n");
-        show_structure(inverted->high_low_container);  // debug
+        roaring_bitmap_printf_describe(inverted);  // debug
     }
 
     roaring_bitmap_free(double_inverted);
@@ -253,14 +252,14 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     bool answer = array_equals(arr, card, buffer, cardtrue);
     if (!answer) {
         printf("\n\nbitmap1:\n");
-        show_structure(bitmap1->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap1);  // debug
         printf("\n\nbitmap2:\n");
-        show_structure(bitmap2->high_low_container);  // debug
+        roaring_bitmap_printf_describe(bitmap2);  // debug
         printf("\n\nresult:\n");
-        show_structure(temp->high_low_container);  // debug
+        roaring_bitmap_printf_describe(temp);  // debug
         roaring_bitmap_t *ca = roaring_bitmap_of_ptr(cardtrue, buffer);
         printf("\n\ncorrect result:\n");
-        show_structure(ca->high_low_container);  // debug
+        roaring_bitmap_printf_describe(ca);  // debug
         free(ca);
     }
     free(buffer);
@@ -336,9 +335,9 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempandnorun, tempandruns)) {
             printf("Intersections don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempandnorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempandnorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(tempandruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempandruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempandnorun);
@@ -362,9 +361,9 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempandnorun, tempandruns)) {
             printf("[inplace] Intersections don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempandnorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempandnorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(tempandruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempandruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempandnorun);
@@ -396,9 +395,9 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("Unions don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempornorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempornorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(temporruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(temporruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempornorun);
@@ -422,9 +421,9 @@ bool compare_unions(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("[inplace] Unions don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempornorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempornorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(temporruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(temporruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempornorun);
@@ -456,9 +455,9 @@ bool compare_xors(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("Xors don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempornorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempornorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(temporruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(temporruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempornorun);
@@ -482,9 +481,9 @@ bool compare_xors(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("[inplace] Xors don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempornorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempornorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(temporruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(temporruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempornorun);
@@ -516,9 +515,9 @@ bool compare_andnots(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("Andnots don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempornorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempornorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(temporruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(temporruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempornorun);
@@ -542,9 +541,9 @@ bool compare_andnots(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         if (!roaring_bitmap_equals(tempornorun, temporruns)) {
             printf("[inplace] Andnots don't agree!\n");
             printf("\n\nbitmap1:\n");
-            show_structure(tempornorun->high_low_container);  // debug
+            roaring_bitmap_printf_describe(tempornorun);  // debug
             printf("\n\nbitmap2:\n");
-            show_structure(temporruns->high_low_container);  // debug
+            roaring_bitmap_printf_describe(temporruns);  // debug
             return false;
         }
         roaring_bitmap_free(tempornorun);

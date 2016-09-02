@@ -29,35 +29,30 @@ void test_example(bool copy_on_write) {
     for (uint32_t i = 100; i < 1000; i++) {
         roaring_bitmap_add(r1, i);
     }
-
     // check whether a value is contained
     assert_true(roaring_bitmap_contains(r1, 500));
 
     // compute how many bits there are:
     uint32_t cardinality = roaring_bitmap_get_cardinality(r1);
     printf("Cardinality = %d \n", cardinality);
+    assert_int_equal(900,cardinality);
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
     uint32_t size = roaring_bitmap_portable_size_in_bytes(r1);
     roaring_bitmap_run_optimize(r1);
     uint32_t compact_size = roaring_bitmap_portable_size_in_bytes(r1);
-
     printf("size before run optimize %d bytes, and after %d bytes\n", size,
            compact_size);
-
     // create a new bitmap with varargs
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
     assert_ptr_not_equal(r2, NULL);
-
     roaring_bitmap_printf(r2);
     printf("\n");
-
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
     r3->copy_on_write = copy_on_write;
-
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
     uint32_t *arr1 = new uint32_t[card1];

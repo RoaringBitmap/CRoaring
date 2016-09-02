@@ -417,16 +417,7 @@ int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
 
 int32_t bitset_container_write(const bitset_container_t *container,
                                   char *buf) {
-if( IS_BIG_ENDIAN){
-	// forcing little endian (could be faster)
-	for(int32_t i = 0 ; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {
-		uint64_t val = container->array[i];
-		val = __builtin_bswap64(val);
-		memcpy(buf + i * sizeof(uint64_t), &val, sizeof(uint64_t));
-	}
-} else {
 	memcpy(buf, container->array, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
-}
 	return bitset_container_size_in_bytes(container);
 }
 
@@ -434,8 +425,6 @@ if( IS_BIG_ENDIAN){
 int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container,
 		const char *buf)  {
 	container->cardinality = cardinality;
-	assert(!IS_BIG_ENDIAN);// TODO: Implement
-
 	memcpy(container->array, buf, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
 	return bitset_container_size_in_bytes(container);
 }

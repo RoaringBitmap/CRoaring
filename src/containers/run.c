@@ -545,29 +545,15 @@ int32_t run_container_serialize(run_container_t *container, char *buf) {
 }
 
 int32_t run_container_write(const run_container_t *container, char *buf) {
-    if (IS_BIG_ENDIAN) {
-        // forcing little endian (could be faster)
-        buf[0] = (uint8_t)(container->n_runs);
-        buf[1] = (uint8_t)(container->n_runs >> 8);
-        for (int32_t i = 0; i < container->n_runs; i++) {
-            rle16_t val = container->runs[i];
-            buf[2 + 4 * i] = (uint8_t)(val.value);
-            buf[2 + 4 * i + 1] = (uint8_t)(val.value >> 8);
-            buf[2 + 4 * i + 2] = (uint8_t)(val.length);
-            buf[2 + 4 * i + 3] = (uint8_t)(val.length >> 8);
-        }
-    } else {
-        memcpy(buf, &container->n_runs, sizeof(uint16_t));
-        memcpy(buf + sizeof(uint16_t), container->runs,
+    memcpy(buf, &container->n_runs, sizeof(uint16_t));
+    memcpy(buf + sizeof(uint16_t), container->runs,
                container->n_runs * sizeof(rle16_t));
-    }
     return run_container_size_in_bytes(container);
 }
 
 int32_t run_container_read(int32_t cardinality, run_container_t *container,
                            const char *buf) {
     (void)cardinality;
-    assert(!IS_BIG_ENDIAN);  // TODO: Implement
     memcpy(&container->n_runs, buf, sizeof(uint16_t));
     if (container->n_runs > container->capacity)
         run_container_grow(container, container->n_runs, false);

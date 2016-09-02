@@ -394,17 +394,8 @@ int32_t array_container_serialize(array_container_t *container, char *buf) {
  *
  */
 int32_t array_container_write(const array_container_t *container, char *buf) {
-    if (IS_BIG_ENDIAN) {
-        // forcing little endian (could be faster)
-        for (int32_t i = 0; i < container->cardinality; i++) {
-            uint16_t val = container->array[i];
-            buf[2 * i] = (uint8_t)val;
-            buf[2 * i + 1] = (uint8_t)(val >> 8);
-        }
-    } else {
-        memcpy(buf, container->array,
+    memcpy(buf, container->array,
                container->cardinality * sizeof(uint16_t));
-    }
     return array_container_size_in_bytes(container);
 }
 
@@ -426,8 +417,6 @@ int32_t array_container_read(int32_t cardinality, array_container_t *container,
         array_container_grow(container, cardinality, DEFAULT_MAX_SIZE, false);
     }
     container->cardinality = cardinality;
-    assert(!IS_BIG_ENDIAN);  // TODO: Implement
-
     memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));
 
     return array_container_size_in_bytes(container);
