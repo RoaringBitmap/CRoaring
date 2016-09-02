@@ -188,15 +188,9 @@ inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
      * here it is possible to bypass the binary search and the ra_get_index
      * call with the following call that might often come true
      */
-    int i;
-    if ((r->high_low_container->size > hb) &&
-        (r->high_low_container->keys[hb] == hb))
-        i = hb;  // we got lucky!
-    else {
-        // next call involves a binary search (maybe expensive)
-        i = ra_get_index(r->high_low_container, hb);
-        if (i < 0) return false;
-    }
+    int32_t i = ra_get_index(r->high_low_container, hb);
+    if (i < 0) return false;
+
     uint8_t typecode;
     // next call ought to be cheap
     void *container =
