@@ -8,12 +8,6 @@
 #include <roaring/containers/containers.h>
 #include <roaring/roaring_array.h>
 
-// ported from RoaringArray.java
-// Todo: optimization (eg branchless binary search)
-// Go version has copy-on-write, has combo binary/sequential search
-// AND: fast SIMD and on key sets; containerwise AND; SIMD partial sum
-//    with +1 for nonempty containers, 0 for empty containers
-//    then use this to pack the arrays for the result.
 
 // Convention: [0,ra->size) all elements are initialized
 //  [ra->size, ra->allocation_size) is junk and contains nothing needing freeing
@@ -23,7 +17,7 @@ extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
 extern inline void *ra_get_container_at_index(const roaring_array_t *ra,
       uint16_t i, uint8_t *typecode);
 extern inline void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i);
-extern inline inline void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
+extern inline void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
         uint16_t key, void *c,
         uint8_t typecode);
 extern inline void ra_set_container_at_index(const roaring_array_t *ra, int32_t i, void *c,
@@ -34,7 +28,8 @@ extern inline void ra_set_container_at_index(const roaring_array_t *ra, int32_t 
 #define INITIAL_CAPACITY 4
 
 static bool realloc_array(roaring_array_t *ra, size_t new_capacity) {
-    ra->keys =
+    // because we combine the allocations, it is not possible to use realloc
+	/*ra->keys =
         (uint16_t *)realloc(ra->keys, sizeof(uint16_t) * new_capacity);
     ra->containers =
         (void **)realloc(ra->containers, sizeof(void *) * new_capacity);
@@ -45,8 +40,21 @@ static bool realloc_array(roaring_array_t *ra, size_t new_capacity) {
     	free(ra->containers);
     	free(ra->typecodes);
     	return false;
-    }
-    ra->allocation_size = new_capacity;
+    }*/
+	const size_t memoryneeded = new_capacity * (sizeof(uint16_t)+sizeof(void *)+sizeof(uint8_t));
+	void * bigalloc = malloc(memoryneeded);
+	if(! bigalloc) return false;
+	void** newcontainers = (void **) bigalloc;
+	uint16_t * newkeys = (uint16_t *)(newcontainers + new_capacity);
+	uint8_t * newtypecodes = (uint8_t *)(newkeys + new_capacity);
+	assert((char *)(newtypecodes + new_capacity) == (char *) bigalloc + memoryneeded);
+    memcpy(newcontainers,ra->containers,sizeof(void *) * ra->size);
+    memcpy(newkeys,ra->keys,sizeof(uint16_t) * ra->size);
+    memcpy(newtypecodes, ra->typecodes,sizeof(uint8_t) * ra->size);
+	ra->containers = newcontainers;
+	ra->keys = newkeys;
+	ra->typecodes = newtypecodes;
+	ra->allocation_size = new_capacity;
     return true;
 }
 
@@ -58,15 +66,10 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
     new_ra->typecodes = NULL;
 
     new_ra->allocation_size = cap;
-    new_ra->keys = (uint16_t *)malloc(cap * sizeof(uint16_t));
-    new_ra->containers = (void **)malloc(cap * sizeof(void *));
-    new_ra->typecodes = (uint8_t *)malloc(cap * sizeof(uint8_t));
-    if (!new_ra->keys || !new_ra->containers || !new_ra->typecodes) {
-        free(new_ra->keys);
-        free(new_ra->containers);
-        free(new_ra->typecodes);
-        return NULL;
-    }
+    void * bigalloc = malloc(cap * (sizeof(uint16_t)+sizeof(void *)+sizeof(uint8_t)));
+    new_ra->containers = (void **) bigalloc;
+    new_ra->keys = (uint16_t *)(new_ra->containers + cap);
+    new_ra->typecodes = (uint8_t *)(new_ra->keys + cap);
     new_ra->size = 0;
 
     return true;
@@ -98,11 +101,9 @@ bool ra_copy(const roaring_array_t *source, roaring_array_t * dest, bool copy_on
                 container_clone(source->containers[i], source->typecodes[i]);
             if (dest->containers[i] == NULL) {
                 for (int32_t j = 0; j < i; j++) {
-                    container_free(source->containers[j], source->typecodes[j]);
+                    container_free(dest->containers[j], dest->typecodes[j]);
                 }
-                free(dest->keys);
-                free(dest->containers);
-                free(dest->typecodes);
+                ra_clear_without_containers(dest);
                 return false;
             }
         }
@@ -136,11 +137,9 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t * dest, bool co
                 container_clone(source->containers[i], source->typecodes[i]);
             if (dest->containers[i] == NULL) {
                 for (int32_t j = 0; j < i; j++) {
-                    container_free(source->containers[j], source->typecodes[j]);
+                    container_free(dest->containers[j], dest->typecodes[j]);
                 }
-                free(dest->keys);
-                free(dest->containers);
-                free(dest->typecodes);
+                ra_clear_without_containers(dest);
                 return false;
             }
         }
@@ -155,11 +154,9 @@ void ra_clear_containers(roaring_array_t *ra) {
 }
 
 void ra_clear_without_containers(roaring_array_t *ra) {
-    free(ra->keys);
+	free(ra->containers); // keys and typecodes are allocated with containers
     ra->keys = NULL;  // paranoid
-    free(ra->containers);
     ra->containers = NULL;  // paranoid
-    free(ra->typecodes);
     ra->typecodes = NULL;  // paranoid
 }
 
@@ -555,10 +552,9 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
         buf += s;
     }
     uint16_t *keys = answer->keys;
-    int32_t *cardinalities = (int32_t *)malloc(size * sizeof(int32_t));
+    int32_t *cardinalities = (int32_t *)malloc(size * (sizeof(int32_t) + sizeof(bool)));// one malloc
     assert(cardinalities != NULL);  // todo: handle
-    bool *isBitmap = (bool *)malloc(size * sizeof(bool));
-    assert(isBitmap != NULL);  // todo: handle
+    bool *isBitmap = (bool *)(cardinalities + size);
     uint16_t tmp;
     for (int32_t k = 0; k < size; ++k) {
         memcpy(&keys[k], buf, sizeof(keys[k]));
@@ -601,8 +597,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
         }
     }
     free(bitmapOfRunContainers);
-    free(cardinalities);
-    free(isBitmap);
+    free(cardinalities);//isBitmap fits in there
     return true;
 }
 

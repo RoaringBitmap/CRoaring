@@ -31,8 +31,8 @@ enum {
 typedef struct roaring_array_s {
     int32_t size;
     int32_t allocation_size;
-    uint16_t *keys;
     void **containers;
+    uint16_t *keys;
     uint8_t *typecodes;
 } roaring_array_t;
 
