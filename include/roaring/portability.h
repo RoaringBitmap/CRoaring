@@ -87,6 +87,8 @@ static inline void * aligned_malloc(size_t alignment, size_t size) {
 	void *p;
 #ifdef _MSC_VER
 	p = _aligned_malloc(size, alignment);
+#elif __MINGW32__
+	p = __mingw_aligned_malloc(size, alignment);
 #else
 	if (posix_memalign(&p, alignment, size) != 0)
 		return NULL;
