@@ -47,8 +47,8 @@ bitset_container_t *bitset_container_create(void) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    if (posix_memalign((void **)&bitset->array, 32,
-                       sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) {
+    bitset->array = (uint64_t *) aligned_malloc(32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (! bitset->array) {
         free(bitset);
         return NULL;
     }
@@ -108,8 +108,8 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    if (posix_memalign((void **)&bitset->array, 32,
-                       sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS)) {
+    bitset->array = (uint64_t *) aligned_malloc(32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (! bitset->array) {
         free(bitset);
         return NULL;
     }
@@ -443,11 +443,11 @@ void* bitset_container_deserialize(const char *buf, size_t buf_len) {
   if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
     memcpy(ptr, buf, sizeof(bitset_container_t));
     // sizeof(__m256i) == 32
-    if(posix_memalign((void **)&ptr->array, 32, l)) {
-      free(ptr);
-      return(NULL);
+    ptr->array = (uint64_t *) aligned_malloc(32, l);
+    if (! ptr->array) {
+        free(ptr);
+        return NULL;
     }
-
     memcpy(ptr->array, buf, l);
     ptr->cardinality = bitset_container_compute_cardinality(ptr);
   }

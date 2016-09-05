@@ -81,4 +81,17 @@ static inline int hamming(uint64_t x) {
 #define UINT32_C(c) (c##UL)
 #endif
 
+
+// portable version of  posix_memalign
+static inline void * aligned_malloc(size_t alignment, size_t size) {
+	void *p;
+#ifdef _MSC_VER
+	p = _aligned_malloc(size, alignment);
+#else
+	if (posix_memalign(&p, alignment, size) != 0)
+		return NULL;
+#endif
+	return p;
+}
+
 #endif /* INCLUDE_PORTABILITY_H_ */
