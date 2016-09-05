@@ -7,6 +7,7 @@
 #define INCLUDE_PORTABILITY_H_
 
 #include <stdint.h>
+#include <malloc.h>
 
 #if __SIZEOF_LONG_LONG__ != 8
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
