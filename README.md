@@ -322,6 +322,9 @@ To reformat your code according to the style convention (make sure that ``clang-
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
 
+# C# Wrapper 
+
+Brandon Smith wrote a C# wrapper available at https://github.com/RogueException/CRoaring.Net (works for Windows and Linux under x64 processors)
 
 # Go (golang) Wrapper
 
