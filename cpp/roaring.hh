@@ -24,6 +24,15 @@ class Roaring {
     }
 
     /**
+     * Construct a bitmap from a list of integer values.
+     */
+    Roaring(size_t n, const uint32_t *data) {
+        roaring = roaring_bitmap_of_ptr(n, data);
+        if (roaring == NULL) {
+            throw std::runtime_error("failed memory alloc in constructor");
+        }
+    }
+    /**
      * Copy constructor
      */
     Roaring(const Roaring &r) : roaring(NULL) {
@@ -54,22 +63,21 @@ class Roaring {
         return ans;
     }
 
-    /**
-     * Construct a bitmap from a list of integer values.
-     */
-    static Roaring fromUint32Array(size_t n, const uint32_t *data) {
-        Roaring ans;
-        for (size_t i = 0; i < n; i++) {
-            ans.add(data[i]);
-        }
-        return ans;
-    }
 
     /**
      * Add value x
      *
      */
     void add(uint32_t x) { roaring_bitmap_add(roaring, x); }
+
+    /**
+     * Add value n_args from pointer vals
+     *
+     */
+    void addMany(size_t n_args, const uint32_t *vals) {
+        roaring_bitmap_add_many(roaring, n_args, vals);
+    }
+
     /**
      * Remove value x
      *

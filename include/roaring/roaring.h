@@ -174,6 +174,12 @@ void roaring_bitmap_free(roaring_bitmap_t *r);
 void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x);
 
 /**
+ * Add value n_args from pointer vals, faster than repeatedly calling roaring_bitmap_add
+ *
+ */
+void roaring_bitmap_add_many(roaring_bitmap_t * r, size_t n_args, const uint32_t *vals);
+
+/**
  * Remove value x
  *
  */

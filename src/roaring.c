@@ -80,23 +80,20 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     return ans;
 }
 
-roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
-    roaring_bitmap_t *answer = roaring_bitmap_create();
+void roaring_bitmap_add_many(roaring_bitmap_t * r, size_t n_args, const uint32_t *vals) {
     void *container = NULL;  // hold value of last container touched
     uint8_t typecode = 0;    // typecode of last container touched
     uint32_t prev = 0;       // previous valued inserted
     size_t i = 0;            // index of value
     int containerindex = 0;
-    if (n_args > 0) {
-        uint32_t val;
-        memcpy(&val, vals + i, sizeof(val));
-        container = containerptr_roaring_bitmap_add(answer, val, &typecode,
+    if(n_args == 0) return;
+    uint32_t val;
+    memcpy(&val, vals + i, sizeof(val));
+    container = containerptr_roaring_bitmap_add(r, val, &typecode,
                                                     &containerindex);
-        prev = val;
-        i++;
-    }
+    prev = val;
+    i++;
     for (; i < n_args; i++) {
-        uint32_t val;
         memcpy(&val, vals + i, sizeof(val));
         if (((prev ^ val) >> 16) ==
             0) {  // no need to seek the container, it is at hand
@@ -109,18 +106,23 @@ roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
             if (container2 != container) {  // rare instance when we need to
                                             // change the container type
                 container_free(container, typecode);
-                ra_set_container_at_index(&answer->high_low_container,
+                ra_set_container_at_index(&r->high_low_container,
                                           containerindex, container2,
                                           newtypecode);
                 typecode = newtypecode;
                 container = container2;
             }
         } else {
-            container = containerptr_roaring_bitmap_add(answer, val, &typecode,
+            container = containerptr_roaring_bitmap_add(r, val, &typecode,
                                                         &containerindex);
         }
         prev = val;
     }
+}
+
+roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
+    roaring_bitmap_t *answer = roaring_bitmap_create();
+    roaring_bitmap_add_many(answer, n_args, vals);
     return answer;
 }
 

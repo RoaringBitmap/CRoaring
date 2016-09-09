@@ -203,13 +203,13 @@ printf("\n");
 
 // we can also create a bitmap from a pointer to 32-bit integers
 const uint32_t values[] = {2, 3, 4};
-Roaring r3 = Roaring::fromUint32Array(3, values);
+Roaring r3(3, values);
 
 // we can also go in reverse and go from arrays to bitmaps
 uint64_t card1 = r1.cardinality();
 uint32_t *arr1 = new uint32_t[card1];
 r1.toUint32Array(arr1);
-Roaring r1f = Roaring::fromUint32Array(card1, arr1);
+Roaring r1f(card1, arr1);
 delete[] arr1;
 
 // bitmaps shall be equal
