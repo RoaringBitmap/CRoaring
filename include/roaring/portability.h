@@ -6,8 +6,12 @@
 #ifndef INCLUDE_PORTABILITY_H_
 #define INCLUDE_PORTABILITY_H_
 
+#ifndef __APPLE__
+#include <malloc.h> // unless we are on a Mac, we include malloc.h
+#endif
+#include <stdlib.h>
 #include <stdint.h>
-#include <malloc.h>
+#include <stdbool.h>
 
 #if __SIZEOF_LONG_LONG__ != 8
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.

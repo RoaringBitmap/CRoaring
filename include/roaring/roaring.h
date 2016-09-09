@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <roaring/roaring_version.h>
 #include <roaring/roaring_array.h>
 #include <roaring/roaring_types.h>
 
