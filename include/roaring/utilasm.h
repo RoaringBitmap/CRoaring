@@ -8,7 +8,7 @@
 
 #include <roaring/portability.h>
 
-#if defined(ROARING_USE_BMI)
+#ifdef ROARING_USE_BMI
 #define ROARING_ASMBITMANIPOPTIMIZATION  // optimization flag
 
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
@@ -64,6 +64,5 @@
         "r"(testByte), /* read only */     \
         "r"(testBit)   /* read only */     \
         )
-
 #endif  // ROARING_USE_BMI
 #endif  /* INCLUDE_UTILASM_H_ */
