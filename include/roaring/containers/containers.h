@@ -17,7 +17,7 @@
 #include <roaring/containers/run.h>
 
 // would enum be possible or better?
-
+// The *CONTAINER_TYPE_CODE values could be part of an enumerated type
 /**
  * The switch case statements follow
  * BITSET_CONTAINER_TYPE_CODE -- ARRAY_CONTAINER_TYPE_CODE --
