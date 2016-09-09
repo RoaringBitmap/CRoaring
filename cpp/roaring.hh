@@ -24,6 +24,15 @@ class Roaring {
     }
 
     /**
+     * Construct a bitmap from a list of integer values.
+     */
+    Roaring(size_t n, const uint32_t *data) {
+        roaring = roaring_bitmap_of_ptr(n, data);
+        if (roaring == NULL) {
+            throw std::runtime_error("failed memory alloc in constructor");
+        }
+    }
+    /**
      * Copy constructor
      */
     Roaring(const Roaring &r) : roaring(NULL) {
@@ -54,22 +63,21 @@ class Roaring {
         return ans;
     }
 
-    /**
-     * Construct a bitmap from a list of integer values.
-     */
-    static Roaring fromUint32Array(size_t n, const uint32_t *data) {
-        Roaring ans;
-        for (size_t i = 0; i < n; i++) {
-            ans.add(data[i]);
-        }
-        return ans;
-    }
 
     /**
      * Add value x
      *
      */
     void add(uint32_t x) { roaring_bitmap_add(roaring, x); }
+
+    /**
+     * Add value n_args from pointer vals
+     *
+     */
+    void addMany(size_t n_args, const uint32_t *vals) {
+        roaring_bitmap_add_many(roaring, n_args, vals);
+    }
+
     /**
      * Remove value x
      *
@@ -226,10 +234,10 @@ class Roaring {
      * sparse bitmaps).
      */
     size_t write(char *buf, bool portable = true) const {
-        if(portable)
-          return roaring_bitmap_portable_serialize(roaring, buf);
+        if (portable)
+            return roaring_bitmap_portable_serialize(roaring, buf);
         else
-          return roaring_bitmap_serialize(roaring, buf);
+            return roaring_bitmap_serialize(roaring, buf);
     }
 
     /**
@@ -244,10 +252,10 @@ class Roaring {
      */
     static Roaring read(const char *buf, bool portable = true) {
         Roaring ans(NULL);
-        if(portable)
-          ans.roaring = roaring_bitmap_portable_deserialize(buf);
+        if (portable)
+            ans.roaring = roaring_bitmap_portable_deserialize(buf);
         else
-          ans.roaring = roaring_bitmap_deserialize(buf);
+            ans.roaring = roaring_bitmap_deserialize(buf);
         if (ans.roaring == NULL) {
             throw std::runtime_error("failed memory alloc while reading");
         }
@@ -264,13 +272,11 @@ class Roaring {
      * sparse bitmaps).
      */
     size_t getSizeInBytes(bool portable = true) const {
-      if(portable)
-        return roaring_bitmap_portable_size_in_bytes(roaring);
-      else
-        return roaring_bitmap_size_in_bytes(roaring);
+        if (portable)
+            return roaring_bitmap_portable_size_in_bytes(roaring);
+        else
+            return roaring_bitmap_size_in_bytes(roaring);
     }
-
-
 
     /**
      * Computes the intersection between two bitmaps and returns new bitmap.
