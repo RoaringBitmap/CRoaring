@@ -95,14 +95,4 @@ with open(versionfile, 'w') as file:
 print(versionfile + " modified")
 
 print("to issue release, enter \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
-#print("current version
 
-#CURRENTVERSIONSTR=`git describe --abbrev=0 --tags`
-
-#if [ $# -eq 0 ]; then
-#    echo "Please specify new version. Current version: $CURRENTVERSION "
-#    exit 1
-#fi
-
-#git tag -a v$NEWVERSION -m "version $NEWVERSION"
-#git push --tags
