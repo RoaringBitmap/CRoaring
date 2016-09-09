@@ -2,8 +2,8 @@
   Typedefs used by various components
 */
 
-#ifndef ROARING_ROARING_TYPES_H
-#define ROARING_ROARING_TYPES_H
+#ifndef ROARING_TYPES_H
+#define ROARING_TYPES_H
 
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
 
@@ -25,12 +25,13 @@ typedef struct roaring_statistics_s {
     uint32_t
         n_values_bitset_containers; /* number of values in  bitmap containers */
 
-    uint32_t n_bytes_array_containers;  /* number of allocated bytes in array
-                                           containers */
-    uint32_t n_bytes_run_containers;    /* number of allocated bytes in run
-                                           containers */
-    uint32_t n_bytes_bitset_containers; /* number of allocated bytes in  bitmap
-                                           containers */
+    uint32_t n_bytes_array_containers; /* number of allocated bytes in array
+                                          containers */
+    uint32_t n_bytes_run_containers;   /* number of allocated bytes in run
+                                          containers */
+    uint32_t
+        n_bytes_bitset_containers; /* number of allocated bytes in  bitmap
+                                      containers */
 
     uint32_t
         max_value; /* the maximal value, undefined if cardinality is zero */

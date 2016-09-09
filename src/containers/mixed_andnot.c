@@ -54,7 +54,7 @@ bool bitset_array_container_andnot(const bitset_container_t *src_1,
                                             src_2->array, src_2->cardinality);
 
     // do required type conversions.
-    if (result->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
         bitset_container_free(result);
         return false;
@@ -77,7 +77,7 @@ bool bitset_array_container_iandnot(bitset_container_t *src_1,
     src_1->cardinality = bitset_clear_list(src_1->array, src_1->cardinality,
                                            src_2->array, src_2->cardinality);
 
-    if (src_1->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
         bitset_container_free(src_1);
         return false;  // not bitset
@@ -96,7 +96,7 @@ bool run_bitset_container_andnot(const run_container_t *src_1,
                                  const bitset_container_t *src_2, void **dst) {
     // follows the Java implementation as of June 2016
     int card = run_container_cardinality(src_1);
-    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (card <= DEFAULT_MAX_SIZE) {
         // must be an array
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
@@ -129,7 +129,7 @@ bool run_bitset_container_andnot(const run_container_t *src_1,
 
         answer->cardinality = bitset_container_compute_cardinality(answer);
 
-        if (answer->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+        if (answer->cardinality <= DEFAULT_MAX_SIZE) {
             *dst = array_container_from_bitset(answer);
             bitset_container_free(answer);
             return false;  // not bitset
@@ -174,7 +174,7 @@ bool bitset_run_container_andnot(const bitset_container_t *src_1,
     }
     result->cardinality = bitset_container_compute_cardinality(result);
 
-    if (result->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
         bitset_container_free(result);
         return false;  // not bitset
@@ -201,7 +201,7 @@ bool bitset_run_container_iandnot(bitset_container_t *src_1,
     }
     src_1->cardinality = bitset_container_compute_cardinality(src_1);
 
-    if (src_1->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
         bitset_container_free(src_1);
         return false;  // not bitset
@@ -336,7 +336,7 @@ int run_array_container_andnot(const run_container_t *src_1,
     }
     // else it's a bitmap or array
 
-    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *ac = array_container_create_given_capacity(card);
         // nb Java code used a generic iterator-based merge to compute
         // difference
@@ -472,7 +472,7 @@ bool bitset_bitset_container_andnot(const bitset_container_t *src_1,
                                     void **dst) {
     bitset_container_t *ans = bitset_container_create();
     int card = bitset_container_andnot(src_1, src_2, ans);
-    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);
         bitset_container_free(ans);
         return false;  // not bitset
@@ -493,7 +493,7 @@ bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
                                      const bitset_container_t *src_2,
                                      void **dst) {
     int card = bitset_container_andnot(src_1, src_2, src_1);
-    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
         bitset_container_free(src_1);
         return false;  // not bitset

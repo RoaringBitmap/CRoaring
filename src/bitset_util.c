@@ -6,7 +6,7 @@
 
 #include <roaring/bitset_util.h>
 
-#if defined(ROARING_X64) || defined(ROARING_USE_AVX)
+#if defined(IS_X64) || defined(USEAVX)
 
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -22,7 +22,7 @@ static uint8_t lengthTable[256] = {
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 #endif
 
-#ifdef ROARING_USE_AVX
+#ifdef USEAVX
 static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
     {1, 0, 0, 0, 0, 0, 0, 0}, /* 0x01 (00000001) */
@@ -282,9 +282,9 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
-#endif  // #ifdef ROARING_USE_AVX
+#endif  // #ifdef USEAVX
 
-#ifdef ROARING_X64
+#ifdef IS_X64
 // same as vecDecodeTable but in 16 bits
 static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
@@ -547,11 +547,12 @@ static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
 
 #endif
 
-#ifdef ROARING_USE_AVX
+#ifdef USEAVX
 
-size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, void *vout,
-                                   size_t outcapacity, uint32_t base) {
-    uint32_t *out = (uint32_t *)vout;
+size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
+                                   void *vout, size_t outcapacity,
+                                   uint32_t base) {
+    uint32_t *out = (uint32_t *) vout;
     uint32_t *initout = out;
     __m256i baseVec = _mm256_set1_epi32(base - 1);
     __m256i incVec = _mm256_set1_epi32(64);
@@ -591,8 +592,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, void *vout,
             uint64_t t = w & -w;
             int r = __builtin_ctzll(w);
             uint32_t val = r + base;
-            memcpy(out, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
+            memcpy(out, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
             out++;
             w ^= t;
         }
@@ -600,21 +600,20 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, void *vout,
     }
     return out - initout;
 }
-#endif  // ROARING_USE_AVX
+#endif  // USEAVX
 
 size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
                               uint32_t base) {
     int outpos = 0;
-    uint32_t *out = (uint32_t *)vout;
+    uint32_t * out = (uint32_t *) vout;
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = bitset[i];
         while (w != 0) {
             uint64_t t = w & -w;
             int r = __builtin_ctzll(w);
             uint32_t val = r + base;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
+            memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
+            outpos ++;
             w ^= t;
         }
         base += 64;
@@ -640,7 +639,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
     return outpos;
 }
 
-#ifdef ROARING_X64
+#ifdef IS_X64
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out" as 16-bit integers, values start at "base" (can
@@ -730,7 +729,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
     return outpos;
 }
 
-#ifdef ROARING_ASMBITMANIPOPTIMIZATION
+#if defined(ASMBITMANIPOPTIMIZATION)
 
 uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
@@ -758,58 +757,59 @@ uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
 }
 
 void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length) {
-    uint64_t pos;
+    uint64_t  pos;
     const uint16_t *end = list + length;
 
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t load;
-    for (; list + 3 < end; list += 4) {
-        pos = list[0];
-        __asm volatile(
-            "shrx %[shift], %[pos], %[offset]\n"
-            "mov (%[bitset],%[offset],8), %[load]\n"
-            "bts %[pos], %[load]\n"
-            "mov %[load], (%[bitset],%[offset],8)"
-            : [load] "=&r"(load), [offset] "=&r"(offset)
-            : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
-        pos = list[1];
-        __asm volatile(
-            "shrx %[shift], %[pos], %[offset]\n"
-            "mov (%[bitset],%[offset],8), %[load]\n"
-            "bts %[pos], %[load]\n"
-            "mov %[load], (%[bitset],%[offset],8)"
-            : [load] "=&r"(load), [offset] "=&r"(offset)
-            : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
-        pos = list[2];
-        __asm volatile(
-            "shrx %[shift], %[pos], %[offset]\n"
-            "mov (%[bitset],%[offset],8), %[load]\n"
-            "bts %[pos], %[load]\n"
-            "mov %[load], (%[bitset],%[offset],8)"
-            : [load] "=&r"(load), [offset] "=&r"(offset)
-            : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
-        pos = list[3];
-        __asm volatile(
-            "shrx %[shift], %[pos], %[offset]\n"
-            "mov (%[bitset],%[offset],8), %[load]\n"
-            "bts %[pos], %[load]\n"
-            "mov %[load], (%[bitset],%[offset],8)"
-            : [load] "=&r"(load), [offset] "=&r"(offset)
-            : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+    for(;list + 3 < end; list += 4) {
+      pos =  list[0];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      pos =  list[1];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      pos =  list[2];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      pos =  list[3];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
     }
 
-    while (list != end) {
-        pos = list[0];
-        __asm volatile(
-            "shrx %[shift], %[pos], %[offset]\n"
-            "mov (%[bitset],%[offset],8), %[load]\n"
-            "bts %[pos], %[load]\n"
-            "mov %[load], (%[bitset],%[offset],8)"
-            : [load] "=&r"(load), [offset] "=&r"(offset)
-            : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
-        list++;
+    while(list != end) {
+      pos =  list[0];
+    __asm volatile(
+        "shrx %[shift], %[pos], %[offset]\n"
+        "mov (%[bitset],%[offset],8), %[load]\n"
+        "bts %[pos], %[load]\n"
+        "mov %[load], (%[bitset],%[offset],8)"
+        : [load] "=&r"(load), [offset] "=&r"(offset)
+        : [bitset] "r"(bitset), [shift] "r"(shift), [pos] "r"(pos));
+      list ++;
     }
+
 }
 
 uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,

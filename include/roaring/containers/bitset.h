@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef ROARING_INCLUDE_CONTAINERS_BITSET_H_
-#define ROARING_INCLUDE_CONTAINERS_BITSET_H_
+#ifndef INCLUDE_CONTAINERS_BITSET_H_
+#define INCLUDE_CONTAINERS_BITSET_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,9 +12,15 @@
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
 
+#ifdef USEAVX
+#define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
+#else
+#define ALIGN_AVX
+#endif
+
 enum {
-    ROARING_BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64,
-    ROARING_BITSET_UNKNOWN_CARDINALITY = -1
+    BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64,
+    BITSET_UNKNOWN_CARDINALITY = -1
 };
 
 struct bitset_container_s {
@@ -52,7 +58,7 @@ void *bitset_container_deserialize(const char *buf, size_t buf_len);
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
                                 uint32_t end);
 
-#ifdef ROARING_ASMBITMANIPOPTIMIZATION
+#ifdef ASMBITMANIPOPTIMIZATION
 /* Set the ith bit.  */
 static inline void bitset_container_set(bitset_container_t *bitset,
                                         uint16_t pos) {
@@ -111,7 +117,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 
 /* Get the value of the ith bit.  */
 inline bool bitset_container_get(const bitset_container_t *bitset,
-                                 uint16_t pos) {
+                                        uint16_t pos) {
     uint64_t word = bitset->array[pos >> 6];
     const uint64_t p = pos;
     ASM_INPLACESHIFT_RIGHT(word, p);
@@ -206,7 +212,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 static inline bool bitset_container_nonzero_cardinality(
     bitset_container_t *bitset) {
     // account for laziness
-    if (bitset->cardinality == ROARING_BITSET_UNKNOWN_CARDINALITY)
+    if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY)
         // could bail early instead with a nonzero result
         bitset->cardinality = bitset_container_compute_cardinality(bitset);
     return bitset->cardinality > 0;
@@ -312,7 +318,8 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
  * The out pointer should point to enough memory (the cardinality times 32
  * bits).
  */
-int bitset_container_to_uint32_array(void *out, const bitset_container_t *cont,
+int bitset_container_to_uint32_array(void *out,
+                                     const bitset_container_t *cont,
                                      uint32_t base);
 
 /*
@@ -331,7 +338,7 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t *v,
  * Return the serialized size in bytes of a container.
  */
 static inline int32_t bitset_container_serialized_size_in_bytes(void) {
-    return ROARING_BITSET_CONTAINER_SIZE_IN_WORDS * 8;
+    return BITSET_CONTAINER_SIZE_IN_WORDS * 8;
 }
 
 /**
@@ -370,7 +377,7 @@ int32_t bitset_container_read(int32_t cardinality,
 static inline int32_t bitset_container_size_in_bytes(
     const bitset_container_t *container) {
     (void)container;
-    return ROARING_BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+    return BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
 }
 
 /**

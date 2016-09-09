@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef ROARING_INCLUDE_CONTAINERS_MIXED_EQUAL_H_
-#define ROARING_INCLUDE_CONTAINERS_MIXED_EQUAL_H_
+#ifndef CONTAINERS_MIXED_EQUAL_H_
+#define CONTAINERS_MIXED_EQUAL_H_
 
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>

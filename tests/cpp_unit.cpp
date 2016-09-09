@@ -35,7 +35,7 @@ void test_example(bool copy_on_write) {
     // compute how many bits there are:
     uint32_t cardinality = roaring_bitmap_get_cardinality(r1);
     printf("Cardinality = %d \n", cardinality);
-    assert_int_equal(900, cardinality);
+    assert_int_equal(900,cardinality);
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
@@ -151,7 +151,7 @@ void test_example_cpp(bool copy_on_write) {
 
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
-    Roaring r3(3, values);
+    Roaring r3 = Roaring::fromUint32Array(3, values);
     r3.setCopyOnWrite(copy_on_write);
 
     // we can also go in reverse and go from arrays to bitmaps
@@ -159,7 +159,7 @@ void test_example_cpp(bool copy_on_write) {
     uint32_t *arr1 = new uint32_t[card1];
     assert_true(arr1 != NULL);
     r1.toUint32Array(arr1);
-    Roaring r1f(card1, arr1);
+    Roaring r1f = Roaring::fromUint32Array(card1, arr1);
     delete[] arr1;
 
     // bitmaps shall be equal
@@ -203,20 +203,29 @@ void test_example_cpp(bool copy_on_write) {
      */
 }
 
-void test_example_true(void **) { test_example(true); }
+void test_example_true(void **) {
+    test_example(true);
+}
 
-void test_example_false(void **) { test_example(false); }
+void test_example_false(void **) {
+    test_example(false);
+}
 
-void test_example_cpp_true(void **) { test_example_cpp(true); }
+void test_example_cpp_true(void **) {
+    test_example_cpp(true);
+}
 
-void test_example_cpp_false(void **) { test_example_cpp(false); }
+void test_example_cpp_false(void **) {
+    test_example_cpp(false);
+}
 
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_example_cpp_true),
-        cmocka_unit_test(test_example_cpp_false)};
+        cmocka_unit_test(test_example_cpp_false)
+    };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

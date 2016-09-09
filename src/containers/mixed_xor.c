@@ -22,7 +22,7 @@ bool array_bitset_container_xor(const array_container_t *src_1,
         result->array, result->cardinality, src_1->array, src_1->cardinality);
 
     // do required type conversions.
-    if (result->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
         bitset_container_free(result);
         return false;  // not bitset
@@ -33,8 +33,7 @@ bool array_bitset_container_xor(const array_container_t *src_1,
 
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.  This version does not
- * update the cardinality of dst (it is set to
- * ROARING_BITSET_UNKNOWN_CARDINALITY).
+ * update the cardinality of dst (it is set to BITSET_UNKNOWN_CARDINALITY).
  */
 
 void array_bitset_container_lazy_xor(const array_container_t *src_1,
@@ -42,7 +41,7 @@ void array_bitset_container_lazy_xor(const array_container_t *src_1,
                                      bitset_container_t *dst) {
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     bitset_flip_list(dst->array, src_1->array, src_1->cardinality);
-    dst->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
 /* Compute the xor of src_1 and src_2 and write the result to
@@ -64,7 +63,7 @@ bool run_bitset_container_xor(const run_container_t *src_1,
     }
     result->cardinality = bitset_container_compute_cardinality(result);
 
-    if (result->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
         bitset_container_free(result);
         return false;  // not bitset
@@ -87,7 +86,7 @@ void run_bitset_container_lazy_xor(const run_container_t *src_1,
         bitset_flip_range(dst->array, rle.value,
                           rle.value + rle.length + UINT32_C(1));
     }
-    dst->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
 /* dst does not indicate a valid container initially.  Eventually it
@@ -113,7 +112,7 @@ int array_run_container_xor(const array_container_t *src_1,
     }
 
     int card = run_container_cardinality(src_2);
-    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (card <= DEFAULT_MAX_SIZE) {
         // Java implementation works with the array, xoring the run elements via
         // iterator
         array_container_t *temp = array_container_from_run(src_2);
@@ -192,7 +191,7 @@ bool array_array_container_xor(const array_container_t *src_1,
                                const array_container_t *src_2, void **dst) {
     int totalCardinality =
         src_1->cardinality + src_2->cardinality;  // upper bound
-    if (totalCardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
         array_container_xor(src_1, src_2, (array_container_t *)*dst);
         return false;  // not a bitset
@@ -202,7 +201,7 @@ bool array_array_container_xor(const array_container_t *src_1,
     bitset_container_t *ourbitset = (bitset_container_t *)*dst;
     ourbitset->cardinality = bitset_flip_list_withcard(
         ourbitset->array, src_1->cardinality, src_2->array, src_2->cardinality);
-    if (ourbitset->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
         // need to convert!
         *dst = array_container_from_bitset(ourbitset);
         bitset_container_free(ourbitset);
@@ -217,7 +216,7 @@ bool array_array_container_lazy_xor(const array_container_t *src_1,
                                     void **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     // upper bound, but probably poor estimate for xor
-    if (totalCardinality <= ROARING_ARRAY_LAZY_LOWERBOUND) {
+    if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL)
             array_container_xor(src_1, src_2, (array_container_t *)*dst);
@@ -228,7 +227,7 @@ bool array_array_container_lazy_xor(const array_container_t *src_1,
     if (*dst != NULL) {
         bitset_container_t *ourbitset = (bitset_container_t *)*dst;
         bitset_flip_list(ourbitset->array, src_2->array, src_2->cardinality);
-        ourbitset->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;
+        ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
     }
     return returnval;
 }
@@ -242,7 +241,7 @@ bool bitset_bitset_container_xor(const bitset_container_t *src_1,
                                  const bitset_container_t *src_2, void **dst) {
     bitset_container_t *ans = bitset_container_create();
     int card = bitset_container_xor(src_1, src_2, ans);
-    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);
         bitset_container_free(ans);
         return false;  // not bitset
@@ -265,7 +264,7 @@ bool bitset_array_container_ixor(bitset_container_t *src_1,
     src_1->cardinality = bitset_flip_list_withcard(
         src_1->array, src_1->cardinality, src_2->array, src_2->cardinality);
 
-    if (src_1->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
         bitset_container_free(src_1);
         return false;  // not bitset

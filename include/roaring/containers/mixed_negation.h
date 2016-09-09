@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef ROARING_INCLUDE_CONTAINERS_MIXED_NEGATION_H_
-#define ROARING_INCLUDE_CONTAINERS_MIXED_NEGATION_H_
+#ifndef INCLUDE_CONTAINERS_MIXED_NEGATION_H_
+#define INCLUDE_CONTAINERS_MIXED_NEGATION_H_
 
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>

@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef ROARING_INCLUDE_CONTAINERS_CONVERT_H_
-#define ROARING_INCLUDE_CONTAINERS_CONVERT_H_
+#ifndef INCLUDE_CONTAINERS_CONVERT_H_
+#define INCLUDE_CONTAINERS_CONVERT_H_
 
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>

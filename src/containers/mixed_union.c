@@ -23,14 +23,13 @@ void array_bitset_container_union(const array_container_t *src_1,
 
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.  This version does not
- * update the cardinality of dst (it is set to
- * ROARING_BITSET_UNKNOWN_CARDINALITY). */
+ * update the cardinality of dst (it is set to BITSET_UNKNOWN_CARDINALITY). */
 void array_bitset_container_lazy_union(const array_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        bitset_container_t *dst) {
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     bitset_set_list(dst->array, src_1->array, src_1->cardinality);
-    dst->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
 void run_bitset_container_union(const run_container_t *src_1,
@@ -54,7 +53,7 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
         rle16_t rle = src_1->runs[rlepos];
         bitset_set_lenrange(dst->array, rle.value, rle.length);
     }
-    dst->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
 // why do we leave the result as a run container??
@@ -157,7 +156,7 @@ void array_run_container_inplace_union(const array_container_t *src_1,
 bool array_array_container_union(const array_container_t *src_1,
                                  const array_container_t *src_2, void **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
-    if (totalCardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL)
             array_container_union(src_1, src_2, (array_container_t *)*dst);
@@ -171,8 +170,7 @@ bool array_array_container_union(const array_container_t *src_1,
         ourbitset->cardinality =
             bitset_set_list_withcard(ourbitset->array, src_1->cardinality,
                                      src_2->array, src_2->cardinality);
-        if (ourbitset->cardinality <=
-            ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+        if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
             // need to convert!
             *dst = array_container_from_bitset(ourbitset);
             bitset_container_free(ourbitset);
@@ -186,7 +184,7 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
                                       const array_container_t *src_2,
                                       void **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
-    if (totalCardinality <= ROARING_ARRAY_LAZY_LOWERBOUND) {
+    if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL)
             array_container_union(src_1, src_2, (array_container_t *)*dst);
@@ -198,7 +196,7 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
         bitset_container_t *ourbitset = (bitset_container_t *)*dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
         bitset_set_list(ourbitset->array, src_2->array, src_2->cardinality);
-        ourbitset->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;
+        ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
     }
     return returnval;
 }

@@ -107,7 +107,7 @@ bool array_container_negation_range(const array_container_t *src,
         new_values_in_range - current_values_in_range;
     const int32_t new_cardinality = src->cardinality + cardinality_change;
 
-    if (new_cardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (new_cardinality > DEFAULT_MAX_SIZE) {
         bitset_container_t *temp = bitset_container_from_array(src);
         bitset_flip_range(temp->array, (uint32_t)range_start,
                           (uint32_t)range_end);
@@ -175,7 +175,7 @@ bool bitset_container_negation_range(const bitset_container_t *src,
     bitset_flip_range(t->array, (uint32_t)range_start, (uint32_t)range_end);
     t->cardinality = bitset_container_compute_cardinality(t);
 
-    if (t->cardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (t->cardinality > DEFAULT_MAX_SIZE) {
         *dst = t;
         return true;
     } else {
@@ -199,7 +199,7 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
                                              const int range_end, void **dst) {
     bitset_flip_range(src->array, (uint32_t)range_start, (uint32_t)range_end);
     src->cardinality = bitset_container_compute_cardinality(src);
-    if (src->cardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+    if (src->cardinality > DEFAULT_MAX_SIZE) {
         *dst = src;
         return true;
     }

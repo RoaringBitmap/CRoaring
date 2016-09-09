@@ -8,6 +8,7 @@
 
 #include "test.h"
 
+
 // arrays expected to both be sorted.
 static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
                         int32_t size2) {

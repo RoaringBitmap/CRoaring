@@ -5,7 +5,7 @@
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
 #include <roaring/portability.h>
 
-#ifdef ROARING_X64
+#ifdef IS_X64
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
         register unsigned cyc_high, cyc_low;                                  \

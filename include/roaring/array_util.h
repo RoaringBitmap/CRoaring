@@ -1,5 +1,5 @@
-#ifndef ROARING_INCLUDE_ARRAY_UTIL_H
-#define ROARING_INCLUDE_ARRAY_UTIL_H
+#ifndef ARRAY_UTIL_H
+#define ARRAY_UTIL_H
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>
@@ -8,7 +8,7 @@
  *  good old binary search
  */
 inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
-                            uint16_t ikey) {
+                                   uint16_t ikey) {
     int32_t low = 0;
     int32_t high = lenarray - 1;
     while (low <= high) {

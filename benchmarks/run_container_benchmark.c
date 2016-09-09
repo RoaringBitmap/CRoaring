@@ -13,7 +13,7 @@
 
 enum { TESTSIZE = 2048 };
 
-#ifdef ROARING_X64
+#ifdef IS_X64
 // flushes the array from cache
 void run_cache_flush(run_container_t* B) {
     const int32_t CACHELINESIZE =
@@ -29,7 +29,7 @@ void run_cache_flush(run_container_t* B) { (void)B; }
 
 // tries to put array in cache
 void run_cache_prefetch(run_container_t* B) {
-#ifdef ROARING_X64
+#ifdef IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else

@@ -16,7 +16,6 @@ ALLCFILES=$(find $SCRIPTPATH/src -name '*.c' )
 
 # order matters
 ALLCHEADERS="
-$SCRIPTPATH/include/roaring/roaring_version.h
 $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/containers/perfparameters.h
 $SCRIPTPATH/include/roaring/array_util.h

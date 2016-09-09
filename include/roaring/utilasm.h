@@ -3,13 +3,13 @@
  *
  */
 
-#ifndef ROARING_INCLUDE_UTILASM_H_
-#define ROARING_INCLUDE_UTILASM_H_
+#ifndef INCLUDE_UTILASM_H_
+#define INCLUDE_UTILASM_H_
 
 #include <roaring/portability.h>
 
-#ifdef ROARING_USE_BMI
-#define ROARING_ASMBITMANIPOPTIMIZATION  // optimization flag
+#if defined(USE_BMI)
+#define ASMBITMANIPOPTIMIZATION  // optimization flag
 
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
     __asm volatile("shrx %1, %2, %0"              \
@@ -64,5 +64,6 @@
         "r"(testByte), /* read only */     \
         "r"(testBit)   /* read only */     \
         )
-#endif  // ROARING_USE_BMI
+
+#endif  // USE_BMI
 #endif  /* INCLUDE_UTILASM_H_ */

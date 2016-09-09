@@ -20,7 +20,7 @@ extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern inline bool bitset_container_get(const bitset_container_t *bitset,
-                                        uint16_t pos);
+                                 uint16_t pos);
 extern int32_t bitset_container_serialized_size_in_bytes();
 extern bool bitset_container_add(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos);
@@ -28,14 +28,13 @@ extern bool bitset_container_contains(const bitset_container_t *bitset,
                                       uint16_t pos);
 
 void bitset_container_clear(bitset_container_t *bitset) {
-    memset(bitset->array, 0,
-           sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
+    memset(bitset->array, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     bitset->cardinality = 0;
 }
 
 void bitset_container_set_all(bitset_container_t *bitset) {
     memset(bitset->array, INT64_C(-1),
-           sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
+           sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     bitset->cardinality = (1 << 16);
 }
 
@@ -48,9 +47,8 @@ bitset_container_t *bitset_container_create(void) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *)aligned_malloc(
-        32, sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
-    if (!bitset->array) {
+    bitset->array = (uint64_t *) aligned_malloc(32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (! bitset->array) {
         free(bitset);
         return NULL;
     }
@@ -63,7 +61,7 @@ void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest) {
     dest->cardinality = source->cardinality;
     memcpy(dest->array, source->array,
-           sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
+           sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
 void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
@@ -110,15 +108,14 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *)aligned_malloc(
-        32, sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
-    if (!bitset->array) {
+    bitset->array = (uint64_t *) aligned_malloc(32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (! bitset->array) {
         free(bitset);
         return NULL;
     }
     bitset->cardinality = src->cardinality;
     memcpy(bitset->array, src->array,
-           sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
+           sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     return bitset;
 }
 
@@ -132,15 +129,15 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
 //#define USEPOPCNT // when this is disabled
 // bitset_container_compute_cardinality uses AVX to compute hamming weight
 
-#ifdef ROARING_USE_AVX
-#ifndef ROARING_WORDS_IN_AVX2_REG
-#define ROARING_WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
+#ifdef USEAVX
+#ifndef WORDS_IN_AVX2_REG
+#define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
 #endif
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     return avx2_harley_seal_popcount256(
         (const __m256i *)bitset->array,
-        ROARING_BITSET_CONTAINER_SIZE_IN_WORDS / (ROARING_WORDS_IN_AVX2_REG));
+        BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
 }
 #else
 
@@ -148,7 +145,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const uint64_t *array = bitset->array;
     int32_t sum = 0;
-    for (int i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
         sum += hamming(array[i]);
         sum += hamming(array[i + 1]);
         sum += hamming(array[i + 2]);
@@ -159,11 +156,15 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 #endif
 
-#ifdef ROARING_USE_AVX
+#ifdef USEAVX
 
-#ifndef ROARING_WORDS_IN_AVX2_REG
-#define ROARING_WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
+#define BITSET_CONTAINER_FN_REPEAT 8
+#ifndef WORDS_IN_AVX2_REG
+#define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
 #endif
+#define LOOP_SIZE                    \
+    BITSET_CONTAINER_SIZE_IN_WORDS / \
+        ((WORDS_IN_AVX2_REG)*BITSET_CONTAINER_FN_REPEAT)
 
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
    result to bitsetout */
@@ -178,7 +179,7 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
     uint8_t *out = (uint8_t*)dst->array;                                \
     const int innerloop = 8;                                            \
     for (size_t i = 0;                                                  \
-        i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS / (ROARING_WORDS_IN_AVX2_REG);       \
+        i < BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG);       \
                                                          i+=innerloop) {\
         __m256i A1, A2, AO;                                             \
         A1 = _mm256_lddqu_si256((__m256i *)(array_1));                  \
@@ -217,7 +218,7 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
         array_1 += 256;                                                 \
         array_2 += 256;                                                 \
     }                                                                   \
-    dst->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;                      \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                      \
     return dst->cardinality;                                            \
 }                                                                       \
 /* next, a version that updates cardinality*/                           \
@@ -228,7 +229,7 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
     const __m256i *array_2 = (const __m256i *) src_2->array;            \
     __m256i *out = (__m256i *) dst->array;                              \
     dst->cardinality = avx2_harley_seal_popcount256andstore_##opname(array_2,\
-    		array_1, out,ROARING_BITSET_CONTAINER_SIZE_IN_WORDS / (ROARING_WORDS_IN_AVX2_REG));\
+    		array_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
     return dst->cardinality;                                            \
 }                                                                       \
 /* next, a version that just computes the cardinality*/                 \
@@ -237,13 +238,36 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
     const __m256i *data1 = (const __m256i *) src_1->array;            \
     const __m256i *data2 = (const __m256i *) src_2->array;            \
     return avx2_harley_seal_popcount256_##opname(data2,                \
-    		data1, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS / (ROARING_WORDS_IN_AVX2_REG));\
+    		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
 }
 
 
 
 
-#else /* not ROARING_USE_AVX  */
+
+/*
+int bitset_container_##opname(const bitset_container_t *src_1,          \
+                              const bitset_container_t *src_2,          \
+                              bitset_container_t *dst) {                \
+    const __m256i *array_1 = (const __m256i *) src_1->array;            \
+    const __m256i *array_2 = (const __m256i *) src_2->array;            \
+    __m256i *out = (__m256i *) dst->array;                              \
+    dst->cardinality = avx2_harley_seal_popcount256andstore_##opname(array_1,\
+    		array_2, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
+    return dst->cardinality;                                            \
+}                                                                       \
+*/
+
+
+/*int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
+                              const bitset_container_t *src_2) {        \
+    const __m256i *data1 = (const __m256i *) src_1->array;            \
+    const __m256i *data2 = (const __m256i *) src_2->array;            \
+    return avx2_harley_seal_popcount256_##opname(data1,                \
+    		data2, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
+}*/
+
+#else /* not USEAVX  */
 
 #define BITSET_CONTAINER_FN(opname, opsymbol, avxintrinsic)               \
 int bitset_container_##opname(const bitset_container_t *src_1,            \
@@ -253,7 +277,7 @@ int bitset_container_##opname(const bitset_container_t *src_1,            \
     const uint64_t *array_2 = src_2->array;                               \
     uint64_t *out = dst->array;                                           \
     int32_t sum = 0;                                                      \
-    for (size_t i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
         const uint64_t word_1 = (array_1[i])opsymbol(array_2[i]),         \
                        word_2 = (array_1[i + 1])opsymbol(array_2[i + 1]); \
         out[i] = word_1;                                                  \
@@ -269,10 +293,10 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1,   \
                                        bitset_container_t *dst) {         \
     const uint64_t *array_1 = src_1->array, *array_2 = src_2->array;      \
     uint64_t *out = dst->array;                                           \
-    for (size_t i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; i++) {         \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {         \
         out[i] = (array_1[i])opsymbol(array_2[i]);                        \
     }                                                                     \
-    dst->cardinality = ROARING_BITSET_UNKNOWN_CARDINALITY;                                                \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                                                \
     return dst->cardinality;                                              \
 }                                                                         \
 int bitset_container_##opname##_justcard(const bitset_container_t *src_1,   \
@@ -280,7 +304,7 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1,   \
     const uint64_t *array_1 = src_1->array;                               \
     const uint64_t *array_2 = src_2->array;                               \
     int32_t sum = 0;                                                      \
-    for (size_t i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
         const uint64_t word_1 = (array_1[i])opsymbol(array_2[i]),         \
                        word_2 = (array_1[i + 1])opsymbol(array_2[i + 1]); \
         sum += hamming(word_1);                                    \
@@ -304,16 +328,15 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
 // clang-format On
 
 
-#undef BITSET_CONTAINER_FN
 
 int bitset_container_to_uint32_array( void *vout, const bitset_container_t *cont, uint32_t base) {
-#ifdef ROARING_USE_AVX2_FOR_DECODING
+#ifdef USEAVX2FORDECODING
 	if(cont->cardinality >= 8192)// heuristic
-		return (int) bitset_extract_setbits_avx2(cont->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, vout,cont->cardinality,base);
+		return (int) bitset_extract_setbits_avx2(cont->array, BITSET_CONTAINER_SIZE_IN_WORDS, vout,cont->cardinality,base);
 	else
-		return (int) bitset_extract_setbits(cont->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, vout,base);
+		return (int) bitset_extract_setbits(cont->array, BITSET_CONTAINER_SIZE_IN_WORDS, vout,base);
 #else
-	return (int) bitset_extract_setbits(cont->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, vout,base);
+	return (int) bitset_extract_setbits(cont->array, BITSET_CONTAINER_SIZE_IN_WORDS, vout,base);
 #endif
 }
 
@@ -324,7 +347,7 @@ void bitset_container_printf(const bitset_container_t * v) {
 	printf("{");
 	uint32_t base = 0;
 	bool iamfirst = true;// TODO: rework so that this is not necessary yet still readable
-	for (int i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
 		uint64_t w = v->array[i];
 		while (w != 0) {
 			uint64_t t = w & -w;
@@ -348,7 +371,7 @@ void bitset_container_printf(const bitset_container_t * v) {
  */
 void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint32_t base) {
 	bool iamfirst = true;// TODO: rework so that this is not necessary yet still readable
-	for (int i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
 		uint64_t w = v->array[i];
 		while (w != 0) {
 			uint64_t t = w & -w;
@@ -371,7 +394,7 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   int num_runs = 0;
   uint64_t next_word = b->array[0];
 
-  for (int i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS-1; ++i) {
+  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS-1; ++i) {
     uint64_t word = next_word;
     next_word = b->array[i+1];
     num_runs += hamming((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
@@ -385,7 +408,7 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
 }
 
 int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
-  int32_t l = sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS;
+  int32_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
   memcpy(buf, container->array, l);
   return(l);
 }
@@ -394,7 +417,7 @@ int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
 
 int32_t bitset_container_write(const bitset_container_t *container,
                                   char *buf) {
-	memcpy(buf, container->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
+	memcpy(buf, container->array, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
 	return bitset_container_size_in_bytes(container);
 }
 
@@ -402,17 +425,17 @@ int32_t bitset_container_write(const bitset_container_t *container,
 int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container,
 		const char *buf)  {
 	container->cardinality = cardinality;
-	memcpy(container->array, buf, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
+	memcpy(container->array, buf, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
 	return bitset_container_size_in_bytes(container);
 }
 
 uint32_t bitset_container_serialization_len() {
-  return(sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
+  return(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
 void* bitset_container_deserialize(const char *buf, size_t buf_len) {
   bitset_container_t *ptr;
-  size_t l = sizeof(uint64_t) * ROARING_BITSET_CONTAINER_SIZE_IN_WORDS;
+  size_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
 
   if(l != buf_len)
     return(NULL);
@@ -433,7 +456,7 @@ void* bitset_container_deserialize(const char *buf, size_t buf_len) {
 }
 
 bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
-  for (int32_t i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+  for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->array[i];
     while (w != 0) {
       uint64_t t = w & -w;
@@ -448,12 +471,12 @@ bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
 
 
 bool bitset_container_equals(bitset_container_t *container1, bitset_container_t *container2) {
-	if((container1->cardinality != ROARING_BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != ROARING_BITSET_UNKNOWN_CARDINALITY)) {
+	if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
 		if(container1->cardinality != container2->cardinality) {
 			return false;
 		}
 	}
-	for(int32_t i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+	for(int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
 		if(container1->array[i] != container2->array[i]) {
 			return false;
 		}
@@ -469,7 +492,7 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
     }
     const uint64_t *array = container->array;
     int32_t size;
-    for (int i = 0; i < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS; i += 1) {
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 1) {
         size = hamming(array[i]);
         if(rank <= *start_rank + size) {
             uint64_t w = container->array[i];

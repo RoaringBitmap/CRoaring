@@ -39,7 +39,7 @@ void setandextract_uint16() {
     }
 }
 
-#ifdef ROARING_X64
+#ifdef IS_X64
 void setandextract_sse_uint16() {
     const unsigned int bitset_size = 1 << 16;
     const unsigned int bitset_size_in_words =
@@ -132,7 +132,7 @@ void setandextract_avx2_uint32() {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(setandextract_uint16),
-#ifdef ROARING_X64
+#ifdef IS_X64
         cmocka_unit_test(setandextract_sse_uint16),
 #endif
         cmocka_unit_test(setandextract_uint32),
