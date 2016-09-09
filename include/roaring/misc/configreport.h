@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef INCLUDE_MISC_CONFIGREPORT_H_
-#define INCLUDE_MISC_CONFIGREPORT_H_
+#ifndef ROARING_INCLUDE_MISC_CONFIGREPORT_H_
+#define ROARING_INCLUDE_MISC_CONFIGREPORT_H_
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>
@@ -12,7 +12,7 @@
 
 #include <roaring/portability.h>
 
-#ifdef IS_X64
+#ifdef ROARING_X64
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {
@@ -115,8 +115,8 @@ static inline void tellmeall() {
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
-    printf("\tBuild option USEAVX ");
-#ifdef USEAVX
+    printf("\tBuild option ROARING_USE_AVX ");
+#ifdef ROARING_USE_AVX
     printf("enabled\n");
 #else
     printf("disabled\n");

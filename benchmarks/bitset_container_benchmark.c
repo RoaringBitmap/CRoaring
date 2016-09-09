@@ -12,12 +12,12 @@
 #include "benchmark.h"
 #include "random.h"
 
-#ifdef IS_X64
+#ifdef ROARING_X64
 // flushes the array of words from cache
 void bitset_cache_flush(bitset_container_t* B) {
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
-    for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
+    for (int32_t k = 0; k < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS;
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_ia32_clflush(B->array + k);
     }
@@ -29,13 +29,13 @@ void bitset_cache_flush(bitset_container_t* B) { (void)B; }
 
 // tries to put array of words in cache
 void bitset_cache_prefetch(bitset_container_t* B) {
-#ifdef IS_X64
+#ifdef ROARING_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else
     const int32_t CACHELINESIZE = 64;
 #endif
-    for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
+    for (int32_t k = 0; k < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS;
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_prefetch(B->array + k);
     }
@@ -94,7 +94,7 @@ int main() {
     BEST_TIME(get_test(B), answer, repeat, size);
     BEST_TIME(bitset_container_cardinality(B), answer, repeat, 1);
     BEST_TIME(bitset_container_compute_cardinality(B), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
 
     size = (1 << 16) / 3;
     BEST_TIME(unset_test(B), 0, repeat, size);
@@ -133,21 +133,21 @@ int main() {
     }
     bitset_container_t* BO = bitset_container_create();
     BEST_TIME(bitset_container_or_nocard(B1, B2, BO), -1, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
     answer = bitset_container_compute_cardinality(BO);
     BEST_TIME(bitset_container_or(B1, B2, BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
     BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
     BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
     BEST_TIME(bitset_container_and_nocard(B1, B2, BO), -1, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
     answer = bitset_container_compute_cardinality(BO);
     BEST_TIME(bitset_container_and(B1, B2, BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
     BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
     BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
 
     // next we are going to benchmark conversion from bitset to array (an
     // important step)
@@ -157,7 +157,7 @@ int main() {
     }
     answer = get_cardinality_through_conversion_to_array(B1);
     BEST_TIME(get_cardinality_through_conversion_to_array(B1), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+              ROARING_BITSET_CONTAINER_SIZE_IN_WORDS);
 
     bitset_container_free(BO);
     bitset_container_free(B1);

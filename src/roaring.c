@@ -381,9 +381,9 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
         return roaring_bitmap_copy(x[0]);
     }
     roaring_bitmap_t *answer =
-        roaring_bitmap_lazy_or(x[0], x[1], LAZY_OR_BITSET_CONVERSION);
+        roaring_bitmap_lazy_or(x[0], x[1], ROARING_LAZY_OR_BITSET_CONVERSION);
     for (size_t i = 2; i < number; i++) {
-        roaring_bitmap_lazy_or_inplace(answer, x[i], LAZY_OR_BITSET_CONVERSION);
+        roaring_bitmap_lazy_or_inplace(answer, x[i], ROARING_LAZY_OR_BITSET_CONVERSION);
     }
     roaring_bitmap_repair_after_lazy(answer);
     return answer;
@@ -1000,10 +1000,10 @@ size_t roaring_bitmap_serialize(const roaring_bitmap_t *ra, char *buf) {
 	uint64_t cardinality = roaring_bitmap_get_cardinality(ra);
 	size_t sizeasarray = cardinality * sizeof(uint32_t) + sizeof(uint32_t);
 	if(portablesize < sizeasarray) {
-		buf[0] = SERIALIZATION_CONTAINER;
+		buf[0] = ROARING_SERIALIZATION_CONTAINER;
     	return roaring_bitmap_portable_serialize(ra, buf + 1) + 1;
 	} else {
-		buf[0] = SERIALIZATION_ARRAY_UINT32;
+		buf[0] = ROARING_SERIALIZATION_ARRAY_UINT32;
         memcpy(buf + 1, &cardinality, sizeof(uint32_t));
         roaring_bitmap_to_uint32_array(ra, (uint32_t *)(buf + 1 + sizeof(uint32_t)));
         return 1 + sizeasarray;
@@ -1044,14 +1044,14 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra,
 
 roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf) {
 	const char * bufaschar = (const char *) buf;
-    if (*(const unsigned char *)buf == SERIALIZATION_ARRAY_UINT32) {
+    if (*(const unsigned char *)buf == ROARING_SERIALIZATION_ARRAY_UINT32) {
     	/* This looks like a compressed set of uint32_t elements */
         uint32_t card;
         memcpy(&card, bufaschar + 1, sizeof(uint32_t));
         const uint32_t *elems = (const uint32_t *)(bufaschar + 1 + sizeof(uint32_t));
 
         return roaring_bitmap_of_ptr(card, elems);
-    } else if (bufaschar[0] == SERIALIZATION_CONTAINER) {
+    } else if (bufaschar[0] == ROARING_SERIALIZATION_CONTAINER) {
     	return roaring_bitmap_portable_deserialize(bufaschar + 1);
     } else
         return (NULL);

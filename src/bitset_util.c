@@ -6,7 +6,7 @@
 
 #include <roaring/bitset_util.h>
 
-#if defined(IS_X64) || defined(USEAVX)
+#if defined(ROARING_X64) || defined(ROARING_USE_AVX)
 
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -22,7 +22,7 @@ static uint8_t lengthTable[256] = {
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 #endif
 
-#ifdef USEAVX
+#ifdef ROARING_USE_AVX
 static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
     {1, 0, 0, 0, 0, 0, 0, 0}, /* 0x01 (00000001) */
@@ -282,9 +282,9 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
-#endif  // #ifdef USEAVX
+#endif  // #ifdef ROARING_USE_AVX
 
-#ifdef IS_X64
+#ifdef ROARING_X64
 // same as vecDecodeTable but in 16 bits
 static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
@@ -547,7 +547,7 @@ static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
 
 #endif
 
-#ifdef USEAVX
+#ifdef ROARING_USE_AVX
 
 size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
                                    void *vout, size_t outcapacity,
@@ -600,7 +600,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length,
     }
     return out - initout;
 }
-#endif  // USEAVX
+#endif  // ROARING_USE_AVX
 
 size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
                               uint32_t base) {
@@ -639,7 +639,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
     return outpos;
 }
 
-#ifdef IS_X64
+#ifdef ROARING_X64
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out" as 16-bit integers, values start at "base" (can
@@ -729,7 +729,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
     return outpos;
 }
 
-#if defined(ASMBITMANIPOPTIMIZATION)
+#ifdef ROARING_ASMBITMANIPOPTIMIZATION
 
 uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
                                   const uint16_t *list, uint64_t length) {

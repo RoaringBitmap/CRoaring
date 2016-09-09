@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef INCLUDE_CONTAINERS_RUN_H_
-#define INCLUDE_CONTAINERS_RUN_H_
+#ifndef ROARING_INCLUDE_CONTAINERS_RUN_H_
+#define ROARING_INCLUDE_CONTAINERS_RUN_H_
 
 #include <assert.h>
 #include <stdbool.h>

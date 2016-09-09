@@ -40,7 +40,7 @@ array_container_t *array_container_create_given_capacity(int32_t size) {
 
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create() {
-    return array_container_create_given_capacity(ARRAY_DEFAULT_INIT_SIZE);
+    return array_container_create_given_capacity(ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE);
 }
 
 /* Duplicate container */
@@ -65,7 +65,7 @@ void array_container_free(array_container_t *arr) {
 }
 
 static inline int32_t grow_capacity(int32_t capacity) {
-    return (capacity <= 0) ? ARRAY_DEFAULT_INIT_SIZE
+    return (capacity <= 0) ? ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE
                            : capacity < 64 ? capacity * 2
                                            : capacity < 1024 ? capacity * 3 / 2
                                                              : capacity * 5 / 4;
@@ -285,7 +285,7 @@ void array_container_intersection(const array_container_t *array1,
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
             min_card = minimum_int32(card_1, card_2);
     const int threshold = 64;  // subject to tuning
-#ifdef USEAVX
+#ifdef ROARING_USE_AVX
     min_card += sizeof(__m128i) / sizeof(uint16_t);
 #endif
     if (out->capacity < min_card)
@@ -297,7 +297,7 @@ void array_container_intersection(const array_container_t *array1,
         out->cardinality = intersect_skewed_uint16(
             array2->array, card_2, array1->array, card_1, out->array);
     } else {
-#ifdef USEAVX
+#ifdef ROARING_USE_AVX
         out->cardinality = intersect_vector16(
             array1->array, card_1, array2->array, card_2, out->array);
 #else
@@ -414,7 +414,7 @@ bool array_container_equals(array_container_t *container1,
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
                              const char *buf) {
     if (container->capacity < cardinality) {
-        array_container_grow(container, cardinality, DEFAULT_MAX_SIZE, false);
+        array_container_grow(container, cardinality, ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE, false);
     }
     container->cardinality = cardinality;
     memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));

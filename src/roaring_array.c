@@ -439,7 +439,7 @@ bool ra_has_run_container(const roaring_array_t *ra) {
 uint32_t ra_portable_header_size(const roaring_array_t *ra) {
     if (ra_has_run_container(ra)) {
         if (ra->size <
-            NO_OFFSET_THRESHOLD) {  // for small bitmaps, we omit the offsets
+            ROARING_NO_OFFSET_THRESHOLD) {  // for small bitmaps, we omit the offsets
             return 4 + (ra->size + 7) / 8 + 4 * ra->size;
         }
         return 4 + (ra->size + 7) / 8 +
@@ -463,7 +463,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
     uint32_t startOffset = 0;
     bool hasrun = ra_has_run_container(ra);
     if (hasrun) {
-        uint32_t cookie = SERIAL_COOKIE | ((ra->size - 1) << 16);
+        uint32_t cookie = ROARING_SERIAL_COOKIE | ((ra->size - 1) << 16);
         memcpy(buf, &cookie, sizeof(cookie));
         buf += sizeof(cookie);
         uint32_t s = (ra->size + 7) / 8;
@@ -478,13 +478,13 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
         memcpy(buf, bitmapOfRunContainers, s);
         buf += s;
         free(bitmapOfRunContainers);
-        if (ra->size < NO_OFFSET_THRESHOLD) {
+        if (ra->size < ROARING_NO_OFFSET_THRESHOLD) {
             startOffset = 4 + 4 * ra->size + s;
         } else {
             startOffset = 4 + 8 * ra->size + s;
         }
     } else {  // backwards compatibility
-        uint32_t cookie = SERIAL_COOKIE_NO_RUNCONTAINER;
+        uint32_t cookie = ROARING_SERIAL_COOKIE_NO_RUNCONTAINER;
 
         memcpy(buf, &cookie, sizeof(cookie));
         buf += sizeof(cookie);
@@ -502,7 +502,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
         memcpy(buf, &card, sizeof(card));
         buf += sizeof(card);
     }
-    if ((!hasrun) || (ra->size >= NO_OFFSET_THRESHOLD)) {
+    if ((!hasrun) || (ra->size >= ROARING_NO_OFFSET_THRESHOLD)) {
         // writing the containers offsets
         for (int32_t k = 0; k < ra->size; k++) {
             memcpy(buf, &startOffset, sizeof(startOffset));
@@ -522,15 +522,15 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
     uint32_t cookie;
     memcpy(&cookie, buf, sizeof(int32_t));
     buf += sizeof(uint32_t);
-    if ((cookie & 0xFFFF) != SERIAL_COOKIE &&
-        cookie != SERIAL_COOKIE_NO_RUNCONTAINER) {
+    if ((cookie & 0xFFFF) != ROARING_SERIAL_COOKIE &&
+        cookie != ROARING_SERIAL_COOKIE_NO_RUNCONTAINER) {
         fprintf(stderr, "I failed to find one of the right cookies. Found %d\n",
                 cookie);
         return false;
     }
     int32_t size;
 
-    if ((cookie & 0xFFFF) == SERIAL_COOKIE)
+    if ((cookie & 0xFFFF) == ROARING_SERIAL_COOKIE)
         size = (cookie >> 16) + 1;
     else {
         memcpy(&size, buf, sizeof(int32_t));
@@ -543,7 +543,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
     }
     answer->size = size;
     char *bitmapOfRunContainers = NULL;
-    bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
+    bool hasrun = (cookie & 0xFFFF) == ROARING_SERIAL_COOKIE;
     if (hasrun) {
         int32_t s = (size + 7) / 8;
         bitmapOfRunContainers = (char *)malloc((size + 7) / 8);
@@ -562,13 +562,13 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
         memcpy(&tmp, buf, sizeof(tmp));
         buf += sizeof(tmp);
         cardinalities[k] = 1 + tmp;
-        isBitmap[k] = cardinalities[k] > DEFAULT_MAX_SIZE;
+        isBitmap[k] = cardinalities[k] > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE;
         if (bitmapOfRunContainers != NULL &&
             (bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0) {
             isBitmap[k] = false;
         }
     }
-    if ((!hasrun) || (size >= NO_OFFSET_THRESHOLD)) {
+    if ((!hasrun) || (size >= ROARING_NO_OFFSET_THRESHOLD)) {
         // skipping the offsets
         buf += size * 4;
     }

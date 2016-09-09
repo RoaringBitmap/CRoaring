@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef INCLUDE_CONTAINERS_ARRAY_H_
-#define INCLUDE_CONTAINERS_ARRAY_H_
+#ifndef ROARING_INCLUDE_CONTAINERS_ARRAY_H_
+#define ROARING_INCLUDE_CONTAINERS_ARRAY_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -17,7 +17,7 @@
 #include <roaring/containers/perfparameters.h>
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
-enum { DEFAULT_MAX_SIZE = 4096 };
+enum { ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE = 4096 };
 
 /* struct array_container - sparse representation of a bitmap
  *

@@ -269,31 +269,31 @@ void array_bitset_run_lazy_xor_test() {
     int cx = array_container_cardinality(AX);  // expected xor
 
     array_bitset_container_lazy_xor(A1, B2, BX);
-    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
+    assert_int_equal(ROARING_BITSET_UNKNOWN_CARDINALITY,
                      bitset_container_cardinality(BX));
     assert_int_equal(cx, bitset_container_compute_cardinality(BX));
 
     array_bitset_container_lazy_xor(A1, B2, B2);  // result onto B2, allowed
-    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
+    assert_int_equal(ROARING_BITSET_UNKNOWN_CARDINALITY,
                      bitset_container_cardinality(B2));
     assert_int_equal(cx, bitset_container_compute_cardinality(B2));
     bitset_container_copy(B2copy, B2);
 
     run_bitset_container_lazy_xor(R1, B2, BX);
-    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
+    assert_int_equal(ROARING_BITSET_UNKNOWN_CARDINALITY,
                      bitset_container_cardinality(BX));
     assert_int_equal(cx, bitset_container_compute_cardinality(BX));
 
     run_bitset_container_lazy_xor(
         R1, B2, B2);  // result onto B2 : not sure it's allowed
-    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
+    assert_int_equal(ROARING_BITSET_UNKNOWN_CARDINALITY,
                      bitset_container_cardinality(B2));
     assert_int_equal(cx, bitset_container_compute_cardinality(B2));
     bitset_container_copy(B2copy, B2);
 
     void* ans = 0;
     assert_true(array_array_container_lazy_xor(A1, A2, &ans));
-    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
+    assert_int_equal(ROARING_BITSET_UNKNOWN_CARDINALITY,
                      bitset_container_cardinality(ans));
     assert_int_equal(cx, bitset_container_compute_cardinality(ans));
     bitset_container_free(ans);

@@ -73,7 +73,7 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        void **dst) {
     int32_t card = run_container_cardinality(src_1);
-    if (card <= DEFAULT_MAX_SIZE) {
+    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
         // result can only be an array (assuming that we never make a
         // RunContainer)
         if (card > src_2->cardinality) {
@@ -108,7 +108,7 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         }
         bitset_reset_range(src_2->array, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
-        if (src_2->cardinality > DEFAULT_MAX_SIZE) {
+        if (src_2->cardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
             return true;
         } else {
             array_container_t *newanswer = array_container_from_bitset(src_2);
@@ -137,7 +137,7 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         bitset_reset_range(answer->array, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
 
-        if (answer->cardinality > DEFAULT_MAX_SIZE) {
+        if (answer->cardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
             return true;
         } else {
             array_container_t *newanswer = array_container_from_bitset(answer);
@@ -161,7 +161,7 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
                                           const bitset_container_t *src_2,
                                           void **dst) {
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
-    if (newCardinality > DEFAULT_MAX_SIZE) {
+    if (newCardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
         *dst = bitset_container_create();
         if (*dst != NULL) {
             bitset_container_and_nocard(src_1, src_2,
@@ -176,7 +176,7 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
         bitset_extract_intersection_setbits_uint16(
             ((bitset_container_t *)src_1)->array,
             ((bitset_container_t *)src_2)->array,
-            BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
+            ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
             0);
     }
     return false;  // not a bitset
@@ -185,7 +185,7 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
 bool bitset_bitset_container_intersection_inplace(
     bitset_container_t *src_1, const bitset_container_t *src_2, void **dst) {
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
-    if (newCardinality > DEFAULT_MAX_SIZE) {
+    if (newCardinality > ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
         *dst = src_1;
         bitset_container_and_nocard(src_1, src_2, src_1);
         ((bitset_container_t *)*dst)->cardinality = newCardinality;
@@ -197,7 +197,7 @@ bool bitset_bitset_container_intersection_inplace(
         bitset_extract_intersection_setbits_uint16(
             ((bitset_container_t *)src_1)->array,
             ((bitset_container_t *)src_2)->array,
-            BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
+            ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
             0);
     }
     return false;  // not a bitset

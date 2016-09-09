@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef INCLUDE_CONTAINERS_MIXED_UNION_H_
-#define INCLUDE_CONTAINERS_MIXED_UNION_H_
+#ifndef ROARING_INCLUDE_CONTAINERS_MIXED_UNION_H_
+#define ROARING_INCLUDE_CONTAINERS_MIXED_UNION_H_
 
 /* These functions appear to exclude cases where the
  * inputs have the same type and the output is guaranteed

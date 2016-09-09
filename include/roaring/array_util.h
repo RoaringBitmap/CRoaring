@@ -1,5 +1,5 @@
-#ifndef ARRAY_UTIL_H
-#define ARRAY_UTIL_H
+#ifndef ROARING_INCLUDE_ARRAY_UTIL_H
+#define ROARING_INCLUDE_ARRAY_UTIL_H
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>

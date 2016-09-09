@@ -1,5 +1,5 @@
-#ifndef BITSET_UTIL_H
-#define BITSET_UTIL_H
+#ifndef ROARING_INCLUDE_BITSET_UTIL_H
+#define ROARING_INCLUDE_BITSET_UTIL_H
 
 #include <stdint.h>
 
@@ -189,7 +189,7 @@ uint64_t bitset_flip_list_withcard(void *bitset, uint64_t card,
 
 void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length);
 
-#ifdef USEAVX
+#ifdef ROARING_USE_AVX
 /***
  * BEGIN Harley-Seal popcount functions.
  */
@@ -300,7 +300,7 @@ inline static uint64_t avx2_harley_seal_popcount256(const __m256i *data,
            (uint64_t)(_mm256_extract_epi64(total, 3));
 }
 
-#define AVXPOPCNTFNC(opname, avx_intrinsic)                                    \
+#define ROARING_AVXPOPCNTFNC(opname, avx_intrinsic)                                    \
     static inline uint64_t avx2_harley_seal_popcount256_##opname(              \
         const __m256i *data1, const __m256i *data2, const uint64_t size) {     \
         __m256i total = _mm256_setzero_si256();                                \
@@ -480,17 +480,19 @@ inline static uint64_t avx2_harley_seal_popcount256(const __m256i *data,
                (uint64_t)(_mm256_extract_epi64(total, 3));                     \
     }
 
-AVXPOPCNTFNC(or, _mm256_or_si256)
-AVXPOPCNTFNC(union, _mm256_or_si256)
-AVXPOPCNTFNC(and, _mm256_and_si256)
-AVXPOPCNTFNC(intersection, _mm256_and_si256)
-AVXPOPCNTFNC (xor, _mm256_xor_si256)
-AVXPOPCNTFNC(andnot, _mm256_andnot_si256)
+ROARING_AVXPOPCNTFNC(or, _mm256_or_si256)
+ROARING_AVXPOPCNTFNC(union, _mm256_or_si256)
+ROARING_AVXPOPCNTFNC(and, _mm256_and_si256)
+ROARING_AVXPOPCNTFNC(intersection, _mm256_and_si256)
+ROARING_AVXPOPCNTFNC (xor, _mm256_xor_si256)
+ROARING_AVXPOPCNTFNC(andnot, _mm256_andnot_si256)
+
+#undef ROARING_AVXPOPCNTFNC
 
 /***
  * END Harley-Seal popcount functions.
  */
 
-#endif  // USEAVX
+#endif  // ROARING_USE_AVX
 
 #endif

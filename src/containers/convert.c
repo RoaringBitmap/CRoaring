@@ -47,7 +47,7 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     //  sse version ends up being slower here
     // (bitset_extract_setbits_sse_uint16)
     // because of the sparsity of the data
-    bitset_extract_setbits_uint16(bits->array, BITSET_CONTAINER_SIZE_IN_WORDS,
+    bitset_extract_setbits_uint16(bits->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS,
                                   result->array, 0);
     return result;
 }
@@ -89,7 +89,7 @@ run_container_t *run_container_from_array(const array_container_t *c) {
 
 void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
                                            uint8_t *resulttype) {
-    if (card <= DEFAULT_MAX_SIZE) {
+    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
@@ -140,7 +140,7 @@ void *convert_run_to_efficient_container(run_container_t *c,
         *typecode_after = RUN_CONTAINER_TYPE_CODE;
         return c;
     }
-    if (card <= DEFAULT_MAX_SIZE) {
+    if (card <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
         // to array
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
@@ -253,7 +253,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         int run_count = 0;
         while (true) {
             while (cur_word == UINT64_C(0) &&
-                   long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS - 1)
+                   long_ctr < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS - 1)
                 cur_word = c_qua_bitset->array[++long_ctr];
 
             if (cur_word == UINT64_C(0)) {
@@ -268,7 +268,7 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
 
             int run_end = 0;
             while (cur_word_with_1s == UINT64_C(-1) &&
-                   long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS - 1)
+                   long_ctr < ROARING_BITSET_CONTAINER_SIZE_IN_WORDS - 1)
                 cur_word_with_1s = c_qua_bitset->array[++long_ctr];
 
             if (cur_word_with_1s == UINT64_C(-1)) {

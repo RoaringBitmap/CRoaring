@@ -2,8 +2,8 @@
 An implementation of Roaring Bitmaps in C.
 */
 
-#ifndef ROARING_H
-#define ROARING_H
+#ifndef ROARING_INCLUDE_ROARING_H
+#define ROARING_INCLUDE_ROARING_H
 #ifdef __cplusplus
 extern "C" {
 #endif

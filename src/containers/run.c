@@ -3,9 +3,7 @@
 
 #include <roaring/containers/run.h>
 #include <roaring/portability.h>
-#ifdef IS_X64
-#include <x86intrin.h>
-#endif
+
 
 extern inline int32_t interleavedBinarySearch(const rle16_t *array,
                                       int32_t lenarray, uint16_t ikey);
@@ -85,7 +83,7 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create(void) {
-    return run_container_create_given_capacity(RUN_DEFAULT_INIT_SIZE);
+    return run_container_create_given_capacity(ROARING_RUN_DEFAULT_INIT_SIZE);
 }
 
 run_container_t *run_container_clone(const run_container_t *src) {
@@ -104,7 +102,7 @@ void run_container_free(run_container_t *run) {
     free(run);
 }
 
-#ifdef USEAVX
+#ifdef ROARING_USE_AVX
 
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run) {
@@ -155,7 +153,7 @@ int run_container_cardinality(const run_container_t *run) {
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =
         (run->capacity == 0)
-            ? RUN_DEFAULT_INIT_SIZE
+            ? ROARING_RUN_DEFAULT_INIT_SIZE
             : run->capacity < 64 ? run->capacity * 2
                                  : run->capacity < 1024 ? run->capacity * 3 / 2
                                                         : run->capacity * 5 / 4;

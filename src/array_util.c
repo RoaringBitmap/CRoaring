@@ -11,7 +11,7 @@
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                                     uint16_t ikey);
 
-#ifdef IS_X64
+#ifdef ROARING_X64
 
 // used by intersect_vector16
 static const uint8_t shuffle_mask16[] __attribute__((aligned(0x1000))) = {
@@ -437,7 +437,7 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
     }
     return count;
 }
-#endif  // IS_X64
+#endif  // ROARING_X64
 
 /* Computes the intersection between one small and one large set of uint16_t.
  * Stores the result into buffer and return the number of elements. */
@@ -609,7 +609,7 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
     return pos;
 }
 
-#if defined(USE_BMI)
+#ifdef ROARING_USE_BMI
 
 /***
  * start of the SIMD 16-bit union code
@@ -1113,7 +1113,7 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
  * End of the SIMD 16-bit union code
  *
  */
-#endif  // IS_X64
+#endif  // ROARING_X64
 
 size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
                     size_t size_2, uint32_t *buffer) {

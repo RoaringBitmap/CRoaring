@@ -2,8 +2,8 @@
   Typedefs used by various components
 */
 
-#ifndef ROARING_TYPES_H
-#define ROARING_TYPES_H
+#ifndef ROARING_ROARING_TYPES_H
+#define ROARING_ROARING_TYPES_H
 
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
 
