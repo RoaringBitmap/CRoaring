@@ -7,7 +7,6 @@
 #include <roaring/array_util.h>
 #include <roaring/containers/containers.h>
 
-
 #define ROARING_SERIALIZATION_ARRAY_UINT32 1
 #define ROARING_SERIALIZATION_CONTAINER 2
 
@@ -49,18 +48,19 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap);
 /**
  * Initialize with default capacity
  */
-bool ra_init(roaring_array_t * t) ;
+bool ra_init(roaring_array_t *t);
 
 /**
  * Copies this roaring array, we assume that dest is not initialized
  */
-bool ra_copy(const roaring_array_t *source, roaring_array_t * dest, bool copy_on_write);
+bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
+             bool copy_on_write);
 
 /**
  * Copies this roaring array, we assume that dest is initialized
  */
-bool ra_overwrite(const roaring_array_t *source, roaring_array_t * dest, bool copy_on_write);
-
+bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
+                  bool copy_on_write);
 
 /**
  * Frees the memory used by a roaring array
@@ -71,7 +71,6 @@ void ra_clear(roaring_array_t *r);
  * Frees the memory used by a roaring array, but does not free the containers
  */
 void ra_clear_without_containers(roaring_array_t *r);
-
 
 /**
  * Frees just the containers
@@ -91,7 +90,7 @@ inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
  * Retrieves the container at index i, filling in the typecode
  */
 inline void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
-                                              uint8_t *typecode) {
+                                       uint8_t *typecode) {
     *typecode = ra->typecodes[i];
     return ra->containers[i];
 }
@@ -116,8 +115,8 @@ void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
  * Append a new key-value pair to ra, cloning (in COW sense) a value from sa
  * at index index
  */
-void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa, uint16_t index,
-                    bool copy_on_write);
+void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
+                    uint16_t index, bool copy_on_write);
 
 /**
  * Append new key-value pairs to ra, cloning (in COW sense)  values from sa
@@ -160,13 +159,12 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
  * Set the container at the corresponding index using the specified
  * typecode.
  */
-inline void ra_set_container_at_index(const roaring_array_t *ra, int32_t i, void *c,
-                               uint8_t typecode) {
+inline void ra_set_container_at_index(const roaring_array_t *ra, int32_t i,
+                                      void *c, uint8_t typecode) {
     assert(i < ra->size);
     ra->containers[i] = c;
     ra->typecodes[i] = typecode;
 }
-
 
 /**
  * If needed, increase the capacity of the array so that it can fit k values
@@ -186,9 +184,9 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos);
 
 void ra_downsize(roaring_array_t *ra, int32_t new_length);
 
-inline void ra_replace_key_and_container_at_index(roaring_array_t *ra, int32_t i,
-                                           uint16_t key, void *c,
-                                           uint8_t typecode) {
+inline void ra_replace_key_and_container_at_index(roaring_array_t *ra,
+                                                  int32_t i, uint16_t key,
+                                                  void *c, uint8_t typecode) {
     assert(i < ra->size);
 
     ra->keys[i] = key;
@@ -213,7 +211,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf);
  * the
  * Java and Go versions.
  */
-bool ra_portable_deserialize(roaring_array_t * ra, const char *buf);
+bool ra_portable_deserialize(roaring_array_t *ra, const char *buf);
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be
@@ -237,12 +235,12 @@ uint32_t ra_portable_header_size(const roaring_array_t *ra);
  * If the container at the index i is share, unshare it (creating a local
  * copy if needed).
  */
-static inline void ra_unshare_container_at_index(roaring_array_t *ra, uint16_t i) {
+static inline void ra_unshare_container_at_index(roaring_array_t *ra,
+                                                 uint16_t i) {
     assert(i < ra->size);
     ra->containers[i] =
         get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
 }
-
 
 /**
  * remove at index i, sliding over all entries after i

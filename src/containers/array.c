@@ -9,7 +9,7 @@
 #include <roaring/containers/array.h>
 
 extern inline bool array_container_contains(const array_container_t *arr,
-                                             uint16_t pos);
+                                            uint16_t pos);
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
@@ -40,7 +40,8 @@ array_container_t *array_container_create_given_capacity(int32_t size) {
 
 /* Create a new array. Return NULL in case of failure. */
 array_container_t *array_container_create() {
-    return array_container_create_given_capacity(ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE);
+    return array_container_create_given_capacity(
+        ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE);
 }
 
 /* Duplicate container */
@@ -327,15 +328,15 @@ void array_container_intersection_inplace(array_container_t *src_1,
     }
 }
 
-int array_container_to_uint32_array(void *vout,
-                                    const array_container_t *cont,
+int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base) {
     int outpos = 0;
-    uint32_t * out = (uint32_t *) vout;
+    uint32_t *out = (uint32_t *)vout;
     for (int i = 0; i < cont->cardinality; ++i) {
         const uint32_t val = base + cont->array[i];
-        memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
-        outpos ++;
+        memcpy(out + outpos, &val,
+               sizeof(uint32_t));  // should be compiled as a MOV on x64
+        outpos++;
     }
     return outpos;
 }
@@ -394,8 +395,7 @@ int32_t array_container_serialize(array_container_t *container, char *buf) {
  *
  */
 int32_t array_container_write(const array_container_t *container, char *buf) {
-    memcpy(buf, container->array,
-               container->cardinality * sizeof(uint16_t));
+    memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
     return array_container_size_in_bytes(container);
 }
 
@@ -414,7 +414,8 @@ bool array_container_equals(array_container_t *container1,
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
                              const char *buf) {
     if (container->capacity < cardinality) {
-        array_container_grow(container, cardinality, ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE, false);
+        array_container_grow(container, cardinality,
+                             ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE, false);
     }
     container->cardinality = cardinality;
     memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));

@@ -4,11 +4,10 @@
 #include <roaring/containers/run.h>
 #include <roaring/portability.h>
 
-
 extern inline int32_t interleavedBinarySearch(const rle16_t *array,
-                                      int32_t lenarray, uint16_t ikey);
+                                              int32_t lenarray, uint16_t ikey);
 extern inline bool run_container_contains(const run_container_t *run,
-                                           uint16_t pos);
+                                          uint16_t pos);
 extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);
 extern void run_container_clear(run_container_t *run);
@@ -486,14 +485,15 @@ void run_container_andnot(const run_container_t *src_1,
 int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
     int outpos = 0;
-    uint32_t * out = (uint32_t *) vout;
+    uint32_t *out = (uint32_t *)vout;
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
         for (int j = 0; j <= le; ++j) {
-          uint32_t val = run_start + j;
-          memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
-          outpos++;
+            uint32_t val = run_start + j;
+            memcpy(out + outpos, &val,
+                   sizeof(uint32_t));  // should be compiled as a MOV on x64
+            outpos++;
         }
     }
     return outpos;
@@ -545,7 +545,7 @@ int32_t run_container_serialize(run_container_t *container, char *buf) {
 int32_t run_container_write(const run_container_t *container, char *buf) {
     memcpy(buf, &container->n_runs, sizeof(uint16_t));
     memcpy(buf + sizeof(uint16_t), container->runs,
-               container->n_runs * sizeof(rle16_t));
+           container->n_runs * sizeof(rle16_t));
     return run_container_size_in_bytes(container);
 }
 

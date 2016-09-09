@@ -33,7 +33,8 @@ bool array_bitset_container_xor(const array_container_t *src_1,
 
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.  This version does not
- * update the cardinality of dst (it is set to ROARING_BITSET_UNKNOWN_CARDINALITY).
+ * update the cardinality of dst (it is set to
+ * ROARING_BITSET_UNKNOWN_CARDINALITY).
  */
 
 void array_bitset_container_lazy_xor(const array_container_t *src_1,

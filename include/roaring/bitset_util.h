@@ -90,9 +90,8 @@ static inline void bitset_reset_range(uint64_t *bitmap, uint32_t start,
  *
  * This function uses AVX2 decoding.
  */
-size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length,
-                                   void *vout, size_t outcapacity,
-                                   uint32_t base);
+size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length, void *vout,
+                                   size_t outcapacity, uint32_t base);
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
@@ -300,7 +299,7 @@ inline static uint64_t avx2_harley_seal_popcount256(const __m256i *data,
            (uint64_t)(_mm256_extract_epi64(total, 3));
 }
 
-#define ROARING_AVXPOPCNTFNC(opname, avx_intrinsic)                                    \
+#define ROARING_AVXPOPCNTFNC(opname, avx_intrinsic)                            \
     static inline uint64_t avx2_harley_seal_popcount256_##opname(              \
         const __m256i *data1, const __m256i *data2, const uint64_t size) {     \
         __m256i total = _mm256_setzero_si256();                                \
@@ -382,8 +381,8 @@ inline static uint64_t avx2_harley_seal_popcount256(const __m256i *data,
                (uint64_t)(_mm256_extract_epi64(total, 3));                     \
     }                                                                          \
     static inline uint64_t avx2_harley_seal_popcount256andstore_##opname(      \
-        const __m256i *__restrict__ data1, const __m256i *__restrict__ data2,          \
-        __m256i *__restrict__ out, const uint64_t size) {                          \
+        const __m256i *__restrict__ data1, const __m256i *__restrict__ data2,  \
+        __m256i *__restrict__ out, const uint64_t size) {                      \
         __m256i total = _mm256_setzero_si256();                                \
         __m256i ones = _mm256_setzero_si256();                                 \
         __m256i twos = _mm256_setzero_si256();                                 \

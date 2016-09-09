@@ -176,8 +176,8 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
         bitset_extract_intersection_setbits_uint16(
             ((bitset_container_t *)src_1)->array,
             ((bitset_container_t *)src_2)->array,
-            ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
-            0);
+            ROARING_BITSET_CONTAINER_SIZE_IN_WORDS,
+            ((array_container_t *)*dst)->array, 0);
     }
     return false;  // not a bitset
 }
@@ -197,8 +197,8 @@ bool bitset_bitset_container_intersection_inplace(
         bitset_extract_intersection_setbits_uint16(
             ((bitset_container_t *)src_1)->array,
             ((bitset_container_t *)src_2)->array,
-            ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
-            0);
+            ROARING_BITSET_CONTAINER_SIZE_IN_WORDS,
+            ((array_container_t *)*dst)->array, 0);
     }
     return false;  // not a bitset
 }

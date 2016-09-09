@@ -8,7 +8,6 @@
 #include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"
 
-
 /**
  * Once you have collected all the integers, build the bitmaps.
  */

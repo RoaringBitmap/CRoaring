@@ -226,10 +226,10 @@ class Roaring {
      * sparse bitmaps).
      */
     size_t write(char *buf, bool portable = true) const {
-        if(portable)
-          return roaring_bitmap_portable_serialize(roaring, buf);
+        if (portable)
+            return roaring_bitmap_portable_serialize(roaring, buf);
         else
-          return roaring_bitmap_serialize(roaring, buf);
+            return roaring_bitmap_serialize(roaring, buf);
     }
 
     /**
@@ -244,10 +244,10 @@ class Roaring {
      */
     static Roaring read(const char *buf, bool portable = true) {
         Roaring ans(NULL);
-        if(portable)
-          ans.roaring = roaring_bitmap_portable_deserialize(buf);
+        if (portable)
+            ans.roaring = roaring_bitmap_portable_deserialize(buf);
         else
-          ans.roaring = roaring_bitmap_deserialize(buf);
+            ans.roaring = roaring_bitmap_deserialize(buf);
         if (ans.roaring == NULL) {
             throw std::runtime_error("failed memory alloc while reading");
         }
@@ -264,13 +264,11 @@ class Roaring {
      * sparse bitmaps).
      */
     size_t getSizeInBytes(bool portable = true) const {
-      if(portable)
-        return roaring_bitmap_portable_size_in_bytes(roaring);
-      else
-        return roaring_bitmap_size_in_bytes(roaring);
+        if (portable)
+            return roaring_bitmap_portable_size_in_bytes(roaring);
+        else
+            return roaring_bitmap_size_in_bytes(roaring);
     }
-
-
 
     /**
      * Computes the intersection between two bitmaps and returns new bitmap.

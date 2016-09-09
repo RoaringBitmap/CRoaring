@@ -47,8 +47,8 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     //  sse version ends up being slower here
     // (bitset_extract_setbits_sse_uint16)
     // because of the sparsity of the data
-    bitset_extract_setbits_uint16(bits->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS,
-                                  result->array, 0);
+    bitset_extract_setbits_uint16(
+        bits->array, ROARING_BITSET_CONTAINER_SIZE_IN_WORDS, result->array, 0);
     return result;
 }
 

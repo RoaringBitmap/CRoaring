@@ -18,12 +18,13 @@
 #endif
 
 // unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
-#if (!defined(ROARING_USE_AVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && \
-    (defined(__BMI2__))
+#if (!defined(ROARING_USE_AVX)) && (!defined(DISABLEAVX)) && \
+    (defined(__AVX2__)) && (defined(__BMI2__))
 #define ROARING_USE_AVX
 #endif
 
-// if ROARING_USE_AVX was somehow defined and we lack either AVX2 or BMI2, we disable it
+// if ROARING_USE_AVX was somehow defined and we lack either AVX2 or BMI2, we
+// disable it
 #if defined(ROARING_USE_AVX) && ((!defined(__AVX2__)) || (!defined(__BMI2__)))
 #undef ROARING_USE_AVX
 #endif
@@ -44,8 +45,8 @@
 // if we have AVX, then we use BMI optimizations
 #if defined(ROARING_USE_AVX)
 #define ROARING_USE_BMI  // we assume that AVX2 and BMI go hand and hand
-#define ROARING_USE_AVX2_FOR_DECODING            // optimization
-#define ROARING_VECTOR_UNION_ENABLED  // vector unions (optimization)
+#define ROARING_USE_AVX2_FOR_DECODING  // optimization
+#define ROARING_VECTOR_UNION_ENABLED   // vector unions (optimization)
 #endif
 
 #if defined(_MSC_VER)
@@ -82,19 +83,17 @@ static inline int hamming(uint64_t x) {
 #define UINT32_C(c) (c##UL)
 #endif
 
-
 // portable version of  posix_memalign
-static inline void * aligned_malloc(size_t alignment, size_t size) {
-	void *p;
+static inline void *aligned_malloc(size_t alignment, size_t size) {
+    void *p;
 #ifdef _MSC_VER
-	p = _aligned_malloc(size, alignment);
+    p = _aligned_malloc(size, alignment);
 #elif __MINGW32__
-	p = __mingw_aligned_malloc(size, alignment);
+    p = __mingw_aligned_malloc(size, alignment);
 #else
-	if (posix_memalign(&p, alignment, size) != 0)
-		return NULL;
+    if (posix_memalign(&p, alignment, size) != 0) return NULL;
 #endif
-	return p;
+    return p;
 }
 
 #endif /* INCLUDE_PORTABILITY_H_ */

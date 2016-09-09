@@ -181,20 +181,19 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value x is present
  */
-inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
-                                           uint32_t val) {
+inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
     const uint16_t hb = val >> 16;
     /*
      * here it is possible to bypass the binary search and the ra_get_index
      * call with the following call that might often come true
      */
-    int32_t i = ra_get_index(& r->high_low_container, hb);
+    int32_t i = ra_get_index(&r->high_low_container, hb);
     if (i < 0) return false;
 
     uint8_t typecode;
     // next call ought to be cheap
     void *container =
-        ra_get_container_at_index(& r->high_low_container, i, &typecode);
+        ra_get_container_at_index(&r->high_low_container, i, &typecode);
     // rest might be a tad expensive
     return container_contains(container, val & 0xFFFF, typecode);
 }
@@ -238,7 +237,8 @@ bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 // see roaring_bitmap_portable_serialize if you want a format that's compatible
 // with Java and Go implementations
 //
-// this format has the benefit of being sometimes more space efficient than roaring_bitmap_portable_serialize
+// this format has the benefit of being sometimes more space efficient than
+// roaring_bitmap_portable_serialize
 // e.g., when the data is sparse.
 //
 // Returns how many bytes were written which should be
@@ -250,13 +250,11 @@ size_t roaring_bitmap_serialize(const roaring_bitmap_t *ra, char *buf);
 // compatible with Java and Go implementations
 roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf);
 
-
 /**
  * How many bytes are required to serialize this bitmap (NOT compatible
  * with Java and Go versions)
  */
 size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *ra);
-
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible with
@@ -264,7 +262,6 @@ size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *ra);
  * Java and Go versions.
  */
 roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
-
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be compatible

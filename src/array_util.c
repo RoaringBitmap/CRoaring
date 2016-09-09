@@ -9,7 +9,7 @@
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
-                                    uint16_t ikey);
+                                   uint16_t ikey);
 
 #ifdef ROARING_X64
 

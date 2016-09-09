@@ -23,7 +23,8 @@ void array_bitset_container_union(const array_container_t *src_1,
 
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.  This version does not
- * update the cardinality of dst (it is set to ROARING_BITSET_UNKNOWN_CARDINALITY). */
+ * update the cardinality of dst (it is set to
+ * ROARING_BITSET_UNKNOWN_CARDINALITY). */
 void array_bitset_container_lazy_union(const array_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        bitset_container_t *dst) {
@@ -170,7 +171,8 @@ bool array_array_container_union(const array_container_t *src_1,
         ourbitset->cardinality =
             bitset_set_list_withcard(ourbitset->array, src_1->cardinality,
                                      src_2->array, src_2->cardinality);
-        if (ourbitset->cardinality <= ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
+        if (ourbitset->cardinality <=
+            ROARING_ARRAY_CONTAINER_DEFAULT_MAX_SIZE) {
             // need to convert!
             *dst = array_container_from_bitset(ourbitset);
             bitset_container_free(ourbitset);

@@ -12,7 +12,6 @@
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
 
-
 enum {
     ROARING_BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64,
     ROARING_BITSET_UNKNOWN_CARDINALITY = -1
@@ -112,7 +111,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 
 /* Get the value of the ith bit.  */
 inline bool bitset_container_get(const bitset_container_t *bitset,
-                                        uint16_t pos) {
+                                 uint16_t pos) {
     uint64_t word = bitset->array[pos >> 6];
     const uint64_t p = pos;
     ASM_INPLACESHIFT_RIGHT(word, p);
@@ -313,8 +312,7 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
  * The out pointer should point to enough memory (the cardinality times 32
  * bits).
  */
-int bitset_container_to_uint32_array(void *out,
-                                     const bitset_container_t *cont,
+int bitset_container_to_uint32_array(void *out, const bitset_container_t *cont,
                                      uint32_t base);
 
 /*
