@@ -87,6 +87,8 @@ inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
     if (ra->size == 1) { // might be a common case
         if(ra->keys[0] == x) {// frequent?
             return 0;
+        } else if (ra->keys[0] < x) {
+            return -2;
         }
         return -1;
     }
