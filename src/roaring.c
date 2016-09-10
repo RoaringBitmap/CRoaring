@@ -82,6 +82,7 @@ void roaring_bitmap_add_many(roaring_bitmap_t * r, size_t n_args, const uint32_t
     uint32_t prev = 0; // previous valued inserted
     size_t i = 0; // index of value
     int containerindex = 0;
+    if(n_args == 0) return;
     uint32_t val;
     memcpy(&val, vals + i, sizeof(val));
     container = containerptr_roaring_bitmap_add(r, val, &typecode, &containerindex);
