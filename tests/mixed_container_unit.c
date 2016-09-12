@@ -395,7 +395,7 @@ void array_bitset_ixor_test() {
     bitset_container_free(B1copy);
     bitset_container_free(B2);
     bitset_container_free(BX);
-    bitset_container_free(BX_1);
+    array_container_free(BX_1);
 }
 
 void array_bitset_iandnot_test() {
