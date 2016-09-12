@@ -1,5 +1,6 @@
 # CRoaring
 Roaring bitmaps in C (and C++)
+[![Build Status](https://travis-ci.org/RoaringBitmap/CRoaring.png)](https://travis-ci.org/RoaringBitmap/CRoaring)
 
 # Introduction
 
