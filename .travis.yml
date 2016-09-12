@@ -1,0 +1,11 @@
+language: c
+sudo: false
+compiler:
+  - gcc
+  - clang
+
+branches:
+  only:
+    - master
+
+script: mkdir -p build && cd build && cmake .. && make && make test && mkdir -p buildnox64 && cd buildnoavx && cmake -DDISABLE_X64=ON .. && make && make test
