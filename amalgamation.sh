@@ -12,7 +12,7 @@ AMAL_H="roaring.h"
 AMAL_C="roaring.c"
 
 # order does not matter
-ALLCFILES=$(find $SCRIPTPATH/src -name '*.c' )
+ALLCFILES=$( ( [ -d $SCRIPTPATH/.git ] && ( type git >/dev/null 2>&1 ) &&  ( git ls-files $SCRIPTPATH/src/*.c $SCRIPTPATH/src/**/*c ) ) ||  ( find $SCRIPTPATH/src -name '*.c' ) )
 
 # order matters
 ALLCHEADERS="
