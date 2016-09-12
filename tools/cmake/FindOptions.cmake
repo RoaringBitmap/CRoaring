@@ -13,6 +13,11 @@ if(SANITIZE)
 endif()
 
 set(OPT_FLAGS "-march=native")
+
+if(DISABLE_X64) 
+  # we can manually disable any optimization for x64 
+  set (OPT_FLAGS "${OPT_FLAGS} -DDISABLE_X64" )
+endif()
 if(DISABLE_AVX)
   # we can manually disable AVX by defining DISABLEAVX
   set (OPT_FLAGS "${OPT_FLAGS} -DDISABLEAVX" )

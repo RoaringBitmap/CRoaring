@@ -6,9 +6,6 @@
 #ifndef INCLUDE_CONTAINERS_ARRAY_H_
 #define INCLUDE_CONTAINERS_ARRAY_H_
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <roaring/portability.h>

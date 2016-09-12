@@ -93,6 +93,10 @@ with open(versionfile, 'w') as file:
 
 
 print(versionfile + " modified")
-print("Please run the tests before issuing a release: mkdir -p debug \n cd debug \n cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE=ON "+maindir+" && make && make test \n")
-print("to issue release, enter \n git commit -a \n gi push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
+
+scriptlocation = os.path.dirname(os.path.abspath(__file__))
+
+
+print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
+pprint("to issue release, enter \n git commit -a \n gi push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
 

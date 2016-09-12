@@ -5,11 +5,14 @@
 
 #ifndef INCLUDE_PORTABILITY_H_
 #define INCLUDE_PORTABILITY_H_
+#if !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
+#define _POSIX_C_SOURCE 200809L
+#endif 
+#if !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
+#define _XOPEN_SOURCE 700
+#endif 
 
-#ifndef __APPLE__
-#include <malloc.h> // unless we are on a Mac, we include malloc.h
-#endif
-#include <stdlib.h>
+#include <stdlib.h> // will provide posix_memalign with _POSIX_C_SOURCE as defined above
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -17,9 +20,27 @@
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
 
+// portable version of  posix_memalign
+static inline void * aligned_malloc(size_t alignment, size_t size) {
+	void *p;
+#ifdef _MSC_VER
+	p = _aligned_malloc(size, alignment);
+#elif __MINGW32__
+	p = __mingw_aligned_malloc(size, alignment);
+#else
+	if (posix_memalign(&p, alignment, size) != 0)
+		return NULL;
+#endif
+	return p;
+}
+
+
+
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
 #endif
+
+#ifndef DISABLE_X64 // some users may want to compile as if they did not have an x64 processor
 
 // unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
 #if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && \
@@ -46,11 +67,14 @@
 #endif
 
 // if we have AVX, then we use BMI optimizations
-#if defined(USEAVX)
+#ifdef USEAVX
 #define USE_BMI  // we assume that AVX2 and BMI go hand and hand
 #define USEAVX2FORDECODING            // optimization
 #define ROARING_VECTOR_UNION_ENABLED  // vector unions (optimization)
 #endif
+
+#endif // DISABLE_X64
+
 
 #if defined(_MSC_VER)
 #define ALIGNED(x) __declspec(align(x))
@@ -86,19 +110,5 @@ static inline int hamming(uint64_t x) {
 #define UINT32_C(c) (c##UL)
 #endif
 
-
-// portable version of  posix_memalign
-static inline void * aligned_malloc(size_t alignment, size_t size) {
-	void *p;
-#ifdef _MSC_VER
-	p = _aligned_malloc(size, alignment);
-#elif __MINGW32__
-	p = __mingw_aligned_malloc(size, alignment);
-#else
-	if (posix_memalign(&p, alignment, size) != 0)
-		return NULL;
-#endif
-	return p;
-}
 
 #endif /* INCLUDE_PORTABILITY_H_ */
