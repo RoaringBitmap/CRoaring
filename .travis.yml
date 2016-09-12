@@ -8,5 +8,5 @@ branches:
     - master
 
 script:
-- ./amalgamation.sh  && cc -march=native -O3 -std=c11  -o almagamation_demo almagamation_demo.c  && ./almagamation_demo && c++ -march=native -O3 -std=c++11 -o almagamation_demo almagamation_demo.cpp  && ./almagamation_demo
+- ./amalgamation.sh  && clang -march=native -O3 -std=c11  -o almagamation_demo almagamation_demo.c  && ./almagamation_demo && clang++ -march=native -O3 -std=c++11 -o almagamation_demo almagamation_demo.cpp  && ./almagamation_demo
 - mkdir -p build && cd build && cmake .. && make && make test && cd .. &&  mkdir -p buildnox64 && cd buildnox64 && cmake -DDISABLE_X64=ON .. && make && make test
