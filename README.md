@@ -30,7 +30,7 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 
 # Requirements
 
-- 64-bit Linux-like operating system (including MacOS)
+- The library should build on a  Linux-like operating system (including MacOS). We also support Windows with mingw or Microsoft Visual studio CodeGen. 
 - Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library should build without problem on ARM processors.
 - Recent C compiler (GCC 4.8 or better), there is also an optional C++ class that requires a C++ compiler
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds)
@@ -263,18 +263,30 @@ mkdir -p build
 cd build
 cmake ..
 make
+# follow by 'make test' if you want to test.
 # you can also type 'make install' to install the library on your system
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
-If wish to build an x64/x86 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
+If wish to build an x64 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
 
 ````
 mkdir -p buildnoavx
 cd buildnoavx
-cmake -DDISABLE_AVX=OFF ..
+cmake -DDISABLE_AVX=ON ..
 make
 ```
+
+If you have x64 hardware, but you wish to disable all x64-specific optimizations (including AVX), then you can 
+do the following...
+
+````
+mkdir -p buildnox64
+cd buildnoavx
+cmake -DDISABLE_X64=ON ..
+make
+```
+
 
 For a debug release, starting from the root directory of the project (CRoaring), try
 

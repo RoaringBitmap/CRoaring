@@ -24,7 +24,7 @@ extern inline bool bitset_container_get(const bitset_container_t *bitset,
 extern int32_t bitset_container_serialized_size_in_bytes();
 extern bool bitset_container_add(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos);
-extern bool bitset_container_contains(const bitset_container_t *bitset,
+extern inline  bool bitset_container_contains(const bitset_container_t *bitset,
                                       uint16_t pos);
 
 void bitset_container_clear(bitset_container_t *bitset) {

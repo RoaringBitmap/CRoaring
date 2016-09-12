@@ -5,6 +5,14 @@
 
 #ifndef INCLUDE_PORTABILITY_H_
 #define INCLUDE_PORTABILITY_H_
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS 1
+#endif
+
 #if !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
 #define _POSIX_C_SOURCE 200809L
 #endif 
@@ -15,25 +23,13 @@
 #include <stdlib.h> // will provide posix_memalign with _POSIX_C_SOURCE as defined above
 #include <stdint.h>
 #include <stdbool.h>
+#ifndef __APPLE__
+#include <malloc.h> // this should never be needed but there are some reports that it is needed.
+#endif
 
 #if __SIZEOF_LONG_LONG__ != 8
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
-
-// portable version of  posix_memalign
-static inline void * aligned_malloc(size_t alignment, size_t size) {
-	void *p;
-#ifdef _MSC_VER
-	p = _aligned_malloc(size, alignment);
-#elif __MINGW32__
-	p = __mingw_aligned_malloc(size, alignment);
-#else
-	if (posix_memalign(&p, alignment, size) != 0)
-		return NULL;
-#endif
-	return p;
-}
-
 
 
 #if defined(_MSC_VER)
@@ -62,7 +58,7 @@ static inline void * aligned_malloc(size_t alignment, size_t size) {
 #include <intrin.h>
 #else
 /* Pretty much anything else. */
-#include <x86intrin.h>
+#include <x86intrin.h> // on some recent GCC, this will declare posix_memalign
 #endif
 #endif
 
@@ -74,6 +70,21 @@ static inline void * aligned_malloc(size_t alignment, size_t size) {
 #endif
 
 #endif // DISABLE_X64
+
+// portable version of  posix_memalign
+static inline void * aligned_malloc(size_t alignment, size_t size) {
+	void *p;
+#ifdef _MSC_VER
+	p = _aligned_malloc(size, alignment);
+#elif __MINGW32__
+	p = __mingw_aligned_malloc(size, alignment);
+#else
+        // somehow, if this is used before including "x86intrin.h", it creates an implicit defined warning.
+	if (posix_memalign(&p, alignment, size) != 0)
+		return NULL;
+#endif
+	return p;
+}
 
 
 #if defined(_MSC_VER)
