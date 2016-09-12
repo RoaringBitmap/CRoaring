@@ -98,5 +98,5 @@ scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 
 print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
-pprint("to issue release, enter \n git commit -a \n gi push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
+print("to issue release, enter \n git commit -a \n gi push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
 
