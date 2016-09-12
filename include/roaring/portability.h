@@ -71,6 +71,13 @@
 
 #endif // DISABLE_X64
 
+// without the following, we get lots of warnings about posix_memalign
+#ifndef __cplusplus
+extern int posix_memalign(void **__memptr, size_t __alignment, size_t __size);
+#else
+extern int posix_memalign(void**, size_t, size_t) throw ();
+#endif //__cplusplus
+
 // portable version of  posix_memalign
 static inline void * aligned_malloc(size_t alignment, size_t size) {
 	void *p;
