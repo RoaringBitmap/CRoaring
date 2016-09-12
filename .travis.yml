@@ -7,4 +7,4 @@ branches:
   only:
     - master
 
-script: mkdir -p build && cd build && cmake .. && make && make test && mkdir -p buildnox64 && cd buildnox64 && cmake -DDISABLE_X64=ON .. && make && make test
+script: mkdir -p build && cd build && cmake .. && make && make test && cd .. &&  mkdir -p buildnox64 && cd buildnox64 && cmake -DDISABLE_X64=ON .. && make && make test
