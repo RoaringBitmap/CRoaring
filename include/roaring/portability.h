@@ -15,10 +15,10 @@
 
 #if !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
 #define _POSIX_C_SOURCE 200809L
-#endif 
+#endif
 #if !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
 #define _XOPEN_SOURCE 700
-#endif 
+#endif
 
 #include <stdlib.h> // will provide posix_memalign with _POSIX_C_SOURCE as defined above
 #include <stdint.h>
@@ -81,7 +81,7 @@ static inline void * aligned_malloc(size_t alignment, size_t size) {
 	void *p;
 #ifdef _MSC_VER
 	p = _aligned_malloc(size, alignment);
-#elif __MINGW32__
+#elif defined(__MINGW32__) || defined(__MINGW64__)
 	p = __mingw_aligned_malloc(size, alignment);
 #else
         // somehow, if this is used before including "x86intrin.h", it creates an implicit defined warning.
@@ -91,6 +91,15 @@ static inline void * aligned_malloc(size_t alignment, size_t size) {
 	return p;
 }
 
+static inline void aligned_free(void *  memblock) {
+#ifdef _MSC_VER
+	_aligned_free(memblock);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+	__mingw_aligned_free(memblock);
+#else
+	free(memblock);
+#endif
+}
 
 #if defined(_MSC_VER)
 #define ALIGNED(x) __declspec(align(x))
