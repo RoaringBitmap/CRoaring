@@ -30,13 +30,14 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 
 # Requirements
 
-- The library should build on a  Linux-like operating system (including MacOS). We also support Windows with mingw or Microsoft Visual studio CodeGen. 
+- The library should build on a  Linux-like operating system (including MacOS).
+- We also support Microsoft Visual studio, see https://github.com/mrboojum/CRoaring4VS .
 - Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library should build without problem on ARM processors.
 - Recent C compiler (GCC 4.8 or better), there is also an optional C++ class that requires a C++ compiler
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds)
 - clang-format (optional)
 
-Serialization on big endian hardware may not be compatible with serialization on little endian hardware. 
+Serialization on big endian hardware may not be compatible with serialization on little endian hardware.
 
 # Amalgamation/Unity Build
 
@@ -277,7 +278,7 @@ cmake -DDISABLE_AVX=ON ..
 make
 ```
 
-If you have x64 hardware, but you wish to disable all x64-specific optimizations (including AVX), then you can 
+If you have x64 hardware, but you wish to disable all x64-specific optimizations (including AVX), then you can
 do the following...
 
 ````
@@ -334,9 +335,13 @@ To reformat your code according to the style convention (make sure that ``clang-
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
 
-# C# Wrapper 
+# C# Wrapper
 
 Brandon Smith wrote a C# wrapper available at https://github.com/RogueException/CRoaring.Net (works for Windows and Linux under x64 processors)
+
+# C++ Wrapper for Visual Studio
+
+There is C++ wrapper for Microsoft Visual Studio available at  https://github.com/mrboojum/CRoaring4VS (works under x86 and x64)
 
 # Go (golang) Wrapper
 
