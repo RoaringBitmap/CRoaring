@@ -205,6 +205,12 @@ bool array_container_equals(array_container_t *container1,
                             array_container_t *container2);
 
 /**
+ * Return true if container1 is a subset of container2.
+ */
+bool array_container_is_subset(array_container_t *container1,
+                            array_container_t *container2);
+
+/**
  * If the element of given rank is in this container, supposing that the first
  * element has rank start_rank, then the function returns true and sets element
  * accordingly.

@@ -363,6 +363,12 @@ bool run_container_equals(run_container_t *container1,
                           run_container_t *container2);
 
 /**
+* Return true if container1 is a subset of container2.
+*/
+bool run_container_is_subset(run_container_t *container1,
+                        run_container_t *container2);
+
+/**
  * Used in a start-finish scan that appends segments, for XOR and NOT
  */
 

@@ -411,6 +411,32 @@ bool array_container_equals(array_container_t *container1,
     return true;
 }
 
+bool array_container_is_subset(array_container_t *container1,
+                            array_container_t *container2) {
+    if (container1->cardinality > container2->cardinality) {
+        return false;
+    }
+    int i1 = 0, i2 = 0;
+    while(i1 < container1->cardinality && i2 < container2->cardinality) {
+        if(container1->array[i1] == container2->array[i2]) {
+            i1++;
+            i2++;
+        }
+        else if(container1->array[i1] > container2->array[i2]) {
+            i2++;
+        }
+        else { // container1->array[i1] < container2->array[i2]
+            return false;
+        }
+    }
+    if(i1 == container1->cardinality) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
                              const char *buf) {
     if (container->capacity < cardinality) {

@@ -19,6 +19,7 @@ set(ROARING_SRC
     containers/mixed_intersection.c
     containers/mixed_union.c
     containers/mixed_equal.c
+    containers/mixed_subset.c
     containers/mixed_negation.c
     containers/mixed_xor.c
     containers/mixed_andnot.c
@@ -29,5 +30,5 @@ set(ROARING_SRC
 
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
-set_target_properties(${ROARING_LIB_NAME} PROPERTIES 
+set_target_properties(${ROARING_LIB_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "..")

@@ -311,6 +311,11 @@ bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
 bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
 
 /**
+ * Return true if all the elements of ra1 are also in ra2.
+ */
+bool roaring_bitmap_is_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
+
+/**
  * (For expert users who seek high performance.)
  *
  * Computes the union between two bitmaps and returns new bitmap. The caller is

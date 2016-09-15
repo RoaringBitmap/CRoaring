@@ -1089,6 +1089,39 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
     return true;
 }
 
+bool roaring_bitmap_is_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
+    const int length1 = ra1->high_low_container.size,
+              length2 = ra2->high_low_container.size;
+
+    int pos1 = 0, pos2 = 0;
+
+    while (pos1 < length1 && pos2 < length2) {
+        const uint16_t s1 = ra_get_key_at_index(& ra1->high_low_container, pos1);
+        const uint16_t s2 = ra_get_key_at_index(& ra2->high_low_container, pos2);
+
+        if (s1 == s2) {
+            uint8_t container_type_1, container_type_2;
+            void *c1 = ra_get_container_at_index(& ra1->high_low_container, pos1,
+                                                 &container_type_1);
+            void *c2 = ra_get_container_at_index(& ra2->high_low_container, pos2,
+                                                 &container_type_2);
+            bool subset = container_is_subset(c1, container_type_1, c2, container_type_2);
+            if(!subset)
+                return false;
+            ++pos1;
+            ++pos2;
+        } else if (s1 < s2) {  // s1 < s2
+            return false;
+        } else {  // s1 > s2
+            pos2 = ra_advance_until(& ra2->high_low_container, s1, pos2);
+        }
+    }
+    if(pos1 == length1)
+        return true;
+    else
+        return false;
+}
+
 static void insert_flipped_container(roaring_array_t *ans_arr,
                                      const roaring_array_t *x1_arr, uint16_t hb,
                                      uint16_t lb_start, uint16_t lb_end) {

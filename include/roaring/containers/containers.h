@@ -9,6 +9,7 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/convert.h>
 #include <roaring/containers/mixed_equal.h>
+#include <roaring/containers/mixed_subset.h>
 #include <roaring/containers/mixed_intersection.h>
 #include <roaring/containers/mixed_negation.h>
 #include <roaring/containers/mixed_union.h>
@@ -533,6 +534,54 @@ static inline bool container_equals(const void *c1, uint8_t type1,
                                           (array_container_t *)c2);
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
             return run_container_equals((run_container_t *)c1,
+                                        (run_container_t *)c2);
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return false;
+    }
+}
+
+/**
+ * Returns true if the container c1 is a subset of the container c2. Note that
+ * c1 can be a subset of c2 even if they have a different type.
+ */
+static inline bool container_is_subset(const void *c1, uint8_t type1,
+                                    const void *c2, uint8_t type2) {
+    c1 = container_unwrap_shared(c1, &type1);
+    c2 = container_unwrap_shared(c2, &type2);
+    switch (CONTAINER_PAIR(type1, type2)) {
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return bitset_container_is_subset((bitset_container_t *)c1,
+                                           (bitset_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            return bitset_container_is_subset_run((bitset_container_t *)c1,
+                                            (run_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return run_container_is_subset_bitset((run_container_t *)c1,
+                                               (bitset_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return false; // by construction, size(c1) > size(c2)
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return array_container_is_subset_bitset((array_container_t *)c1,
+                                                (bitset_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            return array_container_is_subset_run((array_container_t *)c1,
+                                              (run_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            return run_container_is_subset_array((run_container_t *)c1,
+                                              (array_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return array_container_is_subset((array_container_t *)c1,
+                                          (array_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            return run_container_is_subset((run_container_t *)c1,
                                         (run_container_t *)c2);
         default:
             assert(false);
