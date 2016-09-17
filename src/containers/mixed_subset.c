@@ -42,7 +42,6 @@ bool array_container_is_subset_run(array_container_t* container1,
     if (container1->cardinality > run_container_cardinality(container2))
         return false;
     int i_array = 0, i_run = 0;
-    run_container_printf(container2); printf("\n");
     while(i_array < container1->cardinality && i_run < container2->n_runs) {
         uint32_t start = container2->runs[i_run].value;
         uint32_t stop = start+container2->runs[i_run].length;
