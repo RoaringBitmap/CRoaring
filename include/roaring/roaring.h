@@ -316,6 +316,15 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
 bool roaring_bitmap_is_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
 
 /**
+ * Return true if all the elements of ra1 are also in ra2 and ra3 is strictly greater
+ * than ra2.
+ */
+inline bool roaring_bitmap_is_strict_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
+    return (roaring_bitmap_get_cardinality(ra2) > roaring_bitmap_get_cardinality(ra1)
+    && roaring_bitmap_is_subset(ra1, ra2));
+}
+
+/**
  * (For expert users who seek high performance.)
  *
  * Computes the union between two bitmaps and returns new bitmap. The caller is

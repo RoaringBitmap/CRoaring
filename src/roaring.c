@@ -8,6 +8,7 @@
 #include <roaring/roaring_array.h>
 
 extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
+extern inline bool roaring_bitmap_is_strict_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
 
 
 // this is like roaring_bitmap_add, but it populates pointer arguments in such a way
