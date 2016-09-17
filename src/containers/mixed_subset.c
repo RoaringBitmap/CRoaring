@@ -25,8 +25,8 @@ bool run_container_is_subset_array(run_container_t* container1,
         int32_t start = container1->runs[i].value;
         int32_t stop = start+container1->runs[i].length;
         start_pos = advanceUntil(container2->array, stop_pos, container2->cardinality, start);
-        stop_pos = advanceUntil(container2->array, start_pos, container2->cardinality, stop);
-        if(stop_pos == container2->cardinality || start_pos == container2->cardinality) {
+        stop_pos = advanceUntil(container2->array, stop_pos, container2->cardinality, stop);
+        if(start_pos == container2->cardinality) {
             return false;
         }
         else if(stop_pos-start_pos != stop-start ||
@@ -124,9 +124,12 @@ bool bitset_container_is_subset_run(bitset_container_t* container1,
         }
     }
     if(i_bitset < BITSET_CONTAINER_SIZE_IN_WORDS) {
-        return false;
+        // terminated iterating on the run containers, check that rest of bitset is empty
+        for(; i_bitset < BITSET_CONTAINER_SIZE_IN_WORDS ; i_bitset++) {
+            if(container1->array[i_bitset] != 0) {
+                return false;
+            }
+        }
     }
-    else {
-        return true;
-    }
+    return true;
 }
