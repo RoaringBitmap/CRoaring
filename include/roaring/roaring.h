@@ -308,18 +308,18 @@ bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
 /**
  * Return true if the two bitmaps contain the same elements.
  */
-bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
+bool roaring_bitmap_equals(const roaring_bitmap_t *ra1, const roaring_bitmap_t *ra2);
 
 /**
  * Return true if all the elements of ra1 are also in ra2.
  */
-bool roaring_bitmap_is_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
+bool roaring_bitmap_is_subset(const roaring_bitmap_t *ra1, const roaring_bitmap_t *ra2);
 
 /**
  * Return true if all the elements of ra1 are also in ra2 and ra2 is strictly greater
  * than ra1.
  */
-inline bool roaring_bitmap_is_strict_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
+inline bool roaring_bitmap_is_strict_subset(const roaring_bitmap_t *ra1, const roaring_bitmap_t *ra2) {
     return (roaring_bitmap_get_cardinality(ra2) > roaring_bitmap_get_cardinality(ra1)
     && roaring_bitmap_is_subset(ra1, ra2));
 }

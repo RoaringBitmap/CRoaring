@@ -161,6 +161,16 @@ class Roaring {
     bool isEmpty() const { return roaring_bitmap_is_empty(roaring); }
 
     /**
+    * Returns true if the bitmap is subset of the other.
+    */
+    bool isSubset(const Roaring &r) const { return roaring_bitmap_is_subset(roaring, r.roaring); }
+
+    /**
+    * Returns true if the bitmap is strict subset of the other.
+    */
+    bool isStrictSubset(const Roaring &r) const { return roaring_bitmap_is_strict_subset(roaring, r.roaring); }
+
+    /**
      * Convert the bitmap to an array. Write the output to "ans",
      * caller is responsible to ensure that there is enough memory
      * allocated

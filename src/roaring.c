@@ -8,7 +8,7 @@
 #include <roaring/roaring_array.h>
 
 extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
-extern inline bool roaring_bitmap_is_strict_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2);
+extern inline bool roaring_bitmap_is_strict_subset(const roaring_bitmap_t *ra1, const roaring_bitmap_t *ra2);
 
 
 // this is like roaring_bitmap_add, but it populates pointer arguments in such a way
@@ -1071,7 +1071,7 @@ bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
     return true;
 }
 
-bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
+bool roaring_bitmap_equals(const roaring_bitmap_t *ra1, const roaring_bitmap_t *ra2) {
     if (ra1->high_low_container.size != ra2->high_low_container.size) {
         return false;
     }
@@ -1090,7 +1090,7 @@ bool roaring_bitmap_equals(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
     return true;
 }
 
-bool roaring_bitmap_is_subset(roaring_bitmap_t *ra1, roaring_bitmap_t *ra2) {
+bool roaring_bitmap_is_subset(const roaring_bitmap_t *ra1, const roaring_bitmap_t *ra2) {
     const int length1 = ra1->high_low_container.size,
               length2 = ra2->high_low_container.size;
 
