@@ -84,7 +84,6 @@ with open(versionfile, 'w') as file:
     file.write("#define ROARING_INCLUDE_ROARING_VERSION \n")
     file.write("#define ROARING_VERSION = "+toversionstring(*newversion)+",  \n")
     file.write("enum { \n")
-    file.write("    ROARING_VERSION_NUMBER = "+topaddedversionstring(*newversion)+",  \n")
     file.write("    ROARING_VERSION_MAJOR = "+str(newversion[0])+",  \n")
     file.write("    ROARING_VERSION_MINOR = "+str(newversion[1])+",  \n")
     file.write("    ROARING_VERSION_REVISION = "+str(newversion[2])+"  \n")
