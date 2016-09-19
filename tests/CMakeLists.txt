@@ -13,5 +13,6 @@ add_c_test(toplevel_unit)
 add_c_test(realdata_unit)
 add_c_test(util_unit)
 add_c_test(format_portability_unit)
+add_c_test(container_comparison_unit)
 
 add_subdirectory(vendor/cmocka)

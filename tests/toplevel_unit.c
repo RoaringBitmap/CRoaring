@@ -2456,6 +2456,59 @@ void select_test() {
     free(input);
 }
 
+// Return a random value which does not belong to the roaring bitmap.
+// Value will be lower than upper_bound.
+uint32_t choose_missing_value(roaring_bitmap_t *rb, uint32_t upper_bound) {
+    do {
+        uint32_t value = rand()%upper_bound;
+        if(!roaring_bitmap_contains(rb, value))
+            return value;
+    } while(true);
+}
+
+void test_subset() {
+    uint32_t value;
+    roaring_bitmap_t *rb1 = roaring_bitmap_create();
+    roaring_bitmap_t *rb2 = roaring_bitmap_create();
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
+    // Sparse values
+    for(int i = 0 ; i < 1000 ; i++) {
+        roaring_bitmap_add(rb2, choose_missing_value(rb2, 1<<31));
+    }
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_true(roaring_bitmap_is_strict_subset(rb1, rb2));
+    roaring_bitmap_or_inplace(rb1, rb2);
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
+    value = choose_missing_value(rb1, 1<<31);
+    roaring_bitmap_add(rb1, value);
+    roaring_bitmap_add(rb2, choose_missing_value(rb1, 1<<31));
+    assert_false(roaring_bitmap_is_subset(rb1, rb2));
+    assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
+    roaring_bitmap_add(rb2, value);
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_true(roaring_bitmap_is_strict_subset(rb1, rb2));
+    // Dense values
+    for(int i = 0 ; i < 50000 ; i++) {
+        value = choose_missing_value(rb2, 1<<17);
+        roaring_bitmap_add(rb1, value);
+        roaring_bitmap_add(rb2, value);
+    }
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_true(roaring_bitmap_is_strict_subset(rb1, rb2));
+    value = choose_missing_value(rb2, 1<<16);
+    roaring_bitmap_add(rb1, value);
+    roaring_bitmap_add(rb2, choose_missing_value(rb1, 1<<16));
+    assert_false(roaring_bitmap_is_subset(rb1, rb2));
+    assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
+    roaring_bitmap_add(rb2, value);
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_true(roaring_bitmap_is_strict_subset(rb1, rb2));
+    roaring_bitmap_free(rb1);
+    roaring_bitmap_free(rb2);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_stats),
@@ -2528,6 +2581,7 @@ int main() {
         cmocka_unit_test(test_flip_run_container_removal),
         cmocka_unit_test(test_flip_run_container_removal2),
         cmocka_unit_test(select_test),
+        cmocka_unit_test(test_subset),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
     };

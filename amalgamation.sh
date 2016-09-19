@@ -28,6 +28,7 @@ $SCRIPTPATH/include/roaring/containers/bitset.h
 $SCRIPTPATH/include/roaring/containers/run.h
 $SCRIPTPATH/include/roaring/containers/convert.h
 $SCRIPTPATH/include/roaring/containers/mixed_equal.h
+$SCRIPTPATH/include/roaring/containers/mixed_subset.h
 $SCRIPTPATH/include/roaring/containers/mixed_andnot.h
 $SCRIPTPATH/include/roaring/containers/mixed_intersection.h
 $SCRIPTPATH/include/roaring/containers/mixed_negation.h

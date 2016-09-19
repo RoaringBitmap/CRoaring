@@ -387,6 +387,12 @@ bool bitset_container_equals(bitset_container_t *container1,
                              bitset_container_t *container2);
 
 /**
+* Return true if container1 is a subset of container2.
+*/
+bool bitset_container_is_subset(bitset_container_t *container1,
+                          bitset_container_t *container2);
+
+/**
  * If the element of given rank is in this container, supposing that the first
  * element has rank start_rank, then the function returns true and sets element
  * accordingly.

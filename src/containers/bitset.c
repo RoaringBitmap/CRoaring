@@ -484,6 +484,21 @@ bool bitset_container_equals(bitset_container_t *container1, bitset_container_t 
 	return true;
 }
 
+bool bitset_container_is_subset(bitset_container_t *container1,
+                          bitset_container_t *container2) {
+    if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
+        if(container1->cardinality > container2->cardinality) {
+            return false;
+        }
+    }
+    for(int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+		if((container1->array[i] & container2->array[i]) != container1->array[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool bitset_container_select(const bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
     int card = bitset_container_cardinality(container);
     if(rank >= *start_rank + card) {

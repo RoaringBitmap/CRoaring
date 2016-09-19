@@ -636,6 +636,47 @@ bool run_container_equals(run_container_t *container1,
     return true;
 }
 
+bool run_container_is_subset(run_container_t *container1,
+                        run_container_t *container2){
+    int i1 = 0, i2 = 0;
+    while(i1 < container1->n_runs && i2 < container2->n_runs) {
+        int start1 = container1->runs[i1].value;
+        int stop1 = start1 + container1->runs[i1].length;
+        int start2 = container2->runs[i2].value;
+        int stop2 = start2 + container2->runs[i2].length;
+        if(start1 < start2) {
+            return false;
+        }
+        else { // start1 >= start2
+            if(stop1 < stop2) {
+                i1++;
+            }
+            else if(stop1 == stop2) {
+                i1++;
+                i2++;
+            }
+            else { // stop1 > stop2
+                i2++;
+            }
+        }
+    }
+    if(i1 == container1->n_runs) {
+        return true;
+    }
+    else {
+        return false;
+    }
+
+
+
+    for (int32_t i = 0; i < container1->n_runs; ++i) {
+        if ((container1->runs[i].value != container2->runs[i].value) ||
+            (container1->runs[i].length != container2->runs[i].length))
+            return false;
+    }
+    return true;
+}
+
 // TODO: write smart_append_exclusive version to match the overloaded 1 param
 // Java version (or  is it even used?)
 
