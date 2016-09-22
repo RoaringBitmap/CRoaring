@@ -666,15 +666,6 @@ bool run_container_is_subset(run_container_t *container1,
     else {
         return false;
     }
-
-
-
-    for (int32_t i = 0; i < container1->n_runs; ++i) {
-        if ((container1->runs[i].value != container2->runs[i].value) ||
-            (container1->runs[i].length != container2->runs[i].length))
-            return false;
-    }
-    return true;
 }
 
 // TODO: write smart_append_exclusive version to match the overloaded 1 param
