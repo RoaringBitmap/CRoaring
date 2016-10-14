@@ -243,30 +243,6 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
 
 
 
-
-
-/*
-int bitset_container_##opname(const bitset_container_t *src_1,          \
-                              const bitset_container_t *src_2,          \
-                              bitset_container_t *dst) {                \
-    const __m256i *array_1 = (const __m256i *) src_1->array;            \
-    const __m256i *array_2 = (const __m256i *) src_2->array;            \
-    __m256i *out = (__m256i *) dst->array;                              \
-    dst->cardinality = avx2_harley_seal_popcount256andstore_##opname(array_1,\
-    		array_2, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
-    return dst->cardinality;                                            \
-}                                                                       \
-*/
-
-
-/*int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
-                              const bitset_container_t *src_2) {        \
-    const __m256i *data1 = (const __m256i *) src_1->array;            \
-    const __m256i *data2 = (const __m256i *) src_2->array;            \
-    return avx2_harley_seal_popcount256_##opname(data1,                \
-    		data2, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
-}*/
-
 #else /* not USEAVX  */
 
 #define BITSET_CONTAINER_FN(opname, opsymbol, avxintrinsic)               \
