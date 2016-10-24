@@ -83,7 +83,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_C}"
 
 
 
-DEMOC="almagamation_demo.c"
+DEMOC="amalgamation_demo.c"
 echo "Creating ${DEMOC}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${DEMOC}"
 cat <<< '
@@ -116,7 +116,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_HH}"
 } >> "${AMAL_HH}"
 
 
-DEMOCPP="almagamation_demo.cpp"
+DEMOCPP="amalgamation_demo.cpp"
 echo "Creating ${DEMOCPP}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${DEMOCPP}"
 cat <<< '
