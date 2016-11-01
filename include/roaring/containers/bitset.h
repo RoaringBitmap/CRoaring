@@ -176,7 +176,6 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 inline bool bitset_container_get(const bitset_container_t *bitset,
                                         uint16_t pos) {
     const uint64_t word = bitset->array[pos >> 6];
-    // getting rid of the mask can shave one cycle off...
     return (word >> (pos & 63)) & 1;
 }
 
