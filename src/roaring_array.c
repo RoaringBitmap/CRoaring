@@ -43,6 +43,7 @@ static bool realloc_array(roaring_array_t *ra, size_t new_capacity) {
     }*/
 	const size_t memoryneeded = new_capacity * (sizeof(uint16_t)+sizeof(void *)+sizeof(uint8_t));
 	void * bigalloc = malloc(memoryneeded);
+	void * oldbigalloc = ra->containers;
 	if(! bigalloc) return false;
 	void** newcontainers = (void **) bigalloc;
 	uint16_t * newkeys = (uint16_t *)(newcontainers + new_capacity);
@@ -55,6 +56,7 @@ static bool realloc_array(roaring_array_t *ra, size_t new_capacity) {
 	ra->keys = newkeys;
 	ra->typecodes = newtypecodes;
 	ra->allocation_size = new_capacity;
+	free(oldbigalloc);
     return true;
 }
 
