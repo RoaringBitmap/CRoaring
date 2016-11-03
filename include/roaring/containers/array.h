@@ -38,6 +38,11 @@ array_container_t *array_container_create(void);
  * failure. */
 array_container_t *array_container_create_given_capacity(int32_t size);
 
+/*
+ * Shrink the capacity to the actual size, return the number of bytes saved.
+ */
+int array_container_shrink_to_fit(array_container_t *src);
+
 /* Free memory owned by `array'. */
 void array_container_free(array_container_t *array);
 

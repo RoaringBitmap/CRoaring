@@ -57,6 +57,18 @@ array_container_t *array_container_clone(const array_container_t *src) {
     return newcontainer;
 }
 
+int array_container_shrink_to_fit(array_container_t *src) {
+	if(src->cardinality == src->capacity) return 0; // nothing to do
+	int savings = src->capacity -  src->cardinality;
+	src->capacity = src->cardinality;
+    uint16_t *oldarray = src->array;
+    src->array =
+        (uint16_t *)realloc(oldarray, src->capacity * sizeof(uint16_t));
+    if (src->array == NULL) free(oldarray); // should never happen?
+    return savings;
+}
+
+
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
     free(arr->array);

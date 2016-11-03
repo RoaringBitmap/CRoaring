@@ -236,26 +236,35 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
  * efficient;
  * also convert from run containers when more space efficient.  Returns
  * true if the result has at least one run container.
-*/
+ * Additional savings might be possible by calling shrinkToFit().
+ */
 bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 
-//
-// write the bitmap to an output pointer, this output buffer should refer to
-// at least roaring_bitmap_size_in_bytes(ra) allocated bytes.
-//
-// see roaring_bitmap_portable_serialize if you want a format that's compatible
-// with Java and Go implementations
-//
-// this format has the benefit of being sometimes more space efficient than roaring_bitmap_portable_serialize
-// e.g., when the data is sparse.
-//
-// Returns how many bytes were written which should be
-// roaring_bitmap_size_in_bytes(ra).
+/**
+ * If needed, reallocate memory to shrink the memory usage. Returns
+ * the number of bytes saved.
+*/
+size_t roaring_bitmap_shrink_to_fit(roaring_bitmap_t *r);
+
+/**
+* write the bitmap to an output pointer, this output buffer should refer to
+* at least roaring_bitmap_size_in_bytes(ra) allocated bytes.
+*
+* see roaring_bitmap_portable_serialize if you want a format that's compatible
+* with Java and Go implementations
+*
+* this format has the benefit of being sometimes more space efficient than roaring_bitmap_portable_serialize
+* e.g., when the data is sparse.
+*
+* Returns how many bytes were written which should be
+* roaring_bitmap_size_in_bytes(ra).
+*/
 size_t roaring_bitmap_serialize(const roaring_bitmap_t *ra, char *buf);
 
-//  use with roaring_bitmap_serialize
-// see roaring_bitmap_portable_deserialize if you want a format that's
-// compatible with Java and Go implementations
+/**  use with roaring_bitmap_serialize
+* see roaring_bitmap_portable_deserialize if you want a format that's
+* compatible with Java and Go implementations
+*/
 roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf);
 
 

@@ -52,6 +52,12 @@ run_container_t *run_container_create(void);
  * failure. */
 run_container_t *run_container_create_given_capacity(int32_t size);
 
+
+/*
+ * Shrink the capacity to the actual size, return the number of bytes saved.
+ */
+int run_container_shrink_to_fit(run_container_t *src);
+
 /* Free memory owned by `run'. */
 void run_container_free(run_container_t *run);
 

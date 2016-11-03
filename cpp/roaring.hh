@@ -207,8 +207,15 @@ class Roaring {
      * efficient;
      * also convert from run containers when more space efficient.  Returns
      * true if the result has at least one run container.
+     * Additional savings might be possible by calling shrinkToFit().
      */
     bool runOptimize() { return roaring_bitmap_run_optimize(roaring); }
+
+    /**
+     * If needed, reallocate memory to shrink the memory usage. Returns
+     * the number of bytes saved.
+    */
+    size_t shrinkToFit() { return roaring_bitmap_shrink_to_fit(roaring); }
 
     /**
      * Iterate over the bitmap elements. The function iterator is called once

@@ -215,6 +215,24 @@ static inline int container_get_cardinality(const void *container,
     return 0;  // unreached
 }
 
+static inline int container_shrink_to_fit(void *container,
+                                            uint8_t typecode) {
+    container = (void *) container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return 0; // no shrinking possible
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_shrink_to_fit(
+                (array_container_t *)container);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_shrink_to_fit(
+                (run_container_t *)container);
+    }
+    assert(false);
+    __builtin_unreachable();
+    return 0;  // unreached
+}
+
 /*  Create a container with all the values between in [min,max) at a
     distance k*step from min. */
 static inline void *container_from_range(uint8_t *type, uint32_t min,

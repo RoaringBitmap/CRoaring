@@ -83,6 +83,16 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
     return run;
 }
 
+int run_container_shrink_to_fit(run_container_t *src) {
+	if(src->n_runs == src->capacity) return 0; // nothing to do
+	int savings = src->capacity -  src->n_runs;
+	src->capacity = src->n_runs;
+    rle16_t *oldruns = src->runs;
+    src->runs =
+        (rle16_t *)realloc(oldruns, src->capacity * sizeof(rle16_t));
+    if (src->runs == NULL) free(oldruns); // should never happen?
+    return savings;
+}
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create(void) {
     return run_container_create_given_capacity(RUN_DEFAULT_INIT_SIZE);

@@ -963,6 +963,18 @@ bool roaring_bitmap_run_optimize(roaring_bitmap_t *r) {
     return answer;
 }
 
+size_t roaring_bitmap_shrink_to_fit(roaring_bitmap_t *r) {
+    size_t answer = 0;
+    for (int i = 0; i < r->high_low_container.size; i++) {
+        uint8_t typecode_original;
+        void *c = ra_get_container_at_index(& r->high_low_container, i,
+                                            &typecode_original);
+        answer += container_shrink_to_fit(c, typecode_original);
+    }
+    return answer;
+}
+
+
 /**
  *  Remove run-length encoding even when it is more space efficient
  *  return whether a change was applied
