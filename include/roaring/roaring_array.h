@@ -57,6 +57,11 @@ bool ra_init(roaring_array_t * t) ;
  */
 bool ra_copy(const roaring_array_t *source, roaring_array_t * dest, bool copy_on_write);
 
+/*
+ * Shrinks the capacity, returns the number of bytes saved.
+ */
+int ra_shrink_to_fit(roaring_array_t *ra);
+
 /**
  * Copies this roaring array, we assume that dest is initialized
  */

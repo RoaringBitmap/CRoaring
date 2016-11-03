@@ -74,6 +74,14 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
 
     return true;
 }
+
+int ra_shrink_to_fit(roaring_array_t *ra) {
+	int savings = (ra->allocation_size - ra->size) * (sizeof(uint16_t)+sizeof(void *)+sizeof(uint8_t));
+	realloc_array(ra, ra->size);// assumes it succeeds
+	ra->allocation_size = ra->size;
+	return savings;
+}
+
 bool ra_init(roaring_array_t * t) {
 	return ra_init_with_capacity(t, INITIAL_CAPACITY);
 }

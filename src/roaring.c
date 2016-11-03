@@ -971,6 +971,7 @@ size_t roaring_bitmap_shrink_to_fit(roaring_bitmap_t *r) {
                                             &typecode_original);
         answer += container_shrink_to_fit(c, typecode_original);
     }
+    answer += ra_shrink_to_fit(&r->high_low_container);
     return answer;
 }
 
