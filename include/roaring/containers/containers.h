@@ -215,6 +215,27 @@ static inline int container_get_cardinality(const void *container,
     return 0;  // unreached
 }
 
+// returns true if a container is known to be full. Note that a lazy bitset container
+// might be full without us knowing
+static inline bool container_is_full(const void *container,
+                                            uint8_t typecode) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_cardinality(
+                (const bitset_container_t *)container) == (1 << 16);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_cardinality(
+                (const array_container_t *)container) == (1 << 16);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_is_full(
+                (const run_container_t *)container);
+    }
+    assert(false);
+    __builtin_unreachable();
+    return 0;  // unreached
+}
+
 static inline int container_shrink_to_fit(void *container,
                                             uint8_t typecode) {
     container = (void *) container_unwrap_shared(container, &typecode);

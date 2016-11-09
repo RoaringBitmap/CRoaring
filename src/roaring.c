@@ -565,19 +565,21 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(& x1->high_low_container, pos1,
                                                  &container_type_1);
-            c1 = get_writable_copy_if_shared(c1, &container_type_1);
+            if(!container_is_full(c1,container_type_1)) {
+				c1 = get_writable_copy_if_shared(c1, &container_type_1);
 
-            void *c2 = ra_get_container_at_index(& x2->high_low_container, pos2,
-                                                 &container_type_2);
-            void *c = container_ior(c1, container_type_1, c2, container_type_2,
-                                    &container_result_type);
-            if (c != c1) {  // in this instance a new container was created, and
-                            // we need to free the old one
-                container_free(c1, container_type_1);
+				void *c2 = ra_get_container_at_index(& x2->high_low_container, pos2,
+													 &container_type_2);
+				void *c = container_ior(c1, container_type_1, c2, container_type_2,
+										&container_result_type);
+				if (c != c1) {  // in this instance a new container was created, and
+								// we need to free the old one
+					container_free(c1, container_type_1);
+				}
+
+				ra_set_container_at_index(& x1->high_low_container, pos1, c,
+										  container_result_type);
             }
-
-            ra_set_container_at_index(& x1->high_low_container, pos1, c,
-                                      container_result_type);
             ++pos1;
             ++pos2;
             if (pos1 == length1) break;
@@ -1441,32 +1443,34 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(& x1->high_low_container, pos1,
                                                  &container_type_1);
-            if ((bitsetconversion == false) ||
-                (get_container_type(c1, container_type_1) ==
-                 BITSET_CONTAINER_TYPE_CODE)) {
-                c1 = get_writable_copy_if_shared(c1, &container_type_1);
-            } else {
-                // convert to bitset
-                void *oldc1 = c1;
-                uint8_t oldt1 = container_type_1;
-                c1 = (void *)container_unwrap_shared(c1, &container_type_1);
-                c1 = container_to_bitset(c1, container_type_1);
-                container_free(oldc1, oldt1);
-                container_type_1 = BITSET_CONTAINER_TYPE_CODE;
-            }
+            if(!container_is_full(c1,container_type_1)) {
+				if ((bitsetconversion == false) ||
+					(get_container_type(c1, container_type_1) ==
+					 BITSET_CONTAINER_TYPE_CODE)) {
+					c1 = get_writable_copy_if_shared(c1, &container_type_1);
+				} else {
+					// convert to bitset
+					void *oldc1 = c1;
+					uint8_t oldt1 = container_type_1;
+					c1 = (void *)container_unwrap_shared(c1, &container_type_1);
+					c1 = container_to_bitset(c1, container_type_1);
+					container_free(oldc1, oldt1);
+					container_type_1 = BITSET_CONTAINER_TYPE_CODE;
+				}
 
-            void *c2 = ra_get_container_at_index(& x2->high_low_container, pos2,
-                                                 &container_type_2);
-            void *c =
-                container_lazy_ior(c1, container_type_1, c2, container_type_2,
-                                   &container_result_type);
-            if (c != c1) {  // in this instance a new container was created, and
-                            // we need to free the old one
-                container_free(c1, container_type_1);
-            }
+				void *c2 = ra_get_container_at_index(& x2->high_low_container, pos2,
+													 &container_type_2);
+				void *c =
+					container_lazy_ior(c1, container_type_1, c2, container_type_2,
+									   &container_result_type);
+				if (c != c1) {  // in this instance a new container was created, and
+								// we need to free the old one
+					container_free(c1, container_type_1);
+				}
 
-            ra_set_container_at_index(& x1->high_low_container, pos1, c,
-                                      container_result_type);
+				ra_set_container_at_index(& x1->high_low_container, pos1, c,
+										  container_result_type);
+            }
             ++pos1;
             ++pos2;
             if (pos1 == length1) break;
