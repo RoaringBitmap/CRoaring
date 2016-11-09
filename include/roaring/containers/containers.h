@@ -1052,7 +1052,17 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
             bitset_container_or((const bitset_container_t *)c1,
                                 (const bitset_container_t *)c2,
                                 (bitset_container_t *)c1);
-            *result_type = BITSET_CONTAINER_TYPE_CODE;
+#ifdef OR_BITSET_CONVERSION_TO_FULL
+            if(((bitset_container_t *)c1)->cardinality == (1 << 16)) {// we convert
+             result = run_container_create();
+             *result_type = RUN_CONTAINER_TYPE_CODE;
+             ((run_container_t *) result)->n_runs = 1;
+             ((run_container_t *) result)->runs[0].value = 0;
+             ((run_container_t *) result)->runs[0].length = 0xFFFF;
+             return result;
+            }
+#endif
+             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return c1;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
@@ -1153,9 +1163,26 @@ static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
     switch (CONTAINER_PAIR(type1, type2)) {
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             BITSET_CONTAINER_TYPE_CODE):
-            bitset_container_or_nocard((const bitset_container_t *)c1,
-                                       (const bitset_container_t *)c2,
-                                       (bitset_container_t *)c1);  // is lazy
+#ifdef LAZY_OR_BITSET_CONVERSION_TO_FULL
+            // if we have two bitsets, we might as well compute the cardinality
+            bitset_container_or((const bitset_container_t *)c1,
+                                               (const bitset_container_t *)c2,
+                                               (bitset_container_t *)c1);
+            // it is possible that two bitsets can lead to a full container
+            if(((bitset_container_t *)c1)->cardinality == (1 << 16)) {// we convert
+              result = run_container_create();
+              *result_type = RUN_CONTAINER_TYPE_CODE;
+              ((run_container_t *) result)->n_runs = 1;
+              ((run_container_t *) result)->runs[0].value = 0;
+              ((run_container_t *) result)->runs[0].length = 0xFFFF;
+              return result;
+            }
+#else
+        bitset_container_or_nocard((const bitset_container_t *)c1,
+                                           (const bitset_container_t *)c2,
+                                           (bitset_container_t *)c1);
+
+#endif
             *result_type = BITSET_CONTAINER_TYPE_CODE;
             return c1;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
