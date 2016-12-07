@@ -360,7 +360,12 @@ Saulius Grigaliunas wrote a Rust wrapper available at https://github.com/saulius
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
 -  Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
 
-### References about Roaring
+
+# Mailing list/discussion group
+
+https://groups.google.com/forum/#!forum/roaring-bitmaps
+
+# References about Roaring
 
 -  Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin,
 Better bitmap performance with Roaring bitmaps,
