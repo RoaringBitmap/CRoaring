@@ -36,7 +36,7 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 - The library should build on a  Linux-like operating system (including MacOS).
 - We also support Microsoft Visual studio, see https://github.com/mrboojum/CRoaring4VS .
 - Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library should build without problem on ARM processors.
-- Recent C compiler (GCC 4.8 or better), there is also an optional C++ class that requires a C++ compiler
+- Recent C compiler supporting the C11 standard (GCC 4.8 or better or clang), there is also an optional C++ class that requires a C++ compiler
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds)
 - clang-format (optional)
 
@@ -272,6 +272,10 @@ make
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
+As with all ``cmake`` projects, you can specify the compilers you wish to use by adding (for example) ``-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++`` to the ``cmake`` command line.
+
+
+
 If wish to build an x64 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
 
 ````
@@ -359,7 +363,12 @@ Saulius Grigaliunas wrote a Rust wrapper available at https://github.com/saulius
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
 -  Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
 
-### References about Roaring
+
+# Mailing list/discussion group
+
+https://groups.google.com/forum/#!forum/roaring-bitmaps
+
+# References about Roaring
 
 -  Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin,
 Better bitmap performance with Roaring bitmaps,
