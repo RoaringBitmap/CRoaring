@@ -18,6 +18,9 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 [whoosh]: https://bitbucket.org/mchaput/whoosh/wiki/Home
 [kylin]: http://kylin.apache.org/
 
+
+There is a serialized format specification for interoperability between implementations: https://github.com/RoaringBitmap/RoaringFormatSpec/
+
 # Objective
 
 The primary goal of the CRoaring is to provide a high performance low-level implementation that fully take advantage
