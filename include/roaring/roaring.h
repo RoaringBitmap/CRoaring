@@ -278,14 +278,14 @@ size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *ra);
 /**
  * read a bitmap from a serialized version. This is meant to be compatible with
  * the
- * Java and Go versions.
+ * Java and Go versions. See format specification at https://github.com/RoaringBitmap/RoaringFormatSpec
  */
 roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
 
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be compatible
- * with Java and Go versions)
+ * with Java and Go versions).  See format specification at https://github.com/RoaringBitmap/RoaringFormatSpec
  */
 size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra);
 
@@ -295,7 +295,7 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra);
  * This is meant to be compatible with
  * the
  * Java and Go versions. Returns how many bytes were written which should be
- * roaring_bitmap_portable_size_in_bytes(ra).
+ * roaring_bitmap_portable_size_in_bytes(ra).  See format specification at https://github.com/RoaringBitmap/RoaringFormatSpec
  */
 size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
 
