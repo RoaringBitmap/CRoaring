@@ -40,6 +40,7 @@ void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
+
 void test_stats() {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -59,6 +60,39 @@ void test_stats() {
     assert_true(stats.min_value == 100);
     assert_true(stats.max_value == 100000);
     roaring_bitmap_free(r1);
+}
+
+// this should expose memory leaks (https://github.com/RoaringBitmap/CRoaring/pull/70)
+void leaks_with_empty(bool copy_on_write) {
+    roaring_bitmap_t *empty = roaring_bitmap_create();
+    empty->copy_on_write = copy_on_write;
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    r1->copy_on_write = copy_on_write;
+    for (uint32_t i = 100; i < 70000; i+=3) {
+        roaring_bitmap_add(r1, i);
+    }
+    roaring_bitmap_t *ror = roaring_bitmap_or(r1,empty);
+    roaring_bitmap_t *rxor = roaring_bitmap_xor(r1,empty);
+    roaring_bitmap_t *rand = roaring_bitmap_and(r1,empty);
+    roaring_bitmap_t *randnot = roaring_bitmap_andnot(r1,empty);
+    roaring_bitmap_free(empty);
+    assert_true(roaring_bitmap_equals(ror,r1));
+    roaring_bitmap_free(ror);
+    assert_true(roaring_bitmap_equals(rxor,r1));
+    roaring_bitmap_free(rxor);
+    assert_true(roaring_bitmap_equals(randnot,r1));
+    roaring_bitmap_free(randnot);
+    roaring_bitmap_free(r1);
+    assert_true(roaring_bitmap_is_empty(rand));
+    roaring_bitmap_free(rand);
+}
+
+void leaks_with_empty_true() {
+  leaks_with_empty(true);
+}
+
+void leaks_with_empty_false() {
+  leaks_with_empty(false);
 }
 
 void test_example(bool copy_on_write) {
@@ -2474,16 +2508,16 @@ void test_subset() {
     assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
     // Sparse values
     for(int i = 0 ; i < 1000 ; i++) {
-        roaring_bitmap_add(rb2, choose_missing_value(rb2, 1<<31));
+        roaring_bitmap_add(rb2, choose_missing_value(rb2, UINT32_C(1)<<31));
     }
     assert_true(roaring_bitmap_is_subset(rb1, rb2));
     assert_true(roaring_bitmap_is_strict_subset(rb1, rb2));
     roaring_bitmap_or_inplace(rb1, rb2);
     assert_true(roaring_bitmap_is_subset(rb1, rb2));
     assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
-    value = choose_missing_value(rb1, 1<<31);
+    value = choose_missing_value(rb1, UINT32_C(1)<<31);
     roaring_bitmap_add(rb1, value);
-    roaring_bitmap_add(rb2, choose_missing_value(rb1, 1<<31));
+    roaring_bitmap_add(rb2, choose_missing_value(rb1, UINT32_C(1)<<31));
     assert_false(roaring_bitmap_is_subset(rb1, rb2));
     assert_false(roaring_bitmap_is_strict_subset(rb1, rb2));
     roaring_bitmap_add(rb2, value);
@@ -2522,6 +2556,8 @@ int main() {
         cmocka_unit_test(test_silly_range),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
+        cmocka_unit_test(leaks_with_empty_true),
+        cmocka_unit_test(leaks_with_empty_false),
         cmocka_unit_test(test_bitmap_from_range),
         cmocka_unit_test(test_printf),
         cmocka_unit_test(test_printf_withbitmap),
