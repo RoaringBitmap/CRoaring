@@ -162,6 +162,15 @@ roaring_iterate(r1, roaring_iterator_sumall, &counter);
  *  }
  *
  */
+// we can also create iterator structs
+counter = 0;
+roaring_uint32_iterator_t *  i = roaring_create_iterator(r1);
+while(i->has_value) {
+   counter++;
+   roaring_advance_uint32_iterator(i);
+}
+roaring_free_uint32_iterator(i);
+// roaring_bitmap_get_cardinality(r1) == counter
 
 roaring_bitmap_free(r1);
 roaring_bitmap_free(r2);
@@ -253,6 +262,14 @@ r1.iterate(roaring_iterator_sumall, &counter);
      *  }
      *
      */
+
+// we can also iterate the C++ way
+counter = 0;
+for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
+   ++counter;
+}
+// counter == t.cardinality()
+
 ```
 
 

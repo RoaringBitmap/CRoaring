@@ -200,6 +200,7 @@ void test_example(bool copy_on_write) {
     // we can iterate over all values using custom functions
     uint32_t counter = 0;
     roaring_iterate(r1, roaring_iterator_sumall, &counter);
+
     /**
      * bool roaring_iterator_sumall(uint32_t value, void *param) {
      *        *(uint32_t *) param += value;
@@ -208,10 +209,72 @@ void test_example(bool copy_on_write) {
      *
      */
 
+    // we can also create iterator structs
+    counter = 0;
+    roaring_uint32_iterator_t *  i = roaring_create_iterator(r1);
+    while(i->has_value) {
+      counter++;
+      roaring_advance_uint32_iterator(i);
+    }
+    roaring_free_uint32_iterator(i);
+    assert_true(roaring_bitmap_get_cardinality(r1) == counter);
+
+
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
     roaring_bitmap_free(r3);
 }
+
+
+void test_uint32_iterator() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    for(uint32_t i = 0; i < 66000; i+=3) {
+      roaring_bitmap_add(r1,i);
+    }
+    for(uint32_t i = 100000; i < 200000; i++) {
+      roaring_bitmap_add(r1,i);
+    }
+    for(uint32_t i = 300000; i < 500000; i+=100) {
+          roaring_bitmap_add(r1,i);
+    }
+    for(uint32_t i = 600000; i < 700000; i+=1) {
+          roaring_bitmap_add(r1,i);
+    }
+    for(uint32_t i = 800000; i < 900000; i+=7) {
+          roaring_bitmap_add(r1,i);
+    }
+    roaring_bitmap_run_optimize(r1);
+    roaring_uint32_iterator_t *  iter = roaring_create_iterator(r1);
+    for(uint32_t i = 0; i < 66000; i+=3) {
+      assert_true(iter->has_value);
+      assert_true(iter->current_value == i);
+      roaring_advance_uint32_iterator(iter);
+    }
+    for(uint32_t i = 100000; i < 200000; i++) {
+      assert_true(iter->has_value);
+      assert_true(iter->current_value == i);
+      roaring_advance_uint32_iterator(iter);
+    }
+    for(uint32_t i = 300000; i < 500000; i+=100) {
+      assert_true(iter->has_value);
+      assert_true(iter->current_value == i);
+      roaring_advance_uint32_iterator(iter);
+    }
+    for(uint32_t i = 600000; i < 700000; i+=1) {
+      assert_true(iter->has_value);
+      assert_true(iter->current_value == i);
+      roaring_advance_uint32_iterator(iter);
+    }
+    for(uint32_t i = 800000; i < 900000; i+=7) {
+      assert_true(iter->has_value);
+      assert_true(iter->current_value == i);
+      roaring_advance_uint32_iterator(iter);
+    }
+    assert_false(iter->has_value);
+    roaring_free_uint32_iterator(iter);
+    roaring_bitmap_free(r1);
+}
+
 
 void test_example_true() { test_example(true); }
 
@@ -2556,6 +2619,7 @@ int main() {
         cmocka_unit_test(test_silly_range),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
+        cmocka_unit_test(test_uint32_iterator),
         cmocka_unit_test(leaks_with_empty_true),
         cmocka_unit_test(leaks_with_empty_false),
         cmocka_unit_test(test_bitmap_from_range),

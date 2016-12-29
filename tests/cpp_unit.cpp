@@ -201,6 +201,12 @@ void test_example_cpp(bool copy_on_write) {
      *  }
      *
      */
+     // we can also iterate the C++ way
+     counter = 0;
+     for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
+       ++counter;
+     }
+     assert_true(counter == t.cardinality());
 }
 
 void test_example_true(void **) { test_example(true); }
