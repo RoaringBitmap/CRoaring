@@ -166,7 +166,7 @@ roaring_iterate(r1, roaring_iterator_sumall, &counter);
 counter = 0;
 roaring_uint32_iterator_t *  i = roaring_create_iterator(r1);
 while(i->has_value) {
-   counter++;
+   counter++; // could use    i->current_value
    roaring_advance_uint32_iterator(i);
 }
 roaring_free_uint32_iterator(i);
