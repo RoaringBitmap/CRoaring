@@ -609,7 +609,7 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
     return pos;
 }
 
-#if defined(USE_BMI)
+#if defined(IS_X64)
 
 /***
  * start of the SIMD 16-bit union code
@@ -1001,8 +1001,7 @@ static uint8_t uniqshuf[] = {
 static inline int store_unique(__m128i old, __m128i newval, uint16_t *output) {
     __m128i vecTmp = _mm_alignr_epi8(newval, old, 16 - 2);
     // lots of high latency instructions follow (optimize?)
-    int M = _mm_movemask_epi8(_mm_cmpeq_epi16(vecTmp, newval));
-    M = _pext_u32(M, 0x5555);
+    int M = _mm_movemask_epi8(_mm_packs_epi16(_mm_cmpeq_epi16(vecTmp,newval),_mm_setzero_si128()));
     int numberofnewvalues = 8 - _mm_popcnt_u32(M);
     __m128i key = _mm_lddqu_si128((const __m128i *)uniqshuf + M);
     __m128i val = _mm_shuffle_epi8(newval, key);
