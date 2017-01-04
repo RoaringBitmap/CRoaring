@@ -123,6 +123,17 @@ class Roaring {
     }
 
     /**
+     * Compute the difference between the current bitmap and the provided
+     * bitmap,
+     * writing the result in the current bitmap. The provided bitmap is not
+     * modified.
+     */
+    Roaring &operator-=(const Roaring &r) {
+        roaring_bitmap_andnot_inplace(roaring, r.roaring);
+        return *this;
+    }
+
+    /**
      * Compute the union between the current bitmap and the provided bitmap,
      * writing the result in the current bitmap. The provided bitmap is not
      * modified.
@@ -305,6 +316,19 @@ class Roaring {
         roaring_bitmap_t *r = roaring_bitmap_and(roaring, o.roaring);
         if (r == NULL) {
             throw std::runtime_error("failed materalization in and");
+        }
+        return Roaring(r);
+    }
+
+
+    /**
+     * Computes the difference between two bitmaps and returns new bitmap.
+     * The current bitmap and the provided bitmap are unchanged.
+     */
+    Roaring operator-(const Roaring &o) const {
+        roaring_bitmap_t *r = roaring_bitmap_andnot(roaring, o.roaring);
+        if (r == NULL) {
+            throw std::runtime_error("failed materalization in andnot");
         }
         return Roaring(r);
     }
