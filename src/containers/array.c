@@ -149,7 +149,7 @@ void array_container_union(const array_container_t *array_1,
 
     if (out->capacity < max_cardinality)
         array_container_grow(out, max_cardinality, INT32_MAX, false);
-#ifdef ROARING_VECTOR_UNION_ENABLED
+#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = union_vector16(array_1->array, card_1,
@@ -170,64 +170,6 @@ void array_container_union(const array_container_t *array_1,
 #endif
 }
 
-/* helper. a_out must be a valid array container with adequate capacity.
- * and may be same as a1.
- * Returns the cardinality of the output container. Based on Java
- * implementation Util.unsignedDifference
- */
-
-static int array_array_array_subtract(const array_container_t *a1,
-                                      const array_container_t *a2,
-                                      array_container_t *a_out) {
-    int out_card = 0;
-    int k1 = 0, k2 = 0;
-    int length1 = a1->cardinality, length2 = a2->cardinality;
-
-    if (length1 == 0) return 0;
-
-    if (length2 == 0) {
-        if (a1 != a_out)
-            memcpy(a_out->array, a1->array, sizeof(uint16_t) * length1);
-        return length1;
-    }
-
-    uint16_t s1 = a1->array[k1];
-    uint16_t s2 = a2->array[k2];
-
-    while (true) {
-        if (s1 < s2) {
-            a_out->array[out_card++] = s1;
-            ++k1;
-            if (k1 >= length1) {
-                break;
-            }
-            s1 = a1->array[k1];
-        } else if (s1 == s2) {
-            ++k1;
-            ++k2;
-            if (k1 >= length1) {
-                break;
-            }
-            if (k2 >= length2) {
-                memmove(a_out->array + out_card, a1->array + k1,
-                        sizeof(uint16_t) * (length1 - k1));
-                return out_card + length1 - k1;
-            }
-            s1 = a1->array[k1];
-            s2 = a2->array[k2];
-        } else {  // if (val1>val2)
-            ++k2;
-            if (k2 >= length2) {
-                memmove(a_out->array + out_card, a1->array + k1,
-                        sizeof(uint16_t) * (length1 - k1));
-                return out_card + length1 - k1;
-            }
-            s2 = a2->array[k2];
-        }
-    }
-    return out_card;
-}
-
 /* Computes the  difference of array1 and array2 and write the result
  * to array out.
  * Array out does not need to be distinct from array_1
@@ -237,7 +179,11 @@ void array_container_andnot(const array_container_t *array_1,
                             array_container_t *out) {
     if (out->capacity < array_1->cardinality)
         array_container_grow(out, array_1->cardinality, INT32_MAX, false);
-    out->cardinality = array_array_array_subtract(array_1, array_2, out);
+#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
+    out->cardinality = difference_vector16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+#else
+    out->cardinality = difference_uint16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+#endif
 }
 
 /* Computes the symmetric difference of array1 and array2 and write the
@@ -253,34 +199,11 @@ void array_container_xor(const array_container_t *array_1,
 
     if (out->capacity < max_cardinality)
         array_container_grow(out, max_cardinality, INT32_MAX, false);
-
-    // TODO something clever like the AVX union in array_util.c
-    // except where *both* occurrences of a duplicate in a sorted sequence
-    // are removed.
-
-    // just a merge for now (see TODO)
-    int pos1 = 0, pos2 = 0, pos_out = 0;
-    while (pos1 < card_1 && pos2 < card_2) {
-        const uint16_t v1 = array_1->array[pos1];
-        const uint16_t v2 = array_2->array[pos2];
-        if (v1 == v2) {
-            ++pos1;
-            ++pos2;
-            continue;
-        }
-        if (v1 < v2) {
-            out->array[pos_out++] = v1;
-            ++pos1;
-        } else {
-            out->array[pos_out++] = v2;
-            ++pos2;
-        }
-    }
-    // todo: memcpys instead
-    while (pos1 < card_1) out->array[pos_out++] = array_1->array[pos1++];
-    while (pos2 < card_2) out->array[pos_out++] = array_2->array[pos2++];
-
-    out->cardinality = pos_out;
+#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
+    out->cardinality = xor_vector16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+#else
+    out->cardinality = xor_uint16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+#endif
 }
 
 static inline int32_t minimum_int32(int32_t a, int32_t b) {

@@ -66,7 +66,8 @@
 #ifdef USEAVX
 #define USE_BMI  // we assume that AVX2 and BMI go hand and hand
 #define USEAVX2FORDECODING            // optimization
-#define ROARING_VECTOR_UNION_ENABLED  // vector unions (optimization)
+// vector operations should work on not just AVX
+#define ROARING_VECTOR_OPERATIONS_ENABLED  // vector unions (optimization)
 #endif
 
 #endif // DISABLE_X64

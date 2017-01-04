@@ -102,6 +102,18 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer);
 
 /**
+ * Generic XOR function.
+ */
+int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
+                   const uint16_t *array_2, int32_t card_2, uint16_t *out);
+
+/**
+ * Generic difference function (ANDNOT).
+ */
+int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
+                      int length2, uint16_t *a_out);
+
+/**
  * Generic intersection function.
  */
 size_t intersection_uint32(const uint32_t *A, const size_t lenA,
@@ -125,6 +137,20 @@ size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
 uint32_t union_vector16(const uint16_t *set_1, uint32_t size_1,
                         const uint16_t *set_2, uint32_t size_2,
                         uint16_t *buffer);
+/**
+ * A fast SSE-based XOR function.
+ */
+uint32_t xor_vector16(const uint16_t * array1, uint32_t length1,
+                      const uint16_t * array2, uint32_t length2,
+                      uint16_t * output);
+
+
+/**
+ * A fast SSE-based difference function.
+ */
+int32_t difference_vector16(const uint16_t * A, size_t s_a, const uint16_t * B,
+                            size_t s_b, uint16_t * C);
+
 /**
  * Generic union function, returns just the cardinality.
  */

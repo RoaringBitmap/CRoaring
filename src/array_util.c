@@ -362,8 +362,8 @@ static const uint8_t shuffle_mask16[] __attribute__((aligned(0x1000))) = {
  * From Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
  * Optimized by D. Lemire on May 3rd 2013
  */
-int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
-                           size_t s_b, uint16_t *C) {
+int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a, const uint16_t *__restrict__ B,
+                           size_t s_b, uint16_t * C) {
     size_t count = 0;
     size_t i_a = 0, i_b = 0;
     const int vectorlength = sizeof(__m128i) / sizeof(uint16_t);
@@ -437,6 +437,141 @@ int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
     }
     return count;
 }
+
+
+// from http://www.alfredklomp.com/programming/sse-intrinsics/
+static inline __m128i _mm_cmple_epu16(__m128i x, __m128i y) {
+  // Returns 0xFFFF where x <= y:
+  return _mm_cmpeq_epi16(_mm_subs_epu16(x, y), _mm_setzero_si128());
+}
+
+int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a, const uint16_t *__restrict__ B,
+                            size_t s_b, uint16_t * C) {
+
+  // we handle the degenerate case
+  if (s_a == 0)
+    return 0;
+  if (s_b == 0) {
+    if (A != C)
+      memcpy(C, A, sizeof(uint16_t) * s_a);
+    return s_a;
+  }
+  // handle the leading zeroes, it is messy but it allows us to use the fast
+  // _mm_cmpistrm instrinsic safely
+  int32_t count = 0;
+  if ((A[0] == 0) || (B[0] == 0)) {
+    if ((A[0] == 0) && (B[0] == 0)) {
+      A++;
+      s_a--;
+      B++;
+      s_b--;
+    } else if (A[0] == 0) {
+      C[count++] = 0;
+      A++;
+      s_a--;
+    } else {
+      B++;
+      s_b--;
+    }
+  }
+  // at this point, we have two non-empty arrays, made of non-zero
+  // increasing values.
+  size_t i_a = 0, i_b = 0;
+  const size_t vectorlength = sizeof(__m128i) / sizeof(uint16_t);
+  const size_t st_a = (s_a / vectorlength) * vectorlength;
+  const size_t st_b = (s_b / vectorlength) * vectorlength;
+  if ((i_a < st_a) && (i_b < st_b)) { // this is the vectorized code path
+    __m128i v_a, v_b;                 //, v_bmax;
+    // we load a vector from A and a vector from B
+    v_a = _mm_lddqu_si128((__m128i *)&A[i_a]);
+    v_b = _mm_lddqu_si128((__m128i *)&B[i_b]);
+    // we have a runningmask which indicates which values from A have been
+    // spotted in B, these don't get written out.
+    __m128i runningmask_a_found_in_b = _mm_setzero_si128();
+    /****
+    * start of the main vectorized loop
+    *****/
+    while (true) {
+      // afoundinb will contain a mask indicate for each entry in A whether it is seen
+      // in B
+      const __m128i a_found_in_b = _mm_cmpistrm(
+          v_b, v_a, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
+      runningmask_a_found_in_b =
+          _mm_or_si128(runningmask_a_found_in_b, a_found_in_b);
+      // we always compare the last values of A and B
+      const uint16_t a_max = A[i_a + vectorlength - 1];
+      const uint16_t b_max = B[i_b + vectorlength - 1];
+      if (a_max <= b_max) {
+        // Ok. In this code path, we are ready to write our v_a
+        // because there is no need to read more from B, they will
+        // all be large values.
+        const int bitmask_belongs_to_difference =
+            _mm_extract_epi32(runningmask_a_found_in_b, 0) ^ 0xFF;
+        /*** next few lines are probably expensive *****/
+        __m128i sm16 = _mm_load_si128((const __m128i *)shuffle_mask16 +
+                                      bitmask_belongs_to_difference);
+        __m128i p = _mm_shuffle_epi8(v_a, sm16);
+        _mm_storeu_si128((__m128i *)&C[count], p); // can overflow
+        count += _mm_popcnt_u32(bitmask_belongs_to_difference);
+        // we advance a
+        i_a += vectorlength;
+        if (i_a == st_a)// no more
+          break;
+        runningmask_a_found_in_b = _mm_setzero_si128();
+        v_a = _mm_lddqu_si128((__m128i *)&A[i_a]);
+      }
+      if (b_max <= a_max) {
+        // in this code path, the current v_b has become useless
+        i_b += vectorlength;
+        if (i_b == st_b)
+          break;
+        v_b = _mm_lddqu_si128((__m128i *)&B[i_b]);
+      }
+    }
+    // at this point, either we have i_a == st_a, which is the end of the vectorized processing,
+    // or we have i_b == st_b,  and we are not done processing the vector... so we need to finish it off.
+   if (i_a < st_a) {     // we have unfinished business...
+      uint16_t buffer[8]; // buffer to do a masked load
+      memset(buffer, 0, 8 * sizeof(uint16_t));
+      memcpy(buffer, B + i_b, (s_b - i_b) * sizeof(uint16_t));
+      v_b = _mm_lddqu_si128((__m128i *)buffer);
+      const __m128i a_found_in_b = _mm_cmpistrm(
+          v_b, v_a, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
+      runningmask_a_found_in_b =
+          _mm_or_si128(runningmask_a_found_in_b, a_found_in_b);
+      const int bitmask_belongs_to_difference =
+          _mm_extract_epi32(runningmask_a_found_in_b, 0) ^ 0xFF;
+      __m128i sm16 = _mm_load_si128((const __m128i *)shuffle_mask16 +
+                                    bitmask_belongs_to_difference);
+      __m128i p = _mm_shuffle_epi8(v_a, sm16);
+      _mm_storeu_si128((__m128i *)&C[count], p); // can overflow
+      count += _mm_popcnt_u32(bitmask_belongs_to_difference);
+      i_a += vectorlength;
+    }
+    // at this point we should have i_a == st_a and i_b == st_b
+  }
+  // do the tail using scalar code
+  while (i_a < s_a && i_b < s_b) {
+    uint16_t a = A[i_a];
+    uint16_t b = B[i_b];
+    if (b < a) {
+      i_b++;
+    } else if (a < b) {
+      C[count] = a;
+      count++;
+      i_a++;
+    } else { //==
+      i_a++;
+      i_b++;
+    }
+  }
+  if (i_a < s_a) {
+    memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
+    count += s_a - i_a;
+  }
+  return count;
+}
+
 #endif  // IS_X64
 
 /* Computes the intersection between one small and one large set of uint16_t.
@@ -608,6 +743,84 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
 
     return pos;
 }
+
+int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
+                      int length2, uint16_t *a_out) {
+  int out_card = 0;
+  int k1 = 0, k2 = 0;
+  if (length1 == 0)
+    return 0;
+  if (length2 == 0) {
+    if (a1 != a_out)
+      memcpy(a_out, a1, sizeof(uint16_t) * length1);
+    return length1;
+  }
+  uint16_t s1 = a1[k1];
+  uint16_t s2 = a2[k2];
+  while (true) {
+    if (s1 < s2) {
+      a_out[out_card++] = s1;
+      ++k1;
+      if (k1 >= length1) {
+        break;
+      }
+      s1 = a1[k1];
+    } else if (s1 == s2) {
+      ++k1;
+      ++k2;
+      if (k1 >= length1) {
+        break;
+      }
+      if (k2 >= length2) {
+        memmove(a_out + out_card, a1 + k1, sizeof(uint16_t) * (length1 - k1));
+        return out_card + length1 - k1;
+      }
+      s1 = a1[k1];
+      s2 = a2[k2];
+    } else { // if (val1>val2)
+      ++k2;
+      if (k2 >= length2) {
+        memmove(a_out + out_card, a1 + k1, sizeof(uint16_t) * (length1 - k1));
+        return out_card + length1 - k1;
+      }
+      s2 = a2[k2];
+    }
+  }
+  return out_card;
+}
+
+
+int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
+                   const uint16_t *array_2, int32_t card_2, uint16_t *out) {
+  int32_t pos1 = 0, pos2 = 0, pos_out = 0;
+  while (pos1 < card_1 && pos2 < card_2) {
+    const uint16_t v1 = array_1[pos1];
+    const uint16_t v2 = array_2[pos2];
+    if (v1 == v2) {
+      ++pos1;
+      ++pos2;
+      continue;
+    }
+    if (v1 < v2) {
+      out[pos_out++] = v1;
+      ++pos1;
+    } else {
+      out[pos_out++] = v2;
+      ++pos2;
+    }
+  }
+  if (pos1 < card_1) {
+      const size_t n_elems = card_1 - pos1;
+      memcpy(out + pos_out, array_1 + pos1, n_elems * sizeof(uint16_t));
+      pos_out += n_elems;
+  } else if (pos2 < card_2) {
+      const size_t n_elems = card_2 - pos2;
+      memcpy(out + pos_out, array_2 + pos2, n_elems * sizeof(uint16_t));
+      pos_out += n_elems;
+  }
+  return pos_out;
+}
+
 
 #if defined(IS_X64)
 
@@ -1046,8 +1259,7 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
     vB = _mm_lddqu_si128((const __m128i *)array2 + pos2);
     pos2++;
     sse_merge(&vA, &vB, &vecMin, &vecMax);
-    laststore =
-        _mm_set1_epi32(array1[0] < array2[0] ? array1[0] - 1 : array2[0] - 1);
+    laststore = _mm_set1_epi16(-1);
     output += store_unique(laststore, vecMin, output);
     laststore = vecMin;
     if ((pos1 < len1) && (pos2 < len2)) {
@@ -1112,6 +1324,152 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
  * End of the SIMD 16-bit union code
  *
  */
+
+/**
+ * Start of SIMD 16-bit XOR code
+ */
+
+// write vector new, while omitting repeated values assuming that previously
+// written vector was "old"
+static inline int store_unique_xor(__m128i old, __m128i newval,
+                                   uint16_t *output) {
+  __m128i vecTmp1 = _mm_alignr_epi8(newval, old, 16 - 4);
+  __m128i vecTmp2 = _mm_alignr_epi8(newval, old, 16 - 2);
+  __m128i equalleft = _mm_cmpeq_epi16(vecTmp2, vecTmp1);
+  __m128i equalright = _mm_cmpeq_epi16(vecTmp2, newval);
+  __m128i equalleftoright = _mm_or_si128(equalleft, equalright);
+  int M =
+      _mm_movemask_epi8(_mm_packs_epi16(equalleftoright, _mm_setzero_si128()));
+  int numberofnewvalues = 8 - _mm_popcnt_u32(M);
+  __m128i key = _mm_lddqu_si128((const __m128i *)uniqshuf + M);
+  __m128i val = _mm_shuffle_epi8(vecTmp2, key);
+  _mm_storeu_si128((__m128i *)output, val);
+  return numberofnewvalues;
+}
+
+// working in-place, this function overwrites the repeated values
+// could be avoided? Warning: assumes len > 0
+static inline uint32_t unique_xor(uint16_t *out, uint32_t len) {
+  uint32_t pos = 1;
+  for (uint32_t i = 1; i < len; ++i) {
+    if (out[i] != out[i - 1]) {
+      out[pos++] = out[i];
+    } else
+      pos--; // if it is identical to previous, delete it
+  }
+  return pos;
+}
+
+// a one-pass SSE xor algorithm
+uint32_t xor_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
+                      const uint16_t *__restrict__ array2, uint32_t length2,
+                      uint16_t *__restrict__ output) {
+  if ((length1 < 8) || (length2 < 8)) {
+    return xor_uint16(array1, length1, array2, length2, output);
+  }
+  __m128i vA, vB, V, vecMin, vecMax;
+  __m128i laststore;
+  uint16_t *initoutput = output;
+  uint32_t len1 = length1 / 8;
+  uint32_t len2 = length2 / 8;
+  uint32_t pos1 = 0;
+  uint32_t pos2 = 0;
+  // we start the machine
+  vA = _mm_lddqu_si128((const __m128i *)array1 + pos1);
+  pos1++;
+  vB = _mm_lddqu_si128((const __m128i *)array2 + pos2);
+  pos2++;
+  sse_merge(&vA, &vB, &vecMin, &vecMax);
+  laststore = _mm_set1_epi16(-1);
+  uint16_t buffer[17];
+  output += store_unique_xor(laststore, vecMin, output);
+
+  laststore = vecMin;
+  if ((pos1 < len1) && (pos2 < len2)) {
+    uint16_t curA, curB;
+    curA = array1[8 * pos1];
+    curB = array2[8 * pos2];
+    while (true) {
+      if (curA <= curB) {
+        V = _mm_lddqu_si128((const __m128i *)array1 + pos1);
+        pos1++;
+        if (pos1 < len1) {
+          curA = array1[8 * pos1];
+        } else {
+          break;
+        }
+      } else {
+        V = _mm_lddqu_si128((const __m128i *)array2 + pos2);
+        pos2++;
+        if (pos2 < len2) {
+          curB = array2[8 * pos2];
+        } else {
+          break;
+        }
+      }
+      sse_merge(&V, &vecMax, &vecMin, &vecMax);
+      // conditionally stores the last value of laststore as well as all but the
+      // last value of vecMin
+      output += store_unique_xor(laststore, vecMin, output);
+      laststore = vecMin;
+    }
+    sse_merge(&V, &vecMax, &vecMin, &vecMax);
+    // conditionally stores the last value of laststore as well as all but the
+    // last value of vecMin
+    output += store_unique_xor(laststore, vecMin, output);
+    laststore = vecMin;
+  }
+  uint32_t len = (uint32_t)(output - initoutput);
+
+  // we finish the rest off using a scalar algorithm
+  // could be improved?
+  // conditionally stores the last value of laststore as well as all but the
+  // last value of vecMax,
+  // we store to "buffer"
+  int leftoversize = store_unique_xor(laststore, vecMax, buffer);
+  uint16_t vec7 = _mm_extract_epi16(vecMax, 7);
+  uint16_t vec6 = _mm_extract_epi16(vecMax, 6);
+  if (vec7 != vec6)
+    buffer[leftoversize++] = vec7;
+  if (pos1 == len1) {
+
+    memcpy(buffer + leftoversize, array1 + 8 * pos1,
+           (length1 - 8 * len1) * sizeof(uint16_t));
+    leftoversize += length1 - 8 * len1;
+    if (leftoversize == 0) { // trivial case
+      memcpy(output, array2 + 8 * pos2,
+             (length2 - 8 * pos2) * sizeof(uint16_t));
+      len += (length2 - 8 * pos2);
+    } else {
+
+      qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+      leftoversize = unique_xor(buffer, leftoversize);
+      len += xor_uint16(buffer, leftoversize, array2 + 8 * pos2,
+                        length2 - 8 * pos2, output);
+    }
+  } else {
+    memcpy(buffer + leftoversize, array2 + 8 * pos2,
+           (length2 - 8 * len2) * sizeof(uint16_t));
+    leftoversize += length2 - 8 * len2;
+    if (leftoversize == 0) { // trivial case
+      memcpy(output, array1 + 8 * pos1,
+             (length1 - 8 * pos1) * sizeof(uint16_t));
+      len += (length1 - 8 * pos1);
+    } else {
+      qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+      leftoversize = unique_xor(buffer, leftoversize);
+      len += xor_uint16(buffer, leftoversize, array1 + 8 * pos1,
+                        length1 - 8 * pos1, output);
+    }
+  }
+  return len;
+}
+
+/**
+ * End of SIMD 16-bit XOR code
+ */
+
+
 #endif  // IS_X64
 
 size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
