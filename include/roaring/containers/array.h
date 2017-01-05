@@ -244,7 +244,7 @@ void array_container_andnot(const array_container_t *array_1,
 
 /* Append x to the set. Assumes that the value is larger than any preceding
  * values.  */
-static void array_container_append(array_container_t *arr, uint16_t pos) {
+static inline void array_container_append(array_container_t *arr, uint16_t pos) {
     const int32_t capacity = arr->capacity;
 
     if (array_container_full(arr)) {

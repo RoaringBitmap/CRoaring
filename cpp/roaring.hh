@@ -506,11 +506,11 @@ public:
 };
 
 
-RoaringSetBitForwardIterator Roaring::begin() const {
+inline RoaringSetBitForwardIterator Roaring::begin() const {
       return RoaringSetBitForwardIterator(*this);
 }
 
-RoaringSetBitForwardIterator Roaring::end() const {
+inline RoaringSetBitForwardIterator Roaring::end() const {
       return RoaringSetBitForwardIterator(*this, true);
 }
 
