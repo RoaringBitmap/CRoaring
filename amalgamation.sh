@@ -72,7 +72,6 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_H}"
 echo "Creating ${AMAL_C}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_C}"
 {
-    echo "#line 1 \"${AMAL_C}\""
     echo "#include \"${AMAL_H}\""
 
     for h in ${ALLCFILES}; do
@@ -108,7 +107,6 @@ ALLCPPHEADERS="$SCRIPTPATH/cpp/roaring.hh"
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_HH}"
 {
     echo "#include \"${AMAL_H}\""
-    echo "#include \"${AMAL_C}\""
 
     for h in ${ALLCPPHEADERS}; do
         dofile $h
@@ -122,6 +120,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${DEMOCPP}"
 cat <<< '
 #include <iostream>
 #include "roaring.hh"
+#include "roaring.c"
 int main() {
   Roaring r1;
   for (uint32_t i = 100; i < 1000; i++) {

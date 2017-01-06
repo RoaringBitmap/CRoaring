@@ -74,7 +74,7 @@ void *run_container_deserialize(const char *buf, size_t buf_len);
 /*
  * Effectively deletes the value at index index, repacking data.
  */
-static void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
+static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
     memmove(run->runs + index, run->runs + (1 + index),
             (run->n_runs - index - 1) * sizeof(rle16_t));
     run->n_runs--;
