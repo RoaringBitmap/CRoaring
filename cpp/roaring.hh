@@ -91,14 +91,14 @@ class Roaring {
      * Return the largest value (if not empty)
      *
      */
-    uint32_t maximum() { return roaring_bitmap_maximum(roaring); }
+    uint32_t maximum() const { return roaring_bitmap_maximum(roaring); }
 
 
     /**
     * Return the smallest value (if not empty)
     *
     */
-    uint32_t minimum() { return roaring_bitmap_minimum(roaring); }
+    uint32_t minimum() const { return roaring_bitmap_minimum(roaring); }
 
     /**
      * Check if value x is present
@@ -269,7 +269,7 @@ class Roaring {
     /**
     * Returns the number of integers that are smaller or equal to x.
     */
-    uint64_t rank(uint32_t x) {
+    uint64_t rank(uint32_t x) const {
         return roaring_bitmap_rank(roaring, x);
     }
     /**
