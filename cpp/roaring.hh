@@ -86,6 +86,20 @@ class Roaring {
      */
     void remove(uint32_t x) { roaring_bitmap_remove(roaring, x); }
 
+
+    /**
+     * Return the largest value (if not empty)
+     *
+     */
+    uint32_t maximum() { return roaring_bitmap_maximum(roaring); }
+
+
+    /**
+    * Return the smallest value (if not empty)
+    *
+    */
+    uint32_t minimum() { return roaring_bitmap_minimum(roaring); }
+
     /**
      * Check if value x is present
      */
@@ -245,14 +259,19 @@ class Roaring {
 
     /**
      * If the size of the roaring bitmap is strictly greater than rank, then
-     this
-       function returns true and set element to the element of given rank.
-       Otherwise, it returns false.
+     * this function returns true and set element to the element of given rank.
+     *   Otherwise, it returns false.
      */
     bool select(uint32_t rank, uint32_t *element) const {
         return roaring_bitmap_select(roaring, rank, element);
     }
 
+    /**
+    * Returns the number of integers that are smaller or equal to x.
+    */
+    uint64_t rank(uint32_t x) {
+        return roaring_bitmap_rank(roaring, x);
+    }
     /**
      * write a bitmap to a char buffer. This is meant to be compatible with
      * the

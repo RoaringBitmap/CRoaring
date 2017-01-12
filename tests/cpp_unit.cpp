@@ -148,6 +148,11 @@ void test_example_cpp(bool copy_on_write) {
 
     r2.printf();
     printf("\n");
+    assert_true(r2.minimum() == 1);
+
+    assert_true(r2.maximum() == 6);
+
+    assert_true(r2.rank(4) == 3);
 
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};

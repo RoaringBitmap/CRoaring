@@ -7,6 +7,8 @@
 #include <x86intrin.h>
 #endif
 
+extern inline uint16_t run_container_minimum(const run_container_t *run);
+extern inline uint16_t run_container_maximum(const run_container_t *run);
 extern inline int32_t interleavedBinarySearch(const rle16_t *array,
                                       int32_t lenarray, uint16_t ikey);
 extern inline bool run_container_contains(const run_container_t *run,
