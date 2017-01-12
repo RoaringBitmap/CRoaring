@@ -420,6 +420,24 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
  */
 bool roaring_bitmap_select(const roaring_bitmap_t *ra, uint32_t rank,
                            uint32_t *element);
+/**
+* roaring_bitmap_rank returns the number of integers that are smaller or equal to x.
+*/
+uint64_t  roaring_bitmap_rank(const roaring_bitmap_t *bm, uint32_t x);
+
+
+/**
+* roaring_bitmap_smallest returns the smallest value in the set.
+* Returns UINT32_MAX if the set is empty.
+*/
+uint32_t roaring_bitmap_minimum(const roaring_bitmap_t *bm);
+
+
+/**
+* roaring_bitmap_smallest returns the greatest value in the set.
+* Returns 0 if the set is empty.
+*/
+uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *bm);
 
 /**
 *  (For advanced users.)

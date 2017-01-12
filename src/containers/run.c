@@ -746,3 +746,20 @@ bool run_container_select(const run_container_t *container,
     }
     return false;
 }
+
+int run_container_rank(const run_container_t *container, uint16_t x) {
+  int sum = 0;
+  uint32_t x32 = x;
+  for (int i = 0; i < container->n_runs; i++) {
+    uint32_t startpoint = container->runs[i].value;
+    uint32_t length = container->runs[i].length;
+    uint32_t endpoint = length + startpoint;
+    if(x <= endpoint) {
+      if(x < startpoint) break;
+      return sum + (x32 - startpoint) + 1;
+    } else {
+      sum += length + 1;
+    }
+  }
+  return sum;
+}

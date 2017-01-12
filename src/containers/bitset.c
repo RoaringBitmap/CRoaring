@@ -505,3 +505,46 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
     assert(false);
     __builtin_unreachable();
 }
+
+
+/* Returns the smallest value (assumes not empty) */
+uint16_t bitset_container_minimum(const bitset_container_t *container) {
+  for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+    uint64_t w = container->array[i];
+    while (w != 0) {
+      int r = __builtin_ctzll(w);
+      return r + i * 64;
+    }
+  }
+  return UINT16_MAX;
+}
+
+/* Returns the largest value (assumes not empty) */
+inline uint16_t bitset_container_maximum(const bitset_container_t *container) {
+  for (int32_t i = BITSET_CONTAINER_SIZE_IN_WORDS - 1; i > 0; --i ) {
+    uint64_t w = container->array[i];
+    if (w != 0) {
+      int r = __builtin_clzll(w);
+      return i * 64 + 63  - r;
+    }
+  }
+  return 0;
+}
+
+/* Returns the number of values equal or smaller than x */
+int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
+  uint32_t x32 = x;
+  int sum = 0;
+  uint32_t k = 0;
+  for (; k + 63 <= x32; k += 64)  {
+    sum += hamming(container->array[k / 64]);
+  }
+  // at this point, we have covered everything up to k, k not included.
+  // we have that k < x, but not so large that k+63<=x
+  // k is a power of 64
+  int bitsleft = x32 - k + 1;// will be in [0,64)
+  uint64_t leftoverword = container->array[k / 64];// k / 64 should be within scope
+  leftoverword = leftoverword & ((UINT64_C(1) << bitsleft) - 1);
+  sum += hamming(leftoverword);
+  return sum;
+}

@@ -301,4 +301,27 @@ inline bool array_container_contains(const array_container_t *arr,
     return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }
 
+/* Returns the smallest value (assumes not empty) */
+inline uint16_t array_container_minimum(const array_container_t *arr) {
+  if(arr->cardinality == 0) return 0;
+  return arr->array[0];
+}
+
+/* Returns the largest value (assumes not empty) */
+inline uint16_t array_container_maximum(const array_container_t *arr) {
+  if(arr->cardinality == 0) return 0;
+  return arr->array[arr->cardinality - 1];
+}
+
+/* Returns the number of values equal or smaller than x */
+inline int array_container_rank(const array_container_t *arr, uint16_t x) {
+  const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
+  const bool is_present = idx >= 0;
+  if (is_present) {
+    return idx + 1;
+  } else {
+    return -idx - 1;
+  }
+}
+
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

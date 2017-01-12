@@ -401,4 +401,14 @@ bool bitset_container_select(const bitset_container_t *container,
                              uint32_t *start_rank, uint32_t rank,
                              uint32_t *element);
 
+
+
+/* Returns the smallest value (assumes not empty) */
+uint16_t bitset_container_minimum(const bitset_container_t *container);
+
+/* Returns the largest value (assumes not empty) */
+uint16_t bitset_container_maximum(const bitset_container_t *container);
+
+/* Returns the number of values equal or smaller than x */
+int bitset_container_rank(const bitset_container_t *container, uint16_t x);
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

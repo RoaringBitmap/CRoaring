@@ -1807,6 +1807,58 @@ void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *ra) {
     }
 }
 
+/**
+* roaring_bitmap_rank returns the number of integers that are smaller or equal to x.
+*/
+uint64_t  roaring_bitmap_rank(const roaring_bitmap_t *bm, uint32_t x) {
+    uint64_t size = 0;
+    uint32_t xhigh = x >> 16;
+    for (int i = 0; i < bm->high_low_container.size; i++) {
+      uint32_t key = bm->high_low_container.keys[i];
+      if (xhigh > key) {
+        size += container_get_cardinality(bm->high_low_container.containers[i], bm->high_low_container.typecodes[i]);
+      } else if (xhigh == key) {
+        return size + container_rank(bm->high_low_container.containers[i], bm->high_low_container.typecodes[i], x & 0xFFFF);
+      } else {
+        return size;
+      }
+    }
+    return size;
+}
+
+
+/**
+* roaring_bitmap_smallest returns the smallest value in the set.
+* Returns UINT32_MAX if the set is empty.
+*/
+uint32_t roaring_bitmap_minimum(const roaring_bitmap_t *bm) {
+  if(bm->high_low_container.size > 0) {
+      void * container = bm->high_low_container.containers[0];
+      uint8_t typecode = bm->high_low_container.typecodes[0];
+      uint32_t key = bm->high_low_container.keys[0];
+      uint32_t lowvalue = container_minimum(container, typecode);
+      return lowvalue | (key << 16);
+  }
+  return UINT32_MAX;
+}
+
+
+/**
+* roaring_bitmap_smallest returns the greatest value in the set.
+* Returns 0 if the set is empty.
+*/
+uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *bm) {
+  if(bm->high_low_container.size > 0) {
+      void * container = bm->high_low_container.containers[bm->high_low_container.size - 1];
+      uint8_t typecode = bm->high_low_container.typecodes[bm->high_low_container.size - 1];
+      uint32_t key = bm->high_low_container.keys[bm->high_low_container.size - 1];
+      uint32_t lowvalue = container_maximum(container, typecode);
+      return  lowvalue | (key << 16);
+  }
+  return 0;
+}
+
+
 bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank,
                            uint32_t *element) {
     void *container;

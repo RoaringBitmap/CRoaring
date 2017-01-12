@@ -1890,6 +1890,7 @@ void test_run_to_self() {
     free(ans);
 }
 
+
 void test_remove_run_to_bitset() {
     int ans_ctr = 0;
     uint32_t *ans = calloc(100000, sizeof(int32_t));
@@ -2553,6 +2554,101 @@ void select_test() {
     free(input);
 }
 
+
+void test_maximum_minimum() {
+    for(uint32_t mymin = 123; mymin < 1000000; mymin *=2) {
+      // just arrays
+      roaring_bitmap_t *r = roaring_bitmap_create();
+      uint32_t x = mymin;
+      for (; x < 1000 + mymin; x+= 100) {
+          roaring_bitmap_add(r, x);
+      }
+      assert_true(roaring_bitmap_minimum(r) == mymin);
+      assert_true(roaring_bitmap_maximum(r) == x - 100);
+      // now bitmap
+      x = mymin;
+      for (; x < 64000 + mymin; x+= 2) {
+          roaring_bitmap_add(r, x);
+      }
+      assert_true(roaring_bitmap_minimum(r) == mymin);
+      assert_true(roaring_bitmap_maximum(r) == x - 2);
+      // now run
+      x = mymin;
+      for (; x < 64000 + mymin; x++) {
+          roaring_bitmap_add(r, x);
+      }
+      roaring_bitmap_run_optimize(r);
+      assert_true(roaring_bitmap_minimum(r) == mymin);
+      assert_true(roaring_bitmap_maximum(r) == x - 1);
+      roaring_bitmap_free(r);
+  }
+}
+
+
+static uint64_t rank(uint32_t * arr, size_t length, uint32_t x) {
+  uint64_t sum = 0;
+  for(size_t i = 0; i < length; ++i) {
+    if(arr[i] > x) break;
+    sum++;
+  }
+  return sum;
+}
+
+
+void test_rank() {
+    for(uint32_t mymin = 123; mymin < 1000000; mymin *=2) {
+      // just arrays
+      roaring_bitmap_t *r = roaring_bitmap_create();
+      uint32_t x = mymin;
+      for (; x < 1000 + mymin; x+= 100) {
+          roaring_bitmap_add(r, x);
+      }
+      uint64_t card = roaring_bitmap_get_cardinality(r);
+      uint32_t * ans = malloc(card * sizeof(uint32_t));
+      roaring_bitmap_to_uint32_array(r,ans);
+      for(uint32_t z = 0; z < 1000 + mymin + 10; z+= 10) {
+        uint64_t truerank = rank(ans,card,z);
+        uint64_t computedrank = roaring_bitmap_rank(r,z);
+        if(truerank != computedrank) printf("%d != %d \n",(int)truerank, (int)computedrank);
+        assert_true(truerank == computedrank);
+      }
+      free(ans);
+      // now bitmap
+      x = mymin;
+      for (; x < 64000 + mymin; x+= 2) {
+          roaring_bitmap_add(r, x);
+      }
+      card = roaring_bitmap_get_cardinality(r);
+      ans = malloc(card * sizeof(uint32_t));
+      roaring_bitmap_to_uint32_array(r,ans);
+      for(uint32_t z = 0; z < 64000 + mymin + 10; z+= 10) {
+        uint64_t truerank = rank(ans,card,z);
+        uint64_t computedrank = roaring_bitmap_rank(r,z);
+        if(truerank != computedrank) printf("%d != %d \n",(int)truerank, (int)computedrank);
+        assert_true(truerank == computedrank);
+      }
+      free(ans);
+      // now run
+      x = mymin;
+      for (; x < 64000 + mymin; x++) {
+          roaring_bitmap_add(r, x);
+      }
+      roaring_bitmap_run_optimize(r);
+      card = roaring_bitmap_get_cardinality(r);
+      ans = malloc(card * sizeof(uint32_t));
+      roaring_bitmap_to_uint32_array(r,ans);
+      for(uint32_t z = 0; z < 64000 + mymin + 10; z+= 10) {
+        uint64_t truerank = rank(ans,card,z);
+        uint64_t computedrank = roaring_bitmap_rank(r,z);
+        if(truerank != computedrank) printf("%d != %d \n",(int)truerank, (int)computedrank);
+        assert_true(truerank == computedrank);
+      }
+      free(ans);
+
+      roaring_bitmap_free(r);
+  }
+}
+
 // Return a random value which does not belong to the roaring bitmap.
 // Value will be lower than upper_bound.
 uint32_t choose_missing_value(roaring_bitmap_t *rb, uint32_t upper_bound) {
@@ -2608,6 +2704,8 @@ void test_subset() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_rank),
+        cmocka_unit_test(test_maximum_minimum),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_addremove),
         cmocka_unit_test(test_addremoverun),

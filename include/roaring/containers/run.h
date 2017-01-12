@@ -411,4 +411,20 @@ bool run_container_select(const run_container_t *container,
 void run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst);
 
+
+
+/* Returns the smallest value (assumes not empty) */
+inline uint16_t run_container_minimum(const run_container_t *run) {
+  if(run->n_runs  == 0) return 0;
+  return run->runs[0].value;
+}
+
+/* Returns the largest value (assumes not empty) */
+inline uint16_t run_container_maximum(const run_container_t *run) {
+  if(run->n_runs  == 0) return 0;
+  return run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+}
+
+/* Returns the number of values equal or smaller than x */
+int run_container_rank(const run_container_t *arr, uint16_t x);
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

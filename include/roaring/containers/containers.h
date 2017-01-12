@@ -1968,4 +1968,60 @@ static inline bool container_select(const void *container, uint8_t typecode,
     return false;
 }
 
+static inline uint16_t container_maximum(const void *container, uint8_t typecode) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_maximum((bitset_container_t *)container);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_maximum((array_container_t *)container);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_maximum((run_container_t *)container);
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+    assert(false);
+    __builtin_unreachable();
+    return false;
+}
+
+static inline uint16_t container_minimum(const void *container, uint8_t typecode) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_minimum((bitset_container_t *)container);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_minimum((array_container_t *)container);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_minimum((run_container_t *)container);
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+    assert(false);
+    __builtin_unreachable();
+    return false;
+}
+
+// number of values smaller or equal to x
+static inline int container_rank(const void *container, uint8_t typecode, uint16_t x) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_rank((bitset_container_t *)container,x);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_rank((array_container_t *)container,x);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_rank((run_container_t *)container,x);
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+    assert(false);
+    __builtin_unreachable();
+    return false;
+}
+
+
 #endif
