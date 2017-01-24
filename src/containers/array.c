@@ -443,3 +443,11 @@ bool array_container_iterate(const array_container_t *cont, uint32_t base,
         if (!iterator(cont->array[i] + base, ptr)) return false;
     return true;
 }
+
+bool array_container_iterate64(const array_container_t *cont, uint32_t base,
+                               roaring_iterator64 iterator,
+                               uint64_t high_bits, void *ptr) {
+    for (int i = 0; i < cont->cardinality; i++)
+        if (!iterator(high_bits | (uint64_t)(cont->array[i] + base), ptr)) return false;
+    return true;
+}

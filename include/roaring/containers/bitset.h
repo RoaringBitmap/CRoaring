@@ -347,6 +347,9 @@ int bitset_container_number_of_runs(bitset_container_t *b);
 
 bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base,
                               roaring_iterator iterator, void *ptr);
+bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base,
+                                roaring_iterator64 iterator,
+                                uint64_t high_bits, void *ptr);
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.

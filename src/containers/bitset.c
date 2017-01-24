@@ -445,6 +445,20 @@ bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
   return true;
 }
 
+bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, roaring_iterator64 iterator, uint64_t high_bits, void *ptr) {
+  for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
+    uint64_t w = cont->array[i];
+    while (w != 0) {
+      uint64_t t = w & -w;
+      int r = __builtin_ctzll(w);
+      if(!iterator(high_bits | (uint64_t)(r + base), ptr)) return false;
+      w ^= t;
+    }
+    base += 64;
+  }
+  return true;
+}
+
 
 bool bitset_container_equals(bitset_container_t *container1, bitset_container_t *container2) {
 	if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {

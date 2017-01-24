@@ -1791,6 +1791,29 @@ static inline bool container_iterate(const void *container, uint8_t typecode,
     return false;
 }
 
+static inline bool container_iterate64(const void *container, uint8_t typecode,
+                                       uint32_t base, roaring_iterator64 iterator,
+                                       uint64_t high_bits, void *ptr) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_iterate64(
+                (const bitset_container_t *)container, base, iterator, high_bits, ptr);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_iterate64((const array_container_t *)container,
+                                             base, iterator, high_bits, ptr);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_iterate64((const run_container_t *)container,
+                                           base, iterator, high_bits, ptr);
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+    assert(false);
+    __builtin_unreachable();
+    return false;
+}
+
 static inline void *container_not(const void *c, uint8_t typ,
                                   uint8_t *result_type) {
     c = container_unwrap_shared(c, &typ);

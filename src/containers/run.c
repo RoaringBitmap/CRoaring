@@ -635,6 +635,19 @@ bool run_container_iterate(const run_container_t *cont, uint32_t base,
     return true;
 }
 
+bool run_container_iterate64(const run_container_t *cont, uint32_t base,
+                             roaring_iterator64 iterator,
+                             uint64_t high_bits, void *ptr) {
+    for (int i = 0; i < cont->n_runs; ++i) {
+        uint32_t run_start = base + cont->runs[i].value;
+        uint16_t le = cont->runs[i].length;
+
+        for (int j = 0; j <= le; ++j)
+            if (!iterator(high_bits | (uint64_t)(run_start + j), ptr)) return false;
+    }
+    return true;
+}
+
 bool run_container_equals(run_container_t *container1,
                           run_container_t *container2) {
     if (container1->n_runs != container2->n_runs) {

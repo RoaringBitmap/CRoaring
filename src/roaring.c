@@ -1086,6 +1086,17 @@ bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
     return true;
 }
 
+bool roaring_iterate64(const roaring_bitmap_t *ra, roaring_iterator64 iterator,
+                       uint64_t high_bits, void *ptr) {
+    for (int i = 0; i < ra->high_low_container.size; ++i)
+        if (!container_iterate64(ra->high_low_container.containers[i], ra->high_low_container.typecodes[i],
+                ((uint32_t)ra->high_low_container.keys[i]) << 16, iterator,
+                high_bits, ptr)) {
+            return false;
+        }
+    return true;
+}
+
 
 
 /****

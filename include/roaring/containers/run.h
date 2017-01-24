@@ -332,6 +332,9 @@ static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
 
 bool run_container_iterate(const run_container_t *cont, uint32_t base,
                            roaring_iterator iterator, void *ptr);
+bool run_container_iterate64(const run_container_t *cont, uint32_t base,
+                             roaring_iterator64 iterator,
+                             uint64_t high_bits, void *ptr);
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.

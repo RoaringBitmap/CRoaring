@@ -10,12 +10,18 @@
 #include <iostream>
 #include <roaring/roaring.h>
 #include "roaring.hh"
+#include "roaring64map.hh"
 extern "C" {
 #include "test.h"
 }
 
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
+    return true;  // we always process all values
+}
+
+bool roaring_iterator_sumall64(uint64_t value, void *param) {
+    *(uint64_t *)param += value;
     return true;  // we always process all values
 }
 
@@ -214,6 +220,106 @@ void test_example_cpp(bool copy_on_write) {
      assert_true(counter == t.cardinality());
 }
 
+void test_example_cpp_64(bool copy_on_write) {
+    // create a new empty bitmap
+    Roaring64Map r1;
+    r1.setCopyOnWrite(copy_on_write);
+    // then we can add values
+    for (uint64_t i = 100; i < 1000; i++) {
+        r1.add(i);
+    }
+    for (uint64_t i = 14000000000000000100ull; i < 14000000000000001000ull; i++) {
+        r1.add(i);
+    }
+
+    // check whether a value is contained
+    assert_true(r1.contains((uint64_t)14000000000000000500ull));
+
+    // compute how many bits there are:
+    uint32_t cardinality = r1.cardinality();
+    std::cout << "Cardinality = " << cardinality << std::endl;
+
+    // if your bitmaps have long runs, you can compress them by calling
+    // run_optimize
+    uint32_t size = r1.getSizeInBytes();
+    r1.runOptimize();
+    uint32_t compact_size = r1.getSizeInBytes();
+
+    std::cout << "size before run optimize " << size << " bytes, and after "
+              << compact_size << " bytes." << std::endl;
+
+    // create a new bitmap with varargs
+    Roaring64Map r2 = Roaring64Map::bitmapOf(5, 1ull, 2ull, 234294967296ull,
+                                             195839473298ull, 14000000000000000100ull);
+
+    r2.printf();
+    printf("\n");
+    assert_true(r2.minimum() == 1ull);
+
+    assert_true(r2.maximum() == 14000000000000000100ull);
+
+    assert_true(r2.rank(234294967296ull) == 4ull);
+
+    // we can also create a bitmap from a pointer to 32-bit integers
+    const uint32_t values[] = {2, 3, 4};
+    Roaring64Map r3(3, values);
+    r3.setCopyOnWrite(copy_on_write);
+
+    // we can also go in reverse and go from arrays to bitmaps
+    uint64_t card1 = r1.cardinality();
+    uint64_t *arr1 = new uint64_t[card1];
+    assert_true(arr1 != NULL);
+    r1.toUint64Array(arr1);
+    Roaring64Map r1f(card1, arr1);
+    delete[] arr1;
+
+    // bitmaps shall be equal
+    assert_true(r1 == r1f);
+
+    // we can copy and compare bitmaps
+    Roaring64Map z(r3);
+    z.setCopyOnWrite(copy_on_write);
+    assert_true(r3 == z);
+
+    // we can compute union two-by-two
+    Roaring64Map r1_2_3 = r1 | r2;
+    r1_2_3.setCopyOnWrite(copy_on_write);
+    r1_2_3 |= r3;
+
+    // we can compute a big union
+    const Roaring64Map *allmybitmaps[] = {&r1, &r2, &r3};
+    Roaring64Map bigunion = Roaring64Map::fastunion(3, allmybitmaps);
+    assert_true(r1_2_3 == bigunion);
+
+    // we can compute intersection two-by-two
+    Roaring64Map i1_2 = r1 & r2;
+
+    // we can write a bitmap to a pointer and recover it later
+
+    uint32_t expectedsize = r1.getSizeInBytes();
+    char *serializedbytes = new char[expectedsize];
+    r1.write(serializedbytes);
+    Roaring64Map t = Roaring64Map::read(serializedbytes);
+    assert_true(r1 == t);
+    delete[] serializedbytes;
+
+    // we can iterate over all values using custom functions
+    uint64_t counter = 0;
+    r1.iterate(roaring_iterator_sumall64, &counter);
+    /**
+     * void roaring_iterator_sumall64(uint64_t value, void *param) {
+     *        *(uint64_t *) param += value;
+     *  }
+     *
+     */
+     // we can also iterate the C++ way
+     counter = 0;
+     for(Roaring64Map::const_iterator i = t.begin() ; i != t.end() ; i++) {
+       ++counter;
+     }
+     assert_true(counter == t.cardinality());
+}
+
 void test_example_true(void **) { test_example(true); }
 
 void test_example_false(void **) { test_example(false); }
@@ -222,12 +328,18 @@ void test_example_cpp_true(void **) { test_example_cpp(true); }
 
 void test_example_cpp_false(void **) { test_example_cpp(false); }
 
+void test_example_cpp_64_true(void **) { test_example_cpp_64(true); }
+
+void test_example_cpp_64_false(void **) { test_example_cpp_64(false); }
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_example_cpp_true),
-        cmocka_unit_test(test_example_cpp_false)};
+        cmocka_unit_test(test_example_cpp_false),
+        cmocka_unit_test(test_example_cpp_64_true),
+        cmocka_unit_test(test_example_cpp_64_false)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

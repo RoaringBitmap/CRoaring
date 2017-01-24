@@ -6,6 +6,7 @@
 #define ROARING_TYPES_H
 
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
+typedef bool (*roaring_iterator64)(uint64_t value, void *param);
 
 /**
 *  (For advanced users.)
