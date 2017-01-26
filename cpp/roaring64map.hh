@@ -47,14 +47,14 @@ class Roaring64Map{
     /**
      * Construct a 64-bit map from a 32-bit one
      */
-    Roaring64Map(const Roaring &r) { roarings.emplace(std::make_pair(0, r)); }
+    Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
 
     /**
      * Construct a roaring object from the C struct.
      *
      * Passing a NULL point is unsafe.
      */
-    Roaring64Map(roaring_bitmap_t *s) { roarings.emplace(std::make_pair(0, s)); }
+    Roaring64Map(roaring_bitmap_t *s) { emplaceOrInsert(0, s); }
 
     /**
      * Construct a bitmap from a list of integer values.
@@ -538,7 +538,7 @@ class Roaring64Map{
             size_t bytesInRoaring = *((size_t*)buf);
             buf += sizeof(size_t);
             // read Roaring
-            result.roarings.emplace(std::make_pair(key, Roaring::read(buf, portable)));
+            result.emplaceOrInsert(key, Roaring::read(buf, portable));
             // forward buffer past the last Roaring Bitmap
             // TODO: lower-level read API should return bytes read so we don't have to store this
             buf += bytesInRoaring;
@@ -690,6 +690,15 @@ private:
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
     static uint64_t uniteBytes(const uint32_t highBytes, const uint32_t lowBytes) {
         return (uint64_t(highBytes) << 32) | uint64_t(lowBytes);
+    }
+    // this is needed to tolerate gcc's C++11 libstdc++ lacking emplace
+    // prior to version 4.8
+    void emplaceOrInsert(const uint32_t key, const Roaring& value) {
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
+    roarings.insert(std::make_pair(key, value));
+#else
+    roarings.emplace(std::make_pair(key, value));
+#endif
     }
 };
 
