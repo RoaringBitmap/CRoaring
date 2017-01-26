@@ -14,7 +14,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many 32-
 #include <numeric>
 #include <limits>
 
-#include <roaring.hh>
+#include "roaring.hh"
 
 class Roaring64MapSetBitForwardIterator;
 
@@ -119,7 +119,7 @@ class Roaring64Map{
     uint64_t maximum() const {
         for (auto roaring_iter = roarings.crbegin(); roaring_iter != roarings.crend(); ++roaring_iter) {
             if (!roaring_iter->second.isEmpty()) {
-                return (uint64_t(roaring_iter->first) << 32) | uint64_t(roaring_iter->second.maximum());
+                return uniteBytes(roaring_iter->first, roaring_iter->second.maximum());
             }
         }
         return std::numeric_limits<uint64_t>::min();
@@ -133,7 +133,7 @@ class Roaring64Map{
     uint64_t minimum() const {
         for (auto roaring_iter = roarings.cbegin(); roaring_iter != roarings.cend(); ++roaring_iter) {
             if (!roaring_iter->second.isEmpty()) {
-                return (uint64_t(roaring_iter->first) << 32) | uint64_t(roaring_iter->second.minimum());
+                return uniteBytes(roaring_iter->first, roaring_iter->second.minimum());
             }
         }
         return std::numeric_limits<uint64_t>::max();
@@ -239,8 +239,14 @@ class Roaring64Map{
 
     /**
      * Get the cardinality of the bitmap (number of elements).
+     * Throws std::length_error in the special case where the bitmap is full
+     * (cardinality() == 2^64). Check isFull() before calling to avoid exception.
      */
     uint64_t cardinality() const {
+        if (isFull()) {
+            throw std::length_error("bitmap is full, cardinality is 2^64, "
+                                    "unable to represent in a 64-bit integer");
+        }
         return std::accumulate(roarings.cbegin(), roarings.cend(), 0,
             [](uint64_t previous, const std::pair<uint32_t, Roaring>& map_entry) {
                 return previous + map_entry.second.cardinality();
@@ -255,6 +261,19 @@ class Roaring64Map{
             [](const std::pair<uint32_t, Roaring>& map_entry) {
                 return map_entry.second.isEmpty();
             });
+    }
+
+    /**
+    * Returns true if the bitmap is full (cardinality is max uint64_t + 1).
+    */
+    bool isFull() const {
+        // only bother to check if map is fully saturated
+        return roarings.size() == ((size_t)std::numeric_limits<uint32_t>::max()) + 1 ?
+            std::all_of(roarings.cbegin(), roarings.cend(),
+            [](const std::pair<uint32_t, Roaring>& map_entry) {
+                // roarings within map are saturated if cardinality is uint32_t max + 1
+                return map_entry.second.cardinality() == ((uint64_t)std::numeric_limits<uint32_t>::max()) + 1;
+            }) : false;
     }
 
     /**
@@ -274,8 +293,10 @@ class Roaring64Map{
 
     /**
     * Returns true if the bitmap is strict subset of the other.
+    * Throws std::length_error in the special case where the bitmap is full
+    * (cardinality() == 2^64). Check isFull() before calling to avoid exception.
     */
-    bool isStrictSubset(const Roaring64Map &r) const { return isSubset(r) && !(*this == r); }
+    bool isStrictSubset(const Roaring64Map &r) const { return isSubset(r) && cardinality() != r.cardinality(); }
 
     /**
      * Convert the bitmap to an array. Write the output to "ans",
@@ -287,7 +308,7 @@ class Roaring64Map{
         std::accumulate(roarings.cbegin(), roarings.cend(), ans,
             [](uint64_t* previous, const std::pair<uint32_t, Roaring>& map_entry) {
                 for (uint32_t low_bits : map_entry.second)
-                    *previous++ = (uint64_t(map_entry.first) << 32) | uint64_t(low_bits);
+                    *previous++ = uniteBytes(map_entry.first, low_bits);
                 return previous;
             });
     }
@@ -300,6 +321,7 @@ class Roaring64Map{
         auto lhs_iter = roarings.cbegin();
         auto rhs_iter = r.roarings.cbegin();
         do {
+            // if the left map has reached its end, ensure that the right map contains only empty Bitmaps
             if (lhs_iter == roarings.cend()) {
                 while (rhs_iter != r.roarings.cend()) {
                     if (rhs_iter->second.isEmpty()) {
@@ -310,12 +332,14 @@ class Roaring64Map{
                 }
                 return true;
             }
+            // if the left map has an empty bitmap, skip it
             if (lhs_iter->second.isEmpty()) {
                 ++lhs_iter;
                 continue;
             }
 
             do {
+                // if the right map has reached its end, ensure that the right map contains only empty Bitmaps
                 if (rhs_iter == r.roarings.cend()) {
                     while (lhs_iter != roarings.cend()) {
                         if (lhs_iter->second.isEmpty()) {
@@ -326,12 +350,13 @@ class Roaring64Map{
                     }
                     return true;
                 }
+                // if the right map has an empty bitmap, skip it
                 if (rhs_iter->second.isEmpty()) {
                     ++rhs_iter;
                     continue;
                 }
             } while (false);
-
+        // if neither map has reached its end ensure elements are equal and move to the next element in both
         } while (lhs_iter++->second == rhs_iter++->second);
         return false;
     }
@@ -431,7 +456,7 @@ class Roaring64Map{
      */
     bool select(uint64_t rank, uint32_t *element) const {
         for (const auto& map_entry : roarings) {
-            uint64_t sub_cardinality = (uint32_t)map_entry.second.cardinality();
+            uint64_t sub_cardinality = (uint64_t)map_entry.second.cardinality();
             if (rank < sub_cardinality) {
                 return map_entry.second.select(rank, element);
             }
@@ -602,16 +627,14 @@ class Roaring64Map{
             outer_iter_data.high_bits = roarings.begin()->first;
             map_iter->second.iterate([](uint32_t low_bits, void* inner_iter_data)->bool
                 { std::printf("%c%llu", ((iter_data*)inner_iter_data)->first_char,
-                  (long long unsigned)(((uint64_t)((iter_data*)inner_iter_data)->high_bits) << 32)
-                  | (uint64_t)low_bits);
+                  (long long unsigned)uniteBytes(((iter_data*)inner_iter_data)->high_bits, low_bits));
                   if (((iter_data*)inner_iter_data)->first_char == '{')
                      ((iter_data*)inner_iter_data)->first_char = ',';
                   return true; }, (void*)&outer_iter_data);
             std::for_each(++map_iter, roarings.cend(),
                 [](const std::pair<uint32_t, Roaring>& map_entry) {
                     map_entry.second.iterate([](uint32_t low_bits, void* high_bits)->bool
-                        { std::printf(",%llu", (long long unsigned)(((uint64_t)*(uint32_t*)high_bits) << 32)
-                          | (uint64_t)low_bits);
+                        { std::printf(",%llu", (long long unsigned)uniteBytes(*(uint32_t*)high_bits, low_bits));
                           return true; }, (void*)&map_entry.first);
                 });
         }
@@ -665,6 +688,9 @@ private:
     bool copyOnWrite = false;
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
+    static uint64_t uniteBytes(const uint32_t highBytes, const uint32_t lowBytes) {
+        return (uint64_t(highBytes) << 32) | uint64_t(lowBytes);
+    }
 };
 
 
@@ -684,7 +710,7 @@ public:
    * Provides the location of the set bit.
    */
     value_type operator*() const {
-        return (uint64_t(map_iter->first) << 32) | uint64_t(i->current_value);
+        return Roaring64Map::uniteBytes(map_iter->first, i->current_value);
     }
 
     bool operator<(const type_of_iterator &o) {

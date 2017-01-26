@@ -236,14 +236,14 @@ void test_example_cpp_64(bool copy_on_write) {
     assert_true(r1.contains((uint64_t)14000000000000000500ull));
 
     // compute how many bits there are:
-    uint32_t cardinality = r1.cardinality();
+    uint64_t cardinality = r1.cardinality();
     std::cout << "Cardinality = " << cardinality << std::endl;
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
-    uint32_t size = r1.getSizeInBytes();
+    uint64_t size = r1.getSizeInBytes();
     r1.runOptimize();
-    uint32_t compact_size = r1.getSizeInBytes();
+    uint64_t compact_size = r1.getSizeInBytes();
 
     std::cout << "size before run optimize " << size << " bytes, and after "
               << compact_size << " bytes." << std::endl;
