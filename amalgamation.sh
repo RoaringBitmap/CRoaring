@@ -103,7 +103,7 @@ echo "Done with C amalgamation. Proceeding with C++ wrap."
 AMAL_HH="roaring.hh"
 
 echo "Creating ${AMAL_HH}..."
-ALLCPPHEADERS="$SCRIPTPATH/cpp/roaring.hh"
+ALLCPPHEADERS="$SCRIPTPATH/cpp/roaring.hh $SCRIPTPATH/cpp/roaring64map.hh"
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_HH}"
 {
     echo "#include \"${AMAL_H}\""
@@ -127,6 +127,12 @@ int main() {
     r1.add(i);
   }
   std::cout << "cardinality = " << r1.cardinality() << std::endl;
+
+  Roaring64Map r2;
+  for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {
+    r2.add(i);
+  }
+  std::cout << "cardinality = " << r2.cardinality() << std::endl;
   return 0;
 }
 ' >>  "${DEMOCPP}"

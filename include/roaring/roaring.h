@@ -315,9 +315,8 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
 bool roaring_iterate(const roaring_bitmap_t *ra, roaring_iterator iterator,
                      void *ptr);
 
-
-
-
+bool roaring_iterate64(const roaring_bitmap_t *ra, roaring_iterator64 iterator,
+                       uint64_t high_bits, void *ptr);
 
 /**
  * Return true if the two bitmaps contain the same elements.

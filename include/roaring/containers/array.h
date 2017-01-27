@@ -170,6 +170,8 @@ void array_container_grow(array_container_t *container, int32_t min,
 
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr);
+bool array_container_iterate64(const array_container_t *cont, uint32_t base,
+                               roaring_iterator64 iterator, uint64_t high_bits, void *ptr);
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
