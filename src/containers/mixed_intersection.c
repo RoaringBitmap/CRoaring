@@ -18,12 +18,21 @@ void array_bitset_container_intersection(const array_container_t *src_1,
     int32_t newcard = 0;  // dst could be src_1
     const int32_t origcard = src_1->cardinality;
     for (int i = 0; i < origcard; ++i) {
-        // could probably be vectorized
         uint16_t key = src_1->array[i];
-        // next bit could be branchless
-        if (bitset_container_contains(src_2, key)) {
-            dst->array[newcard++] = key;
-        }
+        // this branchless approach is much faster...
+        dst->array[newcard] = key;
+        newcard +=  bitset_container_contains(src_2, key); 
+        /**
+         * we could do it this way instead...
+         * if (bitset_container_contains(src_2, key)) {
+         * dst->array[newcard++] = key;
+         * }
+         * but if the result is unpredictible, the processor generates
+         * many mispredicted branches.
+         * Difference can be huge (from 3 cycles when predictible all the way
+         * to 16 cycles when unpredictible.
+         * See https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/blob/master/extra/bitset/c/arraybitsetintersection.c
+         */
     }
     dst->cardinality = newcard;
 }
