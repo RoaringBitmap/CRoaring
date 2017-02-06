@@ -124,7 +124,7 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
             void *c;
 
             if ((container_type_2 == BITSET_CONTAINER_TYPE_CODE) &&
-                (container_type_2 != BITSET_CONTAINER_TYPE_CODE)) {
+                (container_type_1 != BITSET_CONTAINER_TYPE_CODE)) {
                 c = container_lazy_ior(c2, container_type_2, c1,
                                        container_type_1,
                                        &container_result_type);

@@ -296,9 +296,9 @@ void array_container_printf_as_uint32_array(const array_container_t *v,
     if (v->cardinality == 0) {
         return;
     }
-    printf("%d", v->array[0] + base);
+    printf("%u", v->array[0] + base);
     for (int i = 1; i < v->cardinality; ++i) {
-        printf(",%d", v->array[i] + base);
+        printf(",%u", v->array[i] + base);
     }
 }
 

@@ -180,7 +180,7 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
         if (ra->high_low_container.typecodes[i] ==
             SHARED_CONTAINER_TYPE_CODE) {
             printf(
-                "(shared count = %d )",
+                "(shared count = %u )",
                 ((shared_container_t *)(ra->high_low_container.containers[i]))
                     ->counter);
         }

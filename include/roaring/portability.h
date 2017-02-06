@@ -27,10 +27,9 @@
 #include <malloc.h> // this should never be needed but there are some reports that it is needed.
 #endif
 
-#if __SIZEOF_LONG_LONG__ != 8
+#if defined(__SIZEOF_LONG_LONG__) && __SIZEOF_LONG_LONG__ != 8
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
-
 
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
@@ -53,11 +52,8 @@
 // we have an x64 processor
 #define IS_X64
 // we include the intrinsic header
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-/* Pretty much anything else. */
+#ifndef _MSC_VER
+/* Non-Microsoft C/C++-compatible compiler */
 #include <x86intrin.h> // on some recent GCC, this will declare posix_memalign
 #endif
 #endif
@@ -71,6 +67,34 @@
 #endif
 
 #endif // DISABLE_X64
+
+#ifdef _MSC_VER
+/* Microsoft C/C++-compatible compiler */
+#include <intrin.h>
+
+/* wrappers for Visual Studio built-ins that look like gcc built-ins */
+static inline int __builtin_ctzll(unsigned long long input_num) {
+    unsigned long index;
+    _BitScanForward64(&index, input_num);
+    return index;
+}
+
+static inline int __builtin_clzll(unsigned long long input_num) {
+    unsigned long index;
+    _BitScanReverse64(&index, input_num);
+    return index;
+}
+
+static inline int __builtin_popcountll(unsigned long long input_num) {
+    return (int) __popcnt64(input_num);
+}
+
+static inline void __builtin_unreachable() {
+    __assume(0);
+}
+
+#endif
+
 
 // without the following, we get lots of warnings about posix_memalign
 #ifndef __cplusplus
