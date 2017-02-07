@@ -27,6 +27,10 @@
 #include <malloc.h> // this should never be needed but there are some reports that it is needed.
 #endif
 
+#if defined (_MSC_VER) && !defined(__clang__) && !defined(_WIN64)
+#pragma message("You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
+#endif
+
 #if defined(__SIZEOF_LONG_LONG__) && __SIZEOF_LONG_LONG__ != 8
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
