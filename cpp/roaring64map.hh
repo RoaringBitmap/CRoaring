@@ -144,10 +144,10 @@ class Roaring64Map{
      * Check if value x is present
      */
     bool contains(uint32_t x) const {
-        return roarings.at(0).contains(x);
+        return roarings.count(0) == 0 ? false : roarings.at(0).contains(x);
     }
     bool contains(uint64_t x) const {
-        return roarings.at(highBytes(x)).contains(lowBytes(x));
+        return roarings.count(highBytes(x)) == 0 ? false : roarings.at(highBytes(x)).contains(lowBytes(x));
     }
 
     /**
@@ -454,11 +454,13 @@ class Roaring64Map{
        function returns true and set element to the element of given rank.
        Otherwise, it returns false.
      */
-    bool select(uint64_t rank, uint32_t *element) const {
+    bool select(uint64_t rank, uint64_t *element) const {
         for (const auto& map_entry : roarings) {
             uint64_t sub_cardinality = (uint64_t)map_entry.second.cardinality();
             if (rank < sub_cardinality) {
-                return map_entry.second.select(rank, element);
+                *element = ((uint64_t)map_entry.first) << 32;
+                // assuming little endian
+                return map_entry.second.select(rank, ((uint32_t*)element));
             }
             rank -= sub_cardinality;
         }

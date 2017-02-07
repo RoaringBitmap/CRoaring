@@ -154,6 +154,12 @@ void test_example_cpp(bool copy_on_write) {
 
     r2.printf();
     printf("\n");
+
+    // test select
+    uint32_t element;
+    r2.select(3, &element);
+    assert_true(element == 5);
+
     assert_true(r2.minimum() == 1);
 
     assert_true(r2.maximum() == 6);
@@ -254,6 +260,12 @@ void test_example_cpp_64(bool copy_on_write) {
 
     r2.printf();
     printf("\n");
+
+    // test select
+    uint64_t element;
+    r2.select(4, &element);
+    assert_true(element == 14000000000000000100ull);
+
     assert_true(r2.minimum() == 1ull);
 
     assert_true(r2.maximum() == 14000000000000000100ull);

@@ -329,10 +329,10 @@ void bitset_container_printf(const bitset_container_t * v) {
 			uint64_t t = w & -w;
 			int r = __builtin_ctzll(w);
 			if(iamfirst) {// predicted to be false
-				printf("%d",base + r);
+				printf("%u",base + r);
 				iamfirst = false;
 			} else {
-				printf(",%d",base + r);
+				printf(",%u",base + r);
 			}
 			w ^= t;
 		}
@@ -353,10 +353,10 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 			uint64_t t = w & -w;
 			int r = __builtin_ctzll(w);
 			if(iamfirst) {// predicted to be false
-				printf("%d", r + base);
+				printf("%u", r + base);
 				iamfirst = false;
 			} else {
-				printf(",%d",r + base);
+				printf(",%u",r + base);
 			}
 			w ^= t;
 		}
@@ -534,7 +534,7 @@ uint16_t bitset_container_minimum(const bitset_container_t *container) {
 }
 
 /* Returns the largest value (assumes not empty) */
-inline uint16_t bitset_container_maximum(const bitset_container_t *container) {
+uint16_t bitset_container_maximum(const bitset_container_t *container) {
   for (int32_t i = BITSET_CONTAINER_SIZE_IN_WORDS - 1; i > 0; --i ) {
     uint64_t w = container->array[i];
     if (w != 0) {

@@ -534,7 +534,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
     buf += sizeof(uint32_t);
     if ((cookie & 0xFFFF) != SERIAL_COOKIE &&
         cookie != SERIAL_COOKIE_NO_RUNCONTAINER) {
-        fprintf(stderr, "I failed to find one of the right cookies. Found %d\n",
+        fprintf(stderr, "I failed to find one of the right cookies. Found %u\n",
                 cookie);
         return false;
     }

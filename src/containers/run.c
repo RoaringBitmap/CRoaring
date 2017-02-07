@@ -534,13 +534,13 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
     {
         uint32_t run_start = base + cont->runs[0].value;
         uint16_t le = cont->runs[0].length;
-        printf("%d", run_start);
-        for (uint32_t j = 1; j <= le; ++j) printf(",%d", run_start + j);
+        printf("%u", run_start);
+        for (uint32_t j = 1; j <= le; ++j) printf(",%u", run_start + j);
     }
     for (int32_t i = 1; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
-        for (uint32_t j = 0; j <= le; ++j) printf(",%d", run_start + j);
+        for (uint32_t j = 0; j <= le; ++j) printf(",%u", run_start + j);
     }
 }
 
