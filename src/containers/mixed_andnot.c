@@ -25,9 +25,8 @@ void array_bitset_container_andnot(const array_container_t *src_1,
     const int32_t origcard = src_1->cardinality;
     for (int i = 0; i < origcard; ++i) {
         uint16_t key = src_1->array[i];
-        if (!bitset_container_contains(src_2, key)) {
-            dst->array[newcard++] = key;
-        }
+        dst->array[newcard] = key;
+        newcard += 1 - bitset_container_contains(src_2, key);
     }
     dst->cardinality = newcard;
 }

@@ -21,7 +21,7 @@ void array_bitset_container_intersection(const array_container_t *src_1,
         uint16_t key = src_1->array[i];
         // this branchless approach is much faster...
         dst->array[newcard] = key;
-        newcard +=  bitset_container_contains(src_2, key); 
+        newcard +=  bitset_container_contains(src_2, key);
         /**
          * we could do it this way instead...
          * if (bitset_container_contains(src_2, key)) {
@@ -98,9 +98,8 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
             uint32_t endofrun = (uint32_t)rle.value + rle.length;
             for (uint32_t runValue = rle.value; runValue <= endofrun;
                  ++runValue) {
-                if (bitset_container_contains(src_2, runValue)) {
-                    answer->array[answer->cardinality++] = (uint16_t)runValue;
-                }
+                answer->array[answer->cardinality] = (uint16_t)runValue;
+                answer->cardinality += bitset_container_contains(src_2, runValue);
             }
         }
         return false;
