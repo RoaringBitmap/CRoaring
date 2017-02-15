@@ -76,6 +76,9 @@
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 
+#ifndef __clang__ // if one compiles with MSVC *with* clang, then these intrinsics are defined!!!
+// sadly there is no way to check whether we are missing these intrinsics specifically.
+
 /* wrappers for Visual Studio built-ins that look like gcc built-ins */
 static inline int __builtin_ctzll(unsigned long long input_num) {
     unsigned long index;
@@ -96,6 +99,7 @@ static inline int __builtin_popcountll(unsigned long long input_num) {
 static inline void __builtin_unreachable() {
     __assume(0);
 }
+#endif
 
 #endif
 
