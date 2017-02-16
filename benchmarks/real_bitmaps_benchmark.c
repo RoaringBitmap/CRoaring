@@ -152,6 +152,21 @@ int main(int argc, char **argv) {
     RDTSC_FINAL(cycles_final);
     printf(" %zu successive in-place bitmaps unions took %" PRIu64 " cycles\n",
            count - 1, cycles_final - cycles_start);
+    size_t total_count = 0;
+    RDTSC_START(cycles_start);
+    for (size_t i = 0; i < count; ++i) {
+          roaring_bitmap_t *ra = bitmaps[i];
+          roaring_uint32_iterator_t  j;
+          roaring_init_iterator(ra,&j);
+          while(j.has_value) {
+            total_count ++;
+            roaring_advance_uint32_iterator(&j);
+          }
+    }
+    RDTSC_FINAL(cycles_final);
+
+    printf("Iterating over %zu bitmaps and %zu values took %" PRIu64 " cycles\n", count, total_count,
+              cycles_final - cycles_start);
 
     for (int i = 0; i < (int)count; ++i) {
         free(numbers[i]);
