@@ -472,13 +472,17 @@ typedef struct roaring_uint32_iterator_s {
   const roaring_bitmap_t *parent; // owner
   int32_t container_index; // point to the current container index
   int32_t in_container_index; // for bitset and array container, this is out index
-  int32_t run_index; // for run container, this points out at the run
+  int32_t run_index; // for run container, this points  at the run
   uint32_t in_run_index; // within a run, this is our index
 
   uint32_t current_value;
   bool has_value;
-} roaring_uint32_iterator_t;
 
+  const void * container; // should be: parent->high_low_container.containers[container_index];
+  uint8_t typecode; // should be: parent->high_low_container.typecodes[container_index];
+  uint32_t highbits; // should be: parent->high_low_container.keys[container_index]) << 16;
+
+} roaring_uint32_iterator_t;
 
 /**
 * Initialize an iterator object that can be used to iterate through the
@@ -486,7 +490,6 @@ typedef struct roaring_uint32_iterator_s {
 * The first value is in it->current_value. The iterator traverses the values
 * in increasing order.
 */
-
 void roaring_init_iterator(const roaring_bitmap_t *ra, roaring_uint32_iterator_t * newit);
 
 /**
@@ -495,7 +498,8 @@ void roaring_init_iterator(const roaring_bitmap_t *ra, roaring_uint32_iterator_t
 * The iterator is initialized. If there is a  value, then it->has_value is true.
 * The first value is in it->current_value. The iterator traverses the values
 * in increasing order.
-* Calls roaring_init_iterator.
+*
+* This function calls roaring_init_iterator.
 */
 roaring_uint32_iterator_t * roaring_create_iterator(const roaring_bitmap_t *ra);
 
