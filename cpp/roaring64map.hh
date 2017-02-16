@@ -721,7 +721,7 @@ public:
    * Provides the location of the set bit.
    */
     value_type operator*() const {
-        return Roaring64Map::uniteBytes(map_iter->first, i->current_value);
+        return Roaring64Map::uniteBytes(map_iter->first, i.current_value);
     }
 
     bool operator<(const type_of_iterator &o) {
@@ -749,27 +749,25 @@ public:
     }
 
     type_of_iterator &operator++() {// ++i, must returned inc. value
-        if (i->has_value == true)
-            roaring_advance_uint32_iterator(i);
-        while (!i->has_value) {
+        if (i.has_value == true)
+            roaring_advance_uint32_iterator(&i);
+        while (!i.has_value) {
             map_iter++;
             if (map_iter == map_end)
                 return *this;
-            roaring_free_uint32_iterator(i);
-            i = roaring_create_iterator(map_iter->second.roaring);
+            roaring_init_iterator(map_iter->second.roaring, &i);
         }
         return *this;
     }
 
     type_of_iterator operator++(int) {// i++, must return orig. value
         Roaring64MapSetBitForwardIterator orig(*this);
-        roaring_advance_uint32_iterator(i);
-        while (!i->has_value) {
+        roaring_advance_uint32_iterator(&i);
+        while (!i.has_value) {
             map_iter++;
             if (map_iter == map_end)
                 return orig;
-            roaring_free_uint32_iterator(i);
-            i = roaring_create_iterator(map_iter->second.roaring);
+            roaring_init_iterator(map_iter->second.roaring, &i);
         }
         return orig;
     }
@@ -791,34 +789,30 @@ public:
     {
         if(exhausted) {
             map_iter = parent.roarings.cend();
-            i = nullptr;
         } else {
             map_iter = parent.roarings.cbegin();
-            i = roaring_create_iterator(map_iter->second.roaring);
-            while (!i->has_value) {
+            roaring_init_iterator(map_iter->second.roaring, &i);
+            while (!i.has_value) {
                 map_iter++;
                 if (map_iter == map_end)
                     return;
-                roaring_free_uint32_iterator(i);
-                i = roaring_create_iterator(map_iter->second.roaring);
+                roaring_init_iterator(map_iter->second.roaring, &i);
             }
         }
     }
 
     ~Roaring64MapSetBitForwardIterator() {
-        roaring_free_uint32_iterator(i);
     }
 
     Roaring64MapSetBitForwardIterator(
         const Roaring64MapSetBitForwardIterator &o)
-        : map_iter(o.map_iter), map_end(o.map_end) {
-        i = roaring_copy_uint32_iterator (o.i);
+        : map_iter(o.map_iter), map_end(o.map_end), i(o.i) {
     }
 
 private:
     std::map<uint32_t, Roaring>::const_iterator map_iter;
     std::map<uint32_t, Roaring>::const_iterator map_end;
-    roaring_uint32_iterator_t* i;
+    roaring_uint32_iterator_t i;
 };
 
 

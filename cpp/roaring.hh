@@ -458,70 +458,63 @@ public:
    * Provides the location of the set bit.
    */
   value_type operator*() const {
-    return i->current_value;
+    return i.current_value;
   }
 
   bool operator<(const type_of_iterator &o) {
-    return i->current_value < *o;
+    return i.current_value < *o;
   }
 
   bool operator<=(const type_of_iterator &o) {
-    return i->current_value <= *o;
+    return i.current_value <= *o;
   }
 
   bool operator>(const type_of_iterator &o) {
-    return i->current_value > *o;
+    return i.current_value > *o;
   }
 
   bool operator>=(const type_of_iterator &o) {
-    return i->current_value >= *o;
+    return i.current_value >= *o;
   }
 
   type_of_iterator &operator++() {// ++i, must returned inc. value
-    roaring_advance_uint32_iterator(i);
+    roaring_advance_uint32_iterator(&i);
     return *this;
   }
 
   type_of_iterator operator++(int) {// i++, must return orig. value
     RoaringSetBitForwardIterator orig(*this);
-    roaring_advance_uint32_iterator(i);
+    roaring_advance_uint32_iterator(&i);
     return orig;
   }
 
   bool operator==(const RoaringSetBitForwardIterator &o) {
-    return i->current_value == *o;
+    return i.current_value == *o;
   }
 
   bool operator!=(const RoaringSetBitForwardIterator &o) {
-    return i->current_value != *o;
+    return i.current_value != *o;
   }
 
-  RoaringSetBitForwardIterator(const Roaring & parent, bool exhausted = false) : i(NULL) {
+  RoaringSetBitForwardIterator(const Roaring & parent, bool exhausted = false) {
     if(exhausted) {
-        i = (roaring_uint32_iterator_t *) malloc(sizeof(roaring_uint32_iterator_t));
-        i->parent = parent.roaring;
-        i->container_index = INT32_MAX;
-        i->has_value = false;
-        i->current_value = UINT32_MAX;
+        i.parent = parent.roaring;
+        i.container_index = INT32_MAX;
+        i.has_value = false;
+        i.current_value = UINT32_MAX;
     } else {
-      i = roaring_create_iterator(parent.roaring);
+      roaring_init_iterator(parent.roaring, &i);
     }
   }
 
   virtual ~RoaringSetBitForwardIterator() {
-    roaring_free_uint32_iterator(i);
-    i = NULL;
   }
 
   RoaringSetBitForwardIterator(
-      const RoaringSetBitForwardIterator &o)
-      : i(NULL) {
-    i = roaring_copy_uint32_iterator (o.i);
+      const RoaringSetBitForwardIterator &o) : i(o.i) {
   }
 
-
-
-  roaring_uint32_iterator_t *  i;
+  roaring_uint32_iterator_t i;
 };
 
 
