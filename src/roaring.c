@@ -1142,24 +1142,22 @@ static bool loadfirstvalue(roaring_uint32_iterator_t * newit) {
   return true;
 }
 
-roaring_uint32_iterator_t * roaring_create_iterator(const roaring_bitmap_t *ra) {
-  roaring_uint32_iterator_t * newit = (roaring_uint32_iterator_t *) malloc(sizeof(roaring_uint32_iterator_t));
-  if(newit == NULL) return NULL;
+void roaring_init_iterator(const roaring_bitmap_t *ra, roaring_uint32_iterator_t * newit) {
   newit->parent = ra;
   newit->container_index = 0;
   newit->has_value = loadfirstvalue(newit);
+}
+
+roaring_uint32_iterator_t * roaring_create_iterator(const roaring_bitmap_t *ra) {
+  roaring_uint32_iterator_t * newit = (roaring_uint32_iterator_t *) malloc(sizeof(roaring_uint32_iterator_t));
+  if(newit == NULL) return NULL;
+  roaring_init_iterator(ra, newit);
   return newit;
 }
 
 roaring_uint32_iterator_t * roaring_copy_uint32_iterator(const roaring_uint32_iterator_t * it) {
   roaring_uint32_iterator_t * newit = (roaring_uint32_iterator_t *) malloc(sizeof(roaring_uint32_iterator_t));
-  newit->parent = it->parent;
-  newit->container_index = it->container_index;
-  newit->in_container_index = it->in_container_index;
-  newit->run_index = it->run_index;
-  newit->in_run_index = it->in_run_index;
-  newit->current_value = it->current_value;
-  newit->has_value = it->has_value;
+  memcpy(newit,it,sizeof(roaring_uint32_iterator_t));
   return newit;
 }
 

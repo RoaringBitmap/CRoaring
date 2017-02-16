@@ -480,13 +480,22 @@ typedef struct roaring_uint32_iterator_s {
 } roaring_uint32_iterator_t;
 
 
+/**
+* Initialize an iterator object that can be used to iterate through the
+* values.  If there is a  value, then it->has_value is true.
+* The first value is in it->current_value. The iterator traverses the values
+* in increasing order.
+*/
+
+void roaring_init_iterator(const roaring_bitmap_t *ra, roaring_uint32_iterator_t * newit);
 
 /**
-* Create an iterator object that can be used to iterator through the
+* Create an iterator object that can be used to iterate through the
 * values. Caller is responsible for calling roaring_free_iterator.
 * The iterator is initialized. If there is a  value, then it->has_value is true.
 * The first value is in it->current_value. The iterator traverses the values
 * in increasing order.
+* Calls roaring_init_iterator.
 */
 roaring_uint32_iterator_t * roaring_create_iterator(const roaring_bitmap_t *ra);
 
