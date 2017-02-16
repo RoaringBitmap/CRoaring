@@ -457,12 +457,12 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *ra,
 * What follows is code use to iterate through values in a roaring bitmap
 
 roaring_bitmap_t *ra =...
-roaring_uint32_iterator_t *  i = roaring_create_iterator(ra);
-while(i->has_value) {
-  printf("value = %d\n", i->current_value);
-  roaring_advance_uint32_iterator(i);
+roaring_uint32_iterator_t   i;
+roaring_create_iterator(ra, &i);
+while(i.has_value) {
+  printf("value = %d\n", i.current_value);
+  roaring_advance_uint32_iterator(&i);
 }
-roaring_free_uint32_iterator(i);
 
 Obviously, if you modify the underlying bitmap, the iterator
 becomes invalid. So don't.
@@ -473,7 +473,7 @@ typedef struct roaring_uint32_iterator_s {
   int32_t container_index; // point to the current container index
   int32_t in_container_index; // for bitset and array container, this is out index
   int32_t run_index; // for run container, this points  at the run
-  uint32_t in_run_index; // within a run, this is our index
+  uint32_t in_run_index; // within a run, this is our index (points at the end of the current run)
 
   uint32_t current_value;
   bool has_value;

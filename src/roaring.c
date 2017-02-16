@@ -1106,7 +1106,6 @@ bool roaring_iterate64(const roaring_bitmap_t *ra, roaring_iterator64 iterator,
 static bool loadfirstvalue(roaring_uint32_iterator_t * newit) {
   newit->in_container_index = 0;
   newit->run_index = 0;
-  newit->in_run_index = 0;
   newit->current_value = 0;
   if(newit->container_index >= newit->parent->high_low_container.size) {// otherwise nothing
     newit->current_value =  UINT32_MAX;
@@ -1136,6 +1135,7 @@ static bool loadfirstvalue(roaring_uint32_iterator_t * newit) {
                 break;
             case RUN_CONTAINER_TYPE_CODE:
                 newit->current_value = newit->highbits | (((const run_container_t *)(newit->container))->runs[0].value);
+                newit->in_run_index = newit->current_value + (((const run_container_t *)(newit->container))->runs[0].length);
                 break;
             default:
                 // if this ever happens, bug!
@@ -1195,15 +1195,14 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
                 }
                 break;
             case RUN_CONTAINER_TYPE_CODE:
-                it->in_run_index++;
-                if(it->in_run_index <= ((const run_container_t *)(it->container))->runs[it->run_index].length) {
-                  it->current_value = it->highbits | (((const run_container_t *)(it->container))->runs[it->run_index].value  + it->in_run_index);
+                it->current_value++;
+                if(it->current_value <= it->in_run_index) {
                   return true;
                 }
                 it->run_index++;
                 if(it->run_index < ((const run_container_t *)(it->container))->n_runs) {
-                  it->in_run_index = 0;
                   it->current_value = it->highbits | (((const run_container_t *)(it->container))->runs[it->run_index].value);
+                  it->in_run_index = it->current_value + ((const run_container_t *)(it->container))->runs[it->run_index].length;
                   return true;
                 }
                 break;
