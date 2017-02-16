@@ -30,7 +30,7 @@ endif()
 set(STD_FLAGS "-std=c11 -fPIC")
 set(CXXSTD_FLAGS "-std=c++11 -fPIC")
 
-set(WARNING_FLAGS "-Wall -Winline -Wshadow -Wextra -pedantic")
+set(WARNING_FLAGS "-Wall ")
 
 set(CMAKE_C_FLAGS_DEBUG "-ggdb")
 set(CMAKE_C_FLAGS_RELEASE "-O3")

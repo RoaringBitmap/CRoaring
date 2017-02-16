@@ -62,6 +62,12 @@
 #endif
 #endif
 
+#ifndef _MSC_VER
+/* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline assembly */
+#define ROARING_INLINE_ASM
+#endif
+
+
 // if we have AVX, then we use BMI optimizations
 #ifdef USEAVX
 #define USE_BMI  // we assume that AVX2 and BMI go hand and hand

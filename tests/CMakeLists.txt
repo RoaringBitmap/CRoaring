@@ -15,4 +15,11 @@ add_c_test(util_unit)
 add_c_test(format_portability_unit)
 add_c_test(container_comparison_unit)
 
+# We exclude POSIX tests from Visual Studio default build 
+set_target_properties(realdata_unit PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
+
+
+
+ 
+
 add_subdirectory(vendor/cmocka)

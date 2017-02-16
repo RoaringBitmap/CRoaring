@@ -17,7 +17,7 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 [spark]: https://spark.apache.org/
 [whoosh]: https://bitbucket.org/mchaput/whoosh/wiki/Home
 [kylin]: http://kylin.apache.org/
-[pinot]: http://github.com/linkedin/pinot/wiki 
+[pinot]: http://github.com/linkedin/pinot/wiki
 [atlas]: https://github.com/Netflix/atlas
 
 There is a serialized format specification for interoperability between implementations: https://github.com/RoaringBitmap/RoaringFormatSpec/
@@ -28,15 +28,15 @@ The primary goal of the CRoaring is to provide a high performance low-level impl
 of the latest hardware. Roaring bitmaps are already available on a variety of platform through Java, Go, Rust... implementations. CRoaring is a library that seeks to achieve superior performance by staying close to the latest hardware.
 
 
-(c) 2016 The CRoaring authors.
+(c) 2016-2017 The CRoaring authors.
 
 
 
 # Requirements
 
 - The library should build on a  Linux-like operating system (including MacOS).
-- We also support Microsoft Visual studio, see https://github.com/mrboojum/CRoaring4VS .
-- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library should build without problem on ARM processors.
+- We also support Microsoft Visual studio.
+- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library builds without problem on ARM processors.
 - Recent C compiler supporting the C11 standard (GCC 4.8 or better or clang), there is also an optional C++ class that requires a C++ compiler
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds)
 - clang-format (optional)
@@ -275,7 +275,7 @@ for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
 
 
 
-# Building
+# Building (Linux and macOS)
 
 CRoaring follows the standard cmake workflow. Starting from the root directory of
 the project (CRoaring), you can do:
@@ -356,6 +356,17 @@ To reformat your code according to the style convention (make sure that ``clang-
 ./tools/clang-format.sh
 ```
 
+# Building (Visual Studio under Windows)
+
+We are assuming that you have a common Windows PC with at least Visual Studio 2015, and an x64 processor.
+
+- Grab the CRoaring code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
+- Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available as a command line.
+- Create a subdirectory within CRoaring, such as ``VisualStudio``.
+- Using the command line, go to this newly created directory.
+- Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DBUILD_STATIC=ON  ..``.
+- This last command created a Visual Studio solution file in the newly created directory (e.g., ``RoaringBitmap.sln``). Open this file in Visual Studio. You should now be able to build the project and run the tests.
+
 # Python Wrapper
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
@@ -364,9 +375,6 @@ Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/P
 
 Brandon Smith wrote a C# wrapper available at https://github.com/RogueException/CRoaring.Net (works for Windows and Linux under x64 processors)
 
-# C++ Wrapper for Visual Studio
-
-There is C++ wrapper for Microsoft Visual Studio available at  https://github.com/mrboojum/CRoaring4VS (works under x86 and x64)
 
 # Go (golang) Wrapper
 

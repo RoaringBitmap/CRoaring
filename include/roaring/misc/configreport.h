@@ -16,9 +16,11 @@
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {
+#ifdef ROARING_INLINE_ASM
     __asm volatile("cpuid"
                    : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
                    : "0"(*eax), "2"(*ecx));
+#endif /* not sure what to do when inline assembly is unavailable*/
 }
 
 // CPUID instruction takes no parameters as CPUID implicitly uses the EAX
@@ -26,12 +28,14 @@ static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
 // The EAX register should be loaded with a value specifying what information to
 // return
 static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
+#ifdef ROARING_INLINE_ASM
     __asm__ volatile("cpuid;"  //  call cpuid instruction
                      : "=a"(*eax), "=b"(*ebx), "=c"(*ecx),
                        "=d"(*edx)  // output equal to "movl  %%eax %1"
                      : "a"(code)   // input equal to "movl %1, %%eax"
                      //:"%eax","%ebx","%ecx","%edx"// clobbered register
                      );
+#endif /* not sure what to do when inline assembly is unavailable*/
 }
 
 static inline int computecacheline() {

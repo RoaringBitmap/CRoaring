@@ -286,7 +286,7 @@ static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
 
 #ifdef IS_X64
 // same as vecDecodeTable but in 16 bits
-static uint16_t vecDecodeTable_uint16[256][8] ALIGNED(32) = {
+ALIGNED(32) static uint16_t vecDecodeTable_uint16[256][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
     {1, 0, 0, 0, 0, 0, 0, 0}, /* 0x01 (00000001) */
     {2, 0, 0, 0, 0, 0, 0, 0}, /* 0x02 (00000010) */

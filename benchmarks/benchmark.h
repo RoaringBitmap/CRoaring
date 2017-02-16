@@ -5,7 +5,13 @@
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
 #include <roaring/portability.h>
 
-#ifdef IS_X64
+#ifdef ROARING_INLINE_ASM
+#define CLOBBER_MEMORY __asm volatile("" ::: /* pretend to clobber */ "memory")
+#else
+#define CLOBBER_MEMORY
+#endif
+
+#if defined(IS_X64) && defined(ROARING_INLINE_ASM)
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
         register unsigned cyc_high, cyc_low;                                  \
@@ -62,7 +68,7 @@
         uint64_t min_diff = (uint64_t)-1;                             \
         int wrong_answer = 0;                                         \
         for (int i = 0; i < repeat; i++) {                            \
-            __asm volatile("" ::: /* pretend to clobber */ "memory"); \
+            CLOBBER_MEMORY;                                           \
             RDTSC_START(cycles_start);                                \
             if (test != answer) wrong_answer = 1;                     \
             RDTSC_FINAL(cycles_final);                                \
@@ -90,7 +96,7 @@
         int sum = 0;                                                    \
         for (size_t j = 0; j < nbrtestvalues; j++) {                    \
             pre(base);                                                  \
-            __asm volatile("" ::: /* pretend to clobber */ "memory");   \
+            CLOBBER_MEMORY;                                             \
             RDTSC_START(cycles_start);                                  \
             test(base, testvalues[j]);                                  \
             RDTSC_FINAL(cycles_final);                                  \

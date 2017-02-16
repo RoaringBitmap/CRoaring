@@ -12,7 +12,7 @@
 #include "benchmark.h"
 #include "random.h"
 
-#ifdef IS_X64
+#if defined(IS_X64) && !( defined (_MSC_VER) && !defined(__clang__))
 // flushes the array of words from cache
 void bitset_cache_flush(bitset_container_t* B) {
     const int32_t CACHELINESIZE =
@@ -35,10 +35,12 @@ void bitset_cache_prefetch(bitset_container_t* B) {
 #else
     const int32_t CACHELINESIZE = 64;
 #endif
+#if !( defined (_MSC_VER) && !defined(__clang__))
     for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_prefetch(B->array + k);
     }
+#endif
 }
 
 // used to benchmark array_container_from_bitset

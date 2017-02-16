@@ -3,9 +3,6 @@
 
 #include <roaring/containers/run.h>
 #include <roaring/portability.h>
-#ifdef IS_X64
-#include <x86intrin.h>
-#endif
 
 extern inline uint16_t run_container_minimum(const run_container_t *run);
 extern inline uint16_t run_container_maximum(const run_container_t *run);

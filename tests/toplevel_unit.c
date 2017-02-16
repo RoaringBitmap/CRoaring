@@ -651,10 +651,11 @@ void test_serialize() {
     for (int i = 0; i < 768; i++) run_container_add(run, 3 * i);
 
     serialize_len = run_container_serialization_len(run);
-    char rbuf[serialize_len];
+    char * rbuf = malloc(serialize_len);
     assert_int_equal((int32_t)serialize_len,
                      run_container_serialize(run, rbuf));
     run_container_t *run1 = run_container_deserialize(rbuf, serialize_len);
+	free(rbuf);
 
     run_container_free(run);
     run_container_free(run1);
