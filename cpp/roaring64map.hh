@@ -13,6 +13,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many 32-
 #include <map>
 #include <numeric>
 #include <limits>
+#include <string>
 
 #include "roaring.hh"
 
@@ -444,7 +445,7 @@ class Roaring64Map{
     void iterate(roaring_iterator64 iterator, void *ptr) const {
         std::for_each(roarings.begin(), roarings.cend(),
             [=](const std::pair<uint32_t, Roaring>& map_entry) {
-                roaring_iterate64(map_entry.second.roaring, iterator, uint64_t(map_entry.first) << 32, ptr);
+                roaring_iterate64(&map_entry.second.roaring, iterator, uint64_t(map_entry.first) << 32, ptr);
             });
     }
 
@@ -617,7 +618,7 @@ class Roaring64Map{
     /**
      * Print the content of the bitmap
      */
-    void printf() {
+    void printf() const {
         if (!isEmpty()) {
             auto map_iter = roarings.cbegin();
             while (map_iter->second.isEmpty())
@@ -643,6 +644,44 @@ class Roaring64Map{
         else
             std::printf("{");
         std::printf("}\n");
+    }
+
+    /**
+     * Print the content of the bitmap into a string
+     */
+    std::string toString() const {
+        struct iter_data {
+            std::string str;
+            uint32_t high_bits;
+            char first_char = '{';
+        } outer_iter_data;
+        if (!isEmpty()) {
+            auto map_iter = roarings.cbegin();
+            while (map_iter->second.isEmpty())
+                ++map_iter;
+            outer_iter_data.high_bits = roarings.begin()->first;
+            map_iter->second.iterate([](uint32_t low_bits, void* inner_iter_data)->bool
+                { ((iter_data*)inner_iter_data)->str += ((iter_data*)inner_iter_data)->first_char;
+                  ((iter_data*)inner_iter_data)->str += std::to_string(uniteBytes(
+                                                        ((iter_data*)inner_iter_data)->high_bits, low_bits));
+                  if (((iter_data*)inner_iter_data)->first_char == '{')
+                     ((iter_data*)inner_iter_data)->first_char = ',';
+                  return true; }, (void*)&outer_iter_data);
+            std::for_each(++map_iter, roarings.cend(),
+                [&outer_iter_data](const std::pair<uint32_t, Roaring>& map_entry) {
+                    outer_iter_data.high_bits = map_entry.first;
+                    map_entry.second.iterate([](uint32_t low_bits, void* inner_iter_data)->bool
+                        { ((iter_data*)inner_iter_data)->str += ((iter_data*)inner_iter_data)->first_char;
+                          ((iter_data*)inner_iter_data)->str += std::to_string(uniteBytes(
+                                                                ((iter_data*)inner_iter_data)->high_bits,
+                                                                low_bits));
+                          return true; }, (void*)&outer_iter_data);
+                });
+        }
+        else
+            outer_iter_data.str = '{';
+        outer_iter_data.str += '}';
+        return outer_iter_data.str;
     }
 
     /**
@@ -708,7 +747,7 @@ private:
 /**
  * Used to go through the set bits. Not optimally fast, but convenient.
  */
-class Roaring64MapSetBitForwardIterator {
+class Roaring64MapSetBitForwardIterator final {
 public:
     typedef std::forward_iterator_tag iterator_category;
     typedef uint64_t *pointer;
@@ -755,7 +794,7 @@ public:
             map_iter++;
             if (map_iter == map_end)
                 return *this;
-            roaring_init_iterator(map_iter->second.roaring, &i);
+            roaring_init_iterator(&map_iter->second.roaring, &i);
         }
         return *this;
     }
@@ -767,7 +806,7 @@ public:
             map_iter++;
             if (map_iter == map_end)
                 return orig;
-            roaring_init_iterator(map_iter->second.roaring, &i);
+            roaring_init_iterator(&map_iter->second.roaring, &i);
         }
         return orig;
     }
@@ -791,18 +830,17 @@ public:
             map_iter = parent.roarings.cend();
         } else {
             map_iter = parent.roarings.cbegin();
-            roaring_init_iterator(map_iter->second.roaring, &i);
+            roaring_init_iterator(&map_iter->second.roaring, &i);
             while (!i.has_value) {
                 map_iter++;
                 if (map_iter == map_end)
                     return;
-                roaring_init_iterator(map_iter->second.roaring, &i);
+                roaring_init_iterator(&map_iter->second.roaring, &i);
             }
         }
     }
 
-    ~Roaring64MapSetBitForwardIterator() {
-    }
+    ~Roaring64MapSetBitForwardIterator() = default;
 
     Roaring64MapSetBitForwardIterator(
         const Roaring64MapSetBitForwardIterator &o)
