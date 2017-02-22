@@ -10,13 +10,16 @@ add_c_test(bitset_container_unit)
 add_c_test(mixed_container_unit)
 add_c_test(run_container_unit)
 add_c_test(toplevel_unit)
-add_c_test(realdata_unit)
 add_c_test(util_unit)
 add_c_test(format_portability_unit)
 add_c_test(container_comparison_unit)
 
+if (NOT MSVC)
 # We exclude POSIX tests from Visual Studio default build 
-set_target_properties(realdata_unit PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
+add_c_test(realdata_unit)
+# We used to exclude POSIX tests from Visual Studio default build the documented way but this leads to spurious test failures. 
+# set_target_properties(realdata_unit PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
+endif()
 
 
 

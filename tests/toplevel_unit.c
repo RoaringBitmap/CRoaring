@@ -8,6 +8,12 @@
 
 #include "test.h"
 
+static int seed = 123456789;
+const static int OUR_RAND_MAX = (1<<30)-1;
+static int inline our_rand() {// we do not want to depend on a system-specific random number generator
+  seed = (1103515245 * seed + 12345);
+  return seed & OUR_RAND_MAX;
+}
 
 // arrays expected to both be sorted.
 static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
@@ -901,7 +907,9 @@ static roaring_bitmap_t *gen_bitmap(double start_density,
 
     for (int i = 0; i < universe_size; i += run_length) {
         d = start_density + i * density_gradient;
-        double r = rand() / (double)RAND_MAX;
+        double r = our_rand() / (double)OUR_RAND_MAX;
+		assert(r <= 1.0);
+		assert(r >= 0);
         if (r < d && !(i >= blank_range_start && i < blank_range_end))
             for (int j = 0; j < run_length; ++j) roaring_bitmap_add(ans, i + j);
     }
@@ -2364,16 +2372,18 @@ void test_rand_flips() {
         roaring_bitmap_t *r = roaring_bitmap_create();
         memset(input, 0, range);
         for (int i = 0; i < card; ++i) {
-            float f1 = rand() / (float)RAND_MAX;
-            float f2 = rand() / (float)RAND_MAX;
-            float f3 = rand() / (float)RAND_MAX;
+            double f1 = our_rand() / (double)OUR_RAND_MAX;
+            double f2 = our_rand() / (double)OUR_RAND_MAX;
+            double f3 = our_rand() / (double)OUR_RAND_MAX;
             int pos = (int)(f1 * f2 * f3 *
                             range);  // denser at the start, sparser at end
+			assert(pos < range);
+			assert(pos >= 0);
             roaring_bitmap_add(r, pos);
             input[pos] = 1;
         }
         for (int i = 0; i < min_runs; ++i) {
-            int startpos = rand() % (range / 2);
+            int startpos = our_rand() % (range / 2);
             for (int j = startpos; j < startpos + 65536 * 2; ++j)
                 if (j % 147 < 100) {
                     roaring_bitmap_add(r, j);
@@ -2385,8 +2395,8 @@ void test_rand_flips() {
                (int)roaring_bitmap_get_cardinality(r));
 
         for (int i = 0; i < flip_trials; ++i) {
-            int start = rand() % (range - 1);
-            int len = rand() % (range - start);
+            int start = our_rand() % (range - 1);
+            int len = our_rand() % (range - start);
             roaring_bitmap_t *ans = roaring_bitmap_flip(r, start, start + len);
             memcpy(output, input, range);
             for (int j = start; j < start + len; ++j) output[j] = 1 - input[j];
@@ -2420,16 +2430,18 @@ void test_inplace_rand_flips() {
         roaring_bitmap_t *r = roaring_bitmap_create();
         memset(input, 0, range);
         for (int i = 0; i < card; ++i) {
-            float f1 = rand() / (float)RAND_MAX;
-            float f2 = rand() / (float)RAND_MAX;
-            float f3 = rand() / (float)RAND_MAX;
+            double f1 = our_rand() / (double)OUR_RAND_MAX;
+            double f2 = our_rand() / (double)OUR_RAND_MAX;
+            double f3 = our_rand() / (double)OUR_RAND_MAX;
             int pos = (int)(f1 * f2 * f3 *
                             range);  // denser at the start, sparser at end
-            roaring_bitmap_add(r, pos);
+			assert(pos < range);
+			assert(pos >= 0);
+			roaring_bitmap_add(r, pos);
             input[pos] = 1;
         }
         for (int i = 0; i < min_runs; ++i) {
-            int startpos = rand() % (range / 2);
+            int startpos = our_rand() % (range / 2);
             for (int j = startpos; j < startpos + 65536 * 2; ++j)
                 if (j % 147 < 100) {
                     roaring_bitmap_add(r, j);
@@ -2443,8 +2455,8 @@ void test_inplace_rand_flips() {
         roaring_bitmap_t *r_orig = roaring_bitmap_copy(r);
 
         for (int i = 0; i < flip_trials; ++i) {
-            int start = rand() % (range - 1);
-            int len = rand() % (range - start);
+            int start = our_rand() % (range - 1);
+            int len = our_rand() % (range - start);
 
             roaring_bitmap_flip_inplace(r, start, start + len);
             memcpy(output, input, range);
@@ -2508,16 +2520,18 @@ void select_test() {
         roaring_bitmap_t *r = roaring_bitmap_create();
         memset(input, 0, range);
         for (int i = 0; i < card; ++i) {
-            float f1 = rand() / (float)RAND_MAX;
-            float f2 = rand() / (float)RAND_MAX;
-            float f3 = rand() / (float)RAND_MAX;
+            double f1 = our_rand() / (double)OUR_RAND_MAX;
+            double f2 = our_rand() / (double)OUR_RAND_MAX;
+            double f3 = our_rand() / (double)OUR_RAND_MAX;
             int pos = (int)(f1 * f2 * f3 *
                             range);  // denser at the start, sparser at end
+			assert(pos < range);
+			assert(pos >= 0);
             roaring_bitmap_add(r, pos);
             input[pos] = 1;
         }
         for (int i = 0; i < min_runs; ++i) {
-            int startpos = rand() % (range / 2);
+            int startpos = our_rand() % (range / 2);
             for (int j = startpos; j < startpos + 65536 * 2; ++j)
                 if (j % 147 < 100) {
                     roaring_bitmap_add(r, j);
@@ -2565,21 +2579,21 @@ void test_maximum_minimum() {
           roaring_bitmap_add(r, x);
       }
       assert_true(roaring_bitmap_minimum(r) == mymin);
-      assert_true(roaring_bitmap_maximum(r) == x - 100);
+	    assert_true(roaring_bitmap_maximum(r) == x - 100);
       // now bitmap
       x = mymin;
       for (; x < 64000 + mymin; x+= 2) {
           roaring_bitmap_add(r, x);
       }
-      assert_true(roaring_bitmap_minimum(r) == mymin);
-      assert_true(roaring_bitmap_maximum(r) == x - 2);
+  	  assert_true(roaring_bitmap_minimum(r) == mymin);
+	    assert_true(roaring_bitmap_maximum(r) == x - 2);
       // now run
       x = mymin;
       for (; x < 64000 + mymin; x++) {
           roaring_bitmap_add(r, x);
       }
       roaring_bitmap_run_optimize(r);
-      assert_true(roaring_bitmap_minimum(r) == mymin);
+	    assert_true(roaring_bitmap_minimum(r) == mymin);
       assert_true(roaring_bitmap_maximum(r) == x - 1);
       roaring_bitmap_free(r);
   }
@@ -2650,11 +2664,12 @@ void test_rank() {
   }
 }
 
+
 // Return a random value which does not belong to the roaring bitmap.
 // Value will be lower than upper_bound.
 uint32_t choose_missing_value(roaring_bitmap_t *rb, uint32_t upper_bound) {
     do {
-        uint32_t value = rand()%upper_bound;
+        uint32_t value = our_rand() % upper_bound ;
         if(!roaring_bitmap_contains(rb, value))
             return value;
     } while(true);
