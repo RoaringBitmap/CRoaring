@@ -117,6 +117,7 @@ roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
     return answer;
 }
 
+
 roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     // todo: could be greatly optimized but we do not expect this call to ever include long lists
     roaring_bitmap_t *answer = roaring_bitmap_create();

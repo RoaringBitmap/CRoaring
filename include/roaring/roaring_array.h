@@ -1,5 +1,8 @@
 #ifndef INCLUDE_ROARING_ARRAY_H
 #define INCLUDE_ROARING_ARRAY_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <assert.h>
 #include <stdbool.h>
@@ -270,5 +273,9 @@ void ra_remove_at_index_and_free(roaring_array_t *ra, int32_t i);
 //
 void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
                    uint32_t new_begin);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

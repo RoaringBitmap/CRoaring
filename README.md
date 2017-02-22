@@ -37,9 +37,9 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 - The library should build on a  Linux-like operating system (including MacOS).
 - We also support Microsoft Visual studio.
 - Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library builds without problem on ARM processors.
-- Recent C compiler supporting the C11 standard (GCC 4.8 or better or clang), there is also an optional C++ class that requires a C++ compiler
-- CMake (to contribute to the project, users can rely on amalgamation/unity builds)
-- clang-format (optional)
+- Recent C compiler supporting the C11 standard (GCC 4.8 or better or clang), there is also an optional C++ class that requires a C++ compiler supporting the C++11 standard.
+- CMake (to contribute to the project, users can rely on amalgamation/unity builds).
+- clang-format (optional).
 
 Serialization on big endian hardware may not be compatible with serialization on little endian hardware.
 
