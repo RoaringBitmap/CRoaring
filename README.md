@@ -52,18 +52,55 @@ the rationale, please see the SQLite documentation, https://www.sqlite.org/amalg
 or the corresponding Wikipedia entry (https://en.wikipedia.org/wiki/Single_Compilation_Unit).
 Users who choose this route, do not need to rely on CRoaring's build system (based on CMake).
 
-To generate the amalgamated files, you can invoke a bash script...
+We maintain pre-generated amalgamated files at https://github.com/lemire/CRoaringUnityBuild for your convenience.
+
+To generate the amalgamated files yourself, you can invoke a bash script...
 
 ```bash
 ./amalgamation.sh
 ```
+
+(Bash shells are standard under Linux and macOS. Bash shells are available under Windows as part of the  [GitHub Desktop](https://desktop.github.com/) under the name ``Git Shell``. So if you have cloned the ``CRoaring`` GitHub repository from within the GitHub Desktop, you can right-click on ``CRoaring``, select ``Git Shell`` and then enter the above commands.)
 
 It is not necessary to invoke the script in the CRoaring directory. You can invoke
 it from any directory where you want the amalgamation files to be written.
 
 It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``amalgamation_demo.c``... as well as some brief instructions. The ``amalgamation_demo.c`` file is a short example, whereas ``roaring.h`` and ``roaring.c`` are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files ``roaring.h`` and ``roaring.c`` into your project and be ready to go! No need to produce a library! See the ``amalgamation_demo.c`` file.
 
-The script will also generate C++ files for C++ users, including an example.
+For example, you can use the C code as follows:
+```
+#include <stdio.h>
+#include "roaring.c"
+int main() {
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(r1, i);
+  printf("cardinality = %d\n", (int) roaring_bitmap_get_cardinality(r1));
+  roaring_bitmap_free(r1);
+  return 0;
+}
+```
+
+The script will also generate C++ files for C++ users, including an example. You can use the C++ as follows.
+
+```
+#include <iostream>
+#include "roaring.hh"
+#include "roaring.c"
+int main() {
+  Roaring r1;
+  for (uint32_t i = 100; i < 1000; i++) {
+    r1.add(i);
+  }
+  std::cout << "cardinality = " << r1.cardinality() << std::endl;
+
+  Roaring64Map r2;
+  for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {
+    r2.add(i);
+  }
+  std::cout << "cardinality = " << r2.cardinality() << std::endl;
+  return 0;
+}
+```
 
 If you prefer a silent output, you can use the following command to redirect ``stdout`` :
 
