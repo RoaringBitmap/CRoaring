@@ -275,7 +275,7 @@ for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
 
 
 
-# Building (Linux and macOS)
+# Building (Linux and macOS, Visual Studio users should see below)
 
 CRoaring follows the standard cmake workflow. Starting from the root directory of
 the project (CRoaring), you can do:
@@ -366,6 +366,7 @@ We are assuming that you have a common Windows PC with at least Visual Studio 20
 - Using a shell, go to this newly created directory. For example, within GitHub Desktop, you can right-click on  ``CRoaring`` in your GitHub repository list, and select ``Open in Git Shell``, then type ``cd VisualStudio`` in the newly created shell.
 - Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DBUILD_STATIC=ON  ..`` in the shell while in the ``VisualStudio`` repository.
 - This last command created a Visual Studio solution file in the newly created directory (e.g., ``RoaringBitmap.sln``). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the ``Solution Explorer`` window (available from the ``View`` menu), right-click ``ALL_BUILD`` and select ``Build``. To test the code, still in the ``Solution Explorer`` window, select ``RUN_TESTS`` and select ``Build``.
+
 # Python Wrapper
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
