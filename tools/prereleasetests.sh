@@ -35,6 +35,41 @@ cd $WORK_DIR
 
 echo "working in " $PWD
 
+
+echo "testing debug (static)"
+cd $WORK_DIR  
+mkdir debugstatic 
+cd debugstatic
+cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_STATIC=ON $MAINDIR 
+make 
+make test
+
+echo "testing debug no x64 (static)"
+cd $WORK_DIR
+mkdir debugnox64static 
+cd debugnox64static 
+cmake -DDISABLE_X64=ON -DBUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Debug $MAINDIR 
+make 
+make test
+
+echo "testing release"
+cd $WORK_DIR 
+mkdir releasestatic 
+cd releasestatic  
+cmake -DBUILD_STATIC=ON $MAINDIR 
+make 
+make test
+
+echo "testing release no x64 (static)"
+cd $WORK_DIR 
+mkdir releasenox64static 
+cd releasenox64static
+cmake -DDISABLE_X64=ON -DBUILD_STATIC=ON $MAINDIR  
+make 
+make test
+
+
+
 echo "testing debug"
 cd $WORK_DIR  
 mkdir debug 
