@@ -3,10 +3,17 @@ if("${CMAKE_C_COMPILER_ID}" MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
+
+if (MSVC)
+# Under Visual Studio, we do not support shared libraries.
+set(ROARING_LIB_TYPE STATIC)
+else()
+# Elsewhere, we default on a shared library.
 if(BUILD_STATIC)
   set(ROARING_LIB_TYPE STATIC)
 else()
   set(ROARING_LIB_TYPE SHARED)
+endif()
 endif()
 
 set(ROARING_SRC
