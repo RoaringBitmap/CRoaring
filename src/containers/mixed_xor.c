@@ -18,7 +18,7 @@ bool array_bitset_container_xor(const array_container_t *src_1,
                                 const bitset_container_t *src_2, void **dst) {
     bitset_container_t *result = bitset_container_create();
     bitset_container_copy(src_2, result);
-    result->cardinality = bitset_flip_list_withcard(
+    result->cardinality = (int32_t)bitset_flip_list_withcard(
         result->array, result->cardinality, src_1->array, src_1->cardinality);
 
     // do required type conversions.
@@ -199,7 +199,7 @@ bool array_array_container_xor(const array_container_t *src_1,
     *dst = bitset_container_from_array(src_1);
     bool returnval = true;  // expect a bitset
     bitset_container_t *ourbitset = (bitset_container_t *)*dst;
-    ourbitset->cardinality = bitset_flip_list_withcard(
+    ourbitset->cardinality = (uint32_t)bitset_flip_list_withcard(
         ourbitset->array, src_1->cardinality, src_2->array, src_2->cardinality);
     if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
         // need to convert!
@@ -261,7 +261,7 @@ bool bitset_bitset_container_xor(const bitset_container_t *src_1,
 bool bitset_array_container_ixor(bitset_container_t *src_1,
                                  const array_container_t *src_2, void **dst) {
     *dst = src_1;
-    src_1->cardinality = bitset_flip_list_withcard(
+    src_1->cardinality = (uint32_t)bitset_flip_list_withcard(
         src_1->array, src_1->cardinality, src_2->array, src_2->cardinality);
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {

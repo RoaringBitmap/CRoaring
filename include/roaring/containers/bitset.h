@@ -132,7 +132,7 @@ static inline void bitset_container_set(bitset_container_t *bitset,
     const uint64_t old_word = bitset->array[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word | (UINT64_C(1) << index);
-    bitset->cardinality += (old_word ^ new_word) >> index;
+    bitset->cardinality += (uint32_t)((old_word ^ new_word) >> index);
     bitset->array[pos >> 6] = new_word;
 }
 
@@ -142,7 +142,7 @@ static inline void bitset_container_unset(bitset_container_t *bitset,
     const uint64_t old_word = bitset->array[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
-    bitset->cardinality -= (old_word ^ new_word) >> index;
+    bitset->cardinality -= (uint32_t)((old_word ^ new_word) >> index);
     bitset->array[pos >> 6] = new_word;
 }
 
@@ -154,9 +154,9 @@ static inline bool bitset_container_add(bitset_container_t *bitset,
     const int index = pos & 63;
     const uint64_t new_word = old_word | (UINT64_C(1) << index);
     const uint64_t increment = (old_word ^ new_word) >> index;
-    bitset->cardinality += increment;
+    bitset->cardinality += (uint32_t)increment;
     bitset->array[pos >> 6] = new_word;
-    return increment;  // 0 == false, 1 == true
+    return increment > 0;
 }
 
 /* Remove `pos' from `bitset'. Returns true if `pos' was present.  Might be
@@ -167,9 +167,9 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
     const uint64_t increment = (old_word ^ new_word) >> index;
-    bitset->cardinality -= increment;
+    bitset->cardinality -= (uint32_t)increment;
     bitset->array[pos >> 6] = new_word;
-    return increment;  // 0 == false, 1 == true
+    return increment > 0;
 }
 
 /* Get the value of the ith bit.  */

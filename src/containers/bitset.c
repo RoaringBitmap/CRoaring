@@ -78,13 +78,13 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
         if (firstword == endword) {
             bitset->array[firstword] |=
                 mask & (((~UINT64_C(0)) << (min % 64)) &
-                        ((~UINT64_C(0)) >> ((-max) % 64)));
+                        ((~UINT64_C(0)) >> ((~max + 1) % 64)));
             return;
         }
         bitset->array[firstword] = mask & ((~UINT64_C(0)) << (min % 64));
         for (uint32_t i = firstword + 1; i < endword; i++)
             bitset->array[i] = mask;
-        bitset->array[endword] = mask & ((~UINT64_C(0)) >> ((-max) % 64));
+        bitset->array[endword] = mask & ((~UINT64_C(0)) >> ((~max + 1) % 64));
     } else {
         for (uint32_t value = min; value < max; value += step) {
             bitset_container_add(bitset, value);
@@ -326,7 +326,7 @@ void bitset_container_printf(const bitset_container_t * v) {
 	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
 		uint64_t w = v->array[i];
 		while (w != 0) {
-			uint64_t t = w & -w;
+			uint64_t t = w & (~w + 1);
 			int r = __builtin_ctzll(w);
 			if(iamfirst) {// predicted to be false
 				printf("%u",base + r);
@@ -350,7 +350,7 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
 		uint64_t w = v->array[i];
 		while (w != 0) {
-			uint64_t t = w & -w;
+			uint64_t t = w & (~w + 1);
 			int r = __builtin_ctzll(w);
 			if(iamfirst) {// predicted to be false
 				printf("%u", r + base);
@@ -435,7 +435,7 @@ bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->array[i];
     while (w != 0) {
-      uint64_t t = w & -w;
+      uint64_t t = w & (~w + 1);
       int r = __builtin_ctzll(w);
       if(!iterator(r + base, ptr)) return false;
       w ^= t;
@@ -449,7 +449,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->array[i];
     while (w != 0) {
-      uint64_t t = w & -w;
+      uint64_t t = w & (~w + 1);
       int r = __builtin_ctzll(w);
       if(!iterator(high_bits | (uint64_t)(r + base), ptr)) return false;
       w ^= t;
@@ -503,7 +503,7 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
             uint64_t w = container->array[i];
             uint16_t base = i*64;
             while (w != 0) {
-                uint64_t t = w & -w;
+                uint64_t t = w & (~w + 1);
                 int r = __builtin_ctzll(w);
                 if(*start_rank == rank) {
                     *element = r+base;

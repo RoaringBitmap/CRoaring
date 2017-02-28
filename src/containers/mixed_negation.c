@@ -28,8 +28,8 @@ void array_container_negation(const array_container_t *src,
     uint64_t card = UINT64_C(1 << 16);
     bitset_container_set_all(dst);
 
-    dst->cardinality =
-        bitset_clear_list(dst->array, card, src->array, src->cardinality);
+    dst->cardinality = (int32_t)bitset_clear_list(dst->array, card, src->array,
+                                                  (uint64_t)src->cardinality);
 }
 
 /* Negation across the entire range of the container

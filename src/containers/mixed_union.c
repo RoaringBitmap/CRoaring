@@ -17,7 +17,7 @@ void array_bitset_container_union(const array_container_t *src_1,
                                   const bitset_container_t *src_2,
                                   bitset_container_t *dst) {
     if (src_2 != dst) bitset_container_copy(src_2, dst);
-    dst->cardinality = bitset_set_list_withcard(
+    dst->cardinality = (int32_t)bitset_set_list_withcard(
         dst->array, dst->cardinality, src_1->array, src_1->cardinality);
 }
 
@@ -167,7 +167,7 @@ bool array_array_container_union(const array_container_t *src_1,
     if (*dst != NULL) {
         bitset_container_t *ourbitset = (bitset_container_t *)*dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
-        ourbitset->cardinality =
+        ourbitset->cardinality = (int32_t)
             bitset_set_list_withcard(ourbitset->array, src_1->cardinality,
                                      src_2->array, src_2->cardinality);
         if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
