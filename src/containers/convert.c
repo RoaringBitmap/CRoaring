@@ -267,11 +267,11 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
             uint64_t cur_word_with_1s = cur_word | (cur_word - 1);
 
             int run_end = 0;
-            while (cur_word_with_1s == UINT64_C(-1) &&
+            while (cur_word_with_1s == UINT64_C(0xFFFFFFFFFFFFFFFF) &&
                    long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS - 1)
                 cur_word_with_1s = c_qua_bitset->array[++long_ctr];
 
-            if (cur_word_with_1s == UINT64_C(-1)) {
+            if (cur_word_with_1s == UINT64_C(0xFFFFFFFFFFFFFFFF)) {
                 run_end = 64 + long_ctr * 64;  // exclusive, I guess
                 add_run(answer, run_start, run_end - 1);
                 bitset_container_free(c_qua_bitset);

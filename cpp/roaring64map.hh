@@ -248,7 +248,7 @@ class Roaring64Map{
             throw std::length_error("bitmap is full, cardinality is 2^64, "
                                     "unable to represent in a 64-bit integer");
         }
-        return std::accumulate(roarings.cbegin(), roarings.cend(), 0,
+        return std::accumulate(roarings.cbegin(), roarings.cend(), (uint64_t)0,
             [](uint64_t previous, const std::pair<uint32_t, Roaring>& map_entry) {
                 return previous + map_entry.second.cardinality();
             });
@@ -461,7 +461,7 @@ class Roaring64Map{
             if (rank < sub_cardinality) {
                 *element = ((uint64_t)map_entry.first) << 32;
                 // assuming little endian
-                return map_entry.second.select(rank, ((uint32_t*)element));
+                return map_entry.second.select((uint32_t)rank, ((uint32_t*)element));
             }
             rank -= sub_cardinality;
         }
@@ -501,8 +501,8 @@ class Roaring64Map{
     size_t write(char *buf, bool portable = true) const {
         const char* orig = buf;
         // push map size
-        *((uint32_t*)buf) = roarings.size();
-        buf += sizeof(uint32_t);
+        *((uint64_t*)buf) = roarings.size();
+        buf += sizeof(uint64_t);
         std::for_each(roarings.cbegin(), roarings.cend(),
             [&buf, portable](const std::pair<uint32_t, Roaring>& map_entry) {
                 // push map key
@@ -531,9 +531,9 @@ class Roaring64Map{
     static Roaring64Map read(const char *buf, bool portable = true) {
         Roaring64Map result;
         // get map size
-        uint32_t map_size = *((uint32_t*)buf);
-        buf += sizeof(uint32_t);
-        for (uint32_t lcv = 0; lcv < map_size; lcv++) {
+        uint64_t map_size = *((uint64_t*)buf);
+        buf += sizeof(uint64_t);
+        for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
             uint32_t key = *((uint32_t*)buf);
             buf += sizeof(uint32_t);

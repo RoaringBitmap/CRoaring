@@ -11,7 +11,7 @@ bool array_container_equal_bitset(array_container_t* container1,
     for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
         uint64_t w = container2->array[i];
         while (w != 0) {
-            uint64_t t = w & -w;
+            uint64_t t = w & (~w + 1);
             uint16_t r = i * 64 + __builtin_ctzll(w);
             if (pos >= container1->cardinality) {
                 return false;

@@ -16,12 +16,12 @@ static inline void bitset_set_range(uint64_t *bitmap, uint32_t start,
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
         bitmap[firstword] |= ((~UINT64_C(0)) << (start % 64)) &
-                             ((~UINT64_C(0)) >> ((-end) % 64));
+                             ((~UINT64_C(0)) >> ((~end + 1) % 64));
         return;
     }
     bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
     for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~UINT64_C(0);
-    bitmap[endword] |= (~UINT64_C(0)) >> ((-end) % 64);
+    bitmap[endword] |= (~UINT64_C(0)) >> ((~end + 1) % 64);
 }
 
 /*
@@ -41,7 +41,7 @@ static inline void bitset_set_lenrange(uint64_t *bitmap, uint32_t start,
     for (uint32_t i = firstword + 1; i < endword; i += 2)
         bitmap[i] = bitmap[i + 1] = ~UINT64_C(0);
     bitmap[endword] =
-        temp | (~UINT64_C(0)) >> ((-start - lenminusone - 1) % 64);
+        temp | (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64);
 }
 
 /*
@@ -54,7 +54,7 @@ static inline void bitset_flip_range(uint64_t *bitmap, uint32_t start,
     uint32_t endword = (end - 1) / 64;
     bitmap[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
     for (uint32_t i = firstword; i < endword; i++) bitmap[i] = ~bitmap[i];
-    bitmap[endword] ^= ((~UINT64_C(0)) >> ((-end) % 64));
+    bitmap[endword] ^= ((~UINT64_C(0)) >> ((~end + 1) % 64));
 }
 
 /*
@@ -67,12 +67,12 @@ static inline void bitset_reset_range(uint64_t *bitmap, uint32_t start,
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
         bitmap[firstword] &= ~(((~UINT64_C(0)) << (start % 64)) &
-                               ((~UINT64_C(0)) >> ((-end) % 64)));
+                               ((~UINT64_C(0)) >> ((~end + 1) % 64)));
         return;
     }
     bitmap[firstword] &= ~((~UINT64_C(0)) << (start % 64));
     for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = UINT64_C(0);
-    bitmap[endword] &= ~((~UINT64_C(0)) >> ((-end) % 64));
+    bitmap[endword] &= ~((~UINT64_C(0)) >> ((~end + 1) % 64));
 }
 
 /*

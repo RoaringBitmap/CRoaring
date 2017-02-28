@@ -583,7 +583,7 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
 
     while (true) {
         if (val_l < val_s) {
-            idx_l = advanceUntil(large, idx_l, size_l, val_s);
+            idx_l = advanceUntil(large, (int32_t)idx_l, (int32_t)size_l, val_s);
             if (idx_l == size_l) break;
             val_l = large[idx_l];
         } else if (val_s < val_l) {
@@ -595,13 +595,13 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
             idx_s++;
             if (idx_s == size_s) break;
             val_s = small[idx_s];
-            idx_l = advanceUntil(large, idx_l, size_l, val_s);
+            idx_l = advanceUntil(large, (int32_t)idx_l, (int32_t)size_l, val_s);
             if (idx_l == size_l) break;
             val_l = large[idx_l];
         }
     }
 
-    return pos;
+    return (int32_t)pos;
 }
 
 /**
@@ -617,19 +617,19 @@ int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
     while (1) {
         while (*A < *B) {
         SKIP_FIRST_COMPARE:
-            if (++A == endA) return (out - initout);
+            if (++A == endA) return (int32_t)(out - initout);
         }
         while (*A > *B) {
-            if (++B == endB) return (out - initout);
+            if (++B == endB) return (int32_t)(out - initout);
         }
         if (*A == *B) {
             *out++ = *A;
-            if (++A == endA || ++B == endB) return (out - initout);
+            if (++A == endA || ++B == endB) return (int32_t)(out - initout);
         } else {
             goto SKIP_FIRST_COMPARE;
         }
     }
-    return (out - initout);  // NOTREACHED
+    return (int32_t)(out - initout);  // NOTREACHED
 }
 
 /**
@@ -806,11 +806,11 @@ int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
   if (pos1 < card_1) {
       const size_t n_elems = card_1 - pos1;
       memcpy(out + pos_out, array_1 + pos1, n_elems * sizeof(uint16_t));
-      pos_out += n_elems;
+      pos_out += (int32_t)n_elems;
   } else if (pos2 < card_2) {
       const size_t n_elems = card_2 - pos2;
       memcpy(out + pos_out, array_2 + pos2, n_elems * sizeof(uint16_t));
-      pos_out += n_elems;
+      pos_out += (int32_t)n_elems;
   }
   return pos_out;
 }

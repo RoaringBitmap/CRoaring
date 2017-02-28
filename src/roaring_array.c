@@ -55,7 +55,7 @@ static bool realloc_array(roaring_array_t *ra, size_t new_capacity) {
 	ra->containers = newcontainers;
 	ra->keys = newkeys;
 	ra->typecodes = newtypecodes;
-	ra->allocation_size = new_capacity;
+	ra->allocation_size = (int32_t)new_capacity;
 	free(oldbigalloc);
     return true;
 }

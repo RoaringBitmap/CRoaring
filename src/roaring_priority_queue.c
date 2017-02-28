@@ -39,7 +39,7 @@ static void pq_free(roaring_pq_t *pq) {
 }
 
 static void percolate_down(roaring_pq_t *pq, uint32_t i) {
-    uint32_t size = pq->size;
+    uint32_t size = (uint32_t)pq->size;
     uint32_t hsize = size >> 1;
     roaring_pq_element_t ai = pq->elements[i];
     while (i < hsize) {

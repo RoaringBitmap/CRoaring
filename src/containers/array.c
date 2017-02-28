@@ -164,11 +164,13 @@ void array_container_union(const array_container_t *array_1,
 #else
     // compute union with smallest array first
     if (card_1 < card_2) {
-        out->cardinality = union_uint16(array_1->array, card_1, array_2->array,
-                                        card_2, out->array);
+        out->cardinality = (int32_t)union_uint16(array_1->array, card_1,
+                                                 array_2->array, (size_t)card_2,
+                                                 out->array);
     } else {
-        out->cardinality = union_uint16(array_2->array, card_2, array_1->array,
-                                        card_1, out->array);
+        out->cardinality = (int32_t)union_uint16(array_2->array, card_2,
+                                                 array_1->array, (size_t)card_1,
+                                                 out->array);
     }
 #endif
 }
