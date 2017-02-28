@@ -31,6 +31,13 @@ bool roaring_iterator_sumall(uint32_t value, void *param) {
     return true;  // continue till the end
 }
 
+void is_really_empty() {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    assert_true(roaring_bitmap_is_empty(bm));
+    assert_false(roaring_bitmap_contains(bm,0));
+    roaring_bitmap_free(bm);
+}
+
 void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
     bm1->copy_on_write = copy_on_write;
@@ -2720,6 +2727,7 @@ void test_subset() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(is_really_empty),
         cmocka_unit_test(test_rank),
         cmocka_unit_test(test_maximum_minimum),
         cmocka_unit_test(test_stats),
