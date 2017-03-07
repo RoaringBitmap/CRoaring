@@ -476,7 +476,7 @@ class Roaring {
     * for constructions such as for(auto i = b.begin();
     * i!=b.end(); ++i) {}
     */
-    const_iterator end() const ;
+    const_iterator & end() const ;
 
     roaring_bitmap_t roaring;
 };
@@ -572,8 +572,9 @@ inline RoaringSetBitForwardIterator Roaring::begin() const {
       return RoaringSetBitForwardIterator(*this);
 }
 
-inline RoaringSetBitForwardIterator Roaring::end() const {
-      return RoaringSetBitForwardIterator(*this, true);
+inline RoaringSetBitForwardIterator & Roaring::end() const {
+      static RoaringSetBitForwardIterator e(*this, true);
+      return e;
 }
 
 #endif /* INCLUDE_ROARING_HH_ */

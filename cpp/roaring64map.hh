@@ -722,7 +722,7 @@ class Roaring64Map{
     * for constructions such as for(auto i = b.begin();
     * i!=b.end(); ++i) {}
     */
-    const_iterator end() const;
+    const_iterator & end() const;
 
 private:
     std::map<uint32_t, Roaring> roarings;
@@ -858,8 +858,9 @@ inline Roaring64MapSetBitForwardIterator Roaring64Map::begin() const {
       return Roaring64MapSetBitForwardIterator(*this);
 }
 
-inline Roaring64MapSetBitForwardIterator Roaring64Map::end() const {
-      return Roaring64MapSetBitForwardIterator(*this, true);
+inline Roaring64MapSetBitForwardIterator & Roaring64Map::end() const {
+      static Roaring64MapSetBitForwardIterator e(*this, true);
+      return e;
 }
 
 #endif /* INCLUDE_ROARING_64_MAP_HH_ */
