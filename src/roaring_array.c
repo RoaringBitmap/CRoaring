@@ -506,9 +506,10 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
     for (int32_t k = 0; k < ra->size; ++k) {
         memcpy(buf, &ra->keys[k], sizeof(ra->keys[k]));
         buf += sizeof(ra->keys[k]);
-
+        // get_cardinality returns a value in [1,1<<16], subtracting one 
+        // we get [0,1<<16 - 1] which fits in 16 bits
         uint16_t card =
-            container_get_cardinality(ra->containers[k], ra->typecodes[k]) - 1;
+            (uint16_t)(container_get_cardinality(ra->containers[k], ra->typecodes[k]) - 1);
         memcpy(buf, &card, sizeof(card));
         buf += sizeof(card);
     }
