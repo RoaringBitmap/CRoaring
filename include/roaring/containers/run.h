@@ -131,7 +131,7 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
     if (index >= 0) {
         int32_t le = run->runs[index].length;
         if (le == 0) {
-            recoverRoomAtIndex(run, index);
+            recoverRoomAtIndex(run, (uint16_t) index);
         } else {
             run->runs[index].value++;
             run->runs[index].length--;
@@ -144,13 +144,13 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
         int32_t le = run->runs[index].length;
         if (offset < le) {
             // need to break in two
-            run->runs[index].length = offset - 1;
+            run->runs[index].length = (uint16_t)(offset - 1);
             // need to insert
             uint16_t newvalue = pos + 1;
             int32_t newlength = le - offset - 1;
-            makeRoomAtIndex(run, index + 1);
+            makeRoomAtIndex(run, (uint16_t)(index + 1));
             run->runs[index + 1].value = newvalue;
-            run->runs[index + 1].length = newlength;
+            run->runs[index + 1].length = (uint16_t)newlength;
             return true;
 
         } else if (offset == le) {
@@ -213,7 +213,7 @@ static inline void run_container_append(run_container_t *run, rle16_t vl,
     } else {
         uint32_t newend = vl.value + vl.length + UINT32_C(1);
         if (newend > previousend) {  // we merge
-            previousrl->length = newend - 1 - previousrl->value;
+            previousrl->length = (uint16_t)(newend - 1 - previousrl->value);
             run->runs[run->n_runs - 1] = *previousrl;
         }
     }

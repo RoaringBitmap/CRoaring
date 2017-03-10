@@ -33,7 +33,7 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
                     run->runs[index].length = run->runs[index + 1].value +
                                               run->runs[index + 1].length -
                                               run->runs[index].value;
-                    recoverRoomAtIndex(run, index + 1);
+                    recoverRoomAtIndex(run, (uint16_t)(index + 1));
                     return true;
                 }
             }
@@ -60,7 +60,7 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
             }
         }
     }
-    makeRoomAtIndex(run, index + 1);
+    makeRoomAtIndex(run, (uint16_t)(index + 1));
     run->runs[index + 1].value = pos;
     run->runs[index + 1].length = 0;
     return true;
@@ -422,8 +422,8 @@ void run_container_intersection(const run_container_t *src_1,
                     xend = xstart + src_2->runs[xrlepos].length + 1;
                 }
             }
-            dst->runs[dst->n_runs].value = lateststart;
-            dst->runs[dst->n_runs].length = (earliestend - lateststart - 1);
+            dst->runs[dst->n_runs].value = (uint16_t)lateststart;
+            dst->runs[dst->n_runs].length = (uint16_t)(earliestend - lateststart - 1);
             dst->n_runs++;
         }
     }
