@@ -826,7 +826,7 @@ public:
     Roaring64MapSetBitForwardIterator(const Roaring64Map& parent, bool exhausted = false)
         : map_end(parent.roarings.cend())
     {
-        if(exhausted || parent.roarings.cbegin() == parent.roarings.cend()) {
+        if(exhausted || parent.roarings.empty()) {
             map_iter = parent.roarings.cend();
         } else {
             map_iter = parent.roarings.cbegin();
