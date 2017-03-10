@@ -173,11 +173,11 @@ class Roaring64Map{
      * modified.
      */
     Roaring64Map &operator&=(const Roaring64Map &r) {
-        for (const auto& map_entry : r.roarings) {
-            if (roarings.count(map_entry.first) == 1) {
-                roarings[map_entry.first] &= map_entry.second;
-                roarings[map_entry.first].setCopyOnWrite(copyOnWrite);
-            }
+        for (auto& map_entry : roarings) {
+            if (r.roarings.count(map_entry.first) == 1)
+                map_entry.second &= r.roarings.at(map_entry.first);
+            else
+                map_entry.second = Roaring();
         }
         return *this;
     }
@@ -826,7 +826,7 @@ public:
     Roaring64MapSetBitForwardIterator(const Roaring64Map& parent, bool exhausted = false)
         : map_end(parent.roarings.cend())
     {
-        if(exhausted) {
+        if(exhausted || parent.roarings.cbegin() == parent.roarings.cend()) {
             map_iter = parent.roarings.cend();
         } else {
             map_iter = parent.roarings.cbegin();
@@ -842,10 +842,7 @@ public:
 
     ~Roaring64MapSetBitForwardIterator() = default;
 
-    Roaring64MapSetBitForwardIterator(
-        const Roaring64MapSetBitForwardIterator &o)
-        : map_iter(o.map_iter), map_end(o.map_end), i(o.i) {
-    }
+    Roaring64MapSetBitForwardIterator(const Roaring64MapSetBitForwardIterator &o) = default;
 
 private:
     std::map<uint32_t, Roaring>::const_iterator map_iter;
