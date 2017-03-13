@@ -435,7 +435,7 @@ int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a, const uin
             i_b++;
         }
     }
-    return count;
+    return (int32_t)count;
 }
 
 
@@ -448,7 +448,7 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a, const ui
   if (s_b == 0) {
     if (A != C)
       memcpy(C, A, sizeof(uint16_t) * s_a);
-    return s_a;
+    return (int32_t)s_a;
   }
   // handle the leading zeroes, it is messy but it allows us to use the fast
   // _mm_cmpistrm instrinsic safely
@@ -561,7 +561,7 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a, const ui
   }
   if (i_a < s_a) {
     memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
-    count += s_a - i_a;
+    count += (int32_t)(s_a - i_a);
   }
   return count;
 }
@@ -1238,7 +1238,7 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
                         const uint16_t *__restrict__ array2, uint32_t length2,
                         uint16_t *__restrict__ output) {
     if ((length1 < 8) || (length2 < 8)) {
-        return union_uint16(array1, length1, array2, length2, output);
+        return (uint32_t)union_uint16(array1, length1, array2, length2, output);
     }
     __m128i vA, vB, V, vecMin, vecMax;
     __m128i laststore;
@@ -1300,16 +1300,16 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
         qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
 
         leftoversize = unique(buffer, leftoversize);
-        len += union_uint16(buffer, leftoversize, array2 + 8 * pos2,
-                            length2 - 8 * pos2, output);
+        len += (uint32_t)union_uint16(buffer, leftoversize, array2 + 8 * pos2,
+                                      length2 - 8 * pos2, output);
     } else {
         memcpy(buffer + leftoversize, array2 + 8 * pos2,
                (length2 - 8 * len2) * sizeof(uint16_t));
         leftoversize += length2 - 8 * len2;
         qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
         leftoversize = unique(buffer, leftoversize);
-        len += union_uint16(buffer, leftoversize, array1 + 8 * pos1,
-                            length1 - 8 * pos1, output);
+        len += (uint32_t)union_uint16(buffer, leftoversize, array1 + 8 * pos1,
+                                      length1 - 8 * pos1, output);
     }
     return len;
 }
