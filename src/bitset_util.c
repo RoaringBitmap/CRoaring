@@ -688,11 +688,11 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
             }
         }
     }
-    base += i * 64;
+    base += (uint16_t)(i * 64);
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = bitset[i];
         while ((w != 0) && (out < safeout)) {
-            uint64_t t = w & -w;
+            uint64_t t = w & (~w + 1);
             int r = __builtin_ctzll(w);
             *out = r + base;
             out++;

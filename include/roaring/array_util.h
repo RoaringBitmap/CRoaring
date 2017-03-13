@@ -4,6 +4,8 @@
 #include <stddef.h>  // for size_t
 #include <stdint.h>
 
+#include <roaring/portability.h>
+
 /*
  *  good old binary search
  */
@@ -80,7 +82,7 @@ static inline int32_t advanceUntil(const uint16_t *array, int32_t pos,
  * C should have capacity greater than the minimum of s_1 and s_b + 8
  * where 8 is sizeof(__m128i)/sizeof(uint16_t).
  */
-int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
+int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a, const uint16_t *__restrict__ B,
                            size_t s_b, uint16_t *C);
 
 /* Computes the intersection between one small and one large set of uint16_t.
@@ -134,21 +136,21 @@ size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
 /**
  * A fast SSE-based union function.
  */
-uint32_t union_vector16(const uint16_t *set_1, uint32_t size_1,
-                        const uint16_t *set_2, uint32_t size_2,
-                        uint16_t *buffer);
+uint32_t union_vector16(const uint16_t *__restrict__ set_1, uint32_t size_1,
+                        const uint16_t *__restrict__ set_2, uint32_t size_2,
+                        uint16_t *__restrict__ buffer);
 /**
  * A fast SSE-based XOR function.
  */
-uint32_t xor_vector16(const uint16_t * array1, uint32_t length1,
-                      const uint16_t * array2, uint32_t length2,
-                      uint16_t * output);
+uint32_t xor_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
+                      const uint16_t *__restrict__ array2, uint32_t length2,
+                      uint16_t *__restrict__ output);
 
 
 /**
  * A fast SSE-based difference function.
  */
-int32_t difference_vector16(const uint16_t * A, size_t s_a, const uint16_t * B,
+int32_t difference_vector16(const uint16_t * __restrict__ A, size_t s_a, const uint16_t * __restrict__ B,
                             size_t s_b, uint16_t * C);
 
 /**
