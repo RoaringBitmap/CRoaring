@@ -508,12 +508,8 @@ class Roaring64Map{
                 // push map key
                 *((uint32_t*)buf) = map_entry.first;
                 buf += sizeof(uint32_t);
-                // byte count in Roaring goes here
-                // TODO: lower-level read API should return bytes read so we don't have to store this
-                size_t* const writeBytesHere = (size_t*)buf;
-                buf += sizeof(size_t);
-                *writeBytesHere = map_entry.second.write(buf, portable);
-                buf += *writeBytesHere;
+                // push map value Roaring
+                buf += map_entry.second.write(buf, portable);
             });
         return buf - orig;
     }
@@ -537,14 +533,11 @@ class Roaring64Map{
             // get map key
             uint32_t key = *((uint32_t*)buf);
             buf += sizeof(uint32_t);
-            // read Bytes in Roaring
-            size_t bytesInRoaring = *((size_t*)buf);
-            buf += sizeof(size_t);
-            // read Roaring
-            result.emplaceOrInsert(key, Roaring::read(buf, portable));
+            // read map value Roaring
+            Roaring read = Roaring::read(buf, portable);
+            result.emplaceOrInsert(key, read);
             // forward buffer past the last Roaring Bitmap
-            // TODO: lower-level read API should return bytes read so we don't have to store this
-            buf += bytesInRoaring;
+            buf += read.getSizeInBytes(portable);
         }
         return result;
     }
@@ -559,9 +552,9 @@ class Roaring64Map{
      * sparse bitmaps).
      */
     size_t getSizeInBytes(bool portable = true) const {
-        // start with, respectively, map size and for each map entry, size of keys and Roaring serialized bytes
+        // start with, respectively, map size and size of keys for each map entry
         return std::accumulate(roarings.cbegin(), roarings.cend(),
-                               sizeof(uint32_t) + roarings.size() * (sizeof(uint32_t) + sizeof(size_t)),
+                               sizeof(uint64_t) + roarings.size() * sizeof(uint32_t),
             [=](uint64_t previous, const std::pair<uint32_t, Roaring>& map_entry) {
                 // add in bytes used by each Roaring
                 return previous + map_entry.second.getSizeInBytes(portable);
@@ -736,9 +729,9 @@ private:
     // prior to version 4.8
     void emplaceOrInsert(const uint32_t key, const Roaring& value) {
 #if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
-    roarings.insert(std::make_pair(key, value));
+        roarings.insert(std::make_pair(key, value));
 #else
-    roarings.emplace(std::make_pair(key, value));
+        roarings.emplace(std::make_pair(key, value));
 #endif
     }
 };

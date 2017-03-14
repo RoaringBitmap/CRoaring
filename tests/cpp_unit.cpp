@@ -105,6 +105,7 @@ void test_example(bool copy_on_write) {
     char *serializedbytes = (char *)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
+    assert_true(expectedsize == roaring_bitmap_portable_size_in_bytes(t));
     assert_true(roaring_bitmap_equals(r1, t));
     roaring_bitmap_free(t);
     free(serializedbytes);
@@ -201,11 +202,11 @@ void test_example_cpp(bool copy_on_write) {
     Roaring i1_2 = r1 & r2;
 
     // we can write a bitmap to a pointer and recover it later
-
     uint32_t expectedsize = r1.getSizeInBytes();
     char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
     Roaring t = Roaring::read(serializedbytes);
+    assert_true(expectedsize == t.getSizeInBytes());
     assert_true(r1 == t);
     delete[] serializedbytes;
 
@@ -307,11 +308,11 @@ void test_example_cpp_64(bool copy_on_write) {
     Roaring64Map i1_2 = r1 & r2;
 
     // we can write a bitmap to a pointer and recover it later
-
-    uint32_t expectedsize = r1.getSizeInBytes();
+    size_t expectedsize = r1.getSizeInBytes();
     char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
     Roaring64Map t = Roaring64Map::read(serializedbytes);
+    assert_true(expectedsize == t.getSizeInBytes());
     assert_true(r1 == t);
     delete[] serializedbytes;
 
