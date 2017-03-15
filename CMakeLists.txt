@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 2.8)
+
+
 set(CMAKE_MACOSX_RPATH OFF)
 if (NOT CMAKE_BUILD_TYPE)
                 message(STATUS "No build type selected, default to Release")
@@ -10,7 +12,7 @@ set(ROARING_LIB_NAME roaring)
 
 option(DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
 option(DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
-IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm") 
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
 SET(DISABLE_AVX OFF) # for ARM processors, there is no hope of having AVX support
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
 
