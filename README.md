@@ -335,7 +335,7 @@ As with all ``cmake`` projects, you can specify the compilers you wish to use by
 
 If wish to build an x64 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
 
-````
+```
 mkdir -p buildnoavx
 cd buildnoavx
 cmake -DDISABLE_AVX=ON ..
@@ -345,7 +345,7 @@ make
 If you have x64 hardware, but you wish to disable all x64-specific optimizations (including AVX), then you can
 do the following...
 
-````
+```
 mkdir -p buildnox64
 cd buildnoavx
 cmake -DDISABLE_X64=ON ..
