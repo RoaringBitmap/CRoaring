@@ -22,6 +22,15 @@ add_c_test(realdata_unit)
 endif()
 
 
+if(MSVC)
+  add_custom_command(TARGET toplevel_unit POST_BUILD        # Adds a post-build event 
+    COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:roaring>"
+    COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE_DIR:toplevel_unit>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
+        "$<TARGET_FILE:roaring>"      # <--this is in-file
+        "$<TARGET_FILE_DIR:toplevel_unit>")                 # <--this is out-file path
+endif()
+
 
  
 

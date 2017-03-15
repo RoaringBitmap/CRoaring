@@ -4,18 +4,16 @@ if("${CMAKE_C_COMPILER_ID}" MATCHES "Intel") # icc / icpc
 endif()
 
 
-if (MSVC)
-# Under Visual Studio, we do not support shared libraries.
-set(ROARING_LIB_TYPE STATIC)
-else()
-# Elsewhere, we default on a shared library.
+# we default on a shared library.
 if(BUILD_STATIC)
   set(ROARING_LIB_TYPE STATIC)
+  MESSAGE( STATUS "Building a static library." )
 else()
+  MESSAGE( STATUS "Building a dynamic library (default)." )
   set(ROARING_LIB_TYPE SHARED)
 endif()
-endif()
 
+MESSAGE( STATUS "ROARING_LIB_TYPE: " ${ROARING_LIB_TYPE})
 set(ROARING_SRC
     array_util.c
     bitset_util.c
@@ -37,5 +35,17 @@ set(ROARING_SRC
 
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
+
+if(NOT MSVC)
+## We output the library at the root of the current directory where cmake is invoked
+## This is handy but Visual Studio will happily ignore us
 set_target_properties(${ROARING_LIB_NAME} PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "..")
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${CMAKE_BINARY_DIR})
+endif()
+
+if(MSVC AND (ROARING_LIB_TYPE STREQUAL "SHARED"))
+  MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." ) 
+ set_target_properties(${ROARING_LIB_NAME} 
+    PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
+endif()
