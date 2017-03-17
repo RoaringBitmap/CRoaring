@@ -525,7 +525,7 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
 uint16_t bitset_container_minimum(const bitset_container_t *container) {
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = container->array[i];
-    while (w != 0) {
+    if (w != 0) {
       int r = __builtin_ctzll(w);
       return r + i * 64;
     }
