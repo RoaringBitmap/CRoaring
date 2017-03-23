@@ -247,6 +247,31 @@ void array_container_intersection(const array_container_t *array1,
     }
 }
 
+
+/* computes the size of the intersection of array1 and array2
+ * */
+int array_container_intersection_cardinality(const array_container_t *array1,
+                                  const array_container_t *array2) {
+    int32_t card_1 = array1->cardinality, card_2 = array2->cardinality;
+    const int threshold = 64;  // subject to tuning
+    if (card_1 * threshold < card_2) {
+        return intersect_skewed_uint16_cardinality(
+            array1->array, card_1, array2->array, card_2);
+    } else if (card_2 * threshold < card_1) {
+    	return intersect_skewed_uint16_cardinality(
+            array2->array, card_2, array1->array, card_1);
+    } else {
+#ifdef USEAVX
+    	return intersect_vector16_cardinality(
+            array1->array, card_1, array2->array, card_2);
+#else
+        return intersect_uint16_cardinality(array1->array, card_1,
+                                            array2->array, card_2);
+#endif
+    }
+}
+
+
 /* computes the intersection of array1 and array2 and write the result to
  * array1.
  * */

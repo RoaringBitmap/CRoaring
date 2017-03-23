@@ -275,6 +275,49 @@ class Roaring {
     bool select(uint32_t rank, uint32_t *element) const {
         return roaring_bitmap_select(&roaring, rank, element);
     }
+    /**
+     * Computes the size of the intersection between two bitmaps.
+     *
+     */
+    uint64_t and_cardinality(const Roaring &r) const {
+    	 return roaring_bitmap_and_cardinality(&roaring, &r.roaring);
+    }
+
+    /**
+     * Computes the Jaccard index between two bitmaps. (Also known as the Tanimoto distance,
+     * or the Jaccard similarity coefficient)
+     *
+     * The Jaccard index is undefined if both bitmaps are empty.
+     *
+     */
+    double jaccard_index(const Roaring &r) const {
+    	 return roaring_bitmap_jaccard_index(&roaring, &r.roaring);
+    }
+
+    /**
+     * Computes the size of the union between two bitmaps.
+     *
+     */
+    uint64_t or_cardinality(const Roaring &r) const {
+    	 return roaring_bitmap_or_cardinality(&roaring, &r.roaring);
+    }
+
+    /**
+     * Computes the size of the difference (andnot) between two bitmaps.
+     *
+     */
+    uint64_t andnot_cardinality(const Roaring &r) const {
+    	 return roaring_bitmap_andnot_cardinality(&roaring, &r.roaring);
+    }
+
+    /**
+     * Computes the size of the symmetric difference (andnot) between two bitmaps.
+     *
+     */
+    uint64_t xor_cardinality(const Roaring &r) const {
+    	 return roaring_bitmap_xor_cardinality(&roaring, &r.roaring);
+    }
+
 
     /**
     * Returns the number of integers that are smaller or equal to x.

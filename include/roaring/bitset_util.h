@@ -24,6 +24,48 @@ static inline void bitset_set_range(uint64_t *bitmap, uint32_t start,
     bitmap[endword] |= (~UINT64_C(0)) >> ((~end + 1) % 64);
 }
 
+
+
+/*
+ * Find the cardinality of the bitset in [start,end)
+ */
+static inline int bitset_range_cardinality(uint64_t *bitmap, uint32_t start,
+                                    uint32_t end) {
+    if (start >= end) {
+      return 0;
+    }
+    int firstword = start / 64;
+    int endword = (end - 1) / 64;
+    if (firstword == endword) {
+      return hamming(bitmap[firstword] & ( ((~UINT64_C(0)) << (start%64)) & ((~UINT64_C(0)) >> (64 - (end%64))) ));
+    }
+    int answer = hamming(bitmap[firstword] & ((~UINT64_C(0)) << (start%64)));
+    for (int i = firstword + 1; i < endword; i++) {
+      answer += hamming(bitmap[i]);
+    }
+    answer += hamming(bitmap[endword] & ((~UINT64_C(0)) >> (64 - (end%64))));
+    return answer;
+}
+
+/*
+ * Find the cardinality of the bitset in [begin,begin+lenminusone]
+ */
+static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
+        uint32_t lenminusone) {
+    int firstword = start / 64;
+    uint32_t endword = (start + lenminusone) / 64;
+    if (firstword == endword) {
+      return hamming(bitmap[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
+              << (start % 64));
+    }
+    int answer = hamming(bitmap[firstword] & ((~UINT64_C(0)) << (start%64)));
+    for (int i = firstword + 1; i < endword; i++) {
+      answer += hamming(bitmap[i]);
+    }
+    answer += hamming(bitmap[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64));
+    return answer;
+}
+
 /*
  * Set all bits in indexes [begin,begin+lenminusone] to true.
  */
@@ -32,7 +74,7 @@ static inline void bitset_set_lenrange(uint64_t *bitmap, uint32_t start,
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
-        bitmap[firstword] |= ((~UINT64_C(0)) >> ((63 - lenminusone)))
+        bitmap[firstword] |= ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
                              << (start % 64);
         return;
     }

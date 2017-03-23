@@ -99,11 +99,16 @@ void array_container_xor(const array_container_t *array_1,
                          const array_container_t *array_2,
                          array_container_t *out);
 
-/* Compute the intersection of src_1 and src_2 and write the result to
+/* Computes the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
 void array_container_intersection(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst);
+
+/* computers the size of the intersection between two arrays.
+ */
+int array_container_intersection_cardinality(const array_container_t *src_1,
+                                             const array_container_t *src_2);
 
 /* computes the intersection of array1 and array2 and write the result to
  * array1.
@@ -111,17 +116,7 @@ void array_container_intersection(const array_container_t *src_1,
 void array_container_intersection_inplace(array_container_t *src_1,
                                           const array_container_t *src_2);
 
-/* computes the negation of an array container src, writing to dst,
- *  assumed distinct from src
- *  moved to mixed_negation  TODO: clean me up here
-void array_container_negation(const array_container_t *src,
-                              array_container_t *dst);
 
- TODO delete me too when mixed is ok
-* computes the negation of an array container src_dest, writing to src_dest
- * Requires result fits* /
-void array_container_negation_inplace(array_container_t *src_dest);
-*/
 
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit

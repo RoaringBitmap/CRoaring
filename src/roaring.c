@@ -1888,3 +1888,67 @@ bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank,
     } else
         return false;
 }
+
+
+
+uint64_t roaring_bitmap_and_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
+    const int length1 = x1->high_low_container.size,
+              length2 = x2->high_low_container.size;
+    uint64_t answer = 0;
+    int pos1 = 0, pos2 = 0;
+
+    while (pos1 < length1 && pos2 < length2) {
+        const uint16_t s1 = ra_get_key_at_index(& x1->high_low_container, pos1);
+        const uint16_t s2 = ra_get_key_at_index(& x2->high_low_container, pos2);
+
+        if (s1 == s2) {
+            uint8_t container_type_1, container_type_2;
+            void *c1 = ra_get_container_at_index(& x1->high_low_container, pos1,
+                                                 &container_type_1);
+            void *c2 = ra_get_container_at_index(& x2->high_low_container, pos2,
+                                                 &container_type_2);
+            answer += container_and_cardinality(c1, container_type_1, c2, container_type_2);
+            ++pos1;
+            ++pos2;
+        } else if (s1 < s2) {  // s1 < s2
+            pos1 = ra_advance_until(& x1->high_low_container, s2, pos1);
+        } else {  // s1 > s2
+            pos2 = ra_advance_until(& x2->high_low_container, s1, pos2);
+        }
+    }
+    return answer;
+}
+
+double roaring_bitmap_jaccard_index(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
+    const uint64_t c1 = roaring_bitmap_get_cardinality(x1);
+    const uint64_t c2 = roaring_bitmap_get_cardinality(x2);
+    const uint64_t inter = roaring_bitmap_and_cardinality(x1,x2);
+    return (double) inter / (double)(c1 + c2 - inter);
+}
+
+
+
+uint64_t roaring_bitmap_or_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
+    const uint64_t c1 = roaring_bitmap_get_cardinality(x1);
+    const uint64_t c2 = roaring_bitmap_get_cardinality(x2);
+    const uint64_t inter = roaring_bitmap_and_cardinality(x1,x2);
+    return c1 + c2 - inter;
+}
+
+uint64_t roaring_bitmap_andnot_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
+    const uint64_t c1 = roaring_bitmap_get_cardinality(x1);
+    const uint64_t inter = roaring_bitmap_and_cardinality(x1,x2);
+    return c1 - inter;
+}
+
+uint64_t roaring_bitmap_xor_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
+    const uint64_t c1 = roaring_bitmap_get_cardinality(x1);
+    const uint64_t c2 = roaring_bitmap_get_cardinality(x2);
+    const uint64_t inter = roaring_bitmap_and_cardinality(x1,x2);
+    return c1 + c2 - 2 * inter;
+}

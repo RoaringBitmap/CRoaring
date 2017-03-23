@@ -720,6 +720,59 @@ static inline void *container_and(const void *c1, uint8_t type1, const void *c2,
     }
 }
 
+
+/**
+ * Compute the size of the intersection between two containers.
+ */
+static inline int container_and_cardinality(const void *c1, uint8_t type1, const void *c2,
+                                  uint8_t type2) {
+    c1 = container_unwrap_shared(c1, &type1);
+    c2 = container_unwrap_shared(c2, &type2);
+    switch (CONTAINER_PAIR(type1, type2)) {
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return bitset_container_and_justcard(
+                               (const bitset_container_t *)c1,
+                               (const bitset_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return array_container_intersection_cardinality((const array_container_t *)c1,
+                                         (const array_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            return run_container_intersection_cardinality((const run_container_t *)c1,
+                                       (const run_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return array_bitset_container_intersection_cardinality((const array_container_t *)c2,
+                                                (const bitset_container_t *)c1);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return array_bitset_container_intersection_cardinality((const array_container_t *)c1,
+                                                (const bitset_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            return run_bitset_container_intersection_cardinality(
+                               (const run_container_t *)c2,
+                               (const bitset_container_t *)c1);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return run_bitset_container_intersection_cardinality(
+                               (const run_container_t *)c1,
+                               (const bitset_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            return array_run_container_intersection_cardinality((const array_container_t *)c1,
+                                             (const run_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            return array_run_container_intersection_cardinality((const array_container_t *)c2,
+                                             (const run_container_t *)c1);
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return 0;
+    }
+}
+
+
 /**
  * Compute intersection between two containers, with result in the first
  container if possible. If the returned pointer is identical to c1,

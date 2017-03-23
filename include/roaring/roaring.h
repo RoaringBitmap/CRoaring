@@ -76,6 +76,45 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2);
 
 /**
+ * Computes the size of the intersection between two bitmaps.
+ *
+ */
+uint64_t roaring_bitmap_and_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+/**
+ * Computes the Jaccard index between two bitmaps. (Also known as the Tanimoto distance,
+ * or the Jaccard similarity coefficient)
+ *
+ * The Jaccard index is undefined if both bitmaps are empty.
+ *
+ */
+double roaring_bitmap_jaccard_index(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+/**
+ * Computes the size of the union between two bitmaps.
+ *
+ */
+uint64_t roaring_bitmap_or_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+
+/**
+ * Computes the size of the difference (andnot) between two bitmaps.
+ *
+ */
+uint64_t roaring_bitmap_andnot_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+/**
+ * Computes the size of the symmetric difference (andnot) between two bitmaps.
+ *
+ */
+uint64_t roaring_bitmap_xor_cardinality(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
+/**
  * Inplace version modifies x1, x1 == x2 is allowed
  */
 void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,

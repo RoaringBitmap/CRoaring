@@ -85,17 +85,33 @@ static inline int32_t advanceUntil(const uint16_t *array, int32_t pos,
 int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a, const uint16_t *__restrict__ B,
                            size_t s_b, uint16_t *C);
 
+/**
+ * Compute the cardinality of the intersection using SSE4 instructions
+ */
+int32_t intersect_vector16_cardinality(const uint16_t *__restrict__ A, size_t s_a, const uint16_t *__restrict__ B,
+                           size_t s_b);
+
+
 /* Computes the intersection between one small and one large set of uint16_t.
  * Stores the result into buffer and return the number of elements. */
 int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
                                 const uint16_t *large, size_t size_l,
                                 uint16_t *buffer);
 
+/* Computes the size of the intersection between one small and one large set of uint16_t. */
+int32_t intersect_skewed_uint16_cardinality(const uint16_t *small, size_t size_s,
+                                const uint16_t *large, size_t size_l);
+
 /**
- * Generic intersection function. Passes unit tests.
+ * Generic intersection function.
  */
 int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
                          const uint16_t *B, const size_t lenB, uint16_t *out);
+/**
+ * Compute the size of the intersection (generic).
+ */
+int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
+                         const uint16_t *B, const size_t lenB);
 
 /**
  * Generic union function.

@@ -169,6 +169,8 @@ void test_example(bool copy_on_write) {
 
     // we can compute union two-by-two
     roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1_2_3) == roaring_bitmap_or_cardinality(r1, r2));
+
     r1_2_3->copy_on_write = copy_on_write;
     roaring_bitmap_or_inplace(r1_2_3, r3);
 
@@ -198,6 +200,8 @@ void test_example(bool copy_on_write) {
 
     // we can compute intersection two-by-two
     roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(i1_2) == roaring_bitmap_and_cardinality(r1, r2));
+
     roaring_bitmap_free(i1_2);
 
     // we can write a bitmap to a pointer and recover it later
@@ -790,6 +794,8 @@ void test_intersection_array_x_array() {
     }
 
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1_and_r2) == roaring_bitmap_and_cardinality(r1, r2));
+
     assert_non_null(r1_and_r2);
     assert_int_equal(roaring_bitmap_get_cardinality(r1_and_r2), 2 * 34);
 
@@ -840,6 +846,8 @@ void test_intersection_bitset_x_bitset() {
     }
 
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1_and_r2) == roaring_bitmap_and_cardinality(r1, r2));
+
     assert_non_null(r1_and_r2);
 
     // NOT analytically determined but seems reasonable
@@ -891,6 +899,8 @@ void test_union(bool copy_on_write) {
     }
 
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1_or_r2) == roaring_bitmap_or_cardinality(r1, r2));
+
     r1_or_r2->copy_on_write = copy_on_write;
     assert_int_equal(roaring_bitmap_get_cardinality(r1_or_r2), 166);
 
@@ -934,7 +944,11 @@ static roaring_bitmap_t *synthesized_xor(roaring_bitmap_t *r1,
     if (stats.max_value > universe_size) universe_size = stats.max_value;
 
     roaring_bitmap_t *r1_or_r2 = roaring_bitmap_or(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1_or_r2) == roaring_bitmap_or_cardinality(r1, r2));
+
     roaring_bitmap_t *r1_and_r2 = roaring_bitmap_and(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1_and_r2) == roaring_bitmap_and_cardinality(r1, r2));
+
     roaring_bitmap_t *r1_nand_r2 =
         roaring_bitmap_flip(r1_and_r2, 0U, universe_size + 1U);
     roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_and(r1_or_r2, r1_nand_r2);
@@ -1039,6 +1053,7 @@ void test_xor(bool copy_on_write) {
         for (int j = i; r[j]; ++j) {
             roaring_bitmap_t *expected = synthesized_xor(r[i], r[j]);
             roaring_bitmap_t *result = roaring_bitmap_xor(r[i], r[j]);
+            assert_true(roaring_bitmap_get_cardinality(result) == roaring_bitmap_xor_cardinality(r[i], r[j]));
 
             bool is_equal = roaring_bitmap_equals(expected, result);
 

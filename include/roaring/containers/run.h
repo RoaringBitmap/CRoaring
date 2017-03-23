@@ -293,6 +293,11 @@ void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst);
 
+
+/* Compute the size of the intersection of src_1 and src_2 . */
+int run_container_intersection_cardinality(const run_container_t *src_1,
+                                const run_container_t *src_2);
+
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result
  * to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */

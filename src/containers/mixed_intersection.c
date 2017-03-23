@@ -37,13 +37,30 @@ void array_bitset_container_intersection(const array_container_t *src_1,
     dst->cardinality = newcard;
 }
 
+
+/* Compute the size of the intersection of src_1 and src_2. */
+int array_bitset_container_intersection_cardinality(const array_container_t *src_1,
+                                         const bitset_container_t *src_2) {
+	int32_t newcard = 0;
+	const int32_t origcard = src_1->cardinality;
+	for (int i = 0; i < origcard; ++i) {
+	        uint16_t key = src_1->array[i];
+	        newcard +=  bitset_container_contains(src_2, key);
+	}
+	return newcard;
+}
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
  * valid container. */
 void array_run_container_intersection(const array_container_t *src_1,
                                       const run_container_t *src_2,
                                       array_container_t *dst) {
-    if (dst->capacity < src_1->cardinality)
+	if( run_container_is_full(src_2) ) {
+		if( dst != src_1) array_container_copy(src_1,dst);
+	    return;
+	}
+	if (dst->capacity < src_1->cardinality)
         array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
     if (src_2->n_runs == 0) {
         return;
@@ -77,11 +94,15 @@ void array_run_container_intersection(const array_container_t *src_1,
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * *dst. If the result is true then the result is a bitset_container_t
- * otherwise is a array_container_t.  */
+ * otherwise is a array_container_t. If *dst ==  src_2, an in-place processing is attempted.*/
 bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        void **dst) {
-    int32_t card = run_container_cardinality(src_1);
+    if( run_container_is_full(src_1) ) {
+        if (*dst != src_2) *dst = bitset_container_clone(src_2);
+    	return true;
+    }
+	int32_t card = run_container_cardinality(src_1);
     if (card <= DEFAULT_MAX_SIZE) {
         // result can only be an array (assuming that we never make a
         // RunContainer)
@@ -159,6 +180,57 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         }
     }
 }
+
+
+/* Compute the size of the intersection between src_1 and src_2 . */
+int array_run_container_intersection_cardinality(const array_container_t *src_1,
+                                      const run_container_t *src_2) {
+	if( run_container_is_full(src_2) ) {
+	    return src_1->cardinality;
+	}
+	if (src_2->n_runs == 0) {
+        return 0;
+    }
+    int32_t rlepos = 0;
+    int32_t arraypos = 0;
+    rle16_t rle = src_2->runs[rlepos];
+    int32_t newcard = 0;
+    while (arraypos < src_1->cardinality) {
+        const uint16_t arrayval = src_1->array[arraypos];
+        while (rle.value + rle.length <
+               arrayval) {  // this will frequently be false
+            ++rlepos;
+            if (rlepos == src_2->n_runs) {
+                return newcard;  // we are done
+            }
+            rle = src_2->runs[rlepos];
+        }
+        if (rle.value > arrayval) {
+            arraypos = advanceUntil(src_1->array, arraypos, src_1->cardinality,
+                                    rle.value);
+        } else {
+            newcard++;
+            arraypos++;
+        }
+    }
+    return newcard;
+}
+
+/* Compute the intersection  between src_1 and src_2
+ **/
+int run_bitset_container_intersection_cardinality(const run_container_t *src_1,
+                                       const bitset_container_t *src_2) {
+	   if( run_container_is_full(src_1) ) {
+		   return bitset_container_cardinality(src_2);
+	   }
+	   int answer = 0;
+       for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
+           rle16_t rle = src_1->runs[rlepos];
+           answer += bitset_lenrange_cardinality(src_2->array, rle.value,rle.length);
+       }
+       return answer;
+}
+
 
 /*
  * Compute the intersection between src_1 and src_2 and write the result

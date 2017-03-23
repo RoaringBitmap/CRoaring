@@ -429,6 +429,77 @@ void run_container_intersection(const run_container_t *src_1,
     }
 }
 
+
+/* Compute the size of the intersection of src_1 and src_2 . */
+int run_container_intersection_cardinality(const run_container_t *src_1,
+                                const run_container_t *src_2) {
+    const bool if1 = run_container_is_full(src_1);
+    const bool if2 = run_container_is_full(src_2);
+    if (if1 || if2) {
+        if (if1) {
+            run_container_cardinality(src_2);
+        }
+        if (if2) {
+        	run_container_cardinality(src_1);
+        }
+    }
+    int answer = 0;
+    int32_t rlepos = 0;
+    int32_t xrlepos = 0;
+    int32_t start = src_1->runs[rlepos].value;
+    int32_t end = start + src_1->runs[rlepos].length + 1;
+    int32_t xstart = src_2->runs[xrlepos].value;
+    int32_t xend = xstart + src_2->runs[xrlepos].length + 1;
+    while ((rlepos < src_1->n_runs) && (xrlepos < src_2->n_runs)) {
+        if (end <= xstart) {
+            ++rlepos;
+            if (rlepos < src_1->n_runs) {
+                start = src_1->runs[rlepos].value;
+                end = start + src_1->runs[rlepos].length + 1;
+            }
+        } else if (xend <= start) {
+            ++xrlepos;
+            if (xrlepos < src_2->n_runs) {
+                xstart = src_2->runs[xrlepos].value;
+                xend = xstart + src_2->runs[xrlepos].length + 1;
+            }
+        } else {  // they overlap
+            const int32_t lateststart = start > xstart ? start : xstart;
+            int32_t earliestend;
+            if (end == xend) {  // improbable
+                earliestend = end;
+                rlepos++;
+                xrlepos++;
+                if (rlepos < src_1->n_runs) {
+                    start = src_1->runs[rlepos].value;
+                    end = start + src_1->runs[rlepos].length + 1;
+                }
+                if (xrlepos < src_2->n_runs) {
+                    xstart = src_2->runs[xrlepos].value;
+                    xend = xstart + src_2->runs[xrlepos].length + 1;
+                }
+            } else if (end < xend) {
+                earliestend = end;
+                rlepos++;
+                if (rlepos < src_1->n_runs) {
+                    start = src_1->runs[rlepos].value;
+                    end = start + src_1->runs[rlepos].length + 1;
+                }
+
+            } else {  // end > xend
+                earliestend = xend;
+                xrlepos++;
+                if (xrlepos < src_2->n_runs) {
+                    xstart = src_2->runs[xrlepos].value;
+                    xend = xstart + src_2->runs[xrlepos].length + 1;
+                }
+            }
+            answer += earliestend - lateststart;
+        }
+    }
+    return answer;
+}
+
 /* Compute the difference of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
 void run_container_andnot(const run_container_t *src_1,
