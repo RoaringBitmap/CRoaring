@@ -60,7 +60,7 @@ static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
                            << (start % 64));
     }
     int answer = hamming(bitmap[firstword] & ((~UINT64_C(0)) << (start % 64)));
-    for (int i = firstword + 1; i < endword; i++) {
+    for (uint32_t i = firstword + 1; i < endword; i++) {
         answer += hamming(bitmap[i]);
     }
     answer +=
