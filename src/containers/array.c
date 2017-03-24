@@ -271,6 +271,22 @@ int array_container_intersection_cardinality(const array_container_t *array1,
     }
 }
 
+bool array_container_intersect(const array_container_t *array1,
+                                  const array_container_t *array2) {
+    int32_t card_1 = array1->cardinality, card_2 = array2->cardinality;
+    const int threshold = 64;  // subject to tuning
+    if (card_1 * threshold < card_2) {
+        return intersect_skewed_uint16_nonempty(
+            array1->array, card_1, array2->array, card_2);
+    } else if (card_2 * threshold < card_1) {
+    	return intersect_skewed_uint16_nonempty(
+            array2->array, card_2, array1->array, card_1);
+    } else {
+    	// we do not bother vectorizing
+        return intersect_uint16_nonempty(array1->array, card_1,
+                                            array2->array, card_2);
+    }
+}
 
 /* computes the intersection of array1 and array2 and write the result to
  * array1.

@@ -193,6 +193,10 @@ static inline int bitset_container_cardinality(
     return bitset->cardinality;
 }
 
+
+
+
+
 /* Copy one container into another. We assume that they are distinct. */
 void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest);
@@ -207,7 +211,7 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
  * bitset->cardinality =  bitset_container_compute_cardinality(bitset).*/
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
-/* Get whether there is at least one bit set  */
+/* Get whether there is at least one bit set  (see bitset_container_empty for the reverse) */
 static inline bool bitset_container_nonzero_cardinality(
     bitset_container_t *bitset) {
     // account for laziness
@@ -216,6 +220,19 @@ static inline bool bitset_container_nonzero_cardinality(
         bitset->cardinality = bitset_container_compute_cardinality(bitset);
     return bitset->cardinality > 0;
 }
+
+/* Check whether this bitset is empty (see bitset_container_nonzero_cardinality for the reverse),
+ * unlike bitset_container_nonzero_cardinality, it assumes that the cardinality is known. */
+static inline bool bitset_container_empty(
+    const bitset_container_t *bitset) {
+	return bitset->cardinality == 0;
+}
+
+/*
+ * Check whether the two bitsets intersect
+ */
+bool bitset_container_intersect(const bitset_container_t *src_1,
+                                  const bitset_container_t *src_2);
 
 /* Computes the union of bitsets `src_1' and `src_2' into `dst'  and return the
  * cardinality. */

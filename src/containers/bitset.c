@@ -38,6 +38,8 @@ void bitset_container_set_all(bitset_container_t *bitset) {
     bitset->cardinality = (1 << 16);
 }
 
+
+
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(void) {
     bitset_container_t *bitset =
@@ -126,8 +128,16 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
         bitset_container_compute_cardinality(bitset);  // could be smarter
 }
 
-//#define USEPOPCNT // when this is disabled
-// bitset_container_compute_cardinality uses AVX to compute hamming weight
+
+bool bitset_container_intersect(const bitset_container_t *src_1,
+                                  const bitset_container_t *src_2) {
+	// could vectorize, but this is probably already quite fast in practice
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
+    	if((src_1->array[i] & src_2->array[i]) != 0) return true;
+    }
+    return false;
+}
+
 
 #ifdef USEAVX
 #ifndef WORDS_IN_AVX2_REG

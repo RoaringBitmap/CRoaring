@@ -179,11 +179,19 @@ inline bool run_container_contains(const run_container_t *run,
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run);
 
-/* Card > 0? */
+/* Card > 0?, see run_container_empty for the reverse */
 static inline bool run_container_nonzero_cardinality(
     const run_container_t *run) {
     return run->n_runs > 0;  // runs never empty
 }
+
+/* Card == 0?, see run_container_nonzero_cardinality for the reverse */
+static inline bool run_container_empty(
+    const run_container_t *run) {
+    return run->n_runs == 0;  // runs never empty
+}
+
+
 
 /* Copy one container into another. We assume that they are distinct. */
 void run_container_copy(const run_container_t *src, run_container_t *dst);
@@ -296,6 +304,10 @@ void run_container_intersection(const run_container_t *src_1,
 
 /* Compute the size of the intersection of src_1 and src_2 . */
 int run_container_intersection_cardinality(const run_container_t *src_1,
+                                const run_container_t *src_2);
+
+/* Check whether src_1 and src_2 intersect. */
+bool run_container_intersect(const run_container_t *src_1,
                                 const run_container_t *src_2);
 
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result

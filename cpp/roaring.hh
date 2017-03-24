@@ -283,6 +283,15 @@ class Roaring {
     	 return roaring_bitmap_and_cardinality(&roaring, &r.roaring);
     }
 
+
+    /**
+     * Check whether the two bitmaps intersect.
+     *
+     */
+    bool intersect(const Roaring &r) const {
+    	 return roaring_bitmap_intersect(&roaring, &r.roaring);
+    }
+
     /**
      * Computes the Jaccard index between two bitmaps. (Also known as the Tanimoto distance,
      * or the Jaccard similarity coefficient)

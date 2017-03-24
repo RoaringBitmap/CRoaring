@@ -67,6 +67,26 @@ static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
 }
 
 /*
+ * Check whether the cardinality of the bitset in [begin,begin+lenminusone] is 0
+ */
+static inline bool bitset_lenrange_empty(uint64_t *bitmap, uint32_t start,
+        uint32_t lenminusone) {
+    int firstword = start / 64;
+    uint32_t endword = (start + lenminusone) / 64;
+    if (firstword == endword) {
+      if((bitmap[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
+              << (start % 64)) != 0) return false;
+    }
+    if(((bitmap[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0) return false;
+    for (int i = firstword + 1; i < endword; i++) {
+     if(bitmap[i] != 0) return false;
+    }
+    if((bitmap[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0) return false;
+    return true;
+}
+
+
+/*
  * Set all bits in indexes [begin,begin+lenminusone] to true.
  */
 static inline void bitset_set_lenrange(uint64_t *bitmap, uint32_t start,

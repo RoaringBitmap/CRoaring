@@ -105,6 +105,11 @@ void array_container_intersection(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst);
 
+/* Check whether src_1 and src_2 intersect. */
+bool array_container_intersect(const array_container_t *src_1,
+                                  const array_container_t *src_2);
+
+
 /* computers the size of the intersection between two arrays.
  */
 int array_container_intersection_cardinality(const array_container_t *src_1,

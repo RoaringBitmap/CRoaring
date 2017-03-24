@@ -289,6 +289,26 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     return answer;
 }
 
+
+bool is_intersect_correct(roaring_bitmap_t *bitmap1,
+                             roaring_bitmap_t *bitmap2) {
+	uint64_t c = roaring_bitmap_and_cardinality(bitmap1, bitmap2);
+	if(roaring_bitmap_intersect(bitmap1,bitmap2) != (c>0)) return false;
+	roaring_bitmap_t * bitmap1minus2 = roaring_bitmap_andnot(bitmap1, bitmap2);
+	bool answer = true;
+	if(roaring_bitmap_intersect(bitmap1minus2,bitmap2)) {
+		answer = false;
+	}
+	roaring_bitmap_t * bitmap1plus2 = roaring_bitmap_or(bitmap1, bitmap2);
+	if(!roaring_bitmap_intersect(bitmap1plus2,bitmap2)) {
+		answer =  false;
+	}
+	roaring_bitmap_free(bitmap1minus2);
+	roaring_bitmap_free(bitmap1plus2);
+	return answer;
+}
+
+
 roaring_bitmap_t *inplace_union(roaring_bitmap_t *bitmap1,
                                 roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *answer = roaring_bitmap_copy(bitmap1);
@@ -341,9 +361,17 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
             printf("no run intersection incorrect\n");
             return false;
         }
+        if (!is_intersect_correct(rnorun[i], rnorun[i + 1])) {
+            printf("no run intersect incorrect\n");
+            return false;
+        }
         tempandruns = roaring_bitmap_and(rruns[i], rruns[i + 1]);
         if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
             printf("runs intersection incorrect\n");
+            return false;
+        }
+        if (!is_intersect_correct(rruns[i], rruns[i + 1])) {
+            printf("runs intersect incorrect\n");
             return false;
         }
         if (!slow_bitmap_equals(tempandnorun, tempandruns)) {
@@ -367,9 +395,17 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
             printf("[inplace] no run intersection incorrect\n");
             return false;
         }
+        if (!is_intersect_correct(rnorun[i], rnorun[i + 1])) {
+             printf("[inplace] no run intersect incorrect\n");
+             return false;
+        }
         tempandruns = inplace_intersection(rruns[i], rruns[i + 1]);
         if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
             printf("[inplace] runs intersection incorrect\n");
+            return false;
+        }
+        if (!is_intersect_correct(rruns[i], rruns[i + 1])) {
+            printf("[inplace] runs intersect incorrect\n");
             return false;
         }
         if (!slow_bitmap_equals(tempandnorun, tempandruns)) {

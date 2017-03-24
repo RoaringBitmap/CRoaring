@@ -774,6 +774,57 @@ static inline int container_and_cardinality(const void *c1, uint8_t type1, const
 
 
 /**
+ * Check whether two containers intersect.
+ */
+static inline bool container_intersect(const void *c1, uint8_t type1, const void *c2,
+                                  uint8_t type2) {
+    c1 = container_unwrap_shared(c1, &type1);
+    c2 = container_unwrap_shared(c2, &type2);
+    switch (CONTAINER_PAIR(type1, type2)) {
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return bitset_container_intersect(
+                               (const bitset_container_t *)c1,
+                               (const bitset_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return array_container_intersect((const array_container_t *)c1,
+                                         (const array_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            return run_container_intersect((const run_container_t *)c1,
+                                       (const run_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            ARRAY_CONTAINER_TYPE_CODE):
+            return array_bitset_container_intersect((const array_container_t *)c2,
+                                                (const bitset_container_t *)c1);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return array_bitset_container_intersect((const array_container_t *)c1,
+                                                (const bitset_container_t *)c2);
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
+                            RUN_CONTAINER_TYPE_CODE):
+            return run_bitset_container_intersect(
+                               (const run_container_t *)c2,
+                               (const bitset_container_t *)c1);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE,
+                            BITSET_CONTAINER_TYPE_CODE):
+            return run_bitset_container_intersect(
+                               (const run_container_t *)c1,
+                               (const bitset_container_t *)c2);
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+            return array_run_container_intersect((const array_container_t *)c1,
+                                             (const run_container_t *)c2);
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            return array_run_container_intersect((const array_container_t *)c2,
+                                             (const run_container_t *)c1);
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return 0;
+    }
+}
+
+/**
  * Compute intersection between two containers, with result in the first
  container if possible. If the returned pointer is identical to c1,
  then the container has been modified. If the returned pointer is different

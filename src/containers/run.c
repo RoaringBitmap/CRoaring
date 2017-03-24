@@ -437,10 +437,10 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
         if (if1) {
-            run_container_cardinality(src_2);
+            return run_container_cardinality(src_2);
         }
         if (if2) {
-        	run_container_cardinality(src_1);
+        	return run_container_cardinality(src_1);
         }
     }
     int answer = 0;
@@ -499,6 +499,45 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
     }
     return answer;
 }
+
+bool run_container_intersect(const run_container_t *src_1,
+                                const run_container_t *src_2) {
+    const bool if1 = run_container_is_full(src_1);
+    const bool if2 = run_container_is_full(src_2);
+    if (if1 || if2) {
+        if (if1) {
+            return !run_container_empty(src_2);
+        }
+        if (if2) {
+        	return !run_container_empty(src_1);
+        }
+    }
+    int32_t rlepos = 0;
+    int32_t xrlepos = 0;
+    int32_t start = src_1->runs[rlepos].value;
+    int32_t end = start + src_1->runs[rlepos].length + 1;
+    int32_t xstart = src_2->runs[xrlepos].value;
+    int32_t xend = xstart + src_2->runs[xrlepos].length + 1;
+    while ((rlepos < src_1->n_runs) && (xrlepos < src_2->n_runs)) {
+        if (end <= xstart) {
+            ++rlepos;
+            if (rlepos < src_1->n_runs) {
+                start = src_1->runs[rlepos].value;
+                end = start + src_1->runs[rlepos].length + 1;
+            }
+        } else if (xend <= start) {
+            ++xrlepos;
+            if (xrlepos < src_2->n_runs) {
+                xstart = src_2->runs[xrlepos].value;
+                xend = xstart + src_2->runs[xrlepos].length + 1;
+            }
+        } else {  // they overlap
+            return true;
+        }
+    }
+    return false;
+}
+
 
 /* Compute the difference of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */

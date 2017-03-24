@@ -82,6 +82,14 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
 uint64_t roaring_bitmap_and_cardinality(const roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2);
 
+
+/**
+ * Check whether two bitmaps intersect.
+ *
+ */
+bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2);
+
 /**
  * Computes the Jaccard index between two bitmaps. (Also known as the Tanimoto distance,
  * or the Jaccard similarity coefficient)

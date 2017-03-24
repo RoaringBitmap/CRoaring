@@ -50,6 +50,17 @@ int array_bitset_container_intersection_cardinality(const array_container_t *src
 	return newcard;
 }
 
+
+bool array_bitset_container_intersect(const array_container_t *src_1,
+                                         const bitset_container_t *src_2) {
+	const int32_t origcard = src_1->cardinality;
+	for (int i = 0; i < origcard; ++i) {
+	        uint16_t key = src_1->array[i];
+	        if(bitset_container_contains(src_2, key)) return true;
+	}
+	return false;
+}
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
  * valid container. */
@@ -231,6 +242,52 @@ int run_bitset_container_intersection_cardinality(const run_container_t *src_1,
        return answer;
 }
 
+
+bool array_run_container_intersect(const array_container_t *src_1,
+                                      const run_container_t *src_2) {
+	if( run_container_is_full(src_2) ) {
+	    return !array_container_empty(src_1);
+	}
+	if (src_2->n_runs == 0) {
+        return false;
+    }
+    int32_t rlepos = 0;
+    int32_t arraypos = 0;
+    rle16_t rle = src_2->runs[rlepos];
+    while (arraypos < src_1->cardinality) {
+        const uint16_t arrayval = src_1->array[arraypos];
+        while (rle.value + rle.length <
+               arrayval) {  // this will frequently be false
+            ++rlepos;
+            if (rlepos == src_2->n_runs) {
+                return false;  // we are done
+            }
+            rle = src_2->runs[rlepos];
+        }
+        if (rle.value > arrayval) {
+            arraypos = advanceUntil(src_1->array, arraypos, src_1->cardinality,
+                                    rle.value);
+        } else {
+        	return true;
+            arraypos++;
+        }
+    }
+    return false;
+}
+
+/* Compute the intersection  between src_1 and src_2
+ **/
+bool run_bitset_container_intersect(const run_container_t *src_1,
+                                       const bitset_container_t *src_2) {
+	   if( run_container_is_full(src_1) ) {
+		   return !bitset_container_empty(src_2);
+	   }
+       for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
+           rle16_t rle = src_1->runs[rlepos];
+           if(!bitset_lenrange_empty(src_2->array, rle.value,rle.length)) return true;
+       }
+       return false;
+}
 
 /*
  * Compute the intersection between src_1 and src_2 and write the result

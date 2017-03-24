@@ -102,6 +102,10 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
 int32_t intersect_skewed_uint16_cardinality(const uint16_t *small, size_t size_s,
                                 const uint16_t *large, size_t size_l);
 
+
+/* Check whether the size of the intersection between one small and one large set of uint16_t is non-zero. */
+bool intersect_skewed_uint16_nonempty(const uint16_t *small, size_t size_s,
+                                const uint16_t *large, size_t size_l);
 /**
  * Generic intersection function.
  */
@@ -113,6 +117,11 @@ int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
 int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
                          const uint16_t *B, const size_t lenB);
 
+/**
+ * Checking whether the size of the intersection  is non-zero.
+ */
+bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
+                         const uint16_t *B, const size_t lenB);
 /**
  * Generic union function.
  */

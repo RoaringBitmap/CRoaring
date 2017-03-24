@@ -704,8 +704,35 @@ int32_t intersect_skewed_uint16_cardinality(const uint16_t *small, size_t size_s
     return (int32_t)pos;
 }
 
+bool intersect_skewed_uint16_nonempty(const uint16_t *small, size_t size_s,
+                                const uint16_t *large, size_t size_l) {
+    size_t idx_l = 0, idx_s = 0;
+
+    if (0 == size_s) {
+        return false;
+    }
+
+    uint16_t val_l = large[idx_l], val_s = small[idx_s];
+
+    while (true) {
+        if (val_l < val_s) {
+            idx_l = advanceUntil(large, (int32_t)idx_l, (int32_t)size_l, val_s);
+            if (idx_l == size_l) break;
+            val_l = large[idx_l];
+        } else if (val_s < val_l) {
+            idx_s++;
+            if (idx_s == size_s) break;
+            val_s = small[idx_s];
+        } else {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /**
- * Generic intersection function. Passes unit tests.
+ * Generic intersection function.
  */
 int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
                          const uint16_t *B, const size_t lenB, uint16_t *out) {
@@ -756,6 +783,32 @@ int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
     }
     return answer;  // NOTREACHED
 }
+
+
+bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
+                         const uint16_t *B, const size_t lenB) {
+    if (lenA == 0 || lenB == 0) return 0;
+    const uint16_t *endA = A + lenA;
+    const uint16_t *endB = B + lenB;
+
+    while (1) {
+        while (*A < *B) {
+        SKIP_FIRST_COMPARE:
+            if (++A == endA) return false;
+        }
+        while (*A > *B) {
+            if (++B == endB) return false;
+        }
+        if (*A == *B) {
+            return true;
+        } else {
+            goto SKIP_FIRST_COMPARE;
+        }
+    }
+    return false;  // NOTREACHED
+}
+
+
 
 /**
  * Generic intersection function.
