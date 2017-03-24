@@ -7,17 +7,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <roaring/containers/containers.h>
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>
-#include <roaring/containers/run.h>
+#include <roaring/containers/containers.h>
 #include <roaring/containers/mixed_equal.h>
 #include <roaring/containers/mixed_subset.h>
+#include <roaring/containers/run.h>
 
 #include "test.h"
 
 static inline void container_checked_add(void *container, uint16_t val,
-                                  uint8_t typecode) {
+                                         uint8_t typecode) {
     uint8_t new_type;
     void *new_container = container_add(container, val, typecode, &new_type);
     assert_int_equal(typecode, new_type);
@@ -48,9 +48,9 @@ void generic_equal_test(uint8_t type1, uint8_t type2) {
     void *container1 = container_create(type1);
     void *container2 = container_create(type2);
     assert_true(container_equals(container1, type1, container2, type2));
-    for(int i = 0 ; i < 100 ; i++) {
-        container_checked_add(container1, i*10, type1);
-        container_checked_add(container2, i*10, type2);
+    for (int i = 0; i < 100; i++) {
+        container_checked_add(container1, i * 10, type1);
+        container_checked_add(container2, i * 10, type2);
         assert_true(container_equals(container1, type1, container2, type2));
     }
     container_checked_add(container1, 273, type1);
@@ -105,20 +105,20 @@ void generic_subset_test(uint8_t type1, uint8_t type2) {
     void *container1 = container_create(type1);
     void *container2 = container_create(type2);
     assert_true(container_is_subset(container1, type1, container2, type2));
-    for(int i = 0 ; i < 100 ; i++) {
-        container_checked_add(container1, i*11, type1);
-        container_checked_add(container2, i*11, type2);
+    for (int i = 0; i < 100; i++) {
+        container_checked_add(container1, i * 11, type1);
+        container_checked_add(container2, i * 11, type2);
         assert_true(container_is_subset(container1, type1, container2, type2));
     }
-    for(int i = 0 ; i < 100 ; i++) {
-        container_checked_add(container2, i*7, type2);
+    for (int i = 0; i < 100; i++) {
+        container_checked_add(container2, i * 7, type2);
         assert_true(container_is_subset(container1, type1, container2, type2));
     }
-    for(int i = 0 ; i < 100 ; i++) {
-        if(i%7==0 || i%11==0) continue;
-        container_checked_add(container1, i*5, type1);
+    for (int i = 0; i < 100; i++) {
+        if (i % 7 == 0 || i % 11 == 0) continue;
+        container_checked_add(container1, i * 5, type1);
         assert_false(container_is_subset(container1, type1, container2, type2));
-        container_checked_add(container2, i*5, type2);
+        container_checked_add(container2, i * 5, type2);
         assert_true(container_is_subset(container1, type1, container2, type2));
     }
     container_free(container1, type1);

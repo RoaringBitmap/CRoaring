@@ -22,10 +22,9 @@ void array_bitset_container_intersection(const array_container_t *src_1,
                                          const bitset_container_t *src_2,
                                          array_container_t *dst);
 
-
 /* Compute the size of the intersection of src_1 and src_2. */
-int array_bitset_container_intersection_cardinality(const array_container_t *src_1,
-                                         const bitset_container_t *src_2);
+int array_bitset_container_intersection_cardinality(
+    const array_container_t *src_1, const bitset_container_t *src_2);
 
 
 
@@ -59,10 +58,9 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        void **dst);
 
-
 /* Compute the size of the intersection between src_1 and src_2 . */
 int array_run_container_intersection_cardinality(const array_container_t *src_1,
-                                      const run_container_t *src_2);
+                                                 const run_container_t *src_2);
 
 /* Compute the size of the intersection  between src_1 and src_2
  **/
@@ -78,6 +76,7 @@ bool array_run_container_intersect(const array_container_t *src_1,
  **/
 bool run_bitset_container_intersect(const run_container_t *src_1,
                                        const bitset_container_t *src_2);
+
 /*
  * Same as bitset_bitset_container_intersection except that if the output is to
  * be a

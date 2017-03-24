@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <roaring/portability.h>
 #include <roaring/bitset_util.h>
 #include <roaring/containers/bitset.h>
+#include <roaring/portability.h>
 #include <roaring/utilasm.h>
 
 extern int bitset_container_cardinality(const bitset_container_t *bitset);
@@ -20,12 +20,12 @@ extern bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
 extern void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern inline bool bitset_container_get(const bitset_container_t *bitset,
-                                 uint16_t pos);
+                                        uint16_t pos);
 extern int32_t bitset_container_serialized_size_in_bytes();
 extern bool bitset_container_add(bitset_container_t *bitset, uint16_t pos);
 extern bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos);
-extern inline  bool bitset_container_contains(const bitset_container_t *bitset,
-                                      uint16_t pos);
+extern inline bool bitset_container_contains(const bitset_container_t *bitset,
+                                             uint16_t pos);
 
 void bitset_container_clear(bitset_container_t *bitset) {
     memset(bitset->array, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
@@ -49,8 +49,9 @@ bitset_container_t *bitset_container_create(void) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *) aligned_malloc(32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
-    if (! bitset->array) {
+    bitset->array = (uint64_t *)aligned_malloc(
+        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (!bitset->array) {
         free(bitset);
         return NULL;
     }
@@ -110,8 +111,9 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *) aligned_malloc(32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
-    if (! bitset->array) {
+    bitset->array = (uint64_t *)aligned_malloc(
+        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (!bitset->array) {
         free(bitset);
         return NULL;
     }

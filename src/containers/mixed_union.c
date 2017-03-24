@@ -6,9 +6,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include <roaring/containers/mixed_union.h>
 #include <roaring/bitset_util.h>
 #include <roaring/containers/convert.h>
+#include <roaring/containers/mixed_union.h>
 #include <roaring/containers/perfparameters.h>
 
 /* Compute the union of src_1 and src_2 and write the result to
@@ -167,9 +167,9 @@ bool array_array_container_union(const array_container_t *src_1,
     if (*dst != NULL) {
         bitset_container_t *ourbitset = (bitset_container_t *)*dst;
         bitset_set_list(ourbitset->array, src_1->array, src_1->cardinality);
-        ourbitset->cardinality = (int32_t)
-            bitset_set_list_withcard(ourbitset->array, src_1->cardinality,
-                                     src_2->array, src_2->cardinality);
+        ourbitset->cardinality = (int32_t)bitset_set_list_withcard(
+            ourbitset->array, src_1->cardinality, src_2->array,
+            src_2->cardinality);
         if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
             // need to convert!
             *dst = array_container_from_bitset(ourbitset);

@@ -4,15 +4,16 @@
  */
 
 #include <assert.h>
+#include <roaring/containers/array.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <roaring/containers/array.h>
 
-extern inline uint16_t array_container_minimum(const array_container_t *arr) ;
+extern inline uint16_t array_container_minimum(const array_container_t *arr);
 extern inline uint16_t array_container_maximum(const array_container_t *arr);
-extern inline int array_container_rank(const array_container_t *arr, uint16_t x) ;
+extern inline int array_container_rank(const array_container_t *arr,
+                                       uint16_t x);
 extern inline bool array_container_contains(const array_container_t *arr,
-                                             uint16_t pos);
+                                            uint16_t pos);
 extern int array_container_cardinality(const array_container_t *array);
 extern bool array_container_nonzero_cardinality(const array_container_t *array);
 extern void array_container_clear(array_container_t *array);
@@ -61,16 +62,15 @@ array_container_t *array_container_clone(const array_container_t *src) {
 }
 
 int array_container_shrink_to_fit(array_container_t *src) {
-	if(src->cardinality == src->capacity) return 0; // nothing to do
-	int savings = src->capacity -  src->cardinality;
-	src->capacity = src->cardinality;
+    if (src->cardinality == src->capacity) return 0;  // nothing to do
+    int savings = src->capacity - src->cardinality;
+    src->capacity = src->cardinality;
     uint16_t *oldarray = src->array;
     src->array =
         (uint16_t *)realloc(oldarray, src->capacity * sizeof(uint16_t));
-    if (src->array == NULL) free(oldarray); // should never happen?
+    if (src->array == NULL) free(oldarray);  // should never happen?
     return savings;
 }
-
 
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
@@ -164,13 +164,11 @@ void array_container_union(const array_container_t *array_1,
 #else
     // compute union with smallest array first
     if (card_1 < card_2) {
-        out->cardinality = (int32_t)union_uint16(array_1->array, card_1,
-                                                 array_2->array, (size_t)card_2,
-                                                 out->array);
+        out->cardinality = (int32_t)union_uint16(
+            array_1->array, card_1, array_2->array, (size_t)card_2, out->array);
     } else {
-        out->cardinality = (int32_t)union_uint16(array_2->array, card_2,
-                                                 array_1->array, (size_t)card_1,
-                                                 out->array);
+        out->cardinality = (int32_t)union_uint16(
+            array_2->array, card_2, array_1->array, (size_t)card_1, out->array);
     }
 #endif
 }
@@ -185,9 +183,13 @@ void array_container_andnot(const array_container_t *array_1,
     if (out->capacity < array_1->cardinality)
         array_container_grow(out, array_1->cardinality, INT32_MAX, false);
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
-    out->cardinality = difference_vector16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+    out->cardinality =
+        difference_vector16(array_1->array, array_1->cardinality,
+                            array_2->array, array_2->cardinality, out->array);
 #else
-    out->cardinality = difference_uint16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+    out->cardinality =
+        difference_uint16(array_1->array, array_1->cardinality, array_2->array,
+                          array_2->cardinality, out->array);
 #endif
 }
 
@@ -205,9 +207,13 @@ void array_container_xor(const array_container_t *array_1,
     if (out->capacity < max_cardinality)
         array_container_grow(out, max_cardinality, INT32_MAX, false);
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
-    out->cardinality = xor_vector16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+    out->cardinality =
+        xor_vector16(array_1->array, array_1->cardinality, array_2->array,
+                     array_2->cardinality, out->array);
 #else
-    out->cardinality = xor_uint16(array_1->array, array_1->cardinality, array_2->array, array_2->cardinality, out->array);
+    out->cardinality =
+        xor_uint16(array_1->array, array_1->cardinality, array_2->array,
+                   array_2->cardinality, out->array);
 #endif
 }
 
@@ -247,23 +253,22 @@ void array_container_intersection(const array_container_t *array1,
     }
 }
 
-
 /* computes the size of the intersection of array1 and array2
  * */
 int array_container_intersection_cardinality(const array_container_t *array1,
-                                  const array_container_t *array2) {
+                                             const array_container_t *array2) {
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality;
     const int threshold = 64;  // subject to tuning
     if (card_1 * threshold < card_2) {
-        return intersect_skewed_uint16_cardinality(
-            array1->array, card_1, array2->array, card_2);
+        return intersect_skewed_uint16_cardinality(array1->array, card_1,
+                                                   array2->array, card_2);
     } else if (card_2 * threshold < card_1) {
-    	return intersect_skewed_uint16_cardinality(
-            array2->array, card_2, array1->array, card_1);
+        return intersect_skewed_uint16_cardinality(array2->array, card_2,
+                                                   array1->array, card_1);
     } else {
 #ifdef USEAVX
-    	return intersect_vector16_cardinality(
-            array1->array, card_1, array2->array, card_2);
+        return intersect_vector16_cardinality(array1->array, card_1,
+                                              array2->array, card_2);
 #else
         return intersect_uint16_cardinality(array1->array, card_1,
                                             array2->array, card_2);
@@ -308,15 +313,15 @@ void array_container_intersection_inplace(array_container_t *src_1,
     }
 }
 
-int array_container_to_uint32_array(void *vout,
-                                    const array_container_t *cont,
+int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base) {
     int outpos = 0;
-    uint32_t * out = (uint32_t *) vout;
+    uint32_t *out = (uint32_t *)vout;
     for (int i = 0; i < cont->cardinality; ++i) {
         const uint32_t val = base + cont->array[i];
-        memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
-        outpos ++;
+        memcpy(out + outpos, &val,
+               sizeof(uint32_t));  // should be compiled as a MOV on x64
+        outpos++;
     }
     return outpos;
 }
@@ -375,8 +380,7 @@ int32_t array_container_serialize(array_container_t *container, char *buf) {
  *
  */
 int32_t array_container_write(const array_container_t *container, char *buf) {
-    memcpy(buf, container->array,
-               container->cardinality * sizeof(uint16_t));
+    memcpy(buf, container->array, container->cardinality * sizeof(uint16_t));
     return array_container_size_in_bytes(container);
 }
 
@@ -393,27 +397,24 @@ bool array_container_equals(array_container_t *container1,
 }
 
 bool array_container_is_subset(array_container_t *container1,
-                            array_container_t *container2) {
+                               array_container_t *container2) {
     if (container1->cardinality > container2->cardinality) {
         return false;
     }
     int i1 = 0, i2 = 0;
-    while(i1 < container1->cardinality && i2 < container2->cardinality) {
-        if(container1->array[i1] == container2->array[i2]) {
+    while (i1 < container1->cardinality && i2 < container2->cardinality) {
+        if (container1->array[i1] == container2->array[i2]) {
             i1++;
             i2++;
-        }
-        else if(container1->array[i1] > container2->array[i2]) {
+        } else if (container1->array[i1] > container2->array[i2]) {
             i2++;
-        }
-        else { // container1->array[i1] < container2->array[i2]
+        } else {  // container1->array[i1] < container2->array[i2]
             return false;
         }
     }
-    if(i1 == container1->cardinality) {
+    if (i1 == container1->cardinality) {
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -488,9 +489,10 @@ bool array_container_iterate(const array_container_t *cont, uint32_t base,
 }
 
 bool array_container_iterate64(const array_container_t *cont, uint32_t base,
-                               roaring_iterator64 iterator,
-                               uint64_t high_bits, void *ptr) {
+                               roaring_iterator64 iterator, uint64_t high_bits,
+                               void *ptr) {
     for (int i = 0; i < cont->cardinality; i++)
-        if (!iterator(high_bits | (uint64_t)(cont->array[i] + base), ptr)) return false;
+        if (!iterator(high_bits | (uint64_t)(cont->array[i] + base), ptr))
+            return false;
     return true;
 }

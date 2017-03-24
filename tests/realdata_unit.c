@@ -8,7 +8,6 @@
 #include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"
 
-
 /**
  * Once you have collected all the integers, build the bitmaps.
  */
@@ -79,9 +78,10 @@ bool array_equals(uint32_t *a1, int32_t size1, uint32_t *a2, int32_t size2) {
 
 bool is_union_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_or(bitmap1, bitmap2);
-    if(roaring_bitmap_get_cardinality(temp) != roaring_bitmap_or_cardinality(bitmap1, bitmap2)) {
-    	printf("bad union cardinality\n");
-    	return false;
+    if (roaring_bitmap_get_cardinality(temp) !=
+        roaring_bitmap_or_cardinality(bitmap1, bitmap2)) {
+        printf("bad union cardinality\n");
+        return false;
     }
     uint64_t card1, card2, card;
     card1 = roaring_bitmap_get_cardinality(bitmap1);
@@ -163,9 +163,10 @@ static roaring_bitmap_t *synthesized_andnot(roaring_bitmap_t *r1,
 
 bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_xor(bitmap1, bitmap2);
-    if(roaring_bitmap_get_cardinality(temp) != roaring_bitmap_xor_cardinality(bitmap1, bitmap2)) {
-    	printf("bad symmetric difference cardinality\n");
-    	return false;
+    if (roaring_bitmap_get_cardinality(temp) !=
+        roaring_bitmap_xor_cardinality(bitmap1, bitmap2)) {
+        printf("bad symmetric difference cardinality\n");
+        return false;
     }
 
     roaring_bitmap_t *expected = synthesized_xor(bitmap1, bitmap2);
@@ -187,9 +188,10 @@ bool is_xor_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
 
 bool is_andnot_correct(roaring_bitmap_t *bitmap1, roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_andnot(bitmap1, bitmap2);
-    if(roaring_bitmap_get_cardinality(temp) != roaring_bitmap_andnot_cardinality(bitmap1, bitmap2)) {
-    	 printf("bad difference cardinality\n");
-    	 return false;
+    if (roaring_bitmap_get_cardinality(temp) !=
+        roaring_bitmap_andnot_cardinality(bitmap1, bitmap2)) {
+        printf("bad difference cardinality\n");
+        return false;
     }
 
     roaring_bitmap_t *expected = synthesized_andnot(bitmap1, bitmap2);
@@ -242,9 +244,10 @@ bool is_negation_correct(roaring_bitmap_t *bitmap) {
 bool is_intersection_correct(roaring_bitmap_t *bitmap1,
                              roaring_bitmap_t *bitmap2) {
     roaring_bitmap_t *temp = roaring_bitmap_and(bitmap1, bitmap2);
-    if(roaring_bitmap_get_cardinality(temp) != roaring_bitmap_and_cardinality(bitmap1, bitmap2)) {
-   	  printf("bad intersection cardinality\n");
-   	  return false;
+    if (roaring_bitmap_get_cardinality(temp) !=
+        roaring_bitmap_and_cardinality(bitmap1, bitmap2)) {
+        printf("bad intersection cardinality\n");
+        return false;
     }
 
     uint64_t card1, card2, card;

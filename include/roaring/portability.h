@@ -20,15 +20,16 @@
 #define _XOPEN_SOURCE 700
 #endif
 
-#include <stdlib.h> // will provide posix_memalign with _POSIX_C_SOURCE as defined above
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>  // will provide posix_memalign with _POSIX_C_SOURCE as defined above
 #ifndef __APPLE__
-#include <malloc.h> // this should never be needed but there are some reports that it is needed.
+#include <malloc.h>  // this should never be needed but there are some reports that it is needed.
 #endif
 
-#if defined (_MSC_VER) && !defined(__clang__) && !defined(_WIN64)
-#pragma message("You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64)
+#pragma message( \
+    "You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
 #endif
 
 #if defined(__SIZEOF_LONG_LONG__) && __SIZEOF_LONG_LONG__ != 8
@@ -39,7 +40,8 @@
 #define __restrict__ __restrict
 #endif
 
-#ifndef DISABLE_X64 // some users may want to compile as if they did not have an x64 processor
+#ifndef DISABLE_X64  // some users may want to compile as if they did not have
+                     // an x64 processor
 
 // unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
 #if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && \
@@ -58,45 +60,47 @@
 // we include the intrinsic header
 #ifndef _MSC_VER
 /* Non-Microsoft C/C++-compatible compiler */
-#include <x86intrin.h> // on some recent GCC, this will declare posix_memalign
+#include <x86intrin.h>  // on some recent GCC, this will declare posix_memalign
 #endif
 #endif
 
 #ifndef _MSC_VER
-/* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline assembly */
+/* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline
+ * assembly */
 #define ROARING_INLINE_ASM
 #endif
 
-
 // if we have AVX, then we use BMI optimizations
 #ifdef USEAVX
-#define USE_BMI  // we assume that AVX2 and BMI go hand and hand
-#define USEAVX2FORDECODING            // optimization
+#define USE_BMI             // we assume that AVX2 and BMI go hand and hand
+#define USEAVX2FORDECODING  // optimization
 // vector operations should work on not just AVX
 #define ROARING_VECTOR_OPERATIONS_ENABLED  // vector unions (optimization)
 #endif
 
-#endif // DISABLE_X64
+#endif  // DISABLE_X64
 
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 
-#ifndef __clang__ // if one compiles with MSVC *with* clang, then these intrinsics are defined!!!
-// sadly there is no way to check whether we are missing these intrinsics specifically.
+#ifndef __clang__  // if one compiles with MSVC *with* clang, then these
+                   // intrinsics are defined!!!
+// sadly there is no way to check whether we are missing these intrinsics
+// specifically.
 
 /* wrappers for Visual Studio built-ins that look like gcc built-ins */
 /* result might be undefined when input_num is zero */
 static inline int __builtin_ctzll(unsigned long long input_num) {
     unsigned long index;
-#ifdef _WIN64 // highly recommended!!!
+#ifdef _WIN64  // highly recommended!!!
     _BitScanForward64(&index, input_num);
-#else // if we must support 32-bit Windows
+#else  // if we must support 32-bit Windows
     if ((uint32_t)input_num != 0) {
-      _BitScanForward(&index, (uint32_t) input_num);
+        _BitScanForward(&index, (uint32_t)input_num);
     } else {
-      _BitScanForward(&index, (uint32_t) (input_num >> 32));
-      index += 32;
+        _BitScanForward(&index, (uint32_t)(input_num >> 32));
+        index += 32;
     }
 #endif
     return index;
@@ -105,13 +109,13 @@ static inline int __builtin_ctzll(unsigned long long input_num) {
 /* result might be undefined when input_num is zero */
 static inline int __builtin_clzll(unsigned long long input_num) {
     unsigned long index;
-#ifdef _WIN64 // highly recommended!!!
+#ifdef _WIN64  // highly recommended!!!
     _BitScanReverse64(&index, input_num);
-#else // if we must support 32-bit Windows
+#else  // if we must support 32-bit Windows
     if (input_num > 0xFFFFFFF) {
-        _BitScanReverse(&index, (uint32_t) (input_num >> 32));
+        _BitScanReverse(&index, (uint32_t)(input_num >> 32));
     } else {
-        _BitScanReverse(&index, (uint32_t) (input_num));
+        _BitScanReverse(&index, (uint32_t)(input_num));
         index += 32;
     }
 #endif
@@ -120,48 +124,46 @@ static inline int __builtin_clzll(unsigned long long input_num) {
 
 /* result might be undefined when input_num is zero */
 static inline int __builtin_popcountll(unsigned long long input_num) {
-#ifdef _WIN64 // highly recommended!!!
-    return (int) __popcnt64(input_num);
-#else // if we must support 32-bit Windows
-    return (int) (__popcnt((uint32_t)input_num) + __popcnt((uint32_t)(input_num >> 32))) ;
+#ifdef _WIN64  // highly recommended!!!
+    return (int)__popcnt64(input_num);
+#else  // if we must support 32-bit Windows
+    return (int)(__popcnt((uint32_t)input_num) +
+                 __popcnt((uint32_t)(input_num >> 32)));
 #endif
 }
 
-static inline void __builtin_unreachable() {
-    __assume(0);
-}
+static inline void __builtin_unreachable() { __assume(0); }
 #endif
 
 #endif
-
 
 // without the following, we get lots of warnings about posix_memalign
 #ifndef __cplusplus
 extern int posix_memalign(void **__memptr, size_t __alignment, size_t __size);
-#endif //__cplusplus // C++ does not have a well defined signature
+#endif  //__cplusplus // C++ does not have a well defined signature
 
 // portable version of  posix_memalign
-static inline void * aligned_malloc(size_t alignment, size_t size) {
-	void *p;
+static inline void *aligned_malloc(size_t alignment, size_t size) {
+    void *p;
 #ifdef _MSC_VER
-	p = _aligned_malloc(size, alignment);
+    p = _aligned_malloc(size, alignment);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
-	p = __mingw_aligned_malloc(size, alignment);
+    p = __mingw_aligned_malloc(size, alignment);
 #else
-        // somehow, if this is used before including "x86intrin.h", it creates an implicit defined warning.
-	if (posix_memalign(&p, alignment, size) != 0)
-		return NULL;
+    // somehow, if this is used before including "x86intrin.h", it creates an
+    // implicit defined warning.
+    if (posix_memalign(&p, alignment, size) != 0) return NULL;
 #endif
-	return p;
+    return p;
 }
 
-static inline void aligned_free(void *  memblock) {
+static inline void aligned_free(void *memblock) {
 #ifdef _MSC_VER
-	_aligned_free(memblock);
+    _aligned_free(memblock);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
-	__mingw_aligned_free(memblock);
+    __mingw_aligned_free(memblock);
 #else
-	free(memblock);
+    free(memblock);
 #endif
 }
 
@@ -198,6 +200,5 @@ static inline int hamming(uint64_t x) {
 #ifndef UINT32_C
 #define UINT32_C(c) (c##UL)
 #endif
-
 
 #endif /* INCLUDE_PORTABILITY_H_ */

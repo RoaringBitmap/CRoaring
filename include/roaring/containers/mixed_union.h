@@ -63,7 +63,8 @@ void array_run_container_inplace_union(const array_container_t *src_1,
 
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be src_2.
- * If run_container_is_full(src_1) is true, you must not be calling this function.
+ * If run_container_is_full(src_1) is true, you must not be calling this
+ *function.
  **/
 void run_bitset_container_union(const run_container_t *src_1,
                                 const bitset_container_t *src_2,
@@ -72,7 +73,8 @@ void run_bitset_container_union(const run_container_t *src_1,
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be src_2.  This version does not
  * update the cardinality of dst (it is set to BITSET_UNKNOWN_CARDINALITY).
- * If run_container_is_full(src_1) is true, you must not be calling this function.
+ * If run_container_is_full(src_1) is true, you must not be calling this
+ * function.
  * */
 void run_bitset_container_lazy_union(const run_container_t *src_1,
                                      const bitset_container_t *src_2,

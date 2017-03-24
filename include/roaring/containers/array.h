@@ -8,10 +8,10 @@
 
 #include <string.h>
 
-#include <roaring/portability.h>
-#include <roaring/roaring_types.h>
 #include <roaring/array_util.h>
 #include <roaring/containers/perfparameters.h>
+#include <roaring/portability.h>
+#include <roaring/roaring_types.h>
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -121,8 +121,6 @@ int array_container_intersection_cardinality(const array_container_t *src_1,
 void array_container_intersection_inplace(array_container_t *src_1,
                                           const array_container_t *src_2);
 
-
-
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit
  * integers using base
@@ -131,8 +129,7 @@ void array_container_intersection_inplace(array_container_t *src_1,
  * The function returns the number of values written.
  * The caller is responsible for allocating enough memory in out.
  */
-int array_container_to_uint32_array(void *vout,
-                                    const array_container_t *cont,
+int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base);
 
 /* Compute the number of runs */
@@ -171,7 +168,8 @@ void array_container_grow(array_container_t *container, int32_t min,
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr);
 bool array_container_iterate64(const array_container_t *cont, uint32_t base,
-                               roaring_iterator64 iterator, uint64_t high_bits, void *ptr);
+                               roaring_iterator64 iterator, uint64_t high_bits,
+                               void *ptr);
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
@@ -215,7 +213,7 @@ bool array_container_equals(array_container_t *container1,
  * Return true if container1 is a subset of container2.
  */
 bool array_container_is_subset(array_container_t *container1,
-                            array_container_t *container2);
+                               array_container_t *container2);
 
 /**
  * If the element of given rank is in this container, supposing that the first
@@ -246,7 +244,8 @@ void array_container_andnot(const array_container_t *array_1,
 
 /* Append x to the set. Assumes that the value is larger than any preceding
  * values.  */
-static inline void array_container_append(array_container_t *arr, uint16_t pos) {
+static inline void array_container_append(array_container_t *arr,
+                                          uint16_t pos) {
     const int32_t capacity = arr->capacity;
 
     if (array_container_full(arr)) {
@@ -299,31 +298,31 @@ static inline bool array_container_remove(array_container_t *arr,
 
 /* Check whether x is present.  */
 inline bool array_container_contains(const array_container_t *arr,
-                                            uint16_t pos) {
+                                     uint16_t pos) {
     return binarySearch(arr->array, arr->cardinality, pos) >= 0;
 }
 
 /* Returns the smallest value (assumes not empty) */
 inline uint16_t array_container_minimum(const array_container_t *arr) {
-  if(arr->cardinality == 0) return 0;
-  return arr->array[0];
+    if (arr->cardinality == 0) return 0;
+    return arr->array[0];
 }
 
 /* Returns the largest value (assumes not empty) */
 inline uint16_t array_container_maximum(const array_container_t *arr) {
-  if(arr->cardinality == 0) return 0;
-  return arr->array[arr->cardinality - 1];
+    if (arr->cardinality == 0) return 0;
+    return arr->array[arr->cardinality - 1];
 }
 
 /* Returns the number of values equal or smaller than x */
 inline int array_container_rank(const array_container_t *arr, uint16_t x) {
-  const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
-  const bool is_present = idx >= 0;
-  if (is_present) {
-    return idx + 1;
-  } else {
-    return -idx - 1;
-  }
+    const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
+    const bool is_present = idx >= 0;
+    if (is_present) {
+        return idx + 1;
+    } else {
+        return -idx - 1;
+    }
 }
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

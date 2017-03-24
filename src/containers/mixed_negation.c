@@ -6,12 +6,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include <roaring/containers/mixed_negation.h>
-#include <roaring/bitset_util.h>
 #include <roaring/array_util.h>
-#include <roaring/containers/run.h>
+#include <roaring/bitset_util.h>
 #include <roaring/containers/containers.h>
 #include <roaring/containers/convert.h>
+#include <roaring/containers/mixed_negation.h>
+#include <roaring/containers/run.h>
 
 // TODO: make simplified and optimized negation code across
 // the full range.
