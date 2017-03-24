@@ -77,8 +77,8 @@ static inline bool bitset_lenrange_empty(uint64_t *bitmap, uint32_t start,
     int firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
-      if((bitmap[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
-              << (start % 64)) != 0) return false;
+      return (bitmap[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
+              << (start % 64)) == 0;
     }
     if(((bitmap[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0) return false;
     for (int i = firstword + 1; i < endword; i++) {
