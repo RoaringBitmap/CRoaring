@@ -11,9 +11,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <roaring/containers/perfparameters.h>
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
-#include <roaring/containers/perfparameters.h>
 
 /* struct rle16_s - run length pair
  *
@@ -52,7 +52,6 @@ run_container_t *run_container_create(void);
  * failure. */
 run_container_t *run_container_create_given_capacity(int32_t size);
 
-
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
  */
@@ -83,8 +82,8 @@ static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 /**
  * Good old binary search through rle data
  */
-inline int32_t interleavedBinarySearch(const rle16_t *array,
-                                              int32_t lenarray, uint16_t ikey) {
+inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
+                                       uint16_t ikey) {
     int32_t low = 0;
     int32_t high = lenarray - 1;
     while (low <= high) {
@@ -131,7 +130,7 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
     if (index >= 0) {
         int32_t le = run->runs[index].length;
         if (le == 0) {
-            recoverRoomAtIndex(run, (uint16_t) index);
+            recoverRoomAtIndex(run, (uint16_t)index);
         } else {
             run->runs[index].value++;
             run->runs[index].length--;
@@ -163,8 +162,7 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
 }
 
 /* Check whether `pos' is present in `run'.  */
-inline bool run_container_contains(const run_container_t *run,
-                                          uint16_t pos) {
+inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
     if (index >= 0) return true;
     index = -index - 2;  // points to preceding value, possibly -1
@@ -293,10 +291,9 @@ void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst);
 
-
 /* Compute the size of the intersection of src_1 and src_2 . */
 int run_container_intersection_cardinality(const run_container_t *src_1,
-                                const run_container_t *src_2);
+                                           const run_container_t *src_2);
 
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result
  * to `dst'
@@ -338,8 +335,8 @@ static inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs) {
 bool run_container_iterate(const run_container_t *cont, uint32_t base,
                            roaring_iterator iterator, void *ptr);
 bool run_container_iterate64(const run_container_t *cont, uint32_t base,
-                             roaring_iterator64 iterator,
-                             uint64_t high_bits, void *ptr);
+                             roaring_iterator64 iterator, uint64_t high_bits,
+                             void *ptr);
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
@@ -380,7 +377,7 @@ bool run_container_equals(run_container_t *container1,
 * Return true if container1 is a subset of container2.
 */
 bool run_container_is_subset(run_container_t *container1,
-                        run_container_t *container2);
+                             run_container_t *container2);
 
 /**
  * Used in a start-finish scan that appends segments, for XOR and NOT
@@ -419,18 +416,16 @@ bool run_container_select(const run_container_t *container,
 void run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst);
 
-
-
 /* Returns the smallest value (assumes not empty) */
 inline uint16_t run_container_minimum(const run_container_t *run) {
-  if(run->n_runs  == 0) return 0;
-  return run->runs[0].value;
+    if (run->n_runs == 0) return 0;
+    return run->runs[0].value;
 }
 
 /* Returns the largest value (assumes not empty) */
 inline uint16_t run_container_maximum(const run_container_t *run) {
-  if(run->n_runs  == 0) return 0;
-  return run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
+    if (run->n_runs == 0) return 0;
+    return run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;
 }
 
 /* Returns the number of values equal or smaller than x */

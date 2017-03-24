@@ -6,11 +6,11 @@
 #ifndef INCLUDE_CONTAINERS_BITSET_H_
 #define INCLUDE_CONTAINERS_BITSET_H_
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <roaring/utilasm.h>
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
+#include <roaring/utilasm.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef USEAVX
 #define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
@@ -117,7 +117,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 
 /* Get the value of the ith bit.  */
 inline bool bitset_container_get(const bitset_container_t *bitset,
-                                        uint16_t pos) {
+                                 uint16_t pos) {
     uint64_t word = bitset->array[pos >> 6];
     const uint64_t p = pos;
     ASM_INPLACESHIFT_RIGHT(word, p);
@@ -174,7 +174,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 
 /* Get the value of the ith bit.  */
 inline bool bitset_container_get(const bitset_container_t *bitset,
-                                        uint16_t pos) {
+                                 uint16_t pos) {
     const uint64_t word = bitset->array[pos >> 6];
     return (word >> (pos & 63)) & 1;
 }
@@ -183,7 +183,7 @@ inline bool bitset_container_get(const bitset_container_t *bitset,
 
 /* Check whether `bitset' is present in `array'.  Calls bitset_container_get. */
 inline bool bitset_container_contains(const bitset_container_t *bitset,
-                                             uint16_t pos) {
+                                      uint16_t pos) {
     return bitset_container_get(bitset, pos);
 }
 
@@ -317,8 +317,7 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
  * The out pointer should point to enough memory (the cardinality times 32
  * bits).
  */
-int bitset_container_to_uint32_array(void *out,
-                                     const bitset_container_t *cont,
+int bitset_container_to_uint32_array(void *out, const bitset_container_t *cont,
                                      uint32_t base);
 
 /*
@@ -348,8 +347,8 @@ int bitset_container_number_of_runs(bitset_container_t *b);
 bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base,
                               roaring_iterator iterator, void *ptr);
 bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base,
-                                roaring_iterator64 iterator,
-                                uint64_t high_bits, void *ptr);
+                                roaring_iterator64 iterator, uint64_t high_bits,
+                                void *ptr);
 
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
@@ -392,7 +391,7 @@ bool bitset_container_equals(bitset_container_t *container1,
 * Return true if container1 is a subset of container2.
 */
 bool bitset_container_is_subset(bitset_container_t *container1,
-                          bitset_container_t *container2);
+                                bitset_container_t *container2);
 
 /**
  * If the element of given rank is in this container, supposing that the first
@@ -403,8 +402,6 @@ bool bitset_container_is_subset(bitset_container_t *container1,
 bool bitset_container_select(const bitset_container_t *container,
                              uint32_t *start_rank, uint32_t rank,
                              uint32_t *element);
-
-
 
 /* Returns the smallest value (assumes not empty) */
 uint16_t bitset_container_minimum(const bitset_container_t *container);

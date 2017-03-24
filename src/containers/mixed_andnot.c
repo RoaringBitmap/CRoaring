@@ -6,12 +6,12 @@
 #include <assert.h>
 #include <string.h>
 
-#include <roaring/containers/mixed_andnot.h>
-#include <roaring/bitset_util.h>
 #include <roaring/array_util.h>
-#include <roaring/containers/convert.h>
-#include <roaring/containers/perfparameters.h>
+#include <roaring/bitset_util.h>
 #include <roaring/containers/containers.h>
+#include <roaring/containers/convert.h>
+#include <roaring/containers/mixed_andnot.h>
+#include <roaring/containers/perfparameters.h>
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/
@@ -49,9 +49,9 @@ bool bitset_array_container_andnot(const bitset_container_t *src_1,
     // Java did this directly, but we have option of asm or avx
     bitset_container_t *result = bitset_container_create();
     bitset_container_copy(src_1, result);
-    result->cardinality = (int32_t)bitset_clear_list(result->array,
-        (uint64_t)result->cardinality, src_2->array,
-        (uint64_t)src_2->cardinality);
+    result->cardinality =
+        (int32_t)bitset_clear_list(result->array, (uint64_t)result->cardinality,
+                                   src_2->array, (uint64_t)src_2->cardinality);
 
     // do required type conversions.
     if (result->cardinality <= DEFAULT_MAX_SIZE) {
@@ -74,9 +74,9 @@ bool bitset_array_container_iandnot(bitset_container_t *src_1,
                                     const array_container_t *src_2,
                                     void **dst) {
     *dst = src_1;
-    src_1->cardinality = (int32_t)bitset_clear_list(src_1->array,
-        (uint64_t)src_1->cardinality, src_2->array,
-        (uint64_t)src_2->cardinality);
+    src_1->cardinality =
+        (int32_t)bitset_clear_list(src_1->array, (uint64_t)src_1->cardinality,
+                                   src_2->array, (uint64_t)src_2->cardinality);
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);

@@ -128,7 +128,7 @@ WINBASEAPI BOOL WINAPI IsDebuggerPresent(VOID);
     } while (0)
 
 /** Zero a structure */
-#define ZERO_STRUCT(x) memset((char *) & (x), 0, sizeof(x))
+#define ZERO_STRUCT(x) memset((char *)&(x), 0, sizeof(x))
 
 /** Zero a structure given a pointer to the structure */
 #define ZERO_STRUCTP(x)                                        \

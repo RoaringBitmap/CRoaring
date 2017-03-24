@@ -58,7 +58,7 @@
 #define ASM_BT64(testByte, testBit, count) \
     __asm volatile(                        \
         "bt %2,%1\n"                       \
-        "sbb %0,%0"  /*could use setb */   \
+        "sbb %0,%0" /*could use setb */    \
         : "=r"(count)                      \
         :              /* write */         \
         "r"(testByte), /* read only */     \

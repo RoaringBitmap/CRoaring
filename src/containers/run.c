@@ -7,9 +7,9 @@
 extern inline uint16_t run_container_minimum(const run_container_t *run);
 extern inline uint16_t run_container_maximum(const run_container_t *run);
 extern inline int32_t interleavedBinarySearch(const rle16_t *array,
-                                      int32_t lenarray, uint16_t ikey);
+                                              int32_t lenarray, uint16_t ikey);
 extern inline bool run_container_contains(const run_container_t *run,
-                                           uint16_t pos);
+                                          uint16_t pos);
 extern bool run_container_is_full(const run_container_t *run);
 extern bool run_container_nonzero_cardinality(const run_container_t *r);
 extern void run_container_clear(run_container_t *run);
@@ -83,13 +83,12 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
 }
 
 int run_container_shrink_to_fit(run_container_t *src) {
-	if(src->n_runs == src->capacity) return 0; // nothing to do
-	int savings = src->capacity -  src->n_runs;
-	src->capacity = src->n_runs;
+    if (src->n_runs == src->capacity) return 0;  // nothing to do
+    int savings = src->capacity - src->n_runs;
+    src->capacity = src->n_runs;
     rle16_t *oldruns = src->runs;
-    src->runs =
-        (rle16_t *)realloc(oldruns, src->capacity * sizeof(rle16_t));
-    if (src->runs == NULL) free(oldruns); // should never happen?
+    src->runs = (rle16_t *)realloc(oldruns, src->capacity * sizeof(rle16_t));
+    if (src->runs == NULL) free(oldruns);  // should never happen?
     return savings;
 }
 /* Create a new run container. Return NULL in case of failure. */
@@ -423,16 +422,16 @@ void run_container_intersection(const run_container_t *src_1,
                 }
             }
             dst->runs[dst->n_runs].value = (uint16_t)lateststart;
-            dst->runs[dst->n_runs].length = (uint16_t)(earliestend - lateststart - 1);
+            dst->runs[dst->n_runs].length =
+                (uint16_t)(earliestend - lateststart - 1);
             dst->n_runs++;
         }
     }
 }
 
-
 /* Compute the size of the intersection of src_1 and src_2 . */
 int run_container_intersection_cardinality(const run_container_t *src_1,
-                                const run_container_t *src_2) {
+                                           const run_container_t *src_2) {
     const bool if1 = run_container_is_full(src_1);
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
@@ -440,7 +439,7 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
             run_container_cardinality(src_2);
         }
         if (if2) {
-        	run_container_cardinality(src_1);
+            run_container_cardinality(src_1);
         }
     }
     int answer = 0;
@@ -568,14 +567,15 @@ void run_container_andnot(const run_container_t *src_1,
 int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
     int outpos = 0;
-    uint32_t * out = (uint32_t *) vout;
+    uint32_t *out = (uint32_t *)vout;
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
         for (int j = 0; j <= le; ++j) {
-          uint32_t val = run_start + j;
-          memcpy(out + outpos, &val, sizeof(uint32_t)); // should be compiled as a MOV on x64
-          outpos++;
+            uint32_t val = run_start + j;
+            memcpy(out + outpos, &val,
+                   sizeof(uint32_t));  // should be compiled as a MOV on x64
+            outpos++;
         }
     }
     return outpos;
@@ -627,7 +627,7 @@ int32_t run_container_serialize(run_container_t *container, char *buf) {
 int32_t run_container_write(const run_container_t *container, char *buf) {
     memcpy(buf, &container->n_runs, sizeof(uint16_t));
     memcpy(buf + sizeof(uint16_t), container->runs,
-               container->n_runs * sizeof(rle16_t));
+           container->n_runs * sizeof(rle16_t));
     return run_container_size_in_bytes(container);
 }
 
@@ -704,14 +704,15 @@ bool run_container_iterate(const run_container_t *cont, uint32_t base,
 }
 
 bool run_container_iterate64(const run_container_t *cont, uint32_t base,
-                             roaring_iterator64 iterator,
-                             uint64_t high_bits, void *ptr) {
+                             roaring_iterator64 iterator, uint64_t high_bits,
+                             void *ptr) {
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
 
         for (int j = 0; j <= le; ++j)
-            if (!iterator(high_bits | (uint64_t)(run_start + j), ptr)) return false;
+            if (!iterator(high_bits | (uint64_t)(run_start + j), ptr))
+                return false;
     }
     return true;
 }
@@ -730,33 +731,29 @@ bool run_container_equals(run_container_t *container1,
 }
 
 bool run_container_is_subset(run_container_t *container1,
-                        run_container_t *container2){
+                             run_container_t *container2) {
     int i1 = 0, i2 = 0;
-    while(i1 < container1->n_runs && i2 < container2->n_runs) {
+    while (i1 < container1->n_runs && i2 < container2->n_runs) {
         int start1 = container1->runs[i1].value;
         int stop1 = start1 + container1->runs[i1].length;
         int start2 = container2->runs[i2].value;
         int stop2 = start2 + container2->runs[i2].length;
-        if(start1 < start2) {
+        if (start1 < start2) {
             return false;
-        }
-        else { // start1 >= start2
-            if(stop1 < stop2) {
+        } else {  // start1 >= start2
+            if (stop1 < stop2) {
                 i1++;
-            }
-            else if(stop1 == stop2) {
+            } else if (stop1 == stop2) {
                 i1++;
                 i2++;
-            }
-            else { // stop1 > stop2
+            } else {  // stop1 > stop2
                 i2++;
             }
         }
     }
-    if(i1 == container1->n_runs) {
+    if (i1 == container1->n_runs) {
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -831,18 +828,18 @@ bool run_container_select(const run_container_t *container,
 }
 
 int run_container_rank(const run_container_t *container, uint16_t x) {
-  int sum = 0;
-  uint32_t x32 = x;
-  for (int i = 0; i < container->n_runs; i++) {
-    uint32_t startpoint = container->runs[i].value;
-    uint32_t length = container->runs[i].length;
-    uint32_t endpoint = length + startpoint;
-    if(x <= endpoint) {
-      if(x < startpoint) break;
-      return sum + (x32 - startpoint) + 1;
-    } else {
-      sum += length + 1;
+    int sum = 0;
+    uint32_t x32 = x;
+    for (int i = 0; i < container->n_runs; i++) {
+        uint32_t startpoint = container->runs[i].value;
+        uint32_t length = container->runs[i].length;
+        uint32_t endpoint = length + startpoint;
+        if (x <= endpoint) {
+            if (x < startpoint) break;
+            return sum + (x32 - startpoint) + 1;
+        } else {
+            sum += length + 1;
+        }
     }
-  }
-  return sum;
+    return sum;
 }

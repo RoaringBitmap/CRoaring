@@ -21,7 +21,8 @@ enum { ARRAY_DEFAULT_INIT_SIZE = 16 };
 #define LAZY_OR_BITSET_CONVERSION true
 #endif
 
-/* automatically attempt to convert a bitset to a full run during lazy evaluation */
+/* automatically attempt to convert a bitset to a full run during lazy
+ * evaluation */
 #ifndef LAZY_OR_BITSET_CONVERSION_TO_FULL
 #define LAZY_OR_BITSET_CONVERSION_TO_FULL true
 #endif
@@ -30,6 +31,5 @@ enum { ARRAY_DEFAULT_INIT_SIZE = 16 };
 #ifndef OR_BITSET_CONVERSION_TO_FULL
 #define OR_BITSET_CONVERSION_TO_FULL true
 #endif
-
 
 #endif

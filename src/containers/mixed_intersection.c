@@ -3,10 +3,10 @@
  *
  */
 
-#include <roaring/containers/mixed_intersection.h>
 #include <roaring/array_util.h>
 #include <roaring/bitset_util.h>
 #include <roaring/containers/convert.h>
+#include <roaring/containers/mixed_intersection.h>
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst.  */
@@ -21,7 +21,7 @@ void array_bitset_container_intersection(const array_container_t *src_1,
         uint16_t key = src_1->array[i];
         // this branchless approach is much faster...
         dst->array[newcard] = key;
-        newcard +=  bitset_container_contains(src_2, key);
+        newcard += bitset_container_contains(src_2, key);
         /**
          * we could do it this way instead...
          * if (bitset_container_contains(src_2, key)) {
@@ -31,23 +31,23 @@ void array_bitset_container_intersection(const array_container_t *src_1,
          * many mispredicted branches.
          * Difference can be huge (from 3 cycles when predictible all the way
          * to 16 cycles when unpredictible.
-         * See https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/blob/master/extra/bitset/c/arraybitsetintersection.c
+         * See
+         * https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/blob/master/extra/bitset/c/arraybitsetintersection.c
          */
     }
     dst->cardinality = newcard;
 }
 
-
 /* Compute the size of the intersection of src_1 and src_2. */
-int array_bitset_container_intersection_cardinality(const array_container_t *src_1,
-                                         const bitset_container_t *src_2) {
-	int32_t newcard = 0;
-	const int32_t origcard = src_1->cardinality;
-	for (int i = 0; i < origcard; ++i) {
-	        uint16_t key = src_1->array[i];
-	        newcard +=  bitset_container_contains(src_2, key);
-	}
-	return newcard;
+int array_bitset_container_intersection_cardinality(
+    const array_container_t *src_1, const bitset_container_t *src_2) {
+    int32_t newcard = 0;
+    const int32_t origcard = src_1->cardinality;
+    for (int i = 0; i < origcard; ++i) {
+        uint16_t key = src_1->array[i];
+        newcard += bitset_container_contains(src_2, key);
+    }
+    return newcard;
 }
 
 /* Compute the intersection of src_1 and src_2 and write the result to
@@ -56,11 +56,11 @@ int array_bitset_container_intersection_cardinality(const array_container_t *src
 void array_run_container_intersection(const array_container_t *src_1,
                                       const run_container_t *src_2,
                                       array_container_t *dst) {
-	if( run_container_is_full(src_2) ) {
-		if( dst != src_1) array_container_copy(src_1,dst);
-	    return;
-	}
-	if (dst->capacity < src_1->cardinality)
+    if (run_container_is_full(src_2)) {
+        if (dst != src_1) array_container_copy(src_1, dst);
+        return;
+    }
+    if (dst->capacity < src_1->cardinality)
         array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
     if (src_2->n_runs == 0) {
         return;
@@ -94,15 +94,16 @@ void array_run_container_intersection(const array_container_t *src_1,
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * *dst. If the result is true then the result is a bitset_container_t
- * otherwise is a array_container_t. If *dst ==  src_2, an in-place processing is attempted.*/
+ * otherwise is a array_container_t. If *dst ==  src_2, an in-place processing
+ * is attempted.*/
 bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
                                        void **dst) {
-    if( run_container_is_full(src_1) ) {
+    if (run_container_is_full(src_1)) {
         if (*dst != src_2) *dst = bitset_container_clone(src_2);
-    	return true;
+        return true;
     }
-	int32_t card = run_container_cardinality(src_1);
+    int32_t card = run_container_cardinality(src_1);
     if (card <= DEFAULT_MAX_SIZE) {
         // result can only be an array (assuming that we never make a
         // RunContainer)
@@ -120,7 +121,8 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
             for (uint32_t runValue = rle.value; runValue <= endofrun;
                  ++runValue) {
                 answer->array[answer->cardinality] = (uint16_t)runValue;
-                answer->cardinality += bitset_container_contains(src_2, runValue);
+                answer->cardinality +=
+                    bitset_container_contains(src_2, runValue);
             }
         }
         return false;
@@ -181,14 +183,13 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
     }
 }
 
-
 /* Compute the size of the intersection between src_1 and src_2 . */
 int array_run_container_intersection_cardinality(const array_container_t *src_1,
-                                      const run_container_t *src_2) {
-	if( run_container_is_full(src_2) ) {
-	    return src_1->cardinality;
-	}
-	if (src_2->n_runs == 0) {
+                                                 const run_container_t *src_2) {
+    if (run_container_is_full(src_2)) {
+        return src_1->cardinality;
+    }
+    if (src_2->n_runs == 0) {
         return 0;
     }
     int32_t rlepos = 0;
@@ -218,19 +219,19 @@ int array_run_container_intersection_cardinality(const array_container_t *src_1,
 
 /* Compute the intersection  between src_1 and src_2
  **/
-int run_bitset_container_intersection_cardinality(const run_container_t *src_1,
-                                       const bitset_container_t *src_2) {
-	   if( run_container_is_full(src_1) ) {
-		   return bitset_container_cardinality(src_2);
-	   }
-	   int answer = 0;
-       for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
-           rle16_t rle = src_1->runs[rlepos];
-           answer += bitset_lenrange_cardinality(src_2->array, rle.value,rle.length);
-       }
-       return answer;
+int run_bitset_container_intersection_cardinality(
+    const run_container_t *src_1, const bitset_container_t *src_2) {
+    if (run_container_is_full(src_1)) {
+        return bitset_container_cardinality(src_2);
+    }
+    int answer = 0;
+    for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
+        rle16_t rle = src_1->runs[rlepos];
+        answer +=
+            bitset_lenrange_cardinality(src_2->array, rle.value, rle.length);
+    }
+    return answer;
 }
-
 
 /*
  * Compute the intersection between src_1 and src_2 and write the result

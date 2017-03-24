@@ -3,12 +3,12 @@
 */
 
 #include <assert.h>
+#include <roaring/roaring.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <iostream>
-#include <roaring/roaring.h>
 #include "roaring.hh"
 #include "roaring64map.hh"
 extern "C" {
@@ -219,12 +219,12 @@ void test_example_cpp(bool copy_on_write) {
      *  }
      *
      */
-     // we can also iterate the C++ way
-     counter = 0;
-     for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
-       ++counter;
-     }
-     assert_true(counter == t.cardinality());
+    // we can also iterate the C++ way
+    counter = 0;
+    for (Roaring::const_iterator i = t.begin(); i != t.end(); i++) {
+        ++counter;
+    }
+    assert_true(counter == t.cardinality());
 }
 
 void test_example_cpp_64(bool copy_on_write) {
@@ -235,7 +235,8 @@ void test_example_cpp_64(bool copy_on_write) {
     for (uint64_t i = 100; i < 1000; i++) {
         r1.add(i);
     }
-    for (uint64_t i = 14000000000000000100ull; i < 14000000000000001000ull; i++) {
+    for (uint64_t i = 14000000000000000100ull; i < 14000000000000001000ull;
+         i++) {
         r1.add(i);
     }
 
@@ -256,8 +257,9 @@ void test_example_cpp_64(bool copy_on_write) {
               << compact_size << " bytes." << std::endl;
 
     // create a new bitmap with varargs
-    Roaring64Map r2 = Roaring64Map::bitmapOf(5, 1ull, 2ull, 234294967296ull,
-                                             195839473298ull, 14000000000000000100ull);
+    Roaring64Map r2 =
+        Roaring64Map::bitmapOf(5, 1ull, 2ull, 234294967296ull, 195839473298ull,
+                               14000000000000000100ull);
 
     r2.printf();
     printf("\n");
@@ -325,12 +327,12 @@ void test_example_cpp_64(bool copy_on_write) {
      *  }
      *
      */
-     // we can also iterate the C++ way
-     counter = 0;
-     for(Roaring64Map::const_iterator i = t.begin() ; i != t.end() ; i++) {
-       ++counter;
-     }
-     assert_true(counter == t.cardinality());
+    // we can also iterate the C++ way
+    counter = 0;
+    for (Roaring64Map::const_iterator i = t.begin(); i != t.end(); i++) {
+        ++counter;
+    }
+    assert_true(counter == t.cardinality());
 }
 
 void test_example_true(void **) { test_example(true); }

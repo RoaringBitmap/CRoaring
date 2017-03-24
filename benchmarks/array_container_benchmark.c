@@ -13,7 +13,7 @@
 
 enum { TESTSIZE = 2048 };
 // flushes the array from cache
-#if defined(IS_X64) && !( defined (_MSC_VER) && !defined(__clang__))
+#if defined(IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
 void array_cache_flush(array_container_t* B) {
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
@@ -35,7 +35,7 @@ void array_cache_prefetch(array_container_t* B) {
 #else
     const int32_t CACHELINESIZE = 64;
 #endif
-#if !( defined (_MSC_VER) && !defined(__clang__))
+#if !(defined(_MSC_VER) && !defined(__clang__))
     for (int32_t k = 0; k < B->cardinality;
          k += CACHELINESIZE / (int32_t)sizeof(uint16_t)) {
         __builtin_prefetch(B->array + k);
