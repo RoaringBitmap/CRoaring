@@ -506,7 +506,7 @@ class Roaring64Map{
         std::for_each(roarings.cbegin(), roarings.cend(),
             [&buf, portable](const std::pair<uint32_t, Roaring>& map_entry) {
                 // push map key
-                *((uint32_t*)buf) = map_entry.first;
+        	    memcpy(buf,&map_entry.first,sizeof(uint32_t));// this is undefined: *((uint32_t*)buf) = map_entry.first;
                 buf += sizeof(uint32_t);
                 // push map value Roaring
                 buf += map_entry.second.write(buf, portable);
@@ -531,7 +531,8 @@ class Roaring64Map{
         buf += sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
-            uint32_t key = *((uint32_t*)buf);
+        	uint32_t key;
+    	    memcpy(&key,buf,sizeof(uint32_t));// this is undefined: uint32_t key = *((uint32_t*)buf);
             buf += sizeof(uint32_t);
             // read map value Roaring
             Roaring read = Roaring::read(buf, portable);
