@@ -52,7 +52,7 @@ static inline int bitset_range_cardinality(uint64_t *bitmap, uint32_t start,
  */
 static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
                                               uint32_t lenminusone) {
-    int firstword = start / 64;
+    uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
         return hamming(bitmap[firstword] &
@@ -74,14 +74,14 @@ static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
  */
 static inline bool bitset_lenrange_empty(uint64_t *bitmap, uint32_t start,
         uint32_t lenminusone) {
-    int firstword = start / 64;
+    uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
       if((bitmap[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
               << (start % 64)) != 0) return false;
     }
     if(((bitmap[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0) return false;
-    for (int i = firstword + 1; i < endword; i++) {
+    for (uint32_t i = firstword + 1; i < endword; i++) {
      if(bitmap[i] != 0) return false;
     }
     if((bitmap[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0) return false;
