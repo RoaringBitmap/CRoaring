@@ -34,7 +34,7 @@ set(STD_FLAGS "-std=c11 -fPIC")
 set(CXXSTD_FLAGS "-std=c++11 -fPIC")
 endif()
 
-set(WARNING_FLAGS "-Wall ")
+set(WARNING_FLAGS "-Wall -Wextra -Wsign-compare  -Wshadow  -Wwrite-strings  -Wpointer-arith -Winit-self ")
 if(NOT MSVC)
 set(CMAKE_C_FLAGS_DEBUG "-ggdb")
 set(CMAKE_C_FLAGS_RELEASE "-O3")

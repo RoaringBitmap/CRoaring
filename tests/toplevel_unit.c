@@ -9,8 +9,8 @@
 #include "test.h"
 
 static int seed = 123456789;
-const static int OUR_RAND_MAX = (1 << 30) - 1;
-static int inline our_rand() {  // we do not want to depend on a system-specific
+static const int OUR_RAND_MAX = (1 << 30) - 1;
+inline static int our_rand() {  // we do not want to depend on a system-specific
                                 // random number generator
     seed = (1103515245 * seed + 12345);
     return seed & OUR_RAND_MAX;
@@ -2546,10 +2546,9 @@ void select_test() {
             double f1 = our_rand() / (double)OUR_RAND_MAX;
             double f2 = our_rand() / (double)OUR_RAND_MAX;
             double f3 = our_rand() / (double)OUR_RAND_MAX;
-            int pos = (int)(f1 * f2 * f3 *
+            uint32_t pos = (uint32_t)(f1 * f2 * f3 *
                             range);  // denser at the start, sparser at end
             assert(pos < range);
-            assert(pos >= 0);
             roaring_bitmap_add(r, pos);
             input[pos] = 1;
         }

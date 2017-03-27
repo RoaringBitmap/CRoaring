@@ -1,8 +1,8 @@
 #include <roaring/array_util.h>
 #include <roaring/containers/mixed_subset.h>
 
-bool array_container_is_subset_bitset(array_container_t* container1,
-                                      bitset_container_t* container2) {
+bool array_container_is_subset_bitset(const array_container_t* container1,
+                                      const bitset_container_t* container2) {
     if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
         if (container2->cardinality < container1->cardinality) {
             return false;
@@ -16,8 +16,8 @@ bool array_container_is_subset_bitset(array_container_t* container1,
     return true;
 }
 
-bool run_container_is_subset_array(run_container_t* container1,
-                                   array_container_t* container2) {
+bool run_container_is_subset_array(const run_container_t* container1,
+                                   const array_container_t* container2) {
     if (run_container_cardinality(container1) > container2->cardinality)
         return false;
     int32_t start_pos = -1, stop_pos = -1;
@@ -39,8 +39,8 @@ bool run_container_is_subset_array(run_container_t* container1,
     return true;
 }
 
-bool array_container_is_subset_run(array_container_t* container1,
-                                   run_container_t* container2) {
+bool array_container_is_subset_run(const array_container_t* container1,
+                                   const run_container_t* container2) {
     if (container1->cardinality > run_container_cardinality(container2))
         return false;
     int i_array = 0, i_run = 0;
@@ -62,8 +62,8 @@ bool array_container_is_subset_run(array_container_t* container1,
     }
 }
 
-bool run_container_is_subset_bitset(run_container_t* container1,
-                                    bitset_container_t* container2) {
+bool run_container_is_subset_bitset(const run_container_t* container1,
+                                    const bitset_container_t* container2) {
     // todo: this code could be much faster
     if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
         if (container2->cardinality < run_container_cardinality(container1)) {
@@ -88,8 +88,8 @@ bool run_container_is_subset_bitset(run_container_t* container1,
     return true;
 }
 
-bool bitset_container_is_subset_run(bitset_container_t* container1,
-                                    run_container_t* container2) {
+bool bitset_container_is_subset_run(const bitset_container_t* container1,
+                                    const run_container_t* container2) {
     // todo: this code could be much faster
     if (container1->cardinality != BITSET_UNKNOWN_CARDINALITY) {
         if (container1->cardinality > run_container_cardinality(container2)) {

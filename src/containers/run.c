@@ -651,7 +651,7 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
     }
 }
 
-int32_t run_container_serialize(run_container_t *container, char *buf) {
+int32_t run_container_serialize(const run_container_t *container, char *buf) {
     int32_t l, off;
 
     memcpy(buf, &container->n_runs, off = sizeof(container->n_runs));
@@ -681,7 +681,7 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     return run_container_size_in_bytes(container);
 }
 
-uint32_t run_container_serialization_len(run_container_t *container) {
+uint32_t run_container_serialization_len(const run_container_t *container) {
     return (sizeof(container->n_runs) + sizeof(container->capacity) +
             sizeof(rle16_t) * container->n_runs);
 }
@@ -756,8 +756,8 @@ bool run_container_iterate64(const run_container_t *cont, uint32_t base,
     return true;
 }
 
-bool run_container_equals(run_container_t *container1,
-                          run_container_t *container2) {
+bool run_container_equals(const run_container_t *container1,
+                          const run_container_t *container2) {
     if (container1->n_runs != container2->n_runs) {
         return false;
     }
@@ -769,8 +769,8 @@ bool run_container_equals(run_container_t *container1,
     return true;
 }
 
-bool run_container_is_subset(run_container_t *container1,
-                             run_container_t *container2) {
+bool run_container_is_subset(const run_container_t *container1,
+                             const run_container_t *container2) {
     int i1 = 0, i2 = 0;
     while (i1 < container1->n_runs && i2 < container2->n_runs) {
         int start1 = container1->runs[i1].value;

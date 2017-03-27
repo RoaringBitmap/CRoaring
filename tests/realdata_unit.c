@@ -762,7 +762,7 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
     printf("[%s] %s datadir=%s %s\n", __FILE__, __func__, dirname,
            copy_on_write ? "copy-on-write" : "hard-copies");
 
-    char *extension = ".txt";
+    const char *extension = ".txt";
     size_t count;
 
     size_t *howmany = NULL;

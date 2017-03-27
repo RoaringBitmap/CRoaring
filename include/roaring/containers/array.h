@@ -49,10 +49,10 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(const array_container_t *src);
 
-int32_t array_container_serialize(array_container_t *container,
+int32_t array_container_serialize(const array_container_t *container,
                                   char *buf) WARN_UNUSED;
 
-uint32_t array_container_serialization_len(array_container_t *container);
+uint32_t array_container_serialization_len(const array_container_t *container);
 
 void *array_container_deserialize(const char *buf, size_t buf_len);
 
@@ -206,14 +206,14 @@ static inline int32_t array_container_size_in_bytes(
 /**
  * Return true if the two arrays have the same content.
  */
-bool array_container_equals(array_container_t *container1,
-                            array_container_t *container2);
+bool array_container_equals(const array_container_t *container1,
+                            const array_container_t *container2);
 
 /**
  * Return true if container1 is a subset of container2.
  */
-bool array_container_is_subset(array_container_t *container1,
-                               array_container_t *container2);
+bool array_container_is_subset(const array_container_t *container1,
+                               const array_container_t *container2);
 
 /**
  * If the element of given rank is in this container, supposing that the first

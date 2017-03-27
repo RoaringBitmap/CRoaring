@@ -1571,7 +1571,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                 (get_container_type(c2, container_type_2) !=
                  BITSET_CONTAINER_TYPE_CODE)) {
                 void *newc1 =
-                    (void *)container_unwrap_shared(c1, &container_type_1);
+                    container_mutable_unwrap_shared(c1, &container_type_1);
                 newc1 = container_to_bitset(newc1, container_type_1);
                 container_type_1 = BITSET_CONTAINER_TYPE_CODE;
                 c = container_lazy_ior(newc1, container_type_1, c2,
@@ -1668,7 +1668,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                     // convert to bitset
                     void *oldc1 = c1;
                     uint8_t oldt1 = container_type_1;
-                    c1 = (void *)container_unwrap_shared(c1, &container_type_1);
+                    c1 = container_mutable_unwrap_shared(c1, &container_type_1);
                     c1 = container_to_bitset(c1, container_type_1);
                     container_free(oldc1, oldt1);
                     container_type_1 = BITSET_CONTAINER_TYPE_CODE;

@@ -3,6 +3,8 @@
 
 extern inline const void *container_unwrap_shared(
     const void *candidate_shared_container, uint8_t *type);
+extern inline void *container_mutable_unwrap_shared(
+    void *candidate_shared_container, uint8_t *type);
 
 extern const char *get_container_name(uint8_t typecode);
 
@@ -84,13 +86,13 @@ int32_t container_serialize(const void *container, uint8_t typecode,
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return (bitset_container_serialize((bitset_container_t *)container,
+            return (bitset_container_serialize((const bitset_container_t *)container,
                                                buf));
         case ARRAY_CONTAINER_TYPE_CODE:
             return (
-                array_container_serialize((array_container_t *)container, buf));
+                array_container_serialize((const array_container_t *)container, buf));
         case RUN_CONTAINER_TYPE_CODE:
-            return (run_container_serialize((run_container_t *)container, buf));
+            return (run_container_serialize((const run_container_t *)container, buf));
         default:
             assert(0);
             __builtin_unreachable();
@@ -105,10 +107,10 @@ uint32_t container_serialization_len(const void *container, uint8_t typecode) {
             return bitset_container_serialization_len();
         case ARRAY_CONTAINER_TYPE_CODE:
             return array_container_serialization_len(
-                (array_container_t *)container);
+                (const array_container_t *)container);
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_serialization_len(
-                (run_container_t *)container);
+                (const run_container_t *)container);
         default:
             assert(0);
             __builtin_unreachable();
@@ -199,11 +201,11 @@ void *container_clone(const void *container, uint8_t typecode) {
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE_CODE:
-            return bitset_container_clone((bitset_container_t *)container);
+            return bitset_container_clone((const bitset_container_t *)container);
         case ARRAY_CONTAINER_TYPE_CODE:
-            return array_container_clone((array_container_t *)container);
+            return array_container_clone((const array_container_t *)container);
         case RUN_CONTAINER_TYPE_CODE:
-            return run_container_clone((run_container_t *)container);
+            return run_container_clone((const run_container_t *)container);
         case SHARED_CONTAINER_TYPE_CODE:
             printf("shared containers are not cloneable\n");
             assert(false);

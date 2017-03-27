@@ -1,7 +1,7 @@
 #include <roaring/containers/mixed_equal.h>
 
-bool array_container_equal_bitset(array_container_t* container1,
-                                  bitset_container_t* container2) {
+bool array_container_equal_bitset(const array_container_t* container1,
+                                  const bitset_container_t* container2) {
     if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
         if (container2->cardinality != container1->cardinality) {
             return false;
@@ -26,8 +26,8 @@ bool array_container_equal_bitset(array_container_t* container1,
     return (pos == container1->cardinality);
 }
 
-bool run_container_equals_array(run_container_t* container1,
-                                array_container_t* container2) {
+bool run_container_equals_array(const run_container_t* container1,
+                                const array_container_t* container2) {
     if (run_container_cardinality(container1) != container2->cardinality)
         return false;
     int32_t pos = 0;
@@ -48,8 +48,8 @@ bool run_container_equals_array(run_container_t* container1,
     return (pos == container2->cardinality);
 }
 
-bool run_container_equals_bitset(run_container_t* container1,
-                                 bitset_container_t* container2) {
+bool run_container_equals_bitset(const run_container_t* container1,
+                                 const bitset_container_t* container2) {
     if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
         if (container2->cardinality != run_container_cardinality(container1)) {
             return false;

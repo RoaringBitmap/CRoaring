@@ -45,7 +45,7 @@ void bitset_container_set_all(bitset_container_t *bitset);
 /* Duplicate bitset */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 
-int32_t bitset_container_serialize(bitset_container_t *container,
+int32_t bitset_container_serialize(const bitset_container_t *container,
                                    char *buf) WARN_UNUSED;
 
 uint32_t bitset_container_serialization_len(void);
@@ -211,21 +211,37 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
  * bitset->cardinality =  bitset_container_compute_cardinality(bitset).*/
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
-/* Get whether there is at least one bit set  (see bitset_container_empty for the reverse) */
+/* Get whether there is at least one bit set  (see bitset_container_empty for the reverse),
+   when the cardinality is unknown, it is computed and stored in the struct */
 static inline bool bitset_container_nonzero_cardinality(
     bitset_container_t *bitset) {
     // account for laziness
-    if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY)
+    if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY) {
         // could bail early instead with a nonzero result
         bitset->cardinality = bitset_container_compute_cardinality(bitset);
+    }
     return bitset->cardinality > 0;
 }
 
 /* Check whether this bitset is empty (see bitset_container_nonzero_cardinality for the reverse),
- * unlike bitset_container_nonzero_cardinality, it assumes that the cardinality is known. */
+ *  it never modifies the bitset struct. */
 static inline bool bitset_container_empty(
     const bitset_container_t *bitset) {
-	return bitset->cardinality == 0;
+  if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY) {
+      for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
+          if((bitset->array[i]) != 0) return false;
+      }
+      return true;
+  }
+  return bitset->cardinality == 0;
+}
+
+
+/* Get whether there is at least one bit set  (see bitset_container_empty for the reverse),
+   the bitset is never modified */
+static inline bool bitset_container_const_nonzero_cardinality(
+    const bitset_container_t *bitset) {
+    return !bitset_container_empty(bitset);
 }
 
 /*
@@ -401,14 +417,14 @@ static inline int32_t bitset_container_size_in_bytes(
 /**
  * Return true if the two containers have the same content.
  */
-bool bitset_container_equals(bitset_container_t *container1,
-                             bitset_container_t *container2);
+bool bitset_container_equals(const bitset_container_t *container1,
+                             const bitset_container_t *container2);
 
 /**
 * Return true if container1 is a subset of container2.
 */
-bool bitset_container_is_subset(bitset_container_t *container1,
-                                bitset_container_t *container2);
+bool bitset_container_is_subset(const bitset_container_t *container1,
+                                const bitset_container_t *container2);
 
 /**
  * If the element of given rank is in this container, supposing that the first

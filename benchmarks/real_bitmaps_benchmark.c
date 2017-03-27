@@ -41,7 +41,7 @@ static void printusage(char *command) {
 
 int main(int argc, char **argv) {
     int c;
-    char *extension = ".txt";
+    const char *extension = ".txt";
     bool copy_on_write = false;
     while ((c = getopt(argc, argv, "e:h")) != -1) switch (c) {
             case 'e':

@@ -194,36 +194,36 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
         i < BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG);       \
                                                          i+=innerloop) {\
         __m256i A1, A2, AO;                                             \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1));                  \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2));                  \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1));                  \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2));                  \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)out, AO);                        \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 32));             \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 32));             \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 32));             \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 32));             \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+32), AO);                   \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 64));             \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 64));             \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 64));             \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 64));             \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+64), AO);                   \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 96));             \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 96));             \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 96));             \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 96));             \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+96), AO);                   \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 128));            \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 128));            \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 128));            \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 128));            \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+128), AO);                  \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 160));            \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 160));            \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 160));            \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 160));            \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+160), AO);                  \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 192));            \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 192));            \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 192));            \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 192));            \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+192), AO);                  \
-        A1 = _mm256_lddqu_si256((__m256i *)(array_1 + 224));            \
-        A2 = _mm256_lddqu_si256((__m256i *)(array_2 + 224));            \
+        A1 = _mm256_lddqu_si256((const __m256i *)(array_1 + 224));            \
+        A2 = _mm256_lddqu_si256((const __m256i *)(array_2 + 224));            \
         AO = avx_intrinsic(A2, A1);                                     \
         _mm256_storeu_si256((__m256i *)(out+224), AO);                  \
         out+=256;                                                       \
@@ -395,7 +395,7 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   return num_runs;
 }
 
-int32_t bitset_container_serialize(bitset_container_t *container, char *buf) {
+int32_t bitset_container_serialize(const bitset_container_t *container, char *buf) {
   int32_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
   memcpy(buf, container->array, l);
   return(l);
@@ -472,7 +472,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
 }
 
 
-bool bitset_container_equals(bitset_container_t *container1, bitset_container_t *container2) {
+bool bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
 	if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
 		if(container1->cardinality != container2->cardinality) {
 			return false;
@@ -486,8 +486,8 @@ bool bitset_container_equals(bitset_container_t *container1, bitset_container_t 
 	return true;
 }
 
-bool bitset_container_is_subset(bitset_container_t *container1,
-                          bitset_container_t *container2) {
+bool bitset_container_is_subset(const bitset_container_t *container1,
+                          const bitset_container_t *container2) {
     if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
         if(container1->cardinality > container2->cardinality) {
             return false;

@@ -362,7 +362,7 @@ int32_t array_container_number_of_runs(const array_container_t *a) {
     return nr_runs;
 }
 
-int32_t array_container_serialize(array_container_t *container, char *buf) {
+int32_t array_container_serialize(const array_container_t *container, char *buf) {
     int32_t l, off;
     uint16_t cardinality = (uint16_t)container->cardinality;
 
@@ -384,8 +384,8 @@ int32_t array_container_write(const array_container_t *container, char *buf) {
     return array_container_size_in_bytes(container);
 }
 
-bool array_container_equals(array_container_t *container1,
-                            array_container_t *container2) {
+bool array_container_equals(const array_container_t *container1,
+                            const array_container_t *container2) {
     if (container1->cardinality != container2->cardinality) {
         return false;
     }
@@ -396,8 +396,8 @@ bool array_container_equals(array_container_t *container1,
     return true;
 }
 
-bool array_container_is_subset(array_container_t *container1,
-                               array_container_t *container2) {
+bool array_container_is_subset(const array_container_t *container1,
+                               const array_container_t *container2) {
     if (container1->cardinality > container2->cardinality) {
         return false;
     }
@@ -430,7 +430,7 @@ int32_t array_container_read(int32_t cardinality, array_container_t *container,
     return array_container_size_in_bytes(container);
 }
 
-uint32_t array_container_serialization_len(array_container_t *container) {
+uint32_t array_container_serialization_len(const array_container_t *container) {
     return (sizeof(uint16_t) /* container->cardinality converted to 16 bit */ +
             (sizeof(uint16_t) * container->cardinality));
 }

@@ -63,10 +63,10 @@ void run_container_free(run_container_t *run);
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
 
-int32_t run_container_serialize(run_container_t *container,
+int32_t run_container_serialize(const run_container_t *container,
                                 char *buf) WARN_UNUSED;
 
-uint32_t run_container_serialization_len(run_container_t *container);
+uint32_t run_container_serialization_len(const run_container_t *container);
 
 void *run_container_deserialize(const char *buf, size_t buf_len);
 
@@ -382,14 +382,14 @@ static inline int32_t run_container_size_in_bytes(
 /**
  * Return true if the two containers have the same content.
  */
-bool run_container_equals(run_container_t *container1,
-                          run_container_t *container2);
+bool run_container_equals(const run_container_t *container1,
+                          const run_container_t *container2);
 
 /**
 * Return true if container1 is a subset of container2.
 */
-bool run_container_is_subset(run_container_t *container1,
-                             run_container_t *container2);
+bool run_container_is_subset(const run_container_t *container1,
+                             const run_container_t *container2);
 
 /**
  * Used in a start-finish scan that appends segments, for XOR and NOT

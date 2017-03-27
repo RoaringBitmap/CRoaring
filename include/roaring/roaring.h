@@ -176,7 +176,7 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
                                 const roaring_bitmap_t *x2);
 
 /**
- * Compute the xor of 'number' bitmaps. See also roaring_bitmap_xor_many_heap.
+ * Compute the xor of 'number' bitmaps.
  * Caller is responsible for freeing the
  * result.
  *
@@ -199,12 +199,12 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
                                    const roaring_bitmap_t *x2);
 
 /**
+ * TODO: consider implementing:
  * Compute the xor of 'number' bitmaps using a heap. This can
  * sometimes be faster than roaring_bitmap_xor_many which uses
  * a naive algorithm. Caller is responsible for freeing the
  * result.
  *
- * TODO: consider implementing
  * roaring_bitmap_t *roaring_bitmap_xor_many_heap(uint32_t number,
  *                                              const roaring_bitmap_t **x);
  */
