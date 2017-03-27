@@ -2695,6 +2695,14 @@ uint32_t choose_missing_value(roaring_bitmap_t *rb, uint32_t upper_bound) {
     } while (true);
 }
 
+void test_intersect_small_run_bitset() {
+    roaring_bitmap_t *rb1 = roaring_bitmap_from_range(0, 1, 1);
+    roaring_bitmap_t *rb2 = roaring_bitmap_from_range(1, 8194, 2);
+    assert_false(roaring_bitmap_intersect(rb1, rb2));
+    roaring_bitmap_free(rb1);
+    roaring_bitmap_free(rb2);
+}
+
 void test_subset() {
     uint32_t value;
     roaring_bitmap_t *rb1 = roaring_bitmap_create();
@@ -2740,6 +2748,7 @@ void test_subset() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_intersect_small_run_bitset),
         cmocka_unit_test(is_really_empty),
         cmocka_unit_test(test_rank),
         cmocka_unit_test(test_maximum_minimum),
