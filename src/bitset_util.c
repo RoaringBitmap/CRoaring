@@ -589,8 +589,8 @@ size_t bitset_extract_setbits_avx2(uint64_t *array, size_t length, void *vout,
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = array[i];
         while ((w != 0) && (out < safeout)) {
-            uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
+            int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
@@ -610,8 +610,8 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = bitset[i];
         while (w != 0) {
-            uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
+            int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out + outpos, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
@@ -623,8 +623,8 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
     return outpos;
 }
 
-size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
-                                                  const uint64_t *bitset2,
+size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ bitset1,
+                                                  const uint64_t * __restrict__ bitset2,
                                                   size_t length, uint16_t *out,
                                                   uint16_t base) {
     int outpos = 0;

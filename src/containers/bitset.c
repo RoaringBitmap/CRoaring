@@ -134,8 +134,10 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
 bool bitset_container_intersect(const bitset_container_t *src_1,
                                   const bitset_container_t *src_2) {
 	// could vectorize, but this is probably already quite fast in practice
-    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
-    	if((src_1->array[i] & src_2->array[i]) != 0) return true;
+    const uint64_t * __restrict__ array_1 = src_1->array;
+    const uint64_t * __restrict__ array_2 = src_2->array;
+	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
+        if((array_1[i] & array_2[i]) != 0) return true;
     }
     return false;
 }
@@ -185,8 +187,8 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
                                        const bitset_container_t *src_2, \
                                        bitset_container_t *dst) {       \
-    const uint8_t *array_1 = (const uint8_t *)src_1->array;             \
-    const uint8_t *array_2 = (const uint8_t *)src_2->array;             \
+    const uint8_t * __restrict__ array_1 = (const uint8_t *)src_1->array; \
+    const uint8_t * __restrict__ array_2 = (const uint8_t *)src_2->array; \
     /* not using the blocking optimization for some reason*/            \
     uint8_t *out = (uint8_t*)dst->array;                                \
     const int innerloop = 8;                                            \
@@ -237,8 +239,8 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
 int bitset_container_##opname(const bitset_container_t *src_1,          \
                               const bitset_container_t *src_2,          \
                               bitset_container_t *dst) {                \
-    const __m256i *array_1 = (const __m256i *) src_1->array;            \
-    const __m256i *array_2 = (const __m256i *) src_2->array;            \
+    const __m256i * __restrict__ array_1 = (const __m256i *) src_1->array; \
+    const __m256i * __restrict__ array_2 = (const __m256i *) src_2->array; \
     __m256i *out = (__m256i *) dst->array;                              \
     dst->cardinality = avx2_harley_seal_popcount256andstore_##opname(array_2,\
     		array_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
@@ -247,8 +249,8 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
 /* next, a version that just computes the cardinality*/                 \
 int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
                               const bitset_container_t *src_2) {        \
-    const __m256i *data1 = (const __m256i *) src_1->array;            \
-    const __m256i *data2 = (const __m256i *) src_2->array;            \
+    const __m256i * __restrict__ data1 = (const __m256i *) src_1->array; \
+    const __m256i * __restrict__ data2 = (const __m256i *) src_2->array; \
     return avx2_harley_seal_popcount256_##opname(data2,                \
     		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
 }
@@ -261,8 +263,8 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
 int bitset_container_##opname(const bitset_container_t *src_1,            \
                               const bitset_container_t *src_2,            \
                               bitset_container_t *dst) {                  \
-    const uint64_t *array_1 = src_1->array;                               \
-    const uint64_t *array_2 = src_2->array;                               \
+    const uint64_t * __restrict__ array_1 = src_1->array;                 \
+    const uint64_t * __restrict__ array_2 = src_2->array;                 \
     uint64_t *out = dst->array;                                           \
     int32_t sum = 0;                                                      \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
@@ -279,18 +281,19 @@ int bitset_container_##opname(const bitset_container_t *src_1,            \
 int bitset_container_##opname##_nocard(const bitset_container_t *src_1,   \
                                        const bitset_container_t *src_2,   \
                                        bitset_container_t *dst) {         \
-    const uint64_t *array_1 = src_1->array, *array_2 = src_2->array;      \
+    const uint64_t * __restrict__ array_1 = src_1->array;                 \
+    const uint64_t * __restrict__ array_2 = src_2->array;                 \
     uint64_t *out = dst->array;                                           \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {         \
         out[i] = (array_1[i])opsymbol(array_2[i]);                        \
     }                                                                     \
-    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                                                \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                        \
     return dst->cardinality;                                              \
 }                                                                         \
-int bitset_container_##opname##_justcard(const bitset_container_t *src_1,   \
+int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
                               const bitset_container_t *src_2) {          \
-    const uint64_t *array_1 = src_1->array;                               \
-    const uint64_t *array_2 = src_2->array;                               \
+    const uint64_t * __restrict__ array_1 = src_1->array;                 \
+    const uint64_t * __restrict__ array_2 = src_2->array;                 \
     int32_t sum = 0;                                                      \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
         const uint64_t word_1 = (array_1[i])opsymbol(array_2[i]),         \

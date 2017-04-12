@@ -213,8 +213,8 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_intersection_setbits_uint16(const uint64_t *bitset1,
-                                                  const uint64_t *bitset2,
+size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ bitset1,
+                                                  const uint64_t * __restrict__ bitset2,
                                                   size_t length, uint16_t *out,
                                                   uint16_t base);
 
