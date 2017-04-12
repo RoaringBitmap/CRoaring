@@ -43,6 +43,11 @@ class Roaring64Map {
     Roaring64Map(const Roaring64Map &r) : roarings(r.roarings) {}
 
     /**
+     * Move constructor
+     */
+    Roaring64Map(Roaring64Map &&r) : roarings(std::move(r.roarings)) {}
+
+    /**
      * Construct a 64-bit map from a 32-bit one
      */
     Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }

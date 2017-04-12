@@ -45,6 +45,18 @@ class Roaring {
         }
         roaring.copy_on_write = r.roaring.copy_on_write;
     }
+    /**
+     * Move constructor
+     */
+    Roaring(Roaring &&r) {
+        bool is_ok = ra_init(&roaring.high_low_container);
+        if (!is_ok) {
+            throw std::runtime_error("failed memory alloc in constructor");
+        }
+        roaring.copy_on_write = false;
+        
+        std::swap(roaring, r.roaring);
+    }
 
     /**
      * Construct a roaring object from the C struct.

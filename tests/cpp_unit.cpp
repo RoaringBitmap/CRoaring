@@ -225,6 +225,20 @@ void test_example_cpp(bool copy_on_write) {
         ++counter;
     }
     assert_true(counter == t.cardinality());
+
+    // test move constructor
+    {
+        Roaring b;
+        b.add(10);
+        b.add(20);
+
+        Roaring a(std::move(b));
+        assert_true(a.cardinality() == 2);
+        assert_true(a.contains(10));
+        assert_true(a.contains(20));
+
+        assert_true(b.cardinality() == 0);
+    }
 }
 
 void test_example_cpp_64(bool copy_on_write) {
