@@ -10,6 +10,7 @@ Roaring bitmaps are compressed bitmaps which tend to outperform conventional com
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
 [Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [Whoosh][whoosh] and eBay's [Apache Kylin][kylin].
 
+
 [lucene]: https://lucene.apache.org/
 [solr]: https://lucene.apache.org/solr/
 [elasticsearch]: https://www.elastic.co/products/elasticsearch
@@ -19,6 +20,11 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 [kylin]: http://kylin.apache.org/
 [pinot]: http://github.com/linkedin/pinot/wiki
 [atlas]: https://github.com/Netflix/atlas
+
+Roaring bitmaps are found to work well in many important applications:
+
+> Use Roaring for bitmap compression whenever possible. Do not use other bitmap compression methods ([Wang et al., SIGMOD 2017](http://db.ucsd.edu/wp-content/uploads/2017/03/sidm338-wangA.pdf))
+
 
 There is a serialized format specification for interoperability between implementations: https://github.com/RoaringBitmap/RoaringFormatSpec/
 
