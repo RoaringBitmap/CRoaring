@@ -240,8 +240,7 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
     const uint16_t hb = val >> 16;
     /*
-     * here it is possible to bypass the binary search and the ra_get_index
-     * call with the following call that might often come true
+     * the next function call involves a binary search and lots of branching.
      */
     int32_t i = ra_get_index(&r->high_low_container, hb);
     if (i < 0) return false;
@@ -250,7 +249,7 @@ inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
     // next call ought to be cheap
     void *container =
         ra_get_container_at_index(&r->high_low_container, i, &typecode);
-    // rest might be a tad expensive
+    // rest might be a tad expensive, possibly involving another round of binary search
     return container_contains(container, val & 0xFFFF, typecode);
 }
 
