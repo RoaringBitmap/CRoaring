@@ -13,9 +13,11 @@ if(SANITIZE)
 endif()
 
 ## -march=native is not supported on some platforms
-#if(NOT MSVC)
-#set(OPT_FLAGS "-march=native")
-#endif()
+if(NOT MSVC)
+if(NOT DISABLE_NATIVE)
+set(OPT_FLAGS "-march=native")
+endif()
+endif()
 
 if(DISABLE_X64)
   # we can manually disable any optimization for x64
