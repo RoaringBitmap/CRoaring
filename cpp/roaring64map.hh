@@ -477,16 +477,16 @@ class Roaring64Map {
        function returns true and set element to the element of given rank.
        Otherwise, it returns false.
      */
-    bool select(uint64_t rank, uint64_t *element) const {
+    bool select(uint64_t rnk, uint64_t *element) const {
         for (const auto &map_entry : roarings) {
             uint64_t sub_cardinality = (uint64_t)map_entry.second.cardinality();
-            if (rank < sub_cardinality) {
+            if (rnk < sub_cardinality) {
                 *element = ((uint64_t)map_entry.first) << 32;
                 // assuming little endian
-                return map_entry.second.select((uint32_t)rank,
+                return map_entry.second.select((uint32_t)rnk,
                                                ((uint32_t *)element));
             }
-            rank -= sub_cardinality;
+            rnk -= sub_cardinality;
         }
         return false;
     }
