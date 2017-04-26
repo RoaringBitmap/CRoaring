@@ -275,8 +275,8 @@ class Roaring {
      * this function returns true and set element to the element of given rank.
      *   Otherwise, it returns false.
      */
-    bool select(uint32_t rank, uint32_t *element) const {
-        return roaring_bitmap_select(&roaring, rank, element);
+    bool select(uint32_t rnk, uint32_t *element) const {
+        return roaring_bitmap_select(&roaring, rnk, element);
     }
     /**
      * Computes the size of the intersection between two bitmaps.

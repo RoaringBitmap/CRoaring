@@ -39,6 +39,36 @@ void is_really_empty() {
     roaring_bitmap_free(bm);
 }
 
+
+void can_copy_empty(bool copy_on_write) {
+    roaring_bitmap_t *bm1 = roaring_bitmap_create();
+    bm1->copy_on_write = copy_on_write;
+    roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
+    assert(roaring_bitmap_get_cardinality(bm1) == 0);
+    assert(roaring_bitmap_get_cardinality(bm2) == 0);
+    assert(roaring_bitmap_is_empty(bm1));
+    assert(roaring_bitmap_is_empty(bm2));
+    roaring_bitmap_add(bm1, 3);
+    roaring_bitmap_add(bm2, 5);
+    assert(roaring_bitmap_get_cardinality(bm1) == 1);
+    assert(roaring_bitmap_get_cardinality(bm2) == 1);
+    assert(roaring_bitmap_contains(bm1,3));
+    assert(roaring_bitmap_contains(bm2,5));
+    assert(!roaring_bitmap_contains(bm2,3));
+    assert(!roaring_bitmap_contains(bm1,5));
+    roaring_bitmap_free(bm1);
+    roaring_bitmap_free(bm2);
+}
+
+
+void can_copy_empty_true() {
+  can_copy_empty(true);
+}
+
+void can_copy_empty_false() {
+  can_copy_empty(false);
+}
+
 void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
     bm1->copy_on_write = copy_on_write;
@@ -2748,6 +2778,8 @@ void test_subset() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(can_copy_empty_true),
+        cmocka_unit_test(can_copy_empty_false),
         cmocka_unit_test(test_intersect_small_run_bitset),
         cmocka_unit_test(is_really_empty),
         cmocka_unit_test(test_rank),

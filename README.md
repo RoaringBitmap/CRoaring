@@ -10,6 +10,7 @@ Roaring bitmaps are compressed bitmaps which tend to outperform conventional com
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
 [Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [Whoosh][whoosh] and eBay's [Apache Kylin][kylin].
 
+
 [lucene]: https://lucene.apache.org/
 [solr]: https://lucene.apache.org/solr/
 [elasticsearch]: https://www.elastic.co/products/elasticsearch
@@ -19,6 +20,11 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 [kylin]: http://kylin.apache.org/
 [pinot]: http://github.com/linkedin/pinot/wiki
 [atlas]: https://github.com/Netflix/atlas
+
+Roaring bitmaps are found to work well in many important applications:
+
+> Use Roaring for bitmap compression whenever possible. Do not use other bitmap compression methods ([Wang et al., SIGMOD 2017](http://db.ucsd.edu/wp-content/uploads/2017/03/sidm338-wangA.pdf))
+
 
 There is a serialized format specification for interoperability between implementations: https://github.com/RoaringBitmap/RoaringFormatSpec/
 
@@ -413,6 +419,11 @@ To build with at least Visual Studio 2017 directly in the IDE:
 - Within Visual Studio use ``File > Open > Folder...`` to open the CRoaring folder.
 - Right click on CMakeLists.txt in the parent directory within ``Solution Explorer`` and select ``Build`` to build the project.
 - For testing, in the Standard toolbar, drop the ``Select Startup Item...`` menu and choose one of the tests. Run the test by pressing the button to the left of the dropdown.
+
+# Thread safety
+
+Life, for example, STL containers or Java's default data structures, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. It is safe however to query bitmaps (without modifying them) from several distinct threads,  as long as you do not use the copy-on-write attribute. For example, you can safely copy a bitmap and use both copies in concurrently. One should probably avoid the use of the copy-on-write attribute in a threaded environment.
+
 
 # Python Wrapper
 

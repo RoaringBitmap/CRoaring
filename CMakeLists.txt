@@ -12,9 +12,16 @@ set(ROARING_LIB_NAME roaring)
 
 option(DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
 option(DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
+
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
-SET(DISABLE_AVX OFF) # for ARM processors, there is no hope of having AVX support
+SET(DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
+SET(DISABLE_NATIVE ON) # ARM platforms may not like -march=native
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
+SET(DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
+SET(DISABLE_NATIVE ON) # ARM platforms may not like -march=native
+endif()
 
 option(BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 option(BUILD_LTO "Build library with Link Time Optimization" OFF)

@@ -12,8 +12,11 @@ if(SANITIZE)
   endif()
 endif()
 
+## -march=native is not supported on some platforms
 if(NOT MSVC)
+if(NOT DISABLE_NATIVE)
 set(OPT_FLAGS "-march=native")
+endif()
 endif()
 
 if(DISABLE_X64)
@@ -34,8 +37,9 @@ set(STD_FLAGS "-std=c11 -fPIC")
 set(CXXSTD_FLAGS "-std=c++11 -fPIC")
 endif()
 
-set(WARNING_FLAGS "-Wall -Wextra -Wsign-compare  -Wshadow  -Wwrite-strings  -Wpointer-arith -Winit-self ")
+set(WARNING_FLAGS "-Wall")
 if(NOT MSVC)
+set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
 set(CMAKE_C_FLAGS_DEBUG "-ggdb")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 endif()
