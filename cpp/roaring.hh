@@ -364,30 +364,11 @@ class Roaring {
      * sparse bitmaps).
      */
     static Roaring read(const char *buf, bool portable = true) {
-        if (!portable) {
-            if (*(const unsigned char *)buf == SERIALIZATION_ARRAY_UINT32) {
-                /* This looks like a compressed set of uint32_t elements */
-                uint32_t card;
-                memcpy(&card, buf + 1, sizeof(uint32_t));
-                const uint32_t *elems =
-                    (const uint32_t *)(buf + 1 + sizeof(uint32_t));
-
-                return Roaring((size_t)card, elems);
-            } else if (buf[0] == SERIALIZATION_CONTAINER) {
-                buf += 1;
-            } else
-                throw std::runtime_error(
-                    "bad serialization type designator in read input");
+        roaring_bitmap_t * r = portable ? roaring_bitmap_portable_deserialize(buf) : roaring_bitmap_deserialize(buf);
+        if (r == NULL) {
+            throw std::runtime_error("failed alloc while reading");
         }
-        {
-            Roaring ans;
-            bool is_ok =
-                ra_portable_deserialize(&ans.roaring.high_low_container, buf);
-            if (!is_ok) {
-                throw std::runtime_error("failed memory alloc while reading");
-            }
-            return ans;
-        }
+        return Roaring(r);
     }
 
     /**
