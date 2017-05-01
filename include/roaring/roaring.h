@@ -17,7 +17,11 @@ typedef struct roaring_bitmap_s {
     roaring_array_t high_low_container;
     bool copy_on_write; /* copy_on_write: whether you want to use copy-on-write
                          (saves memory and avoids
-                         copies but needs more care in a threaded context). */
+                         copies but needs more care in a threaded context).
+                         Most users should ignore this flag.
+                         Note: if you do turn this flag to 'true', enabling
+                         COW, then ensure that you do so for all of your bitmaps since
+                         interactions between bitmaps with and without COW is unsafe. */
 } roaring_bitmap_t;
 
 /**
