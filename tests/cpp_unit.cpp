@@ -376,6 +376,17 @@ void test_example_cpp_64(bool copy_on_write) {
         assert_int_equal(3, a.cardinality());
         assert_int_equal(0, b.cardinality());
     }
+
+    {
+        Roaring64Map a, b;
+        b.add(1u);
+        b.add(2u);
+        b.add(3u);
+
+        a = std::move(b);
+        assert_int_equal(3, a.cardinality());
+        assert_int_equal(0, b.cardinality());
+    }
 }
 
 void test_example_true(void **) { test_example(true); }

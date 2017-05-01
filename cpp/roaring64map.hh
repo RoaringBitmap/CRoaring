@@ -172,6 +172,16 @@ class Roaring64Map {
     }
 
     /**
+     * Moves the content of the provided bitmap, and
+     * discards the current content.
+     */
+    Roaring64Map &operator=(Roaring64Map &&r) {
+        roarings = std::move(r.roarings);
+        copyOnWrite = r.copyOnWrite;
+        return *this;
+    }
+
+    /**
      * Compute the intersection between the current bitmap and the provided
      * bitmap,
      * writing the result in the current bitmap. The provided bitmap is not
