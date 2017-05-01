@@ -40,12 +40,12 @@ class Roaring64Map {
     /**
      * Copy constructor
      */
-    Roaring64Map(const Roaring64Map &r) : roarings(r.roarings) {}
+    Roaring64Map(const Roaring64Map &r) = default;
 
     /**
      * Move constructor
      */
-    Roaring64Map(Roaring64Map &&r) : roarings(std::move(r.roarings)) {}
+    Roaring64Map(Roaring64Map &&r) = default;
 
     /**
      * Construct a 64-bit map from a 32-bit one

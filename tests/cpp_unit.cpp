@@ -250,12 +250,12 @@ void test_example_cpp(bool copy_on_write) {
         Roaring a;
 
         a = std::move(b);
-        assert_true(a.cardinality() == 2);
+        assert_int_equal(2, a.cardinality());
         assert_true(a.contains(10));
         assert_true(a.contains(20));
 
         // b should be destroyed without any errors
-        assert_true(b.cardinality() == 0);
+        assert_int_equal(0, b.cardinality());
     }
 }
 
@@ -365,6 +365,17 @@ void test_example_cpp_64(bool copy_on_write) {
         ++counter;
     }
     assert_true(counter == t.cardinality());
+
+    {
+        Roaring64Map b;
+        b.add(1u);
+        b.add(2u);
+        b.add(3u);
+
+        Roaring64Map a(std::move(b));
+        assert_int_equal(3, a.cardinality());
+        assert_int_equal(0, b.cardinality());
+    }
 }
 
 void test_example_true(void **) { test_example(true); }
