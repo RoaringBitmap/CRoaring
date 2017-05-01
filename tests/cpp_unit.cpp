@@ -257,6 +257,17 @@ void test_example_cpp(bool copy_on_write) {
         // b should be destroyed without any errors
         assert_int_equal(0, b.cardinality());
     }
+
+    // test toString
+    {
+        Roaring a;
+        a.add(1);
+        a.add(2);
+        a.add(3);
+        a.add(4);
+
+        assert_string_equal("{1,2,3,4}", a.toString().c_str());
+    }
 }
 
 void test_example_cpp_64(bool copy_on_write) {

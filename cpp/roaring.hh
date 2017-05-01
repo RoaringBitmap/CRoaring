@@ -509,8 +509,7 @@ class Roaring {
                         ((iter_data *)inner_iter_data)->first_char;
                     ((iter_data *)inner_iter_data)->str +=
                         std::to_string(value);
-                    if (((iter_data *)inner_iter_data)->first_char == '{')
-                        ((iter_data *)inner_iter_data)->first_char = ',';
+                    ((iter_data *)inner_iter_data)->first_char = ',';
                     return true;
                 },
                 (void *)&outer_iter_data);

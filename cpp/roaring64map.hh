@@ -673,8 +673,7 @@ class Roaring64Map {
                                 (long long unsigned)uniteBytes(
                                     ((iter_data *)inner_iter_data)->high_bits,
                                     low_bits));
-                    if (((iter_data *)inner_iter_data)->first_char == '{')
-                        ((iter_data *)inner_iter_data)->first_char = ',';
+                    ((iter_data *)inner_iter_data)->first_char = ',';
                     return true;
                 },
                 (void *)&outer_iter_data);
@@ -715,8 +714,7 @@ class Roaring64Map {
                     ((iter_data *)inner_iter_data)->str += std::to_string(
                         uniteBytes(((iter_data *)inner_iter_data)->high_bits,
                                    low_bits));
-                    if (((iter_data *)inner_iter_data)->first_char == '{')
-                        ((iter_data *)inner_iter_data)->first_char = ',';
+                    ((iter_data *)inner_iter_data)->first_char = ',';
                     return true;
                 },
                 (void *)&outer_iter_data);
