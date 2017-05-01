@@ -45,17 +45,19 @@ class Roaring {
         }
         roaring.copy_on_write = r.roaring.copy_on_write;
     }
+
     /**
-     * Move constructor
+     * Move constructor. The moved object remains valid, i.e.
+     * all methods can still be called on it.
      */
     Roaring(Roaring &&r) {
-        bool is_ok = ra_init(&roaring.high_low_container);
+        roaring = std::move(r.roaring);
+
+        // left the moved object in a valid state
+        bool is_ok = ra_init_with_capacity(&r.roaring.high_low_container, 1);
         if (!is_ok) {
             throw std::runtime_error("failed memory alloc in constructor");
         }
-        roaring.copy_on_write = false;
-        
-        std::swap(roaring, r.roaring);
     }
 
     /**
@@ -143,6 +145,22 @@ class Roaring {
             throw std::runtime_error("failed memory alloc in assignment");
         }
         roaring.copy_on_write = r.roaring.copy_on_write;
+        return *this;
+    }
+
+    /**
+     * Moves the content of the provided bitmap, and
+     * discard the current content.
+     */
+    Roaring &operator=(Roaring &&r) {
+        ra_clear(&roaring.high_low_container);
+
+        roaring = std::move(r.roaring);
+        bool is_ok = ra_init_with_capacity(&r.roaring.high_low_container, 1);
+        if (!is_ok) {
+            throw std::runtime_error("failed memory alloc in assignment");
+        }
+
         return *this;
     }
 
