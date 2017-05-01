@@ -47,6 +47,20 @@ class Roaring {
     }
 
     /**
+     * Move constructor. The moved object remains valid, i.e.
+     * all methods can still be called on it.
+     */
+    Roaring(Roaring &&r) {
+        roaring = std::move(r.roaring);
+
+        // left the moved object in a valid state
+        bool is_ok = ra_init_with_capacity(&r.roaring.high_low_container, 1);
+        if (!is_ok) {
+            throw std::runtime_error("failed memory alloc in constructor");
+        }
+    }
+
+    /**
      * Construct a roaring object from the C struct.
      *
      * Passing a NULL point is unsafe.
@@ -131,6 +145,22 @@ class Roaring {
             throw std::runtime_error("failed memory alloc in assignment");
         }
         roaring.copy_on_write = r.roaring.copy_on_write;
+        return *this;
+    }
+
+    /**
+     * Moves the content of the provided bitmap, and
+     * discard the current content.
+     */
+    Roaring &operator=(Roaring &&r) {
+        ra_clear(&roaring.high_low_container);
+
+        roaring = std::move(r.roaring);
+        bool is_ok = ra_init_with_capacity(&r.roaring.high_low_container, 1);
+        if (!is_ok) {
+            throw std::runtime_error("failed memory alloc in assignment");
+        }
+
         return *this;
     }
 
@@ -460,8 +490,7 @@ class Roaring {
                         ((iter_data *)inner_iter_data)->first_char;
                     ((iter_data *)inner_iter_data)->str +=
                         std::to_string(value);
-                    if (((iter_data *)inner_iter_data)->first_char == '{')
-                        ((iter_data *)inner_iter_data)->first_char = ',';
+                    ((iter_data *)inner_iter_data)->first_char = ',';
                     return true;
                 },
                 (void *)&outer_iter_data);

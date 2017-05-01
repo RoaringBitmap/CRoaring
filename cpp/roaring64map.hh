@@ -40,7 +40,12 @@ class Roaring64Map {
     /**
      * Copy constructor
      */
-    Roaring64Map(const Roaring64Map &r) : roarings(r.roarings) {}
+    Roaring64Map(const Roaring64Map &r) = default;
+
+    /**
+     * Move constructor
+     */
+    Roaring64Map(Roaring64Map &&r) = default;
 
     /**
      * Construct a 64-bit map from a 32-bit one
@@ -162,6 +167,16 @@ class Roaring64Map {
      */
     Roaring64Map &operator=(const Roaring64Map &r) {
         roarings = r.roarings;
+        copyOnWrite = r.copyOnWrite;
+        return *this;
+    }
+
+    /**
+     * Moves the content of the provided bitmap, and
+     * discards the current content.
+     */
+    Roaring64Map &operator=(Roaring64Map &&r) {
+        roarings = std::move(r.roarings);
         copyOnWrite = r.copyOnWrite;
         return *this;
     }
@@ -658,8 +673,7 @@ class Roaring64Map {
                                 (long long unsigned)uniteBytes(
                                     ((iter_data *)inner_iter_data)->high_bits,
                                     low_bits));
-                    if (((iter_data *)inner_iter_data)->first_char == '{')
-                        ((iter_data *)inner_iter_data)->first_char = ',';
+                    ((iter_data *)inner_iter_data)->first_char = ',';
                     return true;
                 },
                 (void *)&outer_iter_data);
@@ -700,8 +714,7 @@ class Roaring64Map {
                     ((iter_data *)inner_iter_data)->str += std::to_string(
                         uniteBytes(((iter_data *)inner_iter_data)->high_bits,
                                    low_bits));
-                    if (((iter_data *)inner_iter_data)->first_char == '{')
-                        ((iter_data *)inner_iter_data)->first_char = ',';
+                    ((iter_data *)inner_iter_data)->first_char = ',';
                     return true;
                 },
                 (void *)&outer_iter_data);
