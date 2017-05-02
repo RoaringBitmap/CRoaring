@@ -24,7 +24,7 @@
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
                                              uint32_t **numbers, size_t count,
-                                             bool copy_on_write) {
+                                             bool runoptimize, bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -32,6 +32,8 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
+        if(runoptimize) roaring_bitmap_run_optimize(answer[i]);
+        roaring_bitmap_shrink_to_fit(answer[i]);
         answer[i]->copy_on_write = copy_on_write;
     }
     printf("\n");
@@ -59,6 +61,7 @@ int main(int argc, char **argv) {
     int c;
     const char *extension = ".txt";
     bool copy_on_write = false;
+    bool runoptimize = true;
     while ((c = getopt(argc, argv, "e:h")) != -1) switch (c) {
             case 'e':
                 extension = optarg;
@@ -91,7 +94,7 @@ int main(int argc, char **argv) {
 
     RDTSC_START(cycles_start);
     roaring_bitmap_t **bitmaps =
-        create_all_bitmaps(howmany, numbers, count, copy_on_write);
+        create_all_bitmaps(howmany, numbers, count, runoptimize, copy_on_write);
     RDTSC_FINAL(cycles_final);
     if (bitmaps == NULL) return -1;
     printf("Loaded %d bitmaps from directory %s \n", (int)count, dirname);
