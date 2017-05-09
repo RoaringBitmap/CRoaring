@@ -299,7 +299,33 @@ static inline bool array_container_remove(array_container_t *arr,
 /* Check whether x is present.  */
 inline bool array_container_contains(const array_container_t *arr,
                                      uint16_t pos) {
-    return binarySearch(arr->array, arr->cardinality, pos) >= 0;
+//    return binarySearch(arr->array, arr->cardinality, pos) >= 0;
+    // binary search with fallback to linear search for short ranges
+    int32_t low = 0;
+    const uint16_t * carr = (const uint16_t *) arr->array;
+    int32_t high = arr->cardinality - 1;
+//    while (high - low >= 0) {
+while(high >= low + 16) {
+        int32_t middleIndex = (low + high)>>1;
+        uint16_t middleValue = carr[middleIndex];
+        if (middleValue < pos) {
+            low = middleIndex + 1;
+        } else if (middleValue > pos) {
+            high = middleIndex - 1;
+        } else {
+            return true;
+        }
+    }
+
+    for (int i=low; i <= high; i++) {
+        uint16_t v = carr[i];
+        if (v == pos) {
+            return true;
+        }
+        if ( v > pos ) return false;
+    }
+    return false;
+
 }
 
 /* Returns the smallest value (assumes not empty) */
