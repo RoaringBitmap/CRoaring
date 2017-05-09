@@ -41,11 +41,20 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
     free(ra->typecodes);
     return false;
 }*/
+
+    if ( new_capacity == 0 ) {
+      free(ra->containers);
+      ra->containers = NULL;
+      ra->keys = NULL;
+      ra->typecodes = NULL;
+      ra->allocation_size = (int32_t)new_capacity;
+      return true;
+    }
     const size_t memoryneeded =
         new_capacity * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
     void *bigalloc = malloc(memoryneeded);
-    void *oldbigalloc = ra->containers;
     if (!bigalloc) return false;
+    void *oldbigalloc = ra->containers;
     void **newcontainers = (void **)bigalloc;
     uint16_t *newkeys = (uint16_t *)(newcontainers + new_capacity);
     uint8_t *newtypecodes = (uint8_t *)(newkeys + new_capacity);
@@ -57,7 +66,6 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
     ra->containers = newcontainers;
     ra->keys = newkeys;
     ra->typecodes = newtypecodes;
-    ra->allocation_size = (int32_t)new_capacity;
     free(oldbigalloc);
     return true;
 }
@@ -69,20 +77,24 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
     new_ra->typecodes = NULL;
 
     new_ra->allocation_size = cap;
-    void *bigalloc =
-        malloc(cap * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t)));
-    new_ra->containers = (void **)bigalloc;
-    new_ra->keys = (uint16_t *)(new_ra->containers + cap);
-    new_ra->typecodes = (uint8_t *)(new_ra->keys + cap);
     new_ra->size = 0;
-
+    if(cap > 0) {
+      void *bigalloc =
+        malloc(cap * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t)));
+      if( bigalloc == NULL ) return false;
+      new_ra->containers = (void **)bigalloc;
+      new_ra->keys = (uint16_t *)(new_ra->containers + cap);
+      new_ra->typecodes = (uint8_t *)(new_ra->keys + cap);
+    }
     return true;
 }
 
 int ra_shrink_to_fit(roaring_array_t *ra) {
     int savings = (ra->allocation_size - ra->size) *
                   (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
-    realloc_array(ra, ra->size);  // assumes it succeeds
+    if (!realloc_array(ra, ra->size)) {
+      return 0;
+    }
     ra->allocation_size = ra->size;
     return savings;
 }

@@ -73,7 +73,9 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
     if ((run = (run_container_t *)malloc(sizeof(run_container_t))) == NULL) {
         return NULL;
     }
-    if ((run->runs = (rle16_t *)malloc(sizeof(rle16_t) * size)) == NULL) {
+    if (size <= 0 ) { // we don't want to rely on malloc(0)
+        run->runs = NULL;
+    } else if ((run->runs = (rle16_t *)malloc(sizeof(rle16_t) * size)) == NULL) {
         free(run);
         return NULL;
     }

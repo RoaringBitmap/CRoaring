@@ -30,7 +30,9 @@ array_container_t *array_container_create_given_capacity(int32_t size) {
         return NULL;
     }
 
-    if ((container->array = (uint16_t *)malloc(sizeof(uint16_t) * size)) ==
+    if( size <= 0 ) { // we don't want to rely on malloc(0)
+        container->array = NULL;
+    } else if ((container->array = (uint16_t *)malloc(sizeof(uint16_t) * size)) ==
         NULL) {
         free(container);
         return NULL;
@@ -65,10 +67,15 @@ int array_container_shrink_to_fit(array_container_t *src) {
     if (src->cardinality == src->capacity) return 0;  // nothing to do
     int savings = src->capacity - src->cardinality;
     src->capacity = src->cardinality;
-    uint16_t *oldarray = src->array;
-    src->array =
+    if( src->capacity == 0) { // we do not want to rely on realloc for zero allocs
+      free(src->array);
+      src->array = NULL;
+    } else {
+      uint16_t *oldarray = src->array;
+      src->array =
         (uint16_t *)realloc(oldarray, src->capacity * sizeof(uint16_t));
-    if (src->array == NULL) free(oldarray);  // should never happen?
+      if (src->array == NULL) free(oldarray);  // should never happen?
+    }
     return savings;
 }
 
