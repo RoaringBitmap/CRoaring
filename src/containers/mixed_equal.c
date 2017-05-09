@@ -32,18 +32,18 @@ bool run_container_equals_array(const run_container_t* container1,
         return false;
     int32_t pos = 0;
     for (int i = 0; i < container1->n_runs; ++i) {
-        uint32_t run_start = container1->runs[i].value;
-        uint32_t le = container1->runs[i].length;
+        const uint32_t run_start = container1->runs[i].value;
+        const uint32_t le = container1->runs[i].length;
 
-        for (uint32_t j = run_start; j <= run_start + le; ++j) {
-            if (pos >= container2->cardinality) {
-                return false;
-            }
-            if (container2->array[pos] != j) {
-                return false;
-            }
-            ++pos;
+        if (container2->array[pos] != run_start) {
+            return false;
         }
+
+        if (container2->array[pos + le] != run_start + le) {
+            return false;
+        }
+
+        pos += le + 1;
     }
     return (pos == container2->cardinality);
 }
