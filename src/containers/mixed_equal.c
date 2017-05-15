@@ -45,7 +45,7 @@ bool run_container_equals_array(const run_container_t* container1,
 
         pos += le + 1;
     }
-    return (pos == container2->cardinality);
+    return true;
 }
 
 bool run_container_equals_bitset(const run_container_t* container1,
