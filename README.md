@@ -442,6 +442,12 @@ There is a Go (golang) wrapper available at https://github.com/RoaringBitmap/goc
 
 Saulius Grigaliunas wrote a Rust wrapper available at https://github.com/saulius/croaring-rs
 
+
+# Redis Module
+
+Antonio Guilherme Ferreira Viggiano wrote a Redis Module available at https://github.com/aviggiano/redis-roaring
+
+
 # References and further reading
 
 -  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
