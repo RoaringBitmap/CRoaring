@@ -93,7 +93,6 @@ static roaring_pq_element_t pq_poll(roaring_pq_t *pq) {
 static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                                                   roaring_bitmap_t *x2) {
     uint8_t container_result_type = 0;
-    roaring_bitmap_t *answer = roaring_bitmap_create();
     const int length1 = ra_get_size(&x1->high_low_container),
               length2 = ra_get_size(&x2->high_low_container);
     if (0 == length1) {
@@ -104,6 +103,8 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         roaring_bitmap_free(x2);
         return x1;
     }
+    uint32_t neededcap = length1 > length2 ? length2 : length1;
+    roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
@@ -206,9 +207,12 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
         if (x1.is_temporary && x2.is_temporary) {
             roaring_bitmap_t *newb =
                 lazy_or_from_lazy_inputs(x1.bitmap, x2.bitmap);
+            // should normally return a fresh new bitmap *except* that
+            // it can return x1.bitmap or x2.bitmap in degenerate cases
+            bool temporary = !((newb == x1.bitmap) && (newb == x2.bitmap));
             uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
             roaring_pq_element_t newelement = {
-                .size = bsize, .is_temporary = true, .bitmap = newb};
+                .size = bsize, .is_temporary = temporary, .bitmap = newb};
             pq_add(pq, &newelement);
         } else if (x2.is_temporary) {
             roaring_bitmap_lazy_or_inplace(x2.bitmap, x1.bitmap, false);

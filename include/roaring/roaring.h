@@ -267,6 +267,12 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);
 */
 bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
 
+
+/**
+* Empties the bitmap
+*/
+void roaring_bitmap_clear(roaring_bitmap_t *ra);
+
 /**
  * Convert the bitmap to an array. Write the output to "ans",
  * caller is responsible to ensure that there is enough memory

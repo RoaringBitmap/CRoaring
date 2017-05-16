@@ -47,7 +47,7 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
       ra->containers = NULL;
       ra->keys = NULL;
       ra->typecodes = NULL;
-      ra->allocation_size = (int32_t)new_capacity;
+      ra->allocation_size = 0;
       return true;
     }
     const size_t memoryneeded =
@@ -181,6 +181,12 @@ void ra_clear_containers(roaring_array_t *ra) {
     for (int32_t i = 0; i < ra->size; ++i) {
         container_free(ra->containers[i], ra->typecodes[i]);
     }
+}
+
+void ra_reset(roaring_array_t *ra) {
+  ra_clear_containers(ra);
+  ra->size = 0;
+  ra_shrink_to_fit(ra);
 }
 
 void ra_clear_without_containers(roaring_array_t *ra) {

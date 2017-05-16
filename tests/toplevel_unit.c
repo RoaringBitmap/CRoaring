@@ -377,6 +377,25 @@ void test_addremoverun() {
     roaring_bitmap_free(bm);
 }
 
+void test_clear() {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    for (uint32_t value = 33057; value < 147849; value += 8) {
+        roaring_bitmap_add(bm, value);
+    }
+    roaring_bitmap_clear(bm);
+    assert_true(roaring_bitmap_is_empty(bm));
+    size_t expected_card = 0;
+    for (uint32_t value = 33057; value < 147849; value += 8) {
+        roaring_bitmap_add(bm, value);
+        expected_card ++;
+    }
+    assert_true(roaring_bitmap_get_cardinality(bm) == expected_card);
+    roaring_bitmap_clear(bm);
+    assert_true(roaring_bitmap_is_empty(bm));
+    roaring_bitmap_free(bm);
+}
+
+
 void test_remove_from_copies_true() { can_remove_from_copies(true); }
 
 void test_remove_from_copies_false() { can_remove_from_copies(false); }
@@ -2792,6 +2811,7 @@ void test_or_many_memory_leak() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_clear),
         cmocka_unit_test(can_copy_empty_true),
         cmocka_unit_test(can_copy_empty_false),
         cmocka_unit_test(test_intersect_small_run_bitset),

@@ -256,6 +256,12 @@ static inline void ra_unshare_container_at_index(roaring_array_t *ra,
  */
 void ra_remove_at_index(roaring_array_t *ra, int32_t i);
 
+
+/**
+* clears all containers, sets the size at 0 and shrinks the memory usage.
+*/
+void ra_reset(roaring_array_t *ra);
+
 /**
  * remove at index i, sliding over all entries after i. Free removed container.
  */

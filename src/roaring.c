@@ -298,6 +298,10 @@ void roaring_bitmap_free(roaring_bitmap_t *r) {
     free(r);
 }
 
+void roaring_bitmap_clear(roaring_bitmap_t *r) {
+  ra_reset(&r->high_low_container);
+}
+
 void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
     const uint16_t hb = val >> 16;
     const int i = ra_get_index(&r->high_low_container, hb);
@@ -886,9 +890,7 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_t *empty_bitmap = roaring_bitmap_create();
-        roaring_bitmap_overwrite(x1, empty_bitmap);
-        roaring_bitmap_free(empty_bitmap);
+        roaring_bitmap_clear(x1);
         return;
     }
 
@@ -1730,16 +1732,15 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container.size,
               length2 = x2->high_low_container.size;
-    roaring_bitmap_t *answer =
-        roaring_bitmap_create_with_capacity(length1 + length2);
-    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
     if (0 == length1) {
         return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
         return roaring_bitmap_copy(x1);
     }
-
+    roaring_bitmap_t *answer =
+        roaring_bitmap_create_with_capacity(length1 + length2);
+    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
