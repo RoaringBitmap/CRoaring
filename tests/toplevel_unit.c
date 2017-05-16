@@ -2776,6 +2776,20 @@ void test_subset() {
     roaring_bitmap_free(rb2);
 }
 
+void test_or_many_memory_leak() {
+    for(int i=0; i<10; i++) {
+        roaring_bitmap_t *bm1 = roaring_bitmap_create();
+        for(int j=0; j<10; j++) {
+            roaring_bitmap_t *bm2 = roaring_bitmap_create();
+            const roaring_bitmap_t *buff[] = {bm1, bm2};
+            roaring_bitmap_t *bm3 = roaring_bitmap_or_many(2, buff);
+            roaring_bitmap_free(bm2);
+            roaring_bitmap_free(bm3);
+        }
+        roaring_bitmap_free(bm1);
+    }
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(can_copy_empty_true),
@@ -2858,6 +2872,7 @@ int main() {
         cmocka_unit_test(test_flip_run_container_removal2),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_subset),
+        cmocka_unit_test(test_or_many_memory_leak),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
     };

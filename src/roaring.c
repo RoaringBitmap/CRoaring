@@ -1546,15 +1546,15 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
     uint8_t container_result_type = 0;
     const int length1 = x1->high_low_container.size,
               length2 = x2->high_low_container.size;
-    roaring_bitmap_t *answer =
-        roaring_bitmap_create_with_capacity(length1 + length2);
-    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
     if (0 == length1) {
         return roaring_bitmap_copy(x2);
     }
     if (0 == length2) {
         return roaring_bitmap_copy(x1);
     }
+    roaring_bitmap_t *answer =
+        roaring_bitmap_create_with_capacity(length1 + length2);
+    answer->copy_on_write = x1->copy_on_write && x2->copy_on_write;
     int pos1 = 0, pos2 = 0;
     uint8_t container_type_1, container_type_2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
