@@ -22,7 +22,7 @@ pipe = subprocess.Popen(["git", "rev-parse", "--abbrev-ref", "HEAD"], stdout=sub
 branchresult = pipe.communicate()[0].decode().strip()
 
 if(branchresult != "master"):
-    print(("release on master, you are on '"+branchresult+"'"))
+    print("release on master, you are on '"+branchresult+"'")
     sys.exit(-1)
 
 
@@ -44,21 +44,21 @@ pipe = subprocess.Popen(["git", "rev-parse", "--show-toplevel"], stdout=subproce
 maindir = pipe.communicate()[0].decode().strip()
 
 
-print(("repository: "+maindir))
+print("repository: "+maindir)
 
 pipe = subprocess.Popen(["git", "describe", "--abbrev=0", "--tags"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 versionresult = pipe.communicate()[0].decode().strip()
 
-print(("last version: "+versionresult ))
+print("last version: "+versionresult )
 currentv = extractnumbers(versionresult)
 if(len(sys.argv) != 2):
     nextv = (currentv[0],currentv[1], currentv[2]+1)
-    print(("please specify version number, e.g. "+toversionstring(*nextv)))
+    print("please specify version number, e.g. "+toversionstring(*nextv))
     sys.exit(-1)
 try:
     newversion = extractnumbers(sys.argv[1])
 except:
-    print(("can't parse version number "+sys.argv[1]))
+    print("can't parse version number "+sys.argv[1])
     sys.exit(-1)
 
 print("checking that new version is valid")
@@ -91,11 +91,11 @@ with open(versionfile, 'w') as file:
     file.write("#endif // ROARING_INCLUDE_ROARING_VERSION \n")
 
 
-print((versionfile + " modified"))
+print(versionfile + " modified")
 
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 
-print(("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n"))
-print(("to issue release, enter \n git commit -a \n git push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n"))
+print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
+print("to issue release, enter \n git commit -a \n git push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
 
