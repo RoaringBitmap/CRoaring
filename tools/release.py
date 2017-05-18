@@ -53,7 +53,7 @@ print("last version: "+versionresult )
 currentv = extractnumbers(versionresult)
 if(len(sys.argv) != 2):
     nextv = (currentv[0],currentv[1], currentv[2]+1)
-    print ("please specify version number, e.g. "+toversionstring(*nextv))
+    print("please specify version number, e.g. "+toversionstring(*nextv))
     sys.exit(-1)
 try:
     newversion = extractnumbers(sys.argv[1])
