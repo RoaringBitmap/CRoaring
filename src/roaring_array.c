@@ -105,7 +105,7 @@ bool ra_init(roaring_array_t *t) {
 
 bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
              bool copy_on_write) {
-    if (!ra_init_with_capacity(dest, source->size)) return false;
+    if (!ra_init_with_capacity(dest, source->allocation_size)) return false;
     dest->size = source->size;
     dest->allocation_size = source->size;
     memcpy(dest->keys, source->keys, dest->size * sizeof(uint16_t));
