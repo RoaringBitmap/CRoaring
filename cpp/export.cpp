@@ -3,10 +3,8 @@
 #pragma managed
 
 #include <msclr\marshal.h>
-#include <msclr\lock.h>
 
 using namespace System;
-using namespace System::Collections::Generic;
 
 namespace RoaringCLI {
 	public ref class Roar
@@ -132,3 +130,5 @@ namespace RoaringCLI {
 		}
 	};
 };
+
+#pragma unmanaged
