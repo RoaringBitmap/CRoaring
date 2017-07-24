@@ -120,9 +120,10 @@ namespace RoaringCLI {
 		virtual size_t __clrcall write(array<Byte>^ Data, bool portable) sealed {
 			pin_ptr<Byte> buf = &Data[0];
 			
-			return r64->write((char *)buf, portable);
+			size_t rv = r64->write((char *)buf, portable);
 
 			buf = nullptr;
+			return rv;
 		}
 
 		virtual size_t __clrcall range(size_t x) sealed {
