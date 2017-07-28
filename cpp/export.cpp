@@ -1,4 +1,3 @@
-#define WIN32_LEAN_AND_MEAN
 #include "roaring64map.hh"
 #pragma managed
 
