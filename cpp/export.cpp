@@ -23,7 +23,6 @@ namespace RoaringCLI {
 
 		__clrcall Roar(Roaring64Map& other) {
 			r64 = new Roaring64Map(other);
-			other.getSizeInBytes();
 		}
 
 		__clrcall ~Roar() { this->!Roar(); }
