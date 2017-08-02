@@ -17,6 +17,8 @@ namespace RoaringTestSharp
 
         static void Main(string[] args)
         {
+            var perf = new BigPerf();
+
             var test = new RoaringCLITest();
             test.Add();
             test.CPP(true);
