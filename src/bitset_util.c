@@ -23,7 +23,8 @@ static uint8_t lengthTable[256] = {
 #endif
 
 #ifdef USEAVX
-static uint32_t vecDecodeTable[256][8] ALIGNED(32) = {
+ALIGNED(32)
+static uint32_t vecDecodeTable[256][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
     {1, 0, 0, 0, 0, 0, 0, 0}, /* 0x01 (00000001) */
     {2, 0, 0, 0, 0, 0, 0, 0}, /* 0x02 (00000010) */
