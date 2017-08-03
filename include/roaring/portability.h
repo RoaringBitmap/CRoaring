@@ -44,7 +44,7 @@
                      // an x64 processor
 
 // MSVC doesn't define AVX2 and BMI2 
-#if _MSC_VER > 1800 & defined(_M_X64)
+#if _MSC_VER > 1800 && defined(_M_X64)
 #define __AVX2__
 #define __BMI2__
 #endif
