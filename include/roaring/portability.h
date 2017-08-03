@@ -38,14 +38,17 @@
 
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
-#if _MSC_VER > 1800
-#define __AVX2__
-#define __BMI2__
-#endif
 #endif
 
 #ifndef DISABLE_X64  // some users may want to compile as if they did not have
                      // an x64 processor
+
+#if defined(_MSC_VER)
+#if _MSC_VER > 1800 & defined(_M_X64)
+#define __AVX2__
+#define __BMI2__
+#endif
+#endif
 
 // unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
 #if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && \
