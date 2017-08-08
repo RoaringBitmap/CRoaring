@@ -29,7 +29,11 @@ if(DISABLE_AVX)
 endif()
 
 if(FORCE_AVX) # some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
+if(NOT MSVC)
    set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi2")
+else()
+   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2")
+endif()
 endif()
 
 if(NOT MSVC)
