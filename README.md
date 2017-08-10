@@ -8,17 +8,20 @@ Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortu
 
 Roaring bitmaps are compressed bitmaps which tend to outperform conventional compressed bitmaps such as WAH, EWAH or Concise.
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
-[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [Whoosh][whoosh],  [Pilosa](https://www.pilosa.com/) and eBay's [Apache Kylin][kylin].
-
+[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [OpenSearchServer][opensearchserver], [Cloud Torrent][cloudtorrent], [Whoosh][whoosh],  [Pilosa][pilosa],  [Microsoft Visual Studio Team Services (VSTS)][vsts], and eBay's [Apache Kylin][kylin].
 
 [lucene]: https://lucene.apache.org/
 [solr]: https://lucene.apache.org/solr/
 [elasticsearch]: https://www.elastic.co/products/elasticsearch
 [druid]: http://druid.io/
 [spark]: https://spark.apache.org/
+[opensearchserver]: http://www.opensearchserver.com
+[cloudtorrent]: https://github.com/jpillora/cloud-torrent
 [whoosh]: https://bitbucket.org/mchaput/whoosh/wiki/Home
+[pilosa]: https://www.pilosa.com/
 [kylin]: http://kylin.apache.org/
 [pinot]: http://github.com/linkedin/pinot/wiki
+[vsts]: https://www.visualstudio.com/team-services/
 [atlas]: https://github.com/Netflix/atlas
 
 Roaring bitmaps are found to work well in many important applications:
