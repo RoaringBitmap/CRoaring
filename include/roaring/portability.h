@@ -27,6 +27,7 @@
 #include <malloc.h>  // this should never be needed but there are some reports that it is needed.
 #endif
 
+
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64)
 #pragma message( \
     "You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
@@ -43,14 +44,13 @@
 #ifndef DISABLE_X64  // some users may want to compile as if they did not have
                      // an x64 processor
 
-// unless DISABLEAVX was defined, if we have AVX2 and BMI2, we enable AVX
-#if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__)) && \
-    (defined(__BMI2__))
+// unless DISABLEAVX was defined, if we have __AVX2__, we enable AVX
+#if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__))
 #define USEAVX
 #endif
 
-// if USEAVX was somehow defined and we lack either AVX2 or BMI2, we disable it
-#if defined(USEAVX) && ((!defined(__AVX2__)) || (!defined(__BMI2__)))
+// if USEAVX was somehow defined and we lack __AVX2__, we disable it
+#if defined(USEAVX) && ((!defined(__AVX2__)))
 #undef USEAVX
 #endif
 
@@ -70,7 +70,6 @@
 #define ROARING_INLINE_ASM
 #endif
 
-// if we have AVX, then we use BMI optimizations
 #ifdef USEAVX
 #define USE_BMI             // we assume that AVX2 and BMI go hand and hand
 #define USEAVX2FORDECODING  // optimization
