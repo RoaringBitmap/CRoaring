@@ -60,14 +60,15 @@ static uint32_t *read_integer_file(char *filename, size_t *howmany) {
     if (buffer == NULL) return NULL;
 
     size_t howmanyints = 1;
-    for (int i = 0; buffer[i] != '\0'; i++) {
-        if (buffer[i] == ',') ++howmanyints;
+    size_t i1 = 0;
+    for (; buffer[i1] != '\0'; i1++) {
+        if (buffer[i1] == ',') ++howmanyints;
     }
 
     uint32_t *answer = (uint32_t *)malloc(howmanyints * sizeof(uint32_t));
     if (answer == NULL) return NULL;
     size_t pos = 0;
-    for (int i = 0; buffer[i] != '\0'; i++) {
+    for (size_t i = 0; (i < i1) && (buffer[i] != '\0'); i++) {
         uint32_t currentint;
         while ((buffer[i] < '0') || (buffer[i] > '9')) {
             i++;
