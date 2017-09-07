@@ -7,7 +7,12 @@
 #include <roaring/portability.h>
 
 /*
- *  good old binary search
+ *  Good old binary search.
+ *  Assumes that array is sorted, has logarithmic complexity.
+ *  if the result is x, then:
+ *     if ( x>0 )  you have array[x] = ikey
+ *     if ( x<0 ) then inserting ikey at position -x-1 in array (insuring that array[-x-1]=ikey)
+ *                   keys the array sorted.
  */
 inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                             uint16_t ikey) {
@@ -29,6 +34,10 @@ inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
 
 /**
  * Galloping search
+ * Assumes that array is sorted, has logarithmic complexity.
+ * if the result is x, then if x = length, you have that all values in array between pos and length
+ *    are smaller than min.
+ * otherwise returns the first index x such that array[x] >= min.
  */
 static inline int32_t advanceUntil(const uint16_t *array, int32_t pos,
                                    int32_t length, uint16_t min) {

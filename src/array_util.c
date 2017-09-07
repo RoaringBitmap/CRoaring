@@ -641,6 +641,12 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
 
 #endif  // IS_X64
 
+
+
+#ifdef USE_OLD_SKEW_INTERSECT
+// TODO: given enough experience with the new skew intersect, drop the old one from the code base.
+
+
 /* Computes the intersection between one small and one large set of uint16_t.
  * Stores the result into buffer and return the number of elements. */
 int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
@@ -676,7 +682,131 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
 
     return (int32_t)pos;
 }
+#else // USE_OLD_SKEW_INTERSECT
 
+
+/**
+* Branchless binary search going after 4 values at once.
+* Assumes that array is sorted.
+* You have that array[*index1] >= target1, array[*index12] >= target2, ...
+* except when *index1 = n, in which case you know that all values in array are
+* smaller than target1, and so forth.
+* It has logarithmic complexity.
+*/
+static void binarySearch4(const uint16_t *array, int32_t n, uint16_t target1,
+                   uint16_t target2, uint16_t target3, uint16_t target4,
+                   int32_t *index1, int32_t *index2, int32_t *index3,
+                   int32_t *index4) {
+  const uint16_t *base1 = array;
+  const uint16_t *base2 = array;
+  const uint16_t *base3 = array;
+  const uint16_t *base4 = array;
+  if (n == 0)
+    return;
+  while (n > 1) {
+    int32_t half = n >> 1;
+    base1 = (base1[half] < target1) ? &base1[half] : base1;
+    base2 = (base2[half] < target2) ? &base2[half] : base2;
+    base3 = (base3[half] < target3) ? &base3[half] : base3;
+    base4 = (base4[half] < target4) ? &base4[half] : base4;
+    n -= half;
+  }
+  *index1 = (*base1 < target1) + base1 - array;
+  *index2 = (*base2 < target2) + base2 - array;
+  *index3 = (*base3 < target3) + base3 - array;
+  *index4 = (*base4 < target4) + base4 - array;
+}
+
+/**
+* Branchless binary search going after 2 values at once.
+* Assumes that array is sorted.
+* You have that array[*index1] >= target1, array[*index12] >= target2.
+* except when *index1 = n, in which case you know that all values in array are
+* smaller than target1, and so forth.
+* It has logarithmic complexity.
+*/
+static void binarySearch2(const uint16_t *array, int32_t n, uint16_t target1,
+                   uint16_t target2, int32_t *index1, int32_t *index2) {
+  const uint16_t *base1 = array;
+  const uint16_t *base2 = array;
+  if (n == 0)
+    return;
+  while (n > 1) {
+    int32_t half = n >> 1;
+    base1 = (base1[half] < target1) ? &base1[half] : base1;
+    base2 = (base2[half] < target2) ? &base2[half] : base2;
+    n -= half;
+  }
+  *index1 = (*base1 < target1) + base1 - array;
+  *index2 = (*base2 < target2) + base2 - array;
+}
+
+/* Computes the intersection between one small and one large set of uint16_t.
+ * Stores the result into buffer and return the number of elements.
+ * Processes the small set in blocks of 4 values calling binarySearch4
+ * and binarySearch2. This approach can be slightly superior to a conventional
+ * galloping search in some instances.
+ */
+int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
+                                         const uint16_t *large, size_t size_l,
+                                         uint16_t *buffer) {
+  size_t pos = 0, idx_l = 0, idx_s = 0;
+
+  if (0 == size_s) {
+    return 0;
+  }
+  while ((idx_s + 4 <= size_s) && (idx_l < size_l)) {
+    int32_t index1, index2, index3, index4;
+    uint16_t target1 = small[idx_s];
+    uint16_t target2 = small[idx_s + 1];
+    uint16_t target3 = small[idx_s + 2];
+    uint16_t target4 = small[idx_s + 3];
+    binarySearch4(large + idx_l, size_l - idx_l, target1, target2, target3,
+                  target4, &index1, &index2, &index3, &index4);
+    if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
+      buffer[pos++] = target1;
+    }
+    if ((index2 + idx_l < size_l) && (large[idx_l + index2] == target2)) {
+      buffer[pos++] = target2;
+    }
+    if ((index3 + idx_l < size_l) && (large[idx_l + index3] == target3)) {
+      buffer[pos++] = target3;
+    }
+    if ((index4 + idx_l < size_l) && (large[idx_l + index4] == target4)) {
+      buffer[pos++] = target4;
+    }
+    idx_s += 4;
+    idx_l += index1;
+  }
+  if ((idx_s + 2 <= size_s) && (idx_l < size_l)) {
+    int32_t index1, index2;
+    uint16_t target1 = small[idx_s];
+    uint16_t target2 = small[idx_s + 1];
+    binarySearch2(large + idx_l, size_l - idx_l, target1, target2, &index1,
+                  &index2);
+    if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
+      buffer[pos++] = target1;
+    }
+    if ((index2 + idx_l < size_l) && (large[idx_l + index2] == target2)) {
+      buffer[pos++] = target2;
+    }
+    idx_s += 2;
+    idx_l += index1;
+  }
+  if ((idx_s < size_s) && (idx_l < size_l)) {
+    uint16_t val_s = small[idx_s];
+    int32_t index = binarySearch(large + idx_l, size_l - idx_l, val_s);
+    if (index >= 0)
+      buffer[pos++] = val_s;
+  }
+  return (int32_t)pos;
+}
+
+
+#endif //USE_OLD_SKEW_INTERSECT
+
+
+// TODO: this could be accelerated, possibly, by using binarySearch4 as above.
 int32_t intersect_skewed_uint16_cardinality(const uint16_t *small,
                                             size_t size_s,
                                             const uint16_t *large,
