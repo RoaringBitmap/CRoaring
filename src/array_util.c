@@ -755,8 +755,8 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
   if (0 == size_s) {
     return 0;
   }
+  int32_t index1 = 0, index2 = 0, index3 = 0, index4 = 0;
   while ((idx_s + 4 <= size_s) && (idx_l < size_l)) {
-    int32_t index1, index2, index3, index4;
     uint16_t target1 = small[idx_s];
     uint16_t target2 = small[idx_s + 1];
     uint16_t target3 = small[idx_s + 2];
@@ -779,7 +779,6 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
     idx_l += index1;
   }
   if ((idx_s + 2 <= size_s) && (idx_l < size_l)) {
-    int32_t index1, index2;
     uint16_t target1 = small[idx_s];
     uint16_t target2 = small[idx_s + 1];
     binarySearch2(large + idx_l, size_l - idx_l, target1, target2, &index1,
