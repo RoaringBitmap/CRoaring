@@ -399,7 +399,13 @@ void run_container_smart_append_exclusive(run_container_t *src,
                                           const uint16_t start,
                                           const uint16_t length);
 
-/* The new container consists of a single run. Returns NULL on failure */
+/**
+* The new container consists of a single run [start,stop). 
+* It is required that stop>start, the caller is responsability for this check.
+* It is required that stop <= (1<<16), the caller is responsability for this check.
+* The cardinality of the created container is stop - start.
+* Returns NULL on failure 
+*/
 static inline run_container_t *run_container_create_range(uint32_t start,
                                                           uint32_t stop) {
     run_container_t *rc = run_container_create_given_capacity(1);
