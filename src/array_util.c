@@ -11,8 +11,7 @@
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                                    uint16_t ikey);
 
-#ifdef IS_X64
-
+#ifdef USESSE4
 // used by intersect_vector16
 ALIGNED(0x1000)
 static const uint8_t shuffle_mask16[] = {
@@ -639,7 +638,7 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
     return count;
 }
 
-#endif  // IS_X64
+#endif  // USESSE4
 
 
 
@@ -1129,7 +1128,7 @@ int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
     return pos_out;
 }
 
-#if defined(IS_X64)
+#ifdef USESSE4
 
 /***
  * start of the SIMD 16-bit union code
@@ -1776,7 +1775,7 @@ uint32_t xor_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
  * End of SIMD 16-bit XOR code
  */
 
-#endif  // IS_X64
+#endif  // USESSE4
 
 size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
                     size_t size_2, uint32_t *buffer) {

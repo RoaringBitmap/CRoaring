@@ -44,14 +44,31 @@
 #ifndef DISABLE_X64  // some users may want to compile as if they did not have
                      // an x64 processor
 
+///////////////////////
+/// We support X64 hardware in the following manner:
+///
+/// if IS_X64 is defined then we have at least SSE and SSE2
+/// (All Intel processors sold in the recent past have at least SSE and SSE2 support, 
+/// going back to the Pentium 4.)
+///
+/// if USESSE4 is defined then we assume at least SSE4.2, SSE4.1,
+///                   SSSE3, SSE3... + IS_X64
+/// if USEAVX is defined, then we assume AVX2, AVX + USESSE4
+///
+/// So if you have hardware that supports AVX but not AVX2, then "USEAVX"
+/// won't be enabled.
+/// If you have hardware that supports SSE4.1, but not SSE4.2, then USESSE4
+/// won't be defined.
+//////////////////////
+
 // unless DISABLEAVX was defined, if we have __AVX2__, we enable AVX
 #if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__))
 #define USEAVX
 #endif
 
-// if USEAVX was somehow defined and we lack __AVX2__, we disable it
-#if defined(USEAVX) && ((!defined(__AVX2__)))
-#undef USEAVX
+// if we have __SSE4_2__, we enable SSE4
+#if (defined(__POPCNT__)) && (defined(__SSE4_2__))
+#define USESSE4
 #endif
 
 #if defined(USEAVX) || defined(__x86_64__) || defined(_M_X64)
@@ -71,6 +88,7 @@
 #endif
 
 #ifdef USEAVX
+#define USESSE4             // if we have AVX, then we have SSE4
 #define USE_BMI             // we assume that AVX2 and BMI go hand and hand
 #define USEAVX2FORDECODING  // optimization
 // vector operations should work on not just AVX
@@ -183,7 +201,7 @@ static inline void aligned_free(void *memblock) {
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
 static inline int hamming(uint64_t x) {
-#if defined(IS_X64) && defined(__POPCNT__)
+#ifdef USESSE4
     return _mm_popcnt_u64(x);
 #else
     // won't work under visual studio, but hopeful we have _mm_popcnt_u64 in
