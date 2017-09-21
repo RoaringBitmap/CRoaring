@@ -42,20 +42,20 @@ if [ "$PROCESSOR" == "x86_64" ]; then
   for flag in "-DDISABLE_X64" "-mno-sse3" "-mno-ssse3" "-mno-sse4.1" "-mno-sse4.2" "-mno-avx" "-mno-avx2" ; do 
      echo $flag
      echo "Can build in debug mode (C)"
-     cc $flag -ggdb -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo
+     cc $flag -ggdb -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo && rm ./amalgamation_demo
      echo "Can build in debug mode (C++)"
-     c++ $flag -ggdb -std=c++11 -o amalgamation_demo amalgamation_demo.cpp  && ./amalgamation_demo
+     c++ $flag -ggdb -std=c++11 -o amalgamation_demo amalgamation_demo.cpp  && ./amalgamation_demo && rm ./amalgamation_demo
      echo "Can build in release mode (C)"
-     cc $flag  -O2 -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo
+     cc $flag  -O2 -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo && rm ./amalgamation_demo
      echo "Can build in release mode (C++)"
-     c++ $flag -O2 -std=c++11 -o amalgamation_demo amalgamation_demo.cpp  && ./amalgamation_demo
+     c++ $flag -O2 -std=c++11 -o amalgamation_demo amalgamation_demo.cpp  && ./amalgamation_demo && rm ./amalgamation_demo
    done
 fi
 
 
 echo "testing amalgamate (debug/native)"
-cc -march=native -ggdb -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo
-c++ -march=native -ggdb -std=c++11 -o amalgamation_demo amalgamation_demo.cpp  && ./amalgamation_demo
+cc -march=native -ggdb -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo && rm ./amalgamation_demo
+c++ -march=native -ggdb -std=c++11 -o amalgamation_demo amalgamation_demo.cpp  && ./amalgamation_demo && rm ./amalgamation_demo
 
 echo "testing amalgamate (release/native)"
 cc -march=native -O3 -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo
