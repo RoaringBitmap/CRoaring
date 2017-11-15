@@ -385,13 +385,14 @@ class Roaring {
 
     /**
      * read a bitmap from a serialized version. This is meant to be compatible
-     * with
-     * the
-     * Java and Go versions.
+     * with the Java and Go versions.
      *
      * Setting the portable flag to false enable a custom format that
      * can save space compared to the portable format (e.g., for very
      * sparse bitmaps).
+     *
+     * This function is unsafe in the sense that if you provide bad data,
+     * many, many bytes could be read. See also readSafe.
      */
     static Roaring read(const char *buf, bool portable = true) {
         roaring_bitmap_t * r = portable ? roaring_bitmap_portable_deserialize(buf) : roaring_bitmap_deserialize(buf);
@@ -400,7 +401,18 @@ class Roaring {
         }
         return Roaring(r);
     }
-
+    /**
+     * read a bitmap from a serialized version, reading no more than maxbytes bytes.
+     * This is meant to be compatible with the Java and Go versions.
+     *
+     */
+    static Roaring readSafe(const char *buf, size_t maxbytes) {
+        roaring_bitmap_t * r = roaring_bitmap_portable_deserialize_safe(buf,maxbytes);
+        if (r == NULL) {
+            throw std::runtime_error("failed alloc while reading");
+        }
+        return Roaring(r);
+    }
     /**
      * How many bytes are required to serialize this bitmap (meant to be
      * compatible

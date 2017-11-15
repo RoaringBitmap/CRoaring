@@ -241,6 +241,13 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
     assert_true(roaring_bitmap_equals(r1, t));
     roaring_bitmap_free(t);
+     // we can also check whether there is a bitmap at a memory location without reading it
+    size_t sizeofbitmap = roaring_bitmap_portable_deserialize_size(serializedbytes,expectedsize);
+    assert(sizeofbitmap == expectedsize);  // sizeofbitmap would be zero if no bitmap were found
+    // we can also read the bitmap "safely" by specifying a byte size limit:
+    t = roaring_bitmap_portable_deserialize_safe(serializedbytes,expectedsize);
+    assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
+    roaring_bitmap_free(t);
     free(serializedbytes);
 
     // we can iterate over all values using custom functions
@@ -2811,6 +2818,8 @@ void test_or_many_memory_leak() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_example_true),
+        cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_clear),
         cmocka_unit_test(can_copy_empty_true),
         cmocka_unit_test(can_copy_empty_false),
@@ -2827,8 +2836,6 @@ int main() {
         cmocka_unit_test(test_remove_from_copies_false),
         cmocka_unit_test(test_range_and_serialize),
         cmocka_unit_test(test_silly_range),
-        cmocka_unit_test(test_example_true),
-        cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_uint32_iterator),
         cmocka_unit_test(leaks_with_empty_true),
         cmocka_unit_test(leaks_with_empty_false),

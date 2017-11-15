@@ -1075,13 +1075,16 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra) {
     return ra_portable_size_in_bytes(&ra->high_low_container);
 }
 
-roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
+
+roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes) {
     roaring_bitmap_t *ans =
         (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
     if (ans == NULL) {
         return NULL;
     }
-    bool is_ok = ra_portable_deserialize(&ans->high_low_container, buf);
+    size_t bytesread;
+    bool is_ok = ra_portable_deserialize(&ans->high_low_container, buf, maxbytes, &bytesread);
+    assert(bytesread <= maxbytes);// sanity check
     ans->copy_on_write = false;
     if (!is_ok) {
         roaring_bitmap_free(ans);
@@ -1089,6 +1092,16 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
     }
     return ans;
 }
+
+roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf) {
+    return roaring_bitmap_portable_deserialize_safe(buf, SIZE_MAX);
+}
+
+
+size_t roaring_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes) {
+  return ra_portable_deserialize_size(buf, maxbytes);
+}
+
 
 size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra,
                                          char *buf) {

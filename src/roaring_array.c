@@ -548,7 +548,101 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
     return buf - initbuf;
 }
 
-bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
+// Quickly checks whether there is a serialized bitmap at the pointer,
+// not exceeding size "maxbytes" in bytes. This function does not allocate
+// memory dynamically.
+//
+// This function returns 0 if and only if no valid bitmap is found.
+// Otherwise, it returns how many bytes are occupied.
+//
+size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes) {
+    size_t bytestotal = sizeof(int32_t);// for cookie
+    if(bytestotal > maxbytes) return 0;
+    uint32_t cookie;
+    memcpy(&cookie, buf, sizeof(int32_t));
+    buf += sizeof(uint32_t);
+    if ((cookie & 0xFFFF) != SERIAL_COOKIE &&
+        cookie != SERIAL_COOKIE_NO_RUNCONTAINER) {
+        return 0;
+    }
+    int32_t size;
+
+    if ((cookie & 0xFFFF) == SERIAL_COOKIE)
+        size = (cookie >> 16) + 1;
+    else {
+        bytestotal += sizeof(int32_t);
+        if(bytestotal > maxbytes) return 0;
+        memcpy(&size, buf, sizeof(int32_t));
+        buf += sizeof(uint32_t);
+    }
+    char *bitmapOfRunContainers = NULL;
+    bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
+    if (hasrun) {
+        int32_t s = (size + 7) / 8;
+        bytestotal += s;
+        if(bytestotal > maxbytes) return 0;
+        bitmapOfRunContainers = (char *)buf;
+        buf += s;
+    }
+    bytestotal += size * 2 * sizeof(uint16_t);
+    if(bytestotal > maxbytes) return 0;
+    uint16_t *keyscards = (uint16_t *)buf;
+    buf += size * 2 * sizeof(uint16_t);
+    if ((!hasrun) || (size >= NO_OFFSET_THRESHOLD)) {
+        // skipping the offsets
+        bytestotal += size * 4;
+        if(bytestotal > maxbytes) return 0;
+        buf += size * 4;
+    }
+    // Reading the containers
+    for (int32_t k = 0; k < size; ++k) {
+        uint16_t tmp;
+        memcpy(&tmp, keyscards + 2*k+1, sizeof(tmp));
+        uint32_t thiscard = tmp + 1;
+        bool isbitmap = (thiscard > DEFAULT_MAX_SIZE);
+        bool isrun = false;
+        if(hasrun) {
+          if((bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0) {
+            isbitmap = false;
+            isrun = true;
+          }
+        }
+        if (isbitmap) {
+            size_t containersize = BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+            bytestotal += containersize;
+            if(bytestotal > maxbytes) return 0;
+            buf += containersize;
+        } else if (bitmapOfRunContainers != NULL &&
+                   ((bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0)) {
+            bytestotal += sizeof(uint16_t);
+            if(bytestotal > maxbytes) return 0;
+            uint16_t n_runs;
+            memcpy(&n_runs, buf, sizeof(uint16_t));
+            buf += sizeof(uint16_t);
+            size_t containersize = n_runs * sizeof(rle16_t);
+            bytestotal += containersize;
+            if(bytestotal > maxbytes) return 0;
+            buf += containersize;
+        } else {
+            size_t containersize = thiscard * sizeof(uint16_t);
+            bytestotal += containersize;
+            if(bytestotal > maxbytes) return 0;
+            buf += containersize;
+        }
+    }
+    return bytestotal;
+}
+
+
+// this function populates answer from the content of buf (reading up to maxbytes bytes).
+// The function returns false if a properly serialized bitmap cannot be found.
+// if it returns true, readbytes is populated by how many bytes were read, we have that *readbytes <= maxbytes.
+bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const size_t maxbytes, size_t * readbytes) {
+    *readbytes = sizeof(int32_t);// for cookie
+    if(*readbytes > maxbytes) {
+      fprintf(stderr, "Ran out of bytes while reading first 4 bytes.\n");
+      return false;
+    }
     uint32_t cookie;
     memcpy(&cookie, buf, sizeof(int32_t));
     buf += sizeof(uint32_t);
@@ -563,71 +657,142 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf) {
     if ((cookie & 0xFFFF) == SERIAL_COOKIE)
         size = (cookie >> 16) + 1;
     else {
+        *readbytes += sizeof(int32_t);
+        if(*readbytes > maxbytes) {
+          fprintf(stderr, "Ran out of bytes while reading second part of the cookie.\n");
+          return false;
+        }
         memcpy(&size, buf, sizeof(int32_t));
         buf += sizeof(uint32_t);
     }
-    bool is_ok = ra_init_with_capacity(answer, size);
-    if (!is_ok) {
-        fprintf(stderr, "Failed to allocate memory early on. Bailing out.\n");
-        return false;
-    }
-    answer->size = size;
-    char *bitmapOfRunContainers = NULL;
+    const char *bitmapOfRunContainers = NULL;
     bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
     if (hasrun) {
         int32_t s = (size + 7) / 8;
-        bitmapOfRunContainers = (char *)malloc((size + 7) / 8);
-        assert(bitmapOfRunContainers != NULL);  // todo: handle
-        memcpy(bitmapOfRunContainers, buf, s);
+        *readbytes += s;
+        if(*readbytes > maxbytes) {// data is corrupted?
+          fprintf(stderr, "Ran out of bytes while reading run bitmap.\n");
+          return false;
+        }
+        bitmapOfRunContainers = buf;
         buf += s;
     }
-    uint16_t *keys = answer->keys;
-    int32_t *cardinalities = (int32_t *)malloc(
-        size * (sizeof(int32_t) + sizeof(bool)));  // one malloc
-    assert(cardinalities != NULL);                 // todo: handle
-    bool *isBitmap = (bool *)(cardinalities + size);
-    uint16_t tmp;
+    uint16_t *keyscards = (uint16_t *)buf;
+
+    *readbytes += size * 2 * sizeof(uint16_t);
+    if(*readbytes > maxbytes) {
+      fprintf(stderr, "Ran out of bytes while reading key-cardinality array.\n");
+      return false;
+    }
+    buf += size * 2 * sizeof(uint16_t);
+
+    printf("size = %d \n", size);
+    bool is_ok = ra_init_with_capacity(answer, size);
+    if (!is_ok) {
+        fprintf(stderr, "Failed to allocate memory for roaring array. Bailing out.\n");
+        return false;
+    }
+
     for (int32_t k = 0; k < size; ++k) {
-        memcpy(&keys[k], buf, sizeof(keys[k]));
-        buf += sizeof(keys[k]);
-        memcpy(&tmp, buf, sizeof(tmp));
-        buf += sizeof(tmp);
-        cardinalities[k] = 1 + tmp;
-        isBitmap[k] = cardinalities[k] > DEFAULT_MAX_SIZE;
-        if (bitmapOfRunContainers != NULL &&
-            (bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0) {
-            isBitmap[k] = false;
-        }
+        uint16_t tmp;
+        memcpy(&tmp, keyscards + 2*k, sizeof(tmp));
+        answer->keys[k] = tmp;
     }
     if ((!hasrun) || (size >= NO_OFFSET_THRESHOLD)) {
+        *readbytes += size * 4;
+        if(*readbytes > maxbytes) {// data is corrupted?
+          fprintf(stderr, "Ran out of bytes while reading offsets.\n");
+          ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+          return false;
+        }
+
         // skipping the offsets
         buf += size * 4;
     }
     // Reading the containers
     for (int32_t k = 0; k < size; ++k) {
-        if (isBitmap[k]) {
+        uint16_t tmp;
+        memcpy(&tmp, keyscards + 2*k+1, sizeof(tmp));
+        uint32_t thiscard = tmp + 1;
+        bool isbitmap = (thiscard > DEFAULT_MAX_SIZE);
+        bool isrun = false;
+        if(hasrun) {
+          if((bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0) {
+            isbitmap = false;
+            isrun = true;
+          }
+        }
+        if (isbitmap) {
+            // we check that the read is allowed
+            size_t containersize = BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+            *readbytes += containersize;
+            if(*readbytes > maxbytes) {
+              fprintf(stderr, "Running out of bytes while reading a bitset container.\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            // it is now safe to read
             bitset_container_t *c = bitset_container_create();
-            assert(c != NULL);  // todo: handle
-            buf += bitset_container_read(cardinalities[k], c, buf);
+            if(c == NULL) {// memory allocation failure
+              fprintf(stderr, "Failed to allocate memory for a bitset container.\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            answer->size++;
+            buf += bitset_container_read(thiscard, c, buf);
             answer->containers[k] = c;
             answer->typecodes[k] = BITSET_CONTAINER_TYPE_CODE;
-        } else if (bitmapOfRunContainers != NULL &&
-                   ((bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0)) {
+        } else if (isrun) {
+            // we check that the read is allowed
+            *readbytes += sizeof(uint16_t);
+            if(*readbytes > maxbytes) {
+              fprintf(stderr, "Running out of bytes while reading a run container (header).\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            uint16_t n_runs;
+            memcpy(&n_runs, buf, sizeof(uint16_t));
+            size_t containersize = n_runs * sizeof(rle16_t);
+            *readbytes += containersize;
+            if(*readbytes > maxbytes) {// data is corrupted?
+              fprintf(stderr, "Running out of bytes while reading a run container.\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            // it is now safe to read
+
             run_container_t *c = run_container_create();
-            assert(c != NULL);  // todo: handle
-            buf += run_container_read(cardinalities[k], c, buf);
+            if(c == NULL) {// memory allocation failure
+              fprintf(stderr, "Failed to allocate memory for a run container.\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            answer->size++;
+            buf += run_container_read(thiscard, c, buf);
             answer->containers[k] = c;
             answer->typecodes[k] = RUN_CONTAINER_TYPE_CODE;
         } else {
+            // we check that the read is allowed
+            size_t containersize = thiscard * sizeof(uint16_t);
+            *readbytes += containersize;
+            if(*readbytes > maxbytes) {// data is corrupted?
+              fprintf(stderr, "Running out of bytes while reading an array container.\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            // it is now safe to read
             array_container_t *c =
-                array_container_create_given_capacity(cardinalities[k]);
-            assert(c != NULL);  // todo: handle
-            buf += array_container_read(cardinalities[k], c, buf);
+                array_container_create_given_capacity(thiscard);
+            if(c == NULL) {// memory allocation failure
+              fprintf(stderr, "Failed to allocate memory for an array container.\n");
+              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+              return false;
+            }
+            answer->size++;
+            buf += array_container_read(thiscard, c, buf);
             answer->containers[k] = c;
             answer->typecodes[k] = ARRAY_CONTAINER_TYPE_CODE;
         }
     }
-    free(bitmapOfRunContainers);
-    free(cardinalities);  // isBitmap fits in there
     return true;
 }

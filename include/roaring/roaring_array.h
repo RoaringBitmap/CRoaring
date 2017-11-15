@@ -216,11 +216,23 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf);
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible
- * with
- * the
- * Java and Go versions.
+ * with the Java and Go versions.
+ * maxbytes  indicates how many bytes available from buf.
+ * When the function returns true, roaring_array_t is populated with the data
+ * and *readbytes indicates how many bytes were read. In all cases, if the function
+ * returns true, then maxbytes >= *readbytes.
  */
-bool ra_portable_deserialize(roaring_array_t *ra, const char *buf);
+bool ra_portable_deserialize(roaring_array_t *ra, const char *buf, const size_t maxbytes, size_t * readbytes);
+
+/**
+ * Quickly checks whether there is a serialized bitmap at the pointer,
+ * not exceeding size "maxbytes" in bytes. This function does not allocate
+ * memory dynamically.
+ *
+ * This function returns 0 if and only if no valid bitmap is found.
+ * Otherwise, it returns how many bytes are occupied by the bitmap data.
+ */
+size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes);
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be

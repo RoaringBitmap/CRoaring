@@ -197,7 +197,16 @@ roaring_bitmap_portable_serialize(r1, serializedbytes);
 roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
 assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
 roaring_bitmap_free(t);
+// we can also check whether there is a bitmap at a memory location without reading it
+size_t sizeofbitmap = roaring_bitmap_portable_deserialize_size(serializedbytes,expectedsize);
+assert(sizeofbitmap == expectedsize);  // sizeofbitmap would be zero if no bitmap were found
+// we can also read the bitmap "safely" by specifying a byte size limit:
+t = roaring_bitmap_portable_deserialize_safe(serializedbytes,expectedsize);
+assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
+roaring_bitmap_free(t);
+
 free(serializedbytes);
+
 
 // we can iterate over all values using custom functions
 uint32_t counter = 0;

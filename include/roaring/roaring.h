@@ -332,11 +332,34 @@ size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *ra);
 
 /**
  * read a bitmap from a serialized version. This is meant to be compatible with
- * the
- * Java and Go versions. See format specification at
+ * the Java and Go versions. See format specification at
  * https://github.com/RoaringBitmap/RoaringFormatSpec
+ * In case of failure, a null pointer is returned.
+ * This function is unsafe in the sense that if there is no valid serialized
+ * bitmap at the pointer, then many bytes could be read, possibly causing a buffer
+ * overflow. For a safer approach,
+ * call roaring_bitmap_portable_deserialize_safe.
  */
 roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
+
+/**
+ * read a bitmap from a serialized version in a safe manner (reading up to maxbytes).
+ * This is meant to be compatible with
+ * the Java and Go versions. See format specification at
+ * https://github.com/RoaringBitmap/RoaringFormatSpec
+ * In case of failure, a null pointer is returned.
+ */
+roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes);
+
+/**
+ * Check how many bytes would be read (up to maxbytes) at this pointer if there
+ * is a bitmap, returns zero if there is no valid bitmap.
+ * This is meant to be compatible with
+ * the Java and Go versions. See format specification at
+ * https://github.com/RoaringBitmap/RoaringFormatSpec
+ */
+size_t roaring_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes);
+
 
 /**
  * How many bytes are required to serialize this bitmap (meant to be compatible

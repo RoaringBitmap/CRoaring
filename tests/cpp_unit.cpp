@@ -208,6 +208,11 @@ void test_example_cpp(bool copy_on_write) {
     Roaring t = Roaring::read(serializedbytes);
     assert_true(expectedsize == t.getSizeInBytes());
     assert_true(r1 == t);
+
+    Roaring t2 = Roaring::readSafe(serializedbytes,expectedsize);
+    assert_true(expectedsize == t2.getSizeInBytes());
+    assert_true(r1 == t2);
+
     delete[] serializedbytes;
 
     // we can iterate over all values using custom functions
