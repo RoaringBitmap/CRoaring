@@ -686,7 +686,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
     }
     buf += size * 2 * sizeof(uint16_t);
 
-    printf("size = %d \n", size);
+    //    printf("size = %d \n", size);
     bool is_ok = ra_init_with_capacity(answer, size);
     if (!is_ok) {
         fprintf(stderr, "Failed to allocate memory for roaring array. Bailing out.\n");
