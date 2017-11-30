@@ -34,7 +34,14 @@ find_package(Options)
 find_package(LTO)
 
 include_directories(include)
+## C header files get installed to /usr/local/include/roaring typically
 install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
+
+####
+### Some users want the C++ header files to be installed as well.
+### C++ header files get installed to /usr/local/include/roaring/cpp typically
+install(DIRECTORY cpp DESTINATION include/${ROARING_LIB_NAME})
+
 
 enable_testing()
 include(CTest)
