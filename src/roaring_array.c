@@ -612,8 +612,7 @@ size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes) {
             bytestotal += containersize;
             if(bytestotal > maxbytes) return 0;
             buf += containersize;
-        } else if (bitmapOfRunContainers != NULL &&
-                   ((bitmapOfRunContainers[k / 8] & (1 << (k % 8))) != 0)) {
+        } else if (isrun) {
             bytestotal += sizeof(uint16_t);
             if(bytestotal > maxbytes) return 0;
             uint16_t n_runs;

@@ -343,7 +343,7 @@ make
 # follow by 'make test' if you want to test.
 # you can also type 'make install' to install the library on your system
 # C header files typically get installed to /usr/local/include/roaring
-# whereas C++ header files get installed to /usr/local/include/roaring/cpp
+# whereas C++ header files get installed to /usr/local/include/roaring
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
