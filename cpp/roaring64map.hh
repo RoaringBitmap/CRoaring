@@ -126,6 +126,8 @@ class Roaring64Map {
                                   roaring_iter->second.maximum());
             }
         }
+        // we put std::numeric_limits<>::max/min in parenthesis
+        // to avoid a clash with the Windows.h header under Windows
         return (std::numeric_limits<uint64_t>::min)();
     }
 
@@ -141,6 +143,8 @@ class Roaring64Map {
                                   roaring_iter->second.minimum());
             }
         }
+        // we put std::numeric_limits<>::max/min in parenthesis
+        // to avoid a clash with the Windows.h header under Windows
         return (std::numeric_limits<uint64_t>::max)();
     }
 
@@ -286,6 +290,9 @@ class Roaring64Map {
     */
     bool isFull() const {
         // only bother to check if map is fully saturated
+        //
+        // we put std::numeric_limits<>::max/min in parenthesis
+        // to avoid a clash with the Windows.h header under Windows
         return roarings.size() ==
                        ((size_t)(std::numeric_limits<uint32_t>::max)()) + 1
                    ? std::all_of(
@@ -407,6 +414,8 @@ class Roaring64Map {
             roarings[start_high].flip(start_low, end_low);
             return;
         }
+        // we put std::numeric_limits<>::max/min in parenthesis
+        // to avoid a clash with the Windows.h header under Windows
         roarings[start_high].flip(start_low,
                                   (std::numeric_limits<uint32_t>::max)());
         roarings[start_high++].setCopyOnWrite(copyOnWrite);
