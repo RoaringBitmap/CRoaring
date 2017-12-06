@@ -10,6 +10,11 @@ Roaring bitmaps are compressed bitmaps which tend to outperform conventional com
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
 [Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [OpenSearchServer][opensearchserver], [Cloud Torrent][cloudtorrent], [Whoosh][whoosh],  [Pilosa][pilosa],  [Microsoft Visual Studio Team Services (VSTS)][vsts], and eBay's [Apache Kylin][kylin].
 
+
+We published a peer-reviewed article on the design and evaluation of this library:
+
+- Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience (to appear) [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
+
 [lucene]: https://lucene.apache.org/
 [solr]: https://lucene.apache.org/solr/
 [elasticsearch]: https://www.elastic.co/products/elasticsearch
@@ -513,7 +518,7 @@ https://groups.google.com/forum/#!forum/roaring-bitmaps
 
 # References about Roaring
 
-- Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
+- Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience (to appear) [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
 -  Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin,
 Better bitmap performance with Roaring bitmaps,
 Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016
