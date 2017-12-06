@@ -105,21 +105,21 @@ int32_t intersect_vector16_cardinality(const uint16_t *__restrict__ A,
 
 /* Computes the intersection between one small and one large set of uint16_t.
  * Stores the result into buffer and return the number of elements. */
-int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
-                                const uint16_t *large, size_t size_l,
+int32_t intersect_skewed_uint16(const uint16_t *smallarray, size_t size_s,
+                                const uint16_t *largearray, size_t size_l,
                                 uint16_t *buffer);
 
 /* Computes the size of the intersection between one small and one large set of
  * uint16_t. */
-int32_t intersect_skewed_uint16_cardinality(const uint16_t *small,
+int32_t intersect_skewed_uint16_cardinality(const uint16_t *smallarray,
                                             size_t size_s,
-                                            const uint16_t *large,
+                                            const uint16_t *largearray,
                                             size_t size_l);
 
 
 /* Check whether the size of the intersection between one small and one large set of uint16_t is non-zero. */
-bool intersect_skewed_uint16_nonempty(const uint16_t *small, size_t size_s,
-                                const uint16_t *large, size_t size_l);
+bool intersect_skewed_uint16_nonempty(const uint16_t *smallarray, size_t size_s,
+                                const uint16_t *largearray, size_t size_l);
 /**
  * Generic intersection function.
  */
