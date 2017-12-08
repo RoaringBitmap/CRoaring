@@ -34,11 +34,10 @@ before_build:
     mkdir build
     cd build
     cmake --version
-    cmake .. -G %generator%
-
+    cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..    
     
 build:
-  project: c:\projects\croaring\build\template.sln
+  project: c:\projects\croaring\build\RoaringBitmap.sln
   verbosity: minimal
   parallel: true 
 
