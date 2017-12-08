@@ -1,4 +1,4 @@
-# CRoaring [![Build Status](https://travis-ci.org/RoaringBitmap/CRoaring.png)](https://travis-ci.org/RoaringBitmap/CRoaring)   [![Build Status](https://img.shields.io/appveyor/ci/RoaringBitmap/CRoaring.svg)](https://ci.appveyor.com/project/RoaringBitmap/CRoaring)
+# CRoaring [![Build Status](https://travis-ci.org/RoaringBitmap/CRoaring.png)](https://travis-ci.org/RoaringBitmap/CRoaring)   [![Build Status](https://img.shields.io/appveyor/ci/lemire/croaring.svg)](https://ci.appveyor.com/project/lemire/croaring)
 Roaring bitmaps in C (and C++)
 
 # Introduction
