@@ -32,10 +32,15 @@ init:
 before_build:
 - cmd: >-
     dir /s
+
     mkdir build
+
     cd build
+
     cmake --version
+
     cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..    
+
     dir /s ..
     
 build:
