@@ -1234,12 +1234,13 @@ static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit, uint32
             newit->current_value = newit->highbits | newit->in_container_index;
             break;
         case ARRAY_CONTAINER_TYPE_CODE:
-            newit->in_container_index = array_container_rank((const array_container_t *)(newit->container), lb) - 1;
+            newit->in_container_index = array_container_index_equalorlarger((const array_container_t *)(newit->container), lb);
             newit->current_value =
                 newit->highbits |
                 ((const array_container_t *)(newit->container))->array[newit->in_container_index];
             break;
         case RUN_CONTAINER_TYPE_CODE:
+            newit->run_index = run_container_index_equalorlarger((const run_container_t *)(newit->container), lb);
             if(((const run_container_t *)(newit->container))->runs[newit->run_index].value <= lb) {
               newit->current_value = val;
             } else {

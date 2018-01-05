@@ -366,6 +366,34 @@ void test_uint32_iterator(bool run) {
     assert_true(iter->current_value == 800000);
     roaring_move_uint32_iterator_equalorlarger(iter,900000);
     assert_false(iter->has_value);
+    roaring_move_uint32_iterator_equalorlarger(iter,0);
+    for (uint32_t i = 0; i < 66000; i += 3) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i+1);
+    }
+    for (uint32_t i = 100000; i < 200000; i++) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i+1);
+    }
+    for (uint32_t i = 300000; i < 500000; i += 100) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i+1);
+    }
+    for (uint32_t i = 600000; i < 700000; i += 1) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i+1);
+    }
+    for (uint32_t i = 800000; i < 900000; i += 7) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i+1);
+    }
+    assert_false(iter->has_value);
+
     roaring_free_uint32_iterator(iter);
     roaring_bitmap_free(r1);
 }
@@ -2866,6 +2894,7 @@ void test_or_many_memory_leak() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_uint32_iterator_true),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_clear),
