@@ -400,11 +400,11 @@ void run_container_smart_append_exclusive(run_container_t *src,
                                           const uint16_t length);
 
 /**
-* The new container consists of a single run [start,stop). 
+* The new container consists of a single run [start,stop).
 * It is required that stop>start, the caller is responsability for this check.
 * It is required that stop <= (1<<16), the caller is responsability for this check.
 * The cardinality of the created container is stop - start.
-* Returns NULL on failure 
+* Returns NULL on failure
 */
 static inline run_container_t *run_container_create_range(uint32_t start,
                                                           uint32_t stop) {
@@ -448,4 +448,22 @@ inline uint16_t run_container_maximum(const run_container_t *run) {
 
 /* Returns the number of values equal or smaller than x */
 int run_container_rank(const run_container_t *arr, uint16_t x);
+
+/* Returns the index of the first run containing a value at least as large as x, or -1 */
+inline int run_container_index_equalorlarger(const run_container_t *arr, uint16_t x) {
+    int32_t index = interleavedBinarySearch(arr->runs, arr->n_runs, x);
+    if (index >= 0) return index;
+    index = -index - 2;  // points to preceding run, possibly -1
+    if (index != -1) {   // possible match
+        int32_t offset = x - arr->runs[index].value;
+        int32_t le = arr->runs[index].length;
+        if (offset <= le) return index;
+    }
+    index += 1;
+    if(index  < arr->n_runs) {
+      return index;
+    }
+    return -1;
+}
+
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

@@ -605,6 +605,13 @@ class RoaringSetBitForwardIterator final {
         return i.current_value >= *o;
     }
 
+    /**
+    * Move the iterator to the first value >= val.
+    */
+    void equalorlarger(uint32_t val) {
+      roaring_move_uint32_iterator_equalorlarger(&i,val);
+    }
+
     type_of_iterator &operator++() {  // ++i, must returned inc. value
         roaring_advance_uint32_iterator(&i);
         return *this;

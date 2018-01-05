@@ -231,6 +231,14 @@ void test_example_cpp(bool copy_on_write) {
     }
     assert_true(counter == t.cardinality());
 
+    // we can move iterators
+    const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
+    Roaring rogue(5, manyvalues);
+    Roaring::const_iterator j = rogue.begin();
+    j.equalorlarger(4);
+    assert_true(*j == 4);
+
+
     // test move constructor
     {
         Roaring b;

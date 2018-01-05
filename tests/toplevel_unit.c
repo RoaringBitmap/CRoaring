@@ -277,7 +277,7 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(r3);
 }
 
-void test_uint32_iterator() {
+void test_uint32_iterator(bool run) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     for (uint32_t i = 0; i < 66000; i += 3) {
         roaring_bitmap_add(r1, i);
@@ -294,9 +294,12 @@ void test_uint32_iterator() {
     for (uint32_t i = 800000; i < 900000; i += 7) {
         roaring_bitmap_add(r1, i);
     }
-    roaring_bitmap_run_optimize(r1);
+    if(run) roaring_bitmap_run_optimize(r1);
     roaring_uint32_iterator_t *iter = roaring_create_iterator(r1);
     for (uint32_t i = 0; i < 66000; i += 3) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
         roaring_advance_uint32_iterator(iter);
@@ -304,9 +307,15 @@ void test_uint32_iterator() {
     for (uint32_t i = 100000; i < 200000; i++) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i);
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
         roaring_advance_uint32_iterator(iter);
     }
     for (uint32_t i = 300000; i < 500000; i += 100) {
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
         roaring_advance_uint32_iterator(iter);
@@ -314,17 +323,56 @@ void test_uint32_iterator() {
     for (uint32_t i = 600000; i < 700000; i += 1) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i);
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
         roaring_advance_uint32_iterator(iter);
     }
     for (uint32_t i = 800000; i < 900000; i += 7) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
+        roaring_move_uint32_iterator_equalorlarger(iter,i);
+        assert_true(iter->has_value);
+        assert_true(iter->current_value == i);
         roaring_advance_uint32_iterator(iter);
     }
+    assert_false(iter->has_value);
+    roaring_move_uint32_iterator_equalorlarger(iter,0);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 0);
+    roaring_move_uint32_iterator_equalorlarger(iter,66000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 100000);
+    roaring_move_uint32_iterator_equalorlarger(iter,100000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 100000);
+    roaring_move_uint32_iterator_equalorlarger(iter,200000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 300000);
+    roaring_move_uint32_iterator_equalorlarger(iter,300000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 300000);
+    roaring_move_uint32_iterator_equalorlarger(iter,500000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 600000);
+    roaring_move_uint32_iterator_equalorlarger(iter,600000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 600000);
+    roaring_move_uint32_iterator_equalorlarger(iter,700000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 800000);
+    roaring_move_uint32_iterator_equalorlarger(iter,800000);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 800000);
+    roaring_move_uint32_iterator_equalorlarger(iter,900000);
     assert_false(iter->has_value);
     roaring_free_uint32_iterator(iter);
     roaring_bitmap_free(r1);
 }
+
+void test_uint32_iterator_true() { test_uint32_iterator(true); }
+
+void test_uint32_iterator_false() { test_uint32_iterator(false); }
 
 void test_example_true() { test_example(true); }
 
@@ -2836,7 +2884,8 @@ int main() {
         cmocka_unit_test(test_remove_from_copies_false),
         cmocka_unit_test(test_range_and_serialize),
         cmocka_unit_test(test_silly_range),
-        cmocka_unit_test(test_uint32_iterator),
+        cmocka_unit_test(test_uint32_iterator_true),
+        cmocka_unit_test(test_uint32_iterator_false),
         cmocka_unit_test(leaks_with_empty_true),
         cmocka_unit_test(leaks_with_empty_false),
         cmocka_unit_test(test_bitmap_from_range),

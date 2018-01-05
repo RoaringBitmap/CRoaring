@@ -230,6 +230,9 @@ while(i->has_value) {
    counter++; // could use    i->current_value
    roaring_advance_uint32_iterator(i);
 }
+// you can skip over values and move the iterator with
+// roaring_move_uint32_iterator_equalorlarger(i,someintvalue)
+
 roaring_free_uint32_iterator(i);
 // roaring_bitmap_get_cardinality(r1) == counter
 
@@ -331,6 +334,11 @@ for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
 }
 // counter == t.cardinality()
 
+// we can move iterators to skip values
+const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
+Roaring rogue(5, manyvalues);
+Roaring::const_iterator j = rogue.begin();
+j.equalorlarger(4); // *j == 4
 ```
 
 

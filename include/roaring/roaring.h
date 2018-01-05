@@ -595,6 +595,11 @@ roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *ra);
 bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it);
 
 /**
+* Move the iterator to the first value >= val. If there is a such a value, then it->has_value is true.
+* The new value is in it->current_value. For convenience, returns it->has_value.
+*/
+bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it, uint32_t val) ;
+/**
 * Creates a copy of an iterator.
 * Caller must free it.
 */

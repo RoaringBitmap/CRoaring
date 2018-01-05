@@ -1210,6 +1210,55 @@ static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
     return true;
 }
 
+// prerequesite: the value should be in range of the container
+static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit, uint32_t val) {
+    uint16_t lb = val & 0xFFFF;
+    newit->in_container_index = 0;
+    newit->run_index = 0;
+    newit->current_value = 0;
+    // assume it is found
+    newit->has_value = true;
+    newit->container =
+        newit->parent->high_low_container.containers[newit->container_index];
+    newit->typecode =
+        newit->parent->high_low_container.typecodes[newit->container_index];
+    newit->highbits =
+        ((uint32_t)
+             newit->parent->high_low_container.keys[newit->container_index])
+        << 16;
+    newit->container =
+        container_unwrap_shared(newit->container, &(newit->typecode));
+    switch (newit->typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            newit->in_container_index =  bitset_container_index_equalorlarger((const bitset_container_t *)(newit->container), lb);
+            newit->current_value = newit->highbits | newit->in_container_index;
+            break;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            newit->in_container_index = array_container_rank((const array_container_t *)(newit->container), lb) - 1;
+            newit->current_value =
+                newit->highbits |
+                ((const array_container_t *)(newit->container))->array[newit->in_container_index];
+            break;
+        case RUN_CONTAINER_TYPE_CODE:
+            if(((const run_container_t *)(newit->container))->runs[newit->run_index].value <= lb) {
+              newit->current_value = val;
+            } else {
+              newit->current_value =
+                newit->highbits |
+                (((const run_container_t *)(newit->container))->runs[newit->run_index].value);
+            }
+            newit->in_run_index =
+                (newit->highbits | (((const run_container_t *)(newit->container))->runs[newit->run_index].value)) +
+                (((const run_container_t *)(newit->container))->runs[newit->run_index].length);
+
+            break;
+        default:
+            // if this ever happens, bug!
+            assert(false);
+    }  // switch (typecode)
+    return true;
+}
+
 void roaring_init_iterator(const roaring_bitmap_t *ra,
                            roaring_uint32_iterator_t *newit) {
     newit->parent = ra;
@@ -1232,6 +1281,28 @@ roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
     memcpy(newit, it, sizeof(roaring_uint32_iterator_t));
     return newit;
 }
+
+bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it, uint32_t val) {
+    uint16_t hb = val >> 16;
+    const int i = ra_get_index(& it->parent->high_low_container, hb);
+    if (i >= 0) {
+      uint32_t lowvalue = container_maximum(it->parent->high_low_container.containers[i], it->parent->high_low_container.typecodes[i]);
+      uint16_t lb = val & 0xFFFF;
+      if(lowvalue < lb ) {
+        it->container_index = i+1; // will have to load first value of next container
+      } else {// the value is necessarily within the range of the container
+        it->container_index = i;
+        it->has_value = loadfirstvalue_largeorequal(it, val);
+        return it->has_value;
+      }
+    } else {
+      // there is no matching, so we are going for the next container
+      it->container_index = -i-1;
+    }
+    it->has_value = loadfirstvalue(it);
+    return it->has_value;
+}
+
 
 bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     if (it->container_index >= it->parent->high_low_container.size) {
@@ -1298,6 +1369,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     it->has_value = loadfirstvalue(it);
     return it->has_value;
 }
+
 
 void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) { free(it); }
 
@@ -1906,6 +1978,8 @@ void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *ra) {
         ra->high_low_container.typecodes[i] = new_typecode;
     }
 }
+
+
 
 /**
 * roaring_bitmap_rank returns the number of integers that are smaller or equal

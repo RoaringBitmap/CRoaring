@@ -577,3 +577,18 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
   sum += hamming(leftoverword);
   return sum;
 }
+
+/* Returns the index of the first value equal or larger than x, or -1 */
+int bitset_container_index_equalorlarger(const bitset_container_t *container, uint16_t x) {
+  uint32_t x32 = x;
+  uint32_t k = x32 / 64;
+  uint64_t word = container->array[k];
+  const int diff = x32 - k * 64; // in [0,64)
+  word = (word >> diff) << diff; // a mask is faster, but we don't care
+  while(word == 0) {
+    k++;
+    if(k == BITSET_CONTAINER_SIZE_IN_WORDS) return -1;
+    word = container->array[k];
+  }
+  return k * 64 + __builtin_ctzll(word);
+}
