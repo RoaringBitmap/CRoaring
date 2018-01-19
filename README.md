@@ -486,6 +486,10 @@ You must understand that this implies that the produced binaries will not run on
 We have additionnal optimizations that use inline assembly. However, Visual Studio does not support inline assembly so you cannot benefit from these optimizations under Visual Studio.
 
 
+# AVX2-related throttling
+
+Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.
+
 # Thread safety
 
 Like, for example, STL containers or Java's default data structures, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. It is safe however to query bitmaps (without modifying them) from several distinct threads,  as long as you do not use the copy-on-write attribute. For example, you can safely copy a bitmap and use both copies in concurrently. One should probably avoid the use of the copy-on-write attribute in a threaded environment.
