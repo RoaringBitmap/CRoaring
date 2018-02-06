@@ -1545,6 +1545,9 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
     if (range_start >= range_end) {
         return roaring_bitmap_copy(x1);
     }
+    if(range_end >= UINT64_C(0x100000000)) {
+        range_end = UINT64_C(0x100000000);
+    }
 
     roaring_bitmap_t *ans = roaring_bitmap_create();
     ans->copy_on_write = x1->copy_on_write;
@@ -1594,6 +1597,9 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
                                  uint64_t range_end) {
     if (range_start >= range_end) {
         return;  // empty range
+    }
+    if(range_end >= UINT64_C(0x100000000)) {
+        range_end = UINT64_C(0x100000000);
     }
 
     uint16_t hb_start = (uint16_t)(range_start >> 16);
