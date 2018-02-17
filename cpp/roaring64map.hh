@@ -479,12 +479,12 @@ class Roaring64Map {
 
     /**
      * Iterate over the bitmap elements. The function iterator is called once
-     * for
-     *  all the values with ptr (can be NULL) as the second parameter of each
+     * for all the values with ptr (can be NULL) as the second parameter of each
      * call.
      *
-     *  roaring_iterator64 is simply a pointer to a function that returns void,
-     *  and takes (uint64_t,void*) as inputs.
+     * roaring_iterator is simply a pointer to a function that returns bool
+     * (true means that the iteration should continue while false means that it
+     * should stop), and takes (uint32_t,void*) as inputs.
      */
     void iterate(roaring_iterator64 iterator, void *ptr) const {
         std::for_each(roarings.begin(), roarings.cend(),
