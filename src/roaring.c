@@ -1087,7 +1087,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size
     if(is_ok) assert(bytesread <= maxbytes);
     ans->copy_on_write = false;
     if (!is_ok) {
-        roaring_bitmap_free(ans);
+        free(ans);
         return NULL;
     }
     return ans;
