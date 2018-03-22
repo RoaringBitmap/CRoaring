@@ -12,7 +12,7 @@ They are used by several major systems such as [Apache Lucene][lucene] and deriv
 
 We published a peer-reviewed article on the design and evaluation of this library:
 
-- Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience (to appear) [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
+- Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience 48 (4), 2018 [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
 
 [lucene]: https://lucene.apache.org/
 [solr]: https://lucene.apache.org/solr/

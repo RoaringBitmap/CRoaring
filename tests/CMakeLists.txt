@@ -12,18 +12,19 @@ add_c_test(run_container_unit)
 add_c_test(toplevel_unit)
 add_c_test(util_unit)
 add_c_test(format_portability_unit)
+add_c_test(robust_deserialization_unit)
 add_c_test(container_comparison_unit)
 
 if (NOT MSVC)
-# We exclude POSIX tests from Visual Studio default build 
+# We exclude POSIX tests from Visual Studio default build
 add_c_test(realdata_unit)
-# We used to exclude POSIX tests from Visual Studio default build the documented way but this leads to spurious test failures. 
+# We used to exclude POSIX tests from Visual Studio default build the documented way but this leads to spurious test failures.
 # set_target_properties(realdata_unit PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
 endif()
 
 
 if(MSVC)
-  add_custom_command(TARGET toplevel_unit POST_BUILD        # Adds a post-build event 
+  add_custom_command(TARGET toplevel_unit POST_BUILD        # Adds a post-build event
     COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:roaring>"
     COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE_DIR:toplevel_unit>"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
@@ -32,6 +33,6 @@ if(MSVC)
 endif()
 
 
- 
+
 
 add_subdirectory(vendor/cmocka)

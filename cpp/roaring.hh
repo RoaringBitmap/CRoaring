@@ -33,6 +33,7 @@ class Roaring {
     Roaring(size_t n, const uint32_t *data) : Roaring() {
         roaring_bitmap_add_many(&roaring, n, data);
     }
+
     /**
      * Copy constructor
      */
@@ -288,13 +289,12 @@ class Roaring {
     size_t shrinkToFit() { return roaring_bitmap_shrink_to_fit(&roaring); }
 
     /**
-     * Iterate over the bitmap elements. The function iterator is called once
-     * for
-     *  all the values with ptr (can be NULL) as the second parameter of each
-     * call.
+     * Iterate over the bitmap elements. The function iterator is called once for
+     * all the values with ptr (can be NULL) as the second parameter of each call.
      *
-     *  roaring_iterator is simply a pointer to a function that returns void,
-     *  and takes (uint32_t,void*) as inputs.
+     * roaring_iterator is simply a pointer to a function that returns bool
+     * (true means that the iteration should continue while false means that it
+     * should stop), and takes (uint32_t,void*) as inputs.
      */
     void iterate(roaring_iterator iterator, void *ptr) const {
         roaring_iterate(&roaring, iterator, ptr);
@@ -308,6 +308,7 @@ class Roaring {
     bool select(uint32_t rnk, uint32_t *element) const {
         return roaring_bitmap_select(&roaring, rnk, element);
     }
+
     /**
      * Computes the size of the intersection between two bitmaps.
      *
@@ -315,7 +316,6 @@ class Roaring {
     uint64_t and_cardinality(const Roaring &r) const {
         return roaring_bitmap_and_cardinality(&roaring, &r.roaring);
     }
-
 
     /**
      * Check whether the two bitmaps intersect.
@@ -623,11 +623,11 @@ class RoaringSetBitForwardIterator final {
         return orig;
     }
 
-    bool operator==(const RoaringSetBitForwardIterator &o) {
+    bool operator==(const RoaringSetBitForwardIterator &o) const {
         return i.current_value == *o && i.has_value == o.i.has_value;
     }
 
-    bool operator!=(const RoaringSetBitForwardIterator &o) {
+    bool operator!=(const RoaringSetBitForwardIterator &o) const {
         return i.current_value != *o || i.has_value != o.i.has_value;
     }
 
