@@ -33,7 +33,7 @@ roaring_bitmap_t *roaring_bitmap_create(void);
  * Add all the values between min (included) and max (excluded) that are at a
  * distance k*step from min.
 */
-roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max,
+roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step);
 
 /**
