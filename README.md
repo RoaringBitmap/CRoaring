@@ -511,6 +511,9 @@ There is a Go (golang) wrapper available at https://github.com/RoaringBitmap/goc
 
 Saulius Grigaliunas wrote a Rust wrapper available at https://github.com/saulius/croaring-rs
 
+# D Wrapper
+
+Yuce Tekol wrote a D wrapper available at https://github.com/yuce/droaring
 
 # Redis Module
 

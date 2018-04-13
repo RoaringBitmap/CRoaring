@@ -147,8 +147,11 @@ static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
     return (a < b) ? a : b;
 }
 
-roaring_bitmap_t *roaring_bitmap_from_range(uint32_t min, uint32_t max,
+roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step) {
+    if(max >= UINT64_C(0x100000000)) {
+        max = UINT64_C(0x100000000);
+    }
     if (step == 0) return NULL;
     if (max <= min) return NULL;
     roaring_bitmap_t *answer = roaring_bitmap_create();

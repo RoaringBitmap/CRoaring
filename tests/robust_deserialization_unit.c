@@ -153,6 +153,15 @@ void test_robust_deserialize6() {
     test_deserialize(filename);
 }
 
+void test_robust_deserialize7() {
+    char filename[1024];
+
+    strcpy(filename, TEST_DATA_DIR);
+    strcat(filename, "crashproneinput7.bin");
+
+    test_deserialize(filename);
+}
+
 
 int main() {
     const struct CMUnitTest tests[] = {
@@ -162,7 +171,8 @@ int main() {
         cmocka_unit_test(test_robust_deserialize4),
         cmocka_unit_test(test_robust_deserialize5),
         cmocka_unit_test(test_robust_deserialize6),
-    };
+        cmocka_unit_test(test_robust_deserialize7),
+     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

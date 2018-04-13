@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>  // will provide posix_memalign with _POSIX_C_SOURCE as defined above
-#ifndef __APPLE__
+#if !(defined(__APPLE__)) && !(defined(__FreeBSD__))
 #include <malloc.h>  // this should never be needed but there are some reports that it is needed.
 #endif
 

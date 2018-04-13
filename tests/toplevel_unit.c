@@ -135,6 +135,27 @@ void leaks_with_empty_true() { leaks_with_empty(true); }
 
 void leaks_with_empty_false() { leaks_with_empty(false); }
 
+void check_interval() {
+    // create a new bitmap with varargs
+    roaring_bitmap_t *r = roaring_bitmap_of(4, 1, 2, 3, 1000);
+    assert_non_null(r);
+
+    roaring_bitmap_printf(r);
+
+
+    roaring_bitmap_t *range = roaring_bitmap_from_range(10, 1000+1, 1);
+    assert_non_null(range);
+    assert_true(roaring_bitmap_intersect(r,range));
+    roaring_bitmap_t *range2 = roaring_bitmap_from_range(10, 1000, 1);
+    assert_non_null(range2);
+    assert_false(roaring_bitmap_intersect(r,range2));
+
+    roaring_bitmap_free(r);
+    roaring_bitmap_free(range);
+    roaring_bitmap_free(range2);
+
+}
+
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -2894,6 +2915,7 @@ void test_or_many_memory_leak() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(check_interval),
         cmocka_unit_test(test_uint32_iterator_true),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),

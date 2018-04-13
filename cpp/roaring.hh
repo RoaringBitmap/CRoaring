@@ -623,11 +623,11 @@ class RoaringSetBitForwardIterator final {
         return orig;
     }
 
-    bool operator==(const RoaringSetBitForwardIterator &o) {
+    bool operator==(const RoaringSetBitForwardIterator &o) const {
         return i.current_value == *o && i.has_value == o.i.has_value;
     }
 
-    bool operator!=(const RoaringSetBitForwardIterator &o) {
+    bool operator!=(const RoaringSetBitForwardIterator &o) const {
         return i.current_value != *o || i.has_value != o.i.has_value;
     }
 
