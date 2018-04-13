@@ -110,8 +110,10 @@ run_container_t *run_container_clone(const run_container_t *src) {
 
 /* Free memory. */
 void run_container_free(run_container_t *run) {
-    free(run->runs);
-    run->runs = NULL;  // pedantic
+    if(run->runs != NULL) {// Jon Strabala reports that some tools complain otherwise
+      free(run->runs);
+      run->runs = NULL;  // pedantic
+    }
     free(run);
 }
 
@@ -179,10 +181,16 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
             (rle16_t *)realloc(oldruns, run->capacity * sizeof(rle16_t));
         if (run->runs == NULL) free(oldruns);
     } else {
-        free(run->runs);
+        // Jon Strabala reports that some tools complain otherwise
+        if (run->runs != NULL) {
+          free(run->runs);
+        }
         run->runs = (rle16_t *)malloc(run->capacity * sizeof(rle16_t));
     }
-    // TODO: handle the case where realloc fails
+    // handle the case where realloc fails
+    if (run->runs == NULL) {
+      fprintf(stderr, "could not allocate memory\n");
+    }
     assert(run->runs != NULL);
 }
 

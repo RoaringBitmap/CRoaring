@@ -83,8 +83,10 @@ int array_container_shrink_to_fit(array_container_t *src) {
 
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
-    free(arr->array);
-    arr->array = NULL;
+    if(arr->array != NULL) {// Jon Strabala reports that some tools complain otherwise
+      free(arr->array);
+      arr->array = NULL; // pedantic
+    }
     free(arr);
 }
 
@@ -110,8 +112,6 @@ void array_container_grow(array_container_t *container, int32_t min,
                           int32_t max, bool preserve) {
     int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
 
-    // currently uses set max to INT32_MAX.  The next statement is not so useful
-    // then.
     // if we are within 1/16th of the max, go to max
     if (new_capacity > max - max / 16) new_capacity = max;
 
@@ -123,11 +123,17 @@ void array_container_grow(array_container_t *container, int32_t min,
             (uint16_t *)realloc(array, new_capacity * sizeof(uint16_t));
         if (container->array == NULL) free(array);
     } else {
-        free(array);
+        // Jon Strabala reports that some tools complain otherwise
+        if (array != NULL) {
+          free(array);
+        }
         container->array = (uint16_t *)malloc(new_capacity * sizeof(uint16_t));
     }
 
-    // TODO: handle the case where realloc fails
+    //  handle the case where realloc fails
+    if (container->array == NULL) {
+      fprintf(stderr, "could not allocate memory\n");
+    }
     assert(container->array != NULL);
 }
 
@@ -159,9 +165,11 @@ void array_container_union(const array_container_t *array_1,
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
 
-    if (out->capacity < max_cardinality)
-        array_container_grow(out, max_cardinality, INT32_MAX, false);
+
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
+    if (out->capacity < max_cardinality) {
+      array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
+    }
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = union_vector16(array_1->array, card_1,
@@ -171,6 +179,9 @@ void array_container_union(const array_container_t *array_1,
                                           array_1->array, card_1, out->array);
     }
 #else
+    if (out->capacity < max_cardinality) {
+      array_container_grow(out, max_cardinality, DEFAULT_MAX_SIZE, false);
+    }
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = (int32_t)union_uint16(
@@ -190,7 +201,7 @@ void array_container_andnot(const array_container_t *array_1,
                             const array_container_t *array_2,
                             array_container_t *out) {
     if (out->capacity < array_1->cardinality)
-        array_container_grow(out, array_1->cardinality, INT32_MAX, false);
+        array_container_grow(out, array_1->cardinality, DEFAULT_MAX_SIZE, false);
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     out->cardinality =
         difference_vector16(array_1->array, array_1->cardinality,
@@ -213,13 +224,17 @@ void array_container_xor(const array_container_t *array_1,
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
 
-    if (out->capacity < max_cardinality)
-        array_container_grow(out, max_cardinality, INT32_MAX, false);
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
+    if (out->capacity < max_cardinality) {
+        array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
+    }
     out->cardinality =
         xor_vector16(array_1->array, array_1->cardinality, array_2->array,
                      array_2->cardinality, out->array);
 #else
+    if (out->capacity < max_cardinality) {
+        array_container_grow(out, max_cardinality, DEFAULT_MAX_SIZE, false);
+    }
     out->cardinality =
         xor_uint16(array_1->array, array_1->cardinality, array_2->array,
                    array_2->cardinality, out->array);
@@ -241,10 +256,16 @@ void array_container_intersection(const array_container_t *array1,
             min_card = minimum_int32(card_1, card_2);
     const int threshold = 64;  // subject to tuning
 #ifdef USEAVX
-    min_card += sizeof(__m128i) / sizeof(uint16_t);
+    if (out->capacity < min_card) {
+      array_container_grow(out, min_card + sizeof(__m128i) / sizeof(uint16_t),
+        DEFAULT_MAX_SIZE + sizeof(__m128i) / sizeof(uint16_t), false);
+    }
+#else
+    if (out->capacity < min_card) {
+      array_container_grow(out, min_card, DEFAULT_MAX_SIZE, false);
+    }
 #endif
-    if (out->capacity < min_card)
-        array_container_grow(out, min_card, INT32_MAX, false);
+
     if (card_1 * threshold < card_2) {
         out->cardinality = intersect_skewed_uint16(
             array1->array, card_1, array2->array, card_2, out->array);

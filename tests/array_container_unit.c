@@ -94,7 +94,7 @@ void and_or_test() {
     assert_non_null(BO);
     assert_non_null(TMP);
 
-    for (size_t x = 0; x < (1 << 16); x += 3) {
+    for (size_t x = 0; x < (1 << 16); x += 17) {
         array_container_add(B1, x);
         array_container_add(BI, x);
     }
@@ -105,7 +105,7 @@ void and_or_test() {
         array_container_add(BI, x);
     }
 
-    for (size_t x = 0; x < (1 << 16); x += 62 * 3) {
+    for (size_t x = 0; x < (1 << 16); x += 62 * 17) {
         array_container_add(BO, x);
     }
 

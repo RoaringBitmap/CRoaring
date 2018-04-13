@@ -97,8 +97,10 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
-    aligned_free(bitset->array);
-    bitset->array = NULL;
+    if(bitset->array != NULL) {// Jon Strabala reports that some tools complain otherwise
+      aligned_free(bitset->array);
+      bitset->array = NULL; // pedantic
+    }
     free(bitset);
 }
 
