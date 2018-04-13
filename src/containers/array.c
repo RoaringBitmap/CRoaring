@@ -165,11 +165,11 @@ void array_container_union(const array_container_t *array_1,
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
 
-
-#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     if (out->capacity < max_cardinality) {
       array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
     }
+
+#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = union_vector16(array_1->array, card_1,
@@ -179,9 +179,6 @@ void array_container_union(const array_container_t *array_1,
                                           array_1->array, card_1, out->array);
     }
 #else
-    if (out->capacity < max_cardinality) {
-      array_container_grow(out, max_cardinality, DEFAULT_MAX_SIZE, false);
-    }
     // compute union with smallest array first
     if (card_1 < card_2) {
         out->cardinality = (int32_t)union_uint16(
@@ -223,18 +220,15 @@ void array_container_xor(const array_container_t *array_1,
                          array_container_t *out) {
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
-
-#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     if (out->capacity < max_cardinality) {
         array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
     }
+
+#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     out->cardinality =
         xor_vector16(array_1->array, array_1->cardinality, array_2->array,
                      array_2->cardinality, out->array);
 #else
-    if (out->capacity < max_cardinality) {
-        array_container_grow(out, max_cardinality, DEFAULT_MAX_SIZE, false);
-    }
     out->cardinality =
         xor_uint16(array_1->array, array_1->cardinality, array_2->array,
                    array_2->cardinality, out->array);
