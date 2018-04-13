@@ -74,6 +74,13 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_C}"
 {
     echo "#include \"${AMAL_H}\""
 
+    echo ""
+    echo "/* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */"
+    echo "#ifdef DMALLOC"
+    echo "#include \"dmalloc.h\""
+    echo "#endif"
+    echo ""
+
     for h in ${ALLCFILES}; do
         dofile $h
     done
