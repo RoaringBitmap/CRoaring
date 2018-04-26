@@ -61,6 +61,7 @@ void can_copy_empty(bool copy_on_write) {
 }
 
 
+
 void can_copy_empty_true() {
   can_copy_empty(true);
 }
@@ -155,6 +156,38 @@ void check_interval() {
     roaring_bitmap_free(range2);
 
 }
+
+
+void test_stress_memory(bool copy_on_write) {
+	for (size_t i = 0; i < 5; i++) {
+		roaring_bitmap_t *r1 = roaring_bitmap_create();
+		r1->copy_on_write = copy_on_write;
+		assert_non_null(r1);
+		for (size_t k = 0; k < 1000000; k++) {
+			uint32_t j = rand() % (100000000);
+			roaring_bitmap_add(r1, j);
+		}
+		roaring_bitmap_run_optimize(r1);
+		uint32_t compact_size = roaring_bitmap_portable_size_in_bytes(r1);
+		char * serializedbytes = (char *) malloc(compact_size);
+		size_t actualsize = roaring_bitmap_portable_serialize(r1, serializedbytes);
+		assert_int_equal(actualsize, compact_size);
+    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
+    assert_true(roaring_bitmap_equals(r1, t));
+    roaring_bitmap_free(t);
+		free(serializedbytes);
+		roaring_bitmap_free(r1);
+	}
+}
+
+void test_stress_memory_true() {
+  test_stress_memory(true);
+}
+
+void test_stress_memory_false() {
+  test_stress_memory(false);
+}
+
 
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
@@ -2915,6 +2948,8 @@ void test_or_many_memory_leak() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_stress_memory_true),
+        cmocka_unit_test(test_stress_memory_false),
         cmocka_unit_test(check_interval),
         cmocka_unit_test(test_uint32_iterator_true),
         cmocka_unit_test(test_example_true),
