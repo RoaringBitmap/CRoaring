@@ -55,7 +55,7 @@ static char *read_file(const char *filename) {
  * read it all and generate an array of integers.
  * The caller is responsible for memory de-allocation.
  */
-static uint32_t *read_integer_file(char *filename, size_t *howmany) {
+static uint32_t *read_integer_file(const char *filename, size_t *howmany) {
     char *buffer = read_file(filename);
     if (buffer == NULL) return NULL;
 

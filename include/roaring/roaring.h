@@ -611,6 +611,18 @@ roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
 */
 void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it);
 
+/*
+ * Reads next ${count} values from iterator into user-supplied ${buf}.
+ * Returns the number of read elements.
+ * This number can be smaller than ${count}, which means that iterator is drained.
+ *
+ * This function satisfies semantics of iteration and can be used together with
+ * other iterator functions.
+ *  - first value is copied from ${it}->current_value
+ *  - after function returns, iterator is positioned at the next element
+ */
+uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count);
+
 #ifdef __cplusplus
 }
 #endif
