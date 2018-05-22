@@ -235,6 +235,21 @@ while(i->has_value) {
 roaring_free_uint32_iterator(i);
 // roaring_bitmap_get_cardinality(r1) == counter
 
+// for greater speed, you can iterate over the data in bulk
+i = roaring_create_iterator(r1);
+uint32_t buffer[256];
+while (1) {
+    uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
+    for (uint32_t j = 0; j < ret; j++) {
+             counter += buffer[j];
+    }
+    if (ret < 256) {
+             break;
+     }
+}
+roaring_free_uint32_iterator(i);
+
+
 roaring_bitmap_free(r1);
 roaring_bitmap_free(r2);
 roaring_bitmap_free(r3);
