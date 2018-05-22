@@ -1374,6 +1374,90 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     return it->has_value;
 }
 
+uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count) {
+  uint32_t ret = 0;
+  uint32_t num_values;
+  uint32_t wordindex;  // used for bitsets
+  uint64_t word;       // used for bitsets
+  const array_container_t* acont; //TODO remove
+  const run_container_t* rcont; //TODO remove
+  const bitset_container_t* bcont; //TODO remove
+
+  while (it->has_value && ret < count) {
+    switch (it->typecode) {
+      case BITSET_CONTAINER_TYPE_CODE:
+        bcont = (const bitset_container_t*)(it->container);
+        wordindex = it->in_container_index / 64;
+        word = bcont->array[wordindex] & (UINT64_MAX << (it->in_container_index % 64));
+        do {
+          while (word != 0 && ret < count) {
+            buf[0] = it->highbits | (wordindex * 64 + __builtin_ctzll(word));
+            word = word & (word - 1);
+            buf++;
+            ret++;
+          }
+          while (word == 0 && wordindex+1 < BITSET_CONTAINER_SIZE_IN_WORDS) {
+            wordindex++;
+            word = bcont->array[wordindex];
+          }
+        } while (word != 0 && ret < count);
+        it->has_value = (word != 0);
+        if (it->has_value) {
+          it->in_container_index = wordindex * 64 + __builtin_ctzll(word);
+          it->current_value = it->highbits | it->in_container_index;
+        }
+        break;
+      case ARRAY_CONTAINER_TYPE_CODE:
+        acont = (const array_container_t *)(it->container);
+        num_values = minimum_uint32(acont->cardinality - it->in_container_index, count - ret);
+        for (uint32_t i = 0; i < num_values; i++) {
+          buf[i] = it->highbits | acont->array[it->in_container_index + i];
+        }
+        buf += num_values;
+        ret += num_values;
+        it->in_container_index += num_values;
+        it->has_value = (it->in_container_index < acont->cardinality);
+        if (it->has_value) {
+          it->current_value = it->highbits | acont->array[it->in_container_index];
+        }
+        break;
+      case RUN_CONTAINER_TYPE_CODE:
+        rcont = (const run_container_t*)(it->container);
+        //"in_run_index" name is misleading, read it as "max_value_in_current_run"
+        do {
+          num_values = minimum_uint32(it->in_run_index - it->current_value + 1, count - ret);
+          for (uint32_t i = 0; i < num_values; i++) {
+            buf[i] = it->current_value + i;
+          }
+          it->current_value += num_values; // this can overflow to zero: UINT32_MAX+1=0
+          buf += num_values;
+          ret += num_values;
+
+          if (it->current_value > it->in_run_index || it->current_value == 0) {
+            it->run_index++;
+            if (it->run_index < rcont->n_runs) {
+              it->current_value = it->highbits | rcont->runs[it->run_index].value;
+              it->in_run_index = it->current_value + rcont->runs[it->run_index].length;
+            } else {
+              it->has_value = false;
+            }
+          }
+        } while ((ret < count) && it->has_value);
+        break;
+      default:
+        assert(false);
+    }
+    if (it->has_value) {
+      assert(ret == count);
+      return ret;
+    }
+    it->container_index++;
+    it->has_value = loadfirstvalue(it);
+  }
+  return ret;
+}
+
+
 
 void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) { free(it); }
 

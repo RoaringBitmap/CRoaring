@@ -16,6 +16,10 @@ inline static int our_rand() {  // we do not want to depend on a system-specific
     return seed & OUR_RAND_MAX;
 }
 
+static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
+    return (a < b) ? a : b;
+}
+
 // arrays expected to both be sorted.
 static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
                         int32_t size2) {
@@ -83,6 +87,38 @@ void can_add_to_copies(bool copy_on_write) {
     assert(roaring_bitmap_get_cardinality(bm2) == 2);
     roaring_bitmap_free(bm1);
     roaring_bitmap_free(bm2);
+}
+
+void convert_all_containers(roaring_bitmap_t* r, uint8_t dst_type) {
+    for (int32_t i = 0; i < r->high_low_container.size; i++) {
+        // first step: convert src_type to ARRAY
+        if (r->high_low_container.typecodes[i] == BITSET_CONTAINER_TYPE_CODE) {
+            array_container_t* dst_container = array_container_from_bitset(r->high_low_container.containers[i]);
+            bitset_container_free(r->high_low_container.containers[i]);
+            r->high_low_container.containers[i] = dst_container;
+            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE_CODE;
+        } else if (r->high_low_container.typecodes[i] == RUN_CONTAINER_TYPE_CODE) {
+            array_container_t* dst_container = array_container_from_run(r->high_low_container.containers[i]);
+            run_container_free(r->high_low_container.containers[i]);
+            r->high_low_container.containers[i] = dst_container;
+            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE_CODE;
+        }
+        assert(r->high_low_container.typecodes[i] == ARRAY_CONTAINER_TYPE_CODE);
+
+        // second step: convert ARRAY to dst_type
+        if (dst_type == BITSET_CONTAINER_TYPE_CODE) {
+            bitset_container_t* dst_container = bitset_container_from_array(r->high_low_container.containers[i]);
+            array_container_free(r->high_low_container.containers[i]);
+            r->high_low_container.containers[i] = dst_container;
+            r->high_low_container.typecodes[i] = BITSET_CONTAINER_TYPE_CODE;
+        } else if (dst_type == RUN_CONTAINER_TYPE_CODE) {
+            run_container_t* dst_container = run_container_from_array(r->high_low_container.containers[i]);
+            array_container_free(r->high_low_container.containers[i]);
+            r->high_low_container.containers[i] = dst_container;
+            r->high_low_container.typecodes[i] = RUN_CONTAINER_TYPE_CODE;
+        }
+        assert(r->high_low_container.typecodes[i] == dst_type);
+    }
 }
 
 void test_stats() {
@@ -2946,6 +2982,165 @@ void test_or_many_memory_leak() {
     }
 }
 
+void test_read_uint32_iterator_generate_data(uint32_t** values_out, uint32_t* count_out) {
+    const size_t capacity = 1000*1000;
+    uint32_t* values = malloc(sizeof(uint32_t) * capacity); // ascending order
+    uint32_t count = 0;
+    uint32_t base = 1234; // container index
+
+    // min allowed value
+    values[count++] = 0;
+
+    // only the very first value in container is set
+    values[count++] = base*65536;
+    base += 2;
+
+    // only the very last value in container is set
+    values[count++] = base*65536 + 65535;
+    base += 2;
+
+    // fully filled container
+    for (uint32_t i = 0; i < 65536; i++) {
+        values[count++] = base*65536 + i;
+    }
+    base += 2;
+
+    // even values
+    for (uint32_t i = 0; i < 65536; i += 2) {
+        values[count++] = base*65536 + i;
+    }
+    base += 2;
+
+    // odd values
+    for (uint32_t i = 1; i < 65536; i += 2) {
+        values[count++] = base*65536 + i;
+    }
+    base += 2;
+
+    // each next 64-bit word is ROR'd by one
+    for (uint32_t i = 0; i < 65536; i += 65) {
+        values[count++] = base*65536 + i;
+    }
+    base += 2;
+
+    // runs of increasing length: 0, 1,0, 1,1,0, 1,1,1,0, ...
+    for (uint32_t i = 0, run_index = 0; i < 65536; i++) {
+      if (i != (run_index+1)*(run_index+2)/2-1) {
+        values[count++] = base*65536 + i;
+      } else {
+        run_index++;
+      }
+    }
+    base += 2;
+
+    // 00000XX, XXXXXX, XX0000
+    for (uint32_t i = 65536-100; i < 65536; i++) {
+        values[count++] = base*65536 + i;
+    }
+    base += 1;
+    for (uint32_t i = 0; i < 65536; i++) {
+        values[count++] = base*65536 + i;
+    }
+    base += 1;
+    for (uint32_t i = 0; i < 100; i++) {
+        values[count++] = base*65536 + i;
+    }
+    base += 2;
+
+    // random
+    for (int i = 0; i < 65536; i += our_rand()%10+1) {
+        values[count++] = base*65536 + i;
+    }
+    base += 2;
+
+    // max allowed value
+    values[count++] = UINT32_MAX;
+
+    assert(count <= capacity);
+    *values_out = values;
+    *count_out = count;
+}
+
+/*
+ * Read bitmap in steps of given size, compare with reference values.
+ * If step is UINT32_MAX (special value), then read single non-empty container at a time.
+ */
+void read_compare(roaring_bitmap_t* r, const uint32_t* ref_values, uint32_t ref_count, uint32_t step) {
+    roaring_uint32_iterator_t *iter = roaring_create_iterator(r);
+    uint32_t* buffer = malloc(sizeof(uint32_t) * (step == UINT32_MAX ? 65536 : step));
+    while (ref_count > 0) {
+        assert(iter->has_value == true);
+        assert(iter->current_value == ref_values[0]);
+
+        uint32_t num_ask = step;
+        if (step == UINT32_MAX) {
+            num_ask = 0;
+            for (uint32_t i = 0; i < ref_count; i++) {
+                if ((ref_values[i]>>16) == (ref_values[0]>>16)) {
+                    num_ask++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        uint32_t num_got = roaring_read_uint32_iterator(iter, buffer, num_ask);
+        assert(num_got == minimum_uint32(num_ask, ref_count));
+        for (uint32_t i = 0; i < num_got; i++) {
+            assert(ref_values[i] == buffer[i]);
+        }
+        ref_values += num_got;
+        ref_count -= num_got;
+    }
+
+    assert(iter->has_value == false);
+    assert(iter->current_value == UINT32_MAX);
+
+    assert(roaring_read_uint32_iterator(iter, buffer, step) == 0);
+    assert(iter->has_value == false);
+    assert(iter->current_value == UINT32_MAX);
+
+    free(buffer);
+    roaring_free_uint32_iterator(iter);
+}
+
+void test_read_uint32_iterator(uint8_t type) {
+    uint32_t* ref_values;
+    uint32_t ref_count;
+    test_read_uint32_iterator_generate_data(&ref_values, &ref_count);
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 0; i < ref_count; i++) {
+        roaring_bitmap_add(r, ref_values[i]);
+    }
+    if (type != UINT8_MAX) {
+        convert_all_containers(r, type);
+    }
+
+    read_compare(r, ref_values, ref_count, 1);
+    read_compare(r, ref_values, ref_count, 2);
+    read_compare(r, ref_values, ref_count, 7);
+    read_compare(r, ref_values, ref_count, ref_count-1);
+    read_compare(r, ref_values, ref_count, ref_count);
+    read_compare(r, ref_values, ref_count, UINT32_MAX); // special value
+
+    roaring_bitmap_free(r);
+    free(ref_values);
+}
+
+void test_read_uint32_iterator_array() {
+    test_read_uint32_iterator(ARRAY_CONTAINER_TYPE_CODE);
+}
+void test_read_uint32_iterator_bitset() {
+    test_read_uint32_iterator(BITSET_CONTAINER_TYPE_CODE);
+}
+void test_read_uint32_iterator_run() {
+    test_read_uint32_iterator(RUN_CONTAINER_TYPE_CODE);
+}
+void test_read_uint32_iterator_native() {
+    test_read_uint32_iterator(UINT8_MAX); // special value
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_stress_memory_true),
@@ -3037,6 +3232,10 @@ int main() {
         cmocka_unit_test(test_or_many_memory_leak),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
+        cmocka_unit_test(test_read_uint32_iterator_array),
+        cmocka_unit_test(test_read_uint32_iterator_bitset),
+        cmocka_unit_test(test_read_uint32_iterator_run),
+        cmocka_unit_test(test_read_uint32_iterator_native),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
