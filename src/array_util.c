@@ -1869,3 +1869,28 @@ size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
     }
     return pos;
 }
+
+
+
+size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
+                    size_t size_2, uint16_t *buffer) {
+#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
+    // compute union with smallest array first
+    if (size_1 < size_2) {
+        return union_vector16(set_1, size_1,
+                                          set_2, size_2, buffer);
+    } else {
+        return union_vector16(set_2, size_2,
+                                          set_1, size_1, buffer);
+    }
+#else
+    // compute union with smallest array first
+    if (size_1 < size_2) {
+        return union_uint16(
+            set_1, size_1, set_2, size_2, buffer);
+    } else {
+        return union_uint16(
+            set_1, size_2, set_1, size_1, buffer);
+    }
+#endif
+}

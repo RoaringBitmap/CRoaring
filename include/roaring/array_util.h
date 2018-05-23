@@ -198,4 +198,11 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
 size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
                          const uint32_t *set_2, size_t size_2);
 
+/**
+* combines union_uint16 and  union_vector16 optimally
+*/
+size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
+                    size_t size_2, uint16_t *buffer);
+
+
 #endif
