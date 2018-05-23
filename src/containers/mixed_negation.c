@@ -119,6 +119,10 @@ bool array_container_negation_range(const array_container_t *src,
     array_container_t *arr =
         array_container_create_given_capacity(new_cardinality);
     *dst = (void *)arr;
+    if(new_cardinality == 0) {
+      arr->cardinality = new_cardinality;
+      return false; // we are done.
+    }
     // copy stuff before the active area
     memcpy(arr->array, src->array, start_index * sizeof(uint16_t));
 
