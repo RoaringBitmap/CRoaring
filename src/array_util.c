@@ -1890,7 +1890,7 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
             set_1, size_1, set_2, size_2, buffer);
     } else {
         return union_uint16(
-            set_1, size_2, set_1, size_1, buffer);
+            set_2, size_2, set_1, size_1, buffer);
     }
 #endif
 }
