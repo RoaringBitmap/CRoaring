@@ -1008,11 +1008,11 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
     size_t pos = 0, idx_1 = 0, idx_2 = 0;
 
     if (0 == size_2) {
-        memcpy(buffer, set_1, size_1 * sizeof(uint16_t));
+        memmove(buffer, set_1, size_1 * sizeof(uint16_t));
         return size_1;
     }
     if (0 == size_1) {
-        memcpy(buffer, set_2, size_2 * sizeof(uint16_t));
+        memmove(buffer, set_2, size_2 * sizeof(uint16_t));
         return size_2;
     }
 
@@ -1041,11 +1041,11 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
 
     if (idx_1 < size_1) {
         const size_t n_elems = size_1 - idx_1;
-        memcpy(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint16_t));
+        memmove(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint16_t));
         pos += n_elems;
     } else if (idx_2 < size_2) {
         const size_t n_elems = size_2 - idx_2;
-        memcpy(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint16_t));
+        memmove(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint16_t));
         pos += n_elems;
     }
 
@@ -1782,11 +1782,11 @@ size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
     size_t pos = 0, idx_1 = 0, idx_2 = 0;
 
     if (0 == size_2) {
-        memcpy(buffer, set_1, size_1 * sizeof(uint32_t));
+        memmove(buffer, set_1, size_1 * sizeof(uint32_t));
         return size_1;
     }
     if (0 == size_1) {
-        memcpy(buffer, set_2, size_2 * sizeof(uint32_t));
+        memmove(buffer, set_2, size_2 * sizeof(uint32_t));
         return size_2;
     }
 
@@ -1815,11 +1815,11 @@ size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
 
     if (idx_1 < size_1) {
         const size_t n_elems = size_1 - idx_1;
-        memcpy(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint32_t));
+        memmove(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint32_t));
         pos += n_elems;
     } else if (idx_2 < size_2) {
         const size_t n_elems = size_2 - idx_2;
-        memcpy(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint32_t));
+        memmove(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint32_t));
         pos += n_elems;
     }
 
