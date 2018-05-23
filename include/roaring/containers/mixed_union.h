@@ -38,10 +38,29 @@ bool array_array_container_union(const array_container_t *src_1,
                                  const array_container_t *src_2, void **dst);
 
 /*
+ * Compute the union between src_1 and src_2 and write the result
+ * to *dst if it cannot be written to src_1. If the return function is true,
+ * the result is a bitset_container_t
+ * otherwise is a array_container_t. When the result is an array_container_t, it
+ * it either written to src_1 (if *dst is null) or to *dst.
+ * If the result is a bitset_container_t and *dst is null, then there was a failure.
+ */
+bool array_array_container_inplace_union(array_container_t *src_1,
+                                 const array_container_t *src_2, void **dst);
+
+/*
  * Same as array_array_container_union except that it will more eagerly produce
  * a bitset.
  */
 bool array_array_container_lazy_union(const array_container_t *src_1,
+                                      const array_container_t *src_2,
+                                      void **dst);
+
+/*
+ * Same as array_array_container_inplace_union except that it will more eagerly produce
+ * a bitset.
+ */
+bool array_array_container_lazy_inplace_union(array_container_t *src_1,
                                       const array_container_t *src_2,
                                       void **dst);
 

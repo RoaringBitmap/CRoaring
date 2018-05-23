@@ -1174,12 +1174,15 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
             return c1;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
-            // Java impl. also does not do real in-place in this case
-            *result_type = array_array_container_union(
-                               (const array_container_t *)c1,
+            *result_type = array_array_container_inplace_union(
+                               (array_container_t *)c1,
                                (const array_container_t *)c2, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
+            if((result == NULL)
+               && (*result_type == ARRAY_CONTAINER_TYPE_CODE)) {
+                 return c1; // the computation was done in-place!
+            }
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
             run_container_union_inplace((run_container_t *)c1,
@@ -1293,12 +1296,15 @@ static inline void *container_lazy_ior(void *c1, uint8_t type1, const void *c2,
             return c1;
         case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
-            // Java impl. also does not do real in-place in this case
-            *result_type = array_array_container_lazy_union(
-                               (const array_container_t *)c1,
+            *result_type = array_array_container_lazy_inplace_union(
+                               (array_container_t *)c1,
                                (const array_container_t *)c2, &result)
                                ? BITSET_CONTAINER_TYPE_CODE
                                : ARRAY_CONTAINER_TYPE_CODE;
+            if((result == NULL)
+               && (*result_type == ARRAY_CONTAINER_TYPE_CODE)) {
+                 return c1; // the computation was done in-place!
+            }
             return result;
         case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
             run_container_union_inplace((run_container_t *)c1,
