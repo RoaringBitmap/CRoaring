@@ -651,6 +651,11 @@ void test_bitmap_from_range() {
             }
         }
     }
+
+    // max range
+    roaring_bitmap_t *r = roaring_bitmap_from_range(0, UINT64_MAX, 1);
+    assert_true(roaring_bitmap_get_cardinality(r) == UINT64_C(0x100000000));
+    roaring_bitmap_free(r);
 }
 
 void test_printf() {
