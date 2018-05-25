@@ -147,6 +147,10 @@ static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
     return (a < b) ? a : b;
 }
 
+static inline uint64_t minimum_uint64(uint64_t a, uint64_t b) {
+    return (a < b) ? a : b;
+}
+
 roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step) {
     if(max >= UINT64_C(0x100000000)) {
@@ -161,11 +165,11 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
         }
         return answer;
     }
-    uint32_t min_tmp = min;
+    uint64_t min_tmp = min;
     do {
         uint32_t key = min_tmp >> 16;
         uint32_t container_min = min_tmp & 0xFFFF;
-        uint32_t container_max = minimum_uint32(max - (key << 16), 1 << 16);
+        uint32_t container_max = minimum_uint64(max - (key << 16), 1 << 16);
         uint8_t type;
         void *container = container_from_range(&type, container_min,
                                                container_max, (uint16_t)step);
