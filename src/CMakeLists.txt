@@ -5,7 +5,7 @@ endif()
 
 
 # we default on a shared library.
-if(BUILD_STATIC)
+if(ROARING_BUILD_STATIC)
   set(ROARING_LIB_TYPE STATIC)
   MESSAGE( STATUS "Building a static library." )
 else()
