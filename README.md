@@ -406,7 +406,7 @@ do the following...
 ```
 mkdir -p buildnox64
 cd buildnoavx
-cmake -DDISABLE_X64=ON ..
+cmake -DROARING_DISABLE_X64=ON ..
 make
 ```
 

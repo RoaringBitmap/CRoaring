@@ -3,8 +3,8 @@ macro(append var string)
 endmacro(append)
 
 set(SANITIZE_FLAGS "")
-if(SANITIZE)
-  set(SANITIZE_FLAGS "-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined")
+if(ROARING_SANITIZE)
+  set(ROARING_SANITIZE_FLAGS "-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined")
   if (CMAKE_COMPILER_IS_GNUCC)
     # Ubuntu bug for GCC 5.0+ (safe for all versions)
     append(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=gold")
@@ -14,16 +14,16 @@ endif()
 
 ## -march=native is not supported on some platforms
 if(NOT MSVC)
-if(NOT DISABLE_NATIVE)
+if(NOT ROARING_DISABLE_NATIVE)
 set(OPT_FLAGS "-march=native")
 endif()
 endif()
 
-if(DISABLE_X64)
+if(ROARING_DISABLE_X64)
   # we can manually disable any optimization for x64
   set (OPT_FLAGS "${OPT_FLAGS} -DDISABLE_X64" )
 endif()
-if(DISABLE_AVX)
+if(ROARING_DISABLE_AVX)
   # we can manually disable AVX by defining DISABLEAVX
   set (OPT_FLAGS "${OPT_FLAGS} -DDISABLEAVX" )
 endif()

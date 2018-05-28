@@ -39,7 +39,7 @@ PROCESSOR=$(uname -m)
 
 if [ "$PROCESSOR" == "x86_64" ]; then
   echo "You have an x86-64 processor. Your clang/gcc compiler ought to be able to target this generic architecture."
-  for flag in "-DDISABLE_X64" "-mno-sse3" "-mno-ssse3" "-mno-sse4.1" "-mno-sse4.2" "-mno-avx" "-mno-avx2" ; do 
+  for flag in "-DROARING_DISABLE_X64" "-mno-sse3" "-mno-ssse3" "-mno-sse4.1" "-mno-sse4.2" "-mno-avx" "-mno-avx2" ; do
      echo $flag
      echo "Can build in debug mode (C)"
      cc $flag -ggdb -std=c11  -o amalgamation_demo amalgamation_demo.c  && ./amalgamation_demo && rm ./amalgamation_demo
@@ -70,7 +70,7 @@ echo "testing debug (static)"
 cd $WORK_DIR
 mkdir debugstatic
 cd debugstatic
-cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_STATIC=ON $MAINDIR
+cmake -DCMAKE_BUILD_TYPE=Debug -DROARING_BUILD_STATIC=ON $MAINDIR
 make
 make test
 
@@ -78,7 +78,7 @@ echo "testing debug no x64 (static)"
 cd $WORK_DIR
 mkdir debugnox64static
 cd debugnox64static
-cmake -DDISABLE_X64=ON -DBUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Debug $MAINDIR
+cmake -DROARING_DISABLE_X64=ON -DROARING_BUILD_STATIC=ON -DCMAKE_BUILD_TYPE=Debug $MAINDIR
 make
 make test
 
@@ -86,7 +86,7 @@ echo "testing release"
 cd $WORK_DIR
 mkdir releasestatic
 cd releasestatic
-cmake -DBUILD_STATIC=ON $MAINDIR
+cmake -DROARING_BUILD_STATIC=ON $MAINDIR
 make
 make test
 
@@ -94,7 +94,7 @@ echo "testing release no x64 (static)"
 cd $WORK_DIR
 mkdir releasenox64static
 cd releasenox64static
-cmake -DDISABLE_X64=ON -DBUILD_STATIC=ON $MAINDIR
+cmake -DROARING_DISABLE_X64=ON -DROARING_BUILD_STATIC=ON $MAINDIR
 make
 make test
 
@@ -112,7 +112,7 @@ echo "testing debug no x64"
 cd $WORK_DIR
 mkdir debugnox64
 cd debugnox64
-cmake -DDISABLE_X64=ON -DCMAKE_BUILD_TYPE=Debug $MAINDIR
+cmake -DROARING_DISABLE_X64=ON -DCMAKE_BUILD_TYPE=Debug $MAINDIR
 make
 make test
 
@@ -128,7 +128,7 @@ echo "testing release no x64"
 cd $WORK_DIR
 mkdir releasenox64
 cd releasenox64
-cmake -DDISABLE_X64=ON $MAINDIR
+cmake -DROARING_DISABLE_X64=ON $MAINDIR
 make
 make test
 
