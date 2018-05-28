@@ -26,6 +26,7 @@ endif()
 option(BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 option(BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(SANITIZE "Sanitize addresses" OFF)
+option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
@@ -59,9 +60,10 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
 #################################
 
 add_subdirectory(src)
-add_subdirectory(benchmarks)
-add_subdirectory(tests)
-
+if(ENABLE_ROARING_TESTS)
+  add_subdirectory(benchmarks)
+  add_subdirectory(tests)
+endif()
 # Being terse is good, but knowing how the build is configured is important
 # and should not be hard to figure out.
 MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
@@ -72,6 +74,6 @@ MESSAGE( STATUS "BUILD_STATIC: " ${BUILD_STATIC} )
 MESSAGE( STATUS "BUILD_LTO: " ${BUILD_LTO} )
 MESSAGE( STATUS "SANITIZE: " ${SANITIZE} )
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} ) # important to know which compiler is used
-MESSAGE (STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} ) # important to know the flags
+MESSAGE( STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} ) # important to know the flags
 MESSAGE( STATUS "CMAKE_C_FLAGS_DEBUG: " ${CMAKE_C_FLAGS_DEBUG} )
 MESSAGE( STATUS "CMAKE_C_FLAGS_RELEASE: " ${CMAKE_C_FLAGS_RELEASE} )
