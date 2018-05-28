@@ -10,22 +10,22 @@ endif()
 project(RoaringBitmap)
 set(ROARING_LIB_NAME roaring)
 
-option(DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
-option(DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
+option(ROARING_DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
+option(ROARING_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
 
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
-SET(DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
-SET(DISABLE_NATIVE ON) # ARM platforms may not like -march=native
+SET(ROARING_DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
+SET(ROARING_DISABLE_NATIVE ON) # ARM platforms may not like -march=native
 ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
-SET(DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
-SET(DISABLE_NATIVE ON) # ARM platforms may not like -march=native
+SET(ROARING_DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
+SET(ROARING_DISABLE_NATIVE ON) # ARM platforms may not like -march=native
 endif()
 
-option(BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
-option(BUILD_LTO "Build library with Link Time Optimization" OFF)
-option(SANITIZE "Sanitize addresses" OFF)
+option(ROARING_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+option(ROARING_BUILD_LTO "Build library with Link Time Optimization" OFF)
+option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
@@ -34,7 +34,6 @@ find_package(CTargets)
 find_package(Options)
 find_package(LTO)
 
-include_directories(include)
 ## C header files get installed to /usr/local/include/roaring typically
 install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
 
@@ -68,11 +67,11 @@ endif()
 # and should not be hard to figure out.
 MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} ) # this tends to be "sticky" so you can remain unknowingly in debug mode
-MESSAGE( STATUS "DISABLE_X64: " ${DISABLE_X64} ) # options in cmake are "sticky" so old options can remain even if that is counterintuitive
-MESSAGE( STATUS "DISABLE_AVX: " ${DISABLE_AVX} ) # options in cmake are "sticky" so old options can remain even if that is counterintuitive
-MESSAGE( STATUS "BUILD_STATIC: " ${BUILD_STATIC} )
-MESSAGE( STATUS "BUILD_LTO: " ${BUILD_LTO} )
-MESSAGE( STATUS "SANITIZE: " ${SANITIZE} )
+MESSAGE( STATUS "ROARING_DISABLE_X64: " ${ROARING_DISABLE_X64} ) # options in cmake are "sticky" so old options can remain even if that is counterintuitive
+MESSAGE( STATUS "ROARING_DISABLE_AVX: " ${ROARING_DISABLE_AVX} ) # options in cmake are "sticky" so old options can remain even if that is counterintuitive
+MESSAGE( STATUS "ROARING_BUILD_STATIC: " ${ROARING_BUILD_STATIC} )
+MESSAGE( STATUS "ROARING_BUILD_LTO: " ${ROARING_BUILD_LTO} )
+MESSAGE( STATUS "ROARING_SANITIZE: " ${ROARING_SANITIZE} )
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} ) # important to know which compiler is used
 MESSAGE( STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} ) # important to know the flags
 MESSAGE( STATUS "CMAKE_C_FLAGS_DEBUG: " ${CMAKE_C_FLAGS_DEBUG} )

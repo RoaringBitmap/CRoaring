@@ -5,7 +5,7 @@ endif()
 
 
 # we default on a shared library.
-if(BUILD_STATIC)
+if(ROARING_BUILD_STATIC)
   set(ROARING_LIB_TYPE STATIC)
   MESSAGE( STATUS "Building a static library." )
 else()
@@ -34,6 +34,10 @@ set(ROARING_SRC
     roaring_array.c)
 
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
+target_include_directories(${ROARING_LIB_NAME}
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
 install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
 
 if(NOT MSVC)

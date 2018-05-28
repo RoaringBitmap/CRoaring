@@ -374,7 +374,7 @@ make
 ```
 (You can replace the ``build`` directory with any other directory name.)
 
-By default, on all platforms, we build a dynamic library. You can generate a static library by adding ``-DBUILD_STATIC=ON`` to the command line.
+By default, on all platforms, we build a dynamic library. You can generate a static library by adding ``-DROARING_BUILD_STATIC=ON`` to the command line.
 By default all tests are built on all platforms, to skip building and running tests add `` -DENABLE_ROARING_TESTS=OFF `` to the command line.
 
 As with all ``cmake`` projects, you can specify the compilers you wish to use by adding (for example) ``-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++`` to the ``cmake`` command line.
@@ -386,7 +386,7 @@ If wish to build an x64 version while disabling AVX2 and BMI2 support at the exp
 ```
 mkdir -p buildnoavx
 cd buildnoavx
-cmake -DDISABLE_AVX=ON ..
+cmake -DROARING_DISABLE_AVX=ON ..
 make
 ```
 
@@ -406,7 +406,7 @@ do the following...
 ```
 mkdir -p buildnox64
 cd buildnoavx
-cmake -DDISABLE_X64=ON ..
+cmake -DROARING_DISABLE_X64=ON ..
 make
 ```
 
@@ -416,11 +416,11 @@ For a debug release, starting from the root directory of the project (CRoaring),
 ```
 mkdir -p debug
 cd debug
-cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE=ON ..
+cmake -DCMAKE_BUILD_TYPE=Debug -DROARING_SANITIZE=ON ..
 make
 ```
 
-(Again, you can use the ``-DDISABLE_AVX=ON`` flag if you need it.)
+(Again, you can use the ``-DROARING_DISABLE_AVX=ON`` flag if you need it.)
 
 (Of course you can replace the ``debug`` directory with any other directory name.)
 
@@ -462,7 +462,7 @@ To build with at least Visual Studio 2015 from the command line:
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line.
 - Create a subdirectory within CRoaring, such as ``VisualStudio``.
 - Using a shell, go to this newly created directory. For example, within GitHub Desktop, you can right-click on  ``CRoaring`` in your GitHub repository list, and select ``Open in Git Shell``, then type ``cd VisualStudio`` in the newly created shell.
-- Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..`` in the shell while in the ``VisualStudio`` repository. (Alternatively, if you want to build a static library, you may use the command line ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DBUILD_STATIC=ON  ..``.)
+- Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..`` in the shell while in the ``VisualStudio`` repository. (Alternatively, if you want to build a static library, you may use the command line ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DROARING_BUILD_STATIC=ON  ..``.)
 - This last command created a Visual Studio solution file in the newly created directory (e.g., ``RoaringBitmap.sln``). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the ``Solution Explorer`` window (available from the ``View`` menu), right-click ``ALL_BUILD`` and select ``Build``. To test the code, still in the ``Solution Explorer`` window, select ``RUN_TESTS`` and select ``Build``.
 
 To build with at least Visual Studio 2017 directly in the IDE:
