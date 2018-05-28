@@ -34,7 +34,6 @@ find_package(CTargets)
 find_package(Options)
 find_package(LTO)
 
-include_directories(include)
 ## C header files get installed to /usr/local/include/roaring typically
 install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
 
