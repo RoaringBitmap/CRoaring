@@ -174,6 +174,40 @@ inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
     return false;
 }
 
+/* Check whether all positions in a range of positions from pos1 (included) to pos2 (included) is present in `run'.  */
+static inline bool run_container_contains_range(const run_container_t *run, uint16_t pos1, uint16_t pos2) {
+
+    uint16_t count = 0;
+
+    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos1);
+
+    if (index < 0) {
+
+        index = -index - 2;
+
+        if ((index == -1) || ((pos1 - run->runs[index].value) > run->runs[index].length)) return false;
+    }
+
+    for (int32_t i = index; i < run->n_runs; ++i) {
+
+        const int32_t stop = run->runs[i].value + run->runs[i].length;
+
+        if (run->runs[i].value > pos2) break;
+
+        if (stop > pos2) {
+
+            count += (((pos2 - run->runs[i].value + 1) > 0) ? (pos2 - run->runs[i].value + 1) : 0);
+            break;
+        }
+
+        const int32_t min = (stop - pos1) > 0 ? (stop - pos1) : 0;
+
+	count += (min < run->runs[i].length) ? min : run->runs[i].length;
+    }
+
+    return count >= (pos2 - pos1);
+}
+
 /* Get the cardinality of `run'. Requires an actual computation. */
 int run_container_cardinality(const run_container_t *run);
 

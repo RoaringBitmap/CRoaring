@@ -181,10 +181,40 @@ inline bool bitset_container_get(const bitset_container_t *bitset,
 
 #endif
 
+/* Check if all bits are set in a range of positions from pos1 (included) to pos2 (included). */
+static inline bool bitset_container_get_range(const bitset_container_t *bitset, uint16_t pos1, uint16_t pos2) {
+
+    const uint16_t start = pos1 >> 6;
+    const uint16_t end = pos2 >> 6;
+
+    const uint64_t first = ~((1ULL << (pos1 & 0x3F)) - 1);
+    const uint64_t last = ((1ULL << (pos2 & 0x3F)) << 1) - 1;
+
+    if (start == end) return ((bitset->array[end] & first & last) == (first & last));
+    if ((bitset->array[start] & first) != first) return false;
+    if ((end < BITSET_CONTAINER_SIZE_IN_WORDS) && ((bitset->array[end] & last) != last)) return false;
+
+    for (uint16_t i = start + 1; (i < BITSET_CONTAINER_SIZE_IN_WORDS) && (i < end); ++i){
+
+        if (bitset->array[i] != UINT64_C(0xFFFFFFFFFFFFFFFF)) return false;
+    }
+
+    return true;
+}
+
 /* Check whether `bitset' is present in `array'.  Calls bitset_container_get. */
 inline bool bitset_container_contains(const bitset_container_t *bitset,
                                       uint16_t pos) {
     return bitset_container_get(bitset, pos);
+}
+
+/*
+* Check whether a range of bits from position `pos1' (included) to `pos2' (included)
+* is present in `bitset'.  Calls bitset_container_get_all.
+*/
+static inline bool bitset_container_contains_range(const bitset_container_t *bitset,
+					uint16_t pos1, uint16_t pos2) {
+    return bitset_container_get_range(bitset, pos1, pos2);
 }
 
 /* Get the number of bits set */

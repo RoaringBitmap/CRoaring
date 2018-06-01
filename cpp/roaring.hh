@@ -129,6 +129,13 @@ class Roaring {
     }
 
     /**
+    * Check if all values from x to y are present
+    */
+    bool containsRange(uint32_t x, uint32_t y) const {
+        return roaring_bitmap_contains_range(&roaring, x, y);
+    }
+
+    /**
      * Destructor
      */
     ~Roaring() { ra_clear(&roaring.high_low_container); }

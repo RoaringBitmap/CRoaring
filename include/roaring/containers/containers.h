@@ -534,6 +534,27 @@ inline bool container_contains(const void *container, uint16_t val,
     }
 }
 
+/**
+ * Check whether a range of values from x1 (included) to x2 (included)
+ * is in a container, requires a typecode
+ */
+static inline bool container_contains_range(const void *container, uint16_t x1,
+					uint16_t x2, uint8_t typecode) {
+    container = container_unwrap_shared(container, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            return bitset_container_get_range((const bitset_container_t *)container, x1, x2);
+        case ARRAY_CONTAINER_TYPE_CODE:
+            return array_container_contains_range((const array_container_t *)container, x1, x2);
+        case RUN_CONTAINER_TYPE_CODE:
+            return run_container_contains_range((const run_container_t *)container, x1, x2);
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return false;
+    }
+}
+
 int32_t container_serialize(const void *container, uint8_t typecode,
                             char *buf) WARN_UNUSED;
 

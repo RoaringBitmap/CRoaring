@@ -328,6 +328,18 @@ inline bool array_container_contains(const array_container_t *arr,
 
 }
 
+/* Check whether a range of values from x1 (included) to x2 (included) is present. */
+static inline bool array_container_contains_range(const array_container_t *arr, uint16_t x1, uint16_t x2) {
+
+    const uint16_t *carr = (const uint16_t *) arr->array;
+
+    const int32_t start = advanceUntil(carr, -1, arr->cardinality, x1);
+    const int32_t end = advanceUntil(carr, start - 1, arr->cardinality, x2);
+
+    return (start < arr->cardinality) && (end < arr->cardinality) && (end - start == x2 - x1)
+            && (carr[start] == x1) && (carr[end] == x2);
+}
+
 /* Returns the smallest value (assumes not empty) */
 inline uint16_t array_container_minimum(const array_container_t *arr) {
     if (arr->cardinality == 0) return 0;
