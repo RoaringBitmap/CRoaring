@@ -278,7 +278,7 @@ static inline bool roaring_bitmap_contains_range(const roaring_bitmap_t *r, uint
 
     i2 = (i2 < 0 ? -i2 - 1 : i2);
 
-    if ((i1 < 0) || (i2 - i1 != span)) return false;
+    if ((i1 < 0) || ((i2 - i1 + 1) != span)) return false;
 
     const uint16_t lb_x1 = x1 & 0xFFFF;
     const uint16_t lb_x2 = x2 & 0xFFFF;
