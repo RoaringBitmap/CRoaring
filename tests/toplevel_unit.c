@@ -1995,7 +1995,7 @@ void test_conversion_to_int_array() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2034,7 +2034,7 @@ void test_conversion_to_int_array_with_runoptimize() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2058,7 +2058,7 @@ void test_array_to_run() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2083,7 +2083,7 @@ void test_array_to_self() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2107,7 +2107,7 @@ void test_bitset_to_self() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2131,7 +2131,7 @@ void test_bitset_to_run() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2159,7 +2159,7 @@ void test_run_to_self() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2186,7 +2186,7 @@ void test_remove_run_to_bitset() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2213,7 +2213,7 @@ void test_remove_run_to_array() {
     uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr);
 
-    assert_true(array_equals(arr, card, ans, ans_ctr));
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
     free(arr);
     free(ans);
@@ -2363,7 +2363,7 @@ void test_negation_helper(bool runopt, uint32_t gap) {
         assert_true(hasrun);
     }
 
-    int orig_card = roaring_bitmap_get_cardinality(r1);
+    int orig_card = (int) roaring_bitmap_get_cardinality(r1);
 
     // get the first batch of ones but not the second
     roaring_bitmap_t *notted_r1 = roaring_bitmap_flip(r1, 0U, 100000U);
@@ -2567,7 +2567,7 @@ void test_inplace_negation_helper(bool runopt, uint32_t gap) {
         assert_true(hasrun);
     }
 
-    int orig_card = roaring_bitmap_get_cardinality(r1);
+    int orig_card = (int) roaring_bitmap_get_cardinality(r1);
     roaring_bitmap_t *r1_orig = roaring_bitmap_copy(r1);
 
     // get the first batch of ones but not the second
@@ -2803,7 +2803,7 @@ void select_test() {
                 }
         }
         roaring_bitmap_run_optimize(r);
-        uint32_t true_card = roaring_bitmap_get_cardinality(r);
+        uint64_t true_card = roaring_bitmap_get_cardinality(r);
         printf(" and actual card = %u\n", (unsigned)true_card);
 
         r->copy_on_write = 1;

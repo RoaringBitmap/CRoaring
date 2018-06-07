@@ -48,7 +48,7 @@
 /// We support X64 hardware in the following manner:
 ///
 /// if IS_X64 is defined then we have at least SSE and SSE2
-/// (All Intel processors sold in the recent past have at least SSE and SSE2 support, 
+/// (All Intel processors sold in the recent past have at least SSE and SSE2 support,
 /// going back to the Pentium 4.)
 ///
 /// if USESSE4 is defined then we assume at least SSE4.2, SSE4.1,
@@ -202,7 +202,7 @@ static inline void aligned_free(void *memblock) {
 
 static inline int hamming(uint64_t x) {
 #ifdef USESSE4
-    return _mm_popcnt_u64(x);
+    return (int) _mm_popcnt_u64(x);
 #else
     // won't work under visual studio, but hopeful we have _mm_popcnt_u64 in
     // many cases

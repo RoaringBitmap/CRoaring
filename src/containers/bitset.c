@@ -151,7 +151,7 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 #endif
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
-    return avx2_harley_seal_popcount256(
+    return (int) avx2_harley_seal_popcount256(
         (const __m256i *)bitset->array,
         BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
 }
@@ -244,7 +244,7 @@ int bitset_container_##opname(const bitset_container_t *src_1,          \
     const __m256i * __restrict__ array_1 = (const __m256i *) src_1->array; \
     const __m256i * __restrict__ array_2 = (const __m256i *) src_2->array; \
     __m256i *out = (__m256i *) dst->array;                              \
-    dst->cardinality = avx2_harley_seal_popcount256andstore_##opname(array_2,\
+    dst->cardinality = (int32_t)avx2_harley_seal_popcount256andstore_##opname(array_2,\
     		array_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
     return dst->cardinality;                                            \
 }                                                                       \
@@ -253,7 +253,7 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
                               const bitset_container_t *src_2) {        \
     const __m256i * __restrict__ data1 = (const __m256i *) src_1->array; \
     const __m256i * __restrict__ data2 = (const __m256i *) src_2->array; \
-    return avx2_harley_seal_popcount256_##opname(data2,                \
+    return (int)avx2_harley_seal_popcount256_##opname(data2,                \
     		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
 }
 

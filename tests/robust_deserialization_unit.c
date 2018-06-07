@@ -38,7 +38,7 @@ char* readfile(FILE* fp, size_t * bytes) {
 int compare(char* x, char* y, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         if (x[i] != y[i]) {
-            return i + 1;
+            return (int)(i + 1);
         }
     }
     return 0;

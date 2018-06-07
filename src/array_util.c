@@ -710,10 +710,10 @@ static void binarySearch4(const uint16_t *array, int32_t n, uint16_t target1,
     base4 = (base4[half] < target4) ? &base4[half] : base4;
     n -= half;
   }
-  *index1 = (*base1 < target1) + base1 - array;
-  *index2 = (*base2 < target2) + base2 - array;
-  *index3 = (*base3 < target3) + base3 - array;
-  *index4 = (*base4 < target4) + base4 - array;
+  *index1 = (int32_t)((*base1 < target1) + base1 - array);
+  *index2 = (int32_t)((*base2 < target2) + base2 - array);
+  *index3 = (int32_t)((*base3 < target3) + base3 - array);
+  *index4 = (int32_t)((*base4 < target4) + base4 - array);
 }
 
 /**
@@ -736,8 +736,8 @@ static void binarySearch2(const uint16_t *array, int32_t n, uint16_t target1,
     base2 = (base2[half] < target2) ? &base2[half] : base2;
     n -= half;
   }
-  *index1 = (*base1 < target1) + base1 - array;
-  *index2 = (*base2 < target2) + base2 - array;
+  *index1 = (int32_t)((*base1 < target1) + base1 - array);
+  *index2 = (int32_t)((*base2 < target2) + base2 - array);
 }
 
 /* Computes the intersection between one small and one large set of uint16_t.
@@ -760,7 +760,7 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
     uint16_t target2 = small[idx_s + 1];
     uint16_t target3 = small[idx_s + 2];
     uint16_t target4 = small[idx_s + 3];
-    binarySearch4(large + idx_l, size_l - idx_l, target1, target2, target3,
+    binarySearch4(large + idx_l, (int32_t)(size_l - idx_l), target1, target2, target3,
                   target4, &index1, &index2, &index3, &index4);
     if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
       buffer[pos++] = target1;
@@ -780,7 +780,7 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
   if ((idx_s + 2 <= size_s) && (idx_l < size_l)) {
     uint16_t target1 = small[idx_s];
     uint16_t target2 = small[idx_s + 1];
-    binarySearch2(large + idx_l, size_l - idx_l, target1, target2, &index1,
+    binarySearch2(large + idx_l, (int32_t)(size_l - idx_l), target1, target2, &index1,
                   &index2);
     if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
       buffer[pos++] = target1;
@@ -793,7 +793,7 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
   }
   if ((idx_s < size_s) && (idx_l < size_l)) {
     uint16_t val_s = small[idx_s];
-    int32_t index = binarySearch(large + idx_l, size_l - idx_l, val_s);
+    int32_t index = binarySearch(large + idx_l, (int32_t)(size_l - idx_l), val_s);
     if (index >= 0)
       buffer[pos++] = val_s;
   }
@@ -1877,11 +1877,11 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     // compute union with smallest array first
     if (size_1 < size_2) {
-        return union_vector16(set_1, size_1,
-                                          set_2, size_2, buffer);
+        return union_vector16(set_1, (uint32_t)size_1,
+                                          set_2, (uint32_t)size_2, buffer);
     } else {
-        return union_vector16(set_2, size_2,
-                                          set_1, size_1, buffer);
+        return union_vector16(set_2, (uint32_t)size_2,
+                                          set_1, (uint32_t)size_1, buffer);
     }
 #else
     // compute union with smallest array first

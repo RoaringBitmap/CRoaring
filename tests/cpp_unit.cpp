@@ -39,16 +39,16 @@ void test_example(bool copy_on_write) {
     assert_true(roaring_bitmap_contains(r1, 500));
 
     // compute how many bits there are:
-    uint32_t cardinality = roaring_bitmap_get_cardinality(r1);
-    printf("Cardinality = %d \n", cardinality);
+    uint64_t cardinality = roaring_bitmap_get_cardinality(r1);
+    printf("Cardinality = %d \n", (int)cardinality);
     assert_int_equal(900, cardinality);
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
-    uint32_t size = roaring_bitmap_portable_size_in_bytes(r1);
+    size_t size = roaring_bitmap_portable_size_in_bytes(r1);
     roaring_bitmap_run_optimize(r1);
-    uint32_t compact_size = roaring_bitmap_portable_size_in_bytes(r1);
-    printf("size before run optimize %d bytes, and after %d bytes\n", size,
+    size_t compact_size = roaring_bitmap_portable_size_in_bytes(r1);
+    printf("size before run optimize %zu bytes, and after %zu bytes\n", size,
            compact_size);
     // create a new bitmap with varargs
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
@@ -101,7 +101,7 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(i1_2);
 
     // we can write a bitmap to a pointer and recover it later
-    uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
+    size_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     char *serializedbytes = (char *)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
@@ -138,14 +138,14 @@ void test_example_cpp(bool copy_on_write) {
     assert_true(r1.contains(500));
 
     // compute how many bits there are:
-    uint32_t cardinality = r1.cardinality();
+    uint64_t cardinality = r1.cardinality();
     std::cout << "Cardinality = " << cardinality << std::endl;
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
-    uint32_t size = r1.getSizeInBytes();
+    size_t size = r1.getSizeInBytes();
     r1.runOptimize();
-    uint32_t compact_size = r1.getSizeInBytes();
+    size_t compact_size = r1.getSizeInBytes();
 
     std::cout << "size before run optimize " << size << " bytes, and after "
               << compact_size << " bytes." << std::endl;
@@ -202,7 +202,7 @@ void test_example_cpp(bool copy_on_write) {
     Roaring i1_2 = r1 & r2;
 
     // we can write a bitmap to a pointer and recover it later
-    uint32_t expectedsize = r1.getSizeInBytes();
+    size_t expectedsize = r1.getSizeInBytes();
     char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
     Roaring t = Roaring::read(serializedbytes);

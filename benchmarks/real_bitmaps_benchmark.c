@@ -100,15 +100,15 @@ int main(int argc, char **argv) {
     uint64_t successive_or = 0;
     // try ANDing and ORing together consecutive pairs
     for (int i = 0; i < (int)count - 1; ++i) {
-        uint32_t c1 = roaring_bitmap_get_cardinality(bitmaps[i]);
-        uint32_t c2 = roaring_bitmap_get_cardinality(bitmaps[i + 1]);
+        uint32_t c1 = (uint32_t)roaring_bitmap_get_cardinality(bitmaps[i]);
+        uint32_t c2 = (uint32_t)roaring_bitmap_get_cardinality(bitmaps[i + 1]);
         RDTSC_START(cycles_start);
         roaring_bitmap_t *tempand =
             roaring_bitmap_and(bitmaps[i], bitmaps[i + 1]);
         RDTSC_FINAL(cycles_final);
         successive_and += cycles_final - cycles_start;
 
-        uint32_t ci = roaring_bitmap_get_cardinality(tempand);
+        uint32_t ci = (uint32_t)roaring_bitmap_get_cardinality(tempand);
         roaring_bitmap_free(tempand);
         RDTSC_START(cycles_start);
         roaring_bitmap_t *tempor =
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
         RDTSC_FINAL(cycles_final);
         successive_or += cycles_final - cycles_start;
 
-        uint32_t co = roaring_bitmap_get_cardinality(tempor);
+        uint32_t co = (uint32_t)roaring_bitmap_get_cardinality(tempor);
         roaring_bitmap_free(tempor);
 
         if (c1 + c2 != co + ci) {

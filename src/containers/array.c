@@ -164,7 +164,7 @@ void array_container_union(const array_container_t *array_1,
     if (out->capacity < max_cardinality) {
       array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
     }
-    out->cardinality = fast_union_uint16(array_1->array, card_1,
+    out->cardinality = (int32_t)fast_union_uint16(array_1->array, card_1,
                                       array_2->array, card_2, out->array);
 
 }
