@@ -480,8 +480,10 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2);
 
 /**
- * compute the negation of the roaring bitmap within a specified interval.
- * areas outside the range are passed through unchanged.
+ * compute the negation of the roaring bitmap within a specified 
+ * interval: [range_start, range_end). The number of negated values is
+ * range_end - range_start.
+ * Areas outside the range are passed through unchanged.
  */
 
 roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
@@ -491,7 +493,7 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
  * compute (in place) the negation of the roaring bitmap within a specified
  * interval: [range_start, range_end). The number of negated values is
  * range_end - range_start.
- * areas outside the range are passed through unchanged.
+ * Areas outside the range are passed through unchanged.
  */
 
 void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
