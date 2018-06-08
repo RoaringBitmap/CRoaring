@@ -270,8 +270,7 @@ bool array_run_container_intersect(const array_container_t *src_1,
             arraypos = advanceUntil(src_1->array, arraypos, src_1->cardinality,
                                     rle.value);
         } else {
-        	return true;
-            arraypos++;
+            return true;
         }
     }
     return false;
