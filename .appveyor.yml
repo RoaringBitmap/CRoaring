@@ -13,8 +13,8 @@ configuration:
 - Debug
 
 platform:
-- x64
 - x86
+- x64
 
 init:
 - set arch=
@@ -39,7 +39,7 @@ before_build:
 
     cmake --version
 
-    cmake -DCMAKE_GENERATOR_PLATFORM=%PLATFORM% ..    
+    cmake -DCMAKE_GENERATOR_PLATFORM=%arch% ..    
 
     dir /s ..
     
