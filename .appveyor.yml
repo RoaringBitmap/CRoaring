@@ -19,7 +19,9 @@ platform:
 init:
 - set arch=
 - ps: if ($Env:PLATFORM -eq "x64") { $Env:arch = "Win64" }
+- ps: if ($Env:PLATFORM -eq "x86") { $Env:arch = "Win32" }
 - if "%arch%"=="Win64" ( set arch= Win64)
+- if "%arch%"=="Win32" ( set arch= Win32)
 - echo %arch%
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
 - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" ( set generator="Visual Studio 15 2017%arch%" )
