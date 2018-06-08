@@ -14,13 +14,11 @@ configuration:
 
 platform:
 - x64
-
-environment:
-  matrix:
-  - arch: Win64
+- x86
 
 init:
 - set arch=
+- ps: if ($Env:PLATFORM -eq "x64") { $Env:arch = "Win64" }
 - if "%arch%"=="Win64" ( set arch= Win64)
 - echo %arch%
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
@@ -39,7 +37,7 @@ before_build:
 
     cmake --version
 
-    cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..    
+    cmake -DCMAKE_GENERATOR_PLATFORM=$PLATFORM ..    
 
     dir /s ..
     

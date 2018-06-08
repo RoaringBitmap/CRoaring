@@ -129,11 +129,12 @@ static inline int __builtin_clzll(unsigned long long input_num) {
 #ifdef _WIN64  // highly recommended!!!
     _BitScanReverse64(&index, input_num);
 #else  // if we must support 32-bit Windows
-    if (input_num > 0xFFFFFFF) {
-        _BitScanReverse(&index, (uint32_t)(input_num >> 32));
+    uint32_t msb = (uint32_t)(input_num >> 32);
+    if (msb > 0xFFFFFFFF) {
+        _BitScanReverse(&index, msb);
+        index += 32;
     } else {
         _BitScanReverse(&index, (uint32_t)(input_num));
-        index += 32;
     }
 #endif
     return 63 - index;
