@@ -37,7 +37,7 @@ before_build:
 
     cmake --version
 
-    cmake -DCMAKE_GENERATOR_PLATFORM=$PLATFORM ..    
+    cmake -DCMAKE_GENERATOR_PLATFORM=%PLATFORM% ..    
 
     dir /s ..
     
