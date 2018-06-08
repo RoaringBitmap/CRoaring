@@ -121,6 +121,110 @@ void convert_all_containers(roaring_bitmap_t* r, uint8_t dst_type) {
     }
 }
 
+/*
+ * Tiny framework to compare roaring bitmap vs reference implementation
+ * side by side
+ */
+struct sbs_s {
+    roaring_bitmap_t *roaring;
+
+    // reference implementation
+    uint64_t *words;
+    uint32_t size; // number of words
+};
+typedef struct sbs_s sbs_t;
+
+sbs_t *sbs_create() {
+    sbs_t *sbs = malloc(sizeof(sbs_t));
+    sbs->roaring = roaring_bitmap_create();
+    sbs->size = 1;
+    sbs->words = malloc(sbs->size * sizeof(uint64_t));
+    for (uint32_t i = 0; i < sbs->size; i++) {
+        sbs->words[i] = 0;
+    }
+    return sbs;
+}
+
+void sbs_free(sbs_t *sbs) {
+  roaring_bitmap_free(sbs->roaring);
+  free(sbs->words);
+  free(sbs);
+}
+
+void sbs_convert(sbs_t *sbs, uint8_t code) {
+  convert_all_containers(sbs->roaring, code);
+}
+
+void sbs_ensure_room(sbs_t *sbs, uint32_t v) {
+  uint32_t i = v / 64;
+  if (i >= sbs->size) {
+    uint32_t new_size = (i+1) * 3 / 2;
+    sbs->words = realloc(sbs->words, new_size*sizeof(uint64_t));
+    for (uint32_t j = sbs->size; j < new_size; j++) {
+      sbs->words[j] = 0;
+    }
+    sbs->size = new_size;
+  }
+}
+
+void sbs_add_value(sbs_t *sbs, uint32_t v) {
+    roaring_bitmap_add(sbs->roaring, v);
+
+    sbs_ensure_room(sbs, v);
+    sbs->words[v/64] |= UINT64_C(1) << (v % 64);
+}
+
+void sbs_add_range(sbs_t *sbs, uint32_t min, uint32_t max) {
+    sbs_ensure_room(sbs, max);
+    for (uint64_t v = min; v <= max; v++) {
+        sbs->words[v/64] |= UINT64_C(1) << (v % 64);
+    }
+
+    roaring_bitmap_add_range(sbs->roaring, min, max);
+}
+
+void sbs_check_type(sbs_t *sbs, uint8_t type) {
+    for (int32_t i = 0; i < sbs->roaring->high_low_container.size; i++) {
+        assert_true(sbs->roaring->high_low_container.typecodes[i] == type);
+    }
+}
+
+void sbs_compare(sbs_t *sbs) {
+    uint32_t expected_cardinality = 0;
+    for (uint32_t i = 0; i < sbs->size; i++) {
+        expected_cardinality += _mm_popcnt_u64(sbs->words[i]);
+    }
+    uint32_t *expected_values = malloc(expected_cardinality * sizeof(uint32_t));
+    for (uint32_t i = 0, dst = 0; i < sbs->size; i++) {
+        for (uint32_t j = 0; j < 64; j++) {
+            if ((sbs->words[i] & (UINT64_C(1) << j)) != 0) {
+                expected_values[dst++] = i*64 + j;
+            }
+        }
+    }
+
+    uint32_t actual_cardinality = roaring_bitmap_get_cardinality(sbs->roaring);
+    uint32_t *actual_values = malloc(actual_cardinality * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(sbs->roaring, actual_values);
+
+    bool ok = array_equals(actual_values, actual_cardinality,
+                           expected_values, expected_cardinality);
+    if (!ok) {
+        printf("Expected: ");
+        for (uint32_t i = 0; i < expected_cardinality; i++) {
+            printf("%u ", expected_values[i]);
+        }
+        printf("\n");
+
+        printf("Actual: ");
+        roaring_bitmap_printf(sbs->roaring);
+        printf("\n");
+    }
+    free(actual_values);
+    free(expected_values);
+    assert_true(ok);
+}
+
 void test_stats() {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -3161,6 +3265,137 @@ void test_read_uint32_iterator_native() {
     test_read_uint32_iterator(UINT8_MAX); // special value
 }
 
+void test_add_range() {
+    // autoconversion: BITSET -> BITSET -> RUN
+    {
+      sbs_t* sbs = sbs_create();
+      sbs_add_value(sbs, 100);
+      sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
+      sbs_add_range(sbs, 0, 299);
+      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      sbs_add_range(sbs, 301, 65535);
+      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      // after and only after BITSET becomes [0, 65535], it is converted to RUN
+      sbs_add_range(sbs, 300, 300);
+      sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE);
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // autoconversion: ARRAY -> ARRAY -> BITSET
+    {
+      sbs_t* sbs = sbs_create();
+      sbs_add_value(sbs, 100);
+      sbs_convert(sbs, ARRAY_CONTAINER_TYPE_CODE);
+
+      // unless threshold was hit, it is still ARRAY
+      for (int i = 0; i < 100; i += 2) {
+        sbs_add_value(sbs, i);
+        sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE);
+      }
+
+      // after threshold on number of elements was hit, it is converted to BITSET
+      for (int i = 0; i < 65535; i += 2) {
+        sbs_add_value(sbs, i);
+      }
+      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+     // autoconversion: ARRAY -> RUN
+     {
+      sbs_t* sbs = sbs_create();
+      sbs_add_range(sbs, 0, 100);
+      sbs_convert(sbs, ARRAY_CONTAINER_TYPE_CODE);
+
+      // after ARRAY becomes full [0, 65535], it is converted to RUN
+      sbs_add_range(sbs, 100, 65535);
+      sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE);
+
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // autoconversion: RUN -> RUN -> BITSET
+    {
+      sbs_t* sbs = sbs_create();
+      // by default, RUN container is used
+      for (int i = 0; i < 100; i += 2) {
+        sbs_add_range(sbs, i, i);
+        sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE);
+      }
+      // after number of RLE runs exceeded threshold, it is converted to BITSET
+      for (int i = 0; i < 65535; i += 2) {
+        sbs_add_range(sbs, i, i);
+      }
+      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // append new container to the end
+    {
+      sbs_t* sbs = sbs_create();
+      sbs_add_value(sbs, 5);
+      sbs_add_range(sbs, 65536+5, 65536+20);
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // prepend new container to the beginning
+    {
+      sbs_t* sbs = sbs_create();
+      sbs_add_value(sbs, 65536*1+5);
+      sbs_add_range(sbs, 5, 20);
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // add new container between existing ones
+    {
+      sbs_t* sbs = sbs_create();
+      sbs_add_value(sbs, 65536*0+5);
+      sbs_add_value(sbs, 65536*2+5);
+      sbs_add_range(sbs, 65536*1+5, 65536*1+20);
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // invalid range
+    {
+      sbs_t* sbs = sbs_create();
+      sbs_add_range(sbs, 200, 100);
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // random data inside [0..span)
+    const uint32_t span = 16*65536;
+    for (uint32_t range_length = 1; range_length < 16384; range_length *= 3) {
+        sbs_t* sbs = sbs_create();
+        for (int i = 0; i < 50; i++) {
+            uint32_t value = our_rand() % span;
+            sbs_add_value(sbs, value);
+        }
+        for (int i = 0; i < 50; i++) {
+            uint64_t range_start = our_rand() % (span - range_length);
+            sbs_add_range(sbs, range_start, range_start + range_length - 1);
+        }
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // max range
+    {
+        roaring_bitmap_t *r = roaring_bitmap_create();
+        roaring_bitmap_add_range(r, 0, UINT32_MAX);
+        assert_true(roaring_bitmap_get_cardinality(r) == UINT64_C(0x100000000));
+        roaring_bitmap_free(r);
+    }
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_stress_memory_true),
@@ -3256,6 +3491,7 @@ int main() {
         cmocka_unit_test(test_read_uint32_iterator_bitset),
         cmocka_unit_test(test_read_uint32_iterator_run),
         cmocka_unit_test(test_read_uint32_iterator_native),
+        cmocka_unit_test(test_add_range),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

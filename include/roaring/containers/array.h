@@ -364,4 +364,36 @@ inline int array_container_index_equalorlarger(const array_container_t *arr, uin
     }
 }
 
+/*
+ * Adds all values in range [min,max] using hint:
+ *   nvals_less is the number of array values less than $min
+ *   nvals_greater is the number of array values greater than $max
+ */
+static inline void array_container_add_range_nvals(array_container_t *array,
+                                                   uint32_t min, uint32_t max,
+                                                   int32_t nvals_less,
+                                                   int32_t nvals_greater) {
+    int32_t union_cardinality = nvals_less + (max - min + 1) + nvals_greater;
+    if (union_cardinality > array->capacity) {
+        array_container_grow(array, union_cardinality, INT32_C(0x10000), true);
+    }
+    memmove(&(array->array[union_cardinality - nvals_greater]),
+            &(array->array[array->cardinality - nvals_greater]),
+            nvals_greater * sizeof(uint16_t));
+    for (uint32_t i = 0; i <= max - min; i++) {
+        array->array[nvals_less + i] = min + i;
+    }
+    array->cardinality = union_cardinality;
+}
+
+/**
+ * Adds all values in range [min,max].
+ */
+static inline void array_container_add_range(array_container_t *array,
+                                             uint32_t min, uint32_t max) {
+    int32_t nvals_greater = count_greater(array->array, array->cardinality, max);
+    int32_t nvals_less = count_less(array->array, array->cardinality - nvals_greater, min);
+    array_container_add_range_nvals(array, min, max, nvals_less, nvals_greater);
+}
+
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

@@ -291,6 +291,13 @@ void ra_remove_at_index_and_free(roaring_array_t *ra, int32_t i);
 void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
                    uint32_t new_begin);
 
+/**
+ * Shifts rightmost $count containers to the right, allocating space and
+ * adjusting size during the process.
+ * Caller is responsible for filling in created hole afterwards.
+ */
+void ra_shift_right(roaring_array_t *ra, int32_t count, int32_t distance);
+
 #ifdef __cplusplus
 }
 #endif

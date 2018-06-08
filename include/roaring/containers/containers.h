@@ -16,6 +16,7 @@
 #include <roaring/containers/mixed_union.h>
 #include <roaring/containers/mixed_xor.h>
 #include <roaring/containers/run.h>
+#include <roaring/bitset_util.h>
 
 // would enum be possible or better?
 
@@ -2168,6 +2169,82 @@ static inline int container_rank(const void *container, uint8_t typecode,
     assert(false);
     __builtin_unreachable();
     return false;
+}
+
+/**
+ * Add all values in range [min, max] to a given container.
+ *
+ * If the returned pointer is different from $container, then a new container
+ * has been created and the caller is responsible for freeing it.
+ * The type of the first container may change. Returns the modified
+ * (and possibly new) container.
+ */
+static inline void *container_add_range(void *container, uint8_t type,
+                                        uint32_t min, uint32_t max,
+                                        uint8_t *result_type) {
+    // NB: when selecting new container type, we perform only inexpensive checks
+    switch (type) {
+        case BITSET_CONTAINER_TYPE_CODE: {
+            bitset_container_t *bitset = (bitset_container_t *) container;
+
+            int32_t union_cardinality = 0;
+            union_cardinality += bitset->cardinality;
+            union_cardinality += max - min + 1;
+            union_cardinality -= bitset_range_cardinality(bitset->array, min, max + 1);
+
+            if (union_cardinality == INT32_C(0x10000)) {
+                *result_type = RUN_CONTAINER_TYPE_CODE;
+                return run_container_create_range(0, INT32_C(0x10000));
+            } else {
+                *result_type = BITSET_CONTAINER_TYPE_CODE;
+                bitset_set_range(bitset->array, min, max + 1);
+                bitset->cardinality = union_cardinality;
+                return bitset;
+            }
+        }
+        case ARRAY_CONTAINER_TYPE_CODE: {
+            array_container_t *array = (array_container_t *) container;
+
+            int32_t nvals_greater = count_greater(array->array, array->cardinality, max);
+            int32_t nvals_less = count_less(array->array, array->cardinality - nvals_greater, min);
+            int32_t union_cardinality = nvals_less + (max - min + 1) + nvals_greater;
+
+            if (union_cardinality == INT32_C(0x10000)) {
+                *result_type = RUN_CONTAINER_TYPE_CODE;
+                return run_container_create_range(0, INT32_C(0x10000));
+            } else if (union_cardinality <= DEFAULT_MAX_SIZE) {
+                *result_type = ARRAY_CONTAINER_TYPE_CODE;
+                array_container_add_range_nvals(array, min, max, nvals_less, nvals_greater);
+                return array;
+            } else {
+                *result_type = BITSET_CONTAINER_TYPE_CODE;
+                bitset_container_t *bitset = bitset_container_from_array(array);
+                bitset_set_range(bitset->array, min, max + 1);
+                bitset->cardinality = union_cardinality;
+                return bitset;
+            }
+        }
+        case RUN_CONTAINER_TYPE_CODE: {
+            run_container_t *run = (run_container_t *) container;
+
+            int32_t nruns_greater = rle16_count_greater(run->runs, run->n_runs, max);
+            int32_t nruns_less = rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
+
+            int32_t run_size_bytes = (nruns_less + 1 + nruns_greater) * sizeof(rle16_t);
+            int32_t bitset_size_bytes = BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+
+            if (run_size_bytes <= bitset_size_bytes) {
+                run_container_add_range_nruns(run, min, max, nruns_less, nruns_greater);
+                *result_type = RUN_CONTAINER_TYPE_CODE;
+                return run;
+            } else {
+                *result_type = BITSET_CONTAINER_TYPE_CODE;
+                return bitset_container_from_run_range(run, min, max);
+            }
+        }
+        default:
+            __builtin_unreachable();
+    }
 }
 
 #endif
