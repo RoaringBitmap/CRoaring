@@ -1,10 +1,26 @@
 version: '{build}'
-branches: 
+branches:
   only:
   - master
 image:
 - Visual Studio 2015
 - Visual Studio 2017
+
+
+environment:
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat" '
+      CMD2: 'echo ....'
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"'
+      CMD2: 'echo ....'
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86'
+      CMD2: 'echo ....'
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      CMD1: 'call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64'
+      CMD2: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64'
 
 clone_folder: c:\projects\croaring
 
@@ -17,6 +33,7 @@ platform:
 - x64
 
 init:
+
 - set arch=
 - ps: if ($Env:PLATFORM -eq "x64") { $Env:arch = "Win64" }
 - ps: if ($Env:PLATFORM -eq "x86") { $Env:arch = "Win32" }
@@ -31,6 +48,8 @@ init:
 
 before_build:
 - cmd: >-
+    call %CMD1%
+    call %CMD2%
     dir /s
 
     mkdir build
@@ -39,12 +58,11 @@ before_build:
 
     cmake --version
 
-    cmake -DCMAKE_GENERATOR_PLATFORM=%arch% ..    
+    cmake -DCMAKE_GENERATOR_PLATFORM=%generator% ..
 
     dir /s ..
-    
+
 build:
   project: c:\projects\croaring\build\RoaringBitmap.sln
   verbosity: detailed
-  parallel: true 
-
+  parallel: true
