@@ -44,7 +44,7 @@ init:
 - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" ( set generator="Visual Studio 15 2017%arch%" )
 - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" ( set generator="Visual Studio 14 2015%arch%" )
 - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
-- echo "%generator%"
+- echo %generator%
 
 before_build:
 - cmd: >-
@@ -58,9 +58,9 @@ before_build:
 
     cmake --version
 
-    echo "%generator%"
+    echo %generator%
 
-    cmake -G="%generator%" ..
+    cmake -G=%generator% ..
 
     dir /s ..
 
