@@ -6,10 +6,6 @@ image: Visual Studio 2017
 
 clone_folder: c:\projects\croaring
 
-configuration:
-- Release
-- Debug
-
 platform:
 - x64
 
@@ -21,6 +17,6 @@ environment:
 build_script:
   - mkdir build
   - cd build
-  - ps: cmake -G "$env:GENERATOR" ..
+  - cmake -G %env:GENERATOR% ..
   - cmake --build .
   - ctest
