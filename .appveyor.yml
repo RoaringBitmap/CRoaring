@@ -17,6 +17,6 @@ environment:
 build_script:
   - mkdir build
   - cd build
-  - cmake -G %env:GENERATOR% ..
+  - cmake -G %GENERATOR% ..
   - cmake --build .
   - ctest
