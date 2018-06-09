@@ -60,7 +60,7 @@ before_build:
 
     cmake --version
 
-    cmake -DCMAKE_GENERATOR_PLATFORM=%generator% ..
+    cmake -G="%generator%" ..
 
     dir /s ..
 
