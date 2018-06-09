@@ -3,27 +3,8 @@ branches:
   only:
   - master
 image:
-#- Visual Studio 2015
+- Visual Studio 2015
 - Visual Studio 2017
-
-matrix:
-  allow_failures:
-    - platform: x86
-
-environment:
-  matrix:
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat" '
-      CMD2: 'echo ....'
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"'
-      CMD2: 'echo ....'
-#    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-#      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86'
-#      CMD2: 'echo ....'
-#    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-#      CMD1: 'call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64'
-#      CMD2: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64'
 
 clone_folder: c:\projects\croaring
 
@@ -35,37 +16,21 @@ platform:
 - x86
 - x64
 
+matrix:
+  allow_failures:
+    - platform: x86
+
 init:
-
-- set arch=
 - set genplat=
-- ps: if ($Env:PLATFORM -eq "x64") { $Env:arch = "Win64" }
 - ps: if ($Env:PLATFORM -eq "x64") {$Env:genplat = "-DCMAKE_GENERATOR_PLATFORM=x64" }
-- if "%arch%"=="Win64" ( set arch= Win64)
-- echo %arch%
-- echo %APPVEYOR_BUILD_WORKER_IMAGE%
-- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" ( set generator="Visual Studio 15 2017%arch%" )
-- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" ( set generator="Visual Studio 14 2015%arch%" )
-- if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
-- echo %generator%
-- echo %genplat%
-
 
 before_build:
 - cmd: >-
-    call %CMD1%
-
-    call %CMD2%
-
     mkdir build
 
     cd build
 
     cmake --version
-
-    echo %generator%
-
-    echo %genplat%
 
     cmake %genplat% ..
 
