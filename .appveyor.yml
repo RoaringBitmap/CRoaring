@@ -49,7 +49,9 @@ init:
 before_build:
 - cmd: >-
     call %CMD1%
+
     call %CMD2%
+
     dir /s
 
     mkdir build
