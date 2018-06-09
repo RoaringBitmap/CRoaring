@@ -395,10 +395,11 @@ void test_example_cpp_64(bool copy_on_write) {
         b.add(1u);
         b.add(2u);
         b.add(3u);
+        assert_int_equal(3, b.cardinality());
 
         Roaring64Map a(std::move(b));
         assert_int_equal(3, a.cardinality());
-        assert_int_equal(0, b.cardinality());
+        // assert_int_equal(0, b.cardinality()); // no: b is now unspecified.
     }
 
     {
@@ -406,10 +407,11 @@ void test_example_cpp_64(bool copy_on_write) {
         b.add(1u);
         b.add(2u);
         b.add(3u);
+		assert_int_equal(3, b.cardinality());
 
         a = std::move(b);
         assert_int_equal(3, a.cardinality());
-        assert_int_equal(0, b.cardinality());
+        // assert_int_equal(0, b.cardinality()); // no: b is unspecified
     }
 }
 
