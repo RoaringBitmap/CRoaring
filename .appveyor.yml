@@ -3,9 +3,12 @@ branches:
   only:
   - master
 image:
-- Visual Studio 2015
+#- Visual Studio 2015
 - Visual Studio 2017
 
+matrix:
+  allow_failures:
+    - platform: x86
 
 environment:
   matrix:
@@ -15,12 +18,12 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"'
       CMD2: 'echo ....'
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86'
-      CMD2: 'echo ....'
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      CMD1: 'call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64'
-      CMD2: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64'
+#    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#      CMD1: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86'
+#      CMD2: 'echo ....'
+#    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#      CMD1: 'call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64'
+#      CMD2: 'call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64'
 
 clone_folder: c:\projects\croaring
 
@@ -66,9 +69,7 @@ before_build:
 
     cmake %genplat% ..
 
-    dir /s ..
-
 build:
   project: c:\projects\croaring\build\RoaringBitmap.sln
-  verbosity: detailed
+  verbosity: normal
   parallel: true
