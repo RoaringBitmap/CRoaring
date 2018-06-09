@@ -35,7 +35,9 @@ platform:
 init:
 
 - set arch=
+- set genplat=
 - ps: if ($Env:PLATFORM -eq "x64") { $Env:arch = "Win64" }
+- ps: if ($Env:PLATFORM -eq "x64") {$Env:genplat = "-DCMAKE_GENERATOR_PLATFORM=x64" }
 - if "%arch%"=="Win64" ( set arch= Win64)
 - echo %arch%
 - echo %APPVEYOR_BUILD_WORKER_IMAGE%
@@ -43,6 +45,8 @@ init:
 - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" ( set generator="Visual Studio 14 2015%arch%" )
 - if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2013" ( set generator="Visual Studio 12 2013%arch%" )
 - echo %generator%
+- echo %genplat%
+
 
 before_build:
 - cmd: >-
@@ -58,7 +62,9 @@ before_build:
 
     echo %generator%
 
-    cmake -G=%generator% ..
+    echo %genplat%
+
+    cmake %genplat% ..
 
     dir /s ..
 
