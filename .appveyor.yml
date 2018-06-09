@@ -11,29 +11,16 @@ configuration:
 - Debug
 
 platform:
-- x86
 - x64
 
-matrix:
-  allow_failures:
-    - platform: x86
+environment:
+  matrix:
+    - GENERATOR: "Visual Studio 15 2017" # x86 build
+    - GENERATOR: "Visual Studio 15 2017 Win64" # x64 build
 
-init:
-- set genplat=
-- ps: if ($Env:PLATFORM -eq "x64") {$Env:genplat = "-DCMAKE_GENERATOR_PLATFORM=x64" }
-- '"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %PLATFORM%'
+build_script:
+  - mkdir build
+  - cd build
+  - ps: cmake -G "$env:GENERATOR" ..
+  - cmake --build .
 
-before_build:
-- cmd: >-
-    mkdir build
-
-    cd build
-
-    cmake --version
-
-    cmake %genplat% ..
-
-build:
-  project: c:\projects\croaring\build\RoaringBitmap.sln
-  verbosity: normal
-  parallel: true
