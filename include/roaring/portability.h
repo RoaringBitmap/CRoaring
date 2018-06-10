@@ -100,7 +100,6 @@
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
-#define inline __inline
 
 #ifndef __clang__  // if one compiles with MSVC *with* clang, then these
                    // intrinsics are defined!!!
