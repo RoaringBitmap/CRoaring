@@ -575,6 +575,9 @@ size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes) {
         memcpy(&size, buf, sizeof(int32_t));
         buf += sizeof(uint32_t);
     }
+    if (size > (1<<16)) {
+       return 0; // logically impossible
+    }
     char *bitmapOfRunContainers = NULL;
     bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
     if (hasrun) {
@@ -663,6 +666,11 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
         }
         memcpy(&size, buf, sizeof(int32_t));
         buf += sizeof(uint32_t);
+    }
+    if (size > (1<<16)) {
+       fprintf(stderr, "You cannot have so many containers, the data must be corrupted: %u\n",
+                size);
+       return false; // logically impossible
     }
     const char *bitmapOfRunContainers = NULL;
     bool hasrun = (cookie & 0xFFFF) == SERIAL_COOKIE;
