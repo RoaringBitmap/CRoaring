@@ -513,6 +513,22 @@ Like, for example, STL containers or Java's default data structures, the CRoarin
 # Python Wrapper
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
+Installing it is as easy as typing...
+
+```
+pip install pyroaring
+```
+
+# JavaScript Wrapper
+
+Salvatore Previti  wrote a Node/JavaScript wrapper available at https://github.com/SalvatorePreviti/roaring-node
+Installing it is as easy as typing...
+
+```
+npm install roaring
+```
+
+
 
 # C# Wrapper
 
