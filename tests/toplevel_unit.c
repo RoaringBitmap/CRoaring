@@ -192,7 +192,11 @@ void sbs_check_type(sbs_t *sbs, uint8_t type) {
 void sbs_compare(sbs_t *sbs) {
     uint32_t expected_cardinality = 0;
     for (uint32_t i = 0; i < sbs->size; i++) {
-        expected_cardinality += _mm_popcnt_u64(sbs->words[i]);
+        uint64_t word = sbs->words[i];
+        while (word != 0) {
+            expected_cardinality += 1;
+            word = word & (word - 1);
+        }
     }
     uint32_t *expected_values = malloc(expected_cardinality * sizeof(uint32_t));
     for (uint32_t i = 0, dst = 0; i < sbs->size; i++) {
