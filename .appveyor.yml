@@ -23,4 +23,4 @@ build_script:
   - cd build
   - ps: cmake -G "$env:GENERATOR" -DFORCE_AVX="$env:AVXFLAG" ..
   - cmake --build .
-  - ctest
+  - ctest --verbose
