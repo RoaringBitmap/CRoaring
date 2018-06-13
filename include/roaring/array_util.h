@@ -88,8 +88,8 @@ static inline int32_t advanceUntil(const uint16_t *array, int32_t pos,
  * Returns number of elements which are less then $ikey.
  * Array elements must be unique and sorted.
  */
-inline int32_t count_less(const uint16_t *array, int32_t lenarray,
-                          uint16_t ikey) {
+static inline int32_t count_less(const uint16_t *array, int32_t lenarray,
+                                 uint16_t ikey) {
     if (lenarray == 0) return 0;
     int32_t pos = binarySearch(array, lenarray, ikey);
     return pos >= 0 ? pos : -(pos+1);
@@ -99,8 +99,8 @@ inline int32_t count_less(const uint16_t *array, int32_t lenarray,
  * Returns number of elements which are greater then $ikey.
  * Array elements must be unique and sorted.
  */
-inline int32_t count_greater(const uint16_t *array, int32_t lenarray,
-                             uint16_t ikey) {
+static inline int32_t count_greater(const uint16_t *array, int32_t lenarray,
+                                    uint16_t ikey) {
     if (lenarray == 0) return 0;
     int32_t pos = binarySearch(array, lenarray, ikey);
     if (pos >= 0) {

@@ -105,8 +105,8 @@ inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
  * are less than the key.
  * Note that [5,6,7,8] can be merged with the key 9 and won't be counted.
  */
-inline int32_t rle16_count_less(const rle16_t* array, int32_t lenarray,
-                                uint16_t key) {
+static inline int32_t rle16_count_less(const rle16_t* array, int32_t lenarray,
+                                       uint16_t key) {
     if (lenarray == 0) return 0;
     int32_t low = 0;
     int32_t high = lenarray - 1;
@@ -125,8 +125,8 @@ inline int32_t rle16_count_less(const rle16_t* array, int32_t lenarray,
     return low;
 }
 
-inline int32_t rle16_count_greater(const rle16_t* array, int32_t lenarray,
-                                   uint16_t key) {
+static inline int32_t rle16_count_greater(const rle16_t* array, int32_t lenarray,
+                                          uint16_t key) {
     if (lenarray == 0) return 0;
     int32_t low = 0;
     int32_t high = lenarray - 1;
