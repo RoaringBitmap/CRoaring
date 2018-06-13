@@ -10,8 +10,18 @@
 
 #include <roaring/containers/bitset.h>
 #include <roaring/misc/configreport.h>
-
+#include <roaring/bitset_util.h>
 #include "test.h"
+
+void test_bitset_lenrange_cardinality() {
+  uint64_t words[] = {~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
+  for(int k = 0; k < 64 * 4; k++) {
+    assert(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
+  }
+  for(int k = 64 * 4; k < 64 * 8; k++) {
+      assert(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
+  }
+}
 
 void printf_test() {
     bitset_container_t* B = bitset_container_create();
@@ -232,6 +242,7 @@ void select_test() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_bitset_lenrange_cardinality),
         cmocka_unit_test(printf_test), cmocka_unit_test(set_get_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
         cmocka_unit_test(andnot_test), cmocka_unit_test(to_uint32_array_test),
