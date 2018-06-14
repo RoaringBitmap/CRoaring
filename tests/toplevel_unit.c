@@ -199,6 +199,7 @@ void sbs_compare(sbs_t *sbs) {
         }
     }
     uint32_t *expected_values = malloc(expected_cardinality * sizeof(uint32_t));
+    memset(expected_values, 0, expected_cardinality * sizeof(uint32_t));
     for (uint32_t i = 0, dst = 0; i < sbs->size; i++) {
         for (uint32_t j = 0; j < 64; j++) {
             if ((sbs->words[i] & (UINT64_C(1) << j)) != 0) {
@@ -209,6 +210,7 @@ void sbs_compare(sbs_t *sbs) {
 
     uint32_t actual_cardinality = roaring_bitmap_get_cardinality(sbs->roaring);
     uint32_t *actual_values = malloc(actual_cardinality * sizeof(uint32_t));
+    memset(actual_values, 0, actual_cardinality * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(sbs->roaring, actual_values);
 
     bool ok = array_equals(actual_values, actual_cardinality,

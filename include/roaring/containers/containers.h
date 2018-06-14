@@ -2190,14 +2190,14 @@ static inline void *container_add_range(void *container, uint8_t type,
             int32_t union_cardinality = 0;
             union_cardinality += bitset->cardinality;
             union_cardinality += max - min + 1;
-            union_cardinality -= bitset_range_cardinality(bitset->array, min, max + 1);
+            union_cardinality -= bitset_lenrange_cardinality(bitset->array, min, max-min);
 
             if (union_cardinality == INT32_C(0x10000)) {
                 *result_type = RUN_CONTAINER_TYPE_CODE;
                 return run_container_create_range(0, INT32_C(0x10000));
             } else {
                 *result_type = BITSET_CONTAINER_TYPE_CODE;
-                bitset_set_range(bitset->array, min, max + 1);
+                bitset_set_lenrange(bitset->array, min, max - min);
                 bitset->cardinality = union_cardinality;
                 return bitset;
             }
@@ -2219,7 +2219,7 @@ static inline void *container_add_range(void *container, uint8_t type,
             } else {
                 *result_type = BITSET_CONTAINER_TYPE_CODE;
                 bitset_container_t *bitset = bitset_container_from_array(array);
-                bitset_set_range(bitset->array, min, max + 1);
+                bitset_set_lenrange(bitset->array, min, max - min);
                 bitset->cardinality = union_cardinality;
                 return bitset;
             }

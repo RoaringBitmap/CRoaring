@@ -53,7 +53,7 @@ void *convert_run_to_efficient_container_and_free(run_container_t *c,
  * Create new bitset container which is a union of run container and
  * range [min, max]. Caller is responsible for freeing run container.
  */
-void *bitset_container_from_run_range(const run_container_t *run,
-                                      uint32_t min, uint32_t max);
+bitset_container_t *bitset_container_from_run_range(const run_container_t *run,
+                                                    uint32_t min, uint32_t max);
 
 #endif /* INCLUDE_CONTAINERS_CONVERT_H_ */

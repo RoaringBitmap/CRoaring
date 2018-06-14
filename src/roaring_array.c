@@ -66,6 +66,7 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
     ra->containers = newcontainers;
     ra->keys = newkeys;
     ra->typecodes = newtypecodes;
+    ra->allocation_size = new_capacity;
     free(oldbigalloc);
     return true;
 }
