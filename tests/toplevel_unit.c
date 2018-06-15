@@ -1015,6 +1015,75 @@ void test_contains() {
     roaring_bitmap_free(r1);
 }
 
+void test_contains_range() {
+
+    uint32_t* values = malloc(100000 * sizeof(uint32_t));
+    assert_non_null(values);
+
+    for (uint32_t length_range = 1; length_range <= 64; ++length_range) {
+
+        roaring_bitmap_t *r1 = roaring_bitmap_create();
+    	assert_non_null(r1);
+
+    	for (uint32_t i = 0; i < 100000; ++i){
+
+            const uint32_t val = rand() % 200000;
+
+            roaring_bitmap_add(r1, val);
+            values[i] = val;
+    	}
+
+	for (uint64_t i = 0; i < 100000; ++i){
+
+            if (roaring_bitmap_contains_range(r1, values[i], values[i] + length_range)){
+
+                for (uint32_t j = values[i]; j < values[i] + length_range; ++j) assert_true(roaring_bitmap_contains(r1, j));
+            }
+            else {
+
+                uint32_t count = 0;
+
+                for (uint32_t j = values[i]; j < values[i] + length_range; ++j){
+
+                    if (roaring_bitmap_contains(r1, j)) ++count;
+                    else break;
+                }
+
+                assert_true(count != length_range);
+            }
+        }
+
+    	roaring_bitmap_free(r1);
+    }
+
+    free(values);
+
+    for (uint32_t length_range = 1; length_range <= 64; ++length_range) {
+
+        roaring_bitmap_t *r1 = roaring_bitmap_create();
+    	assert_non_null(r1);
+
+	const uint32_t length_range_twice = length_range * 2;
+
+    	for (uint32_t i = 0; i < 130000; i += length_range){
+
+            if (i % length_range_twice == 0){
+
+                for (uint32_t j = i; j < i + length_range; ++j) roaring_bitmap_add(r1, j);
+            }
+    	}
+
+	for (uint32_t i = 0; i < 130000; i += length_range){
+
+            bool pres = roaring_bitmap_contains_range(r1, i, i + length_range);
+
+            assert_true(((i % length_range_twice == 0) ? pres : !pres));
+        }
+
+    	roaring_bitmap_free(r1);
+    }
+}
+
 void test_intersection_array_x_array() {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     assert_non_null(r1);
@@ -3201,6 +3270,7 @@ int main() {
         cmocka_unit_test(test_portable_serialize),
         cmocka_unit_test(test_add),
         cmocka_unit_test(test_contains),
+	cmocka_unit_test(test_contains_range),
         cmocka_unit_test(test_intersection_array_x_array),
         cmocka_unit_test(test_intersection_array_x_array_inplace),
         cmocka_unit_test(test_intersection_bitset_x_bitset),
