@@ -234,7 +234,6 @@ static inline int bitset_container_cardinality(
 
 
 
-
 /* Copy one container into another. We assume that they are distinct. */
 void bitset_container_copy(const bitset_container_t *source,
                            bitset_container_t *dest);

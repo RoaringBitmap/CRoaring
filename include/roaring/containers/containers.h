@@ -230,6 +230,8 @@ static inline int container_get_cardinality(const void *container,
     return 0;  // unreached
 }
 
+
+
 // returns true if a container is known to be full. Note that a lazy bitset
 // container
 // might be full without us knowing
@@ -2102,8 +2104,15 @@ static inline void *container_inot_range(void *c, uint8_t typ,
 static inline void *container_range_of_ones(uint32_t range_start,
                                             uint32_t range_end,
                                             uint8_t *result_type) {
-    *result_type = RUN_CONTAINER_TYPE_CODE;
-    return run_container_create_range(range_start, range_end);
+    assert(range_end >= range_start);
+    uint64_t cardinality =  range_end - range_start + 1;
+    if(cardinality <= 2) {
+      *result_type = ARRAY_CONTAINER_TYPE_CODE;
+      return array_container_create_range(range_start, range_end);
+    } else {
+      *result_type = RUN_CONTAINER_TYPE_CODE;
+      return run_container_create_range(range_start, range_end);
+    }
 }
 
 /**

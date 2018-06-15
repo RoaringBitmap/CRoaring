@@ -38,6 +38,9 @@ array_container_t *array_container_create(void);
  * failure. */
 array_container_t *array_container_create_given_capacity(int32_t size);
 
+/* Create a new array containing all values in [min,max). */
+array_container_t * array_container_create_range(uint32_t min, uint32_t max);
+
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
  */
@@ -84,9 +87,12 @@ static inline bool array_container_empty(const array_container_t *array) {
     return array->cardinality == 0;
 }
 
+/* check whether the cardinality is equal to the capacity (this does not mean
+* that it contains 1<<16 elements) */
 static inline bool array_container_full(const array_container_t *array) {
     return array->cardinality == array->capacity;
 }
+
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */

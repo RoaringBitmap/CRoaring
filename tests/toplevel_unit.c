@@ -311,6 +311,40 @@ void check_full_inplace_flip() {
   roaring_bitmap_free(r1);
 }
 
+void check_iterate_to_end() {
+  uint64_t bignumber = UINT64_C(0x100000000);
+  for(uint64_t s = 0; s < 1024; s++) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_flip_inplace(r1, bignumber - s, bignumber);
+    roaring_uint32_iterator_t iterator;
+    roaring_init_iterator(r1, &iterator);
+    uint64_t count = 0;
+    while(iterator.has_value) {
+      count++;
+      roaring_advance_uint32_iterator(&iterator);
+    }
+    assert_true(count == s);
+    assert_true(roaring_bitmap_get_cardinality(r1) == s);
+    roaring_bitmap_free(r1);
+  }
+}
+
+void check_range_contains_from_end() {
+  uint64_t bignumber = UINT64_C(0x100000000);
+  for(uint64_t s = 0; s <  1024 * 1024; s++) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_add_range(r1, bignumber - s, bignumber);
+    assert_true(roaring_bitmap_get_cardinality(r1) == s);
+    if(s>0) {
+      assert_true(roaring_bitmap_contains_range(r1, bignumber - s, bignumber - 1));
+    }
+    assert_true(roaring_bitmap_contains_range(r1, bignumber - s, bignumber));
+    assert_false(roaring_bitmap_contains_range(r1, bignumber - s - 1, bignumber));
+    assert_true(roaring_bitmap_get_cardinality(r1) == s);
+    roaring_bitmap_free(r1);
+  }
+}
+
 void check_full_flip() {
   roaring_bitmap_t *rorg = roaring_bitmap_create();
   uint64_t bignumber = UINT64_C(0x100000000);
@@ -1148,71 +1182,46 @@ void test_contains() {
 }
 
 void test_contains_range() {
-
     uint32_t* values = malloc(100000 * sizeof(uint32_t));
     assert_non_null(values);
-
     for (uint32_t length_range = 1; length_range <= 64; ++length_range) {
-
-        roaring_bitmap_t *r1 = roaring_bitmap_create();
-    	assert_non_null(r1);
-
-    	for (uint32_t i = 0; i < 100000; ++i){
-
+      roaring_bitmap_t *r1 = roaring_bitmap_create();
+      assert_non_null(r1);
+      for (uint32_t i = 0; i < 100000; ++i){
             const uint32_t val = rand() % 200000;
-
             roaring_bitmap_add(r1, val);
             values[i] = val;
-    	}
-
-	for (uint64_t i = 0; i < 100000; ++i){
-
+      }
+      for (uint64_t i = 0; i < 100000; ++i){
             if (roaring_bitmap_contains_range(r1, values[i], values[i] + length_range)){
-
                 for (uint32_t j = values[i]; j < values[i] + length_range; ++j) assert_true(roaring_bitmap_contains(r1, j));
             }
             else {
-
                 uint32_t count = 0;
-
                 for (uint32_t j = values[i]; j < values[i] + length_range; ++j){
-
                     if (roaring_bitmap_contains(r1, j)) ++count;
                     else break;
                 }
-
                 assert_true(count != length_range);
             }
         }
-
-    	roaring_bitmap_free(r1);
+      roaring_bitmap_free(r1);
     }
-
     free(values);
-
     for (uint32_t length_range = 1; length_range <= 64; ++length_range) {
-
         roaring_bitmap_t *r1 = roaring_bitmap_create();
-    	assert_non_null(r1);
-
-	const uint32_t length_range_twice = length_range * 2;
-
-    	for (uint32_t i = 0; i < 130000; i += length_range){
-
+        assert_non_null(r1);
+        const uint32_t length_range_twice = length_range * 2;
+        for (uint32_t i = 0; i < 130000; i += length_range){
             if (i % length_range_twice == 0){
-
                 for (uint32_t j = i; j < i + length_range; ++j) roaring_bitmap_add(r1, j);
             }
-    	}
-
-	for (uint32_t i = 0; i < 130000; i += length_range){
-
+        }
+        for (uint32_t i = 0; i < 130000; i += length_range){
             bool pres = roaring_bitmap_contains_range(r1, i, i + length_range);
-
             assert_true(((i % length_range_twice == 0) ? pres : !pres));
         }
-
-    	roaring_bitmap_free(r1);
+        roaring_bitmap_free(r1);
     }
 }
 
@@ -3495,6 +3504,9 @@ void test_add_range() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_contains_range),
+        cmocka_unit_test(check_range_contains_from_end),
+        cmocka_unit_test(check_iterate_to_end),
         cmocka_unit_test(check_full_flip),
         cmocka_unit_test(test_adversarial_range),
         cmocka_unit_test(check_full_inplace_flip),
@@ -3536,7 +3548,6 @@ int main() {
         cmocka_unit_test(test_portable_serialize),
         cmocka_unit_test(test_add),
         cmocka_unit_test(test_contains),
-	cmocka_unit_test(test_contains_range),
         cmocka_unit_test(test_intersection_array_x_array),
         cmocka_unit_test(test_intersection_array_x_array_inplace),
         cmocka_unit_test(test_intersection_bitset_x_bitset),

@@ -51,6 +51,17 @@ array_container_t *array_container_create() {
     return array_container_create_given_capacity(ARRAY_DEFAULT_INIT_SIZE);
 }
 
+/* Create a new array containing all values in [min,max). */
+array_container_t * array_container_create_range(uint32_t min, uint32_t max) {
+    array_container_t * answer = array_container_create_given_capacity(max - min + 1);
+    if(answer == NULL) return answer;
+    answer->cardinality = 0;
+    for(uint32_t k = min; k < max; k++) {
+      answer->array[answer->cardinality++] = k;
+    }
+    return answer;
+}
+
 /* Duplicate container */
 array_container_t *array_container_clone(const array_container_t *src) {
     array_container_t *newcontainer =

@@ -225,38 +225,24 @@ inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
 */
 static inline bool run_container_contains_range(const run_container_t *run,
                                                 uint32_t pos_start, uint32_t pos_end) {
-
     uint32_t count = 0;
-
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos_start);
-
     if (index < 0) {
-
         index = -index - 2;
-
         if ((index == -1) || ((pos_start - run->runs[index].value) > run->runs[index].length)){
-
             return false;
         }
     }
-
     for (int32_t i = index; i < run->n_runs; ++i) {
-
         const uint32_t stop = run->runs[i].value + run->runs[i].length;
-
         if (run->runs[i].value >= pos_end) break;
-
         if (stop >= pos_end) {
-
             count += (((pos_end - run->runs[i].value) > 0) ? (pos_end - run->runs[i].value) : 0);
             break;
         }
-
         const uint32_t min = (stop - pos_start) > 0 ? (stop - pos_start) : 0;
-
-	count += (min < run->runs[i].length) ? min : run->runs[i].length;
+        count += (min < run->runs[i].length) ? min : run->runs[i].length;
     }
-
     return count >= (pos_end - pos_start - 1);
 }
 

@@ -1367,7 +1367,7 @@ bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it, u
 
 bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     if (it->container_index >= it->parent->high_low_container.size) {
-        return false;
+        return (it->has_value = false);
     }
     uint32_t wordindex;  // used for bitsets
     uint64_t word;       // used for bitsets
@@ -1389,7 +1389,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
             if (word != 0) {
                 it->in_container_index = wordindex * 64 + __builtin_ctzll(word);
                 it->current_value = it->highbits | it->in_container_index;
-                return true;
+                return (it->has_value = true);
             }
             break;
         case ARRAY_CONTAINER_TYPE_CODE:
@@ -1403,9 +1403,12 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
             }
             break;
         case RUN_CONTAINER_TYPE_CODE:
+            if(it->current_value == UINT32_MAX) {
+              return (it->has_value = false); // without this, we risk an overflow to zero
+            }
             it->current_value++;
             if (it->current_value <= it->in_run_index) {
-                return true;
+                return (it->has_value = true);
             }
             it->run_index++;
             if (it->run_index <
@@ -1418,7 +1421,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
                                    ((const run_container_t *)(it->container))
                                        ->runs[it->run_index]
                                        .length;
-                return true;
+                return (it->has_value = true);
             }
             break;
         default:
@@ -1427,8 +1430,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     }  // switch (typecode)
     // moving to next container
     it->container_index++;
-    it->has_value = loadfirstvalue(it);
-    return it->has_value;
+    return (it->has_value = loadfirstvalue(it));
 }
 
 uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count) {
@@ -1768,7 +1770,6 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
         for (uint32_t hb = hb_start; hb <= hb_end; ++hb) {
             inplace_fully_flip_container(&x1->high_low_container, hb);
         }
-
         // handle a partial final container
         if (lb_end != 0xFFFF) {
             inplace_flip_container(&x1->high_low_container, hb_end + 1, 0,
