@@ -129,9 +129,9 @@ class Roaring {
     }
 
     /**
-    * Check if all values from x to y are present
+    * Check if all values from x (included) to y (excluded) are present
     */
-    bool containsRange(uint32_t x, uint32_t y) const {
+    bool containsRange(const uint64_t x, const uint64_t y) const {
         return roaring_bitmap_contains_range(&roaring, x, y);
     }
 

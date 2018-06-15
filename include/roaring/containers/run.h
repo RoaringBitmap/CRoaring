@@ -174,38 +174,45 @@ inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
     return false;
 }
 
-/* Check whether all positions in a range of positions from pos1 (included) to pos2 (included) is present in `run'.  */
-static inline bool run_container_contains_range(const run_container_t *run, uint16_t pos1, uint16_t pos2) {
+/*
+* Check whether all positions in a range of positions from pos_start (included)
+* to pos_end (excluded) is present in `run'.
+*/
+static inline bool run_container_contains_range(const run_container_t *run,
+                                                uint32_t pos_start, uint32_t pos_end) {
 
-    uint16_t count = 0;
+    uint32_t count = 0;
 
-    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos1);
+    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos_start);
 
     if (index < 0) {
 
         index = -index - 2;
 
-        if ((index == -1) || ((pos1 - run->runs[index].value) > run->runs[index].length)) return false;
+        if ((index == -1) || ((pos_start - run->runs[index].value) > run->runs[index].length)){
+
+            return false;
+        }
     }
 
     for (int32_t i = index; i < run->n_runs; ++i) {
 
-        const int32_t stop = run->runs[i].value + run->runs[i].length;
+        const uint32_t stop = run->runs[i].value + run->runs[i].length;
 
-        if (run->runs[i].value > pos2) break;
+        if (run->runs[i].value >= pos_end) break;
 
-        if (stop > pos2) {
+        if (stop >= pos_end) {
 
-            count += (((pos2 - run->runs[i].value + 1) > 0) ? (pos2 - run->runs[i].value + 1) : 0);
+            count += (((pos_end - run->runs[i].value) > 0) ? (pos_end - run->runs[i].value) : 0);
             break;
         }
 
-        const int32_t min = (stop - pos1) > 0 ? (stop - pos1) : 0;
+        const uint32_t min = (stop - pos_start) > 0 ? (stop - pos_start) : 0;
 
 	count += (min < run->runs[i].length) ? min : run->runs[i].length;
     }
 
-    return count >= (pos2 - pos1);
+    return count >= (pos_end - pos_start - 1);
 }
 
 #ifdef USEAVX

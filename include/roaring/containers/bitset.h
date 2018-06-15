@@ -181,18 +181,26 @@ inline bool bitset_container_get(const bitset_container_t *bitset,
 
 #endif
 
-/* Check if all bits are set in a range of positions from pos1 (included) to pos2 (included). */
-static inline bool bitset_container_get_range(const bitset_container_t *bitset, uint16_t pos1, uint16_t pos2) {
+/*
+* Check if all bits are set in a range of positions from pos_start (included) to
+* pos_end (excluded).
+*/
+static inline bool bitset_container_get_range(const bitset_container_t *bitset,
+                                                uint32_t pos_start, uint32_t pos_end) {
 
-    const uint16_t start = pos1 >> 6;
-    const uint16_t end = pos2 >> 6;
+    const uint32_t start = pos_start >> 6;
+    const uint32_t end = pos_end >> 6;
 
-    const uint64_t first = ~((1ULL << (pos1 & 0x3F)) - 1);
-    const uint64_t last = ((1ULL << (pos2 & 0x3F)) << 1) - 1;
+    const uint64_t first = ~((1ULL << (pos_start & 0x3F)) - 1);
+    const uint64_t last = (1ULL << (pos_end & 0x3F)) - 1;
 
     if (start == end) return ((bitset->array[end] & first & last) == (first & last));
     if ((bitset->array[start] & first) != first) return false;
-    if ((end < BITSET_CONTAINER_SIZE_IN_WORDS) && ((bitset->array[end] & last) != last)) return false;
+
+    if ((end < BITSET_CONTAINER_SIZE_IN_WORDS) && ((bitset->array[end] & last) != last)){
+
+        return false;
+    }
 
     for (uint16_t i = start + 1; (i < BITSET_CONTAINER_SIZE_IN_WORDS) && (i < end); ++i){
 
@@ -209,12 +217,12 @@ inline bool bitset_container_contains(const bitset_container_t *bitset,
 }
 
 /*
-* Check whether a range of bits from position `pos1' (included) to `pos2' (included)
+* Check whether a range of bits from position `pos_start' (included) to `pos_end' (excluded)
 * is present in `bitset'.  Calls bitset_container_get_all.
 */
 static inline bool bitset_container_contains_range(const bitset_container_t *bitset,
-					uint16_t pos1, uint16_t pos2) {
-    return bitset_container_get_range(bitset, pos1, pos2);
+					uint32_t pos_start, uint32_t pos_end) {
+    return bitset_container_get_range(bitset, pos_start, pos_end);
 }
 
 /* Get the number of bits set */

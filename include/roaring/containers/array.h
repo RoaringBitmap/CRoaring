@@ -328,16 +328,21 @@ inline bool array_container_contains(const array_container_t *arr,
 
 }
 
-/* Check whether a range of values from x1 (included) to x2 (included) is present. */
-static inline bool array_container_contains_range(const array_container_t *arr, uint16_t x1, uint16_t x2) {
+//* Check whether a range of values from range_start (included) to range_end (excluded) is present. */
+static inline bool array_container_contains_range(const array_container_t *arr,
+                                                    uint32_t range_start, uint32_t range_end) {
+
+    const uint16_t rs_included = range_start;
+    const uint16_t re_included = range_end - 1;
 
     const uint16_t *carr = (const uint16_t *) arr->array;
 
-    const int32_t start = advanceUntil(carr, -1, arr->cardinality, x1);
-    const int32_t end = advanceUntil(carr, start - 1, arr->cardinality, x2);
+    const int32_t start = advanceUntil(carr, -1, arr->cardinality, rs_included);
+    const int32_t end = advanceUntil(carr, start - 1, arr->cardinality, re_included);
 
-    return (start < arr->cardinality) && (end < arr->cardinality) && (end - start == x2 - x1)
-            && (carr[start] == x1) && (carr[end] == x2);
+    return (start < arr->cardinality) && (end < arr->cardinality)
+            && (((uint16_t)(end - start)) == re_included - rs_included)
+            && (carr[start] == rs_included) && (carr[end] == re_included);
 }
 
 /* Returns the smallest value (assumes not empty) */
