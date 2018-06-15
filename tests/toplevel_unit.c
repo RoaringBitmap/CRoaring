@@ -193,6 +193,22 @@ void check_interval() {
 
 }
 
+void check_full_inplace_flip() {
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  uint64_t bignumber = UINT64_C(0x100000000);
+  roaring_bitmap_flip_inplace(r1, 0, bignumber);
+  assert_true(roaring_bitmap_get_cardinality(r1) == bignumber);
+  roaring_bitmap_free(r1);
+}
+
+void check_full_flip() {
+  roaring_bitmap_t *rorg = roaring_bitmap_create();
+  uint64_t bignumber = UINT64_C(0x100000000);
+  roaring_bitmap_t *r1 = roaring_bitmap_flip(rorg, 0, bignumber);
+  assert_true(roaring_bitmap_get_cardinality(r1) == bignumber);
+  roaring_bitmap_free(r1);
+  roaring_bitmap_free(rorg);
+}
 
 void test_stress_memory(bool copy_on_write) {
 	for (size_t i = 0; i < 5; i++) {
@@ -588,7 +604,7 @@ void test_remove_from_copies_true() { can_remove_from_copies(true); }
 
 void test_remove_from_copies_false() { can_remove_from_copies(false); }
 
-bool check_bitmap_from_range(uint32_t min, uint32_t max, uint32_t step) {
+bool check_bitmap_from_range(uint32_t min, uint64_t max, uint32_t step) {
     roaring_bitmap_t *result = roaring_bitmap_from_range(min, max, step);
     assert_non_null(result);
     roaring_bitmap_t *expected = roaring_bitmap_create();
@@ -614,6 +630,12 @@ void test_silly_range() {
     assert_false(roaring_bitmap_equals(bm1, bm2));
     roaring_bitmap_free(bm1);
     roaring_bitmap_free(bm2);
+}
+
+void test_adversarial_range() {
+    roaring_bitmap_t *bm1 = roaring_bitmap_from_range(0, UINT64_C(0x100000000), 1);
+    assert_true(roaring_bitmap_get_cardinality(bm1) == UINT64_C(0x100000000));
+    roaring_bitmap_free(bm1);
 }
 
 void test_range_and_serialize() {
@@ -3163,6 +3185,9 @@ void test_read_uint32_iterator_native() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(check_full_flip),
+        cmocka_unit_test(test_adversarial_range),
+        cmocka_unit_test(check_full_inplace_flip),
         cmocka_unit_test(test_stress_memory_true),
         cmocka_unit_test(test_stress_memory_false),
         cmocka_unit_test(check_interval),

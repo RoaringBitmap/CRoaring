@@ -1666,7 +1666,7 @@ roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
 
         if (lb_end != 0xFFFF) --hb_end;  // later we'll handle the partial block
 
-        for (uint16_t hb = hb_start; hb <= hb_end; ++hb) {
+        for (uint32_t hb = hb_start; hb <= hb_end; ++hb) {
             insert_fully_flipped_container(&ans->high_low_container,
                                            &x1->high_low_container, hb);
         }
@@ -1712,7 +1712,7 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
 
         if (lb_end != 0xFFFF) --hb_end;
 
-        for (uint16_t hb = hb_start; hb <= hb_end; ++hb) {
+        for (uint32_t hb = hb_start; hb <= hb_end; ++hb) {
             inplace_fully_flip_container(&x1->high_low_container, hb);
         }
 

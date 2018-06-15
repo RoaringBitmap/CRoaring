@@ -31,7 +31,7 @@ roaring_bitmap_t *roaring_bitmap_create(void);
 
 /**
  * Add all the values between min (included) and max (excluded) that are at a
- * distance k*step from min. 
+ * distance k*step from min.
 */
 roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step);
@@ -480,7 +480,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2);
 
 /**
- * compute the negation of the roaring bitmap within a specified 
+ * compute the negation of the roaring bitmap within a specified
  * interval: [range_start, range_end). The number of negated values is
  * range_end - range_start.
  * Areas outside the range are passed through unchanged.
