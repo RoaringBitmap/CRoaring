@@ -182,7 +182,7 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
     return answer;
 }
 
-void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint32_t min, uint32_t max) {
+void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_t max) {
     if (min > max) {
         return;
     }
@@ -230,6 +230,7 @@ void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint32_t min, uint32_t max) 
         dst--;
     }
 }
+
 
 void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
     printf("{");

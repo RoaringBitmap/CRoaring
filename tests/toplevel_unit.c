@@ -174,13 +174,13 @@ void sbs_add_value(sbs_t *sbs, uint32_t v) {
     sbs->words[v/64] |= UINT64_C(1) << (v % 64);
 }
 
-void sbs_add_range(sbs_t *sbs, uint32_t min, uint32_t max) {
+void sbs_add_range(sbs_t *sbs, uint64_t min, uint64_t max) {
     sbs_ensure_room(sbs, max);
     for (uint64_t v = min; v <= max; v++) {
         sbs->words[v/64] |= UINT64_C(1) << (v % 64);
     }
 
-    roaring_bitmap_add_range(sbs->roaring, min, max);
+    roaring_bitmap_add_range(sbs->roaring, min, max + 1);
 }
 
 void sbs_check_type(sbs_t *sbs, uint8_t type) {
@@ -3487,7 +3487,7 @@ void test_add_range() {
     // max range
     {
         roaring_bitmap_t *r = roaring_bitmap_create();
-        roaring_bitmap_add_range(r, 0, UINT32_MAX);
+        roaring_bitmap_add_range(r, 0, UINT32_MAX + UINT64_C(1));
         assert_true(roaring_bitmap_get_cardinality(r) == UINT64_C(0x100000000));
         roaring_bitmap_free(r);
     }

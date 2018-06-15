@@ -235,7 +235,17 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x);
 /**
  * Add all values in range [min, max]
  */
-void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint32_t min, uint32_t max);
+void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_t max);
+
+
+/**
+ * Add all values in range [min, max)
+ */
+inline void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
+  if(max == min) return;
+  roaring_bitmap_add_range_closed(ra, min, max - 1);
+}
+
 
 /**
  * Remove value x

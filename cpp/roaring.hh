@@ -96,6 +96,13 @@ class Roaring {
     void add(uint32_t x) { roaring_bitmap_add(&roaring, x); }
 
     /**
+    * add if all values from x (included) to y (excluded)
+    */
+    void addRange(const uint64_t x, const uint64_t y)  {
+        return roaring_bitmap_add_range(&roaring, x, y);
+    }
+
+    /**
      * Add value n_args from pointer vals
      *
      */
