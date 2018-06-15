@@ -291,3 +291,20 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         return NULL;
     }
 }
+
+bitset_container_t *bitset_container_from_run_range(const run_container_t *run,
+                                                    uint32_t min, uint32_t max) {
+    bitset_container_t *bitset = bitset_container_create();
+    int32_t union_cardinality = 0;
+    for (int32_t i = 0; i < run->n_runs; ++i) {
+        uint32_t rle_min = run->runs[i].value;
+        uint32_t rle_max = rle_min + run->runs[i].length;
+        bitset_set_lenrange(bitset->array, rle_min, rle_max - rle_min);
+        union_cardinality += run->runs[i].length + 1;
+    }
+    union_cardinality += max - min + 1;
+    union_cardinality -= bitset_lenrange_cardinality(bitset->array, min, max-min);
+    bitset_set_lenrange(bitset->array, min, max - min);
+    bitset->cardinality = union_cardinality;
+    return bitset;
+}

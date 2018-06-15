@@ -2,6 +2,7 @@
 #include <roaring/array_util.h>
 #include <roaring/roaring.h>
 #include <roaring/roaring_array.h>
+#include <roaring/bitset_util.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -179,6 +180,55 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
     } while (min_tmp < max);
     // cardinality of bitmap will be ((uint64_t) max - min + step - 1 ) / step
     return answer;
+}
+
+void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint32_t min, uint32_t max) {
+    if (min > max) {
+        return;
+    }
+
+    uint32_t min_key = min >> 16;
+    uint32_t max_key = max >> 16;
+
+    int32_t num_required_containers = max_key - min_key + 1;
+    int32_t suffix_length = count_greater(ra->high_low_container.keys,
+                                          ra->high_low_container.size,
+                                          max_key);
+    int32_t prefix_length = count_less(ra->high_low_container.keys,
+                                       ra->high_low_container.size - suffix_length,
+                                       min_key);
+    int32_t common_length = ra->high_low_container.size - prefix_length - suffix_length;
+
+    if (num_required_containers > common_length) {
+        ra_shift_right(&ra->high_low_container, suffix_length,
+                       num_required_containers - common_length);
+    }
+
+    int32_t src = prefix_length + common_length - 1;
+    int32_t dst = ra->high_low_container.size - suffix_length - 1;
+    for (uint32_t key = max_key; key != min_key-1; key--) { // beware of min_key==0
+        uint32_t container_min = (min_key == key) ? (min & 0xffff) : 0;
+        uint32_t container_max = (max_key == key) ? (max & 0xffff) : 0xffff;
+        void* new_container;
+        uint8_t new_type;
+
+        if (src >= 0 && ra->high_low_container.keys[src] == key) {
+            new_container = container_add_range(ra->high_low_container.containers[src],
+                                                ra->high_low_container.typecodes[src],
+                                                container_min, container_max, &new_type);
+            if (new_container != ra->high_low_container.containers[src]) {
+                container_free(ra->high_low_container.containers[src],
+                               ra->high_low_container.typecodes[src]);
+            }
+            src--;
+        } else {
+            new_container = container_from_range(&new_type, container_min,
+                                                 container_max+1, 1);
+        }
+        ra_replace_key_and_container_at_index(&ra->high_low_container, dst,
+                                              key, new_container, new_type);
+        dst--;
+    }
 }
 
 void roaring_bitmap_printf(const roaring_bitmap_t *ra) {

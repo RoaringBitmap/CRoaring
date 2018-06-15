@@ -66,6 +66,7 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
     ra->containers = newcontainers;
     ra->keys = newkeys;
     ra->typecodes = newtypecodes;
+    ra->allocation_size = new_capacity;
     free(oldbigalloc);
     return true;
 }
@@ -426,6 +427,20 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
     memmove(&(ra->typecodes[new_begin]), &(ra->typecodes[begin]),
             sizeof(uint8_t) * range);
 }
+
+void ra_shift_right(roaring_array_t *ra, int32_t count, int32_t distance) {
+    extend_array(ra, distance);
+    int32_t srcpos = ra->size - count;
+    int32_t dstpos = srcpos + distance;
+    memmove(&(ra->keys[dstpos]), &(ra->keys[srcpos]),
+            sizeof(uint16_t) * count);
+    memmove(&(ra->containers[dstpos]), &(ra->containers[srcpos]),
+            sizeof(void *) * count);
+    memmove(&(ra->typecodes[dstpos]), &(ra->typecodes[srcpos]),
+            sizeof(uint8_t) * count);
+    ra->size += distance;
+}
+
 
 size_t ra_size_in_bytes(roaring_array_t *ra) {
     size_t cardinality = 0;

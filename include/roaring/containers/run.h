@@ -101,6 +101,51 @@ inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
 }
 
 /**
+ * Returns number of runs which can'be be merged with the key because they
+ * are less than the key.
+ * Note that [5,6,7,8] can be merged with the key 9 and won't be counted.
+ */
+static inline int32_t rle16_count_less(const rle16_t* array, int32_t lenarray,
+                                       uint16_t key) {
+    if (lenarray == 0) return 0;
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t min_value = array[middleIndex].value;
+        uint16_t max_value = array[middleIndex].value + array[middleIndex].length;
+        if (max_value + UINT32_C(1) < key) { // uint32 arithmetic
+            low = middleIndex + 1;
+        } else if (key < min_value) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    return low;
+}
+
+static inline int32_t rle16_count_greater(const rle16_t* array, int32_t lenarray,
+                                          uint16_t key) {
+    if (lenarray == 0) return 0;
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t min_value = array[middleIndex].value;
+        uint16_t max_value = array[middleIndex].value + array[middleIndex].length;
+        if (max_value < key) {
+            low = middleIndex + 1;
+        } else if (key + UINT32_C(1) < min_value) { // uint32 arithmetic
+            high = middleIndex - 1;
+        } else {
+            return lenarray - (middleIndex + 1);
+        }
+    }
+    return lenarray - low;
+}
+
+/**
  * increase capacity to at least min. Whether the
  * existing data needs to be copied over depends on copy. If "copy" is false,
  * then the new content will be uninitialized, otherwise a copy is made.
@@ -464,6 +509,45 @@ inline int run_container_index_equalorlarger(const run_container_t *arr, uint16_
       return index;
     }
     return -1;
+}
+
+/*
+ * Add all values in range [min, max] using hint.
+ */
+static inline void run_container_add_range_nruns(run_container_t* run,
+                                                 uint32_t min, uint32_t max,
+                                                 int32_t nruns_less,
+                                                 int32_t nruns_greater) {
+    int32_t nruns_common = run->n_runs - nruns_less - nruns_greater;
+    if (nruns_common == 0) {
+        makeRoomAtIndex(run, nruns_less);
+        run->runs[nruns_less].value = min;
+        run->runs[nruns_less].length = max - min;
+    } else {
+        uint32_t common_min = run->runs[nruns_less].value;
+        uint32_t common_max = run->runs[nruns_less + nruns_common - 1].value +
+                              run->runs[nruns_less + nruns_common - 1].length;
+        uint32_t result_min = (common_min < min) ? common_min : min;
+        uint32_t result_max = (common_max > max) ? common_max : max;
+
+        run->runs[nruns_less].value = result_min;
+        run->runs[nruns_less].length = result_max - result_min;
+
+        memmove(&(run->runs[nruns_less + 1]),
+                &(run->runs[run->n_runs - nruns_greater]),
+                nruns_greater*sizeof(rle16_t));
+        run->n_runs = nruns_less + 1 + nruns_greater;
+    }
+}
+
+/**
+ * Add all values in range [min, max]
+ */
+static inline void run_container_add_range(run_container_t* run,
+                                           uint32_t min, uint32_t max) {
+    int32_t nruns_greater = rle16_count_greater(run->runs, run->n_runs, max);
+    int32_t nruns_less = rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
+    run_container_add_range_nruns(run, min, max, nruns_less, nruns_greater);
 }
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */
