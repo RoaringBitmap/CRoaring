@@ -219,8 +219,94 @@ inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
     return false;
 }
 
+/*
+* Check whether all positions in a range of positions from pos_start (included)
+* to pos_end (excluded) is present in `run'.
+*/
+static inline bool run_container_contains_range(const run_container_t *run,
+                                                uint32_t pos_start, uint32_t pos_end) {
+
+    uint32_t count = 0;
+
+    int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos_start);
+
+    if (index < 0) {
+
+        index = -index - 2;
+
+        if ((index == -1) || ((pos_start - run->runs[index].value) > run->runs[index].length)){
+
+            return false;
+        }
+    }
+
+    for (int32_t i = index; i < run->n_runs; ++i) {
+
+        const uint32_t stop = run->runs[i].value + run->runs[i].length;
+
+        if (run->runs[i].value >= pos_end) break;
+
+        if (stop >= pos_end) {
+
+            count += (((pos_end - run->runs[i].value) > 0) ? (pos_end - run->runs[i].value) : 0);
+            break;
+        }
+
+        const uint32_t min = (stop - pos_start) > 0 ? (stop - pos_start) : 0;
+
+	count += (min < run->runs[i].length) ? min : run->runs[i].length;
+    }
+
+    return count >= (pos_end - pos_start - 1);
+}
+
+#ifdef USEAVX
+
 /* Get the cardinality of `run'. Requires an actual computation. */
-int run_container_cardinality(const run_container_t *run);
+static inline int run_container_cardinality(const run_container_t *run) {
+    const int32_t n_runs = run->n_runs;
+    const rle16_t *runs = run->runs;
+
+    /* by initializing with n_runs, we omit counting the +1 for each pair. */
+    int sum = n_runs;
+    int32_t k = 0;
+    const int32_t step = sizeof(__m256i) / sizeof(rle16_t);
+    if (n_runs > step) {
+        __m256i total = _mm256_setzero_si256();
+        for (; k + step <= n_runs; k += step) {
+            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)(runs + k));
+            __m256i justlengths = _mm256_srli_epi32(ymm1, 16);
+            total = _mm256_add_epi32(total, justlengths);
+        }
+        // a store might be faster than extract?
+        uint32_t buffer[sizeof(__m256i) / sizeof(rle16_t)];
+        _mm256_storeu_si256((__m256i *)buffer, total);
+        sum += (buffer[0] + buffer[1]) + (buffer[2] + buffer[3]) +
+               (buffer[4] + buffer[5]) + (buffer[6] + buffer[7]);
+    }
+    for (; k < n_runs; ++k) {
+        sum += runs[k].length;
+    }
+
+    return sum;
+}
+
+#else
+
+/* Get the cardinality of `run'. Requires an actual computation. */
+static inline int run_container_cardinality(const run_container_t *run) {
+    const int32_t n_runs = run->n_runs;
+    const rle16_t *runs = run->runs;
+
+    /* by initializing with n_runs, we omit counting the +1 for each pair. */
+    int sum = n_runs;
+    for (int k = 0; k < n_runs; ++k) {
+        sum += runs[k].length;
+    }
+
+    return sum;
+}
+#endif
 
 /* Card > 0?, see run_container_empty for the reverse */
 static inline bool run_container_nonzero_cardinality(

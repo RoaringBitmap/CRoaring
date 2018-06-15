@@ -263,6 +263,57 @@ inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
 }
 
 /**
+ * Check whether a range of values from range_start (included) to range_end (excluded) is present
+ */
+static inline bool roaring_bitmap_contains_range(const roaring_bitmap_t *r, uint64_t range_start, uint64_t range_end) {
+
+    if (range_start >= range_end) return false;  // empty range
+    if (range_end - range_start == 1) return roaring_bitmap_contains(r, range_start);
+
+    const uint16_t hb_rs = range_start >> 16;
+    const uint16_t hb_re = range_end >> 16;
+
+    const int32_t span = hb_re - hb_rs;
+    const int32_t hlc_sz = ra_get_size(&r->high_low_container);
+
+    if (hlc_sz < span) return false;
+
+    int32_t is = ra_get_index(&r->high_low_container, hb_rs);
+    int32_t ie = ra_get_index(&r->high_low_container, hb_re);
+
+    ie = (ie < 0 ? -ie - 1 : ie);
+
+    if ((is < 0) || ((ie - is) != span)) return false;
+
+    const uint16_t lb_rs = range_start & 0xFFFF;
+    const uint16_t lb_re = range_end & 0xFFFF;
+
+    uint8_t typecode;
+
+    void *container = ra_get_container_at_index(&r->high_low_container, is, &typecode);
+
+    if (hb_rs == hb_re) return container_contains_range(container, lb_rs, lb_re, typecode);
+
+    if (!container_contains_range(container, lb_rs, 1 << 16, typecode)) return false;
+
+    if (ie < hlc_sz){
+
+        container = ra_get_container_at_index(&r->high_low_container, ie, &typecode);
+
+        if (!container_contains_range(container, 0, lb_re, typecode)) return false;
+    }
+
+    for (int32_t i = is + 1; i < ie; ++i){
+
+        container = ra_get_container_at_index(&r->high_low_container, i, &typecode);
+
+        if (container_get_cardinality(container, typecode) != ((1 << 16) - 1)) return false;
+    }
+
+    return true;
+}
+
+/**
  * Get the cardinality of the bitmap (number of elements).
  */
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);

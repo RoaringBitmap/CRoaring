@@ -117,54 +117,6 @@ void run_container_free(run_container_t *run) {
     free(run);
 }
 
-#ifdef USEAVX
-
-/* Get the cardinality of `run'. Requires an actual computation. */
-int run_container_cardinality(const run_container_t *run) {
-    const int32_t n_runs = run->n_runs;
-    const rle16_t *runs = run->runs;
-
-    /* by initializing with n_runs, we omit counting the +1 for each pair. */
-    int sum = n_runs;
-    int32_t k = 0;
-    const int32_t step = sizeof(__m256i) / sizeof(rle16_t);
-    if (n_runs > step) {
-        __m256i total = _mm256_setzero_si256();
-        for (; k + step <= n_runs; k += step) {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)(runs + k));
-            __m256i justlengths = _mm256_srli_epi32(ymm1, 16);
-            total = _mm256_add_epi32(total, justlengths);
-        }
-        // a store might be faster than extract?
-        uint32_t buffer[sizeof(__m256i) / sizeof(rle16_t)];
-        _mm256_storeu_si256((__m256i *)buffer, total);
-        sum += (buffer[0] + buffer[1]) + (buffer[2] + buffer[3]) +
-               (buffer[4] + buffer[5]) + (buffer[6] + buffer[7]);
-    }
-    for (; k < n_runs; ++k) {
-        sum += runs[k].length;
-    }
-
-    return sum;
-}
-
-#else
-
-/* Get the cardinality of `run'. Requires an actual computation. */
-int run_container_cardinality(const run_container_t *run) {
-    const int32_t n_runs = run->n_runs;
-    const rle16_t *runs = run->runs;
-
-    /* by initializing with n_runs, we omit counting the +1 for each pair. */
-    int sum = n_runs;
-    for (int k = 0; k < n_runs; ++k) {
-        sum += runs[k].length;
-    }
-
-    return sum;
-}
-#endif
-
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =
         (run->capacity == 0)
