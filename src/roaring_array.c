@@ -247,18 +247,17 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
 
 void ra_append_copies_until(roaring_array_t *ra, const roaring_array_t *sa,
                             uint16_t stopping_key, bool copy_on_write) {
-    for (uint16_t i = 0; i < sa->size; ++i) {
+    for (int32_t i = 0; i < sa->size; ++i) {
         if (sa->keys[i] >= stopping_key) break;
         ra_append_copy(ra, sa, i, copy_on_write);
     }
 }
 
 void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index,
+                          int32_t start_index, int32_t end_index,
                           bool copy_on_write) {
     extend_array(ra, end_index - start_index);
-
-    for (uint16_t i = start_index; i < end_index; ++i) {
+    for (int32_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
@@ -286,10 +285,10 @@ void ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
 }
 
 void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index) {
+                          int32_t start_index, int32_t end_index) {
     extend_array(ra, end_index - start_index);
 
-    for (uint16_t i = start_index; i < end_index; ++i) {
+    for (int32_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
 
         ra->keys[pos] = sa->keys[i];
@@ -300,11 +299,11 @@ void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
 }
 
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
-                     uint16_t start_index, uint16_t end_index,
+                     int32_t start_index, int32_t end_index,
                      bool copy_on_write) {
     extend_array(ra, end_index - start_index);
 
-    for (uint16_t i = start_index; i < end_index; ++i) {
+    for (int32_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
@@ -463,7 +462,7 @@ size_t ra_size_in_bytes(roaring_array_t *ra) {
 
 void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans) {
     size_t ctr = 0;
-    for (int i = 0; i < ra->size; ++i) {
+    for (int32_t i = 0; i < ra->size; ++i) {
         int num_added = container_to_uint32_array(
             ans + ctr, ra->containers[i], ra->typecodes[i],
             ((uint32_t)ra->keys[i]) << 16);

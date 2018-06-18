@@ -130,10 +130,10 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
 /**
  * Append new key-value pairs to ra, cloning (in COW sense)  values from sa
  * at indexes
- * [start_index, uint16_t end_index)
+ * [start_index, end_index)
  */
 void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index,
+                          int32_t start_index, int32_t end_index,
                           bool copy_on_write);
 
 /** appends from sa to ra, ending with the greatest key that is
@@ -151,17 +151,17 @@ void ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
 
 /**
  * Move the key-value pairs to ra from sa at indexes
- * [start_index, uint16_t end_index), old array should not be freed
+ * [start_index, end_index), old array should not be freed
  * (use ra_clear_without_containers)
  **/
 void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
-                          uint16_t start_index, uint16_t end_index);
+                          int32_t start_index, int32_t end_index);
 /**
  * Append new key-value pairs to ra,  from sa at indexes
- * [start_index, uint16_t end_index)
+ * [start_index, end_index)
  */
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
-                     uint16_t start_index, uint16_t end_index,
+                     int32_t start_index, int32_t end_index,
                      bool copy_on_write);
 
 /**

@@ -43,6 +43,15 @@ void is_really_empty() {
     roaring_bitmap_free(bm);
 }
 
+void inplaceorwide() {
+  uint64_t end = 4294901761;
+  roaring_bitmap_t *r1 = roaring_bitmap_from_range(0,1,1);
+  roaring_bitmap_t *r2 = roaring_bitmap_from_range(0,end,1);
+  roaring_bitmap_or_inplace(r1, r2);
+  assert_true(roaring_bitmap_get_cardinality(r1) == end);
+  roaring_bitmap_free(r1);
+  roaring_bitmap_free(r2);
+}
 
 void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
@@ -3504,6 +3513,7 @@ void test_add_range() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(inplaceorwide),
         cmocka_unit_test(test_contains_range),
         cmocka_unit_test(check_range_contains_from_end),
         cmocka_unit_test(check_iterate_to_end),
