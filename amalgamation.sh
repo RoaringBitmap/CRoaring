@@ -38,6 +38,7 @@ $SCRIPTPATH/include/roaring/containers/containers.h
 $SCRIPTPATH/include/roaring/roaring_array.h
 $SCRIPTPATH/include/roaring/misc/configreport.h
 $SCRIPTPATH/include/roaring/roaring.h
+$SCRIPTPATH/include/roaring/ordered_writer.h
 "
 
 for i in ${ALLCHEADERS} ${ALLCFILES}; do

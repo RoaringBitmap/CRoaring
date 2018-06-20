@@ -31,7 +31,9 @@ set(ROARING_SRC
     containers/run.c
     roaring.c
     roaring_priority_queue.c
-    roaring_array.c)
+    roaring_array.c
+    ordered_writer.c
+    )
 
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 target_include_directories(${ROARING_LIB_NAME}

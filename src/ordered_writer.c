@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <roaring/roaring.h>
+#include <roaring/ordered_writer.h>
+#include <roaring/utilasm.h>
 
 roaring_bitmap_writer_t *roaring_bitmap_writer_create(roaring_bitmap_t *target) {
     roaring_bitmap_writer_t *result = (roaring_bitmap_writer_t *) malloc(sizeof(roaring_bitmap_writer_t));
