@@ -11,6 +11,7 @@ extern "C" {
 #include <roaring/roaring_array.h>
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
+#include <roaring/ordered_writer.h>
 #include <stdbool.h>
 
 typedef struct roaring_bitmap_s {
@@ -225,6 +226,13 @@ void roaring_bitmap_free(roaring_bitmap_t *r);
  */
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals);
+
+/**
+ * Add ordered values from pointer vals, faster than repeatedly calling
+ * roaring_bitmap_add_many for ordered values
+ *
+ */
+void roaring_bitmap_add_ordered(roaring_bitmap_t *r, size_t n_args, const uint32_t *vals, roaring_bitmap_writer_t *writer);
 
 /**
  * Add value x
