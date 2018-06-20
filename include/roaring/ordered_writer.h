@@ -1,3 +1,6 @@
+#ifndef ROARING_ORDERED_WRITER
+#define ROARING_ORDERED_WRITER
+
 #include <assert.h>
 #include <roaring/roaring.h>
 
@@ -15,3 +18,5 @@ void roaring_bitmap_writer_free(roaring_bitmap_writer_t *writer);
 void roaring_bitmap_writer_flush(roaring_bitmap_writer_t *writer);
 
 void roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val);
+
+#endif
