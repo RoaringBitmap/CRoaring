@@ -38,12 +38,14 @@ void roaring_bitmap_writer_flush(roaring_bitmap_writer_t *writer) {
     memset(bitmap, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
-void roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val) {
+bool roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val) {
     const uint16_t hb = val >> 16;
     const uint16_t lb = val & 0xFFFF;
 
     if (hb != writer->current_key) {
-        assert(hb > writer->current_key);
+        if (hb <= writer->current_key) {
+            return false;
+        }
         roaring_bitmap_writer_flush(writer);
     }
 
@@ -54,4 +56,6 @@ void roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t v
 
     writer->current_key = hb;
     writer->dirty = true;
+
+    return true;
 }
