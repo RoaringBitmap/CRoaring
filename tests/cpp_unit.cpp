@@ -35,7 +35,12 @@ void serial_test(void **) {
   r1.write(serializedbytes);
   Roaring t = Roaring::read(serializedbytes);
   assert_true(r1 == t);
+  char *copy = new char[serializesize];
+  memcpy(copy, serializedbytes, serializesize);
+  Roaring t2 = Roaring::read(copy);
+  assert_true(t2== t);
   delete[] serializedbytes;
+  delete[] copy;
 }
 
 void test_example(bool copy_on_write) {
