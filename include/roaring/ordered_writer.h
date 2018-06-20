@@ -17,6 +17,6 @@ void roaring_bitmap_writer_free(roaring_bitmap_writer_t *writer);
 
 void roaring_bitmap_writer_flush(roaring_bitmap_writer_t *writer);
 
-void roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val);
+bool roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val);
 
 #endif
