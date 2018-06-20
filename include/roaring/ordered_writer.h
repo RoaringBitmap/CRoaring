@@ -13,6 +13,8 @@ typedef struct roaring_bitmap_writer_s {
 
 roaring_bitmap_writer_t *roaring_bitmap_writer_create(roaring_bitmap_t *target);
 
+void roaring_bitmap_writer_set(roaring_bitmap_writer_t *result, roaring_bitmap_t *target);
+
 void roaring_bitmap_writer_free(roaring_bitmap_writer_t *writer);
 
 void roaring_bitmap_writer_flush(roaring_bitmap_writer_t *writer);

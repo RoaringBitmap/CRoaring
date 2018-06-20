@@ -12,6 +12,13 @@ roaring_bitmap_writer_t *roaring_bitmap_writer_create(roaring_bitmap_t *target) 
     return result;
 }
 
+void roaring_bitmap_writer_set(roaring_bitmap_writer_t *result, roaring_bitmap_t *target) {
+    memset(result->bitmap, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    result->target = target;
+    result->current_key = 0;
+    result->dirty = false;
+}
+
 void roaring_bitmap_writer_free(roaring_bitmap_writer_t *writer) {
     free(writer->bitmap);
     free(writer);
@@ -38,7 +45,7 @@ void roaring_bitmap_writer_flush(roaring_bitmap_writer_t *writer) {
     memset(bitmap, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
 }
 
-bool roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val) {
+inline bool roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t val) {
     const uint16_t hb = val >> 16;
     const uint16_t lb = val & 0xFFFF;
 
