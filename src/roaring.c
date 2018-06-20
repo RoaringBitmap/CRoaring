@@ -3,6 +3,7 @@
 #include <roaring/roaring.h>
 #include <roaring/roaring_array.h>
 #include <roaring/bitset_util.h>
+#include <roaring/ordered_writer.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
