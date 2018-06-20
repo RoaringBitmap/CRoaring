@@ -15,6 +15,7 @@ extern "C" {
 #include "test.h"
 }
 
+
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
     return true;  // we always process all values
@@ -23,6 +24,18 @@ bool roaring_iterator_sumall(uint32_t value, void *param) {
 bool roaring_iterator_sumall64(uint64_t value, void *param) {
     *(uint64_t *)param += value;
     return true;  // we always process all values
+}
+
+
+void serial_test(void **) {
+  uint32_t values[] = {5, 2, 3, 4, 1};
+  Roaring r1(sizeof(values)/sizeof(uint32_t), values);
+  uint32_t serializesize = r1.getSizeInBytes();
+  char *serializedbytes = new char [serializesize];
+  r1.write(serializedbytes);
+  Roaring t = Roaring::read(serializedbytes);
+  assert_true(r1 == t);
+  delete[] serializedbytes;
 }
 
 void test_example(bool copy_on_write) {
@@ -429,6 +442,7 @@ void test_example_cpp_64_false(void **) { test_example_cpp_64(false); }
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_example_cpp_true),
