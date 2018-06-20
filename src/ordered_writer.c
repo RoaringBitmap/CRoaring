@@ -50,8 +50,6 @@ bool roaring_bitmap_writer_add(roaring_bitmap_writer_t *writer, const uint32_t v
     }
 
     uint64_t *bitmap = writer->bitmap;
-
-    const int index = lb & 63;
     bitmap[lb >> 6] |= (UINT64_C(1) << (lb & 63));
 
     writer->current_key = hb;
