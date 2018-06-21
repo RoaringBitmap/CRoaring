@@ -3509,6 +3509,18 @@ void test_add_range() {
         assert_true(roaring_bitmap_get_cardinality(r) == UINT64_C(0x100000000));
         roaring_bitmap_free(r);
     }
+
+    // bug: segfault
+    {
+        roaring_bitmap_t *r1 = roaring_bitmap_from_range(0, 1, 1);
+        r1->copy_on_write = true;
+        roaring_bitmap_t *r2 = roaring_bitmap_copy(r1);
+        roaring_bitmap_add_range(r1, 0, 1);
+        assert(roaring_bitmap_get_cardinality(r1) == 1);
+        assert(roaring_bitmap_get_cardinality(r2) == 1);
+        roaring_bitmap_free(r2);
+        roaring_bitmap_free(r1);
+    }
 }
 
 int main() {
