@@ -211,6 +211,7 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_
         uint8_t new_type;
 
         if (src >= 0 && ra->high_low_container.keys[src] == key) {
+            ra_unshare_container_at_index(&ra->high_low_container, src);
             new_container = container_add_range(ra->high_low_container.containers[src],
                                                 ra->high_low_container.typecodes[src],
                                                 container_min, container_max, &new_type);
