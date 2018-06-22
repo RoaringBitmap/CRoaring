@@ -1198,7 +1198,7 @@ void test_add_checked() {
         assert_true(roaring_bitmap_add_checked(r1, 200 * i));
         assert_false(roaring_bitmap_add_checked(r1, 200 * i));
     }
-    assert_false(roaring_bitmap_add_checked(r1, 200 * i));
+    assert_false(roaring_bitmap_add_checked(r1, 999));
 
     roaring_bitmap_free(r1);
 }
