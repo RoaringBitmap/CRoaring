@@ -721,6 +721,22 @@ void test_addremove() {
     roaring_bitmap_free(bm);
 }
 
+void test_remove_checked() {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    for (uint32_t value = 0; value < 1000; value += 8) {
+        roaring_bitmap_add(bm, value);
+    }
+    for (uint32_t value = 0; value < 1000; value += 8) {
+        assert_true(roaring_bitmap_remove_checked(bm, value));
+        assert_false(roaring_bitmap_remove_checked(bm, value));
+    }
+    assert_false(roaring_bitmap_remove_checked(bm, 999));
+    roaring_bitmap_add(bm, 999);
+    assert_true(roaring_bitmap_remove_checked(bm, 999));
+    assert_true(roaring_bitmap_is_empty(bm));
+    roaring_bitmap_free(bm);
+}
+
 void test_addremoverun() {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     for (uint32_t value = 33057; value < 147849; value += 8) {
@@ -1169,6 +1185,20 @@ void test_add() {
         roaring_bitmap_add(r1, 200 * i);
         assert_int_equal(roaring_bitmap_get_cardinality(r1), i + 1);
     }
+
+    roaring_bitmap_free(r1);
+}
+
+void test_add_checked() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    assert_non_null(r1);
+
+    assert_true(roaring_bitmap_add_checked(r1, 999));
+    for (uint32_t i = 0; i < 1000; ++i) {
+        assert_true(roaring_bitmap_add_checked(r1, 200 * i));
+        assert_false(roaring_bitmap_add_checked(r1, 200 * i));
+    }
+    assert_false(roaring_bitmap_add_checked(r1, 200 * i));
 
     roaring_bitmap_free(r1);
 }
@@ -3569,6 +3599,7 @@ int main() {
         cmocka_unit_test(test_serialize),
         cmocka_unit_test(test_portable_serialize),
         cmocka_unit_test(test_add),
+        cmocka_unit_test(test_add_checked),
         cmocka_unit_test(test_contains),
         cmocka_unit_test(test_intersection_array_x_array),
         cmocka_unit_test(test_intersection_array_x_array_inplace),

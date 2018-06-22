@@ -296,6 +296,9 @@ typings/
 **/*.Server/ModelManifest.xml
 _Pvt_Extensions
 
+# Visual Studio Code
+.vscode
+
 # Paket dependency manager
 .paket/paket.exe
 paket-files/
