@@ -87,6 +87,21 @@ class Roaring64Map {
     }
 
     /**
+     * Add value x
+     * Returns true if a new value was added, false if the value was already existing.
+     */
+    bool addChecked(uint32_t x) {
+        bool result = roarings[0].addChecked(x);
+        roarings[0].setCopyOnWrite(copyOnWrite);
+        return result;
+    }
+    bool addChecked(uint64_t x) {
+        bool result = roarings[highBytes(x)].addChecked(lowBytes(x));
+        roarings[highBytes(x)].setCopyOnWrite(copyOnWrite);
+        return result;
+    }
+
+    /**
      * Add value n_args from pointer vals
      *
      */
@@ -112,6 +127,20 @@ class Roaring64Map {
         auto roaring_iter = roarings.find(highBytes(x));
         if (roaring_iter != roarings.cend())
             roaring_iter->second.remove(lowBytes(x));
+    }
+
+    /**
+     * Remove value x
+     * Returns true if a new value was removed, false if the value was not existing.
+     */
+    bool removeChecked(uint32_t x) {
+        return roarings[0].removeChecked(x);
+    }
+    bool removeChecked(uint64_t x) {
+        auto roaring_iter = roarings.find(highBytes(x));
+        if (roaring_iter != roarings.cend())
+            return roaring_iter->second.removeChecked(lowBytes(x));
+        return false;
     }
 
     /**
