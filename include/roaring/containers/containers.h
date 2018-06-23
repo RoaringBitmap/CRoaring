@@ -268,14 +268,38 @@ static inline int container_shrink_to_fit(void *container, uint8_t typecode) {
     return 0;  // unreached
 }
 
+
+/**
+ * make a container with a run of ones
+ */
+/* initially always use a run container, even if an array might be
+ * marginally
+ * smaller */
+static inline void *container_range_of_ones(uint32_t range_start,
+                                            uint32_t range_end,
+                                            uint8_t *result_type) {
+    assert(range_end >= range_start);
+    uint64_t cardinality =  range_end - range_start + 1;
+    if(cardinality <= 2) {
+      *result_type = ARRAY_CONTAINER_TYPE_CODE;
+      return array_container_create_range(range_start, range_end);
+    } else {
+      *result_type = RUN_CONTAINER_TYPE_CODE;
+      return run_container_create_range(range_start, range_end);
+    }
+}
+
+
 /*  Create a container with all the values between in [min,max) at a
     distance k*step from min. */
 static inline void *container_from_range(uint8_t *type, uint32_t min,
                                          uint32_t max, uint16_t step) {
     if (step == 0) return NULL;  // being paranoid
     if (step == 1) {
-        *type = RUN_CONTAINER_TYPE_CODE;
-        return run_container_create_range(min, max);
+        return container_range_of_ones(min,max,type);
+        // Note: the result is not always a run (need to check the cardinality)
+        //*type = RUN_CONTAINER_TYPE_CODE;
+        //return run_container_create_range(min, max);
     }
     int size = (max - min + step - 1) / step;
     if (size <= DEFAULT_MAX_SIZE) {  // array container
@@ -2093,26 +2117,6 @@ static inline void *container_inot_range(void *c, uint8_t typ,
     assert(false);
     __builtin_unreachable();
     return NULL;
-}
-
-/**
- * make a container with a run of ones
- */
-/* initially always use a run container, even if an array might be
- * marginally
- * smaller */
-static inline void *container_range_of_ones(uint32_t range_start,
-                                            uint32_t range_end,
-                                            uint8_t *result_type) {
-    assert(range_end >= range_start);
-    uint64_t cardinality =  range_end - range_start + 1;
-    if(cardinality <= 2) {
-      *result_type = ARRAY_CONTAINER_TYPE_CODE;
-      return array_container_create_range(range_start, range_end);
-    } else {
-      *result_type = RUN_CONTAINER_TYPE_CODE;
-      return run_container_create_range(range_start, range_end);
-    }
 }
 
 /**

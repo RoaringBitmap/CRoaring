@@ -24,16 +24,27 @@ static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
 static int array_equals(uint32_t *a1, int32_t size1, uint32_t *a2,
                         int32_t size2) {
     if (size1 != size2) return 0;
-    for (int i = 0; i < size1; ++i)
+    for (int i = 0; i < size1; ++i) {
         if (a1[i] != a2[i]) {
             return 0;
         }
+    }
     return 1;
 }
 
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
     return true;  // continue till the end
+}
+
+
+void range_contains() {
+    uint32_t end = 2073952257;
+    uint32_t start = end-2;
+    roaring_bitmap_t *bm = roaring_bitmap_from_range(start, end-1, 1);
+    roaring_bitmap_printf_describe(bm);printf("\n");
+    roaring_bitmap_contains_range(bm, start, end);
+    roaring_bitmap_free(bm);
 }
 
 void is_really_empty() {
@@ -192,10 +203,12 @@ void sbs_add_range(sbs_t *sbs, uint64_t min, uint64_t max) {
     roaring_bitmap_add_range(sbs->roaring, min, max + 1);
 }
 
-void sbs_check_type(sbs_t *sbs, uint8_t type) {
+bool sbs_check_type(sbs_t *sbs, uint8_t type) {
+    bool answer = true;
     for (int32_t i = 0; i < sbs->roaring->high_low_container.size; i++) {
-        assert_true(sbs->roaring->high_low_container.typecodes[i] == type);
+        answer = answer && (sbs->roaring->high_low_container.typecodes[i] == type);
     }
+    return answer;
 }
 
 void sbs_compare(sbs_t *sbs) {
@@ -2909,8 +2922,6 @@ void test_inplace_rand_flips() {
     char *output = malloc(range);
 
     for (int card = 2; card < 1000000; card *= 8) {
-        printf("test_inplace_rand_flips with attempted card %d", card);
-
         roaring_bitmap_t *r = roaring_bitmap_create();
         memset(input, 0, range);
         for (int i = 0; i < card; ++i) {
@@ -2933,8 +2944,6 @@ void test_inplace_rand_flips() {
                 }
         }
         roaring_bitmap_run_optimize(r);
-        printf(" and actual card = %d\n",
-               (int)roaring_bitmap_get_cardinality(r));
 
         roaring_bitmap_t *r_orig = roaring_bitmap_copy(r);
 
@@ -2999,7 +3008,6 @@ void select_test() {
     char *input = malloc(range);
 
     for (int card = 2; card < 1000000; card *= 8) {
-        printf("select_test with attempted card %d", card);
 
         roaring_bitmap_t *r = roaring_bitmap_create();
         memset(input, 0, range);
@@ -3023,7 +3031,6 @@ void select_test() {
         }
         roaring_bitmap_run_optimize(r);
         uint64_t true_card = roaring_bitmap_get_cardinality(r);
-        printf(" and actual card = %u\n", (unsigned)true_card);
 
         r->copy_on_write = 1;
         roaring_bitmap_t *r_copy = roaring_bitmap_copy(r);
@@ -3387,12 +3394,12 @@ void test_add_range() {
       sbs_add_value(sbs, 100);
       sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
       sbs_add_range(sbs, 0, 299);
-      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
       sbs_add_range(sbs, 301, 65535);
-      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
       // after and only after BITSET becomes [0, 65535], it is converted to RUN
       sbs_add_range(sbs, 300, 300);
-      sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE);
+      assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
       sbs_compare(sbs);
       sbs_free(sbs);
     }
@@ -3406,14 +3413,14 @@ void test_add_range() {
       // unless threshold was hit, it is still ARRAY
       for (int i = 0; i < 100; i += 2) {
         sbs_add_value(sbs, i);
-        sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE);
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
       }
 
       // after threshold on number of elements was hit, it is converted to BITSET
       for (int i = 0; i < 65535; i += 2) {
         sbs_add_value(sbs, i);
       }
-      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
 
       sbs_compare(sbs);
       sbs_free(sbs);
@@ -3427,25 +3434,40 @@ void test_add_range() {
 
       // after ARRAY becomes full [0, 65535], it is converted to RUN
       sbs_add_range(sbs, 100, 65535);
-      sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE);
+      assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
 
       sbs_compare(sbs);
       sbs_free(sbs);
     }
-
     // autoconversion: RUN -> RUN -> BITSET
     {
       sbs_t* sbs = sbs_create();
       // by default, RUN container is used
       for (int i = 0; i < 100; i += 2) {
-        sbs_add_range(sbs, i, i);
-        sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE);
+        sbs_add_range(sbs, 4*i, 4*i + 1);
+        assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
       }
       // after number of RLE runs exceeded threshold, it is converted to BITSET
       for (int i = 0; i < 65535; i += 2) {
         sbs_add_range(sbs, i, i);
       }
-      sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE);
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+      sbs_compare(sbs);
+      sbs_free(sbs);
+    }
+
+    // autoconversion: ARRAY -> ARRAY -> BITSET
+    {
+      sbs_t* sbs = sbs_create();
+      for (int i = 0; i < 100; i += 2) {
+        sbs_add_range(sbs, i, i);
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+      }
+      // after number of RLE runs exceeded threshold, it is converted to BITSET
+      for (int i = 0; i < 65535; i += 2) {
+        sbs_add_range(sbs, i, i);
+      }
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
       sbs_compare(sbs);
       sbs_free(sbs);
     }
@@ -3525,6 +3547,7 @@ void test_add_range() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(range_contains),
         cmocka_unit_test(inplaceorwide),
         cmocka_unit_test(test_contains_range),
         cmocka_unit_test(check_range_contains_from_end),
