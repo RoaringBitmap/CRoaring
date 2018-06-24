@@ -233,6 +233,12 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
 void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x);
 
 /**
+ * Add value x
+ * Returns true if a new value was added, false if the value was already existing.
+ */
+bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t x);
+
+/**
  * Add all values in range [min, max]
  */
 void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_t max);
@@ -249,6 +255,12 @@ void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max);
  *
  */
 void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
+
+/**
+ * Remove value x
+ * Returns true if a new value was removed, false if the value was not existing.
+ */
+bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 
 /**
  * Check if value x is present

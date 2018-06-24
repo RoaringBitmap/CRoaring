@@ -96,6 +96,14 @@ class Roaring {
     void add(uint32_t x) { roaring_bitmap_add(&roaring, x); }
 
     /**
+     * Add value x
+     * Returns true if a new value was added, false if the value was already existing.
+     */
+    bool addChecked(uint32_t x) { 
+        return roaring_bitmap_add_checked(&roaring, x);
+    }
+
+    /**
     * add if all values from x (included) to y (excluded)
     */
     void addRange(const uint64_t x, const uint64_t y)  {
@@ -115,6 +123,14 @@ class Roaring {
      *
      */
     void remove(uint32_t x) { roaring_bitmap_remove(&roaring, x); }
+
+    /**
+     * Remove value x
+     * Returns true if a new value was removed, false if the value was not existing.
+     */
+    bool removeChecked(uint32_t x) {
+        return roaring_bitmap_remove_checked(&roaring, x);
+    }
 
     /**
      * Return the largest value (if not empty)

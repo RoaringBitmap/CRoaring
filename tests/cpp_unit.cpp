@@ -445,6 +445,45 @@ void test_example_cpp_64_true(void **) { test_example_cpp_64(true); }
 
 void test_example_cpp_64_false(void **) { test_example_cpp_64(false); }
 
+void test_cpp_add_remove_checked(void **) {
+    Roaring roaring;
+    uint32_t values[4] = { 123, 9999, 0xFFFFFFF7, 0xFFFFFFFF};
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.addChecked(values[i]));
+        assert_false(roaring.addChecked(values[i]));
+    }
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.removeChecked(values[i]));
+        assert_false(roaring.removeChecked(values[i]));
+    }
+    assert_true(roaring.isEmpty());
+}
+
+void test_cpp_add_remove_checked_64(void **) {
+    Roaring64Map roaring;
+
+    uint32_t values32[4] = { 123, 9999, 0xFFFFFFF7, 0xFFFFFFFF};
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.addChecked(values32[i]));
+        assert_false(roaring.addChecked(values32[i]));
+    }
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.removeChecked(values32[i]));
+        assert_false(roaring.removeChecked(values32[i]));
+    }
+
+    uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.addChecked(values64[i]));
+        assert_false(roaring.addChecked(values64[i]));
+    }
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.removeChecked(values64[i]));
+        assert_false(roaring.removeChecked(values64[i]));
+    }
+    assert_true(roaring.isEmpty());
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(serial_test),
@@ -453,7 +492,9 @@ int main() {
         cmocka_unit_test(test_example_cpp_true),
         cmocka_unit_test(test_example_cpp_false),
         cmocka_unit_test(test_example_cpp_64_true),
-        cmocka_unit_test(test_example_cpp_64_false)};
+        cmocka_unit_test(test_example_cpp_64_false),
+        cmocka_unit_test(test_cpp_add_remove_checked),
+        cmocka_unit_test(test_cpp_add_remove_checked_64)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
