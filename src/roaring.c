@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
                                            uint32_t val);
@@ -257,7 +258,7 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
                                          ra->high_low_container.typecodes[i]));
         if (ra->high_low_container.typecodes[i] == SHARED_CONTAINER_TYPE_CODE) {
             printf(
-                "(shared count = %u )",
+                "(shared count = %"PRIu32" )",
                 ((shared_container_t *)(ra->high_low_container.containers[i]))
                     ->counter);
         }

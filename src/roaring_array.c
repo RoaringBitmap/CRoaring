@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/containers.h>
@@ -666,7 +667,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
     buf += sizeof(uint32_t);
     if ((cookie & 0xFFFF) != SERIAL_COOKIE &&
         cookie != SERIAL_COOKIE_NO_RUNCONTAINER) {
-        fprintf(stderr, "I failed to find one of the right cookies. Found %u\n",
+        fprintf(stderr, "I failed to find one of the right cookies. Found %"PRIu32"\n",
                 cookie);
         return false;
     }
@@ -684,7 +685,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
         buf += sizeof(uint32_t);
     }
     if (size > (1<<16)) {
-       fprintf(stderr, "You cannot have so many containers, the data must be corrupted: %u\n",
+       fprintf(stderr, "You cannot have so many containers, the data must be corrupted: %"PRId32"\n",
                 size);
        return false; // logically impossible
     }
