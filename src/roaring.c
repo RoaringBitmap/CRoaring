@@ -258,7 +258,7 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
                                          ra->high_low_container.typecodes[i]));
         if (ra->high_low_container.typecodes[i] == SHARED_CONTAINER_TYPE_CODE) {
             printf(
-                "(shared count = %"PRIu32" )",
+                "(shared count = %" PRIu32 " )",
                 ((shared_container_t *)(ra->high_low_container.containers[i]))
                     ->counter);
         }
