@@ -233,7 +233,7 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_
 
 void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
   if(max == min) return;
-  roaring_bitmap_add_range_closed(ra, min, max - 1);
+  roaring_bitmap_add_range_closed(ra, (uint32_t)min, (uint32_t)(max - 1));
 }
 
 void roaring_bitmap_printf(const roaring_bitmap_t *ra) {
@@ -2391,7 +2391,7 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r, uint64_t range_sta
         range_end = UINT64_C(0x100000000);
     }
     if (range_start >= range_end) return true;  // empty range are always contained!
-    if (range_end - range_start == 1) return roaring_bitmap_contains(r, range_start);
+    if (range_end - range_start == 1) return roaring_bitmap_contains(r, (uint32_t)range_start);
     uint16_t hb_rs = (uint16_t)(range_start >> 16);
     uint16_t hb_re = (uint16_t)((range_end - 1) >> 16);
     const int32_t span = hb_re - hb_rs;
