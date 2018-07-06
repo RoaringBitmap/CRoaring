@@ -28,7 +28,7 @@ extern inline void ra_set_container_at_index(const roaring_array_t *ra,
 
 #define INITIAL_CAPACITY 4
 
-static bool realloc_array(roaring_array_t *ra, size_t new_capacity) {
+static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
     // because we combine the allocations, it is not possible to use realloc
     /*ra->keys =
     (uint16_t *)realloc(ra->keys, sizeof(uint16_t) * new_capacity);
@@ -208,7 +208,7 @@ void ra_clear(roaring_array_t *ra) {
 bool extend_array(roaring_array_t *ra, int32_t k) {
     int32_t desired_size = ra->size + k;
     if (desired_size > ra->allocation_size) {
-        size_t new_capacity =
+        int32_t new_capacity =
             (ra->size < 1024) ? 2 * desired_size : 5 * desired_size / 4;
 
         return realloc_array(ra, new_capacity);
