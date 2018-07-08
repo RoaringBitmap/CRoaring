@@ -679,7 +679,7 @@ class Roaring64Map {
         return std::accumulate(
             roarings.cbegin(), roarings.cend(),
             sizeof(uint64_t) + roarings.size() * sizeof(uint32_t),
-            [=](uint64_t previous,
+            [=](size_t previous,
                 const std::pair<uint32_t, Roaring> &map_entry) {
                 // add in bytes used by each Roaring
                 return previous + map_entry.second.getSizeInBytes(portable);
