@@ -1188,7 +1188,7 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
 size_t roaring_bitmap_serialize(const roaring_bitmap_t *ra, char *buf) {
     size_t portablesize = roaring_bitmap_portable_size_in_bytes(ra);
     uint64_t cardinality = roaring_bitmap_get_cardinality(ra);
-    size_t sizeasarray = cardinality * sizeof(uint32_t) + sizeof(uint32_t);
+    uint64_t sizeasarray = cardinality * sizeof(uint32_t) + sizeof(uint32_t);
     if (portablesize < sizeasarray) {
         buf[0] = SERIALIZATION_CONTAINER;
         return roaring_bitmap_portable_serialize(ra, buf + 1) + 1;
@@ -1197,15 +1197,15 @@ size_t roaring_bitmap_serialize(const roaring_bitmap_t *ra, char *buf) {
         memcpy(buf + 1, &cardinality, sizeof(uint32_t));
         roaring_bitmap_to_uint32_array(
             ra, (uint32_t *)(buf + 1 + sizeof(uint32_t)));
-        return 1 + sizeasarray;
+        return 1 + (size_t)sizeasarray;
     }
 }
 
 size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *ra) {
     size_t portablesize = roaring_bitmap_portable_size_in_bytes(ra);
-    size_t sizeasarray = roaring_bitmap_get_cardinality(ra) * sizeof(uint32_t) +
+    uint64_t sizeasarray = roaring_bitmap_get_cardinality(ra) * sizeof(uint32_t) +
                          sizeof(uint32_t);
-    return portablesize < sizeasarray ? portablesize + 1 : sizeasarray + 1;
+    return portablesize < sizeasarray ? portablesize + 1 : (size_t)sizeasarray + 1;
 }
 
 size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra) {
