@@ -149,7 +149,8 @@ static inline int __builtin_popcountll(unsigned long long input_num) {
 #endif
 }
 
-static inline void __builtin_unreachable() { __assume(0); }
+/* Use #define so this is effective even under /Ob0 (no inline) */
+#define __builtin_unreachable() __assume(0)
 #endif
 
 #endif
