@@ -100,6 +100,29 @@ inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
     return -(low + 1);
 }
 
+/*
+ * Returns index of the run which contains $ikey
+ */
+static inline int32_t rle16_find_run(const rle16_t *array, int32_t lenarray,
+                                     uint16_t ikey) {
+    int32_t low = 0;
+    int32_t high = lenarray - 1;
+    while (low <= high) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t min = array[middleIndex].value;
+        uint16_t max = array[middleIndex].value + array[middleIndex].length;
+        if (ikey > max) {
+            low = middleIndex + 1;
+        } else if (ikey < min) {
+            high = middleIndex - 1;
+        } else {
+            return middleIndex;
+        }
+    }
+    return -(low + 1);
+}
+
+
 /**
  * Returns number of runs which can'be be merged with the key because they
  * are less than the key.
@@ -621,5 +644,72 @@ static inline void run_container_add_range(run_container_t* run,
     int32_t nruns_less = rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
     run_container_add_range_nruns(run, min, max, nruns_less, nruns_greater);
 }
+
+/**
+ * Shifts last $count elements either left (distance < 0) or right (distance > 0)
+ */
+static inline void run_container_shift_tail(run_container_t* run,
+                                            int32_t count, int32_t distance) {
+    if (distance > 0) {
+        if (run->capacity < count+distance) {
+            run_container_grow(run, count+distance, true);
+        }
+    }
+    int32_t srcpos = run->n_runs - count;
+    int32_t dstpos = srcpos + distance;
+    memmove(&(run->runs[dstpos]), &(run->runs[srcpos]), sizeof(rle16_t) * count);
+    run->n_runs += distance;
+}
+
+/**
+ * Remove all elements in range [min, max]
+ */
+static inline void run_container_remove_range(run_container_t *run, uint32_t min, uint32_t max) {
+    int32_t first = rle16_find_run(run->runs, run->n_runs, min);
+    int32_t last = rle16_find_run(run->runs, run->n_runs, max);
+
+    if (first >= 0 && min > run->runs[first].value &&
+        max < run->runs[first].value + run->runs[first].length) {
+        // split this run into two adjacent runs
+
+        // right subinterval
+        makeRoomAtIndex(run, first+1);
+        run->runs[first+1].value = max + 1;
+        run->runs[first+1].length = (run->runs[first].value + run->runs[first].length) - (max + 1);
+
+        // left subinterval
+        run->runs[first].length = (min - 1) - run->runs[first].value;
+
+        return;
+    }
+
+    // update left-most partial run
+    if (first >= 0) {
+        if (min > run->runs[first].value) {
+            run->runs[first].length = (min - 1) - run->runs[first].value;
+            first++;
+        }
+    } else {
+        first = -first-1;
+    }
+
+    // update right-most run
+    if (last >= 0) {
+        uint16_t run_max = run->runs[last].value + run->runs[last].length;
+        if (run_max > max) {
+            run->runs[last].value = max + 1;
+            run->runs[last].length = run_max - (max + 1);
+            last--;
+        }
+    } else {
+        last = (-last-1) - 1;
+    }
+
+    // remove intermediate runs
+    if (first <= last) {
+        run_container_shift_tail(run, run->n_runs - (last+1), -(last-first+1));
+    }
+}
+
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */
