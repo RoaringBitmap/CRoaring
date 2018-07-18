@@ -61,9 +61,11 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
     uint8_t *newtypecodes = (uint8_t *)(newkeys + new_capacity);
     assert((char *)(newtypecodes + new_capacity) ==
            (char *)bigalloc + memoryneeded);
-    memcpy(newcontainers, ra->containers, sizeof(void *) * ra->size);
-    memcpy(newkeys, ra->keys, sizeof(uint16_t) * ra->size);
-    memcpy(newtypecodes, ra->typecodes, sizeof(uint8_t) * ra->size);
+    if(ra->size > 0) {
+      memcpy(newcontainers, ra->containers, sizeof(void *) * ra->size);
+      memcpy(newkeys, ra->keys, sizeof(uint16_t) * ra->size);
+      memcpy(newtypecodes, ra->typecodes, sizeof(uint8_t) * ra->size);
+    }
     ra->containers = newcontainers;
     ra->keys = newkeys;
     ra->typecodes = newtypecodes;
@@ -110,7 +112,9 @@ bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
     if (!ra_init_with_capacity(dest, source->size)) return false;
     dest->size = source->size;
     dest->allocation_size = source->size;
-    memcpy(dest->keys, source->keys, dest->size * sizeof(uint16_t));
+    if(dest->size > 0) {
+      memcpy(dest->keys, source->keys, dest->size * sizeof(uint16_t));
+    }
     // we go through the containers, turning them into shared containers...
     if (copy_on_write) {
         for (int32_t i = 0; i < dest->size; ++i) {
@@ -118,13 +122,17 @@ bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
                 source->containers[i], &source->typecodes[i], copy_on_write);
         }
         // we do a shallow copy to the other bitmap
-        memcpy(dest->containers, source->containers,
+        if(dest->size > 0) {
+          memcpy(dest->containers, source->containers,
                dest->size * sizeof(void *));
-        memcpy(dest->typecodes, source->typecodes,
+          memcpy(dest->typecodes, source->typecodes,
                dest->size * sizeof(uint8_t));
+        }
     } else {
-        memcpy(dest->typecodes, source->typecodes,
+        if(dest->size > 0) {
+          memcpy(dest->typecodes, source->typecodes,
                dest->size * sizeof(uint8_t));
+        }
         for (int32_t i = 0; i < dest->size; i++) {
             dest->containers[i] =
                 container_clone(source->containers[i], source->typecodes[i]);
