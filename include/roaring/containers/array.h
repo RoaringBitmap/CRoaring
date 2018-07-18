@@ -419,4 +419,16 @@ static inline void array_container_add_range(array_container_t *array,
     array_container_add_range_nvals(array, min, max, nvals_less, nvals_greater);
 }
 
+/*
+ * Removes all elements array[pos] .. array[pos+count-1]
+ */
+static inline void array_container_remove_range(array_container_t *array,
+                                                uint32_t pos, uint32_t count) {
+  if (count != 0) {
+      memmove(&(array->array[pos]), &(array->array[pos+count]),
+              (array->cardinality - pos - count) * sizeof(uint16_t));
+      array->cardinality -= count;
+  }
+}
+
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

@@ -203,12 +203,25 @@ void sbs_add_range(sbs_t *sbs, uint64_t min, uint64_t max) {
     roaring_bitmap_add_range(sbs->roaring, min, max + 1);
 }
 
+void sbs_remove_range(sbs_t *sbs, uint64_t min, uint64_t max) {
+    sbs_ensure_room(sbs, max);
+    for (uint64_t v = min; v <= max; v++) {
+        sbs->words[v/64] &= ~(UINT64_C(1) << (v % 64));
+    }
+
+    roaring_bitmap_remove_range(sbs->roaring, min, max + 1);
+}
+
 bool sbs_check_type(sbs_t *sbs, uint8_t type) {
     bool answer = true;
     for (int32_t i = 0; i < sbs->roaring->high_low_container.size; i++) {
         answer = answer && (sbs->roaring->high_low_container.typecodes[i] == type);
     }
     return answer;
+}
+
+bool sbs_is_empty(sbs_t *sbs) {
+  return sbs->roaring->high_low_container.size == 0;
 }
 
 void sbs_compare(sbs_t *sbs) {
@@ -3575,6 +3588,112 @@ void test_add_range() {
     }
 }
 
+void test_remove_range() {
+    // autoconversion: ARRAY -> ARRAY -> NULL
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 100, 200);
+        sbs_convert(sbs, ARRAY_CONTAINER_TYPE_CODE);
+        sbs_remove_range(sbs, 100, 105);
+        sbs_remove_range(sbs, 195, 200);
+        sbs_remove_range(sbs, 150, 155);
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+        sbs_compare(sbs);
+        sbs_remove_range(sbs, 102, 198);
+        assert_true(sbs_is_empty(sbs));
+        sbs_free(sbs);
+    }
+
+    // autoconversion: BITSET -> BITSET -> ARRAY
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 0, 40000);
+        sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
+        sbs_remove_range(sbs, 100, 200);
+        assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+        sbs_remove_range(sbs, 200, 39900);
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // autoconversion: BITSET -> NULL
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 100, 200);
+        sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
+        sbs_remove_range(sbs, 50, 250);
+        assert_true(sbs_is_empty(sbs));
+        sbs_free(sbs);
+    }
+
+    // autoconversion: RUN -> RUN -> BITSET
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 0, 40000);
+        sbs_add_range(sbs, 50000, 60000);
+        sbs_convert(sbs, RUN_CONTAINER_TYPE_CODE);
+        sbs_remove_range(sbs, 100, 200);
+        sbs_remove_range(sbs, 40000, 50000);
+        assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
+        for (int i = 0; i < 65535; i++) {
+            if (i % 2 == 0) {
+                sbs_remove_range(sbs, i, i);
+            }
+        }
+        assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // autoconversion: RUN -> NULL
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 100, 200);
+        sbs_add_range(sbs, 300, 400);
+        sbs_convert(sbs, RUN_CONTAINER_TYPE_CODE);
+        sbs_remove_range(sbs, 50, 450);
+        assert_true(sbs_is_empty(sbs));
+        sbs_free(sbs);
+    }
+
+    // remove containers
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_value(sbs, 65536*1+100);
+        sbs_add_value(sbs, 65536*3+100);
+        sbs_add_value(sbs, 65536*5+100);
+        sbs_add_value(sbs, 65536*7+100);
+        sbs_remove_range(sbs, 65536*3+0, 65536*3+65535); // from the middle
+        sbs_compare(sbs);
+        sbs_remove_range(sbs, 65536*1+0, 65536*1+65535); // from the beginning
+        sbs_compare(sbs);
+        sbs_remove_range(sbs, 65536*7+0, 65536*7+65535); // from the end 
+        sbs_compare(sbs);
+        sbs_remove_range(sbs, 65536*5+0, 65536*5+65535); // the last one
+        sbs_compare(sbs);
+        sbs_remove_range(sbs, 65536*9+0, 65536*9+65535); // non-existent
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // random data inside [0..span)
+    const uint32_t span = 16*65536;
+    for (uint32_t range_length = 3; range_length <= 16384; range_length *= 3) {
+        sbs_t* sbs = sbs_create();
+        for (int i = 0; i < 50; i++) {
+            uint64_t range_start = our_rand() % (span - range_length);
+            sbs_add_range(sbs, range_start, range_start + range_length - 1);
+        }
+        for (int i = 0; i < 50; i++) {
+            uint64_t range_start = our_rand() % (span - range_length);
+            sbs_remove_range(sbs, range_start, range_start + range_length - 1);
+        }
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(range_contains),
@@ -3681,6 +3800,7 @@ int main() {
         cmocka_unit_test(test_read_uint32_iterator_run),
         cmocka_unit_test(test_read_uint32_iterator_native),
         cmocka_unit_test(test_add_range),
+        cmocka_unit_test(test_remove_range),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

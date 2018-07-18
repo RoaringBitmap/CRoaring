@@ -438,8 +438,10 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
             sizeof(uint8_t) * range);
 }
 
-void ra_shift_right(roaring_array_t *ra, int32_t count, int32_t distance) {
-    extend_array(ra, distance);
+void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance) {
+    if (distance > 0) {
+        extend_array(ra, distance);
+    }
     int32_t srcpos = ra->size - count;
     int32_t dstpos = srcpos + distance;
     memmove(&(ra->keys[dstpos]), &(ra->keys[srcpos]),

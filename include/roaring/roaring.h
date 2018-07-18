@@ -243,18 +243,28 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t x);
  */
 void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_t max);
 
-
 /**
  * Add all values in range [min, max)
  */
-void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max);
-
+inline void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
+  if(max == min) return;
+  roaring_bitmap_add_range_closed(ra, (uint32_t)min, (uint32_t)(max - 1));
+}
 
 /**
  * Remove value x
  *
  */
 void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
+
+/** Remove all values in range [min, max] */
+void roaring_bitmap_remove_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_t max);
+
+/** Remove all values in range [min, max) */
+inline void roaring_bitmap_remove_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
+    if(max == min) return;
+    roaring_bitmap_remove_range_closed(ra, (uint32_t)min, (uint32_t)(max - 1));
+}
 
 /**
  * Remove value x

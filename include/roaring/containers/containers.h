@@ -2284,4 +2284,80 @@ static inline void *container_add_range(void *container, uint8_t type,
     }
 }
 
+/*
+ * Removes all elements in range [min, max].
+ * Returns one of:
+ *   - NULL if no elements left
+ *   - pointer to the original container
+ *   - pointer to a newly-allocated container (if it is more efficient)
+ *
+ * If the returned pointer is different from $container, then a new container
+ * has been created and the caller is responsible for freeing the original container.
+ */
+static inline void *container_remove_range(void *container, uint8_t type,
+                                           uint32_t min, uint32_t max,
+                                           uint8_t *result_type) {
+     switch (type) {
+        case BITSET_CONTAINER_TYPE_CODE: {
+            bitset_container_t *bitset = (bitset_container_t *) container;
+
+            int32_t result_cardinality = bitset->cardinality -
+                bitset_lenrange_cardinality(bitset->array, min, max-min);
+
+            if (result_cardinality == 0) {
+                return NULL;
+            } else if (result_cardinality < DEFAULT_MAX_SIZE) {
+                *result_type = ARRAY_CONTAINER_TYPE_CODE;
+                bitset_reset_range(bitset->array, min, max+1);
+                bitset->cardinality = result_cardinality;
+                return array_container_from_bitset(bitset);
+            } else {
+                *result_type = BITSET_CONTAINER_TYPE_CODE;
+                bitset_reset_range(bitset->array, min, max+1);
+                bitset->cardinality = result_cardinality;
+                return bitset;
+            }
+        }
+        case ARRAY_CONTAINER_TYPE_CODE: {
+            array_container_t *array = (array_container_t *) container;
+
+            int32_t nvals_greater = count_greater(array->array, array->cardinality, max);
+            int32_t nvals_less = count_less(array->array, array->cardinality - nvals_greater, min);
+            int32_t result_cardinality = nvals_less + nvals_greater;
+
+            if (result_cardinality == 0) {
+                return NULL;
+            } else {
+                *result_type = ARRAY_CONTAINER_TYPE_CODE;
+                array_container_remove_range(array, nvals_less,
+                    array->cardinality - result_cardinality);
+                return array;
+            }
+        }
+        case RUN_CONTAINER_TYPE_CODE: {
+            run_container_t *run = (run_container_t *) container;
+
+            if (run->n_runs == 0) {
+                return NULL;
+            }
+            if (min <= run_container_minimum(run) && max >= run_container_maximum(run)) {
+                return NULL;
+            }
+
+            run_container_remove_range(run, min, max);
+
+            if (run_container_serialized_size_in_bytes(run->n_runs) <=
+                    bitset_container_serialized_size_in_bytes()) {
+                *result_type = RUN_CONTAINER_TYPE_CODE;
+                return run;
+            } else {
+                *result_type = BITSET_CONTAINER_TYPE_CODE;
+                return bitset_container_from_run(run);
+            }
+        }
+        default:
+            __builtin_unreachable();
+     }
+}
+
 #endif
