@@ -639,8 +639,10 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     memcpy(&container->n_runs, buf, sizeof(uint16_t));
     if (container->n_runs > container->capacity)
         run_container_grow(container, container->n_runs, false);
-    memcpy(container->runs, buf + sizeof(uint16_t),
+    if(container->n_runs > 0) {
+      memcpy(container->runs, buf + sizeof(uint16_t),
            container->n_runs * sizeof(rle16_t));
+    }
     return run_container_size_in_bytes(container);
 }
 
