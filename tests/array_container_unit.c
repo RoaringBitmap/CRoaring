@@ -174,11 +174,25 @@ void select_test() {
     array_container_free(B);
 }
 
+void capacity_test() {
+    array_container_t* array = array_container_create();
+    for (uint32_t i = 0; i < DEFAULT_MAX_SIZE; i++) {
+        array_container_add(array, (uint16_t)i);
+        assert_true(array->capacity <= DEFAULT_MAX_SIZE);
+    }
+    for (uint32_t i = DEFAULT_MAX_SIZE; i < 65536; i++) {
+        array_container_add(array, (uint16_t)i);
+        assert_true(array->capacity <= 65536);
+    }
+    array_container_free(array);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
+        cmocka_unit_test(capacity_test)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

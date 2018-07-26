@@ -13,8 +13,9 @@
 void array_bitset_container_intersection(const array_container_t *src_1,
                                          const bitset_container_t *src_2,
                                          array_container_t *dst) {
-    if (dst->capacity < src_1->cardinality)
-        array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
+    if (dst->capacity < src_1->cardinality) {
+        array_container_grow(dst, src_1->cardinality, false);
+    }
     int32_t newcard = 0;  // dst could be src_1
     const int32_t origcard = src_1->cardinality;
     for (int i = 0; i < origcard; ++i) {
@@ -71,8 +72,9 @@ void array_run_container_intersection(const array_container_t *src_1,
         if (dst != src_1) array_container_copy(src_1, dst);
         return;
     }
-    if (dst->capacity < src_1->cardinality)
-        array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
+    if (dst->capacity < src_1->cardinality) {
+        array_container_grow(dst, src_1->cardinality, false);
+    }
     if (src_2->n_runs == 0) {
         return;
     }

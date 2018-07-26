@@ -19,8 +19,9 @@ void array_bitset_container_andnot(const array_container_t *src_1,
                                    const bitset_container_t *src_2,
                                    array_container_t *dst) {
     // follows Java implementation as of June 2016
-    if (dst->capacity < src_1->cardinality)
-        array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
+    if (dst->capacity < src_1->cardinality) {
+        array_container_grow(dst, src_1->cardinality, false);
+    }
     int32_t newcard = 0;
     const int32_t origcard = src_1->cardinality;
     for (int i = 0; i < origcard; ++i) {
@@ -372,8 +373,9 @@ void array_run_container_andnot(const array_container_t *src_1,
                                 const run_container_t *src_2,
                                 array_container_t *dst) {
     // basically following Java impl as of June 2016
-    if (src_1->cardinality > dst->capacity)
-        array_container_grow(dst, src_1->cardinality, INT32_MAX, false);
+    if (src_1->cardinality > dst->capacity) {
+        array_container_grow(dst, src_1->cardinality, false);
+    }
 
     if (src_2->n_runs == 0) {
         memmove(dst->array, src_1->array,
