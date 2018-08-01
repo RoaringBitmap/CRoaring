@@ -161,15 +161,13 @@ static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
 }
 
 /**
- * increase capacity to at least min, and to no more than max. Whether the
- * existing data needs to be copied over depends on the value of the "preserve"
- * parameter.
- * If preserve is false,
- * then the new content will be uninitialized, otherwise the original data is
- * copied.
+ * Increase capacity to at least min.
+ * Whether the existing data needs to be copied over depends on the "preserve"
+ * parameter. If preserve is false, then the new content will be uninitialized,
+ * otherwise the old content is copied.
  */
 void array_container_grow(array_container_t *container, int32_t min,
-                          int32_t max, bool preserve);
+                          bool preserve);
 
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr);
@@ -255,37 +253,52 @@ static inline void array_container_append(array_container_t *arr,
     const int32_t capacity = arr->capacity;
 
     if (array_container_full(arr)) {
-        array_container_grow(arr, capacity + 1, INT32_MAX, true);
+        array_container_grow(arr, capacity + 1, true);
     }
 
     arr->array[arr->cardinality++] = pos;
 }
 
-/* Add x to the set. Returns true if x was not already present.  */
-static inline bool array_container_add(array_container_t *arr, uint16_t pos) {
+/**
+ * Add value to the set if final cardinality doesn't exceed max_cardinality.
+ * Return code:
+ * 1  -- value was added
+ * 0  -- value was already present
+ * -1 -- value was not added because cardinality would exceed max_cardinality
+ */
+static inline int array_container_try_add(array_container_t *arr, uint16_t value,
+                                          int32_t max_cardinality) {
     const int32_t cardinality = arr->cardinality;
 
     // best case, we can append.
-    if (array_container_empty(arr) || (arr->array[cardinality - 1] < pos)) {
-        array_container_append(arr, pos);
-        return true;
+    if ((array_container_empty(arr) || arr->array[cardinality - 1] < value) &&
+        cardinality < max_cardinality) {
+        array_container_append(arr, value);
+        return 1;
     }
 
-    const int32_t loc = binarySearch(arr->array, cardinality, pos);
-    const bool not_found = loc < 0;
+    const int32_t loc = binarySearch(arr->array, cardinality, value);
 
-    if (not_found) {
+    if (loc >= 0) {
+        return 0;
+    } else if (cardinality < max_cardinality) {
         if (array_container_full(arr)) {
-            array_container_grow(arr, arr->capacity + 1, INT32_MAX, true);
+            array_container_grow(arr, arr->capacity + 1, true);
         }
         const int32_t insert_idx = -loc - 1;
         memmove(arr->array + insert_idx + 1, arr->array + insert_idx,
                 (cardinality - insert_idx) * sizeof(uint16_t));
-        arr->array[insert_idx] = pos;
+        arr->array[insert_idx] = value;
         arr->cardinality++;
+        return 1;
+    } else {
+        return -1;
     }
+}
 
-    return not_found;
+/* Add value to the set. Returns true if x was not already present.  */
+static inline bool array_container_add(array_container_t *arr, uint16_t value) {
+    return array_container_try_add(arr, value, INT32_MAX) == 1;
 }
 
 /* Remove x from the set. Returns true if x was present.  */
@@ -398,7 +411,7 @@ static inline void array_container_add_range_nvals(array_container_t *array,
                                                    int32_t nvals_greater) {
     int32_t union_cardinality = nvals_less + (max - min + 1) + nvals_greater;
     if (union_cardinality > array->capacity) {
-        array_container_grow(array, union_cardinality, INT32_C(0x10000), true);
+        array_container_grow(array, union_cardinality, true);
     }
     memmove(&(array->array[union_cardinality - nvals_greater]),
             &(array->array[array->cardinality - nvals_greater]),

@@ -214,7 +214,7 @@ bool array_array_container_inplace_union(array_container_t *src_1,
         if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
             // need to convert!
             if(src_1->capacity < ourbitset->cardinality) {
-              array_container_grow(src_1, ourbitset->cardinality, INT32_MAX, false);
+              array_container_grow(src_1, ourbitset->cardinality, false);
             }
 
             bitset_extract_setbits_uint16(ourbitset->array, BITSET_CONTAINER_SIZE_IN_WORDS,

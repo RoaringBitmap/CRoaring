@@ -112,16 +112,12 @@ static inline int32_t clamp(int32_t val, int32_t min, int32_t max) {
     return ((val < min) ? min : (val > max) ? max : val);
 }
 
-/**
- * increase capacity to at least min, and to no more than max. Whether the
- * existing data needs to be copied over depends on the "preserve" parameter. If
- * preserve is false,
- * then the new content will be uninitialized, otherwise the old content is
- * copie.
- */
 void array_container_grow(array_container_t *container, int32_t min,
-                          int32_t max, bool preserve) {
+                          bool preserve) {
+
+    int32_t max = (min <= DEFAULT_MAX_SIZE ? DEFAULT_MAX_SIZE : 65536);
     int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
+
     container->capacity = new_capacity;
     uint16_t *array = container->array;
 
@@ -149,7 +145,7 @@ void array_container_copy(const array_container_t *src,
                           array_container_t *dst) {
     const int32_t cardinality = src->cardinality;
     if (cardinality > dst->capacity) {
-        array_container_grow(dst, cardinality, INT32_MAX, false);
+        array_container_grow(dst, cardinality, false);
     }
 
     dst->cardinality = cardinality;
@@ -173,7 +169,7 @@ void array_container_union(const array_container_t *array_1,
     const int32_t max_cardinality = card_1 + card_2;
 
     if (out->capacity < max_cardinality) {
-      array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
+      array_container_grow(out, max_cardinality, false);
     }
     out->cardinality = (int32_t)fast_union_uint16(array_1->array, card_1,
                                       array_2->array, card_2, out->array);
@@ -188,7 +184,7 @@ void array_container_andnot(const array_container_t *array_1,
                             const array_container_t *array_2,
                             array_container_t *out) {
     if (out->capacity < array_1->cardinality)
-        array_container_grow(out, array_1->cardinality, DEFAULT_MAX_SIZE, false);
+        array_container_grow(out, array_1->cardinality, false);
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
     out->cardinality =
         difference_vector16(array_1->array, array_1->cardinality,
@@ -211,7 +207,7 @@ void array_container_xor(const array_container_t *array_1,
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
     if (out->capacity < max_cardinality) {
-        array_container_grow(out, max_cardinality, 2 * DEFAULT_MAX_SIZE, false);
+        array_container_grow(out, max_cardinality, false);
     }
 
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
@@ -242,11 +238,11 @@ void array_container_intersection(const array_container_t *array1,
 #ifdef USEAVX
     if (out->capacity < min_card) {
       array_container_grow(out, min_card + sizeof(__m128i) / sizeof(uint16_t),
-        DEFAULT_MAX_SIZE + sizeof(__m128i) / sizeof(uint16_t), false);
+        false);
     }
 #else
     if (out->capacity < min_card) {
-      array_container_grow(out, min_card, DEFAULT_MAX_SIZE, false);
+      array_container_grow(out, min_card, false);
     }
 #endif
 
@@ -436,7 +432,7 @@ bool array_container_is_subset(const array_container_t *container1,
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
                              const char *buf) {
     if (container->capacity < cardinality) {
-        array_container_grow(container, cardinality, DEFAULT_MAX_SIZE, false);
+        array_container_grow(container, cardinality, false);
     }
     container->cardinality = cardinality;
     memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));

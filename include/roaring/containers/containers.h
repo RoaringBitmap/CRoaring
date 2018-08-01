@@ -479,13 +479,14 @@ static inline void *container_add(void *container, uint16_t val,
             return container;
         case ARRAY_CONTAINER_TYPE_CODE: {
             array_container_t *ac = (array_container_t *)container;
-            array_container_add(ac, val);
-            if (array_container_cardinality(ac) > DEFAULT_MAX_SIZE) {
-                *new_typecode = BITSET_CONTAINER_TYPE_CODE;
-                return bitset_container_from_array(ac);
-            } else {
+            if (array_container_try_add(ac, val, DEFAULT_MAX_SIZE) != -1) {
                 *new_typecode = ARRAY_CONTAINER_TYPE_CODE;
                 return ac;
+            } else {
+                bitset_container_t* bitset = bitset_container_from_array(ac);
+                bitset_container_add(bitset, val);
+                *new_typecode = BITSET_CONTAINER_TYPE_CODE;
+                return bitset;
             }
         } break;
         case RUN_CONTAINER_TYPE_CODE:

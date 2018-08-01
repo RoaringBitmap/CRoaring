@@ -215,9 +215,13 @@ void ra_clear(roaring_array_t *ra) {
 
 bool extend_array(roaring_array_t *ra, int32_t k) {
     int32_t desired_size = ra->size + k;
+    assert(desired_size <= MAX_CONTAINERS);
     if (desired_size > ra->allocation_size) {
         int32_t new_capacity =
             (ra->size < 1024) ? 2 * desired_size : 5 * desired_size / 4;
+        if (new_capacity > MAX_CONTAINERS) {
+            new_capacity = MAX_CONTAINERS;
+        }
 
         return realloc_array(ra, new_capacity);
     }
