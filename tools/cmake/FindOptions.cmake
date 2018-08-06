@@ -14,8 +14,9 @@ endif()
 
 ## -march=native is not supported on some platforms
 if(NOT MSVC)
+
 if(NOT ROARING_DISABLE_NATIVE)
-set(OPT_FLAGS "-march=native")
+set(OPT_FLAGS "-march=${ROARING_ARCH}")
 endif()
 endif()
 
