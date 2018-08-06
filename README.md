@@ -381,7 +381,7 @@ As with all ``cmake`` projects, you can specify the compilers you wish to use by
 
 
 
-If wish to build an x64 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
+If you wish to build an x64 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
 
 ```
 mkdir -p buildnoavx
@@ -407,6 +407,32 @@ do the following...
 mkdir -p buildnox64
 cd buildnoavx
 cmake -DROARING_DISABLE_X64=ON ..
+make
+```
+
+We tell the compiler to target the architecture of the build machine by using the `march=native` flag. This give the
+compiler the freedom to use instructions that your CPU support, but can be dangerous if you are going to use the built
+binaries on different machines. For example, you could get a `SIGILL` crash if you run the code on an older machine
+which does not have some of the instructions (e.g. `POPCOUNT`). There are two ways to deal with this:
+
+First, you can disable this feature altogether by specifying `-DROARING_DISABLE_NATIVE=OFF`:
+
+```
+mkdir -p buildnonative
+cd buildnoavx
+cmake -DROARING_DISABLE_NATIVE=ON ..
+make
+```
+
+Second, you can specify the architecture by specifying `-DROARING_ARCH=arch`. For example, if you have many servers
+but the oldest server is running the Intel `westmere` architecture, you can specify -`DROARING_ARCH=westmere`. You can
+find out the list of valid architecture values by typing `man gcc`. If `-DROARING_DISABLE_NATIVE=on` is specified, then
+this option has no effect.
+
+```
+mkdir -p build_westmere
+cd build_westmere
+cmake -DROARING_ARCH=westmere ..
 make
 ```
 
