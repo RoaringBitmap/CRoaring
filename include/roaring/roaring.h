@@ -266,6 +266,10 @@ inline void roaring_bitmap_remove_range(roaring_bitmap_t *ra, uint64_t min, uint
     roaring_bitmap_remove_range_closed(ra, (uint32_t)min, (uint32_t)(max - 1));
 }
 
+/** Remove multiple values */
+void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
+                                const uint32_t *vals);
+
 /**
  * Remove value x
  * Returns true if a new value was removed, false if the value was not existing.
