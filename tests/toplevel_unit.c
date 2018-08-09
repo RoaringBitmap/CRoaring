@@ -212,6 +212,15 @@ void sbs_remove_range(sbs_t *sbs, uint64_t min, uint64_t max) {
     roaring_bitmap_remove_range(sbs->roaring, min, max + 1);
 }
 
+void sbs_remove_many(sbs_t *sbs, size_t n_args, uint32_t *vals) {
+    for (size_t i = 0; i < n_args; i++) {
+        uint32_t v = vals[i];
+        sbs_ensure_room(sbs, v);
+        sbs->words[v/64] &= ~(UINT64_C(1) << (v % 64));
+    }
+    roaring_bitmap_remove_many(sbs->roaring, n_args, vals);
+}
+
 bool sbs_check_type(sbs_t *sbs, uint8_t type) {
     bool answer = true;
     for (int32_t i = 0; i < sbs->roaring->high_low_container.size; i++) {
@@ -3694,6 +3703,52 @@ void test_remove_range() {
     }
 }
 
+void test_remove_many() {
+    // multiple values per container (sorted)
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 0, 65536*2-1);
+        uint32_t values[] = {1, 3, 5, 7, 65536+1, 65536+3, 65536+5, 65536+7};
+        sbs_remove_many(sbs, sizeof(values)/sizeof(values[0]), values);
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // multiple values per container (interleaved)
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 0, 65536*2-1);
+        uint32_t values[] = {65536+7, 65536+5, 7, 5, 1, 65536+1, 65536+3, 3};
+        sbs_remove_many(sbs, sizeof(values)/sizeof(values[0]), values);
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // no-op checks
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_value(sbs, 500);
+        uint32_t values[] = {501, 80000}; // non-existent value/container
+        sbs_remove_many(sbs, sizeof(values)/sizeof(values[0]), values);
+        sbs_remove_many(sbs, 0, NULL); // NULL ptr is not dereferenced
+        sbs_compare(sbs);
+        sbs_free(sbs);
+    }
+
+    // container type changes and container removal
+    {
+        sbs_t *sbs = sbs_create();
+        sbs_add_range(sbs, 0, 65535);
+        for (uint32_t v = 0; v <= 65535; v++) {
+            sbs_remove_many(sbs, 1, &v);
+            assert(roaring_bitmap_get_cardinality(sbs->roaring) == 65535-v);
+        }
+        assert(sbs_is_empty(sbs));
+        sbs_free(sbs);
+    }
+
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(range_contains),
@@ -3801,6 +3856,7 @@ int main() {
         cmocka_unit_test(test_read_uint32_iterator_native),
         cmocka_unit_test(test_add_range),
         cmocka_unit_test(test_remove_range),
+        cmocka_unit_test(test_remove_many),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

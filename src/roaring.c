@@ -527,6 +527,40 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t val) {
     return result;
 }
 
+void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
+                                const uint32_t *vals) {
+    if (n_args == 0 || r->high_low_container.size == 0) {
+        return;
+    }
+    int32_t pos = -1; // position of the container used in the previous iteration
+    for (size_t i = 0; i < n_args; i++) {
+        uint16_t key = (uint16_t)(vals[i] >> 16);
+        if (pos < 0 || key != r->high_low_container.keys[pos]) {
+            pos = ra_get_index(&r->high_low_container, key);
+        }
+        if (pos >= 0) {
+            uint8_t new_typecode;
+            void *new_container;
+            new_container = container_remove(r->high_low_container.containers[pos],
+                                             vals[i] & 0xffff,
+                                             r->high_low_container.typecodes[pos],
+                                             &new_typecode);
+            if (new_container != r->high_low_container.containers[pos]) {
+                container_free(r->high_low_container.containers[pos],
+                               r->high_low_container.typecodes[pos]);
+                ra_replace_key_and_container_at_index(&r->high_low_container,
+                                                      pos, key, new_container,
+                                                      new_typecode);
+            }
+            if (!container_nonzero_cardinality(new_container, new_typecode)) {
+                container_free(new_container, new_typecode);
+                ra_remove_at_index(&r->high_low_container, pos);
+                pos = -1;
+            }
+        }
+    }
+}
+
 // there should be some SIMD optimizations possible here
 roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2) {
