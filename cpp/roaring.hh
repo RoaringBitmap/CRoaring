@@ -396,16 +396,47 @@ class Roaring {
     * Returns the number of integers that are smaller or equal to x.
     */
     uint64_t rank(uint32_t x) const { return roaring_bitmap_rank(&roaring, x); }
+
     /**
-     * write a bitmap to a char buffer. This is meant to be compatible with
-     * the
-     * Java and Go versions. Returns how many bytes were written which should be
-     * getSizeInBytes().
-     *
-     * Setting the portable flag to false enable a custom format that
-     * can save space compared to the portable format (e.g., for very
-     * sparse bitmaps).
-     */
+    * write a bitmap to a char buffer. This is meant to be compatible with
+    * the
+    * Java and Go versions. Returns how many bytes were written which should be
+    * getSizeInBytes().
+    *
+    * Setting the portable flag to false enable a custom format that
+    * can save space compared to the portable format (e.g., for very
+    * sparse bitmaps).
+    *
+    * Boost users can serialize bitmaps in this manner:
+    *
+    *       BOOST_SERIALIZATION_SPLIT_FREE(Roaring)
+    *       namespace boost {
+    *       namespace serialization {
+    *
+    *       template <class Archive>
+    *       void save(Archive& ar, const Roaring& bitmask, 
+    *          const unsigned int version) {
+    *         std::size_t expected_size_in_bytes = bitmask.getSizeInBytes();
+    *         std::vector<char> buffer(expected_size_in_bytes);
+    *         std::size_t       size_in_bytes = bitmask.write(buffer.data());
+    *
+    *         ar& size_in_bytes;
+    *         ar& boost::serialization::make_binary_object(buffer.data(), 
+    *             size_in_bytes);
+    *      }
+    *      template <class Archive>
+    *      void load(Archive& ar, Roaring& bitmask, 
+    *          const unsigned int version) {
+    *         std::size_t size_in_bytes = 0;
+    *         ar& size_in_bytes;
+    *         std::vector<char> buffer(size_in_bytes);
+    *         ar&  boost::serialization::make_binary_object(buffer.data(),
+    *            size_in_bytes);
+    *         bitmask = Roaring::readSafe(buffer.data(), size_in_bytes);
+    *}
+    *}  // namespace serialization
+    *}  // namespace boost
+    */
     size_t write(char *buf, bool portable = true) const {
         if (portable)
             return roaring_bitmap_portable_serialize(&roaring, buf);
