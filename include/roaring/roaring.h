@@ -282,6 +282,10 @@ void roaring_bitmap_clear(roaring_bitmap_t *ra);
  */
 void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra, uint32_t *ans);
 
+
+
+void roaring_bitmap_range_uint32_array(const roaring_bitmap_t *ra, size_t offset, size_t limit, uint32_t *ans);
+
 /**
  *  Remove run-length encoding even when it is more space efficient
  *  return whether a change was applied
