@@ -280,6 +280,13 @@ class Roaring {
     void toUint32Array(uint32_t *ans) const {
         roaring_bitmap_to_uint32_array(&roaring, ans);
     }
+    /**
+     * to int array with pagination
+     * 
+     */
+    void rangeUint32Array(uint32_t *ans, size_t offset, size_t limit) const {
+        roaring_bitmap_range_uint32_array(&roaring, offset, limit, ans);
+    }
 
     /**
      * Return true if the two bitmaps contain the same elements.

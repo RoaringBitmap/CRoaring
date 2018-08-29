@@ -487,6 +487,76 @@ void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans) {
     }
 }
 
+void ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limit, uint32_t *ans) {
+    size_t ctr = 0;
+    size_t dtr = 0;
+
+    size_t t_offset = 0;
+
+    bool first = false;
+    size_t first_skip = 0;
+
+    uint32_t *t_ans;
+    uint32_t *append_ans;
+    size_t cur_len;
+
+    for (int i = 0; i < ra->size; ++i) {
+        
+        const void *container = container_unwrap_shared(ra->containers[i], &ra->typecodes[i]);
+        switch (ra->typecodes[i]) {
+            case BITSET_CONTAINER_TYPE_CODE:
+                t_offset = ((const bitset_container_t *)container)->cardinality;
+                break;
+            case ARRAY_CONTAINER_TYPE_CODE:
+                t_offset = ((const array_container_t *)container)->cardinality;
+                break;
+            case RUN_CONTAINER_TYPE_CODE:
+                t_offset = run_container_cardinality((const run_container_t *)container);
+                break;
+        }
+        if (ctr + t_offset >= offset && ctr <= offset + limit){
+            if (!first){
+                //first_skip = t_offset - (ctr + t_offset - offset);
+                first_skip = offset - ctr;
+                first = true;
+                t_ans = malloc(sizeof(*t_ans) * (first_skip + limit));
+                cur_len = first_skip + limit;
+            }
+            if (dtr + t_offset > cur_len){
+                append_ans = malloc(sizeof(*append_ans) * (cur_len + t_offset));
+                cur_len = cur_len + t_offset;
+                memcpy(append_ans, t_ans, dtr * sizeof(uint32_t));
+                free(t_ans);
+                t_ans = append_ans;
+            }
+            switch (ra->typecodes[i]) {
+                case BITSET_CONTAINER_TYPE_CODE:
+                    container_to_uint32_array(
+                        t_ans + dtr, (const bitset_container_t *)container,  ra->typecodes[i],
+                        ((uint32_t)ra->keys[i]) << 16);
+                    break;
+                case ARRAY_CONTAINER_TYPE_CODE:
+                    container_to_uint32_array(
+                        t_ans + dtr, (const array_container_t *)container, ra->typecodes[i],
+                        ((uint32_t)ra->keys[i]) << 16);
+                    break;
+                case RUN_CONTAINER_TYPE_CODE:
+                    container_to_uint32_array(
+                        t_ans + dtr, (const run_container_t *)container, ra->typecodes[i],
+                        ((uint32_t)ra->keys[i]) << 16);
+                    break;
+            }
+            dtr += t_offset;
+        }
+        ctr += t_offset;
+        if (dtr-first_skip >= limit) break;
+    }
+    memcpy(ans, t_ans+first_skip, limit * sizeof(size_t));
+    free(t_ans);
+    t_ans = NULL;
+    append_ans = NULL;
+}
+
 bool ra_has_run_container(const roaring_array_t *ra) {
     for (int32_t k = 0; k < ra->size; ++k) {
         if (get_container_type(ra->containers[k], ra->typecodes[k]) ==
