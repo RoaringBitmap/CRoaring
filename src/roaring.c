@@ -384,7 +384,7 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     return ans;
 }
 
-static bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
+bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
                                      const roaring_bitmap_t *src) {
     return ra_overwrite(&src->high_low_container, &dest->high_low_container,
                         src->copy_on_write);

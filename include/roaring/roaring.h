@@ -64,6 +64,19 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
  */
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r);
 
+
+/**
+ * Copies a  bitmap from src to dest. It is assumed that the pointer dest
+ * is to an already allocated bitmap. The content of the dest bitmap is
+ * freed/deleted.
+ *
+ * It might be preferable and simpler to call roaring_bitmap_copy except
+ * that roaring_bitmap_overwrite can save on memory allocations.
+ *
+ */
+bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
+                                     const roaring_bitmap_t *src);
+
 /**
  * Print the content of the bitmap.
  */
