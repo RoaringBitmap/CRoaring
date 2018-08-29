@@ -519,11 +519,11 @@ void ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                 //first_skip = t_offset - (ctr + t_offset - offset);
                 first_skip = offset - ctr;
                 first = true;
-                t_ans = malloc(sizeof(*t_ans) * (first_skip + limit));
+                t_ans = (uint32_t *)malloc(sizeof(*t_ans) * (first_skip + limit));
                 cur_len = first_skip + limit;
             }
             if (dtr + t_offset > cur_len){
-                append_ans = malloc(sizeof(*append_ans) * (cur_len + t_offset));
+                append_ans = (uint32_t *)malloc(sizeof(*append_ans) * (cur_len + t_offset));
                 cur_len = cur_len + t_offset;
                 memcpy(append_ans, t_ans, dtr * sizeof(uint32_t));
                 free(t_ans);
