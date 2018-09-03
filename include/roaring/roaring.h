@@ -338,6 +338,17 @@ void roaring_bitmap_clear(roaring_bitmap_t *ra);
  */
 void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra, uint32_t *ans);
 
+
+/**
+ * Convert the bitmap to an array from "offset" by "limit". Write the output to "ans".
+ * so, you can get data in paging.
+ * caller is responsible to ensure that there is enough memory
+ * allocated
+ * (e.g., ans = malloc(roaring_bitmap_get_cardinality(limit)
+ *   * sizeof(uint32_t))
+ */
+void roaring_bitmap_range_uint32_array(const roaring_bitmap_t *ra, size_t offset, size_t limit, uint32_t *ans);
+
 /**
  *  Remove run-length encoding even when it is more space efficient
  *  return whether a change was applied

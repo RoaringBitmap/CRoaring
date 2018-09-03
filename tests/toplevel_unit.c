@@ -473,6 +473,15 @@ void test_example(bool copy_on_write) {
     assert(arr1 != NULL);
     roaring_bitmap_to_uint32_array(r1, arr1);
 
+    // we can go from arrays to bitmaps from "offset" by "limit"
+    size_t offset = 100;
+    size_t limit = 1000;
+    uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
+    assert(arr3 != NULL);
+    roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
+    free(arr3);
+
+
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
     free(arr1);
     assert_non_null(r1f);
@@ -1004,7 +1013,7 @@ void test_portable_serialize() {
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
     uint32_t *arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr1);
-
+ 
     uint64_t card2 = roaring_bitmap_get_cardinality(r2);
     uint32_t *arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r2, arr2);
