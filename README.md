@@ -168,6 +168,14 @@ free(arr1);
 assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
 roaring_bitmap_free(r1f);
 
+// we can go from arrays to bitmaps from "offset" by "limit"
+size_t offset = 100;
+size_t limit = 1000;
+uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
+assert(arr3 != NULL);
+roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
+free(arr3)
+
 // we can copy and compare bitmaps
 roaring_bitmap_t *z = roaring_bitmap_copy(r3);
 assert(roaring_bitmap_equals(r3, z));  // what we recover is equal
