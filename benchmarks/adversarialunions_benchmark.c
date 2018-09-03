@@ -94,7 +94,7 @@ int notsofull() {
 
 
 int main() {
-    print("How to best aggregate the bitmaps is data-sensitive.\n");
+    printf("How to best aggregate the bitmaps is data-sensitive.\n");
     quickfull();
     notsofull();
     return 0;
