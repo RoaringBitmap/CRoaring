@@ -536,6 +536,36 @@ Our AVX2 code does not use floating-point numbers or multiplications, so it is n
 Like, for example, STL containers or Java's default data structures, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. It is safe however to query bitmaps (without modifying them) from several distinct threads,  as long as you do not use the copy-on-write attribute. For example, you can safely copy a bitmap and use both copies in concurrently. One should probably avoid the use of the copy-on-write attribute in a threaded environment.
 
 
+# How to best aggregate bitmaps?
+
+Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many
+different strategies.
+
+You can use `roaring_bitmap_or_many(bitmapcount, bitmaps)` or `roaring_bitmap_or_many_heap(bitmapcount, bitmaps)` or you may
+even roll your own aggregation:
+
+```
+roaring_bitmap_t *answer  = roaring_bitmap_copy(bitmaps[0]);
+for (size_t i = 1; i < bitmapcount; i++) {
+  roaring_bitmap_or_inplace(answer, bitmaps[i]);
+}
+```
+
+All of them will work but they have different performance characteristics. The `roaring_bitmap_or_many_heap` should
+probably only be used if, after benchmarking, you find that it is faster by a good margin: it uses more memory.
+
+The `roaring_bitmap_or_many` is meant as a good default. It works by trying to delay work as much as possible.
+However, because it delays computations, it also does not optimize the format as the computation runs. It might
+thus fail to see some useful pattern in the data such as long consecutive values.
+
+The approach based on repeated calls to `roaring_bitmap_or_inplace`
+is also fine, and might even be faster in some cases. You can expect it to be faster if, after
+a few calls, you get long sequences of consecutive values in the answer. That is, if the
+final answer is all integers in the range [0,1000000), and this is apparent quickly, then the
+later `roaring_bitmap_or_inplace` will be very fast.
+
+You should benchmark these alternatives on your own data to decide what is best.
+
 # Python Wrapper
 
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
