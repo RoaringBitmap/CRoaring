@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <roaring/roaring.h>
+#include <stdio.h>
 #include "benchmark.h"
 int quickfull() {
     printf("The naive approach works well when the bitmaps quickly become full\n");
