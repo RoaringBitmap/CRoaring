@@ -487,7 +487,7 @@ void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans) {
     }
 }
 
-void ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limit, uint32_t *ans) {
+bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limit, uint32_t *ans) {
     size_t ctr = 0;
     size_t dtr = 0;
 
@@ -496,9 +496,8 @@ void ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
     bool first = false;
     size_t first_skip = 0;
 
-    uint32_t *t_ans;
-    uint32_t *append_ans;
-    size_t cur_len;
+    uint32_t *t_ans = NULL;
+    size_t cur_len = 0;
 
     for (int i = 0; i < ra->size; ++i) {
         
@@ -520,17 +519,23 @@ void ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                 first_skip = offset - ctr;
                 first = true;
                 t_ans = (uint32_t *)malloc(sizeof(*t_ans) * (first_skip + limit));
+                if(t_ans == NULL) {
+                  return false;
+                }
                 memset(t_ans, 0, sizeof(*t_ans) * (first_skip + limit)) ;
                 cur_len = first_skip + limit;
             }
             if (dtr + t_limit > cur_len){
-                append_ans = (uint32_t *)malloc(sizeof(*append_ans) * (cur_len + t_limit));
+                uint32_t * append_ans = (uint32_t *)malloc(sizeof(*append_ans) * (cur_len + t_limit));
+                if(append_ans == NULL) {
+                  if(t_ans != NULL) free(t_ans);
+                  return false;
+                }
                 memset(append_ans, 0, sizeof(*append_ans) * (cur_len + t_limit));
                 cur_len = cur_len + t_limit;
                 memcpy(append_ans, t_ans, dtr * sizeof(uint32_t));
                 free(t_ans);
                 t_ans = append_ans;
-                append_ans = NULL;
             }
             switch (ra->typecodes[i]) {
                 case BITSET_CONTAINER_TYPE_CODE:
@@ -554,9 +559,11 @@ void ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
         ctr += t_limit;
         if (dtr-first_skip >= limit) break;
     }
-    memcpy(ans, t_ans+first_skip, limit * sizeof(uint32_t));
-    free(t_ans);
-    t_ans = NULL;
+    if(t_ans != NULL) {
+      memcpy(ans, t_ans+first_skip, limit * sizeof(uint32_t));
+      free(t_ans);
+    }
+    return true;
 }
 
 bool ra_has_run_container(const roaring_array_t *ra) {

@@ -1186,8 +1186,8 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra, uint32_t *ans) {
     ra_to_uint32_array(&ra->high_low_container, ans);
 }
 
-void roaring_bitmap_range_uint32_array(const roaring_bitmap_t *ra, size_t offset, size_t limit,  uint32_t *ans) {
-    ra_range_uint32_array(&ra->high_low_container, offset, limit, ans);
+bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *ra, size_t offset, size_t limit,  uint32_t *ans) {
+    return ra_range_uint32_array(&ra->high_low_container, offset, limit, ans);
 }
 
 /** convert array and bitmap containers to run containers when it is more

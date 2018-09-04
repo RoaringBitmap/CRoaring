@@ -346,8 +346,9 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *ra, uint32_t *ans);
  * allocated
  * (e.g., ans = malloc(roaring_bitmap_get_cardinality(limit)
  *   * sizeof(uint32_t))
+ * Return false in case of failure (e.g., insufficient memory)
  */
-void roaring_bitmap_range_uint32_array(const roaring_bitmap_t *ra, size_t offset, size_t limit, uint32_t *ans);
+bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *ra, size_t offset, size_t limit, uint32_t *ans);
 
 /**
  *  Remove run-length encoding even when it is more space efficient
