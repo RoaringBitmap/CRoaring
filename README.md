@@ -592,6 +592,9 @@ Installing it is as easy as typing...
 npm install roaring
 ```
 
+# Swift Wrapper
+
+Jérémie Piotte wrote a [Swift wrapper](https://github.com/piotte13/SwiftRoaring).
 
 
 # C# Wrapper
