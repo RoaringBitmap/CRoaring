@@ -319,6 +319,12 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r, uint64_t range_sta
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra);
 
 /**
+ * Returns number of elements in range [range_start, range_end).
+ */
+uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *ra,
+                                          uint64_t range_start, uint64_t range_end);
+
+/**
 * Returns true if the bitmap is empty (cardinality is zero).
 */
 bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
