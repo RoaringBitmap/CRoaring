@@ -3758,6 +3758,34 @@ void test_remove_many() {
 
 }
 
+void test_range_cardinality() {
+    const uint64_t s = 65536;
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_add_range(r, s*2, s*10);
+
+    // single container (minhb == maxhb)
+    assert(roaring_bitmap_range_cardinality(r, s*2, s*3) == s);
+    assert(roaring_bitmap_range_cardinality(r, s*2+100, s*3) == s-100);
+    assert(roaring_bitmap_range_cardinality(r, s*2, s*3-200) == s-200);
+    assert(roaring_bitmap_range_cardinality(r, s*2+100, s*3-200) == s-300);
+
+    // multiple containers (maxhb > minhb)
+    assert(roaring_bitmap_range_cardinality(r, s*2, s*5) == s*3);
+    assert(roaring_bitmap_range_cardinality(r, s*2+100, s*5) == s*3-100);
+    assert(roaring_bitmap_range_cardinality(r, s*2, s*5-200) == s*3-200);
+    assert(roaring_bitmap_range_cardinality(r, s*2+100, s*5-200) == s*3-300);
+
+    // boundary checks
+    assert(roaring_bitmap_range_cardinality(r, s*20, s*21) == 0);
+    assert(roaring_bitmap_range_cardinality(r, 100, 100) == 0);
+    assert(roaring_bitmap_range_cardinality(r, 0, s*7) == s*5);
+    assert(roaring_bitmap_range_cardinality(r, s*7, UINT64_MAX) == s*3);
+
+    roaring_bitmap_free(r);
+}
+
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(range_contains),
@@ -3866,6 +3894,7 @@ int main() {
         cmocka_unit_test(test_add_range),
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),
+        cmocka_unit_test(test_range_cardinality),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

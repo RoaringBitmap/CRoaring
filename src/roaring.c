@@ -1178,6 +1178,62 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *ra) {
     return card;
 }
 
+uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *ra,
+                                          uint64_t range_start,
+                                          uint64_t range_end) {
+    if (range_end > UINT32_MAX) {
+        range_end = UINT32_MAX + UINT64_C(1);
+    }
+    if (range_start >= range_end) {
+        return 0;
+    }
+    range_end--; // make range_end inclusive
+    // now we have: 0 <= range_start <= range_end <= UINT32_MAX
+
+    int minhb = range_start >> 16;
+    int maxhb = range_end >> 16;
+
+    uint64_t card = 0;
+
+    int i = ra_get_index(&ra->high_low_container, minhb);
+    if (i >= 0) {
+        if (minhb == maxhb) {
+            card += container_rank(ra->high_low_container.containers[i],
+                                   ra->high_low_container.typecodes[i],
+                                   range_end & 0xffff);
+        } else {
+            card += container_get_cardinality(ra->high_low_container.containers[i],
+                                              ra->high_low_container.typecodes[i]);
+        }
+        if ((range_start & 0xffff) != 0) {
+            card -= container_rank(ra->high_low_container.containers[i],
+                                   ra->high_low_container.typecodes[i],
+                                   (range_start & 0xffff) - 1);
+        }
+        i++;
+    } else {
+        i = -i - 1;
+    }
+
+    for (; i < ra->high_low_container.size; i++) {
+        uint16_t key = ra->high_low_container.keys[i];
+        if (key < maxhb) {
+            card += container_get_cardinality(ra->high_low_container.containers[i],
+                                              ra->high_low_container.typecodes[i]);
+        } else if (key == maxhb) {
+            card += container_rank(ra->high_low_container.containers[i],
+                                   ra->high_low_container.typecodes[i],
+                                   range_end & 0xffff);
+            break;
+        } else {
+            break;
+        }
+    }
+
+    return card;
+}
+
+
 bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra) {
     return ra->high_low_container.size == 0;
 }
