@@ -623,8 +623,6 @@ typedef struct roaring_uint32_iterator_s {
     int32_t in_container_index;  // for bitset and array container, this is out
                                  // index
     int32_t run_index;           // for run container, this points  at the run
-    uint32_t in_run_index;  // within a run, this is our index (points at the
-                            // end of the current run)
 
     uint32_t current_value;
     bool has_value;
@@ -642,19 +640,26 @@ typedef struct roaring_uint32_iterator_s {
 
 /**
 * Initialize an iterator object that can be used to iterate through the
-* values.  If there is a  value, then it->has_value is true.
-* The first value is in it->current_value. The iterator traverses the values
-* in increasing order.
+* values. If there is a  value, then this iterator points to the first value
+* and it->has_value is true. The value is in it->current_value.
 */
 void roaring_init_iterator(const roaring_bitmap_t *ra,
                            roaring_uint32_iterator_t *newit);
 
 /**
+* Initialize an iterator object that can be used to iterate through the
+* values. If there is a value, then this iterator points to the last value
+* and it->has_value is true. The value is in it->current_value.
+*/
+void roaring_init_iterator_last(const roaring_bitmap_t *ra,
+                                roaring_uint32_iterator_t *newit);
+
+/**
 * Create an iterator object that can be used to iterate through the
 * values. Caller is responsible for calling roaring_free_iterator.
-* The iterator is initialized. If there is a  value, then it->has_value is true.
-* The first value is in it->current_value. The iterator traverses the values
-* in increasing order.
+* The iterator is initialized. If there is a  value, then this iterator
+* points to the first value and it->has_value is true.
+* The value is in it->current_value.
 *
 * This function calls roaring_init_iterator.
 */
@@ -666,6 +671,13 @@ roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *ra);
 * orders. For convenience, returns it->has_value.
 */
 bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it);
+
+/**
+* Decrement the iterator. If there is a new value, then it->has_value is true.
+* The new value is in it->current_value. Values are traversed in decreasing
+* orders. For convenience, returns it->has_value.
+*/
+bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it);
 
 /**
 * Move the iterator to the first value >= val. If there is a such a value, then it->has_value is true.

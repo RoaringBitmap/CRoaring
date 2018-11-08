@@ -691,6 +691,17 @@ class RoaringSetBitForwardIterator final {
         return orig;
     }
 
+    type_of_iterator& operator--() { // prefix --
+        roaring_previous_uint32_iterator(&i);
+        return *this;
+    }
+
+    type_of_iterator operator--(int) { // postfix --
+        RoaringSetBitForwardIterator orig(*this);
+        roaring_previous_uint32_iterator(&i);
+        return orig;
+    }
+
     bool operator==(const RoaringSetBitForwardIterator &o) const {
         return i.current_value == *o && i.has_value == o.i.has_value;
     }

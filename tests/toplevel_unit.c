@@ -364,6 +364,7 @@ void check_iterate_to_end() {
     roaring_init_iterator(r1, &iterator);
     uint64_t count = 0;
     while(iterator.has_value) {
+      assert(iterator.current_value + (s - count) == bignumber);
       count++;
       roaring_advance_uint32_iterator(&iterator);
     }
@@ -371,6 +372,25 @@ void check_iterate_to_end() {
     assert_true(roaring_bitmap_get_cardinality(r1) == s);
     roaring_bitmap_free(r1);
   }
+}
+
+void check_iterate_to_beginning() {
+    uint64_t bignumber = UINT64_C(0x100000000);
+    for(uint64_t s = 0; s < 1024; s++) {
+        roaring_bitmap_t *r1 = roaring_bitmap_create();
+        roaring_bitmap_flip_inplace(r1, bignumber - s, bignumber);
+        roaring_uint32_iterator_t iterator;
+        roaring_init_iterator_last(r1, &iterator);
+        uint64_t count = 0;
+        while(iterator.has_value) {
+            count++;
+            assert(iterator.current_value + count == bignumber);
+            roaring_previous_uint32_iterator(&iterator);
+        }
+        assert_true(count == s);
+        assert_true(roaring_bitmap_get_cardinality(r1) == s);
+        roaring_bitmap_free(r1);
+    }
 }
 
 void check_range_contains_from_end() {
@@ -3289,7 +3309,7 @@ void test_or_many_memory_leak() {
     }
 }
 
-void test_read_uint32_iterator_generate_data(uint32_t** values_out, uint32_t* count_out) {
+void test_iterator_generate_data(uint32_t **values_out, uint32_t *count_out) {
     const size_t capacity = 1000*1000;
     uint32_t* values = malloc(sizeof(uint32_t) * capacity); // ascending order
     uint32_t count = 0;
@@ -3414,7 +3434,7 @@ void read_compare(roaring_bitmap_t* r, const uint32_t* ref_values, uint32_t ref_
 void test_read_uint32_iterator(uint8_t type) {
     uint32_t* ref_values;
     uint32_t ref_count;
-    test_read_uint32_iterator_generate_data(&ref_values, &ref_count);
+    test_iterator_generate_data(&ref_values, &ref_count);
 
     roaring_bitmap_t *r = roaring_bitmap_create();
     for (uint32_t i = 0; i < ref_count; i++) {
@@ -3446,6 +3466,129 @@ void test_read_uint32_iterator_run() {
 }
 void test_read_uint32_iterator_native() {
     test_read_uint32_iterator(UINT8_MAX); // special value
+}
+
+void test_previous_iterator(uint8_t type) {
+    uint32_t* ref_values;
+    uint32_t ref_count;
+    test_iterator_generate_data(&ref_values, &ref_count);
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 0; i < ref_count; i++) {
+        roaring_bitmap_add(r, ref_values[i]);
+    }
+    if (type != UINT8_MAX) {
+        convert_all_containers(r, type);
+    }
+
+    roaring_uint32_iterator_t iterator;
+    roaring_init_iterator_last(r, &iterator);
+    uint32_t count = 0;
+
+    do {
+        assert(iterator.has_value);
+        ++count;
+        assert((int64_t)ref_count - (int64_t)count >= 0); // sanity check
+        assert(ref_values[ref_count - count] == iterator.current_value);
+    } while (roaring_previous_uint32_iterator(&iterator));
+
+    assert(ref_count == count);
+
+    roaring_bitmap_free(r);
+    free(ref_values);
+}
+
+void test_previous_iterator_array() {
+    test_previous_iterator(ARRAY_CONTAINER_TYPE_CODE);
+}
+
+void test_previous_iterator_bitset() {
+    test_previous_iterator(BITSET_CONTAINER_TYPE_CODE);
+}
+
+void test_previous_iterator_run() {
+    test_previous_iterator(RUN_CONTAINER_TYPE_CODE);
+}
+
+void test_previous_iterator_native() {
+    test_previous_iterator(UINT8_MAX); // special value
+}
+
+void test_iterator_reuse_retry_count(int retry_count){
+    uint32_t* ref_values;
+    uint32_t ref_count;
+    test_iterator_generate_data(&ref_values, &ref_count);
+
+    roaring_bitmap_t* with_edges = roaring_bitmap_create();
+    // We don't want min and max values inside this bitmap
+    roaring_bitmap_t* without_edges = roaring_bitmap_create();
+
+    for (uint32_t i = 0; i < ref_count; i++) {
+        roaring_bitmap_add(with_edges, ref_values[i]);
+        if (i != 0 && i != ref_count - 1) {
+            roaring_bitmap_add(without_edges, ref_values[i]);
+        }
+    }
+
+    // sanity checks
+    assert(roaring_bitmap_contains(with_edges, 0));
+    assert(roaring_bitmap_contains(with_edges, UINT32_MAX));
+    assert(!roaring_bitmap_contains(without_edges, 0));
+    assert(!roaring_bitmap_contains(without_edges, UINT32_MAX));
+    assert(roaring_bitmap_get_cardinality(with_edges) - 2 == roaring_bitmap_get_cardinality(without_edges));
+
+    const roaring_bitmap_t* bitmaps[] = {with_edges, without_edges};
+    int num_bitmaps = sizeof(bitmaps) / sizeof(bitmaps[0]);
+
+    for (int i = 0; i < num_bitmaps; ++i){
+        roaring_uint32_iterator_t iterator;
+        roaring_init_iterator(bitmaps[i], &iterator);
+        assert(iterator.has_value);
+        uint32_t first_value = iterator.current_value;
+
+        uint32_t count = 0;
+        while (iterator.has_value) {
+            count++;
+            roaring_advance_uint32_iterator(&iterator);
+        }
+        assert(count == roaring_bitmap_get_cardinality(bitmaps[i]));
+
+        // Test advancing the iterator more times than necessary
+        for (int retry = 0; retry < retry_count; ++retry) {
+            roaring_advance_uint32_iterator(&iterator);
+        }
+
+        // Using same iterator we want to go backwards through the list
+        roaring_previous_uint32_iterator(&iterator);
+        count = 0;
+        while (iterator.has_value) {
+            count++;
+            roaring_previous_uint32_iterator(&iterator);
+        }
+        assert(count == roaring_bitmap_get_cardinality(bitmaps[i]));
+
+        // Test decrement the iterator more times than necessary
+        for (int retry = 0; retry < retry_count; ++retry) {
+            roaring_previous_uint32_iterator(&iterator);
+        }
+
+        roaring_advance_uint32_iterator(&iterator);
+        assert(iterator.has_value);
+        assert(first_value == iterator.current_value);
+    }
+
+
+    roaring_bitmap_free(without_edges);
+    roaring_bitmap_free(with_edges);
+    free(ref_values);
+}
+
+void test_iterator_reuse() {
+    test_iterator_reuse_retry_count(0);
+}
+
+void test_iterator_reuse_many() {
+    test_iterator_reuse_retry_count(10);
 }
 
 void test_add_range() {
@@ -3793,6 +3936,8 @@ int main() {
         cmocka_unit_test(test_contains_range),
         cmocka_unit_test(check_range_contains_from_end),
         cmocka_unit_test(check_iterate_to_end),
+        cmocka_unit_test(check_iterate_to_beginning),
+        cmocka_unit_test(test_iterator_reuse),
         cmocka_unit_test(check_full_flip),
         cmocka_unit_test(test_adversarial_range),
         cmocka_unit_test(check_full_inplace_flip),
@@ -3891,6 +4036,12 @@ int main() {
         cmocka_unit_test(test_read_uint32_iterator_bitset),
         cmocka_unit_test(test_read_uint32_iterator_run),
         cmocka_unit_test(test_read_uint32_iterator_native),
+        cmocka_unit_test(test_previous_iterator_array),
+        cmocka_unit_test(test_previous_iterator_bitset),
+        cmocka_unit_test(test_previous_iterator_run),
+        cmocka_unit_test(test_previous_iterator_native),
+        cmocka_unit_test(test_iterator_reuse),
+        cmocka_unit_test(test_iterator_reuse_many),
         cmocka_unit_test(test_add_range),
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),
