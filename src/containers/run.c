@@ -721,19 +721,6 @@ bool run_container_iterate64(const run_container_t *cont, uint32_t base,
     return true;
 }
 
-bool run_container_equals(const run_container_t *container1,
-                          const run_container_t *container2) {
-    if (container1->n_runs != container2->n_runs) {
-        return false;
-    }
-    for (int32_t i = 0; i < container1->n_runs; ++i) {
-        if ((container1->runs[i].value != container2->runs[i].value) ||
-            (container1->runs[i].length != container2->runs[i].length))
-            return false;
-    }
-    return true;
-}
-
 bool run_container_is_subset(const run_container_t *container1,
                              const run_container_t *container2) {
     int i1 = 0, i2 = 0;

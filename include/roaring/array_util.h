@@ -231,4 +231,6 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
                     size_t size_2, uint16_t *buffer);
 
 
+bool memequals(const void *s1, const void *s2, size_t n);
+
 #endif

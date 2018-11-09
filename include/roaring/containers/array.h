@@ -210,8 +210,15 @@ static inline int32_t array_container_size_in_bytes(
 /**
  * Return true if the two arrays have the same content.
  */
-bool array_container_equals(const array_container_t *container1,
-                            const array_container_t *container2);
+static inline bool array_container_equals(
+    const array_container_t *container1,
+    const array_container_t *container2) {
+
+    if (container1->cardinality != container2->cardinality) {
+        return false;
+    }
+    return memequals(container1->array, container2->array, container1->cardinality*2);
+}
 
 /**
  * Return true if container1 is a subset of container2.
