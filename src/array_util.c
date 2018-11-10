@@ -1896,9 +1896,12 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
 }
 
 bool memequals(const void *s1, const void *s2, size_t n) {
+    if (n == 0) {
+        return true;
+    }
 #ifdef USEAVX
-    const uint8_t *ptr1 = s1;
-    const uint8_t *ptr2 = s2;
+    const uint8_t *ptr1 = (const uint8_t *)s1;
+    const uint8_t *ptr2 = (const uint8_t *)s2;
     const uint8_t *end1 = ptr1 + n;
     const uint8_t *end8 = ptr1 + n/8*8;
     const uint8_t *end32 = ptr1 + n/32*32;
