@@ -394,18 +394,6 @@ int32_t array_container_write(const array_container_t *container, char *buf) {
     return array_container_size_in_bytes(container);
 }
 
-bool array_container_equals(const array_container_t *container1,
-                            const array_container_t *container2) {
-    if (container1->cardinality != container2->cardinality) {
-        return false;
-    }
-    // could be vectorized:
-    for (int32_t i = 0; i < container1->cardinality; ++i) {
-        if (container1->array[i] != container2->array[i]) return false;
-    }
-    return true;
-}
-
 bool array_container_is_subset(const array_container_t *container1,
                                const array_container_t *container2) {
     if (container1->cardinality > container2->cardinality) {

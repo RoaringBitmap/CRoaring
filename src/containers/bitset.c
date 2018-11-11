@@ -482,12 +482,26 @@ bool bitset_container_equals(const bitset_container_t *container1, const bitset_
 		if(container1->cardinality != container2->cardinality) {
 			return false;
 		}
+    if (container1->cardinality == INT32_C(0x10000)) {
+        return true;
+    }
 	}
-	for(int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
-		if(container1->array[i] != container2->array[i]) {
-			return false;
-		}
-	}
+#ifdef USEAVX
+  const __m256i *ptr1 = (const __m256i*)container1->array;
+  const __m256i *ptr2 = (const __m256i*)container2->array;
+  for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/32; i++) {
+      __m256i r1 = _mm256_load_si256(ptr1+i);
+      __m256i r2 = _mm256_load_si256(ptr2+i);
+      int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(r1, r2));
+      if ((uint32_t)mask != UINT32_MAX) {
+          return false;
+      }
+  }
+#else
+  return memcmp(container1->array,
+                container2->array,
+                BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)) == 0;
+#endif
 	return true;
 }
 

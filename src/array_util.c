@@ -1894,3 +1894,49 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
     }
 #endif
 }
+
+bool memequals(const void *s1, const void *s2, size_t n) {
+    if (n == 0) {
+        return true;
+    }
+#ifdef USEAVX
+    const uint8_t *ptr1 = (const uint8_t *)s1;
+    const uint8_t *ptr2 = (const uint8_t *)s2;
+    const uint8_t *end1 = ptr1 + n;
+    const uint8_t *end8 = ptr1 + n/8*8;
+    const uint8_t *end32 = ptr1 + n/32*32;
+
+    while (ptr1 < end32) {
+        __m256i r1 = _mm256_loadu_si256((const __m256i*)ptr1);
+        __m256i r2 = _mm256_loadu_si256((const __m256i*)ptr2);
+        int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(r1, r2));
+        if ((uint32_t)mask != UINT32_MAX) {
+            return false;
+        }
+        ptr1 += 32;
+        ptr2 += 32;
+    }
+
+    while (ptr1 < end8) {
+        uint64_t v1 = *((const uint64_t*)ptr1);
+        uint64_t v2 = *((const uint64_t*)ptr2);
+        if (v1 != v2) {
+            return false;
+        }
+        ptr1 += 8;
+        ptr2 += 8;
+    }
+
+    while (ptr1 < end1) {
+        if (*ptr1 != *ptr2) {
+            return false;
+        }
+        ptr1++;
+        ptr2++;
+    }
+
+    return true;
+#else
+    return memcmp(s1, s2, n) == 0;
+#endif
+}

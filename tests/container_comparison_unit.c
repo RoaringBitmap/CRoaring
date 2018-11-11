@@ -24,6 +24,24 @@ static inline void container_checked_add(void *container, uint16_t val,
     assert_true(container == new_container);
 }
 
+static inline void delegated_add(void *container, uint8_t typecode,
+                                 uint16_t val) {
+    switch(typecode) {
+        case BITSET_CONTAINER_TYPE_CODE:
+            bitset_container_add((bitset_container_t*)container, val);
+            break;
+        case ARRAY_CONTAINER_TYPE_CODE:
+            array_container_add((array_container_t*)container, val);
+            break;
+        case RUN_CONTAINER_TYPE_CODE:
+            run_container_add((run_container_t*)container, val);
+            break;
+        default:
+            assert(false);
+            __builtin_unreachable();
+    }
+}
+
 static inline void *container_create(uint8_t typecode) {
     void *result = NULL;
     switch (typecode) {
@@ -61,6 +79,39 @@ void generic_equal_test(uint8_t type1, uint8_t type2) {
     assert_false(container_equals(container1, type1, container2, type2));
     container_checked_add(container2, 273, type2);
     assert_true(container_equals(container1, type1, container2, type2));
+    container_free(container1, type1);
+    container_free(container2, type2);
+
+    // full container
+    container1 = container_create(type1);
+    container2 = container_create(type2);
+    for (uint32_t i = 0; i < 65536; i++) {
+        delegated_add(container1, type1, i);
+        delegated_add(container2, type2, i);
+    }
+    assert_true(container_equals(container1, type1, container2, type2));
+    container_free(container1, type1);
+    container_free(container2, type2);
+
+    // first elements differ
+    container1 = container_create(type1);
+    container2 = container_create(type2);
+    for (int i = 0; i < 65536; i++) {
+        if (i != 0) delegated_add(container1, type1, i);
+        if (i != 1) delegated_add(container2, type2, i);
+    }
+    assert_false(container_equals(container1, type1, container2, type2));
+    container_free(container1, type1);
+    container_free(container2, type2);
+
+    // last elements differ
+    container1 = container_create(type1);
+    container2 = container_create(type2);
+    for (int i = 0; i < 65536; i++) {
+        if (i != 65534) delegated_add(container1, type1, i);
+        if (i != 65535) delegated_add(container2, type2, i);
+    }
+    assert_false(container_equals(container1, type1, container2, type2));
     container_free(container1, type1);
     container_free(container2, type2);
 }

@@ -50,26 +50,28 @@ bool run_container_equals_array(const run_container_t* container1,
 
 bool run_container_equals_bitset(const run_container_t* container1,
                                  const bitset_container_t* container2) {
-    if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
-        if (container2->cardinality != run_container_cardinality(container1)) {
-            return false;
-        }
-    } else {
-        int32_t card = bitset_container_compute_cardinality(
-            container2);  // modify container2?
-        if (card != run_container_cardinality(container1)) {
-            return false;
-        }
+
+    int run_card = run_container_cardinality(container1);
+    int bitset_card = (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) ?
+                      container2->cardinality :
+                      bitset_container_compute_cardinality(container2);
+    if (bitset_card != run_card) {
+        return false;
     }
-    for (int i = 0; i < container1->n_runs; ++i) {
-        uint32_t run_start = container1->runs[i].value;
-        uint32_t le = container1->runs[i].length;
-        for (uint32_t j = run_start; j <= run_start + le; ++j) {
-            // todo: this code could be much faster
-            if (!bitset_container_contains(container2, j)) {
+
+    for (int32_t i = 0; i < container1->n_runs; i++) {
+        uint32_t begin = container1->runs[i].value;
+        if (container1->runs[i].length) {
+            uint32_t end = begin + container1->runs[i].length + 1;
+            if (!bitset_container_contains_range(container2, begin, end)) {
+                return false;
+            }
+        } else {
+            if (!bitset_container_contains(container2, begin)) {
                 return false;
             }
         }
     }
+
     return true;
 }
