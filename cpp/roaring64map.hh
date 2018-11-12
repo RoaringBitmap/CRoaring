@@ -38,16 +38,6 @@ class Roaring64Map {
     Roaring64Map(size_t n, const uint64_t *data) { addMany(n, data); }
 
     /**
-     * Copy constructor
-     */
-    Roaring64Map(const Roaring64Map &r) = default;
-
-    /**
-     * Move constructor
-     */
-    Roaring64Map(Roaring64Map &&r) = default;
-
-    /**
      * Construct a 64-bit map from a 32-bit one
      */
     Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
@@ -187,31 +177,6 @@ class Roaring64Map {
         return roarings.count(highBytes(x)) == 0
                    ? false
                    : roarings.at(highBytes(x)).contains(lowBytes(x));
-    }
-
-    /**
-     * Destructor
-     */
-    ~Roaring64Map() = default;
-
-    /**
-     * Copies the content of the provided bitmap, and
-     * discards the current content.
-     */
-    Roaring64Map &operator=(const Roaring64Map &r) {
-        roarings = r.roarings;
-        copyOnWrite = r.copyOnWrite;
-        return *this;
-    }
-
-    /**
-     * Moves the content of the provided bitmap, and
-     * discards the current content.
-     */
-    Roaring64Map &operator=(Roaring64Map &&r) {
-        roarings = std::move(r.roarings);
-        copyOnWrite = r.copyOnWrite;
-        return *this;
     }
 
     /**
@@ -969,11 +934,6 @@ class Roaring64MapSetBitForwardIterator final {
             }
         }
     }
-
-    ~Roaring64MapSetBitForwardIterator() = default;
-
-    Roaring64MapSetBitForwardIterator(
-        const Roaring64MapSetBitForwardIterator &o) = default;
 
    private:
     std::map<uint32_t, Roaring>::const_iterator map_iter;

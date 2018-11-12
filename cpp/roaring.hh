@@ -20,10 +20,7 @@ class Roaring {
      * Create an empty bitmap
      */
     Roaring() {
-        bool is_ok = ra_init(&roaring.high_low_container);
-        if (!is_ok) {
-            throw std::runtime_error("failed memory alloc in constructor");
-        }
+        ra_init(&roaring.high_low_container);
         roaring.copy_on_write = false;
     }
 
@@ -51,14 +48,10 @@ class Roaring {
      * Move constructor. The moved object remains valid, i.e.
      * all methods can still be called on it.
      */
-    Roaring(Roaring &&r) {
+    Roaring(Roaring &&r) noexcept {
         roaring = std::move(r.roaring);
-
-        // left the moved object in a valid state
-        bool is_ok = ra_init_with_capacity(&r.roaring.high_low_container, 1);
-        if (!is_ok) {
-            throw std::runtime_error("failed memory alloc in constructor");
-        }
+        r.roaring.copy_on_write = false;
+        ra_init(&r.roaring.high_low_container);
     }
 
     /**
@@ -67,7 +60,7 @@ class Roaring {
      * Passing a NULL point is unsafe.
      * the pointer to the C struct will be invalid after the call.
      */
-    Roaring(roaring_bitmap_t *s) {
+    Roaring(roaring_bitmap_t *s) noexcept {
         // steal the interior struct
         roaring.high_low_container = s->high_low_container;
         roaring.copy_on_write = s->copy_on_write;
@@ -183,15 +176,11 @@ class Roaring {
      * Moves the content of the provided bitmap, and
      * discard the current content.
      */
-    Roaring &operator=(Roaring &&r) {
+    Roaring &operator=(Roaring &&r) noexcept {
         ra_clear(&roaring.high_low_container);
-
         roaring = std::move(r.roaring);
-        bool is_ok = ra_init_with_capacity(&r.roaring.high_low_container, 1);
-        if (!is_ok) {
-            throw std::runtime_error("failed memory alloc in assignment");
-        }
-
+        r.roaring.copy_on_write = false;
+        ra_init(&r.roaring.high_low_container);
         return *this;
     }
 
@@ -721,16 +710,6 @@ class RoaringSetBitForwardIterator final {
             roaring_init_iterator(&parent.roaring, &i);
         }
     }
-
-    RoaringSetBitForwardIterator &operator=(
-        const RoaringSetBitForwardIterator &o) = default;
-    RoaringSetBitForwardIterator &operator=(RoaringSetBitForwardIterator &&o) =
-        default;
-
-    ~RoaringSetBitForwardIterator() = default;
-
-    RoaringSetBitForwardIterator(const RoaringSetBitForwardIterator &o)
-        : i(o.i) {}
 
     roaring_uint32_iterator_t i;
 };
