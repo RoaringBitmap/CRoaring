@@ -58,11 +58,7 @@ roaring_bitmap_t *roaring_bitmap_create() {
     if (!ans) {
         return NULL;
     }
-    bool is_ok = ra_init(&ans->high_low_container);
-    if (!is_ok) {
-        free(ans);
-        return NULL;
-    }
+    ra_init(&ans->high_low_container);
     ans->copy_on_write = false;
     return ans;
 }

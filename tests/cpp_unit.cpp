@@ -2,6 +2,7 @@
 * The purpose of this test is to check that we can call CRoaring from C++
 */
 
+#include <type_traits>
 #include <assert.h>
 #include <roaring/roaring.h>
 #include <stdio.h>
@@ -15,6 +16,9 @@ extern "C" {
 #include "test.h"
 }
 
+
+static_assert(std::is_nothrow_move_constructible<Roaring>::value,
+        "Expected Roaring to be no except move constructable");
 
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
