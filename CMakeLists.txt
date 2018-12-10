@@ -26,6 +26,7 @@ SET(ROARING_DISABLE_NATIVE ON) # ARM platforms may not like -march=native
 endif()
 
 option(ROARING_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+option(ROARING_LINK_STATIC "Link executables (tests, benchmarks) statically" OFF)
 option(ROARING_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
@@ -74,6 +75,7 @@ MESSAGE( STATUS "ROARING_DISABLE_AVX: " ${ROARING_DISABLE_AVX} ) # options in cm
 MESSAGE( STATUS "ROARING_DISABLE_NATIVE: " ${ROARING_DISABLE_NATIVE} )
 MESSAGE( STATUS "ROARING_ARCH: " ${ROARING_ARCH} )
 MESSAGE( STATUS "ROARING_BUILD_STATIC: " ${ROARING_BUILD_STATIC} )
+MESSAGE( STATUS "ROARING_LINK_STATIC: " ${ROARING_LINK_STATIC} )
 MESSAGE( STATUS "ROARING_BUILD_LTO: " ${ROARING_BUILD_LTO} )
 MESSAGE( STATUS "ROARING_SANITIZE: " ${ROARING_SANITIZE} )
 MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} ) # important to know which compiler is used
