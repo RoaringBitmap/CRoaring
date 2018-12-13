@@ -60,3 +60,11 @@ set(CMAKE_CXX_FLAGS "${CXXSTD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLA
 if(MSVC)
 add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4267 /wd4244  /wd4113 /nologo")
 endif()
+
+if(ROARING_LINK_STATIC)
+  if(NOT MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "-static")
+  else()
+    MESSAGE(WARNING "Option ROARING_LINK_STATIC is not supported with MSVC and was ignored")
+  endif()
+endif()
