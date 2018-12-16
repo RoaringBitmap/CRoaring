@@ -12,6 +12,7 @@ set(ROARING_LIB_NAME roaring)
 
 option(ROARING_DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
 option(ROARING_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
+option(ROARING_DISABLE_NEON "Forcefully disable NEON even if hardware supports it" OFF)
 option(ROARING_DISABLE_NATIVE "Forcefully disable -march optimizations" OFF)
 set(ROARING_ARCH "native" CACHE STRING "If ROARING_DISABLE_NATIVE is OFF, the architecture to optimize for (-march)")
 
@@ -72,6 +73,7 @@ MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
 MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} ) # this tends to be "sticky" so you can remain unknowingly in debug mode
 MESSAGE( STATUS "ROARING_DISABLE_X64: " ${ROARING_DISABLE_X64} ) # options in cmake are "sticky" so old options can remain even if that is counterintuitive
 MESSAGE( STATUS "ROARING_DISABLE_AVX: " ${ROARING_DISABLE_AVX} ) # options in cmake are "sticky" so old options can remain even if that is counterintuitive
+MESSAGE( STATUS "ROARING_DISABLE_NEON: " ${ROARING_DISABLE_NEON} )
 MESSAGE( STATUS "ROARING_DISABLE_NATIVE: " ${ROARING_DISABLE_NATIVE} )
 MESSAGE( STATUS "ROARING_ARCH: " ${ROARING_ARCH} )
 MESSAGE( STATUS "ROARING_BUILD_STATIC: " ${ROARING_BUILD_STATIC} )

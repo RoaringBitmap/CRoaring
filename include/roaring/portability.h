@@ -81,6 +81,13 @@
 #endif
 #endif
 
+#if !defined(USENEON) && !defined(DISABLENEON) && defined(__ARM_NEON)
+#  define USENEON
+#endif
+#if defined(USENEON)
+#  include <arm_neon.h>
+#endif
+
 #ifndef _MSC_VER
 /* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline
  * assembly */

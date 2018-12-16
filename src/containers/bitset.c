@@ -155,6 +155,31 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
         (const __m256i *)bitset->array,
         BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
 }
+
+#elif defined(USENEON)
+int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+    uint16x8_t n0 = vdupq_n_u16(0);
+    uint16x8_t n1 = vdupq_n_u16(0);
+    uint16x8_t n2 = vdupq_n_u16(0);
+    uint16x8_t n3 = vdupq_n_u16(0);
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {
+        uint64x2_t c0 = vld1q_u64(&bitset->array[i + 0]);
+        n0 = vaddq_u16(n0, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c0))));
+        uint64x2_t c1 = vld1q_u64(&bitset->array[i + 2]);
+        n1 = vaddq_u16(n1, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c1))));
+        uint64x2_t c2 = vld1q_u64(&bitset->array[i + 4]);
+        n2 = vaddq_u16(n2, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c2))));
+        uint64x2_t c3 = vld1q_u64(&bitset->array[i + 6]);
+        n3 = vaddq_u16(n3, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c3))));
+    }
+    uint64x2_t n = vdupq_n_u64(0);
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n0)));
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n1)));
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n2)));
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n3)));
+    return vgetq_lane_u64(n, 0) + vgetq_lane_u64(n, 1);
+}
+
 #else
 
 /* Get the number of bits set (force computation) */
@@ -185,7 +210,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 /* Computes a binary operation (eg union) on bitset1 and bitset2 and write the
    result to bitsetout */
 // clang-format off
-#define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic)            \
+#define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)  \
 int bitset_container_##opname##_nocard(const bitset_container_t *src_1, \
                                        const bitset_container_t *src_2, \
                                        bitset_container_t *dst) {       \
@@ -257,11 +282,97 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
     		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));\
 }
 
+#elif defined(USENEON)
 
+#define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)  \
+int bitset_container_##opname(const bitset_container_t *src_1,                \
+                              const bitset_container_t *src_2,                \
+                              bitset_container_t *dst) {                      \
+    const uint64_t * __restrict__ array_1 = src_1->array;                     \
+    const uint64_t * __restrict__ array_2 = src_2->array;                     \
+    uint64_t *out = dst->array;                                               \
+    uint16x8_t n0 = vdupq_n_u16(0);                                           \
+    uint16x8_t n1 = vdupq_n_u16(0);                                           \
+    uint16x8_t n2 = vdupq_n_u16(0);                                           \
+    uint16x8_t n3 = vdupq_n_u16(0);                                           \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {          \
+        uint64x2_t c0 = neon_intrinsic(vld1q_u64(&array_1[i + 0]),            \
+                                       vld1q_u64(&array_2[i + 0]));           \
+        n0 = vaddq_u16(n0, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c0))));   \
+        vst1q_u64(&out[i + 0], c0);                                           \
+        uint64x2_t c1 = neon_intrinsic(vld1q_u64(&array_1[i + 2]),            \
+                                       vld1q_u64(&array_2[i + 2]));           \
+        n1 = vaddq_u16(n1, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c1))));   \
+        vst1q_u64(&out[i + 2], c1);                                           \
+        uint64x2_t c2 = neon_intrinsic(vld1q_u64(&array_1[i + 4]),            \
+                                       vld1q_u64(&array_2[i + 4]));           \
+        n2 = vaddq_u16(n2, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c2))));   \
+        vst1q_u64(&out[i + 4], c2);                                           \
+        uint64x2_t c3 = neon_intrinsic(vld1q_u64(&array_1[i + 6]),            \
+                                       vld1q_u64(&array_2[i + 6]));           \
+        n3 = vaddq_u16(n3, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c3))));   \
+        vst1q_u64(&out[i + 6], c3);                                           \
+    }                                                                         \
+    uint64x2_t n = vdupq_n_u64(0);                                            \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n0)));                           \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n1)));                           \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n2)));                           \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n3)));                           \
+    dst->cardinality = vgetq_lane_u64(n, 0) + vgetq_lane_u64(n, 1);           \
+    return dst->cardinality;                                                  \
+}                                                                             \
+int bitset_container_##opname##_nocard(const bitset_container_t *src_1,       \
+                                       const bitset_container_t *src_2,       \
+                                             bitset_container_t *dst) {       \
+    const uint64_t * __restrict__ array_1 = src_1->array;                     \
+    const uint64_t * __restrict__ array_2 = src_2->array;                     \
+    uint64_t *out = dst->array;                                               \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {          \
+        vst1q_u64(&out[i + 0], neon_intrinsic(vld1q_u64(&array_1[i + 0]),     \
+                                              vld1q_u64(&array_2[i + 0])));   \
+        vst1q_u64(&out[i + 2], neon_intrinsic(vld1q_u64(&array_1[i + 2]),     \
+                                              vld1q_u64(&array_2[i + 2])));   \
+        vst1q_u64(&out[i + 4], neon_intrinsic(vld1q_u64(&array_1[i + 4]),     \
+                                              vld1q_u64(&array_2[i + 4])));   \
+        vst1q_u64(&out[i + 6], neon_intrinsic(vld1q_u64(&array_1[i + 6]),     \
+                                              vld1q_u64(&array_2[i + 6])));   \
+    }                                                                         \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                            \
+    return dst->cardinality;                                                  \
+}                                                                             \
+int bitset_container_##opname##_justcard(const bitset_container_t *src_1,     \
+                                         const bitset_container_t *src_2) {   \
+    const uint64_t * __restrict__ array_1 = src_1->array;                     \
+    const uint64_t * __restrict__ array_2 = src_2->array;                     \
+    uint16x8_t n0 = vdupq_n_u16(0);                                           \
+    uint16x8_t n1 = vdupq_n_u16(0);                                           \
+    uint16x8_t n2 = vdupq_n_u16(0);                                           \
+    uint16x8_t n3 = vdupq_n_u16(0);                                           \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {          \
+        uint64x2_t c0 = neon_intrinsic(vld1q_u64(&array_1[i + 0]),            \
+                                       vld1q_u64(&array_2[i + 0]));           \
+        n0 = vaddq_u16(n0, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c0))));   \
+        uint64x2_t c1 = neon_intrinsic(vld1q_u64(&array_1[i + 2]),            \
+                                       vld1q_u64(&array_2[i + 2]));           \
+        n1 = vaddq_u16(n1, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c1))));   \
+        uint64x2_t c2 = neon_intrinsic(vld1q_u64(&array_1[i + 4]),            \
+                                       vld1q_u64(&array_2[i + 4]));           \
+        n2 = vaddq_u16(n2, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c2))));   \
+        uint64x2_t c3 = neon_intrinsic(vld1q_u64(&array_1[i + 6]),            \
+                                       vld1q_u64(&array_2[i + 6]));           \
+        n3 = vaddq_u16(n3, vpaddlq_u8(vcntq_u8(vreinterpretq_u8_u64(c3))));   \
+    }                                                                         \
+    uint64x2_t n = vdupq_n_u64(0);                                            \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n0)));                           \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n1)));                           \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n2)));                           \
+    n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n3)));                           \
+    return vgetq_lane_u64(n, 0) + vgetq_lane_u64(n, 1);                       \
+}
 
 #else /* not USEAVX  */
 
-#define BITSET_CONTAINER_FN(opname, opsymbol, avxintrinsic)               \
+#define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)  \
 int bitset_container_##opname(const bitset_container_t *src_1,            \
                               const bitset_container_t *src_2,            \
                               bitset_container_t *dst) {                  \
@@ -309,15 +420,15 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
 #endif
 
 // we duplicate the function because other containers use the "or" term, makes API more consistent
-BITSET_CONTAINER_FN(or, |, _mm256_or_si256)
-BITSET_CONTAINER_FN(union, |, _mm256_or_si256)
+BITSET_CONTAINER_FN(or,    |, _mm256_or_si256, vorrq_u64)
+BITSET_CONTAINER_FN(union, |, _mm256_or_si256, vorrq_u64)
 
 // we duplicate the function because other containers use the "intersection" term, makes API more consistent
-BITSET_CONTAINER_FN(and, &, _mm256_and_si256)
-BITSET_CONTAINER_FN(intersection, &, _mm256_and_si256)
+BITSET_CONTAINER_FN(and,          &, _mm256_and_si256, vandq_u64)
+BITSET_CONTAINER_FN(intersection, &, _mm256_and_si256, vandq_u64)
 
-BITSET_CONTAINER_FN(xor, ^, _mm256_xor_si256)
-BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256)
+BITSET_CONTAINER_FN(xor,    ^,  _mm256_xor_si256,    veorq_u64)
+BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
 // clang-format On
 
 

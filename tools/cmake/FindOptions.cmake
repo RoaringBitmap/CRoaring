@@ -28,6 +28,9 @@ if(ROARING_DISABLE_AVX)
   # we can manually disable AVX by defining DISABLEAVX
   set (OPT_FLAGS "${OPT_FLAGS} -DDISABLEAVX" )
 endif()
+if(ROARING_DISABLE_NEON)
+  set (OPT_FLAGS "${OPT_FLAGS} -DDISABLENEON" )
+endif()
 
 if(FORCE_AVX) # some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
 if(NOT MSVC)

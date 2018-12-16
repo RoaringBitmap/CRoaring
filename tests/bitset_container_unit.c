@@ -23,6 +23,14 @@ void test_bitset_lenrange_cardinality() {
   }
 }
 
+void test_bitset_compute_cardinality() {
+    // check that overflow doesn't happen
+    bitset_container_t *b = bitset_container_create();
+    bitset_container_add_from_range(b, 0, 0x10000, 1);
+    assert(bitset_container_compute_cardinality(b) == 0x10000);
+    bitset_container_free(b);
+}
+
 void printf_test() {
     bitset_container_t* B = bitset_container_create();
     assert_non_null(B);
@@ -247,6 +255,7 @@ int main() {
         cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
         cmocka_unit_test(andnot_test), cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
+        cmocka_unit_test(test_bitset_compute_cardinality),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
