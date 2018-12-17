@@ -35,6 +35,25 @@
             : "=r"(cyc_high), "=r"(cyc_low)::"%rax", "%rbx", "%rcx", "%rdx"); \
         (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                      \
     } while (0)
+
+#elif defined(__linux__) && defined(__GLIBC__)
+
+#include <time.h>
+
+#define RDTSC_START(cycles) \
+  do { \
+    struct timespec ts; \
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts); \
+    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
+  } while (0)
+
+#define RDTSC_FINAL(cycles) \
+  do { \
+    struct timespec ts; \
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts); \
+    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
+  } while (0)
+
 #else
 
 /**

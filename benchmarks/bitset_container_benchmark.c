@@ -1,16 +1,15 @@
-
-
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <roaring/portability.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/convert.h>
 #include <roaring/misc/configreport.h>
-#include <roaring/portability.h>
 
 #include "benchmark.h"
 #include "random.h"
+
+#define DIV_CEIL_64K(denom) (((1 << 16) + ((denom) - 1)) / (denom))
+
+const int repeat = 500;
+
 
 #if defined(IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
 // flushes the array of words from cache
@@ -84,8 +83,39 @@ int get_test(bitset_container_t* B) {
     return card;
 }
 
+void benchmark_logical_operations() {
+    printf("\nLogical operations (time units per single operation):\n");
+    bitset_container_t* B1 = bitset_container_create();
+    for (int x = 0; x < 1 << 16; x += 3) {
+        bitset_container_set(B1, (uint16_t)x);
+    }
+    bitset_container_t* B2 = bitset_container_create();
+    for (int x = 0; x < 1 << 16; x += 5) {
+        bitset_container_set(B2, (uint16_t)x);
+    }
+
+    bitset_container_t* BO = bitset_container_create();
+
+    const int and_cardinality = DIV_CEIL_64K(3*5);
+    BEST_TIME(bitset_container_and_nocard(B1, B2, BO), BITSET_UNKNOWN_CARDINALITY, repeat, 1);
+    BEST_TIME(bitset_container_and(B1, B2, BO), and_cardinality, repeat, 1);
+    BEST_TIME(bitset_container_and_justcard(B1, B2), and_cardinality, repeat, 1);
+    BEST_TIME(bitset_container_compute_cardinality(BO), and_cardinality, repeat, 1);
+
+    const int or_cardinality = DIV_CEIL_64K(3) + DIV_CEIL_64K(5) - DIV_CEIL_64K(3*5);
+    BEST_TIME(bitset_container_or_nocard(B1, B2, BO), BITSET_UNKNOWN_CARDINALITY, repeat, 1);
+    BEST_TIME(bitset_container_or(B1, B2, BO), or_cardinality, repeat, 1);
+    BEST_TIME(bitset_container_or_justcard(B1, B2), or_cardinality, repeat, 1);
+    BEST_TIME(bitset_container_compute_cardinality(BO), or_cardinality, repeat, 1);
+
+    bitset_container_free(BO);
+    bitset_container_free(B1);
+    bitset_container_free(B2);
+    printf("\n");
+}
+
+
 int main() {
-    int repeat = 500;
     int size = (1 << 16) / 3;
     tellmeall();
     printf("bitset container benchmarks\n");
@@ -125,35 +155,11 @@ int main() {
     }
     printf("\n");
 
-    bitset_container_t* B1 = bitset_container_create();
-    for (int x = 0; x < 1 << 16; x += 3) {
-        bitset_container_set(B1, (uint16_t)x);
-    }
-    bitset_container_t* B2 = bitset_container_create();
-    for (int x = 0; x < 1 << 16; x += 5) {
-        bitset_container_set(B2, (uint16_t)x);
-    }
-    bitset_container_t* BO = bitset_container_create();
-    BEST_TIME(bitset_container_or_nocard(B1, B2, BO), -1, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    answer = bitset_container_compute_cardinality(BO);
-    BEST_TIME(bitset_container_or(B1, B2, BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
-    BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    BEST_TIME(bitset_container_and_nocard(B1, B2, BO), -1, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    answer = bitset_container_compute_cardinality(BO);
-    BEST_TIME(bitset_container_and(B1, B2, BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
-    BEST_TIME(bitset_container_cardinality(BO), answer, repeat, 1);
-    BEST_TIME(bitset_container_compute_cardinality(BO), answer, repeat,
-              BITSET_CONTAINER_SIZE_IN_WORDS);
+    benchmark_logical_operations();
 
     // next we are going to benchmark conversion from bitset to array (an
     // important step)
-    bitset_container_clear(B1);
+    bitset_container_t* B1 = bitset_container_create();
     for (int k = 0; k < 4096; ++k) {
         bitset_container_set(B1, (uint16_t)ranged_random(1 << 16));
     }
@@ -161,8 +167,6 @@ int main() {
     BEST_TIME(get_cardinality_through_conversion_to_array(B1), answer, repeat,
               BITSET_CONTAINER_SIZE_IN_WORDS);
 
-    bitset_container_free(BO);
     bitset_container_free(B1);
-    bitset_container_free(B2);
     return 0;
 }

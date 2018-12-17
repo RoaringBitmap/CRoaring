@@ -1,12 +1,8 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <roaring/portability.h>
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 #include <roaring/containers/mixed_equal.h>
-
 #include "benchmark.h"
 #include "random.h"
 

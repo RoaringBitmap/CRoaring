@@ -1,13 +1,6 @@
-
-
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <roaring/portability.h>
 #include <roaring/containers/array.h>
 #include <roaring/misc/configreport.h>
-#include <roaring/portability.h>
-
 #include "benchmark.h"
 #include "random.h"
 
