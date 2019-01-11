@@ -6,20 +6,20 @@ extern inline const void *container_unwrap_shared(
 extern inline void *container_mutable_unwrap_shared(
     void *candidate_shared_container, uint8_t *type);
 
-extern const char *get_container_name(uint8_t typecode);
+extern inline const char *get_container_name(uint8_t typecode);
 
-extern int container_get_cardinality(const void *container, uint8_t typecode);
+extern inline int container_get_cardinality(const void *container, uint8_t typecode);
 
-extern void *container_iand(void *c1, uint8_t type1, const void *c2,
+extern inline void *container_iand(void *c1, uint8_t type1, const void *c2,
                             uint8_t type2, uint8_t *result_type);
 
-extern void *container_ior(void *c1, uint8_t type1, const void *c2,
+extern inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                            uint8_t type2, uint8_t *result_type);
 
-extern void *container_ixor(void *c1, uint8_t type1, const void *c2,
+extern inline void *container_ixor(void *c1, uint8_t type1, const void *c2,
                             uint8_t type2, uint8_t *result_type);
 
-extern void *container_iandnot(void *c1, uint8_t type1, const void *c2,
+extern inline void *container_iandnot(void *c1, uint8_t type1, const void *c2,
                                uint8_t type2, uint8_t *result_type);
 
 void container_free(void *container, uint8_t typecode) {
@@ -138,29 +138,29 @@ void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len) {
     }
 }
 
-extern bool container_nonzero_cardinality(const void *container,
+extern inline bool container_nonzero_cardinality(const void *container,
                                           uint8_t typecode);
 
-extern void container_free(void *container, uint8_t typecode);
+extern inline void container_free(void *container, uint8_t typecode);
 
-extern int container_to_uint32_array(uint32_t *output, const void *container,
+extern inline int container_to_uint32_array(uint32_t *output, const void *container,
                                      uint8_t typecode, uint32_t base);
 
-extern void *container_add(void *container, uint16_t val, uint8_t typecode,
+extern inline void *container_add(void *container, uint16_t val, uint8_t typecode,
                            uint8_t *new_typecode);
 
 extern inline bool container_contains(const void *container, uint16_t val,
                                       uint8_t typecode);
 
-extern void *container_clone(const void *container, uint8_t typecode);
+extern inline void *container_clone(const void *container, uint8_t typecode);
 
-extern void *container_and(const void *c1, uint8_t type1, const void *c2,
+extern inline void *container_and(const void *c1, uint8_t type1, const void *c2,
                            uint8_t type2, uint8_t *result_type);
 
-extern void *container_or(const void *c1, uint8_t type1, const void *c2,
+extern inline void *container_or(const void *c1, uint8_t type1, const void *c2,
                           uint8_t type2, uint8_t *result_type);
 
-extern void *container_xor(const void *c1, uint8_t type1, const void *c2,
+extern inline void *container_xor(const void *c1, uint8_t type1, const void *c2,
                            uint8_t type2, uint8_t *result_type);
 
 void *get_copy_of_container(void *container, uint8_t *typecode,
@@ -246,26 +246,26 @@ void shared_container_free(shared_container_t *container) {
     }
 }
 
-extern void *container_not(const void *c1, uint8_t type1, uint8_t *result_type);
+extern inline void *container_not(const void *c1, uint8_t type1, uint8_t *result_type);
 
-extern void *container_not_range(const void *c1, uint8_t type1,
+extern inline void *container_not_range(const void *c1, uint8_t type1,
                                  uint32_t range_start, uint32_t range_end,
                                  uint8_t *result_type);
 
-extern void *container_inot(void *c1, uint8_t type1, uint8_t *result_type);
+extern inline void *container_inot(void *c1, uint8_t type1, uint8_t *result_type);
 
-extern void *container_inot_range(void *c1, uint8_t type1, uint32_t range_start,
+extern inline void *container_inot_range(void *c1, uint8_t type1, uint32_t range_start,
                                   uint32_t range_end, uint8_t *result_type);
 
-extern void *container_range_of_ones(uint32_t range_start, uint32_t range_end,
+extern inline void *container_range_of_ones(uint32_t range_start, uint32_t range_end,
                                      uint8_t *result_type);
 
 // where are the correponding things for union and intersection??
-extern void *container_lazy_xor(const void *c1, uint8_t type1, const void *c2,
+extern inline void *container_lazy_xor(const void *c1, uint8_t type1, const void *c2,
                                 uint8_t type2, uint8_t *result_type);
 
-extern void *container_lazy_ixor(void *c1, uint8_t type1, const void *c2,
+extern inline void *container_lazy_ixor(void *c1, uint8_t type1, const void *c2,
                                  uint8_t type2, uint8_t *result_type);
 
-extern void *container_andnot(const void *c1, uint8_t type1, const void *c2,
+extern inline void *container_andnot(const void *c1, uint8_t type1, const void *c2,
                               uint8_t type2, uint8_t *result_type);

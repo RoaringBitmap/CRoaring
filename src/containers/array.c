@@ -16,12 +16,12 @@ extern inline int array_container_rank(const array_container_t *arr,
                                        uint16_t x);
 extern inline bool array_container_contains(const array_container_t *arr,
                                             uint16_t pos);
-extern int array_container_cardinality(const array_container_t *array);
-extern bool array_container_nonzero_cardinality(const array_container_t *array);
-extern void array_container_clear(array_container_t *array);
-extern int32_t array_container_serialized_size_in_bytes(int32_t card);
-extern bool array_container_empty(const array_container_t *array);
-extern bool array_container_full(const array_container_t *array);
+extern inline int array_container_cardinality(const array_container_t *array);
+extern inline bool array_container_nonzero_cardinality(const array_container_t *array);
+extern inline void array_container_clear(array_container_t *array);
+extern inline int32_t array_container_serialized_size_in_bytes(int32_t card);
+extern inline bool array_container_empty(const array_container_t *array);
+extern inline bool array_container_full(const array_container_t *array);
 
 /* Create a new array with capacity size. Return NULL in case of failure. */
 array_container_t *array_container_create_given_capacity(int32_t size) {

@@ -346,7 +346,7 @@ void *ra_get_container(roaring_array_t *ra, uint16_t x, uint8_t *typecode) {
     return ra->containers[i];
 }
 
-extern void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
+extern inline void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
                                        uint8_t *typecode);
 
 void *ra_get_writable_container(roaring_array_t *ra, uint16_t x,
@@ -368,9 +368,9 @@ uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
     return ra->keys[i];
 }
 
-extern int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
+extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
 
-extern int32_t ra_advance_until(const roaring_array_t *ra, uint16_t x,
+extern inline int32_t ra_advance_until(const roaring_array_t *ra, uint16_t x,
                                 int32_t pos);
 
 // everything skipped over is freed
@@ -504,7 +504,7 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
     size_t cur_len = 0;
 
     for (int i = 0; i < ra->size; ++i) {
-        
+
         const void *container = container_unwrap_shared(ra->containers[i], &ra->typecodes[i]);
         switch (ra->typecodes[i]) {
             case BITSET_CONTAINER_TYPE_CODE:
