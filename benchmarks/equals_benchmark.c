@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <roaring/portability.h>
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>

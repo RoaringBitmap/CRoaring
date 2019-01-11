@@ -141,7 +141,6 @@ void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len) {
 extern inline bool container_nonzero_cardinality(const void *container,
                                           uint8_t typecode);
 
-extern inline void container_free(void *container, uint8_t typecode);
 
 extern inline int container_to_uint32_array(uint32_t *output, const void *container,
                                      uint8_t typecode, uint32_t base);
