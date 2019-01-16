@@ -775,7 +775,7 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
       buffer[pos++] = target4;
     }
     idx_s += 4;
-    idx_l += index1;
+    idx_l += index4;
   }
   if ((idx_s + 2 <= size_s) && (idx_l < size_l)) {
     uint16_t target1 = small[idx_s];
@@ -789,7 +789,7 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
       buffer[pos++] = target2;
     }
     idx_s += 2;
-    idx_l += index1;
+    idx_l += index2;
   }
   if ((idx_s < size_s) && (idx_l < size_l)) {
     uint16_t val_s = small[idx_s];
