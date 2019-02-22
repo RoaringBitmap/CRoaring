@@ -15,13 +15,6 @@ extern "C" {
 
 typedef struct roaring_bitmap_s {
     roaring_array_t high_low_container;
-    bool copy_on_write; /* copy_on_write: whether you want to use copy-on-write
-                         (saves memory and avoids
-                         copies but needs more care in a threaded context).
-                         Most users should ignore this flag.
-                         Note: if you do turn this flag to 'true', enabling
-                         COW, then ensure that you do so for all of your bitmaps since
-                         interactions between bitmaps with and without COW is unsafe. */
 } roaring_bitmap_t;
 
 /**
@@ -46,6 +39,25 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
  * Creates a new bitmap from a pointer of uint32_t integers
  */
 roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
+
+/*
+ * Whether you want to use copy-on-write.
+ * Saves memory and avoids copies but needs more care in a threaded context.
+ * Most users should ignore this flag.
+ * Note: if you do turn this flag to 'true', enabling COW,
+ * then ensure that you do so for all of your bitmaps since
+ * interactions between bitmaps with and without COW is unsafe.
+ */
+inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r) {
+    return r->high_low_container.flags & ROARING_FLAG_COW;
+}
+inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r, bool cow) {
+    if (cow) {
+        r->high_low_container.flags |= ROARING_FLAG_COW;
+    } else {
+        r->high_low_container.flags &= ~ROARING_FLAG_COW;
+    }
+}
 
 /**
  * Describe the inner structure of the bitmap.
@@ -229,7 +241,7 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
 /**
  * Frees the memory.
  */
-void roaring_bitmap_free(roaring_bitmap_t *r);
+void roaring_bitmap_free(const roaring_bitmap_t *r);
 
 /**
  * Add value n_args from pointer vals, faster than repeatedly calling
@@ -452,6 +464,51 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra);
  * https://github.com/RoaringBitmap/RoaringFormatSpec
  */
 size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *ra, char *buf);
+
+/*
+ * "Frozen" serialization format imitates memory layout of roaring_bitmap_t.
+ * Deserialized bitmap is a constant view of the underlying buffer.
+ * This significantly reduces amount of allocations and copying required during
+ * deserialization.
+ * It can be used with memory mapped files.
+ * Example can be found in benchmarks/frozen_benchmark.c
+ *
+ *         [#####] const roaring_bitmap_t *
+ *          | | |
+ *     +----+ | +-+
+ *     |      |   |
+ * [#####################################] underlying buffer
+ *
+ * Note that because frozen serialization format imitates C memory layout
+ * of roaring_bitmap_t, it is not fixed. It is different on big/little endian
+ * platforms and can be changed in future.
+ */
+
+/**
+ * Returns number of bytes required to serialize bitmap using frozen format.
+ */
+size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *ra);
+
+/**
+ * Serializes bitmap using frozen format.
+ * Buffer size must be at least roaring_bitmap_frozen_size_in_bytes().
+ */
+void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *ra, char *buf);
+
+/**
+ * Creates constant bitmap that is a view of a given buffer.
+ * Buffer must contain data previously written by roaring_bitmap_frozen_serialize(),
+ * and additionally its beginning must be aligned by 32 bytes.
+ * Length must be equal exactly to roaring_bitmap_frozen_size_in_bytes().
+ *
+ * On error, NULL is returned.
+ *
+ * Bitmap returned by this function can be used in all readonly contexts.
+ * Bitmap must be freed as usual, by calling roaring_bitmap_free().
+ * Underlying buffer must not be freed or modified while it backs any bitmaps.
+ */
+const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf, size_t length);
+
 
 /**
  * Iterate over the bitmap elements. The function iterator is called once for

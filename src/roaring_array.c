@@ -109,6 +109,7 @@ void ra_init(roaring_array_t *new_ra) {
 
     new_ra->allocation_size = 0;
     new_ra->size = 0;
+    new_ra->flags = 0;
 }
 
 bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,

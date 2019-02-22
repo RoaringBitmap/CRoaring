@@ -34,7 +34,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
         if(runoptimize) roaring_bitmap_run_optimize(answer[i]);
         roaring_bitmap_shrink_to_fit(answer[i]);
-        answer[i]->copy_on_write = copy_on_write;
+        roaring_bitmap_set_copy_on_write(answer[i], copy_on_write);
     }
     printf("\n");
     return answer;

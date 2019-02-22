@@ -15,9 +15,13 @@ extern "C" {
 #define SERIALIZATION_ARRAY_UINT32 1
 #define SERIALIZATION_CONTAINER 2
 
+#define ROARING_FLAG_COW UINT8_C(0x1)
+#define ROARING_FLAG_FROZEN UINT8_C(0x2)
+
 enum {
     SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
     SERIAL_COOKIE = 12347,
+    FROZEN_COOKIE = 13766,
     NO_OFFSET_THRESHOLD = 4
 };
 
@@ -37,6 +41,7 @@ typedef struct roaring_array_s {
     void **containers;
     uint16_t *keys;
     uint8_t *typecodes;
+    uint8_t flags;
 } roaring_array_t;
 
 /**
