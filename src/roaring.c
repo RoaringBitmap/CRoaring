@@ -2770,13 +2770,13 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
         }
     }
 
-    uint64_t *bitset_zone = arena_alloc(&buf, bitset_zone_size);
-    rle16_t *run_zone = arena_alloc(&buf, run_zone_size);
-    uint16_t *array_zone = arena_alloc(&buf, array_zone_size);
-    uint16_t *key_zone = arena_alloc(&buf, 2*ra->size);
-    uint16_t *count_zone = arena_alloc(&buf, 2*ra->size);
-    uint8_t *typecode_zone = arena_alloc(&buf, ra->size);
-    uint32_t *header_zone = arena_alloc(&buf, 4);
+    uint64_t *bitset_zone = (uint64_t *)arena_alloc(&buf, bitset_zone_size);
+    rle16_t *run_zone = (rle16_t *)arena_alloc(&buf, run_zone_size);
+    uint16_t *array_zone = (uint16_t *)arena_alloc(&buf, array_zone_size);
+    uint16_t *key_zone = (uint16_t *)arena_alloc(&buf, 2*ra->size);
+    uint16_t *count_zone = (uint16_t *)arena_alloc(&buf, 2*ra->size);
+    uint8_t *typecode_zone = (uint8_t *)arena_alloc(&buf, ra->size);
+    uint32_t *header_zone = (uint32_t *)arena_alloc(&buf, 4);
 
     for (int32_t i = 0; i < ra->size; i++) {
         uint16_t count;
@@ -2901,7 +2901,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     rb->high_low_container.keys = (uint16_t *)keys;
     rb->high_low_container.typecodes = (uint8_t *)typecodes;
     rb->high_low_container.containers =
-            arena_alloc(&arena, sizeof(void*) * num_containers);
+            (void **)arena_alloc(&arena, sizeof(void*) * num_containers);
     for (int32_t i = 0; i < num_containers; i++) {
         switch (typecodes[i]) {
             case BITSET_CONTAINER_TYPE_CODE: {
