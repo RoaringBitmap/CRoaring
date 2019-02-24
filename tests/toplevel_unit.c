@@ -3965,7 +3965,7 @@ void test_frozen_serialization() {
 
 void test_frozen_serialization_max_containers() {
     roaring_bitmap_t *r = roaring_bitmap_create();
-    for (int i = 0; i < 65536; i++) {
+    for (int64_t i = 0; i < 65536; i++) {
         roaring_bitmap_add(r, 65536 * i);
     }
     assert(r->high_low_container.size == 65536);

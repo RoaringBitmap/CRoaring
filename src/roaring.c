@@ -2675,11 +2675,11 @@ bool roaring_bitmap_is_strict_subset(const roaring_bitmap_t *ra1,
  *
  * -- (beginning must be aligned by 32 bytes) --
  * <bitset_data> uint64_t[BITSET_CONTAINER_SIZE_IN_WORDS * num_bitset_containers]
- * <array_data>  uint16_t[total number of array elements in all array containers]
  * <run_data>    rle16_t[total number of rle elements in all run containers]
+ * <array_data>  uint16_t[total number of array elements in all array containers]
  * <keys>        uint16_t[num_containers]
- * <typecodes>   uint8_t[num_containers]
  * <counts>      uint16_t[num_containers]
+ * <typecodes>   uint8_t[num_containers]
  * <header>      uint32_t
  *
  * <header> is a 4-byte value which is a bit union of FROZEN_COOKIE (15 bits)
@@ -2695,6 +2695,8 @@ bool roaring_bitmap_is_strict_subset(const roaring_bitmap_t *ra1,
  *
  * <*_data> and <keys> are kept close together because they are not accessed
  * during deserilization. This may reduce IO in case of large mmaped bitmaps.
+ * All members have their native alignments during deserilization except <header>,
+ * which is not guaranteed to be aligned by 4 bytes.
  */
 
 size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *rb) {
@@ -2706,23 +2708,23 @@ size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *rb) {
                 num_bytes += BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
-                const array_container_t *array =
-                        (const array_container_t *) ra->containers[i];
-                num_bytes += array->cardinality * sizeof(uint16_t);
-                break;
-            }
             case RUN_CONTAINER_TYPE_CODE: {
                 const run_container_t *run =
                         (const run_container_t *) ra->containers[i];
                 num_bytes += run->n_runs * sizeof(rle16_t);
                 break;
             }
+            case ARRAY_CONTAINER_TYPE_CODE: {
+                const array_container_t *array =
+                        (const array_container_t *) ra->containers[i];
+                num_bytes += array->cardinality * sizeof(uint16_t);
+                break;
+            }
             default:
                 __builtin_unreachable();
         }
     }
-    num_bytes += (2 + 1 + 2) * ra->size; // keys, typecodes, counts
+    num_bytes += (2 + 2 + 1) * ra->size; // keys, counts, typecodes
     num_bytes += 4; // header
     return num_bytes;
 }
@@ -2734,22 +2736,21 @@ inline static void *arena_alloc(char **arena, size_t num_bytes) {
 }
 
 void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
+    /*
+     * Note: we do not require user to supply spicificly aligned buffer.
+     * Thus we have to use memcpy() everywhere.
+     */
+
     const roaring_array_t *ra = &rb->high_low_container;
 
     size_t bitset_zone_size = 0;
-    size_t array_zone_size = 0;
     size_t run_zone_size = 0;
+    size_t array_zone_size = 0;
     for (int32_t i = 0; i < ra->size; i++) {
         switch (ra->typecodes[i]) {
             case BITSET_CONTAINER_TYPE_CODE: {
                 bitset_zone_size +=
                         BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
-                break;
-            }
-            case ARRAY_CONTAINER_TYPE_CODE: {
-                const array_container_t *array =
-                        (const array_container_t *) ra->containers[i];
-                array_zone_size += array->cardinality * sizeof(uint16_t);
                 break;
             }
             case RUN_CONTAINER_TYPE_CODE: {
@@ -2758,17 +2759,23 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 run_zone_size += run->n_runs * sizeof(rle16_t);
                 break;
             }
+            case ARRAY_CONTAINER_TYPE_CODE: {
+                const array_container_t *array =
+                        (const array_container_t *) ra->containers[i];
+                array_zone_size += array->cardinality * sizeof(uint16_t);
+                break;
+            }
             default:
                 __builtin_unreachable();
         }
     }
 
     uint64_t *bitset_zone = arena_alloc(&buf, bitset_zone_size);
-    uint16_t *array_zone = arena_alloc(&buf, array_zone_size);
     rle16_t *run_zone = arena_alloc(&buf, run_zone_size);
+    uint16_t *array_zone = arena_alloc(&buf, array_zone_size);
     uint16_t *key_zone = arena_alloc(&buf, 2*ra->size);
-    uint8_t *typecode_zone = arena_alloc(&buf, ra->size);
     uint16_t *count_zone = arena_alloc(&buf, 2*ra->size);
+    uint8_t *typecode_zone = arena_alloc(&buf, ra->size);
     uint32_t *header_zone = arena_alloc(&buf, 4);
 
     for (int32_t i = 0; i < ra->size; i++) {
@@ -2787,15 +2794,6 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 }
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
-                const array_container_t *array =
-                        (const array_container_t *) ra->containers[i];
-                size_t num_bytes = array->cardinality * sizeof(uint16_t);
-                memcpy(array_zone, array->array, num_bytes);
-                array_zone += array->cardinality;
-                count = array->cardinality - 1;
-                break;
-            }
             case RUN_CONTAINER_TYPE_CODE: {
                 const run_container_t *run =
                         (const run_container_t *) ra->containers[i];
@@ -2805,16 +2803,25 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 count = run->n_runs;
                 break;
             }
+            case ARRAY_CONTAINER_TYPE_CODE: {
+                const array_container_t *array =
+                        (const array_container_t *) ra->containers[i];
+                size_t num_bytes = array->cardinality * sizeof(uint16_t);
+                memcpy(array_zone, array->array, num_bytes);
+                array_zone += array->cardinality;
+                count = array->cardinality - 1;
+                break;
+            }
             default:
                 __builtin_unreachable();
         }
-        count_zone[i] = count;
+        memcpy(&count_zone[i], &count, 2);
     }
     memcpy(key_zone, ra->keys, ra->size * sizeof(uint16_t));
     memcpy(typecode_zone, ra->typecodes, ra->size * sizeof(uint8_t));
-    *header_zone = (ra->size << 15) | FROZEN_COOKIE;
+    uint32_t header = ((uint32_t)ra->size << 15) | FROZEN_COOKIE;
+    memcpy(header_zone, &header, 4);
 }
-
 
 const roaring_bitmap_t *
 roaring_bitmap_frozen_view(const char *buf, size_t length) {
@@ -2826,7 +2833,8 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     if (length < 4) {
         return NULL;
     }
-    uint32_t header = *(const uint32_t *)(buf + length - 4);
+    uint32_t header;
+    memcpy(&header, buf + length - 4, 4); // header may be misaligned
     if ((header & 0x7FFF) != FROZEN_COOKIE) {
         return NULL;
     }
@@ -2837,48 +2845,48 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
         return NULL;
     }
     uint16_t *keys = (uint16_t *)(buf + length - 4 - num_containers * 5);
-    uint8_t *typecodes = (uint8_t *)(buf + length - 4 - num_containers * 3);
-    uint16_t *counts = (uint16_t *)(buf + length - 4 - num_containers * 2);
+    uint16_t *counts = (uint16_t *)(buf + length - 4 - num_containers * 3);
+    uint8_t *typecodes = (uint8_t *)(buf + length - 4 - num_containers * 1);
 
     // {bitset,array,run}_zone
     int32_t num_bitset_containers = 0;
-    int32_t num_array_containers = 0;
     int32_t num_run_containers = 0;
+    int32_t num_array_containers = 0;
     size_t bitset_zone_size = 0;
-    size_t array_zone_size = 0;
     size_t run_zone_size = 0;
+    size_t array_zone_size = 0;
     for (int32_t i = 0; i < num_containers; i++) {
         switch (typecodes[i]) {
             case BITSET_CONTAINER_TYPE_CODE:
                 num_bitset_containers++;
                 bitset_zone_size += BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
-            case ARRAY_CONTAINER_TYPE_CODE:
-                num_array_containers++;
-                array_zone_size += (counts[i] + UINT32_C(1)) * sizeof(uint16_t);
-                break;
             case RUN_CONTAINER_TYPE_CODE:
                 num_run_containers++;
                 run_zone_size += counts[i] * sizeof(rle16_t);
+                break;
+            case ARRAY_CONTAINER_TYPE_CODE:
+                num_array_containers++;
+                array_zone_size += (counts[i] + UINT32_C(1)) * sizeof(uint16_t);
                 break;
             default:
                 return NULL;
         }
     }
-    if (length != bitset_zone_size + array_zone_size + run_zone_size +
+    if (length != bitset_zone_size + run_zone_size + array_zone_size +
                   5 * num_containers + 4) {
         return NULL;
     }
     uint64_t *bitset_zone = (uint64_t*) (buf);
-    uint16_t *array_zone = (uint16_t*) (buf + bitset_zone_size);
-    rle16_t *run_zone = (rle16_t*) (buf + bitset_zone_size + array_zone_size);
+    rle16_t *run_zone = (rle16_t*) (buf + bitset_zone_size);
+    uint16_t *array_zone = (uint16_t*) (buf + bitset_zone_size + run_zone_size);
 
     size_t alloc_size = 0;
     alloc_size += sizeof(roaring_bitmap_t);
     alloc_size += num_containers * sizeof(void *);
     alloc_size += num_bitset_containers * sizeof(bitset_container_t);
-    alloc_size += num_array_containers * sizeof(array_container_t);
     alloc_size += num_run_containers * sizeof(run_container_t);
+    alloc_size += num_array_containers * sizeof(array_container_t);
 
     char *arena = (char *)malloc(alloc_size);
     if (arena == NULL) {
@@ -2905,16 +2913,6 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                 bitset_zone += BITSET_CONTAINER_SIZE_IN_WORDS;
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
-                array_container_t *array = (array_container_t *)
-                        arena_alloc(&arena, sizeof(array_container_t));
-                array->capacity = counts[i] + UINT32_C(1);
-                array->cardinality = counts[i] + UINT32_C(1);
-                array->array = array_zone;
-                rb->high_low_container.containers[i] = array;
-                array_zone += counts[i] + UINT32_C(1);
-                break;
-            }
             case RUN_CONTAINER_TYPE_CODE: {
                 run_container_t *run = (run_container_t *)
                         arena_alloc(&arena, sizeof(run_container_t));
@@ -2923,6 +2921,16 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                 run->runs = run_zone;
                 rb->high_low_container.containers[i] = run;
                 run_zone += run->n_runs;
+                break;
+            }
+            case ARRAY_CONTAINER_TYPE_CODE: {
+                array_container_t *array = (array_container_t *)
+                        arena_alloc(&arena, sizeof(array_container_t));
+                array->capacity = counts[i] + UINT32_C(1);
+                array->cardinality = counts[i] + UINT32_C(1);
+                array->array = array_zone;
+                rb->high_low_container.containers[i] = array;
+                array_zone += counts[i] + UINT32_C(1);
                 break;
             }
             default:
