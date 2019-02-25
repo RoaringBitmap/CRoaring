@@ -66,7 +66,7 @@ void inplaceorwide() {
 
 void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
-    bm1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(bm1, copy_on_write);
     roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
     assert(roaring_bitmap_get_cardinality(bm1) == 0);
     assert(roaring_bitmap_get_cardinality(bm2) == 0);
@@ -96,7 +96,7 @@ void can_copy_empty_false() {
 
 void can_add_to_copies(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
-    bm1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(bm1, copy_on_write);
     roaring_bitmap_add(bm1, 3);
     roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
     assert(roaring_bitmap_get_cardinality(bm1) == 1);
@@ -300,9 +300,9 @@ void test_stats() {
 // (https://github.com/RoaringBitmap/CRoaring/pull/70)
 void leaks_with_empty(bool copy_on_write) {
     roaring_bitmap_t *empty = roaring_bitmap_create();
-    empty->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(empty, copy_on_write);
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     for (uint32_t i = 100; i < 70000; i += 3) {
         roaring_bitmap_add(r1, i);
     }
@@ -421,7 +421,7 @@ void check_full_flip() {
 void test_stress_memory(bool copy_on_write) {
 	for (size_t i = 0; i < 5; i++) {
 		roaring_bitmap_t *r1 = roaring_bitmap_create();
-		r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
 		assert_non_null(r1);
 		for (size_t k = 0; k < 1000000; k++) {
 			uint32_t j = rand() % (100000000);
@@ -452,7 +452,7 @@ void test_stress_memory_false() {
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     assert_non_null(r1);
 
     // then we can add values
@@ -485,7 +485,7 @@ void test_example(bool copy_on_write) {
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
-    r3->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r3, copy_on_write);
 
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
@@ -512,7 +512,7 @@ void test_example(bool copy_on_write) {
 
     // we can copy and compare bitmaps
     roaring_bitmap_t *z = roaring_bitmap_copy(r3);
-    z->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(z, copy_on_write);
     assert_true(roaring_bitmap_equals(r3, z));
 
     roaring_bitmap_free(z);
@@ -522,7 +522,7 @@ void test_example(bool copy_on_write) {
     assert_true(roaring_bitmap_get_cardinality(r1_2_3) ==
                 roaring_bitmap_or_cardinality(r1, r2));
 
-    r1_2_3->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_2_3, copy_on_write);
     roaring_bitmap_or_inplace(r1_2_3, r3);
 
     // we can compute a big union
@@ -538,7 +538,7 @@ void test_example(bool copy_on_write) {
 
     // we can compute xor two-by-two
     roaring_bitmap_t *rx1_2_3 = roaring_bitmap_xor(r1, r2);
-    rx1_2_3->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(rx1_2_3, copy_on_write);
     roaring_bitmap_xor_inplace(rx1_2_3, r3);
 
     // we can compute a big xor
@@ -746,7 +746,7 @@ void test_example_false() { test_example(false); }
 
 void can_remove_from_copies(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
-    bm1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(bm1, copy_on_write);
     roaring_bitmap_add(bm1, 3);
     roaring_bitmap_t *bm2 = roaring_bitmap_copy(bm1);
     assert(roaring_bitmap_get_cardinality(bm1) == 1);
@@ -1438,10 +1438,10 @@ void test_intersection_bitset_x_bitset_inplace() {
 
 void test_union(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     assert(r1);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
     assert(r2);
 
     for (uint32_t i = 0; i < 100; ++i) {
@@ -1455,7 +1455,7 @@ void test_union(bool copy_on_write) {
     assert_true(roaring_bitmap_get_cardinality(r1_or_r2) ==
                 roaring_bitmap_or_cardinality(r1, r2));
 
-    r1_or_r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_or_r2, copy_on_write);
     assert_int_equal(roaring_bitmap_get_cardinality(r1_or_r2), 166);
 
     roaring_bitmap_free(r1_or_r2);
@@ -1553,9 +1553,9 @@ static void show_difference(roaring_bitmap_t *result,
 
 void test_xor(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
 
     for (uint32_t i = 0; i < 300; ++i) {
         if (i % 2 == 0) roaring_bitmap_add(r1, i);
@@ -1563,7 +1563,7 @@ void test_xor(bool copy_on_write) {
     }
 
     roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_xor(r1, r2);
-    r1_xor_r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_xor_r2, copy_on_write);
 
     int ansctr = 0;
     for (int i = 0; i < 300; ++i) {
@@ -1628,9 +1628,9 @@ void test_xor_false() { test_xor(false); }
 
 void test_xor_inplace(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
 
     for (uint32_t i = 0; i < 300; ++i) {
         if (i % 2 == 0) roaring_bitmap_add(r1, i);
@@ -1670,7 +1670,7 @@ void test_xor_inplace(bool copy_on_write) {
         for (int j = i + 1; r[j]; ++j) {
             roaring_bitmap_t *expected = synthesized_xor(r[i], r[j]);
             roaring_bitmap_t *copy = roaring_bitmap_copy(r[i]);
-            copy->copy_on_write = copy_on_write;
+            roaring_bitmap_set_copy_on_write(copy, copy_on_write);
 
             roaring_bitmap_xor_inplace(copy, r[j]);
 
@@ -1697,9 +1697,9 @@ void test_xor_inplace_false() { test_xor_inplace(false); }
 
 void test_xor_lazy(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
 
     for (uint32_t i = 0; i < 300; ++i) {
         if (i % 2 == 0) roaring_bitmap_add(r1, i);
@@ -1709,7 +1709,7 @@ void test_xor_lazy(bool copy_on_write) {
     roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_lazy_xor(r1, r2);
     roaring_bitmap_repair_after_lazy(r1_xor_r2);
 
-    r1_xor_r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_xor_r2, copy_on_write);
 
     int ansctr = 0;
     for (int i = 0; i < 300; ++i) {
@@ -1780,9 +1780,9 @@ void test_xor_lazy_false() { test_xor_lazy(false); }
 
 void test_xor_lazy_inplace(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
 
     for (uint32_t i = 0; i < 300; ++i) {
         if (i % 2 == 0) roaring_bitmap_add(r1, i);
@@ -1790,7 +1790,7 @@ void test_xor_lazy_inplace(bool copy_on_write) {
     }
 
     roaring_bitmap_t *r1_xor_r2 = roaring_bitmap_copy(r1);
-    r1_xor_r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_xor_r2, copy_on_write);
 
     roaring_bitmap_lazy_xor_inplace(r1_xor_r2, r2);
     roaring_bitmap_repair_after_lazy(r1_xor_r2);
@@ -1866,7 +1866,7 @@ void test_xor_lazy_inplace_false() { test_xor_lazy_inplace(false); }
 static roaring_bitmap_t *roaring_from_sentinel_array(int *data,
                                                      bool copy_on_write) {
     roaring_bitmap_t *ans = roaring_bitmap_create();
-    ans->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(ans, copy_on_write);
 
     for (; *data != -1; ++data) {
         roaring_bitmap_add(ans, *data);
@@ -1876,9 +1876,9 @@ static roaring_bitmap_t *roaring_from_sentinel_array(int *data,
 
 void test_andnot(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
 
     int data1[] = {1,
                    2,
@@ -2010,7 +2010,7 @@ void test_andnot(bool copy_on_write) {
     }
 
     roaring_bitmap_t *r1_andnot_r2 = roaring_bitmap_andnot(r1, r2);
-    r1_andnot_r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_andnot_r2, copy_on_write);
 
     int ansctr = 0;
     for (int i = 0; i < 300; ++i) {
@@ -2072,9 +2072,9 @@ void test_andnot_false() { test_andnot(false); }
 
 void test_andnot_inplace(bool copy_on_write) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     roaring_bitmap_t *r2 = roaring_bitmap_create();
-    r2->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r2, copy_on_write);
 
     int data1[] = {1,
                    2,
@@ -2247,7 +2247,7 @@ void test_andnot_inplace(bool copy_on_write) {
         for (int j = i + 1; r[j]; ++j) {
             roaring_bitmap_t *expected = synthesized_andnot(r[i], r[j]);
             roaring_bitmap_t *copy = roaring_bitmap_copy(r[i]);
-            copy->copy_on_write = copy_on_write;
+            roaring_bitmap_set_copy_on_write(copy, copy_on_write);
 
             roaring_bitmap_andnot_inplace(copy, r[j]);
 
@@ -3113,7 +3113,7 @@ void select_test() {
         roaring_bitmap_run_optimize(r);
         uint64_t true_card = roaring_bitmap_get_cardinality(r);
 
-        r->copy_on_write = 1;
+        roaring_bitmap_set_copy_on_write(r, true);
         roaring_bitmap_t *r_copy = roaring_bitmap_copy(r);
 
         void *bitmaps[] = {r, r_copy};
@@ -3739,7 +3739,7 @@ void test_add_range() {
     // bug: segfault
     {
         roaring_bitmap_t *r1 = roaring_bitmap_from_range(0, 1, 1);
-        r1->copy_on_write = true;
+        roaring_bitmap_set_copy_on_write(r1, true);
         roaring_bitmap_t *r2 = roaring_bitmap_copy(r1);
         roaring_bitmap_add_range(r1, 0, 1);
         assert(roaring_bitmap_get_cardinality(r1) == 1);
@@ -3928,6 +3928,50 @@ void test_range_cardinality() {
     roaring_bitmap_free(r);
 }
 
+void frozen_serialization_compare(roaring_bitmap_t *r1) {
+    size_t num_bytes = roaring_bitmap_frozen_size_in_bytes(r1);
+    char *buf = aligned_malloc(32, num_bytes);
+    roaring_bitmap_frozen_serialize(r1, buf);
+
+    const roaring_bitmap_t *r2 =
+        roaring_bitmap_frozen_view(buf, num_bytes);
+
+    assert(roaring_bitmap_equals(r1, r2));
+    assert(roaring_bitmap_frozen_view(buf+1, num_bytes-1) == NULL);
+
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+    aligned_free(buf);
+}
+
+void test_frozen_serialization() {
+    const uint64_t s = 65536;
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_add(r, 0);
+    roaring_bitmap_add(r, UINT32_MAX);
+    roaring_bitmap_add(r, 1000);
+    roaring_bitmap_add(r, 2000);
+    roaring_bitmap_add(r, 100000);
+    roaring_bitmap_add(r, 200000);
+    roaring_bitmap_add_range(r, s*10 + 100, s*13 - 100);
+    for (uint64_t i = 0; i < s*3; i += 2) {
+        roaring_bitmap_add(r, s*20 + i);
+    }
+    roaring_bitmap_run_optimize(r);
+    //roaring_bitmap_printf_describe(r);
+    frozen_serialization_compare(r);
+}
+
+void test_frozen_serialization_max_containers() {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (int64_t i = 0; i < 65536; i++) {
+        roaring_bitmap_add(r, 65536 * i);
+    }
+    assert(r->high_low_container.size == 65536);
+    frozen_serialization_compare(r);
+}
+
 
 int main() {
     const struct CMUnitTest tests[] = {
@@ -4046,6 +4090,8 @@ int main() {
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),
         cmocka_unit_test(test_range_cardinality),
+        cmocka_unit_test(test_frozen_serialization),
+        cmocka_unit_test(test_frozen_serialization_max_containers),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

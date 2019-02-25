@@ -50,7 +50,7 @@ void serial_test(void **) {
 void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
-    r1->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1, copy_on_write);
     assert_ptr_not_equal(r1, NULL);
 
     // then we can add values
@@ -80,7 +80,7 @@ void test_example(bool copy_on_write) {
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
-    r3->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r3, copy_on_write);
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
     uint32_t *arr1 = new uint32_t[card1];
@@ -97,14 +97,14 @@ void test_example(bool copy_on_write) {
 
     // we can copy and compare bitmaps
     roaring_bitmap_t *z = roaring_bitmap_copy(r3);
-    z->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(z, copy_on_write);
     assert_true(roaring_bitmap_equals(r3, z));
 
     roaring_bitmap_free(z);
 
     // we can compute union two-by-two
     roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
-    r1_2_3->copy_on_write = copy_on_write;
+    roaring_bitmap_set_copy_on_write(r1_2_3, copy_on_write);
     roaring_bitmap_or_inplace(r1_2_3, r3);
 
     // we can compute a big union

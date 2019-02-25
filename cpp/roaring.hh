@@ -21,7 +21,6 @@ class Roaring {
      */
     Roaring() {
         ra_init(&roaring.high_low_container);
-        roaring.copy_on_write = false;
     }
 
     /**
@@ -37,11 +36,12 @@ class Roaring {
     Roaring(const Roaring &r) {
         bool is_ok =
             ra_copy(&r.roaring.high_low_container, &roaring.high_low_container,
-                    r.roaring.copy_on_write);
+                    roaring_bitmap_get_copy_on_write(&r.roaring));
         if (!is_ok) {
             throw std::runtime_error("failed memory alloc in constructor");
         }
-        roaring.copy_on_write = r.roaring.copy_on_write;
+        roaring_bitmap_set_copy_on_write(&roaring,
+            roaring_bitmap_get_copy_on_write(&r.roaring));
     }
 
     /**
@@ -50,7 +50,6 @@ class Roaring {
      */
     Roaring(Roaring &&r) noexcept {
         roaring = std::move(r.roaring);
-        r.roaring.copy_on_write = false;
         ra_init(&r.roaring.high_low_container);
     }
 
@@ -63,7 +62,6 @@ class Roaring {
     Roaring(roaring_bitmap_t *s) noexcept {
         // steal the interior struct
         roaring.high_low_container = s->high_low_container;
-        roaring.copy_on_write = s->copy_on_write;
         // deallocate the old container
         free(s);
     }
@@ -164,11 +162,12 @@ class Roaring {
         ra_clear(&roaring.high_low_container);
         bool is_ok =
             ra_copy(&r.roaring.high_low_container, &roaring.high_low_container,
-                    r.roaring.copy_on_write);
+                    roaring_bitmap_get_copy_on_write(&r.roaring));
         if (!is_ok) {
             throw std::runtime_error("failed memory alloc in assignment");
         }
-        roaring.copy_on_write = r.roaring.copy_on_write;
+        roaring_bitmap_set_copy_on_write(&roaring,
+            roaring_bitmap_get_copy_on_write(&r.roaring));
         return *this;
     }
 
@@ -179,7 +178,6 @@ class Roaring {
     Roaring &operator=(Roaring &&r) noexcept {
         ra_clear(&roaring.high_low_container);
         roaring = std::move(r.roaring);
-        r.roaring.copy_on_write = false;
         ra_init(&r.roaring.high_low_container);
         return *this;
     }
@@ -537,7 +535,9 @@ class Roaring {
     /**
      * Whether or not we apply copy and write.
      */
-    void setCopyOnWrite(bool val) { roaring.copy_on_write = val; }
+    void setCopyOnWrite(bool val) {
+        roaring_bitmap_set_copy_on_write(&roaring, val);
+    }
 
     /**
      * Print the content of the bitmap
@@ -572,7 +572,9 @@ class Roaring {
     /**
      * Whether or not copy and write is active.
      */
-    bool getCopyOnWrite() const { return roaring.copy_on_write; }
+    bool getCopyOnWrite() const {
+        return roaring_bitmap_get_copy_on_write(&roaring);
+    }
 
     /**
      * computes the logical or (union) between "n" bitmaps (referenced by a
