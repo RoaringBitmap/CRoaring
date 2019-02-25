@@ -3941,7 +3941,7 @@ void frozen_serialization_compare(roaring_bitmap_t *r1) {
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    free(buf);
+    aligned_free(buf);
 }
 
 void test_frozen_serialization() {
