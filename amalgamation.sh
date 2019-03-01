@@ -53,10 +53,11 @@ function stripinc()
 }
 function dofile()
 {
-    echo "/* begin file $1 */"
+    RELFILE=${1#"$SCRIPTPATH/"}
+    echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
     stripinc < $1
-    echo "/* end file $1 */"
+    echo "/* end file $RELFILE */"
 }
 
 timestamp=$(date)
