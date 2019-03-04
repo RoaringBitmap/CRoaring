@@ -45,6 +45,8 @@ if(NOT MSVC)
 ## This is handy but Visual Studio will happily ignore us
 set_target_properties(${ROARING_LIB_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+  VERSION ${ROARING_LIB_VERSION}
+  SOVERSION ${ROARING_LIB_SOVERSION})
 MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${CMAKE_BINARY_DIR})
 endif()
 

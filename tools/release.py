@@ -95,6 +95,19 @@ print(versionfile + " modified")
 
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
+import fileinput
+import re
+
+newmajorversionstring = str(newversion[0])
+newversionstring = str(newversion[0]) + "." + str(newversion[1]) + "." + str(newversion[2])
+cmakefile = maindir + os.sep + "CMakeLists.txt"
+for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
+    line = re.sub('ROARING_LIB_VERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_VERSION "'+newversionstring, line.rstrip())
+    line = re.sub('ROARING_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+newmajorversionstring, line)
+    print(line)
+
+print("modified "+cmakefile+", a backup was made")
+
 
 print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
 print("to issue release, enter \n git commit -a \n git push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")

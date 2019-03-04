@@ -9,6 +9,8 @@ endif()
 
 project(RoaringBitmap)
 set(ROARING_LIB_NAME roaring)
+set(ROARING_LIB_VERSION "0.2.60" CACHE STRING "Roaring library version")
+set(ROARING_LIB_SOVERSION "0" CACHE STRING "Roaring library soversion")
 
 option(ROARING_DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
 option(ROARING_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
