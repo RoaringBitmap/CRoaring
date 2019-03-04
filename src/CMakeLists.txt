@@ -35,10 +35,26 @@ set(ROARING_SRC
 
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 target_include_directories(${ROARING_LIB_NAME}
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
+  PUBLIC
+   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
+#
+#install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
+#
+install(TARGETS ${ROARING_LIB_NAME}
+   EXPORT ${ROARING_LIB_NAME}-config
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(EXPORT ${ROARING_LIB_NAME}-config
+   FILE ${ROARING_LIB_NAME}-config.cmake
+   NAMESPACE ${ROARING_LIB_NAME}::
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${ROARING_LIB_NAME}
+ )
 
 if(NOT MSVC)
 ## We output the library at the root of the current directory where cmake is invoked
@@ -52,9 +68,9 @@ endif()
 
 if(MSVC AND (ROARING_LIB_TYPE STREQUAL "SHARED"))
   if (CMAKE_VERSION VERSION_LESS 3.4)
-    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." ) 
+    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
   endif()
-  MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." ) 
- set_target_properties(${ROARING_LIB_NAME} 
+  MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
+ set_target_properties(${ROARING_LIB_NAME}
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 endif()
