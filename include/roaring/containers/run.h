@@ -676,7 +676,7 @@ static inline void run_container_remove_range(run_container_t *run, uint32_t min
     int32_t last = rle16_find_run(run->runs, run->n_runs, max);
 
     if (first >= 0 && min > run->runs[first].value &&
-        max < run->runs[first].value + run->runs[first].length) {
+        max < ((uint32_t)run->runs[first].value + (uint32_t)run->runs[first].length)) {
         // split this run into two adjacent runs
 
         // right subinterval
