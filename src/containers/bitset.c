@@ -700,7 +700,7 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
   // k is a power of 64
   int bitsleft = x32 - k + 1;// will be in [0,64)
   uint64_t leftoverword = container->array[k / 64];// k / 64 should be within scope
-  leftoverword = leftoverword & ((UINT64_C(1) << bitsleft) - 1);
+  leftoverword = leftoverword << ((64 - bitsleft) & 63); // need the "&63" otherwise we shift by 64 which is undefined.
   sum += hamming(leftoverword);
   return sum;
 }
