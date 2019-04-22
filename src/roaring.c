@@ -1195,8 +1195,8 @@ uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *ra,
     range_end--; // make range_end inclusive
     // now we have: 0 <= range_start <= range_end <= UINT32_MAX
 
-    int minhb = range_start >> 16;
-    int maxhb = range_end >> 16;
+    uint16_t minhb = range_start >> 16;
+    uint16_t maxhb = range_end >> 16;
 
     uint64_t card = 0;
 
