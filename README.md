@@ -535,6 +535,36 @@ You must understand that this implies that the produced binaries will not run on
 We have additionnal optimizations that use inline assembly. However, Visual Studio does not support inline assembly so you cannot benefit from these optimizations under Visual Studio.
 
 
+## Usage (Using `vcpkg` on Windows, Linux and macOS)
+
+[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and macOS can download and install `roaring` with one single command from their favorite shell.
+
+On Linux and macOS:
+
+```
+$ ./vcpkg install roaring
+```
+
+will build and install `roaring` as a static library.
+
+On Windows (64-bit):
+
+```
+.\vcpkg.exe install roaring:x64-windows
+```
+
+will build and install `roaring` as a shared library.
+
+```
+.\vcpkg.exe install roaring:x64-windows-static  
+```
+
+will build and install `roaring` as a static library.
+
+These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.
+
+If you find the version of `roaring` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submiting an issue or by creating a PR.
+
 # AVX2-related throttling
 
 Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.

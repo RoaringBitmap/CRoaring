@@ -28,7 +28,7 @@
 #endif
 
 
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64) && !defined(ROARING_ACK_32BIT)
 #pragma message( \
     "You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
 #endif
