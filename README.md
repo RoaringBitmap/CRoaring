@@ -624,7 +624,7 @@ npm install roaring
 
 # Swift Wrapper
 
-Jérémie Piotte wrote a [Swift wrapper](https://github.com/piotte13/SwiftRoaring).
+Jérémie Piotte wrote a [Swift wrapper](https://github.com/RoaringBitmap/SwiftRoaring).
 
 
 # C# Wrapper
