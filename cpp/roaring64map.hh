@@ -19,6 +19,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include "roaring.hh"
 
 class Roaring64MapSetBitForwardIterator;
+class Roaring64MapSetBitBiDirectionalIterator;
 
 class Roaring64Map {
    public:
@@ -49,7 +50,15 @@ class Roaring64Map {
      */
     Roaring64Map(roaring_bitmap_t *s) { emplaceOrInsert(0, s); }
 
-    /**
+	/**
+	 * Assignment operator.
+	 */
+	Roaring64Map &operator=(const Roaring64Map &r) {
+		roarings = r.roarings;
+		return *this;
+	}
+	
+	/**
      * Construct a bitmap from a list of integer values.
      */
     static Roaring64Map bitmapOf(size_t n...) {
@@ -133,6 +142,13 @@ class Roaring64Map {
         return false;
     }
 
+	/**
+     * Clear the bitmap
+     */
+	void clear() {
+		roarings.clear();
+	}
+	
     /**
      * Return the largest value (if not empty)
      *
@@ -801,7 +817,9 @@ class Roaring64Map {
     }
 
     friend class Roaring64MapSetBitForwardIterator;
+	friend class Roaring64MapSetBitBiDirectionalIterator;
     typedef Roaring64MapSetBitForwardIterator const_iterator;
+    typedef Roaring64MapSetBitBiDirectionalIterator const_bidirectional_iterator;	
 
     /**
     * Returns an iterator that can be used to access the position of the
@@ -822,7 +840,7 @@ class Roaring64Map {
     * i!=b.end(); ++i) {}
     */
     const_iterator end() const;
-
+	
    private:
     std::map<uint32_t, Roaring> roarings;
     bool copyOnWrite = false;
@@ -846,7 +864,7 @@ class Roaring64Map {
 /**
  * Used to go through the set bits. Not optimally fast, but convenient.
  */
-class Roaring64MapSetBitForwardIterator final {
+class Roaring64MapSetBitForwardIterator {
    public:
     typedef std::forward_iterator_tag iterator_category;
     typedef uint64_t *pointer;
@@ -906,8 +924,24 @@ class Roaring64MapSetBitForwardIterator final {
         }
         return orig;
     }
-
-    bool operator==(const Roaring64MapSetBitForwardIterator &o) {
+	
+	bool move(const value_type& x) {
+		map_iter = p.lower_bound(Roaring64Map::highBytes(x));
+		if (map_iter != p.cend()) {
+			roaring_init_iterator(&map_iter->second.roaring, &i);
+			if (map_iter->first == Roaring64Map::highBytes(x)) {
+				if (roaring_move_uint32_iterator_equalorlarger(&i, Roaring64Map::lowBytes(x)))
+					return true;
+				map_iter++;
+				if (map_iter == map_end) return false;
+				roaring_init_iterator(&map_iter->second.roaring, &i);
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	bool operator==(const Roaring64MapSetBitForwardIterator &o) {
         if (map_iter == map_end && o.map_iter == o.map_end) return true;
         if (o.map_iter == o.map_end) return false;
         return **this == *o;
@@ -919,9 +953,16 @@ class Roaring64MapSetBitForwardIterator final {
         return **this != *o;
     }
 
+	Roaring64MapSetBitForwardIterator &operator=(const Roaring64MapSetBitForwardIterator& r) {
+		map_iter = r.map_iter;
+		map_end = r.map_end;
+		i = r.i;
+		return *this;
+	}
+	
     Roaring64MapSetBitForwardIterator(const Roaring64Map &parent,
                                       bool exhausted = false)
-        : map_end(parent.roarings.cend()) {
+        : p(parent.roarings), map_end(parent.roarings.cend()) {
         if (exhausted || parent.roarings.empty()) {
             map_iter = parent.roarings.cend();
         } else {
@@ -935,10 +976,59 @@ class Roaring64MapSetBitForwardIterator final {
         }
     }
 
-   private:
+   protected:
+	const std::map<uint32_t, Roaring>& p;
     std::map<uint32_t, Roaring>::const_iterator map_iter;
     std::map<uint32_t, Roaring>::const_iterator map_end;
     roaring_uint32_iterator_t i;
+};
+
+class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitForwardIterator {
+ public:
+	Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
+											bool exhausted = false)
+        : Roaring64MapSetBitForwardIterator(parent, exhausted), map_begin(parent.roarings.cbegin()) {}
+
+	Roaring64MapSetBitBiDirectionalIterator &operator=(const Roaring64MapSetBitForwardIterator& r) {
+		*(Roaring64MapSetBitForwardIterator*)this = r;
+		return *this;
+	}
+	
+	type_of_iterator& operator--() { //  --i, must return dec.value
+		if (map_iter == map_end) {
+			--map_iter;
+			roaring_init_iterator_last(&map_iter->second.roaring, &i);
+			if (i.has_value) return *this;
+		}
+		
+		roaring_previous_uint32_iterator(&i);
+        while (!i.has_value) {
+			if (map_iter == map_begin) return *this;
+            map_iter--;
+            roaring_init_iterator_last(&map_iter->second.roaring, &i);
+        }
+        return *this;
+    }
+
+	type_of_iterator operator--(int) {  // i--, must return orig. value
+        Roaring64MapSetBitBiDirectionalIterator orig(*this);
+		if (map_iter == map_end) {
+			--map_iter;
+			roaring_init_iterator_last(&map_iter->second.roaring, &i);
+			return orig;
+		}
+		
+        roaring_previous_uint32_iterator(&i);
+        while (!i.has_value) {
+            if (map_iter == map_begin) return orig;
+            map_iter--;
+            roaring_init_iterator_last(&map_iter->second.roaring, &i);
+        }
+        return orig;
+    }
+	
+ protected:
+	std::map<uint32_t, Roaring>::const_iterator map_begin;
 };
 
 inline Roaring64MapSetBitForwardIterator Roaring64Map::begin() const {
