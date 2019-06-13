@@ -488,6 +488,64 @@ void test_cpp_add_remove_checked_64(void **) {
     assert_true(roaring.isEmpty());
 }
 
+void test_cpp_clear_64(void **) {
+    Roaring64Map roaring;
+
+    uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.addChecked(values64[i]));
+    }
+
+	roaring.clear();
+	
+    assert_true(roaring.isEmpty());
+}
+
+void test_cpp_move_64(void **) {
+    Roaring64Map roaring;
+
+    uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.addChecked(values64[i]));
+    }
+
+	Roaring64Map::const_iterator i(roaring);
+	i.move(123ULL);
+	assert_true(*i == 123ULL);
+	i.move(0xAFFFFFFF8ULL);
+	assert_true(*i == 0xFFFFFFFFFULL);
+	assert_false(i.move(0xFFFFFFFFFFULL));
+}
+
+void test_cpp_bidirectional_iterator_64(void **) {
+    Roaring64Map roaring;
+
+    uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};
+    for (int i = 0; i < 4; ++i) {
+        assert_true(roaring.addChecked(values64[i]));
+    }
+
+	Roaring64Map::const_bidirectional_iterator i(roaring);
+	i = roaring.begin();
+	assert_true(*i++ == 123ULL);
+	assert_true(*i++ == 0xAFFFFFFF7ULL);
+	assert_true(*i++ == 0xFFFFFFFFFULL);
+	assert_true(*i++ == 0xA00000000AULL);
+	assert_true(i == roaring.end());
+	assert_true(*--i == 0xA00000000AULL);	
+	assert_true(*--i == 0xFFFFFFFFFULL);
+	assert_true(*--i == 0xAFFFFFFF7ULL);
+	assert_true(*--i == 123ULL);
+	assert_true(i == roaring.begin());
+	i = roaring.end();
+	i--;
+	assert_true(*i-- == 0xA00000000AULL);
+	assert_true(*i-- == 0xFFFFFFFFFULL);
+	assert_true(*i-- == 0xAFFFFFFF7ULL);
+	assert_true(*i == 123ULL);
+	assert_true(i == roaring.begin());
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(serial_test),
@@ -498,7 +556,10 @@ int main() {
         cmocka_unit_test(test_example_cpp_64_true),
         cmocka_unit_test(test_example_cpp_64_false),
         cmocka_unit_test(test_cpp_add_remove_checked),
-        cmocka_unit_test(test_cpp_add_remove_checked_64)};
+        cmocka_unit_test(test_cpp_add_remove_checked_64),
+		cmocka_unit_test(test_cpp_clear_64),
+		cmocka_unit_test(test_cpp_move_64),
+		cmocka_unit_test(test_cpp_bidirectional_iterator_64)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

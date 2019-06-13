@@ -19,6 +19,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include "roaring.hh"
 
 class Roaring64MapSetBitForwardIterator;
+class Roaring64MapSetBitBiDirectionalIterator;
 
 class Roaring64Map {
    public:
@@ -818,6 +819,7 @@ class Roaring64Map {
     friend class Roaring64MapSetBitForwardIterator;
 	friend class Roaring64MapSetBitBiDirectionalIterator;
     typedef Roaring64MapSetBitForwardIterator const_iterator;
+    typedef Roaring64MapSetBitBiDirectionalIterator const_bidirectional_iterator;	
 
     /**
     * Returns an iterator that can be used to access the position of the
@@ -838,7 +840,7 @@ class Roaring64Map {
     * i!=b.end(); ++i) {}
     */
     const_iterator end() const;
-
+	
    private:
     std::map<uint32_t, Roaring> roarings;
     bool copyOnWrite = false;
@@ -924,10 +926,17 @@ class Roaring64MapSetBitForwardIterator {
     }
 	
 	bool move(const value_type& x) {
-		map_iter = p.find(Roaring64Map::highBytes(x));
+		map_iter = p.lower_bound(Roaring64Map::highBytes(x));
 		if (map_iter != p.cend()) {
 			roaring_init_iterator(&map_iter->second.roaring, &i);
-			return roaring_move_uint32_iterator_equalorlarger(&i, Roaring64Map::lowBytes(x));			
+			if (map_iter->first == Roaring64Map::highBytes(x)) {
+				if (roaring_move_uint32_iterator_equalorlarger(&i, Roaring64Map::lowBytes(x)))
+					return true;
+				map_iter++;
+				if (map_iter == map_end) return false;
+				roaring_init_iterator(&map_iter->second.roaring, &i);
+			}
+			return true;
 		}
 		return false;
 	}
@@ -1003,10 +1012,16 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
 
 	type_of_iterator operator--(int) {  // i--, must return orig. value
         Roaring64MapSetBitBiDirectionalIterator orig(*this);
+		if (map_iter == map_end) {
+			--map_iter;
+			roaring_init_iterator_last(&map_iter->second.roaring, &i);
+			return orig;
+		}
+		
         roaring_previous_uint32_iterator(&i);
         while (!i.has_value) {
-            map_iter--;
             if (map_iter == map_begin) return orig;
+            map_iter--;
             roaring_init_iterator_last(&map_iter->second.roaring, &i);
         }
         return orig;
