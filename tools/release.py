@@ -106,9 +106,9 @@ cmakefile = maindir + os.sep + "CMakeLists.txt"
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
     line = re.sub('ROARING_LIB_VERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_VERSION "'+newversionstring, line.rstrip())
     line = re.sub('ROARING_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+newmajorversionstring, line)
-    line = re.sub('set(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
-    line = re.sub('set(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
-    line = re.sub('set(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
+    line = re.sub('set\(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
+    line = re.sub('set\(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
+    line = re.sub('set\(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
     print(line)
 
 print("modified "+cmakefile+", a backup was made")
@@ -116,4 +116,3 @@ print("modified "+cmakefile+", a backup was made")
 
 print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
 print("to issue release, enter \n git commit -a \n git push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
-
