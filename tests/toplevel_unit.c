@@ -84,7 +84,15 @@ void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
-
+void issue208() {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 1; i < 8194; i+=2) {
+        roaring_bitmap_add(r, i);
+    }
+    uint32_t rank = roaring_bitmap_rank(r, 63);
+    assert(rank == 32);
+    roaring_bitmap_free(r);
+}
 
 void can_copy_empty_true() {
   can_copy_empty(true);
@@ -1033,7 +1041,7 @@ void test_portable_serialize() {
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
     uint32_t *arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r1, arr1);
- 
+
     uint64_t card2 = roaring_bitmap_get_cardinality(r2);
     uint32_t *arr2 = (uint32_t *)malloc(card2 * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(r2, arr2);
@@ -3829,7 +3837,7 @@ void test_remove_range() {
         sbs_compare(sbs);
         sbs_remove_range(sbs, 65536*1+0, 65536*1+65535); // from the beginning
         sbs_compare(sbs);
-        sbs_remove_range(sbs, 65536*7+0, 65536*7+65535); // from the end 
+        sbs_remove_range(sbs, 65536*7+0, 65536*7+65535); // from the end
         sbs_compare(sbs);
         sbs_remove_range(sbs, 65536*5+0, 65536*5+65535); // the last one
         sbs_compare(sbs);
@@ -3975,6 +3983,7 @@ void test_frozen_serialization_max_containers() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue208),
         cmocka_unit_test(range_contains),
         cmocka_unit_test(inplaceorwide),
         cmocka_unit_test(test_contains_range),
