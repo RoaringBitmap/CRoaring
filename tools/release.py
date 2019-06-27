@@ -104,8 +104,8 @@ newrevversionstring = str(newversion[2])
 newversionstring = str(newversion[0]) + "." + str(newversion[1]) + "." + str(newversion[2])
 cmakefile = maindir + os.sep + "CMakeLists.txt"
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
-    line = re.sub('ROARING_LIB_VERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_VERSION "'+newversionstring, line.rstrip())
-    line = re.sub('ROARING_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+newmajorversionstring, line)
+    line = re.sub('ROARING_LIB_VERSION "\d+\.\d+\.\d+','ROARING_LIB_VERSION "'+newversionstring, line.rstrip())
+    line = re.sub('ROARING_LIB_SOVERSION "\d+','ROARING_LIB_SOVERSION "'+newmajorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)

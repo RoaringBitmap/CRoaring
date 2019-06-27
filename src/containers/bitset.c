@@ -689,21 +689,16 @@ uint16_t bitset_container_maximum(const bitset_container_t *container) {
 
 /* Returns the number of values equal or smaller than x */
 int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
-  uint32_t x32 = x;
+  // credit: aqrit
   int sum = 0;
-  uint32_t k = 0;
-  for (; k + 63 <= x32; k += 64)  {
-    sum += hamming(container->array[k / 64]);
+  int i = 0;
+  for (int end = x / 64; i < end; i++){
+    sum += hamming(container->array[i]);
   }
-  // at this point, we have covered everything up to k, k not included.
-  // we have that k < x, but not so large that k+63<=x
-  // k is a power of 64
-  int bitsleft = x32 - k + 1;// will be in [0,64)
-  uint64_t leftoverword = container->array[k / 64];// k / 64 should be within scope
-  // next line may compile  to 2 or 3 efficient instructions, including a shift
-  // and it works even if bitsleft == 0.
-  leftoverword = leftoverword & ((UINT64_C(1) << bitsleft) - 1); 
-  sum += hamming(leftoverword);
+  uint64_t lastword = container->array[i];
+  uint64_t lastpos = UINT64_C(1) << (x % 64);
+  uint64_t mask = lastpos + lastpos - 1; // smear right
+  sum += hamming(lastword & mask);
   return sum;
 }
 

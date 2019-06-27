@@ -94,6 +94,23 @@ void issue208() {
     roaring_bitmap_free(r);
 }
 
+void issue208b() {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 65536 - 64; i < 65536; i++) {
+        roaring_bitmap_add(r, i);
+    }
+    for (uint32_t i = 0; i < 8196; i+=2) {
+        roaring_bitmap_add(r, i);
+    }
+    for (uint32_t i = 65536 - 64; i < 65536; i++) {
+        uint32_t expected = i - (65536 - 64) + 8196 / 2 + 1;
+        uint32_t rank = roaring_bitmap_rank(r, i);
+        assert(rank == expected);
+    }
+    roaring_bitmap_free(r);
+}
+
+
 void can_copy_empty_true() {
   can_copy_empty(true);
 }
@@ -3984,6 +4001,7 @@ void test_frozen_serialization_max_containers() {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(issue208),
+        cmocka_unit_test(issue208b),
         cmocka_unit_test(range_contains),
         cmocka_unit_test(inplaceorwide),
         cmocka_unit_test(test_contains_range),
