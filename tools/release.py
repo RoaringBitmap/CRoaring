@@ -96,7 +96,6 @@ print(versionfile + " modified")
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 import fileinput
-import re
 
 newmajorversionstring = str(newversion[0])
 mewminorversionstring = str(newversion[1])
