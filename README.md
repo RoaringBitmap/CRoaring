@@ -81,7 +81,7 @@ it from any directory where you want the amalgamation files to be written.
 It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``amalgamation_demo.c``... as well as some brief instructions. The ``amalgamation_demo.c`` file is a short example, whereas ``roaring.h`` and ``roaring.c`` are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files ``roaring.h`` and ``roaring.c`` into your project and be ready to go! No need to produce a library! See the ``amalgamation_demo.c`` file.
 
 For example, you can use the C code as follows:
-```
+```C++
 #include <stdio.h>
 #include "roaring.c"
 int main() {
@@ -95,7 +95,7 @@ int main() {
 
 The script will also generate C++ files for C++ users, including an example. You can use the C++ as follows.
 
-```
+```C++
 #include <iostream>
 #include "roaring.hh"
 #include "roaring.c"
