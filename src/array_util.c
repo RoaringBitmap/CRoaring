@@ -638,7 +638,9 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
             memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
           }
         } else {
-          memcpy(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
+           for(size_t i = 0; i < (s_a - i_a); i++) {
+                C[count + i] = A[i + i_a];
+           }
         }
         count += (int32_t)(s_a - i_a);
     }
