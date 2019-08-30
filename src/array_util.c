@@ -509,6 +509,10 @@ int32_t intersect_vector16_cardinality(const uint16_t *__restrict__ A,
     return (int32_t)count;
 }
 
+/////////
+// Warning:
+// This function may not be safe if A == C or B == C.
+/////////
 int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
                             const uint16_t *__restrict__ B, size_t s_b,
                             uint16_t *C) {
@@ -1556,6 +1560,7 @@ static int uint16_compare(const void *a, const void *b) {
 }
 
 // a one-pass SSE union algorithm
+// This function may not be safe if array1 == output or array2 == output.
 uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
                         const uint16_t *__restrict__ array2, uint32_t length2,
                         uint16_t *__restrict__ output) {
