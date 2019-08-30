@@ -186,9 +186,15 @@ void array_container_andnot(const array_container_t *array_1,
     if (out->capacity < array_1->cardinality)
         array_container_grow(out, array_1->cardinality, false);
 #ifdef ROARING_VECTOR_OPERATIONS_ENABLED
-    out->cardinality =
-        difference_vector16(array_1->array, array_1->cardinality,
+    if((out != array_1) && (out != array_2)) {
+      out->cardinality =
+          difference_vector16(array_1->array, array_1->cardinality,
                             array_2->array, array_2->cardinality, out->array);
+     } else {
+      out->cardinality =
+        difference_uint16(array_1->array, array_1->cardinality, array_2->array,
+                          array_2->cardinality, out->array);
+     }
 #else
     out->cardinality =
         difference_uint16(array_1->array, array_1->cardinality, array_2->array,
