@@ -19,7 +19,7 @@ steps:
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest -V
 ---
 kind: pipeline
 name: amd64_gcc_cmake
@@ -41,7 +41,7 @@ steps:
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest -V
 ---
 kind: pipeline
 name: arm64_clang_cmake
@@ -63,7 +63,7 @@ steps:
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest -V
 ---
 kind: pipeline
 name: arm64_gcc_cmake
