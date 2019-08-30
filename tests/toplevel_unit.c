@@ -3955,7 +3955,7 @@ void test_range_cardinality() {
 
 void frozen_serialization_compare(roaring_bitmap_t *r1) {
     size_t num_bytes = roaring_bitmap_frozen_size_in_bytes(r1);
-    char *buf = aligned_malloc(32, num_bytes);
+    char *buf = roaring_bitmap_aligned_malloc(32, num_bytes);
     roaring_bitmap_frozen_serialize(r1, buf);
 
     const roaring_bitmap_t *r2 =
@@ -3966,7 +3966,7 @@ void frozen_serialization_compare(roaring_bitmap_t *r1) {
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
-    aligned_free(buf);
+    roaring_bitmap_aligned_free(buf);
 }
 
 void test_frozen_serialization() {

@@ -49,7 +49,7 @@ bitset_container_t *bitset_container_create(void) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *)aligned_malloc(
+    bitset->array = (uint64_t *)roaring_bitmap_aligned_malloc(
         32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     if (!bitset->array) {
         free(bitset);
@@ -98,7 +98,7 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     if(bitset->array != NULL) {// Jon Strabala reports that some tools complain otherwise
-      aligned_free(bitset->array);
+      roaring_bitmap_aligned_free(bitset->array);
       bitset->array = NULL; // pedantic
     }
     free(bitset);
@@ -113,7 +113,7 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *)aligned_malloc(
+    bitset->array = (uint64_t *)roaring_bitmap_aligned_malloc(
         32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     if (!bitset->array) {
         free(bitset);
@@ -547,7 +547,7 @@ void* bitset_container_deserialize(const char *buf, size_t buf_len) {
   if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
     memcpy(ptr, buf, sizeof(bitset_container_t));
     // sizeof(__m256i) == 32
-    ptr->array = (uint64_t *) aligned_malloc(32, l);
+    ptr->array = (uint64_t *) roaring_bitmap_aligned_malloc(32, l);
     if (! ptr->array) {
         free(ptr);
         return NULL;
