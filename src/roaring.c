@@ -2934,6 +2934,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                 break;
             }
             default:
+                free(arena);
                 return NULL;
         }
     }
