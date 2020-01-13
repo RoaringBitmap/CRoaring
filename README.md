@@ -123,7 +123,11 @@ If you prefer a silent output, you can use the following command to redirect ``s
 
 # API
 
-The interface is found in the file ``include/roaring/roaring.h``.
+The C interface is found in the file ``include/roaring/roaring.h``. We have C++ interface at `cpp/roaring.hh`.
+
+# Dealing with large volumes
+
+Some users have to deal with large volumes of data. It  may be important for these users to be aware of the `addMany` (C++) `roaring_bitmap_or_many` (C) functions as it is much faster and economical to add values in batches when possible. Furthermore, calling periodically the `runOptimize` (C++) or `roaring_bitmap_run_optimize` (C) functions may help.
 
 # Example (C)
 
