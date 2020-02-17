@@ -84,7 +84,8 @@ run_container_t *run_container_from_array(const array_container_t *c) {
 /**
  * Convert the runcontainer to either a Bitmap or an Array Container, depending
  * on the cardinality.  Frees the container.
- * Allocates and returns new container, which caller is responsible for freeing
+ * Allocates and returns new container, which caller is responsible for freeing.
+ * It does not free the run container.
  */
 
 void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
@@ -102,7 +103,7 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
         }
         assert(card == answer->cardinality);
         *resulttype = ARRAY_CONTAINER_TYPE_CODE;
-        run_container_free(r);
+        //run_container_free(r);
         return answer;
     }
     bitset_container_t *answer = bitset_container_create();
@@ -112,7 +113,7 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
     }
     answer->cardinality = card;
     *resulttype = BITSET_CONTAINER_TYPE_CODE;
-    run_container_free(r);
+    //run_container_free(r);
     return answer;
 }
 

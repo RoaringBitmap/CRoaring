@@ -637,8 +637,8 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
     }
     if (i_a < s_a) {
         if(C == A) {
-          assert(count <= i_a);
-          if(count < i_a) {
+          assert((size_t)count <= i_a);
+          if((size_t)count < i_a) {
             memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
           }
         } else {

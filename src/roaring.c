@@ -1303,7 +1303,7 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
                 int32_t card = run_container_cardinality(truec);
                 void *c1 = convert_to_bitset_or_array_container(
                     truec, card, &typecode_after);
-                shared_container_free((shared_container_t *)c);
+                shared_container_free((shared_container_t *)c);// will free the run container as needed
                 ra_set_container_at_index(&r->high_low_container, i, c1,
                                           typecode_after);
 
@@ -1311,6 +1311,7 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
                 int32_t card = run_container_cardinality((run_container_t *)c);
                 void *c1 = convert_to_bitset_or_array_container(
                     (run_container_t *)c, card, &typecode_after);
+                run_container_free((run_container_t *)c);
                 ra_set_container_at_index(&r->high_low_container, i, c1,
                                           typecode_after);
             }

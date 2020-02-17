@@ -2557,6 +2557,67 @@ void test_remove_run_to_array() {
     free(ans);
 }
 
+
+void test_remove_run_to_bitset_cow() {
+    int ans_ctr = 0;
+    uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+    // bitset container  (best done with runs)
+    for (uint32_t i = 0; i < 50000; i++) {
+        if (i != 300) {  // making 2 runs
+            ans[ans_ctr++] = 65536 + i;
+        }
+    }
+
+    roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+    roaring_bitmap_set_copy_on_write(r1, true);
+    assert_true(roaring_bitmap_run_optimize(r1));  // will make a run container
+    roaring_bitmap_t *r2 = roaring_bitmap_copy(r1);
+    assert_true(roaring_bitmap_remove_run_compression(r1));  // removal done
+    assert_true(roaring_bitmap_remove_run_compression(r2));  // removal done
+    assert_true(
+        roaring_bitmap_run_optimize(r1));  // there is again a run container
+
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
+
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
+    roaring_bitmap_free(r1);
+    free(arr);
+    free(ans);
+}
+
+void test_remove_run_to_array_cow() {
+    int ans_ctr = 0;
+    uint32_t *ans = calloc(100000, sizeof(int32_t));
+
+    // array  (best done with runs)
+    for (uint32_t i = 0; i < 500; i++) {
+        if (i != 300) {  // making 2 runs
+            ans[ans_ctr++] = 65536 + i;
+        }
+    }
+
+    roaring_bitmap_t *r1 = make_roaring_from_array(ans, ans_ctr);
+    roaring_bitmap_set_copy_on_write(r1, true);
+    assert_true(roaring_bitmap_run_optimize(r1));  // will make a run container
+    roaring_bitmap_t *r2 = roaring_bitmap_copy(r1);
+    assert_true(roaring_bitmap_remove_run_compression(r1));  // removal done
+    assert_true(roaring_bitmap_remove_run_compression(r2));  // removal done
+    assert_true(
+        roaring_bitmap_run_optimize(r1));  // there is again a run container
+
+    uint64_t card = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr = (uint32_t *)malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(r1, arr);
+
+    assert_true(array_equals(arr, (int)card, ans, ans_ctr));
+    roaring_bitmap_free(r1);
+    free(arr);
+    free(ans);
+}
+
 // array in, array out
 void test_negation_array0() {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
@@ -4076,6 +4137,8 @@ int main() {
         cmocka_unit_test(test_bitset_to_self),
         cmocka_unit_test(test_conversion_to_int_array_with_runoptimize),
         cmocka_unit_test(test_run_to_self),
+        cmocka_unit_test(test_remove_run_to_bitset_cow),
+        cmocka_unit_test(test_remove_run_to_array_cow),
         cmocka_unit_test(test_remove_run_to_bitset),
         cmocka_unit_test(test_remove_run_to_array),
         cmocka_unit_test(test_negation_array0),

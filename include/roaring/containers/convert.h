@@ -29,7 +29,7 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits);
 run_container_t *run_container_from_array(const array_container_t *c);
 
 /* convert a run into either an array or a bitset
- * might free the container */
+ * might free the container. This does not free the input run container. */
 void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
                                            uint8_t *resulttype);
 
