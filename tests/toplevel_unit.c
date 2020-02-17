@@ -2584,6 +2584,7 @@ void test_remove_run_to_bitset_cow() {
 
     assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
     free(arr);
     free(ans);
 }
@@ -2614,6 +2615,7 @@ void test_remove_run_to_array_cow() {
 
     assert_true(array_equals(arr, (int)card, ans, ans_ctr));
     roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
     free(arr);
     free(ans);
 }
