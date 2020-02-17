@@ -305,6 +305,43 @@ void test_example_cpp(bool copy_on_write) {
     }
 }
 
+void test_run_compression_cpp(bool copy_on_write) {
+  Roaring r1;
+  r1.setCopyOnWrite(copy_on_write);
+  for (uint32_t i = 100; i <= 10000; i++) {
+    r1.add(i);
+  }
+  uint64_t size_origin = r1.getSizeInBytes();
+  bool has_run = r1.runOptimize();
+  uint64_t size_optimized = r1.getSizeInBytes();
+  assert_true(has_run);
+  assert_true(size_origin > size_optimized);
+  bool removed = r1.removeRunCompression();
+  assert_true(removed);
+  uint64_t size_removed = r1.getSizeInBytes();
+  assert_true(size_removed > size_optimized);
+  return;
+}
+
+
+void test_run_compression_cpp_64(bool copy_on_write) {
+  Roaring64Map r1;
+  r1.setCopyOnWrite(copy_on_write);
+  for (uint64_t i = 100; i <= 10000; i++) {
+    r1.add(i);
+  }
+  uint64_t size_origin = r1.getSizeInBytes();
+  bool has_run = r1.runOptimize();
+  uint64_t size_optimized = r1.getSizeInBytes();
+  assert_true(has_run);
+  assert_true(size_origin > size_optimized);
+  bool removed = r1.removeRunCompression();
+  assert_true(removed);
+  uint64_t size_removed = r1.getSizeInBytes();
+  assert_true(size_removed > size_optimized);
+  return;
+}
+
 void test_example_cpp_64(bool copy_on_write) {
     // create a new empty bitmap
     Roaring64Map r1;
@@ -449,6 +486,14 @@ void test_example_cpp_64_true(void **) { test_example_cpp_64(true); }
 
 void test_example_cpp_64_false(void **) { test_example_cpp_64(false); }
 
+void test_run_compression_cpp_64_true(void **) { test_run_compression_cpp_64(true); }
+
+void test_run_compression_cpp_64_false(void **) { test_run_compression_cpp_64(false); }
+
+void test_run_compression_cpp_true(void **) { test_run_compression_cpp(true); }
+
+void test_run_compression_cpp_false(void **) { test_run_compression_cpp(false); }
+
 void test_cpp_add_remove_checked(void **) {
     Roaring roaring;
     uint32_t values[4] = { 123, 9999, 0xFFFFFFF7, 0xFFFFFFFF};
@@ -557,6 +602,10 @@ int main() {
         cmocka_unit_test(test_example_cpp_64_false),
         cmocka_unit_test(test_cpp_add_remove_checked),
         cmocka_unit_test(test_cpp_add_remove_checked_64),
+        cmocka_unit_test(test_run_compression_cpp_64_true),
+        cmocka_unit_test(test_run_compression_cpp_64_false),
+        cmocka_unit_test(test_run_compression_cpp_true),
+        cmocka_unit_test(test_run_compression_cpp_false),
 		cmocka_unit_test(test_cpp_clear_64),
 		cmocka_unit_test(test_cpp_move_64),
 		cmocka_unit_test(test_cpp_bidirectional_iterator_64)};
