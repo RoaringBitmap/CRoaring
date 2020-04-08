@@ -325,8 +325,10 @@ class Roaring {
     }
 
     /**
+     * Selects the value at index rnk in the bitmap, where the smallest value
+     * is at index 0.
      * If the size of the roaring bitmap is strictly greater than rank, then
-     * this function returns true and set element to the element of given rank.
+     * this function returns true and sets element to the element of given rank.
      *   Otherwise, it returns false.
      */
     bool select(uint32_t rnk, uint32_t *element) const {
@@ -388,6 +390,10 @@ class Roaring {
 
     /**
     * Returns the number of integers that are smaller or equal to x.
+    * Thus the rank of the smallest element is one.
+    * The rank and select functions differ in convention: this function returns
+    * 1 when ranking the smallest value, but the select function returns the
+    * smallest value when using index 0.
     */
     uint64_t rank(uint32_t x) const { return roaring_bitmap_rank(&roaring, x); }
 

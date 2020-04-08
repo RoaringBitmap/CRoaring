@@ -627,15 +627,21 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
                                  uint64_t range_end);
 
 /**
+ * Selects the element at index 'rank' where the smallest element is at index 0.
  * If the size of the roaring bitmap is strictly greater than rank, then this
-   function returns true and set element to the element of given rank.
+   function returns true and sets element to the element of given rank.
    Otherwise, it returns false.
  */
 bool roaring_bitmap_select(const roaring_bitmap_t *ra, uint32_t rank,
                            uint32_t *element);
 /**
 * roaring_bitmap_rank returns the number of integers that are smaller or equal
-* to x.
+* to x. Thus if x is the first element, this function will return 1.
+*
+* The indexing convention differs between roaring_bitmap_select and
+* roaring_bitmap_rank: roaring_bitmap_select refers to the smallest value
+* as having index 0, whereas roaring_bitmap_rank returns 1 when ranking
+* the smallest value.
 */
 uint64_t roaring_bitmap_rank(const roaring_bitmap_t *bm, uint32_t x);
 
