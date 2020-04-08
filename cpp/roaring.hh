@@ -390,7 +390,8 @@ class Roaring {
 
     /**
     * Returns the number of integers that are smaller or equal to x.
-    * Thus the rank of the smallest element is one.
+    * Thus the rank of the smallest element is one.  If
+    * x is smaller than the smallest element, this function will return 0.
     * The rank and select functions differ in convention: this function returns
     * 1 when ranking the smallest value, but the select function returns the
     * smallest value when using index 0.

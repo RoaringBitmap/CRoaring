@@ -636,7 +636,8 @@ bool roaring_bitmap_select(const roaring_bitmap_t *ra, uint32_t rank,
                            uint32_t *element);
 /**
 * roaring_bitmap_rank returns the number of integers that are smaller or equal
-* to x. Thus if x is the first element, this function will return 1.
+* to x. Thus if x is the first element, this function will return 1. If
+* x is smaller than the smallest element, this function will return 0.
 *
 * The indexing convention differs between roaring_bitmap_select and
 * roaring_bitmap_rank: roaring_bitmap_select refers to the smallest value
