@@ -40,6 +40,7 @@ target_include_directories(${ROARING_LIB_NAME}
    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(${ROARING_LIB_NAME} PUBLIC roaring-headers)
+target_link_libraries(${ROARING_LIB_NAME} PUBLIC roaring-headers-cpp)
 #
 #install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
 #
