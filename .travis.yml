@@ -23,8 +23,6 @@ matrix:
   include: # ordered by execution time, slowest first
     - env: CONF=armhf
     - env: CONF=aarch64
-    - env: CONF=sani
-    - env: CONF=saninox64
     - env: CONF=debug
     - env: CONF=debugnox64
     - env: CONF=release
