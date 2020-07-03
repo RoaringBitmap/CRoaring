@@ -47,7 +47,7 @@ find_package(Options)
 find_package(LTO)
 
 ## C header files get installed to /usr/local/include/roaring typically
-install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
+
 
 add_library(roaring-headers INTERFACE)
 target_include_directories(roaring-headers INTERFACE
@@ -63,8 +63,14 @@ target_include_directories(roaring-headers-cpp INTERFACE
 ### C++ header files get installed to /usr/local/include/roaring typically
 SET(CPP_ROARING_HEADERS cpp/roaring64map.hh  cpp/roaring.hh) # needs to be updated if we add more files
 install(FILES ${CPP_ROARING_HEADERS} DESTINATION include/${ROARING_LIB_NAME})
+install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
 
-
+install(TARGETS roaring-headers roaring-headers-cpp
+   EXPORT ${ROARING_LIB_NAME}-config
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCDIR})
 enable_testing()
 include(CTest)
 
