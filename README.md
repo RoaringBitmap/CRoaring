@@ -56,6 +56,11 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 
 Serialization on big endian hardware may not be compatible with serialization on little endian hardware.
 
+# Using a CMake subdirectory
+
+If you like CMake, you can just drop CRoaring in your project as a subdirectory and get going. [See our demonstration for further details](https://github.com/RoaringBitmap/croaring_cmake_demo).
+
+
 # Amalgamation/Unity Build
 
 The CRoaring library can be amalgamated into a single source file that makes it easier
