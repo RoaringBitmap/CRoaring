@@ -43,7 +43,7 @@ target_link_libraries(${ROARING_LIB_NAME} PUBLIC roaring-headers)
 #
 #install(TARGETS ${ROARING_LIB_NAME} DESTINATION lib)
 #
-install(TARGETS ${ROARING_LIB_NAME} roaring-headers roaring-headers-cpp
+install(TARGETS ${ROARING_LIB_NAME} 
    EXPORT ${ROARING_LIB_NAME}-config
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
