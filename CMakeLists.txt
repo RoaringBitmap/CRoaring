@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
+project(RoaringBitmap
+  DESCRIPTION "Roaring bitmaps in C (and C++)"
+  LANGUAGES CXX C
+)
 include(GNUInstallDirs)
 
 set(CMAKE_MACOSX_RPATH OFF)
@@ -7,7 +11,6 @@ if (NOT CMAKE_BUILD_TYPE)
                 set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-project(RoaringBitmap)
 set(ROARING_LIB_NAME roaring)
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 2)
@@ -44,15 +47,30 @@ find_package(Options)
 find_package(LTO)
 
 ## C header files get installed to /usr/local/include/roaring typically
-install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
+
+
+add_library(roaring-headers INTERFACE)
+target_include_directories(roaring-headers INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${ROARING_LIB_NAME}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
+add_library(roaring-headers-cpp INTERFACE)
+target_include_directories(roaring-headers-cpp INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cpp>
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
 
 ####
 ### Some users want the C++ header files to be installed as well.
 ### C++ header files get installed to /usr/local/include/roaring typically
 SET(CPP_ROARING_HEADERS cpp/roaring64map.hh  cpp/roaring.hh) # needs to be updated if we add more files
 install(FILES ${CPP_ROARING_HEADERS} DESTINATION include/${ROARING_LIB_NAME})
+install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
 
-
+install(TARGETS roaring-headers roaring-headers-cpp
+   EXPORT ${ROARING_LIB_NAME}-config
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCDIR})
 enable_testing()
 include(CTest)
 
