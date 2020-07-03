@@ -41,7 +41,7 @@ The primary goal of the CRoaring is to provide a high performance low-level impl
 of the latest hardware. Roaring bitmaps are already available on a variety of platform through Java, Go, Rust... implementations. CRoaring is a library that seeks to achieve superior performance by staying close to the latest hardware.
 
 
-(c) 2016-2017 The CRoaring authors.
+(c) 2016-... The CRoaring authors.
 
 
 
