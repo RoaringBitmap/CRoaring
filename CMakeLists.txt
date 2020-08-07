@@ -46,6 +46,10 @@ find_package(CTargets)
 find_package(Options)
 find_package(LTO)
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/roaring.pc.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/roaring.pc" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/roaring.pc" DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
 ## C header files get installed to /usr/local/include/roaring typically
 
 
