@@ -16,6 +16,7 @@ ALLCFILES=$( ( [ -d $SCRIPTPATH/.git ] && ( type git >/dev/null 2>&1 ) &&  ( git
 
 # order matters
 ALLCHEADERS="
+$SCRIPTPATH/src/license-comment.h
 $SCRIPTPATH/include/roaring/roaring_version.h
 $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/containers/perfparameters.h
@@ -82,7 +83,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_C}"
     echo "#endif"
     echo ""
 
-    for h in ${ALLCFILES}; do
+    for h in "$SCRIPTPATH/src/license-comment.h" ${ALLCFILES}; do
         dofile $h
     done
 } >> "${AMAL_C}"
@@ -116,7 +117,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_HH}"
 {
     echo "#include \"${AMAL_H}\""
 
-    for h in ${ALLCPPHEADERS}; do
+    for h in "$SCRIPTPATH/src/license-comment.h" ${ALLCPPHEADERS}; do
         dofile $h
     done
 } >> "${AMAL_HH}"
