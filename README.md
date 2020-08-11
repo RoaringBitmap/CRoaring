@@ -543,6 +543,16 @@ You must understand that this implies that the produced binaries will not run on
 We have additionnal optimizations that use inline assembly. However, Visual Studio does not support inline assembly so you cannot benefit from these optimizations under Visual Studio.
 
 
+## Usage (Using `conan`)
+
+You can install the library using the conan package manager:
+
+```
+$ echo -e "[requires]\nroaring/0.2.66" > conanfile.txt
+$ conan install .
+```
+
+
 ## Usage (Using `vcpkg` on Windows, Linux and macOS)
 
 [vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and macOS can download and install `roaring` with one single command from their favorite shell.
