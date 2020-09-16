@@ -332,7 +332,7 @@ class Roaring64Map {
     bool isSubset(const Roaring64Map &r) const {
         for (const auto &map_entry : roarings) {
             auto roaring_iter = r.roarings.find(map_entry.first);
-            if (roaring_iter == roarings.cend())
+            if (roaring_iter == r.roarings.cend())
                 return false;
             else if (!map_entry.second.isSubset(roaring_iter->second))
                 return false;
