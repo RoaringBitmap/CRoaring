@@ -115,7 +115,7 @@
 
 /* wrappers for Visual Studio built-ins that look like gcc built-ins */
 /* result might be undefined when input_num is zero */
-static inline int __builtin_ctzll(unsigned long long input_num) {
+inline int __builtin_ctzll(unsigned long long input_num) {
     unsigned long index;
 #ifdef _WIN64  // highly recommended!!!
     _BitScanForward64(&index, input_num);
@@ -131,7 +131,7 @@ static inline int __builtin_ctzll(unsigned long long input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-static inline int __builtin_clzll(unsigned long long input_num) {
+inline int __builtin_clzll(unsigned long long input_num) {
     unsigned long index;
 #ifdef _WIN64  // highly recommended!!!
     _BitScanReverse64(&index, input_num);
@@ -150,7 +150,7 @@ static inline int __builtin_clzll(unsigned long long input_num) {
 #ifdef USESSE4
 /* POPCNT support was added to processors around the release of SSE4.2 */
 /* USESSE4 flag guarantees POPCNT support */
-static inline int __builtin_popcountll(unsigned long long input_num) {
+inline int __builtin_popcountll(unsigned long long input_num) {
 #ifdef _WIN64  // highly recommended!!!
 	return (int)__popcnt64(input_num);
 #else  // if we must support 32-bit Windows
