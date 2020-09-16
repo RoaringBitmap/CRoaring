@@ -511,13 +511,6 @@ int bitset_container_number_of_runs(bitset_container_t *b) {
   return num_runs;
 }
 
-int32_t bitset_container_serialize(const bitset_container_t *container, char *buf) {
-  int32_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
-  memcpy(buf, container->array, l);
-  return(l);
-}
-
-
 
 int32_t bitset_container_write(const bitset_container_t *container,
                                   char *buf) {
@@ -531,32 +524,6 @@ int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container
 	container->cardinality = cardinality;
 	memcpy(container->array, buf, BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
 	return bitset_container_size_in_bytes(container);
-}
-
-uint32_t bitset_container_serialization_len() {
-  return(sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
-}
-
-void* bitset_container_deserialize(const char *buf, size_t buf_len) {
-  bitset_container_t *ptr;
-  size_t l = sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS;
-
-  if(l != buf_len)
-    return(NULL);
-
-  if((ptr = (bitset_container_t *)malloc(sizeof(bitset_container_t))) != NULL) {
-    memcpy(ptr, buf, sizeof(bitset_container_t));
-    // sizeof(__m256i) == 32
-    ptr->array = (uint64_t *) roaring_bitmap_aligned_malloc(32, l);
-    if (! ptr->array) {
-        free(ptr);
-        return NULL;
-    }
-    memcpy(ptr->array, buf, l);
-    ptr->cardinality = bitset_container_compute_cardinality(ptr);
-  }
-
-  return((void*)ptr);
 }
 
 bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {

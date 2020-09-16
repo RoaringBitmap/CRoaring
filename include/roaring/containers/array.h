@@ -52,13 +52,6 @@ void array_container_free(array_container_t *array);
 /* Duplicate container */
 array_container_t *array_container_clone(const array_container_t *src);
 
-int32_t array_container_serialize(const array_container_t *container,
-                                  char *buf) WARN_UNUSED;
-
-uint32_t array_container_serialization_len(const array_container_t *container);
-
-void *array_container_deserialize(const char *buf, size_t buf_len);
-
 /* Get the cardinality of `array'. */
 static inline int array_container_cardinality(const array_container_t *array) {
     return array->cardinality;

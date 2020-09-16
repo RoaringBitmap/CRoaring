@@ -158,6 +158,7 @@ static inline void *container_to_bitset(void *container, uint8_t typecode) {
 
 /**
  * Get the container name from the typecode
+ * (unused at time of writing)
  */
 static inline const char *get_container_name(uint8_t typecode) {
     switch (typecode) {
@@ -585,13 +586,6 @@ static inline bool container_contains_range(const void *container, uint32_t rang
             return false;
     }
 }
-
-int32_t container_serialize(const void *container, uint8_t typecode,
-                            char *buf) WARN_UNUSED;
-
-uint32_t container_serialization_len(const void *container, uint8_t typecode);
-
-void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len);
 
 /**
  * Returns true if the two containers have the same content. Note that

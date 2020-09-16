@@ -1165,19 +1165,24 @@ void test_serialize() {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
 
+    /* manually create a run container, and inject ito a roaring bitmap */
     run_container_t *run = run_container_create_given_capacity(1024);
     assert_non_null(run);
     for (int i = 0; i < 768; i++) run_container_add(run, 3 * i);
 
-    serialize_len = run_container_serialization_len(run);
-    char *rbuf = malloc(serialize_len);
-    assert_int_equal((int32_t)serialize_len,
-                     run_container_serialize(run, rbuf));
-    run_container_t *run1 = run_container_deserialize(rbuf, serialize_len);
-    free(rbuf);
+    r1 = roaring_bitmap_create_with_capacity(1);
+    ra_append(&r1->high_low_container, 0, run, RUN_CONTAINER_TYPE_CODE);
 
-    run_container_free(run);
-    run_container_free(run1);
+    serialize_len = roaring_bitmap_size_in_bytes(r1);
+    serialized = malloc(serialize_len);
+    assert_int_equal((int32_t)serialize_len,
+                     roaring_bitmap_serialize(r1, serialized));
+    r2 = roaring_bitmap_deserialize(serialized);
+    assert_true(roaring_bitmap_equals(r1, r2));
+
+    free(serialized);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
 
     r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
                            19866827);
