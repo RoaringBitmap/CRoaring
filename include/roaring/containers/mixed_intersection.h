@@ -15,6 +15,10 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
  * valid container. */
@@ -87,5 +91,9 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
  */
 bool bitset_bitset_container_intersection_inplace(
     bitset_container_t *src_1, const bitset_container_t *src_2, void **dst);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLUDE_CONTAINERS_MIXED_INTERSECTION_H_ */

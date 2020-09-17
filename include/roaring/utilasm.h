@@ -8,6 +8,10 @@
 
 #include <roaring/portability.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(USE_BMI) & defined(ROARING_INLINE_ASM)
 #define ASMBITMANIPOPTIMIZATION  // optimization flag
 
@@ -66,4 +70,9 @@
         )
 
 #endif  // USE_BMI
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /* INCLUDE_UTILASM_H_ */

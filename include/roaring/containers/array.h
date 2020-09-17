@@ -13,6 +13,10 @@
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
 
@@ -443,5 +447,9 @@ static inline void array_container_remove_range(array_container_t *array,
       array->cardinality -= count;
   }
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

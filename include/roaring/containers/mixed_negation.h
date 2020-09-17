@@ -10,6 +10,10 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Negation across the entire range of the container.
  * Compute the  negation of src  and write the result
  * to *dst. The complement of a
@@ -119,5 +123,9 @@ int run_container_negation_range(const run_container_t *src,
 int run_container_negation_range_inplace(run_container_t *src,
                                          const int range_start,
                                          const int range_end, void **dst);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLUDE_CONTAINERS_MIXED_NEGATION_H_ */

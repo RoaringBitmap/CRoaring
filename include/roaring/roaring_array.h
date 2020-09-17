@@ -1,14 +1,15 @@
 #ifndef INCLUDE_ROARING_ARRAY_H
 #define INCLUDE_ROARING_ARRAY_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <assert.h>
 #include <roaring/array_util.h>
 #include <roaring/containers/containers.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MAX_CONTAINERS 65536
 

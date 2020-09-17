@@ -6,6 +6,10 @@
 
 #include <roaring/portability.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  *  Good old binary search.
  *  Assumes that array is sorted, has logarithmic complexity.
@@ -232,5 +236,9 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
 
 
 bool memequals(const void *s1, const void *s2, size_t n);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

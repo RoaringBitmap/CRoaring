@@ -23,6 +23,10 @@
 
 //#include "containers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst (which has no container initially).
  * Result is true iff dst is a bitset  */
@@ -151,4 +155,9 @@ bool array_array_container_ixor(array_container_t *src_1,
 
 int run_run_container_ixor(run_container_t *src_1, const run_container_t *src_2,
                            void **dst);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

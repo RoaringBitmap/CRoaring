@@ -92,8 +92,6 @@ extern inline void *container_add(void *container, uint16_t val, uint8_t typecod
 extern inline bool container_contains(const void *container, uint16_t val,
                                       uint8_t typecode);
 
-extern inline void *container_clone(const void *container, uint8_t typecode);
-
 extern inline void *container_and(const void *c1, uint8_t type1, const void *c2,
                            uint8_t type2, uint8_t *result_type);
 

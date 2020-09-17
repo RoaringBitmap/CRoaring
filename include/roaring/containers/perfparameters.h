@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
 During lazy computations, we can transform array containers into bitset
 containers as
@@ -32,6 +36,10 @@ enum { ARRAY_DEFAULT_INIT_SIZE = 0 };
 /* automatically attempt to convert a bitset to a full run */
 #ifndef OR_BITSET_CONVERSION_TO_FULL
 #define OR_BITSET_CONVERSION_TO_FULL true
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

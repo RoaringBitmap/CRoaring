@@ -5,6 +5,10 @@
 #ifndef ROARING_TYPES_H
 #define ROARING_TYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
 typedef bool (*roaring_iterator64)(uint64_t value, void *param);
 
@@ -44,5 +48,9 @@ typedef struct roaring_statistics_s {
 
     // and n_values_arrays, n_values_rle, n_values_bitmap
 } roaring_statistics_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ROARING_TYPES_H */

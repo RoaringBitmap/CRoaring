@@ -8,6 +8,10 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/
 void array_bitset_container_andnot(const array_container_t *src_1,
@@ -157,4 +161,9 @@ bool bitset_bitset_container_andnot(const bitset_container_t *src_1,
 bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
                                      const bitset_container_t *src_2,
                                      void **dst);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

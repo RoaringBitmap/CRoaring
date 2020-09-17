@@ -6,6 +6,10 @@
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Set all bits in indexes [begin,end) to true.
  */
@@ -534,5 +538,9 @@ AVXPOPCNTFNC(andnot, _mm256_andnot_si256)
  */
 
 #endif  // USEAVX
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -2566,7 +2566,7 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
             pos2 = ra_advance_until(& x2->high_low_container, s1, pos2);
         }
     }
-    return answer;
+    return answer != 0;
 }
 
 

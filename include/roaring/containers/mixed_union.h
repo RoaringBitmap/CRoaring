@@ -15,6 +15,10 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Compute the union of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.   */
 void array_bitset_container_union(const array_container_t *src_1,
@@ -98,5 +102,9 @@ void run_bitset_container_union(const run_container_t *src_1,
 void run_bitset_container_lazy_union(const run_container_t *src_1,
                                      const bitset_container_t *src_2,
                                      bitset_container_t *dst);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLUDE_CONTAINERS_MIXED_UNION_H_ */

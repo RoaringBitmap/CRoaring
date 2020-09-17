@@ -16,6 +16,10 @@
 #include <roaring/roaring_types.h>
 #include <roaring/array_util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* struct rle16_s - run length pair
  *
  * @value:  start position of the run
@@ -30,6 +34,14 @@ struct rle16_s {
 };
 
 typedef struct rle16_s rle16_t;
+
+#ifdef __cplusplus
+    #define MAKE_RLE16(val,len) \
+        {(uint16_t)(val), (uint16_t)(len)}  // no tagged structs until c++20
+#else
+    #define MAKE_RLE16(val,len) \
+        (rle16_t){.value = (uint16_t)(val), .length = (uint16_t)(len)}
+#endif
 
 /* struct run_container_s - run container bitmap
  *
@@ -383,10 +395,7 @@ static inline void run_container_append_value(run_container_t *run,
                                               rle16_t *previousrl) {
     const uint32_t previousend = previousrl->value + previousrl->length;
     if (val > previousend + 1) {  // we add a new one
-        //*previousrl = (rle16_t){.value = val, .length = 0};// requires C99
-        previousrl->value = val;
-        previousrl->length = 0;
-
+        *previousrl = MAKE_RLE16(val, 0);
         run->runs[run->n_runs] = *previousrl;
         run->n_runs++;
     } else if (val == previousend + 1) {  // we merge
@@ -401,11 +410,7 @@ static inline void run_container_append_value(run_container_t *run,
  */
 static inline rle16_t run_container_append_value_first(run_container_t *run,
                                                        uint16_t val) {
-    // rle16_t newrle = (rle16_t){.value = val, .length = 0};// requires C99
-    rle16_t newrle;
-    newrle.value = val;
-    newrle.length = 0;
-
+    rle16_t newrle = MAKE_RLE16(val, 0);
     run->runs[run->n_runs] = newrle;
     run->n_runs++;
     return newrle;
@@ -711,5 +716,8 @@ static inline void run_container_remove_range(run_container_t *run, uint32_t min
     }
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

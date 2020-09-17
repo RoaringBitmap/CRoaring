@@ -10,6 +10,10 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Return true if container1 is a subset of container2.
  */
@@ -39,5 +43,9 @@ bool run_container_is_subset_bitset(const run_container_t* container1,
 */
 bool bitset_container_is_subset_run(const bitset_container_t* container1,
                                     const run_container_t* container2);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CONTAINERS_MIXED_SUBSET_H_ */
