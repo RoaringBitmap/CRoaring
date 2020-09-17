@@ -45,13 +45,6 @@ void bitset_container_set_all(bitset_container_t *bitset);
 /* Duplicate bitset */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 
-int32_t bitset_container_serialize(const bitset_container_t *container,
-                                   char *buf) WARN_UNUSED;
-
-uint32_t bitset_container_serialization_len(void);
-
-void *bitset_container_deserialize(const char *buf, size_t buf_len);
-
 /* Set the bit in [begin,end). WARNING: as of April 2016, this method is slow
  * and
  * should not be used in performance-sensitive code. Ever.  */

@@ -614,18 +614,6 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
     }
 }
 
-int32_t run_container_serialize(const run_container_t *container, char *buf) {
-    int32_t l, off;
-
-    memcpy(buf, &container->n_runs, off = sizeof(container->n_runs));
-    memcpy(&buf[off], &container->capacity, sizeof(container->capacity));
-    off += sizeof(container->capacity);
-
-    l = sizeof(rle16_t) * container->n_runs;
-    memcpy(&buf[off], container->runs, l);
-    return (off + l);
-}
-
 int32_t run_container_write(const run_container_t *container, char *buf) {
     memcpy(buf, &container->n_runs, sizeof(uint16_t));
     memcpy(buf + sizeof(uint16_t), container->runs,
@@ -644,55 +632,6 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
            container->n_runs * sizeof(rle16_t));
     }
     return run_container_size_in_bytes(container);
-}
-
-uint32_t run_container_serialization_len(const run_container_t *container) {
-    return (sizeof(container->n_runs) + sizeof(container->capacity) +
-            sizeof(rle16_t) * container->n_runs);
-}
-
-void *run_container_deserialize(const char *buf, size_t buf_len) {
-    run_container_t *ptr;
-
-    if (buf_len < 8 /* n_runs + capacity */)
-        return (NULL);
-    else
-        buf_len -= 8;
-
-    if ((ptr = (run_container_t *)malloc(sizeof(run_container_t))) != NULL) {
-        size_t len;
-        int32_t off;
-
-        memcpy(&ptr->n_runs, buf, off = 4);
-        memcpy(&ptr->capacity, &buf[off], 4);
-        off += 4;
-
-        len = sizeof(rle16_t) * ptr->n_runs;
-
-        if (len != buf_len) {
-            free(ptr);
-            return (NULL);
-        }
-
-        if ((ptr->runs = (rle16_t *)malloc(len)) == NULL) {
-            free(ptr);
-            return (NULL);
-        }
-
-        memcpy(ptr->runs, &buf[off], len);
-
-        /* Check if returned values are monotonically increasing */
-        for (int32_t i = 0, j = 0; i < ptr->n_runs; i++) {
-            if (ptr->runs[i].value < j) {
-                free(ptr->runs);
-                free(ptr);
-                return (NULL);
-            } else
-                j = ptr->runs[i].value;
-        }
-    }
-
-    return (ptr);
 }
 
 bool run_container_iterate(const run_container_t *cont, uint32_t base,

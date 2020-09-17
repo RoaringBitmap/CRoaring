@@ -6,8 +6,6 @@ extern inline const void *container_unwrap_shared(
 extern inline void *container_mutable_unwrap_shared(
     void *candidate_shared_container, uint8_t *type);
 
-extern inline const char *get_container_name(uint8_t typecode);
-
 extern inline int container_get_cardinality(const void *container, uint8_t typecode);
 
 extern inline void *container_iand(void *c1, uint8_t type1, const void *c2,
@@ -78,63 +76,6 @@ void container_printf_as_uint32_array(const void *container, uint8_t typecode,
             return;
         default:
             __builtin_unreachable();
-    }
-}
-
-int32_t container_serialize(const void *container, uint8_t typecode,
-                            char *buf) {
-    container = container_unwrap_shared(container, &typecode);
-    switch (typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
-            return (bitset_container_serialize((const bitset_container_t *)container,
-                                               buf));
-        case ARRAY_CONTAINER_TYPE_CODE:
-            return (
-                array_container_serialize((const array_container_t *)container, buf));
-        case RUN_CONTAINER_TYPE_CODE:
-            return (run_container_serialize((const run_container_t *)container, buf));
-        default:
-            assert(0);
-            __builtin_unreachable();
-            return (-1);
-    }
-}
-
-uint32_t container_serialization_len(const void *container, uint8_t typecode) {
-    container = container_unwrap_shared(container, &typecode);
-    switch (typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
-            return bitset_container_serialization_len();
-        case ARRAY_CONTAINER_TYPE_CODE:
-            return array_container_serialization_len(
-                (const array_container_t *)container);
-        case RUN_CONTAINER_TYPE_CODE:
-            return run_container_serialization_len(
-                (const run_container_t *)container);
-        default:
-            assert(0);
-            __builtin_unreachable();
-            return (0);
-    }
-}
-
-void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len) {
-    switch (typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
-            return (bitset_container_deserialize(buf, buf_len));
-        case ARRAY_CONTAINER_TYPE_CODE:
-            return (array_container_deserialize(buf, buf_len));
-        case RUN_CONTAINER_TYPE_CODE:
-            return (run_container_deserialize(buf, buf_len));
-        case SHARED_CONTAINER_TYPE_CODE:
-            printf("this should never happen.\n");
-            assert(0);
-            __builtin_unreachable();
-            return (NULL);
-        default:
-            assert(0);
-            __builtin_unreachable();
-            return (NULL);
     }
 }
 

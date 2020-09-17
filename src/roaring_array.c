@@ -463,25 +463,6 @@ void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance) {
 }
 
 
-size_t ra_size_in_bytes(roaring_array_t *ra) {
-    size_t cardinality = 0;
-    size_t tot_len =
-        1 /* initial byte type */ + 4 /* tot_len */ + sizeof(roaring_array_t) +
-        ra->size * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
-    for (int32_t i = 0; i < ra->size; i++) {
-        tot_len +=
-            (container_serialization_len(ra->containers[i], ra->typecodes[i]) +
-             sizeof(uint16_t));
-        cardinality +=
-            container_get_cardinality(ra->containers[i], ra->typecodes[i]);
-    }
-
-    if ((cardinality * sizeof(uint32_t) + sizeof(uint32_t)) < tot_len) {
-        return cardinality * sizeof(uint32_t) + 1 + sizeof(uint32_t);
-    }
-    return tot_len;
-}
-
 void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans) {
     size_t ctr = 0;
     for (int32_t i = 0; i < ra->size; ++i) {

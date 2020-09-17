@@ -378,17 +378,6 @@ int32_t array_container_number_of_runs(const array_container_t *a) {
     return nr_runs;
 }
 
-int32_t array_container_serialize(const array_container_t *container, char *buf) {
-    int32_t l, off;
-    uint16_t cardinality = (uint16_t)container->cardinality;
-
-    memcpy(buf, &cardinality, off = sizeof(cardinality));
-    l = sizeof(uint16_t) * container->cardinality;
-    if (l) memcpy(&buf[off], container->array, l);
-
-    return (off + l);
-}
-
 /**
  * Writes the underlying array to buf, outputs how many bytes were written.
  * The number of bytes written should be
@@ -432,57 +421,6 @@ int32_t array_container_read(int32_t cardinality, array_container_t *container,
     memcpy(container->array, buf, container->cardinality * sizeof(uint16_t));
 
     return array_container_size_in_bytes(container);
-}
-
-uint32_t array_container_serialization_len(const array_container_t *container) {
-    return (sizeof(uint16_t) /* container->cardinality converted to 16 bit */ +
-            (sizeof(uint16_t) * container->cardinality));
-}
-
-void *array_container_deserialize(const char *buf, size_t buf_len) {
-    array_container_t *ptr;
-
-    if (buf_len < 2) /* capacity converted to 16 bit */
-        return (NULL);
-    else
-        buf_len -= 2;
-
-    if ((ptr = (array_container_t *)malloc(sizeof(array_container_t))) !=
-        NULL) {
-        size_t len;
-        int32_t off;
-        uint16_t cardinality;
-
-        memcpy(&cardinality, buf, off = sizeof(cardinality));
-
-        ptr->capacity = ptr->cardinality = (uint32_t)cardinality;
-        len = sizeof(uint16_t) * ptr->cardinality;
-
-        if (len != buf_len) {
-            free(ptr);
-            return (NULL);
-        }
-
-        if ((ptr->array = (uint16_t *)malloc(sizeof(uint16_t) *
-                                             ptr->capacity)) == NULL) {
-            free(ptr);
-            return (NULL);
-        }
-
-        if (len) memcpy(ptr->array, &buf[off], len);
-
-        /* Check if returned values are monotonically increasing */
-        for (int32_t i = 0, j = 0; i < ptr->cardinality; i++) {
-            if (ptr->array[i] < j) {
-                free(ptr->array);
-                free(ptr);
-                return (NULL);
-            } else
-                j = ptr->array[i];
-        }
-    }
-
-    return (ptr);
 }
 
 bool array_container_iterate(const array_container_t *cont, uint32_t base,

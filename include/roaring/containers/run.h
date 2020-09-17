@@ -64,13 +64,6 @@ void run_container_free(run_container_t *run);
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
 
-int32_t run_container_serialize(const run_container_t *container,
-                                char *buf) WARN_UNUSED;
-
-uint32_t run_container_serialization_len(const run_container_t *container);
-
-void *run_container_deserialize(const char *buf, size_t buf_len);
-
 /*
  * Effectively deletes the value at index index, repacking data.
  */
