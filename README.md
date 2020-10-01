@@ -183,7 +183,7 @@ size_t limit = 1000;
 uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
 assert(arr3 != NULL);
 roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
-free(arr3)
+free(arr3);
 
 // we can copy and compare bitmaps
 roaring_bitmap_t *z = roaring_bitmap_copy(r3);
