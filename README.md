@@ -183,7 +183,7 @@ size_t limit = 1000;
 uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
 assert(arr3 != NULL);
 roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
-free(arr3)
+free(arr3);
 
 // we can copy and compare bitmaps
 roaring_bitmap_t *z = roaring_bitmap_copy(r3);
@@ -201,7 +201,7 @@ assert(
     roaring_bitmap_equals(r1_2_3, bigunion));  // what we recover is equal
 // can also do the big union with a heap
 roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps);
-assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
+assert(roaring_bitmap_equals(r1_2_3, bigunionheap));
 
 roaring_bitmap_free(r1_2_3);
 roaring_bitmap_free(bigunion);
