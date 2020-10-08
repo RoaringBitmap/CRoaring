@@ -84,6 +84,51 @@ void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
+
+
+
+
+bool check_serialization(roaring_bitmap_t *bitmap) {
+    const int32_t size = roaring_bitmap_portable_size_in_bytes(bitmap);
+    char *data = (char *)malloc(size);
+    roaring_bitmap_portable_serialize(bitmap, data);
+    roaring_bitmap_t *deserializedBitmap = roaring_bitmap_portable_deserialize(data);
+    bool ret = roaring_bitmap_equals(bitmap, deserializedBitmap);
+    roaring_bitmap_free(deserializedBitmap);
+    free(data);
+    return ret;
+}
+
+
+void issue245() {
+    roaring_bitmap_t *bitmap = roaring_bitmap_create();
+    const uint32_t targetEntries = 2048;
+    const int32_t runLength = 8;
+    int32_t offset = 0;
+    // Add a single run more than 2 extents longs.
+    roaring_bitmap_add_range_closed(bitmap, offset, offset + runLength);
+    offset += runLength + 2;
+    // Add 2047 non-contiguous bits.
+    for (uint32_t count = 1; count < targetEntries; count++, offset += 2) {
+        roaring_bitmap_add_range_closed(bitmap, offset, offset);
+    }
+    
+    if (!check_serialization(bitmap)) {
+        printf("Bitmaps do not match at 2048 entries\n");
+        abort();
+    }
+    
+    // Add one more, forcing it to become a bitset
+    offset += 2;
+    roaring_bitmap_add_range_closed(bitmap, offset, offset);
+    
+    if (!check_serialization(bitmap)) {
+        printf("Bitmaps do not match at 2049 entries\n");
+        abort();
+    }
+    roaring_bitmap_free(bitmap);
+}
+
 void issue208() {
     roaring_bitmap_t *r = roaring_bitmap_create();
     for (uint32_t i = 1; i < 8194; i+=2) {
@@ -4068,6 +4113,7 @@ void test_frozen_serialization_max_containers() {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),
         cmocka_unit_test(issue208b),
         cmocka_unit_test(range_contains),
