@@ -27,7 +27,7 @@ set(ROARING_ARCH "native" CACHE STRING "If ROARING_DISABLE_NATIVE is OFF, the ar
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc64le")
 SET(ROARING_DISABLE_AVX ON) # for power processors, there is no hope of having AVX support
 SET(ROARING_DISABLE_NATIVE ON) # power platforms may not like -march=native
-ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc64le")
 
 
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
