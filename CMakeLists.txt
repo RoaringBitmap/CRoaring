@@ -24,6 +24,12 @@ option(ROARING_DISABLE_NEON "Forcefully disable NEON even if hardware supports i
 option(ROARING_DISABLE_NATIVE "Forcefully disable -march optimizations" OFF)
 set(ROARING_ARCH "native" CACHE STRING "If ROARING_DISABLE_NATIVE is OFF, the architecture to optimize for (-march)")
 
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc64le")
+SET(ROARING_DISABLE_AVX ON) # for power processors, there is no hope of having AVX support
+SET(ROARING_DISABLE_NATIVE ON) # power platforms may not like -march=native
+ENDIF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+
+
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
 SET(ROARING_DISABLE_AVX ON) # for ARM processors, there is no hope of having AVX support
 SET(ROARING_DISABLE_NATIVE ON) # ARM platforms may not like -march=native
