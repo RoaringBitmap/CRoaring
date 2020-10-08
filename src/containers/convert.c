@@ -292,10 +292,11 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         return NULL;
     }
 }
-
-bitset_container_t *bitset_container_from_run_range(const run_container_t *run,
-                                                    uint32_t min, uint32_t max) {
+void *container_from_run_range(const run_container_t *run,
+                                                    uint32_t min, uint32_t max, uint8_t *typecode_after) {
+    // We expect most of the time to end up with a bitset container
     bitset_container_t *bitset = bitset_container_create();
+    *typecode_after = BITSET_CONTAINER_TYPE_CODE;
     int32_t union_cardinality = 0;
     for (int32_t i = 0; i < run->n_runs; ++i) {
         uint32_t rle_min = run->runs[i].value;
@@ -307,5 +308,12 @@ bitset_container_t *bitset_container_from_run_range(const run_container_t *run,
     union_cardinality -= bitset_lenrange_cardinality(bitset->array, min, max-min);
     bitset_set_lenrange(bitset->array, min, max - min);
     bitset->cardinality = union_cardinality;
+    if(bitset->cardinality <= DEFAULT_MAX_SIZE) {
+        // we need to convert to an array container
+        array_container_t * array = array_container_from_bitset(bitset);
+        *typecode_after = ARRAY_CONTAINER_TYPE_CODE;
+        bitset_container_free(bitset);
+        return array;
+    }
     return bitset;
 }

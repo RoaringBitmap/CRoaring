@@ -2270,8 +2270,7 @@ static inline void *container_add_range(void *container, uint8_t type,
                 *result_type = RUN_CONTAINER_TYPE_CODE;
                 return run;
             } else {
-                *result_type = BITSET_CONTAINER_TYPE_CODE;
-                return bitset_container_from_run_range(run, min, max);
+                return container_from_run_range(run, min, max, result_type);
             }
         }
         default:
