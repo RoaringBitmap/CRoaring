@@ -2518,7 +2518,7 @@ bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank,
 
     if (valid) {
         key = bm->high_low_container.keys[i - 1];
-        *element |= (key << 16);
+        *element |= (((uint32_t)key) << 16);  // w/o cast, key promotes signed
         return true;
     } else
         return false;
