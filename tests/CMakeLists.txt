@@ -5,6 +5,7 @@
 
 
 add_cpp_test(cpp_unit)
+add_cpp_test(cpp_random_unit)
 add_c_test(array_container_unit)
 add_c_test(bitset_container_unit)
 add_c_test(mixed_container_unit)
