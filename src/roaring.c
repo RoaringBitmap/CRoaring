@@ -665,11 +665,17 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
             uint8_t typecode1, typecode2, typecode_result;
             void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
                                                  &typecode1);
-            c1 = get_writable_copy_if_shared(c1, &typecode1);
             void *c2 = ra_get_container_at_index(&x2->high_low_container, pos2,
                                                  &typecode2);
-            void *c =
-                container_iand(c1, typecode1, c2, typecode2, &typecode_result);
+            // We do the computation "in place" only when c1 is not a shared container.
+            // Rationale: using a shared container safely with in place computation would 
+            // require making a copy and then doing the computation in place which is likely 
+            // less efficient than avoiding in place entirely and always generating a new 
+            // container.
+            void *c = (typecode1 == SHARED_CONTAINER_TYPE_CODE) ?
+              container_and(c1, typecode1, c2, typecode2, &typecode_result)
+              : container_iand(c1, typecode1, c2, typecode2, &typecode_result);
+            
             if (c != c1) {  // in this instance a new container was created, and
                             // we need to free the old one
                 container_free(c1, typecode1);
@@ -806,19 +812,17 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
             void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
                                                  &container_type_1);
             if (!container_is_full(c1, container_type_1)) {
-                c1 = get_writable_copy_if_shared(c1, &container_type_1);
-
                 void *c2 = ra_get_container_at_index(&x2->high_low_container,
-                                                     pos2, &container_type_2);
-                void *c =
-                    container_ior(c1, container_type_1, c2, container_type_2,
+                                                      pos2, &container_type_2);
+                void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
+                     container_or(c1, container_type_1, c2, container_type_2,
+                                  &container_result_type)
+                    : container_ior(c1, container_type_1, c2, container_type_2,
                                   &container_result_type);
-                if (c !=
-                    c1) {  // in this instance a new container was created, and
-                           // we need to free the old one
+                if (c != c1) {  // in this instance a new container was created, and
+                                // we need to free the old one
                     container_free(c1, container_type_1);
                 }
-
                 ra_set_container_at_index(&x1->high_low_container, pos1, c,
                                           container_result_type);
             }
@@ -968,12 +972,16 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
                                                  &container_type_1);
-            c1 = get_writable_copy_if_shared(c1, &container_type_1);
-
             void *c2 = ra_get_container_at_index(&x2->high_low_container, pos2,
-                                                 &container_type_2);
-            void *c = container_ixor(c1, container_type_1, c2, container_type_2,
-                                     &container_result_type);
+                                                 &container_type_2);            
+            // We do the computation "in place" only when c1 is not a shared container.
+            // Rationale: using a shared container safely with in place computation would 
+            // require making a copy and then doing the computation in place which is likely 
+            // less efficient than avoiding in place entirely and always generating a new 
+            // container.
+            void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
+              container_xor(c1, container_type_1, c2, container_type_2, &container_result_type)
+              : container_ixor(c1, container_type_1, c2, container_type_2, &container_result_type);
 
             if (container_nonzero_cardinality(c, container_result_type)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c,
@@ -1113,13 +1121,17 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
                                                  &container_type_1);
-            c1 = get_writable_copy_if_shared(c1, &container_type_1);
 
             void *c2 = ra_get_container_at_index(&x2->high_low_container, pos2,
                                                  &container_type_2);
-            void *c =
-                container_iandnot(c1, container_type_1, c2, container_type_2,
-                                  &container_result_type);
+            // We do the computation "in place" only when c1 is not a shared container.
+            // Rationale: using a shared container safely with in place computation would 
+            // require making a copy and then doing the computation in place which is likely 
+            // less efficient than avoiding in place entirely and always generating a new 
+            // container.
+            void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
+              container_andnot(c1, container_type_1, c2, container_type_2, &container_result_type)
+              : container_iandnot(c1, container_type_1, c2, container_type_2, &container_result_type);
 
             if (container_nonzero_cardinality(c, container_result_type)) {
                 ra_replace_key_and_container_at_index(&x1->high_low_container,
@@ -2378,12 +2390,16 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
         if (s1 == s2) {
             void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
                                                  &container_type_1);
-            c1 = get_writable_copy_if_shared(c1, &container_type_1);
             void *c2 = ra_get_container_at_index(&x2->high_low_container, pos2,
                                                  &container_type_2);
-            void *c =
-                container_lazy_ixor(c1, container_type_1, c2, container_type_2,
-                                    &container_result_type);
+            // We do the computation "in place" only when c1 is not a shared container.
+            // Rationale: using a shared container safely with in place computation would 
+            // require making a copy and then doing the computation in place which is likely 
+            // less efficient than avoiding in place entirely and always generating a new 
+            // container.
+            void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
+              container_lazy_xor(c1, container_type_1, c2, container_type_2, &container_result_type)
+              : container_lazy_ixor(c1, container_type_1, c2, container_type_2, &container_result_type);
             if (container_nonzero_cardinality(c, container_result_type)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c,
                                           container_result_type);
