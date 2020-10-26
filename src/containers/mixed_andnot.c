@@ -13,6 +13,10 @@
 #include <roaring/containers/mixed_andnot.h>
 #include <roaring/containers/perfparameters.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+#endif
+
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/
 void array_bitset_container_andnot(const array_container_t *src_1,
@@ -501,3 +505,7 @@ bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
         return true;
     }
 }
+
+#ifdef __cplusplus
+} }  // extern "C" { namespace roaring {
+#endif

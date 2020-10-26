@@ -13,6 +13,10 @@
 #include <roaring/containers/mixed_negation.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+#endif
+
 // TODO: make simplified and optimized negation code across
 // the full range.
 
@@ -331,3 +335,7 @@ int run_container_negation_range_inplace(run_container_t *src,
 
     return return_typecode;
 }
+
+#ifdef __cplusplus
+} }  // extern "C" { namespace roaring {
+#endif

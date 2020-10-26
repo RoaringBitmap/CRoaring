@@ -11,7 +11,7 @@ An implementation of Roaring Bitmaps in C.
 #include <stdbool.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 typedef struct roaring_bitmap_s {
@@ -774,7 +774,7 @@ void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it);
 uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count);
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif

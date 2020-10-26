@@ -9,7 +9,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 /* Compute the andnot of src_1 and src_2 and write the result to
@@ -163,7 +163,7 @@ bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
                                      void **dst);
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif

@@ -6,11 +6,14 @@ A C++ header for Roaring Bitmaps.
 
 #include <stdarg.h>
 
-#include <roaring/roaring.h>
 #include <algorithm>
 #include <new>
 #include <stdexcept>
 #include <string>
+
+#include <roaring/roaring.h>
+
+namespace roaring {
 
 class RoaringSetBitForwardIterator;
 
@@ -731,5 +734,7 @@ inline RoaringSetBitForwardIterator &Roaring::end() const {
     static RoaringSetBitForwardIterator e(*this, true);
     return e;
 }
+
+}  // namespace roaring
 
 #endif /* INCLUDE_ROARING_HH_ */

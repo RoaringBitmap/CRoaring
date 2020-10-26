@@ -4,14 +4,17 @@
 
 #include <type_traits>
 #include <assert.h>
-#include <roaring/roaring.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <iostream>
+
+#include <roaring/roaring.h>
 #include "roaring.hh"
 #include "roaring64map.hh"
+using namespace roaring;
+
 extern "C" {
 #include "test.h"
 }

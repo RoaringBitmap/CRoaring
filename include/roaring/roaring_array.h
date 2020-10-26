@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 #define MAX_CONTAINERS 65536
@@ -309,7 +309,7 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
 void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance);
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif

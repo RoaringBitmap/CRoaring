@@ -9,7 +9,7 @@
 #include <roaring/portability.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 #if defined(USE_BMI) & defined(ROARING_INLINE_ASM)
@@ -72,7 +72,7 @@ extern "C" {
 #endif  // USE_BMI
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif  /* INCLUDE_UTILASM_H_ */

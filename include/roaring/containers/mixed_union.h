@@ -16,7 +16,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 /* Compute the union of src_1 and src_2 and write the result to
@@ -104,7 +104,7 @@ void run_bitset_container_lazy_union(const run_container_t *src_1,
                                      bitset_container_t *dst);
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_MIXED_UNION_H_ */

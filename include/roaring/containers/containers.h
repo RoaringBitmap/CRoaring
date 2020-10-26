@@ -19,7 +19,7 @@
 #include <roaring/bitset_util.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 // would enum be possible or better?
@@ -2359,7 +2359,7 @@ static inline void *container_remove_range(void *container, uint8_t type,
 }
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif

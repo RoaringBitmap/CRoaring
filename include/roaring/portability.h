@@ -28,7 +28,7 @@
 #endif
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" {  // portability definitions are in global scope, not a namespace
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64) && !defined(ROARING_ACK_32BIT)
@@ -247,7 +247,7 @@ static inline int hamming(uint64_t x) {
 #endif
 
 #ifdef __cplusplus
-}
+}  // extern "C" {
 #endif
 
 #endif /* INCLUDE_PORTABILITY_H_ */

@@ -4,6 +4,10 @@
 #include <roaring/containers/run.h>
 #include <roaring/portability.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+#endif
+
 extern inline uint16_t run_container_minimum(const run_container_t *run);
 extern inline uint16_t run_container_maximum(const run_container_t *run);
 extern inline int32_t interleavedBinarySearch(const rle16_t *array,
@@ -763,3 +767,7 @@ int run_container_rank(const run_container_t *container, uint16_t x) {
     }
     return sum;
 }
+
+#ifdef __cplusplus
+} }  // extern "C" { namespace roaring {
+#endif

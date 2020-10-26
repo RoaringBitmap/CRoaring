@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 #ifdef USEAVX
@@ -483,7 +483,7 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x);
 int bitset_container_index_equalorlarger(const bitset_container_t *container, uint16_t x);
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

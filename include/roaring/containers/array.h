@@ -14,7 +14,7 @@
 #include <roaring/roaring_types.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
@@ -449,7 +449,7 @@ static inline void array_container_remove_range(array_container_t *array,
 }
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

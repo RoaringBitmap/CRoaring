@@ -17,7 +17,7 @@
 #include <roaring/array_util.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { namespace roaring {
 #endif
 
 /* struct rle16_s - run length pair
@@ -717,7 +717,7 @@ static inline void run_container_remove_range(run_container_t *run, uint32_t min
 }
 
 #ifdef __cplusplus
-}
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */
