@@ -41,4 +41,4 @@ jobs:
           cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DROARING_BUILD_STATIC=ON  ..
           cmake --build . --verbose
-          ctest -j4 --output-on-failure
+          ctest  --verbose
