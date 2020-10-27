@@ -10,6 +10,10 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 /* Convert an array into a bitset. The input container is not freed or modified.
  */
 bitset_container_t *bitset_container_from_array(const array_container_t *arr);
@@ -55,5 +59,9 @@ void *convert_run_to_efficient_container_and_free(run_container_t *c,
  */
 void *container_from_run_range(const run_container_t *run,
                                                     uint32_t min, uint32_t max, uint8_t *typecode_after);
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif
 
 #endif /* INCLUDE_CONTAINERS_CONVERT_H_ */

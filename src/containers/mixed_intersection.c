@@ -8,6 +8,10 @@
 #include <roaring/containers/convert.h>
 #include <roaring/containers/mixed_intersection.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst.  */
 void array_bitset_container_intersection(const array_container_t *src_1,
@@ -342,3 +346,7 @@ bool bitset_bitset_container_intersection_inplace(
     }
     return false;  // not a bitset
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

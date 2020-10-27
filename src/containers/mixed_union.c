@@ -11,6 +11,10 @@
 #include <roaring/containers/mixed_union.h>
 #include <roaring/containers/perfparameters.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 /* Compute the union of src_1 and src_2 and write the result to
  * dst.  */
 void array_bitset_container_union(const array_container_t *src_1,
@@ -285,3 +289,7 @@ bool array_array_container_lazy_inplace_union(array_container_t *src_1,
     }
     return returnval;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

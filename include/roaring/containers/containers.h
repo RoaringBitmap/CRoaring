@@ -18,6 +18,10 @@
 #include <roaring/containers/run.h>
 #include <roaring/bitset_util.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 // would enum be possible or better?
 
 /**
@@ -71,7 +75,7 @@ void *shared_container_extract_copy(shared_container_t *container,
                                     uint8_t *typecode);
 
 /* access to container underneath */
-inline const void *container_unwrap_shared(
+static inline const void *container_unwrap_shared(
     const void *candidate_shared_container, uint8_t *type) {
     if (*type == SHARED_CONTAINER_TYPE_CODE) {
         *type =
@@ -85,7 +89,7 @@ inline const void *container_unwrap_shared(
 
 
 /* access to container underneath */
-inline void *container_mutable_unwrap_shared(
+static inline void *container_mutable_unwrap_shared(
     void *candidate_shared_container, uint8_t *type) {
     if (*type == SHARED_CONTAINER_TYPE_CODE) {
         *type =
@@ -543,7 +547,7 @@ static inline void *container_remove(void *container, uint16_t val,
 /**
  * Check whether a value is in a container, requires a  typecode
  */
-inline bool container_contains(const void *container, uint16_t val,
+static inline bool container_contains(const void *container, uint16_t val,
                                uint8_t typecode) {
     container = container_unwrap_shared(container, &typecode);
     switch (typecode) {
@@ -2353,5 +2357,9 @@ static inline void *container_remove_range(void *container, uint8_t type,
             __builtin_unreachable();
      }
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif
 
 #endif

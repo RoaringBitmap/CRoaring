@@ -15,6 +15,10 @@
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 extern inline int bitset_container_cardinality(const bitset_container_t *bitset);
 extern inline bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
@@ -683,3 +687,7 @@ int bitset_container_index_equalorlarger(const bitset_container_t *container, ui
   }
   return k * 64 + __builtin_ctzll(word);
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

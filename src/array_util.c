@@ -8,6 +8,11 @@
 #include <roaring/array_util.h>
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
+
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                                    uint16_t ikey);
 
@@ -1954,3 +1959,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
     return memcmp(s1, s2, n) == 0;
 #endif
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

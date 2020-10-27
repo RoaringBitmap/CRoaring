@@ -12,6 +12,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+
+// Note: in pure C++ code, you should avoid putting `using` in header files 
+using api::roaring_iterator;
+using api::roaring_iterator64;
+
+namespace internal {
+#endif
+
 #ifdef USEAVX
 #define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
 #else
@@ -477,4 +487,9 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x);
 
 /* Returns the index of the first value equal or larger than x, or -1 */
 int bitset_container_index_equalorlarger(const bitset_container_t *container, uint16_t x);
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif
+
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

@@ -12,6 +12,10 @@
 
 #include <roaring/portability.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace misc {
+#endif
+
 #ifdef IS_X64
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
@@ -174,6 +178,10 @@ static inline void tellmeall() {
 #endif
 }
 
+#endif
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace misc {
 #endif
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */

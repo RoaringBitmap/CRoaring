@@ -5,6 +5,10 @@
 #include <roaring/containers/convert.h>
 #include <roaring/containers/perfparameters.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 // file contains grubby stuff that must know impl. details of all container
 // types.
 bitset_container_t *bitset_container_from_array(const array_container_t *a) {
@@ -317,3 +321,7 @@ void *container_from_run_range(const run_container_t *run,
     }
     return bitset;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

@@ -4,14 +4,23 @@ An implementation of Roaring Bitmaps in C.
 
 #ifndef ROARING_H
 #define ROARING_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <roaring/roaring_array.h>
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+    
+// These definitions are needed for inlining.
+// Note: in pure C++ code, you should avoid putting `using` in header files 
+using internal::ra_get_index;
+using internal::ra_get_container_at_index;
+using internal::container_contains;
+
+namespace api {
+#endif
 
 typedef struct roaring_bitmap_s {
     roaring_array_t high_low_container;
@@ -48,10 +57,10 @@ roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
  * then ensure that you do so for all of your bitmaps since
  * interactions between bitmaps with and without COW is unsafe.
  */
-inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r) {
+static inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r) {
     return r->high_low_container.flags & ROARING_FLAG_COW;
 }
-inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r, bool cow) {
+static inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r, bool cow) {
     if (cow) {
         r->high_low_container.flags |= ROARING_FLAG_COW;
     } else {
@@ -271,7 +280,7 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_
 /**
  * Add all values in range [min, max)
  */
-inline void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
+static inline void roaring_bitmap_add_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
   if(max == min) return;
   roaring_bitmap_add_range_closed(ra, (uint32_t)min, (uint32_t)(max - 1));
 }
@@ -286,7 +295,7 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 void roaring_bitmap_remove_range_closed(roaring_bitmap_t *ra, uint32_t min, uint32_t max);
 
 /** Remove all values in range [min, max) */
-inline void roaring_bitmap_remove_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
+static inline void roaring_bitmap_remove_range(roaring_bitmap_t *ra, uint64_t min, uint64_t max) {
     if(max == min) return;
     roaring_bitmap_remove_range_closed(ra, (uint32_t)min, (uint32_t)(max - 1));
 }
@@ -304,7 +313,7 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value x is present
  */
-inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
     const uint16_t hb = val >> 16;
     /*
      * the next function call involves a binary search and lots of branching.
@@ -773,7 +782,7 @@ void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it);
 uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count);
 
 #ifdef __cplusplus
-}
+} } }  // extern "C" { namespace roaring { namespace api {
 #endif
 
 #endif

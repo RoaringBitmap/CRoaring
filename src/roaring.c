@@ -9,6 +9,12 @@
 #include <string.h>
 #include <inttypes.h>
 
+#ifdef __cplusplus
+using namespace ::roaring::internal;
+
+extern "C" { namespace roaring { namespace api {
+#endif
+
 extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
                                            uint32_t val);
 extern inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r);
@@ -2566,7 +2572,7 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
             pos2 = ra_advance_until(& x2->high_low_container, s1, pos2);
         }
     }
-    return answer;
+    return answer != 0;
 }
 
 
@@ -2958,3 +2964,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
 
     return rb;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring {
+#endif

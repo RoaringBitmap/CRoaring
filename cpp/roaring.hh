@@ -6,11 +6,14 @@ A C++ header for Roaring Bitmaps.
 
 #include <stdarg.h>
 
-#include <roaring/roaring.h>
 #include <algorithm>
 #include <new>
 #include <stdexcept>
 #include <string>
+
+#include <roaring/roaring.h>
+
+namespace roaring {
 
 class RoaringSetBitForwardIterator;
 
@@ -20,28 +23,28 @@ class Roaring {
      * Create an empty bitmap
      */
     Roaring() {
-        ra_init(&roaring.high_low_container);
+        internal::ra_init(&roaring.high_low_container);
     }
 
     /**
      * Construct a bitmap from a list of integer values.
      */
     Roaring(size_t n, const uint32_t *data) : Roaring() {
-        roaring_bitmap_add_many(&roaring, n, data);
+        api::roaring_bitmap_add_many(&roaring, n, data);
     }
 
     /**
      * Copy constructor
      */
     Roaring(const Roaring &r) {
-        bool is_ok =
-            ra_copy(&r.roaring.high_low_container, &roaring.high_low_container,
+        bool is_ok = internal::ra_copy(
+            &r.roaring.high_low_container, &roaring.high_low_container,
                     roaring_bitmap_get_copy_on_write(&r.roaring));
         if (!is_ok) {
             throw std::runtime_error("failed memory alloc in constructor");
         }
-        roaring_bitmap_set_copy_on_write(&roaring,
-            roaring_bitmap_get_copy_on_write(&r.roaring));
+        api::roaring_bitmap_set_copy_on_write(&roaring,
+            api::roaring_bitmap_get_copy_on_write(&r.roaring));
     }
 
     /**
@@ -50,7 +53,7 @@ class Roaring {
      */
     Roaring(Roaring &&r) noexcept {
         roaring = std::move(r.roaring);
-        ra_init(&r.roaring.high_low_container);
+        internal::ra_init(&r.roaring.high_low_container);
     }
 
     /**
@@ -84,21 +87,21 @@ class Roaring {
      * Add value x
      *
      */
-    void add(uint32_t x) { roaring_bitmap_add(&roaring, x); }
+    void add(uint32_t x) { api::roaring_bitmap_add(&roaring, x); }
 
     /**
      * Add value x
      * Returns true if a new value was added, false if the value was already existing.
      */
     bool addChecked(uint32_t x) { 
-        return roaring_bitmap_add_checked(&roaring, x);
+        return api::roaring_bitmap_add_checked(&roaring, x);
     }
 
     /**
     * add if all values from x (included) to y (excluded)
     */
     void addRange(const uint64_t x, const uint64_t y)  {
-        return roaring_bitmap_add_range(&roaring, x, y);
+        return api::roaring_bitmap_add_range(&roaring, x, y);
     }
 
     /**
@@ -106,68 +109,68 @@ class Roaring {
      *
      */
     void addMany(size_t n_args, const uint32_t *vals) {
-        roaring_bitmap_add_many(&roaring, n_args, vals);
+        api::roaring_bitmap_add_many(&roaring, n_args, vals);
     }
 
     /**
      * Remove value x
      *
      */
-    void remove(uint32_t x) { roaring_bitmap_remove(&roaring, x); }
+    void remove(uint32_t x) { api::roaring_bitmap_remove(&roaring, x); }
 
     /**
      * Remove value x
      * Returns true if a new value was removed, false if the value was not existing.
      */
     bool removeChecked(uint32_t x) {
-        return roaring_bitmap_remove_checked(&roaring, x);
+        return api::roaring_bitmap_remove_checked(&roaring, x);
     }
 
     /**
      * Return the largest value (if not empty)
      *
      */
-    uint32_t maximum() const { return roaring_bitmap_maximum(&roaring); }
+    uint32_t maximum() const { return api::roaring_bitmap_maximum(&roaring); }
 
     /**
     * Return the smallest value (if not empty)
     *
     */
-    uint32_t minimum() const { return roaring_bitmap_minimum(&roaring); }
+    uint32_t minimum() const { return api::roaring_bitmap_minimum(&roaring); }
 
     /**
      * Check if value x is present
      */
     bool contains(uint32_t x) const {
-        return roaring_bitmap_contains(&roaring, x);
+        return api::roaring_bitmap_contains(&roaring, x);
     }
 
     /**
     * Check if all values from x (included) to y (excluded) are present
     */
     bool containsRange(const uint64_t x, const uint64_t y) const {
-        return roaring_bitmap_contains_range(&roaring, x, y);
+        return api::roaring_bitmap_contains_range(&roaring, x, y);
     }
 
     /**
      * Destructor
      */
-    ~Roaring() { ra_clear(&roaring.high_low_container); }
+    ~Roaring() { internal::ra_clear(&roaring.high_low_container); }
 
     /**
      * Copies the content of the provided bitmap, and
      * discard the current content.
      */
     Roaring &operator=(const Roaring &r) {
-        ra_clear(&roaring.high_low_container);
-        bool is_ok =
-            ra_copy(&r.roaring.high_low_container, &roaring.high_low_container,
+        internal::ra_clear(&roaring.high_low_container);
+        bool is_ok = internal::ra_copy(
+            &r.roaring.high_low_container, &roaring.high_low_container,
                     roaring_bitmap_get_copy_on_write(&r.roaring));
         if (!is_ok) {
             throw std::runtime_error("failed memory alloc in assignment");
         }
-        roaring_bitmap_set_copy_on_write(&roaring,
-            roaring_bitmap_get_copy_on_write(&r.roaring));
+        api::roaring_bitmap_set_copy_on_write(&roaring,
+            api::roaring_bitmap_get_copy_on_write(&r.roaring));
         return *this;
     }
 
@@ -176,9 +179,9 @@ class Roaring {
      * discard the current content.
      */
     Roaring &operator=(Roaring &&r) noexcept {
-        ra_clear(&roaring.high_low_container);
+        internal::ra_clear(&roaring.high_low_container);
         roaring = std::move(r.roaring);
-        ra_init(&r.roaring.high_low_container);
+        internal::ra_init(&r.roaring.high_low_container);
         return *this;
     }
 
@@ -189,7 +192,7 @@ class Roaring {
      * modified.
      */
     Roaring &operator&=(const Roaring &r) {
-        roaring_bitmap_and_inplace(&roaring, &r.roaring);
+        api::roaring_bitmap_and_inplace(&roaring, &r.roaring);
         return *this;
     }
 
@@ -200,7 +203,7 @@ class Roaring {
      * modified.
      */
     Roaring &operator-=(const Roaring &r) {
-        roaring_bitmap_andnot_inplace(&roaring, &r.roaring);
+        api::roaring_bitmap_andnot_inplace(&roaring, &r.roaring);
         return *this;
     }
 
@@ -212,7 +215,7 @@ class Roaring {
      * See also the fastunion function to aggregate many bitmaps more quickly.
      */
     Roaring &operator|=(const Roaring &r) {
-        roaring_bitmap_or_inplace(&roaring, &r.roaring);
+        api::roaring_bitmap_or_inplace(&roaring, &r.roaring);
         return *this;
     }
 
@@ -223,7 +226,7 @@ class Roaring {
      * modified.
      */
     Roaring &operator^=(const Roaring &r) {
-        roaring_bitmap_xor_inplace(&roaring, &r.roaring);
+        api::roaring_bitmap_xor_inplace(&roaring, &r.roaring);
         return *this;
     }
 
@@ -236,26 +239,26 @@ class Roaring {
      * Get the cardinality of the bitmap (number of elements).
      */
     uint64_t cardinality() const {
-        return roaring_bitmap_get_cardinality(&roaring);
+        return api::roaring_bitmap_get_cardinality(&roaring);
     }
 
     /**
     * Returns true if the bitmap is empty (cardinality is zero).
     */
-    bool isEmpty() const { return roaring_bitmap_is_empty(&roaring); }
+    bool isEmpty() const { return api::roaring_bitmap_is_empty(&roaring); }
 
     /**
     * Returns true if the bitmap is subset of the other.
     */
     bool isSubset(const Roaring &r) const {
-        return roaring_bitmap_is_subset(&roaring, &r.roaring);
+        return api::roaring_bitmap_is_subset(&roaring, &r.roaring);
     }
 
     /**
     * Returns true if the bitmap is strict subset of the other.
     */
     bool isStrictSubset(const Roaring &r) const {
-        return roaring_bitmap_is_strict_subset(&roaring, &r.roaring);
+        return api::roaring_bitmap_is_strict_subset(&roaring, &r.roaring);
     }
 
     /**
@@ -265,21 +268,21 @@ class Roaring {
      * (e.g., ans = new uint32[mybitmap.cardinality()];)
      */
     void toUint32Array(uint32_t *ans) const {
-        roaring_bitmap_to_uint32_array(&roaring, ans);
+        api::roaring_bitmap_to_uint32_array(&roaring, ans);
     }
     /**
      * to int array with pagination
      * 
      */
     void rangeUint32Array(uint32_t *ans, size_t offset, size_t limit) const {
-        roaring_bitmap_range_uint32_array(&roaring, offset, limit, ans);
+        api::roaring_bitmap_range_uint32_array(&roaring, offset, limit, ans);
     }
 
     /**
      * Return true if the two bitmaps contain the same elements.
      */
     bool operator==(const Roaring &r) const {
-        return roaring_bitmap_equals(&roaring, &r.roaring);
+        return api::roaring_bitmap_equals(&roaring, &r.roaring);
     }
 
     /**
@@ -287,7 +290,7 @@ class Roaring {
      * areas outside the range are passed through unchanged.
      */
     void flip(uint64_t range_start, uint64_t range_end) {
-        roaring_bitmap_flip_inplace(&roaring, range_start, range_end);
+        api::roaring_bitmap_flip_inplace(&roaring, range_start, range_end);
     }
 
     /**
@@ -295,7 +298,7 @@ class Roaring {
      *  return whether a change was applied
      */
     bool removeRunCompression() {
-        return roaring_bitmap_remove_run_compression(&roaring);
+        return api::roaring_bitmap_remove_run_compression(&roaring);
     }
 
     /** convert array and bitmap containers to run containers when it is more
@@ -304,13 +307,13 @@ class Roaring {
      * true if the result has at least one run container.
      * Additional savings might be possible by calling shrinkToFit().
      */
-    bool runOptimize() { return roaring_bitmap_run_optimize(&roaring); }
+    bool runOptimize() { return api::roaring_bitmap_run_optimize(&roaring); }
 
     /**
      * If needed, reallocate memory to shrink the memory usage. Returns
      * the number of bytes saved.
     */
-    size_t shrinkToFit() { return roaring_bitmap_shrink_to_fit(&roaring); }
+    size_t shrinkToFit() { return api::roaring_bitmap_shrink_to_fit(&roaring); }
 
     /**
      * Iterate over the bitmap elements. The function iterator is called once for
@@ -321,7 +324,7 @@ class Roaring {
      * should stop), and takes (uint32_t,void*) as inputs.
      */
     void iterate(roaring_iterator iterator, void *ptr) const {
-        roaring_iterate(&roaring, iterator, ptr);
+        api::roaring_iterate(&roaring, iterator, ptr);
     }
 
     /**
@@ -332,7 +335,7 @@ class Roaring {
      *   Otherwise, it returns false.
      */
     bool select(uint32_t rnk, uint32_t *element) const {
-        return roaring_bitmap_select(&roaring, rnk, element);
+        return api::roaring_bitmap_select(&roaring, rnk, element);
     }
 
     /**
@@ -340,7 +343,7 @@ class Roaring {
      *
      */
     uint64_t and_cardinality(const Roaring &r) const {
-        return roaring_bitmap_and_cardinality(&roaring, &r.roaring);
+        return api::roaring_bitmap_and_cardinality(&roaring, &r.roaring);
     }
 
     /**
@@ -348,7 +351,7 @@ class Roaring {
      *
      */
     bool intersect(const Roaring &r) const {
-    	 return roaring_bitmap_intersect(&roaring, &r.roaring);
+    	 return api::roaring_bitmap_intersect(&roaring, &r.roaring);
     }
 
     /**
@@ -360,7 +363,7 @@ class Roaring {
      *
      */
     double jaccard_index(const Roaring &r) const {
-        return roaring_bitmap_jaccard_index(&roaring, &r.roaring);
+        return api::roaring_bitmap_jaccard_index(&roaring, &r.roaring);
     }
 
     /**
@@ -368,7 +371,7 @@ class Roaring {
      *
      */
     uint64_t or_cardinality(const Roaring &r) const {
-        return roaring_bitmap_or_cardinality(&roaring, &r.roaring);
+        return api::roaring_bitmap_or_cardinality(&roaring, &r.roaring);
     }
 
     /**
@@ -376,7 +379,7 @@ class Roaring {
      *
      */
     uint64_t andnot_cardinality(const Roaring &r) const {
-        return roaring_bitmap_andnot_cardinality(&roaring, &r.roaring);
+        return api::roaring_bitmap_andnot_cardinality(&roaring, &r.roaring);
     }
 
     /**
@@ -385,7 +388,7 @@ class Roaring {
      *
      */
     uint64_t xor_cardinality(const Roaring &r) const {
-        return roaring_bitmap_xor_cardinality(&roaring, &r.roaring);
+        return api::roaring_bitmap_xor_cardinality(&roaring, &r.roaring);
     }
 
     /**
@@ -396,7 +399,9 @@ class Roaring {
     * 1 when ranking the smallest value, but the select function returns the
     * smallest value when using index 0.
     */
-    uint64_t rank(uint32_t x) const { return roaring_bitmap_rank(&roaring, x); }
+    uint64_t rank(uint32_t x) const {
+        return api::roaring_bitmap_rank(&roaring, x);
+    }
 
     /**
     * write a bitmap to a char buffer. This is meant to be compatible with
@@ -440,9 +445,9 @@ class Roaring {
     */
     size_t write(char *buf, bool portable = true) const {
         if (portable)
-            return roaring_bitmap_portable_serialize(&roaring, buf);
+            return api::roaring_bitmap_portable_serialize(&roaring, buf);
         else
-            return roaring_bitmap_serialize(&roaring, buf);
+            return api::roaring_bitmap_serialize(&roaring, buf);
     }
 
     /**
@@ -457,7 +462,9 @@ class Roaring {
      * many, many bytes could be read. See also readSafe.
      */
     static Roaring read(const char *buf, bool portable = true) {
-        roaring_bitmap_t * r = portable ? roaring_bitmap_portable_deserialize(buf) : roaring_bitmap_deserialize(buf);
+        roaring_bitmap_t * r = portable
+            ? api::roaring_bitmap_portable_deserialize(buf)
+            : api::roaring_bitmap_deserialize(buf);
         if (r == NULL) {
             throw std::runtime_error("failed alloc while reading");
         }
@@ -469,7 +476,8 @@ class Roaring {
      *
      */
     static Roaring readSafe(const char *buf, size_t maxbytes) {
-        roaring_bitmap_t * r = roaring_bitmap_portable_deserialize_safe(buf,maxbytes);
+        roaring_bitmap_t * r =
+                api::roaring_bitmap_portable_deserialize_safe(buf,maxbytes);
         if (r == NULL) {
             throw std::runtime_error("failed alloc while reading");
         }
@@ -486,9 +494,9 @@ class Roaring {
      */
     size_t getSizeInBytes(bool portable = true) const {
         if (portable)
-            return roaring_bitmap_portable_size_in_bytes(&roaring);
+            return api::roaring_bitmap_portable_size_in_bytes(&roaring);
         else
-            return roaring_bitmap_size_in_bytes(&roaring);
+            return api::roaring_bitmap_size_in_bytes(&roaring);
     }
 
     /**
@@ -496,7 +504,7 @@ class Roaring {
      * The current bitmap and the provided bitmap are unchanged.
      */
     Roaring operator&(const Roaring &o) const {
-        roaring_bitmap_t *r = roaring_bitmap_and(&roaring, &o.roaring);
+        roaring_bitmap_t *r = api::roaring_bitmap_and(&roaring, &o.roaring);
         if (r == NULL) {
             throw std::runtime_error("failed materalization in and");
         }
@@ -508,7 +516,7 @@ class Roaring {
      * The current bitmap and the provided bitmap are unchanged.
      */
     Roaring operator-(const Roaring &o) const {
-        roaring_bitmap_t *r = roaring_bitmap_andnot(&roaring, &o.roaring);
+        roaring_bitmap_t *r = api::roaring_bitmap_andnot(&roaring, &o.roaring);
         if (r == NULL) {
             throw std::runtime_error("failed materalization in andnot");
         }
@@ -520,7 +528,7 @@ class Roaring {
      * The current bitmap and the provided bitmap are unchanged.
      */
     Roaring operator|(const Roaring &o) const {
-        roaring_bitmap_t *r = roaring_bitmap_or(&roaring, &o.roaring);
+        roaring_bitmap_t *r = api::roaring_bitmap_or(&roaring, &o.roaring);
         if (r == NULL) {
             throw std::runtime_error("failed materalization in or");
         }
@@ -532,7 +540,7 @@ class Roaring {
      * The current bitmap and the provided bitmap are unchanged.
      */
     Roaring operator^(const Roaring &o) const {
-        roaring_bitmap_t *r = roaring_bitmap_xor(&roaring, &o.roaring);
+        roaring_bitmap_t *r = api::roaring_bitmap_xor(&roaring, &o.roaring);
         if (r == NULL) {
             throw std::runtime_error("failed materalization in xor");
         }
@@ -543,13 +551,13 @@ class Roaring {
      * Whether or not we apply copy and write.
      */
     void setCopyOnWrite(bool val) {
-        roaring_bitmap_set_copy_on_write(&roaring, val);
+        api::roaring_bitmap_set_copy_on_write(&roaring, val);
     }
 
     /**
      * Print the content of the bitmap
      */
-    void printf() const { roaring_bitmap_printf(&roaring); }
+    void printf() const { api::roaring_bitmap_printf(&roaring); }
 
     /**
      * Print the content of the bitmap into a string
@@ -580,7 +588,7 @@ class Roaring {
      * Whether or not copy and write is active.
      */
     bool getCopyOnWrite() const {
-        return roaring_bitmap_get_copy_on_write(&roaring);
+        return api::roaring_bitmap_get_copy_on_write(&roaring);
     }
 
     /**
@@ -595,7 +603,7 @@ class Roaring {
         }
         for (size_t k = 0; k < n; ++k) x[k] = &inputs[k]->roaring;
 
-        roaring_bitmap_t *c_ans = roaring_bitmap_or_many(n, x);
+        roaring_bitmap_t *c_ans = api::roaring_bitmap_or_many(n, x);
         if (c_ans == NULL) {
             free(x);
             throw std::runtime_error("failed memory alloc in fastunion");
@@ -675,28 +683,28 @@ class RoaringSetBitForwardIterator final {
     * Move the iterator to the first value >= val.
     */
     void equalorlarger(uint32_t val) {
-      roaring_move_uint32_iterator_equalorlarger(&i,val);
+        api::roaring_move_uint32_iterator_equalorlarger(&i,val);
     }
 
     type_of_iterator &operator++() {  // ++i, must returned inc. value
-        roaring_advance_uint32_iterator(&i);
+        api::roaring_advance_uint32_iterator(&i);
         return *this;
     }
 
     type_of_iterator operator++(int) {  // i++, must return orig. value
         RoaringSetBitForwardIterator orig(*this);
-        roaring_advance_uint32_iterator(&i);
+        api::roaring_advance_uint32_iterator(&i);
         return orig;
     }
 
     type_of_iterator& operator--() { // prefix --
-        roaring_previous_uint32_iterator(&i);
+        api::roaring_previous_uint32_iterator(&i);
         return *this;
     }
 
     type_of_iterator operator--(int) { // postfix --
         RoaringSetBitForwardIterator orig(*this);
-        roaring_previous_uint32_iterator(&i);
+        api::roaring_previous_uint32_iterator(&i);
         return orig;
     }
 
@@ -716,7 +724,7 @@ class RoaringSetBitForwardIterator final {
             i.has_value = false;
             i.current_value = UINT32_MAX;
         } else {
-            roaring_init_iterator(&parent.roaring, &i);
+            api::roaring_init_iterator(&parent.roaring, &i);
         }
     }
 
@@ -731,5 +739,7 @@ inline RoaringSetBitForwardIterator &Roaring::end() const {
     static RoaringSetBitForwardIterator e(*this, true);
     return e;
 }
+
+}  // namespace roaring
 
 #endif /* INCLUDE_ROARING_HH_ */

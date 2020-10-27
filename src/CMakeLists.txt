@@ -33,6 +33,10 @@ set(ROARING_SRC
     roaring_priority_queue.c
     roaring_array.c)
 
+if(ROARING_BUILD_C_AS_CPP)  # more checks and tools, e.g. <type_traits> analysis 
+  SET_SOURCE_FILES_PROPERTIES(${ROARING_SRC} PROPERTIES LANGUAGE CXX)
+endif()
+
 add_library(${ROARING_LIB_NAME} ${ROARING_LIB_TYPE} ${ROARING_SRC})
 target_include_directories(${ROARING_LIB_NAME}
   PUBLIC

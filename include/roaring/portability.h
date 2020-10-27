@@ -27,6 +27,9 @@
 #include <malloc.h>  // this should never be needed but there are some reports that it is needed.
 #endif
 
+#ifdef __cplusplus
+extern "C" {  // portability definitions are in global scope, not a namespace
+#endif
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64) && !defined(ROARING_ACK_32BIT)
 #pragma message( \
@@ -241,6 +244,10 @@ static inline int hamming(uint64_t x) {
 
 #ifndef UINT32_C
 #define UINT32_C(c) (c##UL)
+#endif
+
+#ifdef __cplusplus
+}  // extern "C" {
 #endif
 
 #endif /* INCLUDE_PORTABILITY_H_ */

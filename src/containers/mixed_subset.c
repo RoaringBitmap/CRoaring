@@ -1,6 +1,10 @@
 #include <roaring/array_util.h>
 #include <roaring/containers/mixed_subset.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 bool array_container_is_subset_bitset(const array_container_t* container1,
                                       const bitset_container_t* container2) {
     if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
@@ -131,3 +135,7 @@ bool bitset_container_is_subset_run(const bitset_container_t* container1,
     }
     return true;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

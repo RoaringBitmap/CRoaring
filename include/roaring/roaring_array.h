@@ -1,14 +1,17 @@
 #ifndef INCLUDE_ROARING_ARRAY_H
 #define INCLUDE_ROARING_ARRAY_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <assert.h>
 #include <roaring/array_util.h>
 #include <roaring/containers/containers.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+
+namespace api {
+#endif
 
 #define MAX_CONTAINERS 65536
 
@@ -17,13 +20,6 @@ extern "C" {
 
 #define ROARING_FLAG_COW UINT8_C(0x1)
 #define ROARING_FLAG_FROZEN UINT8_C(0x2)
-
-enum {
-    SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
-    SERIAL_COOKIE = 12347,
-    FROZEN_COOKIE = 13766,
-    NO_OFFSET_THRESHOLD = 4
-};
 
 /**
  * Roaring arrays are array-based key-value pairs having containers as values
@@ -43,6 +39,22 @@ typedef struct roaring_array_s {
     uint8_t *typecodes;
     uint8_t flags;
 } roaring_array_t;
+
+#ifdef __cplusplus
+}  // namespace api
+
+// Note: in pure C++ code, you should avoid putting `using` in header files
+using api::roaring_array_t;
+
+namespace internal {
+#endif
+
+enum {
+    SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
+    SERIAL_COOKIE = 12347,
+    FROZEN_COOKIE = 13766,
+    NO_OFFSET_THRESHOLD = 4
+};
 
 /**
  * Create a new roaring array
@@ -308,7 +320,8 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
 void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance);
 
 #ifdef __cplusplus
-}
+}  // namespace internal
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif

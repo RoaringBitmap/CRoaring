@@ -13,6 +13,10 @@
 #include <roaring/containers/mixed_negation.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 // TODO: make simplified and optimized negation code across
 // the full range.
 
@@ -311,7 +315,7 @@ int run_container_negation_range_inplace(run_container_t *src,
     }
 
     // as with Java implementation, use locals to give self a buffer of depth 1
-    rle16_t buffered = (rle16_t){.value = (uint16_t)0, .length = (uint16_t)0};
+    rle16_t buffered = MAKE_RLE16(0, 0);
     rle16_t next = buffered;
     if (k < my_nbr_runs) buffered = src->runs[k];
 
@@ -331,3 +335,7 @@ int run_container_negation_range_inplace(run_container_t *src,
 
     return return_typecode;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

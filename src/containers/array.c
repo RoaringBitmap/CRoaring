@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 extern inline uint16_t array_container_minimum(const array_container_t *arr);
 extern inline uint16_t array_container_maximum(const array_container_t *arr);
 extern inline int array_container_index_equalorlarger(const array_container_t *arr, uint16_t x);
@@ -438,3 +442,7 @@ bool array_container_iterate64(const array_container_t *cont, uint32_t base,
             return false;
     return true;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

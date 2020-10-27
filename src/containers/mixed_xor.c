@@ -11,6 +11,10 @@
 #include <roaring/containers/mixed_xor.h>
 #include <roaring/containers/perfparameters.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst (which has no container initially).
  * Result is true iff dst is a bitset  */
@@ -343,3 +347,7 @@ int run_run_container_ixor(run_container_t *src_1, const run_container_t *src_2,
     run_container_free(src_1);
     return ans;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

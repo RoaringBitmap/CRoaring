@@ -4,17 +4,24 @@
 
 #include <type_traits>
 #include <assert.h>
-#include <roaring/roaring.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <iostream>
-#include "roaring.hh"
-#include "roaring64map.hh"
+
 extern "C" {
 #include "test.h"
 }
+
+#include <roaring/roaring.h>
+using namespace roaring::api;  // access to pure C exported API for testing
+
+#include "roaring.hh"
+using roaring::Roaring;  // the C++ wrapper class
+
+#include "roaring64map.hh"
+using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,

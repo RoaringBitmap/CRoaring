@@ -9,6 +9,10 @@
 #include <roaring/containers/containers.h>
 #include <roaring/roaring_array.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 // Convention: [0,ra->size) all elements are initialized
 //  [ra->size, ra->allocation_size) is junk and contains nothing needing freeing
 
@@ -898,3 +902,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
     }
     return true;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

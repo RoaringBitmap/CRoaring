@@ -6,6 +6,10 @@
 
 #include <roaring/bitset_util.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 #ifdef IS_X64
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -925,3 +929,7 @@ void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length) {
         list++;
     }
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

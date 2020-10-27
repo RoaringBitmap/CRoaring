@@ -1597,7 +1597,7 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
             // run_container_append does not dynamically increase its
             // array
             run_container_append_first(
-                RI, (rle16_t){.value = offsetx, .length = actual_runlen - 1});
+                RI, MAKE_RLE16(offsetx, actual_runlen - 1));
             card += actual_runlen;
             if (++runlen == k) runlen = h;  // wrap after k-1 back to h.
         }
@@ -1678,7 +1678,7 @@ static int run_negation_range_tests_simpler(int k, int h, int start_offset,
                 actual_runlen = (1 << 16) - offsetx;
 
             run_container_append_first(
-                RI, (rle16_t){.value = offsetx, .length = actual_runlen - 1});
+                RI, MAKE_RLE16(offsetx, actual_runlen));
             card += actual_runlen;
             if (++runlen == k) runlen = h;
         }

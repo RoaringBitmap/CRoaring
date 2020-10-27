@@ -1,5 +1,11 @@
 #include <roaring/roaring.h>
 
+#ifdef __cplusplus
+using namespace ::roaring::internal;
+
+extern "C" { namespace roaring { namespace api {
+#endif
+
 struct roaring_pq_element_s {
     uint64_t size;
     bool is_temporary;
@@ -239,3 +245,7 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
     pq_free(pq);
     return answer;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace api {
+#endif
