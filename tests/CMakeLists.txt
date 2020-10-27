@@ -15,8 +15,8 @@ add_c_test(format_portability_unit)
 add_c_test(robust_deserialization_unit)
 add_c_test(container_comparison_unit)
 
-if (NOT MSVC)
-# We exclude POSIX tests from Visual Studio default build
+if (NOT WIN32)
+# We exclude POSIX tests from Microsoft Windows
 add_c_test(realdata_unit)
 # We used to exclude POSIX tests from Visual Studio default build the documented way but this leads to spurious test failures.
 # set_target_properties(realdata_unit PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
