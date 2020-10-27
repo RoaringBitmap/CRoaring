@@ -14,7 +14,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 // TODO: make simplified and optimized negation code across
@@ -337,5 +337,5 @@ int run_container_negation_range_inplace(run_container_t *src,
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

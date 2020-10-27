@@ -18,6 +18,12 @@
 
 #ifdef __cplusplus
 extern "C" { namespace roaring {
+
+// Note: in pure C++ code, you should avoid putting `using` in header files 
+using api::roaring_iterator;
+using api::roaring_iterator64;
+
+namespace internal {
 #endif
 
 /* struct rle16_s - run length pair
@@ -717,7 +723,7 @@ static inline void run_container_remove_range(run_container_t *run, uint32_t min
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

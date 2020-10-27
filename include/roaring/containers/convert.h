@@ -11,7 +11,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /* Convert an array into a bitset. The input container is not freed or modified.
@@ -61,7 +61,7 @@ void *container_from_run_range(const run_container_t *run,
                                                     uint32_t min, uint32_t max, uint8_t *typecode_after);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_CONVERT_H_ */

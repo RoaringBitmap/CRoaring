@@ -2,7 +2,7 @@
 #include <roaring/containers/containers.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 extern inline const void *container_unwrap_shared(
@@ -213,5 +213,5 @@ extern inline void *container_andnot(const void *c1, uint8_t type1, const void *
                               uint8_t type2, uint8_t *result_type);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

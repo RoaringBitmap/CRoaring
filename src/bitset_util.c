@@ -7,7 +7,7 @@
 #include <roaring/bitset_util.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 #ifdef IS_X64
@@ -931,5 +931,5 @@ void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length) {
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

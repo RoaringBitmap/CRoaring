@@ -15,6 +15,12 @@
 
 #ifdef __cplusplus
 extern "C" { namespace roaring {
+
+// Note: in pure C++ code, you should avoid putting `using` in header files 
+using api::roaring_iterator;
+using api::roaring_iterator64;
+
+namespace internal {
 #endif
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
@@ -449,7 +455,7 @@ static inline void array_container_remove_range(array_container_t *array,
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } } // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

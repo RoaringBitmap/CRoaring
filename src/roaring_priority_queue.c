@@ -1,7 +1,9 @@
 #include <roaring/roaring.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+using namespace ::roaring::internal;
+
+extern "C" { namespace roaring { namespace api {
 #endif
 
 struct roaring_pq_element_s {
@@ -245,5 +247,5 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace api {
 #endif

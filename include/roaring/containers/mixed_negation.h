@@ -11,7 +11,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /* Negation across the entire range of the container.
@@ -125,7 +125,7 @@ int run_container_negation_range_inplace(run_container_t *src,
                                          const int range_end, void **dst);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_MIXED_NEGATION_H_ */

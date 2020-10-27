@@ -7,7 +7,7 @@
 #include <roaring/utilasm.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /*
@@ -540,7 +540,7 @@ AVXPOPCNTFNC(andnot, _mm256_andnot_si256)
 #endif  // USEAVX
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal
 #endif
 
 #endif

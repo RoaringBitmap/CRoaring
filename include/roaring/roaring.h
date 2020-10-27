@@ -12,6 +12,14 @@ An implementation of Roaring Bitmaps in C.
 
 #ifdef __cplusplus
 extern "C" { namespace roaring {
+    
+// These definitions are needed for inlining.
+// Note: in pure C++ code, you should avoid putting `using` in header files 
+using internal::ra_get_index;
+using internal::ra_get_container_at_index;
+using internal::container_contains;
+
+namespace api {
 #endif
 
 typedef struct roaring_bitmap_s {
@@ -774,7 +782,7 @@ void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it);
 uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace api {
 #endif
 
 #endif

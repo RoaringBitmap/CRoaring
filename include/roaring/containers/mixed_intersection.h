@@ -16,7 +16,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /* Compute the intersection of src_1 and src_2 and write the result to
@@ -93,7 +93,7 @@ bool bitset_bitset_container_intersection_inplace(
     bitset_container_t *src_1, const bitset_container_t *src_2, void **dst);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_MIXED_INTERSECTION_H_ */

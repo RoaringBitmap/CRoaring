@@ -10,7 +10,7 @@
 #include <roaring/roaring_array.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 // Convention: [0,ra->size) all elements are initialized
@@ -904,5 +904,5 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

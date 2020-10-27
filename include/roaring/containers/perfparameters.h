@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /**
@@ -39,7 +39,7 @@ enum { ARRAY_DEFAULT_INIT_SIZE = 0 };
 #endif
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif

@@ -11,7 +11,7 @@
 #include <roaring/containers/run.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /**
@@ -45,7 +45,7 @@ bool bitset_container_is_subset_run(const bitset_container_t* container1,
                                     const run_container_t* container2);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* CONTAINERS_MIXED_SUBSET_H_ */

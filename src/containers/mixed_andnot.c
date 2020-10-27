@@ -14,7 +14,7 @@
 #include <roaring/containers/perfparameters.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /* Compute the andnot of src_1 and src_2 and write the result to
@@ -507,5 +507,5 @@ bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

@@ -24,7 +24,7 @@
 //#include "containers.h"
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 /* Compute the xor of src_1 and src_2 and write the result to
@@ -157,7 +157,7 @@ int run_run_container_ixor(run_container_t *src_1, const run_container_t *src_2,
                            void **dst);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif

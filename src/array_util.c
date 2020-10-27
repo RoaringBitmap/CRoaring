@@ -10,7 +10,7 @@
 #include <roaring/utilasm.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
@@ -1961,5 +1961,5 @@ bool memequals(const void *s1, const void *s2, size_t n) {
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

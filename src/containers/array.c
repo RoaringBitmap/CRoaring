@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 extern inline uint16_t array_container_minimum(const array_container_t *arr);
@@ -444,5 +444,5 @@ bool array_container_iterate64(const array_container_t *cont, uint32_t base,
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

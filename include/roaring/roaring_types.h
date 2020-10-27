@@ -6,7 +6,7 @@
 #define ROARING_TYPES_H
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace api {
 #endif
 
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
@@ -50,7 +50,7 @@ typedef struct roaring_statistics_s {
 } roaring_statistics_t;
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace api {
 #endif
 
 #endif /* ROARING_TYPES_H */

@@ -13,7 +13,7 @@
 #include <roaring/portability.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace misc {
 #endif
 
 #ifdef IS_X64
@@ -181,7 +181,7 @@ static inline void tellmeall() {
 #endif
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace misc {
 #endif
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */

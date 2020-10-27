@@ -14,6 +14,12 @@
 
 #ifdef __cplusplus
 extern "C" { namespace roaring {
+
+// Note: in pure C++ code, you should avoid putting `using` in header files 
+using api::roaring_iterator;
+using api::roaring_iterator64;
+
+namespace internal {
 #endif
 
 #ifdef USEAVX
@@ -483,7 +489,7 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x);
 int bitset_container_index_equalorlarger(const bitset_container_t *container, uint16_t x);
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_BITSET_H_ */

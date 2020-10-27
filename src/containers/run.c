@@ -5,7 +5,7 @@
 #include <roaring/portability.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 extern inline uint16_t run_container_minimum(const run_container_t *run);
@@ -769,5 +769,5 @@ int run_container_rank(const run_container_t *container, uint16_t x) {
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

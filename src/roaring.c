@@ -10,7 +10,9 @@
 #include <inttypes.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+using namespace ::roaring::internal;
+
+extern "C" { namespace roaring { namespace api {
 #endif
 
 extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
@@ -2964,5 +2966,5 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring {
 #endif

@@ -16,7 +16,7 @@
 #include <roaring/utilasm.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 extern inline int bitset_container_cardinality(const bitset_container_t *bitset);
@@ -689,5 +689,5 @@ int bitset_container_index_equalorlarger(const bitset_container_t *container, ui
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif

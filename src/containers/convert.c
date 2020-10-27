@@ -6,7 +6,7 @@
 #include <roaring/containers/perfparameters.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" { namespace roaring { namespace internal {
 #endif
 
 // file contains grubby stuff that must know impl. details of all container
@@ -323,5 +323,5 @@ void *container_from_run_range(const run_container_t *run,
 }
 
 #ifdef __cplusplus
-} }  // extern "C" { namespace roaring {
+} } }  // extern "C" { namespace roaring { namespace internal {
 #endif
