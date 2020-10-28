@@ -131,13 +131,13 @@ cat <<< '
 #include "roaring.hh"
 #include "roaring.c"
 int main() {
-  Roaring r1;
+  roaring::Roaring r1;
   for (uint32_t i = 100; i < 1000; i++) {
     r1.add(i);
   }
   std::cout << "cardinality = " << r1.cardinality() << std::endl;
 
-  Roaring64Map r2;
+  roaring::Roaring64Map r2;
   for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {
     r2.add(i);
   }

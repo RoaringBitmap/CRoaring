@@ -25,7 +25,9 @@ class Roaring64MapSetBitForwardIterator;
 class Roaring64MapSetBitBiDirectionalIterator;
 
 class Roaring64Map {
-   public:
+  typedef api::roaring_bitmap_t roaring_bitmap_t;
+
+  public:
     /**
      * Create an empty bitmap
      */
@@ -998,7 +1000,7 @@ class Roaring64MapSetBitForwardIterator {
 	const std::map<uint32_t, Roaring>& p;
     std::map<uint32_t, Roaring>::const_iterator map_iter;
     std::map<uint32_t, Roaring>::const_iterator map_end;
-    roaring_uint32_iterator_t i;
+    api::roaring_uint32_iterator_t i;
 };
 
 class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitForwardIterator {
