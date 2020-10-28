@@ -18,7 +18,9 @@ namespace roaring {
 class RoaringSetBitForwardIterator;
 
 class Roaring {
-   public:
+  typedef api::roaring_bitmap_t roaring_bitmap_t;  // class-local name alias
+
+  public:
     /**
      * Create an empty bitmap
      */
@@ -323,7 +325,7 @@ class Roaring {
      * (true means that the iteration should continue while false means that it
      * should stop), and takes (uint32_t,void*) as inputs.
      */
-    void iterate(roaring_iterator iterator, void *ptr) const {
+    void iterate(api::roaring_iterator iterator, void *ptr) const {
         api::roaring_iterate(&roaring, iterator, ptr);
     }
 
@@ -728,7 +730,7 @@ class RoaringSetBitForwardIterator final {
         }
     }
 
-    roaring_uint32_iterator_t i;
+    api::roaring_uint32_iterator_t i;
 };
 
 inline RoaringSetBitForwardIterator Roaring::begin() const {
