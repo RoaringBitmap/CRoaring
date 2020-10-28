@@ -14,8 +14,7 @@ extern "C" {
 #include "test.h"
 }
 
-#include <roaring/roaring.h>
-using namespace roaring::api;  // access to pure C exported API for testing
+#include <roaring/roaring.h>  // access to pure C exported API for testing
 
 #include "roaring.hh"
 using roaring::Roaring;  // the C++ wrapper class
