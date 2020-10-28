@@ -785,4 +785,22 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
 } } }  // extern "C" { namespace roaring { namespace api {
 #endif
 
+#endif  /* ROARING_H */
+
+#ifdef __cplusplus
+    /**
+     * Best practices for C++ headers is to avoid polluting global scope.
+     * But for C compatibility when just `roaring.h` is included building as
+     * C++, default to global access for the C public API.
+     *
+     * BUT when `roaring.hh` is included instead, it sets this flag.  That way
+     * explicit namespacing must be used to get the C functions.
+     *
+     * This is outside the include guard so that if you include BOTH headers, 
+     * the order won't matter; you still get the global definitions.
+     */
+    #if !defined(ROARING_API_NOT_IN_GLOBAL_NAMESPACE)
+        using namespace ::roaring::api;
+    #endif
 #endif
+
