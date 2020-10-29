@@ -31,7 +31,9 @@ set(ROARING_SRC
     containers/run.c
     roaring.c
     roaring_priority_queue.c
-    roaring_array.c)
+    roaring_array.c
+    ordered_writer.c
+    )
 
 if(ROARING_BUILD_C_AS_CPP)  # more checks and tools, e.g. <type_traits> analysis 
   SET_SOURCE_FILES_PROPERTIES(${ROARING_SRC} PROPERTIES LANGUAGE CXX)

@@ -261,6 +261,13 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals);
 
 /**
+ * Add ordered values from pointer vals, faster than repeatedly calling
+ * roaring_bitmap_add_many for ordered values
+ *
+ */
+bool roaring_bitmap_add_ordered(roaring_bitmap_t *r, size_t n_args, const uint32_t *vals);
+
+/**
  * Add value x
  *
  */
