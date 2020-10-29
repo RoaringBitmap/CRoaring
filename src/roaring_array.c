@@ -35,19 +35,10 @@ extern inline void ra_set_container_at_index(
     container_t *c, uint8_t typecode);
 
 static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
-    // because we combine the allocations, it is not possible to use realloc
-    /*ra->keys =
-    (uint16_t *)realloc(ra->keys, sizeof(uint16_t) * new_capacity);
-ra->containers =
-    (void **)realloc(ra->containers, sizeof(void *) * new_capacity);
-ra->typecodes =
-    (uint8_t *)realloc(ra->typecodes, sizeof(uint8_t) * new_capacity);
-if (!ra->keys || !ra->containers || !ra->typecodes) {
-    free(ra->keys);
-    free(ra->containers);
-    free(ra->typecodes);
-    return false;
-}*/
+    //
+    // Note: not implemented using C's realloc(), because the memory layout is
+    // Struct-of-Arrays vs. Array-of-Structs:
+    // https://github.com/RoaringBitmap/CRoaring/issues/256
 
     if ( new_capacity == 0 ) {
       free(ra->containers);
