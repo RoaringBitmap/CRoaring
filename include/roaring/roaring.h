@@ -702,7 +702,7 @@ typedef struct roaring_uint32_iterator_s {
     uint32_t current_value;
     bool has_value;
 
-    const void
+    const ROARING_CONTAINER_T
         *container;  // should be:
                      // parent->high_low_container.containers[container_index];
     uint8_t typecode;  // should be:

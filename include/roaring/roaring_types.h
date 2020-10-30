@@ -12,6 +12,27 @@
 extern "C" { namespace roaring { namespace api {
 #endif
 
+
+/**
+ * When building .c files as C++, there's added compile-time checking if the
+ * container types are derived from a `container_t` base class.  So long as
+ * such a base class is empty, the struct will behave compatibly with C structs
+ * despite the derivation.  This is due to the Empty Base Class Optimization:
+ *
+ * https://en.cppreference.com/w/cpp/language/ebo
+ *
+ * But since C isn't namespaced, taking `container_t` globally might collide
+ * with other projects.  So roaring.h uses ROARING_CONTAINER_T, while internal
+ * code #undefs that after declaring `typedef ROARING_CONTAINER_T container_t;`
+ */
+#if defined(__cplusplus)
+    struct container_s {};
+    #define ROARING_CONTAINER_T ::roaring::api::container_s
+#else
+    #define ROARING_CONTAINER_T void  // no compile-time checking
+#endif
+
+
 #define MAX_CONTAINERS 65536
 
 #define SERIALIZATION_ARRAY_UINT32 1
@@ -33,7 +54,7 @@ extern "C" { namespace roaring { namespace api {
 typedef struct roaring_array_s {
     int32_t size;
     int32_t allocation_size;
-    void **containers;
+    ROARING_CONTAINER_T **containers;  // Use container_t in non-API files!
     uint16_t *keys;
     uint8_t *typecodes;
     uint8_t flags;

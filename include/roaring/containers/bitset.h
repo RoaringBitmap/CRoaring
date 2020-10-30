@@ -6,11 +6,14 @@
 #ifndef INCLUDE_CONTAINERS_BITSET_H_
 #define INCLUDE_CONTAINERS_BITSET_H_
 
-#include <roaring/portability.h>
-#include <roaring/roaring_types.h>
-#include <roaring/utilasm.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#include <roaring/portability.h>
+#include <roaring/roaring_types.h>  // roaring_iterator
+#include <roaring/utilasm.h>  // ASM_XXX macros
+
+#include <roaring/containers/container_defs.h>  // container_t, perfparameters
 
 #ifdef __cplusplus
 extern "C" { namespace roaring {
@@ -33,7 +36,7 @@ enum {
     BITSET_UNKNOWN_CARDINALITY = -1
 };
 
-struct bitset_container_s {
+STRUCT_CONTAINER(bitset_container_s) {
     int32_t cardinality;
     uint64_t *array;
 };

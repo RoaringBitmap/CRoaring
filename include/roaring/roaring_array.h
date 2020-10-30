@@ -83,8 +83,9 @@ inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
 /**
  * Retrieves the container at index i, filling in the typecode
  */
-inline void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
-                                       uint8_t *typecode) {
+inline container_t *ra_get_container_at_index(
+    const roaring_array_t *ra, uint16_t i, uint8_t *typecode
+){
     *typecode = ra->typecodes[i];
     return ra->containers[i];
 }
@@ -97,13 +98,16 @@ uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
 /**
  * Add a new key-value pair at index i
  */
-void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
-                                void *container, uint8_t typecode);
+void ra_insert_new_key_value_at(
+        roaring_array_t *ra, int32_t i, uint16_t key,
+        container_t *c, uint8_t typecode);
 
 /**
  * Append a new key-value pair
  */
-void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
+void ra_append(
+        roaring_array_t *ra, uint16_t key,
+        container_t *c, uint8_t typecode);
 
 /**
  * Append a new key-value pair to ra, cloning (in COW sense) a value from sa
@@ -153,8 +157,10 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
  * Set the container at the corresponding index using the specified
  * typecode.
  */
-inline void ra_set_container_at_index(const roaring_array_t *ra, int32_t i,
-                                      void *c, uint8_t typecode) {
+inline void ra_set_container_at_index(
+    const roaring_array_t *ra, int32_t i,
+    container_t *c, uint8_t typecode
+){
     assert(i < ra->size);
     ra->containers[i] = c;
     ra->typecodes[i] = typecode;
@@ -178,9 +184,10 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos);
 
 void ra_downsize(roaring_array_t *ra, int32_t new_length);
 
-inline void ra_replace_key_and_container_at_index(roaring_array_t *ra,
-                                                  int32_t i, uint16_t key,
-                                                  void *c, uint8_t typecode) {
+inline void ra_replace_key_and_container_at_index(
+    roaring_array_t *ra, int32_t i, uint16_t key,
+    container_t *c, uint8_t typecode
+){
     assert(i < ra->size);
 
     ra->keys[i] = key;
@@ -246,8 +253,8 @@ uint32_t ra_portable_header_size(const roaring_array_t *ra);
 static inline void ra_unshare_container_at_index(roaring_array_t *ra,
                                                  uint16_t i) {
     assert(i < ra->size);
-    ra->containers[i] =
-        get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+    ra->containers[i] = get_writable_copy_if_shared(ra->containers[i],
+                                                    &ra->typecodes[i]);
 }
 
 /**

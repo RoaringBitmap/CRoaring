@@ -18,17 +18,21 @@ extern "C" { namespace roaring { namespace internal {
 
 extern inline int32_t ra_get_size(const roaring_array_t *ra);
 extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
-extern inline void *ra_get_container_at_index(const roaring_array_t *ra,
-                                              uint16_t i, uint8_t *typecode);
+
+extern inline container_t *ra_get_container_at_index(
+    const roaring_array_t *ra, uint16_t i,
+    uint8_t *typecode);
+
 extern inline void ra_unshare_container_at_index(roaring_array_t *ra,
                                                  uint16_t i);
-extern inline void ra_replace_key_and_container_at_index(roaring_array_t *ra,
-                                                         int32_t i,
-                                                         uint16_t key, void *c,
-                                                         uint8_t typecode);
-extern inline void ra_set_container_at_index(const roaring_array_t *ra,
-                                             int32_t i, void *c,
-                                             uint8_t typecode);
+
+extern inline void ra_replace_key_and_container_at_index(
+    roaring_array_t *ra, int32_t i, uint16_t key,
+    container_t *c, uint8_t typecode);
+
+extern inline void ra_set_container_at_index(
+    const roaring_array_t *ra, int32_t i,
+    container_t *c, uint8_t typecode);
 
 static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
     // because we combine the allocations, it is not possible to use realloc
@@ -53,18 +57,18 @@ if (!ra->keys || !ra->containers || !ra->typecodes) {
       ra->allocation_size = 0;
       return true;
     }
-    const size_t memoryneeded =
-        new_capacity * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
+    const size_t memoryneeded = new_capacity * (
+                sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t));
     void *bigalloc = malloc(memoryneeded);
     if (!bigalloc) return false;
     void *oldbigalloc = ra->containers;
-    void **newcontainers = (void **)bigalloc;
+    container_t **newcontainers = (container_t **)bigalloc;
     uint16_t *newkeys = (uint16_t *)(newcontainers + new_capacity);
     uint8_t *newtypecodes = (uint8_t *)(newkeys + new_capacity);
     assert((char *)(newtypecodes + new_capacity) ==
            (char *)bigalloc + memoryneeded);
     if(ra->size > 0) {
-      memcpy(newcontainers, ra->containers, sizeof(void *) * ra->size);
+      memcpy(newcontainers, ra->containers, sizeof(container_t *) * ra->size);
       memcpy(newkeys, ra->keys, sizeof(uint16_t) * ra->size);
       memcpy(newtypecodes, ra->typecodes, sizeof(uint8_t) * ra->size);
     }
@@ -83,10 +87,10 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
     if (cap > INT32_MAX) { return false; }
 
     if(cap > 0) {
-      void *bigalloc =
-        malloc(cap * (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t)));
+      void *bigalloc = malloc(cap *
+                (sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t)));
       if( bigalloc == NULL ) return false;
-      new_ra->containers = (void **)bigalloc;
+      new_ra->containers = (container_t **)bigalloc;
       new_ra->keys = (uint16_t *)(new_ra->containers + cap);
       new_ra->typecodes = (uint8_t *)(new_ra->keys + cap);
       // Narrowing is safe because of above check
@@ -97,7 +101,7 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
 
 int ra_shrink_to_fit(roaring_array_t *ra) {
     int savings = (ra->allocation_size - ra->size) *
-                  (sizeof(uint16_t) + sizeof(void *) + sizeof(uint8_t));
+                  (sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t));
     if (!realloc_array(ra, ra->size)) {
       return 0;
     }
@@ -137,7 +141,7 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
         }
         // we do a shallow copy to the other bitmap
         memcpy(dest->containers, source->containers,
-               dest->size * sizeof(void *));
+               dest->size * sizeof(container_t *));
         memcpy(dest->typecodes, source->typecodes,
                dest->size * sizeof(uint8_t));
     } else {
@@ -199,13 +203,15 @@ bool extend_array(roaring_array_t *ra, int32_t k) {
     return true;
 }
 
-void ra_append(roaring_array_t *ra, uint16_t key, void *container,
-               uint8_t typecode) {
+void ra_append(
+    roaring_array_t *ra, uint16_t key,
+    container_t *c, uint8_t typecode
+){
     extend_array(ra, 1);
     const int32_t pos = ra->size;
 
     ra->keys[pos] = key;
-    ra->containers[pos] = container;
+    ra->containers[pos] = c;
     ra->typecodes[pos] = typecode;
     ra->size++;
 }
@@ -306,30 +312,39 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
     }
 }
 
-void *ra_get_container(roaring_array_t *ra, uint16_t x, uint8_t *typecode) {
+container_t *ra_get_container(
+    roaring_array_t *ra, uint16_t x, uint8_t *typecode
+){
     int i = binarySearch(ra->keys, (int32_t)ra->size, x);
     if (i < 0) return NULL;
     *typecode = ra->typecodes[i];
     return ra->containers[i];
 }
 
-extern inline void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
-                                       uint8_t *typecode);
+extern inline container_t *ra_get_container_at_index(
+    const roaring_array_t *ra, uint16_t i,
+    uint8_t *typecode);
 
-void *ra_get_writable_container(roaring_array_t *ra, uint16_t x,
-                                uint8_t *typecode) {
+#ifdef ROARING_NOT_USED
+container_t *ra_get_writable_container(
+    roaring_array_t *ra, uint16_t x,
+    uint8_t *typecode
+){
     int i = binarySearch(ra->keys, (int32_t)ra->size, x);
     if (i < 0) return NULL;
     *typecode = ra->typecodes[i];
     return get_writable_copy_if_shared(ra->containers[i], typecode);
 }
 
-void *ra_get_writable_container_at_index(roaring_array_t *ra, uint16_t i,
-                                         uint8_t *typecode) {
+container_t *ra_get_writable_container_at_index(
+    roaring_array_t *ra, uint16_t i,
+    uint8_t *typecode
+){
     assert(i < ra->size);
     *typecode = ra->typecodes[i];
     return get_writable_copy_if_shared(ra->containers[i], typecode);
 }
+#endif
 
 uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
     return ra->keys[i];
@@ -349,18 +364,20 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos) {
     return pos;
 }
 
-void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
-                                void *container, uint8_t typecode) {
+void ra_insert_new_key_value_at(
+    roaring_array_t *ra, int32_t i, uint16_t key,
+    container_t *c, uint8_t typecode
+){
     extend_array(ra, 1);
     // May be an optimization opportunity with DIY memmove
     memmove(&(ra->keys[i + 1]), &(ra->keys[i]),
             sizeof(uint16_t) * (ra->size - i));
     memmove(&(ra->containers[i + 1]), &(ra->containers[i]),
-            sizeof(void *) * (ra->size - i));
+            sizeof(container_t *) * (ra->size - i));
     memmove(&(ra->typecodes[i + 1]), &(ra->typecodes[i]),
             sizeof(uint8_t) * (ra->size - i));
     ra->keys[i] = key;
-    ra->containers[i] = container;
+    ra->containers[i] = c;
     ra->typecodes[i] = typecode;
     ra->size++;
 }
@@ -377,7 +394,7 @@ void ra_downsize(roaring_array_t *ra, int32_t new_length) {
 
 void ra_remove_at_index(roaring_array_t *ra, int32_t i) {
     memmove(&(ra->containers[i]), &(ra->containers[i + 1]),
-            sizeof(void *) * (ra->size - i - 1));
+            sizeof(container_t *) * (ra->size - i - 1));
     memmove(&(ra->keys[i]), &(ra->keys[i + 1]),
             sizeof(uint16_t) * (ra->size - i - 1));
     memmove(&(ra->typecodes[i]), &(ra->typecodes[i + 1]),
@@ -406,7 +423,7 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
     // that are not copied elsewhere
 
     memmove(&(ra->containers[new_begin]), &(ra->containers[begin]),
-            sizeof(void *) * range);
+            sizeof(container_t *) * range);
     memmove(&(ra->keys[new_begin]), &(ra->keys[begin]),
             sizeof(uint16_t) * range);
     memmove(&(ra->typecodes[new_begin]), &(ra->typecodes[begin]),
@@ -422,7 +439,7 @@ void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance) {
     memmove(&(ra->keys[dstpos]), &(ra->keys[srcpos]),
             sizeof(uint16_t) * count);
     memmove(&(ra->containers[dstpos]), &(ra->containers[srcpos]),
-            sizeof(void *) * count);
+            sizeof(container_t *) * count);
     memmove(&(ra->typecodes[dstpos]), &(ra->typecodes[srcpos]),
             sizeof(uint8_t) * count);
     ra->size += distance;
@@ -453,16 +470,17 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
 
     for (int i = 0; i < ra->size; ++i) {
 
-        const void *container = container_unwrap_shared(ra->containers[i], &ra->typecodes[i]);
+        const container_t *c = container_unwrap_shared(
+                                        ra->containers[i], &ra->typecodes[i]);
         switch (ra->typecodes[i]) {
             case BITSET_CONTAINER_TYPE_CODE:
-                t_limit = ((const bitset_container_t *)container)->cardinality;
+                t_limit = ((const bitset_container_t *)c)->cardinality;
                 break;
             case ARRAY_CONTAINER_TYPE_CODE:
-                t_limit = ((const array_container_t *)container)->cardinality;
+                t_limit = ((const array_container_t *)c)->cardinality;
                 break;
             case RUN_CONTAINER_TYPE_CODE:
-                t_limit = run_container_cardinality((const run_container_t *)container);
+                t_limit = run_container_cardinality((const run_container_t *)c);
                 break;
         }
         if (ctr + t_limit - 1 >= offset && ctr < offset + limit){
@@ -492,17 +510,20 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
             switch (ra->typecodes[i]) {
                 case BITSET_CONTAINER_TYPE_CODE:
                     container_to_uint32_array(
-                        t_ans + dtr, (const bitset_container_t *)container,  ra->typecodes[i],
+                        t_ans + dtr,
+                        (const bitset_container_t *)c,  ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
                 case ARRAY_CONTAINER_TYPE_CODE:
                     container_to_uint32_array(
-                        t_ans + dtr, (const array_container_t *)container, ra->typecodes[i],
+                        t_ans + dtr,
+                        (const array_container_t *)c, ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
                 case RUN_CONTAINER_TYPE_CODE:
                     container_to_uint32_array(
-                        t_ans + dtr, (const run_container_t *)container, ra->typecodes[i],
+                        t_ans + dtr,
+                        (const run_container_t *)c, ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
             }

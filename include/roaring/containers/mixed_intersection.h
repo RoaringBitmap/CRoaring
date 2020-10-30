@@ -44,7 +44,7 @@ bool array_bitset_container_intersect(const array_container_t *src_1,
  */
 bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
                                           const bitset_container_t *src_2,
-                                          void **dst);
+                                          container_t **dst);
 
 /* Compute the intersection between src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
@@ -60,7 +60,7 @@ void array_run_container_intersection(const array_container_t *src_1,
  **/
 bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
-                                       void **dst);
+                                       container_t **dst);
 
 /* Compute the size of the intersection between src_1 and src_2 . */
 int array_run_container_intersection_cardinality(const array_container_t *src_1,
@@ -90,7 +90,8 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
  * In all cases, the result is in *dst.
  */
 bool bitset_bitset_container_intersection_inplace(
-    bitset_container_t *src_1, const bitset_container_t *src_2, void **dst);
+    bitset_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst);
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {

@@ -48,6 +48,7 @@ $SCRIPTPATH/cpp/roaring64map.hh
 ALL_PRIVATE_H="
 $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/containers/perfparameters.h
+$SCRIPTPATH/include/roaring/containers/container_defs.h
 $SCRIPTPATH/include/roaring/array_util.h
 $SCRIPTPATH/include/roaring/utilasm.h
 $SCRIPTPATH/include/roaring/bitset_util.h

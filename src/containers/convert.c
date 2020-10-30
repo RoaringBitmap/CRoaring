@@ -91,9 +91,10 @@ run_container_t *run_container_from_array(const array_container_t *c) {
  * Allocates and returns new container, which caller is responsible for freeing.
  * It does not free the run container.
  */
-
-void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
-                                           uint8_t *resulttype) {
+container_t *convert_to_bitset_or_array_container(
+    run_container_t *r, int32_t card,
+    uint8_t *resulttype
+){
     if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
@@ -126,8 +127,10 @@ void *convert_to_bitset_or_array_container(run_container_t *r, int32_t card,
 /* If a conversion occurs, the caller is responsible to free the original
  * container and
  * he becomes responsible to free the new one. */
-void *convert_run_to_efficient_container(run_container_t *c,
-                                         uint8_t *typecode_after) {
+container_t *convert_run_to_efficient_container(
+    run_container_t *c,
+    uint8_t *typecode_after
+){
     int32_t size_as_run_container =
         run_container_serialized_size_in_bytes(c->n_runs);
 
@@ -175,9 +178,11 @@ void *convert_run_to_efficient_container(run_container_t *c,
 }
 
 // like convert_run_to_efficient_container but frees the old result if needed
-void *convert_run_to_efficient_container_and_free(run_container_t *c,
-                                                  uint8_t *typecode_after) {
-    void *answer = convert_run_to_efficient_container(c, typecode_after);
+container_t *convert_run_to_efficient_container_and_free(
+    run_container_t *c,
+    uint8_t *typecode_after
+){
+    container_t *answer = convert_run_to_efficient_container(c, typecode_after);
     if (answer != c) run_container_free(c);
     return answer;
 }
@@ -189,11 +194,13 @@ void *convert_run_to_efficient_container_and_free(run_container_t *c,
 // TODO: split into run-  array-  and bitset-  subfunctions for sanity;
 // a few function calls won't really matter.
 
-void *convert_run_optimize(void *c, uint8_t typecode_original,
-                           uint8_t *typecode_after) {
+container_t *convert_run_optimize(
+    container_t *c, uint8_t typecode_original,
+    uint8_t *typecode_after
+){
     if (typecode_original == RUN_CONTAINER_TYPE_CODE) {
-        void *newc = convert_run_to_efficient_container((run_container_t *)c,
-                                                        typecode_after);
+        container_t *newc = convert_run_to_efficient_container(
+                                    (run_container_t *)c, typecode_after);
         if (newc != c) {
             container_free(c, typecode_original);
         }
@@ -296,8 +303,11 @@ void *convert_run_optimize(void *c, uint8_t typecode_original,
         return NULL;
     }
 }
-void *container_from_run_range(const run_container_t *run,
-                                                    uint32_t min, uint32_t max, uint8_t *typecode_after) {
+
+container_t *container_from_run_range(
+    const run_container_t *run,
+    uint32_t min, uint32_t max, uint8_t *typecode_after
+){
     // We expect most of the time to end up with a bitset container
     bitset_container_t *bitset = bitset_container_create();
     *typecode_after = BITSET_CONTAINER_TYPE_CODE;

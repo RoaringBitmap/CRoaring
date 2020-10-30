@@ -100,7 +100,7 @@ static roaring_pq_element_t pq_poll(roaring_pq_t *pq) {
 // this function consumes and frees the inputs
 static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                                                   roaring_bitmap_t *x2) {
-    uint8_t container_result_type = 0;
+    uint8_t result_type = 0;
     const int length1 = ra_get_size(&x1->high_low_container),
               length2 = ra_get_size(&x2->high_low_container);
     if (0 == length1) {
@@ -114,7 +114,7 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     uint32_t neededcap = length1 > length2 ? length2 : length1;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
     int pos1 = 0, pos2 = 0;
-    uint8_t container_type_1, container_type_2;
+    uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
     uint16_t s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
     while (true) {
@@ -122,39 +122,38 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
             // todo: unsharing can be inefficient as it may create a clone where
             // none
             // is needed, but it has the benefit of being easy to reason about.
-            ra_unshare_container_at_index(&x1->high_low_container, pos1);
-            void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
-                                                 &container_type_1);
-            assert(container_type_1 != SHARED_CONTAINER_TYPE_CODE);
-            ra_unshare_container_at_index(&x2->high_low_container, pos2);
-            void *c2 = ra_get_container_at_index(&x2->high_low_container, pos2,
-                                                 &container_type_2);
-            assert(container_type_2 != SHARED_CONTAINER_TYPE_CODE);
-            void *c;
 
-            if ((container_type_2 == BITSET_CONTAINER_TYPE_CODE) &&
-                (container_type_1 != BITSET_CONTAINER_TYPE_CODE)) {
-                c = container_lazy_ior(c2, container_type_2, c1,
-                                       container_type_1,
-                                       &container_result_type);
-                container_free(c1, container_type_1);
+            ra_unshare_container_at_index(&x1->high_low_container, pos1);
+            container_t *c1 = ra_get_container_at_index(
+                                    &x1->high_low_container, pos1, &type1);
+            assert(type1 != SHARED_CONTAINER_TYPE_CODE);
+
+            ra_unshare_container_at_index(&x2->high_low_container, pos2);
+            container_t *c2 = ra_get_container_at_index(
+                                    &x2->high_low_container, pos2, &type2);
+            assert(type2 != SHARED_CONTAINER_TYPE_CODE);
+            
+            container_t *c;
+
+            if ((type2 == BITSET_CONTAINER_TYPE_CODE) &&
+                (type1 != BITSET_CONTAINER_TYPE_CODE)
+            ){
+                c = container_lazy_ior(c2, type2, c1, type1, &result_type);
+                container_free(c1, type1);
                 if (c != c2) {
-                    container_free(c2, container_type_2);
+                    container_free(c2, type2);
                 }
             } else {
-                c = container_lazy_ior(c1, container_type_1, c2,
-                                       container_type_2,
-                                       &container_result_type);
-                container_free(c2, container_type_2);
+                c = container_lazy_ior(c1, type1, c2, type2, &result_type);
+                container_free(c2, type2);
                 if (c != c1) {
-                    container_free(c1, container_type_1);
+                    container_free(c1, type1);
                 }
             }
             // since we assume that the initial containers are non-empty, the
             // result here
             // can only be non-empty
-            ra_append(&answer->high_low_container, s1, c,
-                      container_result_type);
+            ra_append(&answer->high_low_container, s1, c, result_type);
             ++pos1;
             ++pos2;
             if (pos1 == length1) break;
@@ -163,17 +162,17 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
             s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
 
         } else if (s1 < s2) {  // s1 < s2
-            void *c1 = ra_get_container_at_index(&x1->high_low_container, pos1,
-                                                 &container_type_1);
-            ra_append(&answer->high_low_container, s1, c1, container_type_1);
+            container_t *c1 = ra_get_container_at_index(
+                                    &x1->high_low_container, pos1, &type1);
+            ra_append(&answer->high_low_container, s1, c1, type1);
             pos1++;
             if (pos1 == length1) break;
             s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
 
         } else {  // s1 > s2
-            void *c2 = ra_get_container_at_index(&x2->high_low_container, pos2,
-                                                 &container_type_2);
-            ra_append(&answer->high_low_container, s2, c2, container_type_2);
+            container_t *c2 = ra_get_container_at_index(
+                                    &x2->high_low_container, pos2, &type2);
+            ra_append(&answer->high_low_container, s2, c2, type2);
             pos2++;
             if (pos2 == length2) break;
             s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
