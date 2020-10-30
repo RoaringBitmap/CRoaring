@@ -985,9 +985,16 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
             // require making a copy and then doing the computation in place which is likely 
             // less efficient than avoiding in place entirely and always generating a new 
             // container.
-            void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
-              container_xor(c1, container_type_1, c2, container_type_2, &container_result_type)
-              : container_ixor(c1, container_type_1, c2, container_type_2, &container_result_type);
+            void *c;
+            if (container_type_1 == SHARED_CONTAINER_TYPE_CODE) {
+                c = container_xor(c1, container_type_1,  // doesn't free c1
+                        c2, container_type_2, &container_result_type);
+                shared_container_free((shared_container_t *)c1);  // so release
+            }
+            else {
+                c = container_ixor(c1, container_type_1, c2, container_type_2,
+                                   &container_result_type);
+            }
 
             if (container_nonzero_cardinality(c, container_result_type)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c,
@@ -1135,10 +1142,16 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
             // require making a copy and then doing the computation in place which is likely 
             // less efficient than avoiding in place entirely and always generating a new 
             // container.
-            void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
-              container_andnot(c1, container_type_1, c2, container_type_2, &container_result_type)
-              : container_iandnot(c1, container_type_1, c2, container_type_2, &container_result_type);
-
+            void *c;
+            if (container_type_1 == SHARED_CONTAINER_TYPE_CODE) {
+                c = container_andnot(c1, container_type_1,  // doesn't free c1
+                            c2, container_type_2, &container_result_type);
+                shared_container_free((shared_container_t *)c1);  // so release
+            }
+            else { 
+                c = container_iandnot(c1, container_type_1, c2,
+                                container_type_2, &container_result_type);
+            }
             if (container_nonzero_cardinality(c, container_result_type)) {
                 ra_replace_key_and_container_at_index(&x1->high_low_container,
                                                       intersection_size++, s1,
@@ -2403,9 +2416,16 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             // require making a copy and then doing the computation in place which is likely 
             // less efficient than avoiding in place entirely and always generating a new 
             // container.
-            void *c = (container_type_1 == SHARED_CONTAINER_TYPE_CODE) ?
-              container_lazy_xor(c1, container_type_1, c2, container_type_2, &container_result_type)
-              : container_lazy_ixor(c1, container_type_1, c2, container_type_2, &container_result_type);
+            void *c;
+            if (container_type_1 == SHARED_CONTAINER_TYPE_CODE) {
+                c = container_lazy_xor(c1, container_type_1,  // doesn't free c1
+                                c2, container_type_2, &container_result_type);
+                shared_container_free((shared_container_t *)c1);  // so release
+            }
+            else {
+                c = container_lazy_ixor(c1, container_type_1, c2,
+                                    container_type_2, &container_result_type);
+            }
             if (container_nonzero_cardinality(c, container_result_type)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c,
                                           container_result_type);
