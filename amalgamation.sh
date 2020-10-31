@@ -7,25 +7,44 @@ SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 timestamp=$(date)  # capture to label files with their generation time
 
-echo "We are about to amalgamate all CRoaring files into one source file. "
-echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale. "
+function newline {
+    echo ""
+}
 
+echo "We are about to amalgamate all CRoaring files into one source file."
+echo "For rationale, see: https://www.sqlite.org/amalgamation.html"
+echo "and: https://en.wikipedia.org/wiki/Single_Compilation_Unit"
+newline
+
+
+# Files that this script generates
+#
 AMAL_H="roaring.h"
+AMAL_HH="roaring.hh"
 AMAL_C="roaring.c"
+DEMOC="amalgamation_demo.c"
+DEMOCPP="amalgamation_demo.cpp"
 
-# order matters
+
+# .h files for the official API => Order matters
+#
 ALL_PUBLIC_H="
 $SCRIPTPATH/include/roaring/roaring_version.h
 $SCRIPTPATH/include/roaring/roaring_types.h
 $SCRIPTPATH/include/roaring/roaring.h
 "
 
-# order does not matter
-ALL_PRIVATE_C=$( ( [ -d $SCRIPTPATH/.git ] && ( type git >/dev/null 2>&1 ) &&  ( git ls-files $SCRIPTPATH/src/*.c $SCRIPTPATH/src/**/*c ) ) ||  ( find $SCRIPTPATH/src -name '*.c' ) )
+# .hh header files for the C++ API wrapper => Order does not matter at present
+#
+ALL_PUBLIC_HH="
+$SCRIPTPATH/cpp/roaring.hh
+$SCRIPTPATH/cpp/roaring64map.hh
+"
 
-# these private header files are embedded at the head of the amalgamated C file
-# the amalgamated public header file must be #include'd before the private ones
-# order matters
+# internal .h files => These are used in the implementation but aren't part of
+# the API.  They're all embedded at the head of the amalgamated C file, and
+# need to be in this order.
+#
 ALL_PRIVATE_H="
 $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/containers/perfparameters.h
@@ -48,7 +67,22 @@ $SCRIPTPATH/include/roaring/roaring_array.h
 $SCRIPTPATH/include/roaring/misc/configreport.h
 "
 
-for i in ${ALL_PUBLIC_H} ${ALL_PRIVATE_C} ${ALL_PUBLIC_H}; do
+# .c implementation files
+#
+# The `#include <roaring/*>` lines are stripped out with sed, so all the C code
+# has the definitions available from all the header files.  Since the order of
+# the top level declarations doesn't matter after that point, the file list is
+# generated automatically from git-tracked C files in the /src/ directory.
+#
+ALL_PRIVATE_C=$( ( \
+    [ -d $SCRIPTPATH/.git ] \
+        && ( type git >/dev/null 2>&1 ) \
+        && ( git ls-files $SCRIPTPATH/src/*.c $SCRIPTPATH/src/**/*c ) \
+    ) || ( find $SCRIPTPATH/src -name '*.c' ) )
+
+# Verify up-front that all the files exist
+#
+for i in ${ALL_PUBLIC_H} ${ALL_PUBLIC_HH} ${ALL_PRIVATE_H} ${ALL_PRIVATE_C}; do
     test -e $i && continue
     echo "FATAL: source file [$i] not found."
     exit 127
@@ -58,13 +92,13 @@ function echo_timestamp()
 {
     echo "// !!! DO NOT EDIT - THIS IS AN AUTO-GENERATED FILE !!!"
     echo "// Created by amalgamation.sh on ${timestamp}"
-    echo ""  # newline
+    newline
 }
 
 function echo_license()
 {
     cat $SCRIPTPATH/src/license-comment.h
-    echo ""  # newline
+    newline
 }
 
 function stripinc()
@@ -76,7 +110,16 @@ function dofile()
 {
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
-    # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
+
+    # The preprocessor has a feature which lets you redefine the line and file:
+    # https://en.cppreference.com/w/c/preprocessor/line
+    # 
+    # This conceivably could be used to map back to the original source, e.g.:
+    #
+    #     echo "#line 8 \"$1\""
+    #
+    # However, this breaks IDEs and is not nearly as useful as it sounds.
+
     stripinc < $1
     echo "/* end file $RELFILE */"
 }
@@ -99,12 +142,12 @@ echo "Creating ${AMAL_C}..."
   
     echo "#include \"${AMAL_H}\""
 
-    echo ""
+    newline
     echo "/* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */"
     echo "#ifdef DMALLOC"
     echo "#include \"dmalloc.h\""
     echo "#endif"
-    echo ""
+    newline
 
     echo "#include \"roaring.h\"  /* include public API definitions */"
 
@@ -114,7 +157,6 @@ echo "Creating ${AMAL_C}..."
 } > "${AMAL_C}"
 
 
-DEMOC="amalgamation_demo.c"
 echo "Creating ${DEMOC}..."
 {
     echo_timestamp
@@ -133,12 +175,7 @@ int main() {
 } > "${DEMOC}"
 
 
-echo "Done with C amalgamation. Proceeding with C++ wrap."
-
-AMAL_HH="roaring.hh"
-
 echo "Creating ${AMAL_HH}..."
-ALL_PUBLIC_HH="$SCRIPTPATH/cpp/roaring.hh $SCRIPTPATH/cpp/roaring64map.hh"
 {
     echo_timestamp
     echo_license
@@ -146,7 +183,7 @@ ALL_PUBLIC_HH="$SCRIPTPATH/cpp/roaring.hh $SCRIPTPATH/cpp/roaring64map.hh"
     # using the C++ roaring:: namespace does not make the C API available by
     # default.  One must either `#include "roaring.h"` manually or use the
     # `roaring::api::` namespace.  The protection against putting the API in
-    # global scope is one via a #define surrounding the include, but that
+    # global scope is done via a #define surrounding the include, but that
     # inclusion is stripped out so we repeat it here.
     #
     # !!! This would be better if it found the inclusion of roaring.h and
@@ -162,7 +199,6 @@ ALL_PUBLIC_HH="$SCRIPTPATH/cpp/roaring.hh $SCRIPTPATH/cpp/roaring64map.hh"
 } > "${AMAL_HH}"
 
 
-DEMOCPP="amalgamation_demo.cpp"
 echo "Creating ${DEMOCPP}..."
 {
     echo_timestamp
@@ -188,26 +224,24 @@ int main() {
 }
 '
 } >  "${DEMOCPP}"
-echo "Done with C++."
 
-echo "Done with all files generation. "
 
+# Print out a directory listing of the output files and their sizes
+#
+newline
 echo "Files have been written to current directory: $PWD "
 ls -la ${AMAL_C} ${AMAL_H} ${AMAL_HH}  ${DEMOC} ${DEMOCPP}
-
-echo "Giving final instructions:"
-
+newline
 
 CBIN=${DEMOC%%.*}
 CPPBIN=${DEMOCPP%%.*}
 
-echo
 echo "The interface is found in the file 'include/roaring/roaring.h'."
-echo
-echo "Try :"
+newline
+echo "For C, try:"
 echo "cc -march=native -O3 -std=c11  -o ${CBIN} ${DEMOC}  && ./${CBIN} "
-echo
-echo "For C++, try :"
+newline
+echo "For C++, try:"
 echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} "
 
 lowercase(){
@@ -216,8 +250,8 @@ lowercase(){
 
 OS=`lowercase \`uname\``
 
-echo
-echo "You can build a shared library with the following command :"
+newline
+echo "You can build a shared library with the following command:"
 
 if [ $OS == "darwin" ]; then
   echo "cc -march=native -O3 -std=c11 -shared -o libroaring.dylib -fPIC roaring.c"
@@ -225,4 +259,6 @@ else
   echo "cc -march=native -O3 -std=c11 -shared -o libroaring.so -fPIC roaring.c"
 fi
 
-echo "You can try compiling with the extra flags -DDISABLEAVX or -DROARING_DISABLE_X64 to disable AVX and all x64 optimization respectively."
+newline
+echo "You can try compiling with flags -DDISABLEAVX or -DROARING_DISABLE_X64"
+echo "(which disables AVX and all x64 optimization respectively)"
