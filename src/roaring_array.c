@@ -160,6 +160,9 @@ bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
 bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                   bool copy_on_write) {
     ra_clear_containers(dest);  // we are going to overwrite them
+    if (source->size == 0) {  // Note: can't call memcpy(NULL), even w/size 0
+        return true;  // output was just cleared, so they match
+    }
     if (dest->allocation_size < source->size) {
         if (!realloc_array(dest, source->size)) {
             return false;
