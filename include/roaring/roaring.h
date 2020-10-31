@@ -5,21 +5,15 @@ An implementation of Roaring Bitmaps in C.
 #ifndef ROARING_H
 #define ROARING_H
 
-#include <roaring/roaring_array.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>  // for `size_t`
+
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
-#include <stdbool.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
-    
-// These definitions are needed for inlining.
-// Note: in pure C++ code, you should avoid putting `using` in header files 
-using internal::ra_get_index;
-using internal::ra_get_container_at_index;
-using internal::container_contains;
-
-namespace api {
+extern "C" { namespace roaring { namespace api {
 #endif
 
 typedef struct roaring_bitmap_s {
@@ -311,23 +305,9 @@ void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
 bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 
 /**
- * Check if value x is present
+ * Check if value is present
  */
-static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
-    const uint16_t hb = val >> 16;
-    /*
-     * the next function call involves a binary search and lots of branching.
-     */
-    int32_t i = ra_get_index(&r->high_low_container, hb);
-    if (i < 0) return false;
-
-    uint8_t typecode;
-    // next call ought to be cheap
-    void *container =
-        ra_get_container_at_index(&r->high_low_container, i, &typecode);
-    // rest might be a tad expensive, possibly involving another round of binary search
-    return container_contains(container, val & 0xFFFF, typecode);
-}
+bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
 
 /**
  * Check whether a range of values from range_start (included) to range_end (excluded) is present

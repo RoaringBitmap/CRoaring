@@ -6,6 +6,10 @@
 
 #include <roaring/roaring.h>
 
+// include internal headers for invasive testing
+#include <roaring/containers/containers.h>
+#include <roaring/roaring_array.h>
+
 #include "test.h"
 
 static unsigned int seed = 123456789;

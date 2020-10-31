@@ -5,9 +5,40 @@
 #ifndef ROARING_TYPES_H
 #define ROARING_TYPES_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace api {
 #endif
+
+#define MAX_CONTAINERS 65536
+
+#define SERIALIZATION_ARRAY_UINT32 1
+#define SERIALIZATION_CONTAINER 2
+
+#define ROARING_FLAG_COW UINT8_C(0x1)
+#define ROARING_FLAG_FROZEN UINT8_C(0x2)
+
+/**
+ * Roaring arrays are array-based key-value pairs having containers as values
+ * and 16-bit integer keys. A roaring bitmap  might be implemented as such.
+ */
+
+// parallel arrays.  Element sizes quite different.
+// Alternative is array
+// of structs.  Which would have better
+// cache performance through binary searches?
+
+typedef struct roaring_array_s {
+    int32_t size;
+    int32_t allocation_size;
+    void **containers;
+    uint16_t *keys;
+    uint8_t *typecodes;
+    uint8_t flags;
+} roaring_array_t;
+
 
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
 typedef bool (*roaring_iterator64)(uint64_t value, void *param);

@@ -15,6 +15,8 @@ A C++ header for Roaring Bitmaps.
 #include <roaring/roaring.h>
 #undef ROARING_API_NOT_IN_GLOBAL_NAMESPACE
 
+#include <roaring/roaring_array.h>  // roaring::internal array functions used
+
 namespace roaring {
 
 class RoaringSetBitForwardIterator;
