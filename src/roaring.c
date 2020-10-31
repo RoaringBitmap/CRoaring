@@ -383,10 +383,16 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     if (!ans) {
         return NULL;
     }
-    bool is_ok = ra_copy(&r->high_low_container, &ans->high_low_container,
-                         is_cow(r));
-    if (!is_ok) {
+    if (!ra_init_with_capacity(  // allocation of list of containers can fail
+                &ans->high_low_container, r->high_low_container.size)
+    ){
         free(ans);
+        return NULL;
+    }
+    if (!ra_overwrite(  // memory allocation of individual containers may fail
+                &r->high_low_container, &ans->high_low_container, is_cow(r))
+    ){
+        roaring_bitmap_free(ans);  // overwrite should leave in freeable state
         return NULL;
     }
     roaring_bitmap_set_copy_on_write(ans, is_cow(r));
