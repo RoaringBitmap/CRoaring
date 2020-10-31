@@ -21,9 +21,35 @@ typedef struct roaring_bitmap_s {
 } roaring_bitmap_t;
 
 /**
- * Creates a new bitmap (initially empty)
+ * Dynamically allocates a new bitmap (initially empty).
+ * Returns NULL if the allocation fails.
+ * Capacity is a performance hint for how many "containers" the data will need.
+ * Client is responsible for calling `roaring_bitmap_free()`.
  */
-roaring_bitmap_t *roaring_bitmap_create(void);
+roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
+
+/**
+ * Dynamically allocates a new bitmap (initially empty).
+ * Returns NULL if the allocation fails.
+ * Client is responsible for calling `roaring_bitmap_free()`.
+ */
+static inline roaring_bitmap_t *roaring_bitmap_create(void)
+  { return roaring_bitmap_create_with_capacity(0); }
+
+/**
+ * Initialize a roaring bitmap structure in memory controlled by client.
+ * Capacity is a performance hint for how many "containers" the data will need.
+ * Can return false if auxiliary allocations fail when capacity greater than 0.
+ */
+bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap);
+
+/**
+ * Initialize a roaring bitmap structure in memory controlled by client.
+ * The bitmap will be in a "clear" state, with no auxiliary allocations.
+ * Since this performs no allocations, the function will not fail.
+ */
+static inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r)
+  { roaring_bitmap_init_with_capacity(r, 0); }
 
 /**
  * Add all the values between min (included) and max (excluded) that are at a
@@ -31,12 +57,6 @@ roaring_bitmap_t *roaring_bitmap_create(void);
 */
 roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step);
-
-/**
- * Creates a new bitmap (initially empty) with a provided
- * container-storage capacity (it is a performance hint).
- */
-roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
 
 /**
  * Creates a new bitmap from a pointer of uint32_t integers
@@ -332,8 +352,10 @@ bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
 
 
 /**
-* Empties the bitmap
-*/
+ * Empties the bitmap.  It will have no auxiliary allocations (so if the bitmap
+ * was initialized in client memory via roaring_bitmap_init(), then a call to
+ * roaring_bitmap_clear() would be enough to "free" it) 
+ */
 void roaring_bitmap_clear(roaring_bitmap_t *ra);
 
 /**

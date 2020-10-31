@@ -70,16 +70,6 @@ static inline void *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
     }
 }
 
-roaring_bitmap_t *roaring_bitmap_create() {
-    roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
-    if (!ans) {
-        return NULL;
-    }
-    ra_init(&ans->high_low_container);
-    return ans;
-}
-
 roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     roaring_bitmap_t *ans =
         (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
@@ -93,6 +83,11 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     }
     return ans;
 }
+
+bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap) {
+    return ra_init_with_capacity(&r->high_low_container, cap);
+}
+
 
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals) {
