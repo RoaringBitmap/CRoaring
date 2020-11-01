@@ -465,13 +465,13 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                                         ra->containers[i], &ra->typecodes[i]);
         switch (ra->typecodes[i]) {
             case BITSET_CONTAINER_TYPE:
-                t_limit = ((const bitset_container_t *)c)->cardinality;
+                t_limit = (const_CAST_bitset(c))->cardinality;
                 break;
             case ARRAY_CONTAINER_TYPE:
-                t_limit = ((const array_container_t *)c)->cardinality;
+                t_limit = (const_CAST_array(c))->cardinality;
                 break;
             case RUN_CONTAINER_TYPE:
-                t_limit = run_container_cardinality((const run_container_t *)c);
+                t_limit = run_container_cardinality(const_CAST_run(c));
                 break;
         }
         if (ctr + t_limit - 1 >= offset && ctr < offset + limit){
@@ -502,19 +502,19 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                 case BITSET_CONTAINER_TYPE:
                     container_to_uint32_array(
                         t_ans + dtr,
-                        (const bitset_container_t *)c,  ra->typecodes[i],
+                        const_CAST_bitset(c),  ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
                 case ARRAY_CONTAINER_TYPE:
                     container_to_uint32_array(
                         t_ans + dtr,
-                        (const array_container_t *)c, ra->typecodes[i],
+                        const_CAST_array(c), ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
                 case RUN_CONTAINER_TYPE:
                     container_to_uint32_array(
                         t_ans + dtr,
-                        (const run_container_t *)c, ra->typecodes[i],
+                        const_CAST_run(c), ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
             }
