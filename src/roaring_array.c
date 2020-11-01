@@ -116,50 +116,12 @@ void ra_init(roaring_array_t *new_ra) {
     new_ra->flags = 0;
 }
 
-bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
-             bool copy_on_write) {
-    if (!ra_init_with_capacity(dest, source->size)) return false;
-    dest->size = source->size;
-    dest->allocation_size = source->size;
-    if(dest->size > 0) {
-      memcpy(dest->keys, source->keys, dest->size * sizeof(uint16_t));
-    }
-    // we go through the containers, turning them into shared containers...
-    if (copy_on_write) {
-        for (int32_t i = 0; i < dest->size; ++i) {
-            source->containers[i] = get_copy_of_container(
-                source->containers[i], &source->typecodes[i], copy_on_write);
-        }
-        // we do a shallow copy to the other bitmap
-        if(dest->size > 0) {
-          memcpy(dest->containers, source->containers,
-               dest->size * sizeof(void *));
-          memcpy(dest->typecodes, source->typecodes,
-               dest->size * sizeof(uint8_t));
-        }
-    } else {
-        if(dest->size > 0) {
-          memcpy(dest->typecodes, source->typecodes,
-               dest->size * sizeof(uint8_t));
-        }
-        for (int32_t i = 0; i < dest->size; i++) {
-            dest->containers[i] =
-                container_clone(source->containers[i], source->typecodes[i]);
-            if (dest->containers[i] == NULL) {
-                for (int32_t j = 0; j < i; j++) {
-                    container_free(dest->containers[j], dest->typecodes[j]);
-                }
-                ra_clear_without_containers(dest);
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                   bool copy_on_write) {
     ra_clear_containers(dest);  // we are going to overwrite them
+    if (source->size == 0) {  // Note: can't call memcpy(NULL), even w/size 0
+        return true;  // output was just cleared, so they match
+    }
     if (dest->allocation_size < source->size) {
         if (!realloc_array(dest, source->size)) {
             return false;

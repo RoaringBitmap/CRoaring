@@ -6,8 +6,9 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #define INCLUDE_ROARING_64_MAP_HH_
 
 #include <algorithm>
-#include <cstdarg>
-#include <cstdio>
+#include <cstdarg>  // for va_list handling in bitmapOf()
+#include <cstdio>  // for std::printf() in the printf() method
+#include <cstring>  // for std::memcpy()
 #include <limits>
 #include <map>
 #include <new>
@@ -510,7 +511,7 @@ class Roaring64Map {
      * (true means that the iteration should continue while false means that it
      * should stop), and takes (uint32_t,void*) as inputs.
      */
-    void iterate(roaring_iterator64 iterator, void *ptr) const {
+    void iterate(api::roaring_iterator64 iterator, void *ptr) const {
         std::for_each(roarings.begin(), roarings.cend(),
                       [=](const std::pair<uint32_t, Roaring> &map_entry) {
                           roaring_iterate64(&map_entry.second.roaring, iterator,
@@ -580,10 +581,9 @@ class Roaring64Map {
             roarings.cbegin(), roarings.cend(),
             [&buf, portable](const std::pair<uint32_t, Roaring> &map_entry) {
                 // push map key
-                memcpy(buf, &map_entry.first,
-                       sizeof(uint32_t));  // this is undefined:
-                                           // *((uint32_t*)buf) =
-                                           // map_entry.first;
+                std::memcpy(buf, &map_entry.first, sizeof(uint32_t));
+                // ^-- Note: `*((uint32_t*)buf) = map_entry.first;` is undefined
+
                 buf += sizeof(uint32_t);
                 // push map value Roaring
                 buf += map_entry.second.write(buf, portable);
@@ -612,8 +612,9 @@ class Roaring64Map {
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
             uint32_t key;
-            memcpy(&key, buf, sizeof(uint32_t));  // this is undefined: uint32_t
-                                                  // key = *((uint32_t*)buf);
+            std::memcpy(&key, buf, sizeof(uint32_t));
+            // ^-- Note: `uint32_t key = *((uint32_t*)buf);` is undefined
+
             buf += sizeof(uint32_t);
             // read map value Roaring
             Roaring read = Roaring::read(buf, portable);
@@ -643,8 +644,9 @@ class Roaring64Map {
                 throw std::runtime_error("ran out of bytes");
             }
             uint32_t key;
-            memcpy(&key, buf, sizeof(uint32_t));  // this is undefined: uint32_t
-                                                  // key = *((uint32_t*)buf);
+            std::memcpy(&key, buf, sizeof(uint32_t));
+            // ^-- Note: `uint32_t key = *((uint32_t*)buf);` is undefined
+
             buf += sizeof(uint32_t);
             maxbytes -= sizeof(uint32_t);
             // read map value Roaring

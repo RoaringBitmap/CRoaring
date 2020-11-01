@@ -2,8 +2,12 @@
  * realdata_unit.c
  */
 #define _GNU_SOURCE
-#include <roaring/roaring.h>
-#include <roaring/roaring_types.h>
+
+#include <assert.h>
+
+#include <roaring/roaring.h>  // public api
+
+#include <roaring/array_util.h>  // union_uint32(), intersection_uint32()
 
 #include "../benchmarks/numbersfromtextfiles.h"
 #include "config.h"

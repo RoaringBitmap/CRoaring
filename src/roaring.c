@@ -1,13 +1,16 @@
 #include <assert.h>
-#include <roaring/array_util.h>
-#include <roaring/roaring.h>
-#include <roaring/roaring_array.h>
-#include <roaring/bitset_util.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+
+#include <roaring/roaring.h>
+#include <roaring/roaring_array.h>
+
+#include <roaring/containers/containers.h>
+#include <roaring/bitset_util.h>
+#include <roaring/array_util.h>
 
 #ifdef __cplusplus
 using namespace ::roaring::internal;
@@ -67,16 +70,6 @@ static inline void *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
     }
 }
 
-roaring_bitmap_t *roaring_bitmap_create() {
-    roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
-    if (!ans) {
-        return NULL;
-    }
-    ra_init(&ans->high_low_container);
-    return ans;
-}
-
 roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     roaring_bitmap_t *ans =
         (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
@@ -90,6 +83,11 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     }
     return ans;
 }
+
+bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap) {
+    return ra_init_with_capacity(&r->high_low_container, cap);
+}
+
 
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals) {
@@ -383,10 +381,16 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     if (!ans) {
         return NULL;
     }
-    bool is_ok = ra_copy(&r->high_low_container, &ans->high_low_container,
-                         is_cow(r));
-    if (!is_ok) {
+    if (!ra_init_with_capacity(  // allocation of list of containers can fail
+                &ans->high_low_container, r->high_low_container.size)
+    ){
         free(ans);
+        return NULL;
+    }
+    if (!ra_overwrite(  // memory allocation of individual containers may fail
+                &r->high_low_container, &ans->high_low_container, is_cow(r))
+    ){
+        roaring_bitmap_free(ans);  // overwrite should leave in freeable state
         return NULL;
     }
     roaring_bitmap_set_copy_on_write(ans, is_cow(r));
@@ -2655,6 +2659,23 @@ uint64_t roaring_bitmap_xor_cardinality(const roaring_bitmap_t *x1,
     const uint64_t c2 = roaring_bitmap_get_cardinality(x2);
     const uint64_t inter = roaring_bitmap_and_cardinality(x1, x2);
     return c1 + c2 - 2 * inter;
+}
+
+
+bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+    const uint16_t hb = val >> 16;
+    /*
+     * the next function call involves a binary search and lots of branching.
+     */
+    int32_t i = ra_get_index(&r->high_low_container, hb);
+    if (i < 0) return false;
+
+    uint8_t typecode;
+    // next call ought to be cheap
+    void *container =
+        ra_get_container_at_index(&r->high_low_container, i, &typecode);
+    // rest might be a tad expensive, possibly involving another round of binary search
+    return container_contains(container, val & 0xFFFF, typecode);
 }
 
 

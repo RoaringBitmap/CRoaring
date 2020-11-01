@@ -15,6 +15,8 @@ A C++ header for Roaring Bitmaps.
 #include <roaring/roaring.h>
 #undef ROARING_API_NOT_IN_GLOBAL_NAMESPACE
 
+#include <roaring/roaring_array.h>  // roaring::internal array functions used
+
 namespace roaring {
 
 class RoaringSetBitForwardIterator;
@@ -24,10 +26,11 @@ class Roaring {
 
   public:
     /**
-     * Create an empty bitmap
+     * Create an empty bitmap in the existing memory for the class.
+     * The bitmap will be in the "clear" state with no auxiliary allocations.
      */
     Roaring() {
-        internal::ra_init(&roaring.high_low_container);
+        api::roaring_bitmap_init_cleared(&roaring);
     }
 
     /**
@@ -40,11 +43,8 @@ class Roaring {
     /**
      * Copy constructor
      */
-    Roaring(const Roaring &r) {
-        bool is_ok = internal::ra_copy(
-            &r.roaring.high_low_container, &roaring.high_low_container,
-                    roaring_bitmap_get_copy_on_write(&r.roaring));
-        if (!is_ok) {
+    Roaring(const Roaring &r) : Roaring() {
+        if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
             throw std::runtime_error("failed memory alloc in constructor");
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
@@ -56,21 +56,26 @@ class Roaring {
      * all methods can still be called on it.
      */
     Roaring(Roaring &&r) noexcept {
-        roaring = std::move(r.roaring);
-        internal::ra_init(&r.roaring.high_low_container);
+        //
+        // !!! This clones the bits of the roaring structure to a new location
+        // and then overwrites the old bits...assuming that this will still
+        // work.  There are scenarios where this could break; e.g. if some of
+        // those bits were pointers into the structure memory itself.  If such
+        // things were possible, a roaring_bitmap_move() API would be needed.
+        //
+        roaring = r.roaring;
+        api::roaring_bitmap_init_cleared(&r.roaring);
     }
 
     /**
-     * Construct a roaring object from the C struct.
+     * Construct a roaring object by taking control of a malloc()'d C struct.
      *
-     * Passing a NULL point is unsafe.
-     * the pointer to the C struct will be invalid after the call.
+     * Passing a NULL pointer is unsafe.
+     * The pointer to the C struct will be invalid after the call.
      */
     Roaring(roaring_bitmap_t *s) noexcept {
-        // steal the interior struct
-        roaring.high_low_container = s->high_low_container;
-        // deallocate the old container
-        free(s);
+        roaring = *s;  // steal the content of the roaring_bitmap_t
+        free(s);  // deallocate the passed-in pointer
     }
 
     /**
@@ -157,20 +162,17 @@ class Roaring {
     }
 
     /**
-     * Destructor
+     * Destructor.  By contract, calling roaring_bitmap_clear() is enough to
+     * release all auxiliary memory used by the structure.
      */
-    ~Roaring() { internal::ra_clear(&roaring.high_low_container); }
+    ~Roaring() { api::roaring_bitmap_clear(&roaring); }
 
     /**
      * Copies the content of the provided bitmap, and
      * discard the current content.
      */
     Roaring &operator=(const Roaring &r) {
-        internal::ra_clear(&roaring.high_low_container);
-        bool is_ok = internal::ra_copy(
-            &r.roaring.high_low_container, &roaring.high_low_container,
-                    roaring_bitmap_get_copy_on_write(&r.roaring));
-        if (!is_ok) {
+        if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
             throw std::runtime_error("failed memory alloc in assignment");
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
@@ -183,9 +185,13 @@ class Roaring {
      * discard the current content.
      */
     Roaring &operator=(Roaring &&r) noexcept {
-        internal::ra_clear(&roaring.high_low_container);
-        roaring = std::move(r.roaring);
-        internal::ra_init(&r.roaring.high_low_container);
+        api::roaring_bitmap_clear(&roaring);  // free this class's allocations
+
+        // !!! See notes in the Move Constructor regaring roaring_bitmap_move()
+        //
+        roaring = r.roaring;
+        api::roaring_bitmap_init_cleared(&r.roaring);
+
         return *this;
     }
 

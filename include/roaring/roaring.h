@@ -5,21 +5,15 @@ An implementation of Roaring Bitmaps in C.
 #ifndef ROARING_H
 #define ROARING_H
 
-#include <roaring/roaring_array.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>  // for `size_t`
+
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
-#include <stdbool.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
-    
-// These definitions are needed for inlining.
-// Note: in pure C++ code, you should avoid putting `using` in header files 
-using internal::ra_get_index;
-using internal::ra_get_container_at_index;
-using internal::container_contains;
-
-namespace api {
+extern "C" { namespace roaring { namespace api {
 #endif
 
 typedef struct roaring_bitmap_s {
@@ -27,9 +21,35 @@ typedef struct roaring_bitmap_s {
 } roaring_bitmap_t;
 
 /**
- * Creates a new bitmap (initially empty)
+ * Dynamically allocates a new bitmap (initially empty).
+ * Returns NULL if the allocation fails.
+ * Capacity is a performance hint for how many "containers" the data will need.
+ * Client is responsible for calling `roaring_bitmap_free()`.
  */
-roaring_bitmap_t *roaring_bitmap_create(void);
+roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
+
+/**
+ * Dynamically allocates a new bitmap (initially empty).
+ * Returns NULL if the allocation fails.
+ * Client is responsible for calling `roaring_bitmap_free()`.
+ */
+static inline roaring_bitmap_t *roaring_bitmap_create(void)
+  { return roaring_bitmap_create_with_capacity(0); }
+
+/**
+ * Initialize a roaring bitmap structure in memory controlled by client.
+ * Capacity is a performance hint for how many "containers" the data will need.
+ * Can return false if auxiliary allocations fail when capacity greater than 0.
+ */
+bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap);
+
+/**
+ * Initialize a roaring bitmap structure in memory controlled by client.
+ * The bitmap will be in a "clear" state, with no auxiliary allocations.
+ * Since this performs no allocations, the function will not fail.
+ */
+static inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r)
+  { roaring_bitmap_init_with_capacity(r, 0); }
 
 /**
  * Add all the values between min (included) and max (excluded) that are at a
@@ -37,12 +57,6 @@ roaring_bitmap_t *roaring_bitmap_create(void);
 */
 roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step);
-
-/**
- * Creates a new bitmap (initially empty) with a provided
- * container-storage capacity (it is a performance hint).
- */
-roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
 
 /**
  * Creates a new bitmap from a pointer of uint32_t integers
@@ -311,23 +325,9 @@ void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
 bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 
 /**
- * Check if value x is present
+ * Check if value is present
  */
-static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
-    const uint16_t hb = val >> 16;
-    /*
-     * the next function call involves a binary search and lots of branching.
-     */
-    int32_t i = ra_get_index(&r->high_low_container, hb);
-    if (i < 0) return false;
-
-    uint8_t typecode;
-    // next call ought to be cheap
-    void *container =
-        ra_get_container_at_index(&r->high_low_container, i, &typecode);
-    // rest might be a tad expensive, possibly involving another round of binary search
-    return container_contains(container, val & 0xFFFF, typecode);
-}
+bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
 
 /**
  * Check whether a range of values from range_start (included) to range_end (excluded) is present
@@ -352,8 +352,10 @@ bool roaring_bitmap_is_empty(const roaring_bitmap_t *ra);
 
 
 /**
-* Empties the bitmap
-*/
+ * Empties the bitmap.  It will have no auxiliary allocations (so if the bitmap
+ * was initialized in client memory via roaring_bitmap_init(), then a call to
+ * roaring_bitmap_clear() would be enough to "free" it) 
+ */
 void roaring_bitmap_clear(roaring_bitmap_t *ra);
 
 /**
