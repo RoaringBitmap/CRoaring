@@ -41,6 +41,9 @@ STRUCT_CONTAINER(array_container_s) {
 
 typedef struct array_container_s array_container_t;
 
+#define CAST_array(c)         CAST(array_container_t *, c)  // safer downcast
+#define const_CAST_array(c)   CAST(const array_container_t *, c)
+
 /* Create a new array with default. Return NULL in case of failure. See also
  * array_container_create_given_capacity. */
 array_container_t *array_container_create(void);

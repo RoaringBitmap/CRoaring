@@ -34,19 +34,19 @@ extern inline container_t *container_iandnot(
         const container_t *c2, uint8_t type2,
         uint8_t *result_type);
 
-void container_free(container_t *container, uint8_t typecode) {
-    switch (typecode) {
+void container_free(container_t *c, uint8_t type) {
+    switch (type) {
         case BITSET_CONTAINER_TYPE:
-            bitset_container_free((bitset_container_t *)container);
+            bitset_container_free(CAST_bitset(c));
             break;
         case ARRAY_CONTAINER_TYPE:
-            array_container_free((array_container_t *)container);
+            array_container_free(CAST_array(c));
             break;
         case RUN_CONTAINER_TYPE:
-            run_container_free((run_container_t *)container);
+            run_container_free(CAST_run(c));
             break;
         case SHARED_CONTAINER_TYPE:
-            shared_container_free((shared_container_t *)container);
+            shared_container_free(CAST_shared(c));
             break;
         default:
             assert(false);
@@ -54,17 +54,17 @@ void container_free(container_t *container, uint8_t typecode) {
     }
 }
 
-void container_printf(const container_t *container, uint8_t typecode) {
-    container = container_unwrap_shared(container, &typecode);
-    switch (typecode) {
+void container_printf(const container_t *c, uint8_t type) {
+    c = container_unwrap_shared(c, &type);
+    switch (type) {
         case BITSET_CONTAINER_TYPE:
-            bitset_container_printf((const bitset_container_t *)container);
+            bitset_container_printf(const_CAST_bitset(c));
             return;
         case ARRAY_CONTAINER_TYPE:
-            array_container_printf((const array_container_t *)container);
+            array_container_printf(const_CAST_array(c));
             return;
         case RUN_CONTAINER_TYPE:
-            run_container_printf((const run_container_t *)container);
+            run_container_printf(const_CAST_run(c));
             return;
         default:
             __builtin_unreachable();
@@ -79,15 +79,15 @@ void container_printf_as_uint32_array(
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
             bitset_container_printf_as_uint32_array(
-                (const bitset_container_t *)c, base);
+                const_CAST_bitset(c), base);
             return;
         case ARRAY_CONTAINER_TYPE:
             array_container_printf_as_uint32_array(
-                (const array_container_t *)c, base);
+                const_CAST_array(c), base);
             return;
         case RUN_CONTAINER_TYPE:
             run_container_printf_as_uint32_array(
-                (const run_container_t *)c, base);
+                const_CAST_run(c), base);
             return;
         default:
             __builtin_unreachable();
@@ -135,7 +135,7 @@ container_t *get_copy_of_container(
     if (copy_on_write) {
         shared_container_t *shared_container;
         if (*typecode == SHARED_CONTAINER_TYPE) {
-            shared_container = (shared_container_t *)c;
+            shared_container = CAST_shared(c);
             shared_container->counter += 1;
             return shared_container;
         }
@@ -168,11 +168,11 @@ container_t *container_clone(const container_t *c, uint8_t typecode) {
     c = container_unwrap_shared(c, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
-            return bitset_container_clone((const bitset_container_t *)c);
+            return bitset_container_clone(const_CAST_bitset(c));
         case ARRAY_CONTAINER_TYPE:
-            return array_container_clone((const array_container_t *)c);
+            return array_container_clone(const_CAST_array(c));
         case RUN_CONTAINER_TYPE:
-            return run_container_clone((const run_container_t *)c);
+            return run_container_clone(const_CAST_run(c));
         case SHARED_CONTAINER_TYPE:
             printf("shared containers are not cloneable\n");
             assert(false);

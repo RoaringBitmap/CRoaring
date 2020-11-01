@@ -54,6 +54,26 @@ typedef ROARING_CONTAINER_T container_t;
 #endif
 
 
+/**
+ * Since container_t* is not void* in C++, "dangerous" casts are not needed to
+ * downcast; only a static_cast<> is needed.  Define a macro for static casting
+ * which helps make casts more visible, and catches problems at compile-time
+ * when building the C sources in C++ mode:
+ * 
+ *     void some_func(container_t **c, ...) {  // double pointer, not single
+ *         array_container_t *ac1 = (array_container_t *)(c);  // uncaught!!
+ * 
+ *         array_container_t *ac2 = CAST(array_container_t *, c)  // C++ errors
+ *         array_container_t *ac3 = CAST_array(c);  // shorthand for #2, errors
+ *     }
+ */
+#ifdef __cplusplus
+    #define CAST(type,value)    static_cast<type>(value)
+#else
+    #define CAST(type,value)    ((type)value)
+#endif
+
+
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
 #endif

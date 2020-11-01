@@ -200,14 +200,14 @@ container_t *convert_run_optimize(
 ){
     if (typecode_original == RUN_CONTAINER_TYPE) {
         container_t *newc = convert_run_to_efficient_container(
-                                    (run_container_t *)c, typecode_after);
+                                    CAST_run(c), typecode_after);
         if (newc != c) {
             container_free(c, typecode_original);
         }
         return newc;
     } else if (typecode_original == ARRAY_CONTAINER_TYPE) {
         // it might need to be converted to a run container.
-        array_container_t *c_qua_array = (array_container_t *)c;
+        array_container_t *c_qua_array = CAST_array(c);
         int32_t n_runs = array_container_number_of_runs(c_qua_array);
         int32_t size_as_run_container =
             run_container_serialized_size_in_bytes(n_runs);
@@ -243,7 +243,7 @@ container_t *convert_run_optimize(
     } else if (typecode_original ==
                BITSET_CONTAINER_TYPE) {  // run conversions on bitset
         // does bitset need conversion to run?
-        bitset_container_t *c_qua_bitset = (bitset_container_t *)c;
+        bitset_container_t *c_qua_bitset = CAST_bitset(c);
         int32_t n_runs = bitset_container_number_of_runs(c_qua_bitset);
         int32_t size_as_run_container =
             run_container_serialized_size_in_bytes(n_runs);

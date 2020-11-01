@@ -207,12 +207,12 @@ bool array_array_container_xor(
         src_1->cardinality + src_2->cardinality;  // upper bound
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        array_container_xor(src_1, src_2, (array_container_t *)*dst);
+        array_container_xor(src_1, src_2, CAST_array(*dst));
         return false;  // not a bitset
     }
     *dst = bitset_container_from_array(src_1);
     bool returnval = true;  // expect a bitset
-    bitset_container_t *ourbitset = (bitset_container_t *)*dst;
+    bitset_container_t *ourbitset = CAST_bitset(*dst);
     ourbitset->cardinality = (uint32_t)bitset_flip_list_withcard(
         ourbitset->array, src_1->cardinality, src_2->array, src_2->cardinality);
     if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
@@ -234,13 +234,13 @@ bool array_array_container_lazy_xor(
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL)
-            array_container_xor(src_1, src_2, (array_container_t *)*dst);
+            array_container_xor(src_1, src_2, CAST_array(*dst));
         return false;  // not a bitset
     }
     *dst = bitset_container_from_array(src_1);
     bool returnval = true;  // expect a bitset (maybe, for XOR??)
     if (*dst != NULL) {
-        bitset_container_t *ourbitset = (bitset_container_t *)*dst;
+        bitset_container_t *ourbitset = CAST_bitset(*dst);
         bitset_flip_list(ourbitset->array, src_2->array, src_2->cardinality);
         ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
     }
