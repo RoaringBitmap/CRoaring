@@ -290,7 +290,7 @@ int run_array_container_andnot(
     if (card <= arbitrary_threshold) {
         if (src_2->cardinality == 0) {
             *dst = run_container_clone(src_1);
-            return RUN_CONTAINER_TYPE_CODE;
+            return RUN_CONTAINER_TYPE;
         }
         // Java's "lazyandNot.toEfficientContainer" thing
         run_container_t *answer = run_container_create_given_capacity(
@@ -357,12 +357,12 @@ int run_array_container_andnot(
         // difference
         ac->cardinality = run_array_array_subtract(src_1, src_2, ac);
         *dst = ac;
-        return ARRAY_CONTAINER_TYPE_CODE;
+        return ARRAY_CONTAINER_TYPE;
     }
     bitset_container_t *ans = bitset_container_from_run(src_1);
     bool result_is_bitset = bitset_array_container_iandnot(ans, src_2, dst);
-    return (result_is_bitset ? BITSET_CONTAINER_TYPE_CODE
-                             : ARRAY_CONTAINER_TYPE_CODE);
+    return (result_is_bitset ? BITSET_CONTAINER_TYPE
+                             : ARRAY_CONTAINER_TYPE);
 }
 
 /* Compute the andnot of src_1 and src_2 and write the result to

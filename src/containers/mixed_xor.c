@@ -128,15 +128,15 @@ int array_run_container_xor(
         array_container_t *temp = array_container_from_run(src_2);
         bool ret_is_bitset = array_array_container_xor(temp, src_1, dst);
         array_container_free(temp);
-        return ret_is_bitset ? BITSET_CONTAINER_TYPE_CODE
-                             : ARRAY_CONTAINER_TYPE_CODE;
+        return ret_is_bitset ? BITSET_CONTAINER_TYPE
+                             : ARRAY_CONTAINER_TYPE;
 
     } else {  // guess that it will end up as a bitset
         bitset_container_t *result = bitset_container_from_run(src_2);
         bool is_bitset = bitset_array_container_ixor(result, src_1, dst);
         // any necessary type conversion has been done by the ixor
-        int retval = (is_bitset ? BITSET_CONTAINER_TYPE_CODE
-                                : ARRAY_CONTAINER_TYPE_CODE);
+        int retval = (is_bitset ? BITSET_CONTAINER_TYPE
+                                : ARRAY_CONTAINER_TYPE);
         return retval;
     }
 }

@@ -126,17 +126,17 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
             ra_unshare_container_at_index(&x1->high_low_container, pos1);
             container_t *c1 = ra_get_container_at_index(
                                     &x1->high_low_container, pos1, &type1);
-            assert(type1 != SHARED_CONTAINER_TYPE_CODE);
+            assert(type1 != SHARED_CONTAINER_TYPE);
 
             ra_unshare_container_at_index(&x2->high_low_container, pos2);
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
-            assert(type2 != SHARED_CONTAINER_TYPE_CODE);
+            assert(type2 != SHARED_CONTAINER_TYPE);
             
             container_t *c;
 
-            if ((type2 == BITSET_CONTAINER_TYPE_CODE) &&
-                (type1 != BITSET_CONTAINER_TYPE_CODE)
+            if ((type2 == BITSET_CONTAINER_TYPE) &&
+                (type1 != BITSET_CONTAINER_TYPE)
             ){
                 c = container_lazy_ior(c2, type2, c1, type1, &result_type);
                 container_free(c1, type1);
