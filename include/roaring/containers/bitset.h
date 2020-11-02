@@ -45,6 +45,7 @@ typedef struct bitset_container_s bitset_container_t;
 
 #define CAST_bitset(c)         CAST(bitset_container_t *, c)  // safer downcast
 #define const_CAST_bitset(c)   CAST(const bitset_container_t *, c)
+#define movable_CAST_bitset(c) movable_CAST(bitset_container_t **, c)
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(void);

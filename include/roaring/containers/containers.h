@@ -66,6 +66,7 @@ typedef struct shared_container_s shared_container_t;
 
 #define CAST_shared(c)         CAST(shared_container_t *, c)  // safer downcast
 #define const_CAST_shared(c)   CAST(const shared_container_t *, c)
+#define movable_CAST_shared(c) movable_CAST(shared_container_t **, c)
 
 /*
  * With copy_on_write = true
