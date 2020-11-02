@@ -8,10 +8,11 @@
 
 #include <string.h>
 
-#include <roaring/array_util.h>
-#include <roaring/containers/perfparameters.h>
 #include <roaring/portability.h>
-#include <roaring/roaring_types.h>
+#include <roaring/roaring_types.h>  // roaring_iterator
+#include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
+
+#include <roaring/containers/container_defs.h>  // container_t, perfparameters
 
 #ifdef __cplusplus
 extern "C" { namespace roaring {
@@ -32,7 +33,7 @@ enum { DEFAULT_MAX_SIZE = 4096 };
  * @capacity:    allocated size of `array`
  * @array:       sorted list of integers
  */
-struct array_container_s {
+STRUCT_CONTAINER(array_container_s) {
     int32_t cardinality;
     int32_t capacity;
     uint16_t *array;

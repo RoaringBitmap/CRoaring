@@ -157,8 +157,10 @@ void array_run_container_inplace_union(const array_container_t *src_1,
     }
 }
 
-bool array_array_container_union(const array_container_t *src_1,
-                                 const array_container_t *src_2, void **dst) {
+bool array_array_container_union(
+    const array_container_t *src_1, const array_container_t *src_2,
+    container_t **dst
+){
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
@@ -187,8 +189,10 @@ bool array_array_container_union(const array_container_t *src_1,
     return returnval;
 }
 
-bool array_array_container_inplace_union(array_container_t *src_1,
-                                 const array_container_t *src_2, void **dst) {
+bool array_array_container_inplace_union(
+    array_container_t *src_1, const array_container_t *src_2,
+    container_t **dst
+){
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     *dst = NULL;
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
@@ -233,9 +237,10 @@ bool array_array_container_inplace_union(array_container_t *src_1,
 }
 
 
-bool array_array_container_lazy_union(const array_container_t *src_1,
-                                      const array_container_t *src_2,
-                                      void **dst) {
+bool array_array_container_lazy_union(
+    const array_container_t *src_1, const array_container_t *src_2,
+    container_t **dst
+){
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
@@ -258,9 +263,10 @@ bool array_array_container_lazy_union(const array_container_t *src_1,
 }
 
 
-bool array_array_container_lazy_inplace_union(array_container_t *src_1,
-                                      const array_container_t *src_2,
-                                      void **dst) {
+bool array_array_container_lazy_inplace_union(
+    array_container_t *src_1, const array_container_t *src_2,
+    container_t **dst
+){
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     *dst = NULL;
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {

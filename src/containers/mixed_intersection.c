@@ -113,9 +113,10 @@ void array_run_container_intersection(const array_container_t *src_1,
  * *dst. If the result is true then the result is a bitset_container_t
  * otherwise is a array_container_t. If *dst ==  src_2, an in-place processing
  * is attempted.*/
-bool run_bitset_container_intersection(const run_container_t *src_1,
-                                       const bitset_container_t *src_2,
-                                       void **dst) {
+bool run_bitset_container_intersection(
+    const run_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst
+){
     if (run_container_is_full(src_1)) {
         if (*dst != src_2) *dst = bitset_container_clone(src_2);
         return true;
@@ -301,9 +302,10 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
  * to *dst. If the return function is true, the result is a bitset_container_t
  * otherwise is a array_container_t.
  */
-bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
-                                          const bitset_container_t *src_2,
-                                          void **dst) {
+bool bitset_bitset_container_intersection(
+    const bitset_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst
+){
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
     if (newCardinality > DEFAULT_MAX_SIZE) {
         *dst = bitset_container_create();
@@ -327,7 +329,9 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
 }
 
 bool bitset_bitset_container_intersection_inplace(
-    bitset_container_t *src_1, const bitset_container_t *src_2, void **dst) {
+    bitset_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst
+){
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
     if (newCardinality > DEFAULT_MAX_SIZE) {
         *dst = src_1;
