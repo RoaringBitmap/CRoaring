@@ -66,6 +66,7 @@ typedef struct run_container_s run_container_t;
 
 #define CAST_run(c)         CAST(run_container_t *, c)  // safer downcast
 #define const_CAST_run(c)   CAST(const run_container_t *, c)
+#define movable_CAST_run(c) movable_CAST(run_container_t **, c)
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create(void);
