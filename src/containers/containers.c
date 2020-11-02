@@ -24,10 +24,9 @@ extern inline container_t *container_ior(
         const container_t *c2, uint8_t type2,
         uint8_t *result_type);
 
-extern inline container_t *container_ixor(
-        container_t *c1, uint8_t type1,
-        const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+extern inline void container_ixor(
+        container_t **c1, uint8_t *type1,
+        const container_t *c2, uint8_t type2);
 
 extern inline container_t *container_iandnot(
         container_t *c1, uint8_t type1,
@@ -242,10 +241,9 @@ extern inline container_t *container_lazy_xor(
         const container_t *c2, uint8_t type2,
         uint8_t *result_type);
 
-extern inline container_t *container_lazy_ixor(
-        container_t *c1, uint8_t type1,
-        const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+extern inline void container_lazy_ixor(
+        container_t **c1, uint8_t *type1,
+        const container_t *c2, uint8_t type2);
 
 extern inline container_t *container_andnot(
         const container_t *c1, uint8_t type1,

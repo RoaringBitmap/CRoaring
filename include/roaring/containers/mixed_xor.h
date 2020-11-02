@@ -27,12 +27,39 @@
 extern "C" { namespace roaring { namespace internal {
 #endif
 
-/* Compute the xor of src_1 and src_2 and write the result to
- * dst (which has no container initially).
- * Result is true iff dst is a bitset  */
-bool array_bitset_container_xor(
-        const array_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+/* NON-LAZY XOR FUNCTIONS
+ *
+ * These functions compute the xor of src_1 and src_2 and return the result.
+ * result_type will be the type of the newly generated container.
+ *
+ * They are "non-lazy" because they *do* compact the result container to a
+ * minimal size, and ensure the cardinality of bitsets has been precalculated.
+ */
+
+container_t *array_bitset_container_xor(
+        const array_container_t *ac1, const bitset_container_t *bc2,
+        uint8_t *result_type);
+
+container_t *bitset_bitset_container_xor(
+        const bitset_container_t *bc1, const bitset_container_t *bc2,
+        uint8_t *result_type);
+
+container_t *run_bitset_container_xor(
+        const run_container_t *rc1, const bitset_container_t *bc2,
+        uint8_t *result_type);
+
+container_t *array_run_container_xor(
+        const array_container_t *ac1, const run_container_t *rc2,
+        uint8_t *result_type);
+
+container_t *array_array_container_xor(
+        const array_container_t *ac1, const array_container_t *ac2,
+        uint8_t *result_type);
+
+container_t *run_run_container_xor(
+        const run_container_t *rc1, const run_container_t *rc2,
+        uint8_t *result_type);
+
 
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst. It is allowed for src_2 to be dst.  This version does not
@@ -42,25 +69,7 @@ bool array_bitset_container_xor(
 void array_bitset_container_lazy_xor(const array_container_t *src_1,
                                      const bitset_container_t *src_2,
                                      bitset_container_t *dst);
-/* Compute the xor of src_1 and src_2 and write the result to
- * dst (which has no container initially). Return value is
- * "dst is a bitset"
- */
 
-bool bitset_bitset_container_xor(
-        const bitset_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
-
-/* Compute the xor of src_1 and src_2 and write the result to
- * dst. Result may be either a bitset or an array container
- * (returns "result is bitset"). dst does not initially have
- * any container, but becomes either a bitset container (return
- * result true) or an array container.
- */
-
-bool run_bitset_container_xor(
-        const run_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
 
 /* lazy xor.  Dst is initialized and may be equal to src_2.
  *  Result is left as a bitset container, even if actual
@@ -71,21 +80,6 @@ void run_bitset_container_lazy_xor(const run_container_t *src_1,
                                    const bitset_container_t *src_2,
                                    bitset_container_t *dst);
 
-/* dst does not indicate a valid container initially.  Eventually it
- * can become any kind of container.
- */
-
-int array_run_container_xor(
-        const array_container_t *src_1, const run_container_t *src_2,
-        container_t **dst);
-
-/* dst does not initially have a valid container.  Creates either
- * an array or a bitset container, indicated by return code
- */
-
-bool array_array_container_xor(
-        const array_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
 
 /* dst does not initially have a valid container.  Creates either
  * an array or a bitset container, indicated by return code.
@@ -106,71 +100,51 @@ void array_run_container_lazy_xor(const array_container_t *src_1,
                                   const run_container_t *src_2,
                                   run_container_t *dst);
 
-/* dst does not indicate a valid container initially.  Eventually it
- * can become any kind of container.
- */
-
-int run_run_container_xor(
-        const run_container_t *src_1, const run_container_t *src_2,
-        container_t **dst);
 
 /* INPLACE versions (initial implementation may not exploit all inplace
  * opportunities (if any...)
+ *
+ * Compute the xor of src_1 and src_2 and write the result to src_1.
+ * type1 should be the correct type of src1 to start with.
+ * The type may be modified.
  */
 
-/* Compute the xor of src_1 and src_2 and write the result to
- * dst (which has no container initially).  It will modify src_1
- * to be dst if the result is a bitset.  Otherwise, it will
- * free src_1 and dst will be a new array container.  In both
- * cases, the caller is responsible for deallocating dst.
- * Returns true iff dst is a bitset  */
+void bitset_array_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const array_container_t *ac2);
 
-bool bitset_array_container_ixor(
-        bitset_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
+void bitset_bitset_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const bitset_container_t *bc2);
 
-bool bitset_bitset_container_ixor(
-        bitset_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+void array_bitset_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const bitset_container_t *bc2);
 
-bool array_bitset_container_ixor(
-        array_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+void run_bitset_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const bitset_container_t *bc2);
 
-/* Compute the xor of src_1 and src_2 and write the result to
- * dst. Result may be either a bitset or an array container
- * (returns "result is bitset"). dst does not initially have
- * any container, but becomes either a bitset container (return
- * result true) or an array container.
- */
+void bitset_run_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const run_container_t *rc2);
 
-bool run_bitset_container_ixor(
-        run_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+void array_run_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const run_container_t *rc2);
 
-bool bitset_run_container_ixor(
-        bitset_container_t *src_1, const run_container_t *src_2,
-        container_t **dst);
+void run_array_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const array_container_t *ac2);
 
-/* dst does not indicate a valid container initially.  Eventually it
- * can become any kind of container.
- */
+void array_array_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const array_container_t *ac2);
 
-int array_run_container_ixor(
-        array_container_t *src_1, const run_container_t *src_2,
-        container_t **dst);
+void run_run_container_ixor(
+        container_t **c1, uint8_t *type1,
+        const run_container_t *ac2);
 
-int run_array_container_ixor(
-        run_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
-
-bool array_array_container_ixor(
-        array_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
-
-int run_run_container_ixor(
-        run_container_t *src_1, const run_container_t *src_2,
-        container_t **dst);
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {

@@ -989,7 +989,9 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
                 shared_container_free((shared_container_t *)c1);  // so release
             }
             else {
-                c = container_ixor(c1, type1, c2, type2, &result_type);
+                result_type = type1;
+                c = c1;
+                container_ixor(&c, &result_type, c2, type2);
             }
 
             if (container_nonzero_cardinality(c, result_type)) {
@@ -2415,7 +2417,9 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                 shared_container_free((shared_container_t *)c1);  // release
             }
             else {
-                c = container_lazy_ixor(c1, type1, c2, type2, &result_type);
+                result_type = type1;
+                c = c1;
+                container_lazy_ixor(&c, &result_type, c2, type2);
             }
         
             if (container_nonzero_cardinality(c, result_type)) {
