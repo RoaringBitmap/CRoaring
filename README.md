@@ -47,14 +47,11 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 
 # Requirements
 
-- The library should build on a  Linux-like operating system (including MacOS).
-- We also support Microsoft Visual studio.
-- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library builds without problem on ARM processors.
+- Linux, macOS, FreeBSD, Windows (MSYS2 and Microsoft Visual studio).
+- We test the library with ARM, x64/x86 and POWER processors. We only support little endian systems (big endian systems are vanishingly rare).
 - Recent C compiler supporting the C11 standard (GCC 4.8 or better or clang), there is also an optional C++ class that requires a C++ compiler supporting the C++11 standard.
-- CMake (to contribute to the project, users can rely on amalgamation/unity builds).
-- clang-format (optional).
-
-Serialization on big endian hardware may not be compatible with serialization on little endian hardware.
+- CMake (to contribute to the project, users can rely on amalgamation/unity builds if they do not wish to use CMake).
+ 
 
 # Using a CMake subdirectory
 
@@ -666,11 +663,6 @@ Yuce Tekol wrote a D wrapper available at https://github.com/yuce/droaring
 
 Antonio Guilherme Ferreira Viggiano wrote a Redis Module available at https://github.com/aviggiano/redis-roaring
 
-
-# References and further reading
-
--  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
--  Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
 
 
 # Mailing list/discussion group
