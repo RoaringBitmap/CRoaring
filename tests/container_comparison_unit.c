@@ -27,13 +27,13 @@ static inline void container_checked_add(void *container, uint16_t val,
 static inline void delegated_add(void *container, uint8_t typecode,
                                  uint16_t val) {
     switch(typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
+        case BITSET_CONTAINER_TYPE:
             bitset_container_add((bitset_container_t*)container, val);
             break;
-        case ARRAY_CONTAINER_TYPE_CODE:
+        case ARRAY_CONTAINER_TYPE:
             array_container_add((array_container_t*)container, val);
             break;
-        case RUN_CONTAINER_TYPE_CODE:
+        case RUN_CONTAINER_TYPE:
             run_container_add((run_container_t*)container, val);
             break;
         default:
@@ -45,13 +45,13 @@ static inline void delegated_add(void *container, uint8_t typecode,
 static inline void *container_create(uint8_t typecode) {
     void *result = NULL;
     switch (typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
+        case BITSET_CONTAINER_TYPE:
             result = bitset_container_create();
             break;
-        case ARRAY_CONTAINER_TYPE_CODE:
+        case ARRAY_CONTAINER_TYPE:
             result = array_container_create();
             break;
-        case RUN_CONTAINER_TYPE_CODE:
+        case RUN_CONTAINER_TYPE:
             result = run_container_create();
             break;
         default:
@@ -117,39 +117,39 @@ void generic_equal_test(uint8_t type1, uint8_t type2) {
 }
 
 void equal_array_array_test() {
-    generic_equal_test(ARRAY_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE);
+    generic_equal_test(ARRAY_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
 void equal_bitset_bitset_test() {
-    generic_equal_test(BITSET_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE);
+    generic_equal_test(BITSET_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 void equal_run_run_test() {
-    generic_equal_test(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE);
+    generic_equal_test(RUN_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
 void equal_array_bitset_test() {
-    generic_equal_test(ARRAY_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE);
+    generic_equal_test(ARRAY_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 void equal_bitset_array_test() {
-    generic_equal_test(BITSET_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE);
+    generic_equal_test(BITSET_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
 void equal_array_run_test() {
-    generic_equal_test(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE);
+    generic_equal_test(ARRAY_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
 void equal_run_array_test() {
-    generic_equal_test(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE);
+    generic_equal_test(RUN_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
 void equal_bitset_run_test() {
-    generic_equal_test(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE);
+    generic_equal_test(BITSET_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
 void equal_run_bitset_test() {
-    generic_equal_test(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE);
+    generic_equal_test(RUN_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 void generic_subset_test(uint8_t type1, uint8_t type2) {
@@ -177,35 +177,35 @@ void generic_subset_test(uint8_t type1, uint8_t type2) {
 }
 
 void subset_array_array_test() {
-    generic_subset_test(ARRAY_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE);
+    generic_subset_test(ARRAY_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
 void subset_bitset_bitset_test() {
-    generic_subset_test(BITSET_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE);
+    generic_subset_test(BITSET_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 void subset_run_run_test() {
-    generic_subset_test(RUN_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE);
+    generic_subset_test(RUN_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
 void subset_array_bitset_test() {
-    generic_subset_test(ARRAY_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE);
+    generic_subset_test(ARRAY_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 void subset_array_run_test() {
-    generic_subset_test(ARRAY_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE);
+    generic_subset_test(ARRAY_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
 void subset_run_array_test() {
-    generic_subset_test(RUN_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE);
+    generic_subset_test(RUN_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
 void subset_bitset_run_test() {
-    generic_subset_test(BITSET_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE);
+    generic_subset_test(BITSET_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
 void subset_run_bitset_test() {
-    generic_subset_test(RUN_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE);
+    generic_subset_test(RUN_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 int main() {

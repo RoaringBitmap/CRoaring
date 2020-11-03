@@ -473,13 +473,13 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
         const container_t *c = container_unwrap_shared(
                                         ra->containers[i], &ra->typecodes[i]);
         switch (ra->typecodes[i]) {
-            case BITSET_CONTAINER_TYPE_CODE:
+            case BITSET_CONTAINER_TYPE:
                 t_limit = ((const bitset_container_t *)c)->cardinality;
                 break;
-            case ARRAY_CONTAINER_TYPE_CODE:
+            case ARRAY_CONTAINER_TYPE:
                 t_limit = ((const array_container_t *)c)->cardinality;
                 break;
-            case RUN_CONTAINER_TYPE_CODE:
+            case RUN_CONTAINER_TYPE:
                 t_limit = run_container_cardinality((const run_container_t *)c);
                 break;
         }
@@ -508,19 +508,19 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                 t_ans = append_ans;
             }
             switch (ra->typecodes[i]) {
-                case BITSET_CONTAINER_TYPE_CODE:
+                case BITSET_CONTAINER_TYPE:
                     container_to_uint32_array(
                         t_ans + dtr,
                         (const bitset_container_t *)c,  ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
-                case ARRAY_CONTAINER_TYPE_CODE:
+                case ARRAY_CONTAINER_TYPE:
                     container_to_uint32_array(
                         t_ans + dtr,
                         (const array_container_t *)c, ra->typecodes[i],
                         ((uint32_t)ra->keys[i]) << 16);
                     break;
-                case RUN_CONTAINER_TYPE_CODE:
+                case RUN_CONTAINER_TYPE:
                     container_to_uint32_array(
                         t_ans + dtr,
                         (const run_container_t *)c, ra->typecodes[i],
@@ -542,7 +542,7 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
 bool ra_has_run_container(const roaring_array_t *ra) {
     for (int32_t k = 0; k < ra->size; ++k) {
         if (get_container_type(ra->containers[k], ra->typecodes[k]) ==
-            RUN_CONTAINER_TYPE_CODE)
+            RUN_CONTAINER_TYPE)
             return true;
     }
     return false;
@@ -583,7 +583,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
         assert(bitmapOfRunContainers != NULL);  // todo: handle
         for (int32_t i = 0; i < ra->size; ++i) {
             if (get_container_type(ra->containers[i], ra->typecodes[i]) ==
-                RUN_CONTAINER_TYPE_CODE) {
+                RUN_CONTAINER_TYPE) {
                 bitmapOfRunContainers[i / 8] |= (1 << (i % 8));
             }
         }
@@ -830,7 +830,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
             answer->size++;
             buf += bitset_container_read(thiscard, c, buf);
             answer->containers[k] = c;
-            answer->typecodes[k] = BITSET_CONTAINER_TYPE_CODE;
+            answer->typecodes[k] = BITSET_CONTAINER_TYPE;
         } else if (isrun) {
             // we check that the read is allowed
             *readbytes += sizeof(uint16_t);
@@ -859,7 +859,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
             answer->size++;
             buf += run_container_read(thiscard, c, buf);
             answer->containers[k] = c;
-            answer->typecodes[k] = RUN_CONTAINER_TYPE_CODE;
+            answer->typecodes[k] = RUN_CONTAINER_TYPE;
         } else {
             // we check that the read is allowed
             size_t containersize = thiscard * sizeof(uint16_t);
@@ -880,7 +880,7 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
             answer->size++;
             buf += array_container_read(thiscard, c, buf);
             answer->containers[k] = c;
-            answer->typecodes[k] = ARRAY_CONTAINER_TYPE_CODE;
+            answer->typecodes[k] = ARRAY_CONTAINER_TYPE;
         }
     }
     return true;

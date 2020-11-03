@@ -61,7 +61,7 @@ static inline container_t *containerptr_roaring_bitmap_add(
     } else {
         array_container_t *newac = array_container_create();
         container_t *container = container_add(newac, val & 0xFFFF,
-                                        ARRAY_CONTAINER_TYPE_CODE, typecode);
+                                        ARRAY_CONTAINER_TYPE, typecode);
         // we could just assume that it stays an array container
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, *typecode);
@@ -298,7 +298,7 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
                                        ra->high_low_container.typecodes[i]),
                container_get_cardinality(ra->high_low_container.containers[i],
                                          ra->high_low_container.typecodes[i]));
-        if (ra->high_low_container.typecodes[i] == SHARED_CONTAINER_TYPE_CODE) {
+        if (ra->high_low_container.typecodes[i] == SHARED_CONTAINER_TYPE) {
             printf(
                 "(shared count = %" PRIu32 " )",
                 ((shared_container_t *)(ra->high_low_container.containers[i]))
@@ -353,17 +353,17 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *ra,
             container_size_in_bytes(ra->high_low_container.containers[i],
                                     ra->high_low_container.typecodes[i]);
         switch (truetype) {
-            case BITSET_CONTAINER_TYPE_CODE:
+            case BITSET_CONTAINER_TYPE:
                 stat->n_bitset_containers++;
                 stat->n_values_bitset_containers += card;
                 stat->n_bytes_bitset_containers += sbytes;
                 break;
-            case ARRAY_CONTAINER_TYPE_CODE:
+            case ARRAY_CONTAINER_TYPE:
                 stat->n_array_containers++;
                 stat->n_values_array_containers += card;
                 stat->n_bytes_array_containers += sbytes;
                 break;
-            case RUN_CONTAINER_TYPE_CODE:
+            case RUN_CONTAINER_TYPE:
                 stat->n_run_containers++;
                 stat->n_values_run_containers += card;
                 stat->n_bytes_run_containers += sbytes;
@@ -433,7 +433,7 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
     } else {
         array_container_t *newac = array_container_create();
         container_t *container = container_add(newac, val & 0xFFFF,
-                                        ARRAY_CONTAINER_TYPE_CODE, &typecode);
+                                        ARRAY_CONTAINER_TYPE, &typecode);
         // we could just assume that it stays an array container
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, typecode);
@@ -470,7 +470,7 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t val) {
     } else {
         array_container_t *newac = array_container_create();
         container_t *container = container_add(newac, val & 0xFFFF,
-                                        ARRAY_CONTAINER_TYPE_CODE, &typecode);
+                                        ARRAY_CONTAINER_TYPE, &typecode);
         // we could just assume that it stays an array container
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, typecode);
@@ -682,7 +682,7 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
             // less efficient than avoiding in place entirely and always generating a new 
             // container.
             container_t *c =
-                (type1 == SHARED_CONTAINER_TYPE_CODE)
+                (type1 == SHARED_CONTAINER_TYPE)
                     ? container_and(c1, type1, c2, type2, &result_type)
                     : container_iand(c1, type1, c2, type2, &result_type);
             
@@ -822,7 +822,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                 container_t *c2 = ra_get_container_at_index(
                                         &x2->high_low_container, pos2, &type2);
                 container_t *c =
-                    (type1 == SHARED_CONTAINER_TYPE_CODE)
+                    (type1 == SHARED_CONTAINER_TYPE)
                         ? container_or(c1, type1, c2, type2, &result_type)
                         : container_ior(c1, type1, c2, type2, &result_type);
                 
@@ -984,7 +984,7 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
             // container.
 
             container_t *c;
-            if (type1 == SHARED_CONTAINER_TYPE_CODE) {
+            if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_xor(c1, type1, c2, type2, &result_type);
                 shared_container_free((shared_container_t *)c1);  // so release
             }
@@ -1137,7 +1137,7 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
             // container.
 
             container_t *c;
-            if (type1 == SHARED_CONTAINER_TYPE_CODE) {
+            if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_andnot(c1, type1, c2, type2, &result_type);
                 shared_container_free((shared_container_t *)c1);  // release
             }
@@ -1289,7 +1289,7 @@ bool roaring_bitmap_run_optimize(roaring_bitmap_t *r) {
         container_t *c = ra_get_container_at_index(&r->high_low_container, i,
                                                    &type_original);
         container_t *c1 = convert_run_optimize(c, type_original, &type_after);
-        if (type_after == RUN_CONTAINER_TYPE_CODE) {
+        if (type_after == RUN_CONTAINER_TYPE) {
             answer = true;
         }
         ra_set_container_at_index(&r->high_low_container, i, c1, type_after);
@@ -1319,9 +1319,9 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
         uint8_t type_original, type_after;
         container_t *c = ra_get_container_at_index(&r->high_low_container, i,
                                                    &type_original);
-        if (get_container_type(c, type_original) == RUN_CONTAINER_TYPE_CODE) {
+        if (get_container_type(c, type_original) == RUN_CONTAINER_TYPE) {
             answer = true;
-            if (type_original == SHARED_CONTAINER_TYPE_CODE) {
+            if (type_original == SHARED_CONTAINER_TYPE) {
                 run_container_t *truec =
                     (run_container_t *)((shared_container_t *)c)->container;
                 int32_t card = run_container_cardinality(truec);
@@ -1486,7 +1486,7 @@ static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
     uint32_t wordindex;
     uint64_t word;  // used for bitsets
     switch (newit->typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
+        case BITSET_CONTAINER_TYPE:
             wordindex = 0;
             while ((word = ((const bitset_container_t *)(newit->container))
                                ->array[wordindex]) == 0)
@@ -1495,12 +1495,12 @@ static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
             newit->in_container_index = wordindex * 64 + __builtin_ctzll(word);
             newit->current_value = newit->highbits | newit->in_container_index;
             break;
-        case ARRAY_CONTAINER_TYPE_CODE:
+        case ARRAY_CONTAINER_TYPE:
             newit->current_value =
                 newit->highbits |
                 ((const array_container_t *)(newit->container))->array[0];
             break;
-        case RUN_CONTAINER_TYPE_CODE:
+        case RUN_CONTAINER_TYPE:
             newit->current_value =
                 newit->highbits |
                 (((const run_container_t *)(newit->container))->runs[0].value);
@@ -1517,7 +1517,7 @@ static bool loadlastvalue(roaring_uint32_iterator_t* newit) {
         return newit->has_value;
 
     switch(newit->typecode) {
-        case BITSET_CONTAINER_TYPE_CODE: {
+        case BITSET_CONTAINER_TYPE: {
             uint32_t wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
             uint64_t word;
             const bitset_container_t* bitset_container = (const bitset_container_t*)newit->container;
@@ -1529,13 +1529,13 @@ static bool loadlastvalue(roaring_uint32_iterator_t* newit) {
             newit->current_value = newit->highbits | newit->in_container_index;
             break;
         }
-        case ARRAY_CONTAINER_TYPE_CODE: {
+        case ARRAY_CONTAINER_TYPE: {
             const array_container_t* array_container = (const array_container_t*)newit->container;
             newit->in_container_index = array_container->cardinality - 1;
             newit->current_value = newit->highbits | array_container->array[newit->in_container_index];
             break;
         }
-        case RUN_CONTAINER_TYPE_CODE: {
+        case RUN_CONTAINER_TYPE: {
             const run_container_t* run_container = (const run_container_t*)newit->container;
             newit->run_index = run_container->n_runs - 1;
             const rle16_t* last_run = &run_container->runs[newit->run_index];
@@ -1556,17 +1556,17 @@ static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit, uint32
     uint16_t lb = val & 0xFFFF;
 
     switch (newit->typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
+        case BITSET_CONTAINER_TYPE:
             newit->in_container_index =  bitset_container_index_equalorlarger((const bitset_container_t *)(newit->container), lb);
             newit->current_value = newit->highbits | newit->in_container_index;
             break;
-        case ARRAY_CONTAINER_TYPE_CODE:
+        case ARRAY_CONTAINER_TYPE:
             newit->in_container_index = array_container_index_equalorlarger((const array_container_t *)(newit->container), lb);
             newit->current_value =
                 newit->highbits |
                 ((const array_container_t *)(newit->container))->array[newit->in_container_index];
             break;
-        case RUN_CONTAINER_TYPE_CODE:
+        case RUN_CONTAINER_TYPE:
             newit->run_index = run_container_index_equalorlarger((const run_container_t *)(newit->container), lb);
             if(((const run_container_t *)(newit->container))->runs[newit->run_index].value <= lb) {
               newit->current_value = val;
@@ -1647,7 +1647,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     uint32_t wordindex;  // used for bitsets
     uint64_t word;       // used for bitsets
     switch (it->typecode) {
-        case BITSET_CONTAINER_TYPE_CODE:
+        case BITSET_CONTAINER_TYPE:
             it->in_container_index++;
             wordindex = it->in_container_index / 64;
             if (wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) break;
@@ -1667,7 +1667,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
                 return (it->has_value = true);
             }
             break;
-        case ARRAY_CONTAINER_TYPE_CODE:
+        case ARRAY_CONTAINER_TYPE:
             it->in_container_index++;
             if (it->in_container_index <
                 ((const array_container_t *)(it->container))->cardinality) {
@@ -1677,7 +1677,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
                 return (it->has_value = true);
             }
             break;
-        case RUN_CONTAINER_TYPE_CODE: {
+        case RUN_CONTAINER_TYPE: {
             if(it->current_value == UINT32_MAX) {
                 return (it->has_value = false); // without this, we risk an overflow to zero
             }
@@ -1714,7 +1714,7 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
     }
 
     switch (it->typecode) {
-        case BITSET_CONTAINER_TYPE_CODE: {
+        case BITSET_CONTAINER_TYPE: {
             if (--it->in_container_index < 0)
                 break;
 
@@ -1733,7 +1733,7 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
             it->current_value = it->highbits | it->in_container_index;
             return (it->has_value = true);
         }
-        case ARRAY_CONTAINER_TYPE_CODE: {
+        case ARRAY_CONTAINER_TYPE: {
             if (--it->in_container_index < 0)
                 break;
 
@@ -1741,7 +1741,7 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
             it->current_value = it->highbits | array_container->array[it->in_container_index];
             return (it->has_value = true);
         }
-        case RUN_CONTAINER_TYPE_CODE: {
+        case RUN_CONTAINER_TYPE: {
             if(it->current_value == 0)
                 return (it->has_value = false);
 
@@ -1778,7 +1778,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
 
   while (it->has_value && ret < count) {
     switch (it->typecode) {
-      case BITSET_CONTAINER_TYPE_CODE:
+      case BITSET_CONTAINER_TYPE:
         bcont = (const bitset_container_t*)(it->container);
         wordindex = it->in_container_index / 64;
         word = bcont->array[wordindex] & (UINT64_MAX << (it->in_container_index % 64));
@@ -1800,7 +1800,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
           it->current_value = it->highbits | it->in_container_index;
         }
         break;
-      case ARRAY_CONTAINER_TYPE_CODE:
+      case ARRAY_CONTAINER_TYPE:
         acont = (const array_container_t *)(it->container);
         num_values = minimum_uint32(acont->cardinality - it->in_container_index, count - ret);
         for (uint32_t i = 0; i < num_values; i++) {
@@ -1814,7 +1814,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
           it->current_value = it->highbits | acont->array[it->in_container_index];
         }
         break;
-      case RUN_CONTAINER_TYPE_CODE:
+      case RUN_CONTAINER_TYPE:
         rcont = (const run_container_t*)(it->container);
         //"in_run_index" name is misleading, read it as "max_value_in_current_run"
         do {
@@ -2139,13 +2139,13 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                     &x2->high_low_container, pos2, &type2);
             container_t *c;
             if (bitsetconversion &&
-                (get_container_type(c1, type1) != BITSET_CONTAINER_TYPE_CODE) &&
-                (get_container_type(c2, type2) != BITSET_CONTAINER_TYPE_CODE)
+                (get_container_type(c1, type1) != BITSET_CONTAINER_TYPE) &&
+                (get_container_type(c2, type2) != BITSET_CONTAINER_TYPE)
             ){
                 container_t *newc1 =
                     container_mutable_unwrap_shared(c1, &type1);
                 newc1 = container_to_bitset(newc1, type1);
-                type1 = BITSET_CONTAINER_TYPE_CODE;
+                type1 = BITSET_CONTAINER_TYPE;
                 c = container_lazy_ior(newc1, type1, c2, type2,
                                        &result_type);
                 if (c != newc1) {  // should not happen
@@ -2228,8 +2228,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                     &x1->high_low_container, pos1, &type1);
             if (!container_is_full(c1, type1)) {
                 if ((bitsetconversion == false) ||
-                    (get_container_type(c1, type1) ==
-                     BITSET_CONTAINER_TYPE_CODE)
+                    (get_container_type(c1, type1) == BITSET_CONTAINER_TYPE)
                 ){
                     c1 = get_writable_copy_if_shared(c1, &type1);
                 } else {
@@ -2239,7 +2238,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                     c1 = container_mutable_unwrap_shared(c1, &type1);
                     c1 = container_to_bitset(c1, type1);
                     container_free(old_c1, old_type1);
-                    type1 = BITSET_CONTAINER_TYPE_CODE;
+                    type1 = BITSET_CONTAINER_TYPE;
                 }
 
                 container_t *c2 = ra_get_container_at_index(
@@ -2401,7 +2400,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             // container.
 
             container_t *c;
-            if (type1 == SHARED_CONTAINER_TYPE_CODE) {
+            if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_lazy_xor(c1, type1, c2, type2, &result_type);
                 shared_container_free((shared_container_t *)c1);  // release
             }
@@ -2746,17 +2745,17 @@ size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *rb) {
     size_t num_bytes = 0;
     for (int32_t i = 0; i < ra->size; i++) {
         switch (ra->typecodes[i]) {
-            case BITSET_CONTAINER_TYPE_CODE: {
+            case BITSET_CONTAINER_TYPE: {
                 num_bytes += BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
             }
-            case RUN_CONTAINER_TYPE_CODE: {
+            case RUN_CONTAINER_TYPE: {
                 const run_container_t *run =
                         (const run_container_t *) ra->containers[i];
                 num_bytes += run->n_runs * sizeof(rle16_t);
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
+            case ARRAY_CONTAINER_TYPE: {
                 const array_container_t *array =
                         (const array_container_t *) ra->containers[i];
                 num_bytes += array->cardinality * sizeof(uint16_t);
@@ -2790,18 +2789,18 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
     size_t array_zone_size = 0;
     for (int32_t i = 0; i < ra->size; i++) {
         switch (ra->typecodes[i]) {
-            case BITSET_CONTAINER_TYPE_CODE: {
+            case BITSET_CONTAINER_TYPE: {
                 bitset_zone_size +=
                         BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
             }
-            case RUN_CONTAINER_TYPE_CODE: {
+            case RUN_CONTAINER_TYPE: {
                 const run_container_t *run =
                         (const run_container_t *) ra->containers[i];
                 run_zone_size += run->n_runs * sizeof(rle16_t);
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
+            case ARRAY_CONTAINER_TYPE: {
                 const array_container_t *array =
                         (const array_container_t *) ra->containers[i];
                 array_zone_size += array->cardinality * sizeof(uint16_t);
@@ -2823,7 +2822,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
     for (int32_t i = 0; i < ra->size; i++) {
         uint16_t count;
         switch (ra->typecodes[i]) {
-            case BITSET_CONTAINER_TYPE_CODE: {
+            case BITSET_CONTAINER_TYPE: {
                 const bitset_container_t *bitset =
                         (const bitset_container_t *) ra->containers[i];
                 memcpy(bitset_zone, bitset->array,
@@ -2836,7 +2835,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 }
                 break;
             }
-            case RUN_CONTAINER_TYPE_CODE: {
+            case RUN_CONTAINER_TYPE: {
                 const run_container_t *run =
                         (const run_container_t *) ra->containers[i];
                 size_t num_bytes = run->n_runs * sizeof(rle16_t);
@@ -2845,7 +2844,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 count = run->n_runs;
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
+            case ARRAY_CONTAINER_TYPE: {
                 const array_container_t *array =
                         (const array_container_t *) ra->containers[i];
                 size_t num_bytes = array->cardinality * sizeof(uint16_t);
@@ -2899,15 +2898,15 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     size_t array_zone_size = 0;
     for (int32_t i = 0; i < num_containers; i++) {
         switch (typecodes[i]) {
-            case BITSET_CONTAINER_TYPE_CODE:
+            case BITSET_CONTAINER_TYPE:
                 num_bitset_containers++;
                 bitset_zone_size += BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
-            case RUN_CONTAINER_TYPE_CODE:
+            case RUN_CONTAINER_TYPE:
                 num_run_containers++;
                 run_zone_size += counts[i] * sizeof(rle16_t);
                 break;
-            case ARRAY_CONTAINER_TYPE_CODE:
+            case ARRAY_CONTAINER_TYPE:
                 num_array_containers++;
                 array_zone_size += (counts[i] + UINT32_C(1)) * sizeof(uint16_t);
                 break;
@@ -2947,7 +2946,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                                     sizeof(container_t*) * num_containers);
     for (int32_t i = 0; i < num_containers; i++) {
         switch (typecodes[i]) {
-            case BITSET_CONTAINER_TYPE_CODE: {
+            case BITSET_CONTAINER_TYPE: {
                 bitset_container_t *bitset = (bitset_container_t *)
                         arena_alloc(&arena, sizeof(bitset_container_t));
                 bitset->array = bitset_zone;
@@ -2956,7 +2955,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                 bitset_zone += BITSET_CONTAINER_SIZE_IN_WORDS;
                 break;
             }
-            case RUN_CONTAINER_TYPE_CODE: {
+            case RUN_CONTAINER_TYPE: {
                 run_container_t *run = (run_container_t *)
                         arena_alloc(&arena, sizeof(run_container_t));
                 run->capacity = counts[i];
@@ -2966,7 +2965,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                 run_zone += run->n_runs;
                 break;
             }
-            case ARRAY_CONTAINER_TYPE_CODE: {
+            case ARRAY_CONTAINER_TYPE: {
                 array_container_t *array = (array_container_t *)
                         arena_alloc(&arena, sizeof(array_container_t));
                 array->capacity = counts[i] + UINT32_C(1);

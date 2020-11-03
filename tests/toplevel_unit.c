@@ -186,30 +186,30 @@ void can_add_to_copies(bool copy_on_write) {
 void convert_all_containers(roaring_bitmap_t* r, uint8_t dst_type) {
     for (int32_t i = 0; i < r->high_low_container.size; i++) {
         // first step: convert src_type to ARRAY
-        if (r->high_low_container.typecodes[i] == BITSET_CONTAINER_TYPE_CODE) {
+        if (r->high_low_container.typecodes[i] == BITSET_CONTAINER_TYPE) {
             array_container_t* dst_container = array_container_from_bitset(r->high_low_container.containers[i]);
             bitset_container_free(r->high_low_container.containers[i]);
             r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE_CODE;
-        } else if (r->high_low_container.typecodes[i] == RUN_CONTAINER_TYPE_CODE) {
+            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE;
+        } else if (r->high_low_container.typecodes[i] == RUN_CONTAINER_TYPE) {
             array_container_t* dst_container = array_container_from_run(r->high_low_container.containers[i]);
             run_container_free(r->high_low_container.containers[i]);
             r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE_CODE;
+            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE;
         }
-        assert(r->high_low_container.typecodes[i] == ARRAY_CONTAINER_TYPE_CODE);
+        assert(r->high_low_container.typecodes[i] == ARRAY_CONTAINER_TYPE);
 
         // second step: convert ARRAY to dst_type
-        if (dst_type == BITSET_CONTAINER_TYPE_CODE) {
+        if (dst_type == BITSET_CONTAINER_TYPE) {
             bitset_container_t* dst_container = bitset_container_from_array(r->high_low_container.containers[i]);
             array_container_free(r->high_low_container.containers[i]);
             r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = BITSET_CONTAINER_TYPE_CODE;
-        } else if (dst_type == RUN_CONTAINER_TYPE_CODE) {
+            r->high_low_container.typecodes[i] = BITSET_CONTAINER_TYPE;
+        } else if (dst_type == RUN_CONTAINER_TYPE) {
             run_container_t* dst_container = run_container_from_array(r->high_low_container.containers[i]);
             array_container_free(r->high_low_container.containers[i]);
             r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = RUN_CONTAINER_TYPE_CODE;
+            r->high_low_container.typecodes[i] = RUN_CONTAINER_TYPE;
         }
         assert(r->high_low_container.typecodes[i] == dst_type);
     }
@@ -1220,7 +1220,7 @@ void test_serialize() {
     for (int i = 0; i < 768; i++) run_container_add(run, 3 * i);
 
     r1 = roaring_bitmap_create_with_capacity(1);
-    ra_append(&r1->high_low_container, 0, run, RUN_CONTAINER_TYPE_CODE);
+    ra_append(&r1->high_low_container, 0, run, RUN_CONTAINER_TYPE);
 
     serialize_len = roaring_bitmap_size_in_bytes(r1);
     serialized = malloc(serialize_len);
@@ -3598,13 +3598,13 @@ void test_read_uint32_iterator(uint8_t type) {
 }
 
 void test_read_uint32_iterator_array() {
-    test_read_uint32_iterator(ARRAY_CONTAINER_TYPE_CODE);
+    test_read_uint32_iterator(ARRAY_CONTAINER_TYPE);
 }
 void test_read_uint32_iterator_bitset() {
-    test_read_uint32_iterator(BITSET_CONTAINER_TYPE_CODE);
+    test_read_uint32_iterator(BITSET_CONTAINER_TYPE);
 }
 void test_read_uint32_iterator_run() {
-    test_read_uint32_iterator(RUN_CONTAINER_TYPE_CODE);
+    test_read_uint32_iterator(RUN_CONTAINER_TYPE);
 }
 void test_read_uint32_iterator_native() {
     test_read_uint32_iterator(UINT8_MAX); // special value
@@ -3641,15 +3641,15 @@ void test_previous_iterator(uint8_t type) {
 }
 
 void test_previous_iterator_array() {
-    test_previous_iterator(ARRAY_CONTAINER_TYPE_CODE);
+    test_previous_iterator(ARRAY_CONTAINER_TYPE);
 }
 
 void test_previous_iterator_bitset() {
-    test_previous_iterator(BITSET_CONTAINER_TYPE_CODE);
+    test_previous_iterator(BITSET_CONTAINER_TYPE);
 }
 
 void test_previous_iterator_run() {
-    test_previous_iterator(RUN_CONTAINER_TYPE_CODE);
+    test_previous_iterator(RUN_CONTAINER_TYPE);
 }
 
 void test_previous_iterator_native() {
@@ -3738,14 +3738,14 @@ void test_add_range() {
     {
       sbs_t* sbs = sbs_create();
       sbs_add_value(sbs, 100);
-      sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
+      sbs_convert(sbs, BITSET_CONTAINER_TYPE);
       sbs_add_range(sbs, 0, 299);
-      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
       sbs_add_range(sbs, 301, 65535);
-      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
       // after and only after BITSET becomes [0, 65535], it is converted to RUN
       sbs_add_range(sbs, 300, 300);
-      assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE));
       sbs_compare(sbs);
       sbs_free(sbs);
     }
@@ -3754,19 +3754,19 @@ void test_add_range() {
     {
       sbs_t* sbs = sbs_create();
       sbs_add_value(sbs, 100);
-      sbs_convert(sbs, ARRAY_CONTAINER_TYPE_CODE);
+      sbs_convert(sbs, ARRAY_CONTAINER_TYPE);
 
       // unless threshold was hit, it is still ARRAY
       for (int i = 0; i < 100; i += 2) {
         sbs_add_value(sbs, i);
-        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE));
       }
 
       // after threshold on number of elements was hit, it is converted to BITSET
       for (int i = 0; i < 65535; i += 2) {
         sbs_add_value(sbs, i);
       }
-      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
 
       sbs_compare(sbs);
       sbs_free(sbs);
@@ -3776,11 +3776,11 @@ void test_add_range() {
      {
       sbs_t* sbs = sbs_create();
       sbs_add_range(sbs, 0, 100);
-      sbs_convert(sbs, ARRAY_CONTAINER_TYPE_CODE);
+      sbs_convert(sbs, ARRAY_CONTAINER_TYPE);
 
       // after ARRAY becomes full [0, 65535], it is converted to RUN
       sbs_add_range(sbs, 100, 65535);
-      assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE));
 
       sbs_compare(sbs);
       sbs_free(sbs);
@@ -3791,13 +3791,13 @@ void test_add_range() {
       // by default, RUN container is used
       for (int i = 0; i < 100; i += 2) {
         sbs_add_range(sbs, 4*i, 4*i + 1);
-        assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE));
       }
       // after number of RLE runs exceeded threshold, it is converted to BITSET
       for (int i = 0; i < 65535; i += 2) {
         sbs_add_range(sbs, i, i);
       }
-      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
       sbs_compare(sbs);
       sbs_free(sbs);
     }
@@ -3807,13 +3807,13 @@ void test_add_range() {
       sbs_t* sbs = sbs_create();
       for (int i = 0; i < 100; i += 2) {
         sbs_add_range(sbs, i, i);
-        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE));
       }
       // after number of RLE runs exceeded threshold, it is converted to BITSET
       for (int i = 0; i < 65535; i += 2) {
         sbs_add_range(sbs, i, i);
       }
-      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+      assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
       sbs_compare(sbs);
       sbs_free(sbs);
     }
@@ -3896,11 +3896,11 @@ void test_remove_range() {
     {
         sbs_t *sbs = sbs_create();
         sbs_add_range(sbs, 100, 200);
-        sbs_convert(sbs, ARRAY_CONTAINER_TYPE_CODE);
+        sbs_convert(sbs, ARRAY_CONTAINER_TYPE);
         sbs_remove_range(sbs, 100, 105);
         sbs_remove_range(sbs, 195, 200);
         sbs_remove_range(sbs, 150, 155);
-        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE));
         sbs_compare(sbs);
         sbs_remove_range(sbs, 102, 198);
         assert_true(sbs_is_empty(sbs));
@@ -3911,11 +3911,11 @@ void test_remove_range() {
     {
         sbs_t *sbs = sbs_create();
         sbs_add_range(sbs, 0, 40000);
-        sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
+        sbs_convert(sbs, BITSET_CONTAINER_TYPE);
         sbs_remove_range(sbs, 100, 200);
-        assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
         sbs_remove_range(sbs, 200, 39900);
-        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, ARRAY_CONTAINER_TYPE));
         sbs_compare(sbs);
         sbs_free(sbs);
     }
@@ -3924,7 +3924,7 @@ void test_remove_range() {
     {
         sbs_t *sbs = sbs_create();
         sbs_add_range(sbs, 100, 200);
-        sbs_convert(sbs, BITSET_CONTAINER_TYPE_CODE);
+        sbs_convert(sbs, BITSET_CONTAINER_TYPE);
         sbs_remove_range(sbs, 50, 250);
         assert_true(sbs_is_empty(sbs));
         sbs_free(sbs);
@@ -3935,16 +3935,16 @@ void test_remove_range() {
         sbs_t *sbs = sbs_create();
         sbs_add_range(sbs, 0, 40000);
         sbs_add_range(sbs, 50000, 60000);
-        sbs_convert(sbs, RUN_CONTAINER_TYPE_CODE);
+        sbs_convert(sbs, RUN_CONTAINER_TYPE);
         sbs_remove_range(sbs, 100, 200);
         sbs_remove_range(sbs, 40000, 50000);
-        assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, RUN_CONTAINER_TYPE));
         for (int i = 0; i < 65535; i++) {
             if (i % 2 == 0) {
                 sbs_remove_range(sbs, i, i);
             }
         }
-        assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE_CODE));
+        assert_true(sbs_check_type(sbs, BITSET_CONTAINER_TYPE));
         sbs_compare(sbs);
         sbs_free(sbs);
     }
@@ -3954,7 +3954,7 @@ void test_remove_range() {
         sbs_t *sbs = sbs_create();
         sbs_add_range(sbs, 100, 200);
         sbs_add_range(sbs, 300, 400);
-        sbs_convert(sbs, RUN_CONTAINER_TYPE_CODE);
+        sbs_convert(sbs, RUN_CONTAINER_TYPE);
         sbs_remove_range(sbs, 50, 450);
         assert_true(sbs_is_empty(sbs));
         sbs_free(sbs);

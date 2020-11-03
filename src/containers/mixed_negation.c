@@ -244,7 +244,7 @@ int run_container_negation_range(
     // follows the Java implementation
     if (range_end <= range_start) {
         *dst = run_container_clone(src);
-        return RUN_CONTAINER_TYPE_CODE;
+        return RUN_CONTAINER_TYPE;
     }
 
     run_container_t *ans = run_container_create_given_capacity(
@@ -264,7 +264,7 @@ int run_container_negation_range(
     }
 
     *dst = convert_run_to_efficient_container(ans, &return_typecode);
-    if (return_typecode != RUN_CONTAINER_TYPE_CODE) run_container_free(ans);
+    if (return_typecode != RUN_CONTAINER_TYPE) run_container_free(ans);
 
     return return_typecode;
 }
@@ -285,7 +285,7 @@ int run_container_negation_range_inplace(
 
     if (range_end <= range_start) {
         *dst = src;
-        return RUN_CONTAINER_TYPE_CODE;
+        return RUN_CONTAINER_TYPE;
     }
 
     // TODO: efficient special case when range is 0 to 65535 inclusive
@@ -347,7 +347,7 @@ int run_container_negation_range_inplace(
     }
 
     *dst = convert_run_to_efficient_container(ans, &return_typecode);
-    if (return_typecode != RUN_CONTAINER_TYPE_CODE) run_container_free(ans);
+    if (return_typecode != RUN_CONTAINER_TYPE) run_container_free(ans);
 
     return return_typecode;
 }
