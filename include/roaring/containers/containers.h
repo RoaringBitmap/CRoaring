@@ -7,7 +7,10 @@
 
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
+
 #include <roaring/containers/convert.h>
+
 #include <roaring/containers/mixed_andnot.h>
 #include <roaring/containers/mixed_equal.h>
 #include <roaring/containers/mixed_intersection.h>
@@ -15,7 +18,7 @@
 #include <roaring/containers/mixed_subset.h>
 #include <roaring/containers/mixed_union.h>
 #include <roaring/containers/mixed_xor.h>
-#include <roaring/containers/run.h>
+
 #include <roaring/bitset_util.h>
 
 #ifdef __cplusplus
@@ -29,12 +32,20 @@ extern "C" { namespace roaring { namespace internal {
  * BITSET_CONTAINER_TYPE -- ARRAY_CONTAINER_TYPE -- RUN_CONTAINER_TYPE
  * so it makes more sense to number them 1, 2, 3 (in the vague hope that the
  * compiler might exploit this ordering).
+ * 
+ * Because token pasting can't convert strings to uppercase, lowercase forms
+ * are provided as alternate definitions for macros that need them.
  */
 
 #define BITSET_CONTAINER_TYPE 1
 #define ARRAY_CONTAINER_TYPE 2
 #define RUN_CONTAINER_TYPE 3
 #define SHARED_CONTAINER_TYPE 4
+
+#define bitset_CONTAINER_TYPE BITSET_CONTAINER_TYPE
+#define array_CONTAINER_TYPE ARRAY_CONTAINER_TYPE
+#define run_CONTAINER_TYPE RUN_CONTAINER_TYPE
+
 
 /**
  * Macros for pairing container type codes, suitable for switch statements.
@@ -67,6 +78,29 @@ typedef struct shared_container_s shared_container_t;
 #define CAST_shared(c)         CAST(shared_container_t *, c)  // safer downcast
 #define const_CAST_shared(c)   CAST(const shared_container_t *, c)
 #define movable_CAST_shared(c) movable_CAST(shared_container_t **, c)
+
+
+/**
+ * Not all combinations of two container types have a specialized inplace
+ * algorithms.  Many fall back on the default of just using the non-inplace
+ * versions and then overwriting the passed in container with it.  This macro
+ * makes defining those default implementations consistent, and makes it clear
+ * that they haven't been tailored specially.
+ *
+ * NOTE: Wherever this macro is used, it should be considered if efficiency
+ * warrants writing an actual inplace routine.  Anything inplace with a bitset
+ * is a good candidate.
+ */
+#define DECLARE_INPLACE_DEFAULT(T1,T2,OP) \
+    void T1##_##T2##_container_i##OP( \
+        container_t **c1, uint8_t *type1, \
+        const T2##_container_t *x2 \
+    ){ \
+        assert(*type1 == T1##_CONTAINER_TYPE); \
+        T1##_container_t *x1 = *movable_CAST_##T1(c1); \
+        *c1 = T1##_##T2##_container_##OP(x1, x2, type1); \
+        T1##_container_free(x1); \
+    }
 
 /*
  * With copy_on_write = true

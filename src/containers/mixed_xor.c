@@ -245,9 +245,6 @@ container_t *bitset_bitset_container_xor(
  * If a tailored in-place implemention is not available, then the plain xor is
  * used to generate a new container and the old one freed.
  *
- * TODO: write more actual inplace routines where efficiency warrants it.
- * Anything inplace with a bitset is a good candidate.
- * 
  * Java implementation (as of May 2016) for array_run, run_run and bitset_run
  * don't do anything different for inplace.  Could adopt the mixed_union.c
  * approach instead (ie, using smart_append_exclusive)
@@ -274,85 +271,21 @@ void bitset_array_container_ixor(
     assert(*type1 == BITSET_CONTAINER_TYPE);
 }
 
-void bitset_bitset_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const bitset_container_t *bc2
-){
-    assert(*type1 == BITSET_CONTAINER_TYPE);
-    bitset_container_t *bc1 = *movable_CAST_bitset(c1);
-    *c1 = bitset_bitset_container_xor(bc1, bc2, type1);
-    bitset_container_free(bc1);
-}
+DECLARE_INPLACE_DEFAULT(bitset, bitset, xor)
 
-void array_bitset_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const bitset_container_t *bc2
-){
-    assert(*type1 == ARRAY_CONTAINER_TYPE);
-    array_container_t *ac1 = *movable_CAST_array(c1);
-    *c1 = array_bitset_container_xor(ac1, bc2, type1);
-    array_container_free(ac1);
-}
+DECLARE_INPLACE_DEFAULT(array, bitset, xor)
 
-void run_bitset_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const bitset_container_t *bc2
-){
-    assert(*type1 == RUN_CONTAINER_TYPE);
-    run_container_t *rc1 = *movable_CAST_run(c1);
-    *c1 = run_bitset_container_xor(rc1, bc2, type1);
-    run_container_free(rc1);
-}
+DECLARE_INPLACE_DEFAULT(run, bitset, xor)
 
-void bitset_run_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const run_container_t *rc2
-){
-    assert(*type1 == BITSET_CONTAINER_TYPE);
-    bitset_container_t *bc1 = *movable_CAST_bitset(c1);
-    *c1 = run_bitset_container_xor(rc2, bc1, type1);
-    bitset_container_free(bc1);
-}
+DECLARE_INPLACE_DEFAULT(bitset, run, xor)
 
-void array_run_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const run_container_t *rc2
-){
-    assert(*type1 == ARRAY_CONTAINER_TYPE);
-    array_container_t *ac1 = *movable_CAST_array(c1);
-    *c1 = array_run_container_xor(ac1, rc2, type1);
-    array_container_free(ac1);
-}
+DECLARE_INPLACE_DEFAULT(array, run, xor)
 
-void run_array_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const array_container_t *ac2
-){
-    assert(*type1 == RUN_CONTAINER_TYPE);
-    run_container_t *rc1 = *movable_CAST_run(c1);
-    *c1 = array_run_container_xor(ac2, rc1, type1);
-    run_container_free(rc1);
-}
+DECLARE_INPLACE_DEFAULT(run, array, xor)
 
-void array_array_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const array_container_t *ac2
-){
-    assert(*type1 == ARRAY_CONTAINER_TYPE);
-    array_container_t *ac1 = *movable_CAST_array(c1);
-    *c1 = array_array_container_xor(ac1, ac2, type1);
-    array_container_free(ac1);
-}
+DECLARE_INPLACE_DEFAULT(array, array, xor)
 
-void run_run_container_ixor(
-    container_t **c1, uint8_t *type1,
-    const run_container_t *rc2
-){
-    assert(*type1 == RUN_CONTAINER_TYPE);
-    run_container_t *rc1 = *movable_CAST_run(c1);
-    *c1 = run_run_container_xor(rc1, rc2, type1);
-    run_container_free(rc1);
-}
+DECLARE_INPLACE_DEFAULT(run, run, xor)
 
 
 #ifdef __cplusplus

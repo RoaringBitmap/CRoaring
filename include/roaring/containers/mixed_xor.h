@@ -101,6 +101,17 @@ void array_run_container_lazy_xor(const array_container_t *src_1,
                                   run_container_t *dst);
 
 
+/* EQUIVALENCIES since order does not matter for non-inplace xor.
+ */
+
+#define bitset_run_container_xor(c1,c2,t) \
+    run_bitset_container_xor(c2,c1,t)
+
+#define run_array_container_xor(c1,c2,t) \
+    array_run_container_xor(c2,c1,t)
+
+
+
 /* INPLACE versions (initial implementation may not exploit all inplace
  * opportunities (if any...)
  *
