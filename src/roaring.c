@@ -18,6 +18,23 @@ using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace api {
 #endif
 
+#if !defined(ROARING_NO_PANIC)
+int roaring_panic(int id) {
+    switch (id) {
+      case ROARING_ERR_ALLOC_FAILED:
+        fprintf(stderr, "Allocation Failed in Roaring Bitmaps\n");
+        break;
+
+      default:
+        fprintf(stderr, "Unknown Error in Roaring Bitmaps\n");
+        break;
+    }
+    fprintf(stderr, "https://github.com/RoaringBitmap/CRoaring/issues/174\n");
+    exit(EXIT_FAILURE);
+}
+#endif
+
+
 extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
                                            uint32_t val);
 extern inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r);

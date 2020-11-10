@@ -16,6 +16,35 @@ An implementation of Roaring Bitmaps in C.
 extern "C" { namespace roaring { namespace api {
 #endif
 
+#define ROARING_ERR_ALLOC_FAILED -1
+
+/**
+ * The easy-to-use API forms do not return failure results.  They are inline
+ * functions (declared in this header) that pass a code to a handler in the
+ * event of a problem.
+ *
+ * These inlines are implemented in terms of core APIs that pass back `NULL`,
+ * or `false`, or an error code when there is a problem.  Clients who wish to
+ * handle errors at the callsites should use those directly...but be sure to
+ * read the notes on each API regarding atomicity guarantees (or lack thereof).
+ *
+ * You may override the function called in the inline helpers by defining
+ * ROARING_FAILURE_HANDLER before including the API.  It defaults to a basic
+ * `roaring_panic()` function that prints out an error message and exits.
+ */ 
+#if !defined ROARING_FAILURE_HANDLER
+    #define ROARING_FAILURE_HANDLER roaring_panic
+#endif
+
+/**
+ * Print out an error message to stdio and call exit()
+ *
+ * This function will not be included if ROARING_NO_PANIC is defined.   That
+ * can be useful for embedded clients that do not want to link to stdio.
+ */
+int roaring_panic(int error_code);
+
+
 typedef struct roaring_bitmap_s {
     roaring_array_t high_low_container;
 } roaring_bitmap_t;
