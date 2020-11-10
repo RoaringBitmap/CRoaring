@@ -44,6 +44,7 @@ option(ROARING_BUILD_STATIC "Build a static library" OFF) # turning it on disabl
 option(ROARING_LINK_STATIC "Link executables (tests, benchmarks) statically" OFF)
 option(ROARING_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(ROARING_BUILD_C_AS_CPP "Build library C files using C++ compilation" OFF)
+option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" OFF)
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
 

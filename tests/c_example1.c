@@ -82,7 +82,7 @@ int main() {
 
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
-    char *serializedbytes = malloc(expectedsize);
+    char *serializedbytes = (char*)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
     assert(roaring_bitmap_equals(r1, t));  // what we recover is equal

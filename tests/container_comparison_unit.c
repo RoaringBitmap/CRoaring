@@ -14,27 +14,32 @@
 #include <roaring/containers/mixed_subset.h>
 #include <roaring/containers/run.h>
 
+#ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
+    using namespace roaring::internal;
+#endif
+
 #include "test.h"
 
-static inline void container_checked_add(void *container, uint16_t val,
+
+static inline void container_checked_add(container_t *container, uint16_t val,
                                          uint8_t typecode) {
     uint8_t new_type;
-    void *new_container = container_add(container, val, typecode, &new_type);
+    container_t *new_container = container_add(container, val, typecode, &new_type);
     assert_int_equal(typecode, new_type);
     assert_true(container == new_container);
 }
 
-static inline void delegated_add(void *container, uint8_t typecode,
+static inline void delegated_add(container_t *container, uint8_t typecode,
                                  uint16_t val) {
     switch(typecode) {
         case BITSET_CONTAINER_TYPE:
-            bitset_container_add((bitset_container_t*)container, val);
+            bitset_container_add(CAST_bitset(container), val);
             break;
         case ARRAY_CONTAINER_TYPE:
-            array_container_add((array_container_t*)container, val);
+            array_container_add(CAST_array(container), val);
             break;
         case RUN_CONTAINER_TYPE:
-            run_container_add((run_container_t*)container, val);
+            run_container_add(CAST_run(container), val);
             break;
         default:
             assert(false);
@@ -42,8 +47,8 @@ static inline void delegated_add(void *container, uint8_t typecode,
     }
 }
 
-static inline void *container_create(uint8_t typecode) {
-    void *result = NULL;
+static inline container_t *container_create(uint8_t typecode) {
+    container_t *result = NULL;
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
             result = bitset_container_create();
@@ -63,8 +68,8 @@ static inline void *container_create(uint8_t typecode) {
 }
 
 void generic_equal_test(uint8_t type1, uint8_t type2) {
-    void *container1 = container_create(type1);
-    void *container2 = container_create(type2);
+    container_t *container1 = container_create(type1);
+    container_t *container2 = container_create(type2);
     assert_true(container_equals(container1, type1, container2, type2));
     for (int i = 0; i < 100; i++) {
         container_checked_add(container1, i * 10, type1);
@@ -116,45 +121,45 @@ void generic_equal_test(uint8_t type1, uint8_t type2) {
     container_free(container2, type2);
 }
 
-void equal_array_array_test() {
+DEFINE_TEST(equal_array_array_test) {
     generic_equal_test(ARRAY_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
-void equal_bitset_bitset_test() {
+DEFINE_TEST(equal_bitset_bitset_test) {
     generic_equal_test(BITSET_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
-void equal_run_run_test() {
+DEFINE_TEST(equal_run_run_test) {
     generic_equal_test(RUN_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
-void equal_array_bitset_test() {
+DEFINE_TEST(equal_array_bitset_test) {
     generic_equal_test(ARRAY_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
-void equal_bitset_array_test() {
+DEFINE_TEST(equal_bitset_array_test) {
     generic_equal_test(BITSET_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
-void equal_array_run_test() {
+DEFINE_TEST(equal_array_run_test) {
     generic_equal_test(ARRAY_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
-void equal_run_array_test() {
+DEFINE_TEST(equal_run_array_test) {
     generic_equal_test(RUN_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
-void equal_bitset_run_test() {
+DEFINE_TEST(equal_bitset_run_test) {
     generic_equal_test(BITSET_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
-void equal_run_bitset_test() {
+DEFINE_TEST(equal_run_bitset_test) {
     generic_equal_test(RUN_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
 void generic_subset_test(uint8_t type1, uint8_t type2) {
-    void *container1 = container_create(type1);
-    void *container2 = container_create(type2);
+    container_t *container1 = container_create(type1);
+    container_t *container2 = container_create(type2);
     assert_true(container_is_subset(container1, type1, container2, type2));
     for (int i = 0; i < 100; i++) {
         container_checked_add(container1, i * 11, type1);
@@ -176,35 +181,35 @@ void generic_subset_test(uint8_t type1, uint8_t type2) {
     container_free(container2, type2);
 }
 
-void subset_array_array_test() {
+DEFINE_TEST(subset_array_array_test) {
     generic_subset_test(ARRAY_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
-void subset_bitset_bitset_test() {
+DEFINE_TEST(subset_bitset_bitset_test) {
     generic_subset_test(BITSET_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
-void subset_run_run_test() {
+DEFINE_TEST(subset_run_run_test) {
     generic_subset_test(RUN_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
-void subset_array_bitset_test() {
+DEFINE_TEST(subset_array_bitset_test) {
     generic_subset_test(ARRAY_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
-void subset_array_run_test() {
+DEFINE_TEST(subset_array_run_test) {
     generic_subset_test(ARRAY_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
-void subset_run_array_test() {
+DEFINE_TEST(subset_run_array_test) {
     generic_subset_test(RUN_CONTAINER_TYPE, ARRAY_CONTAINER_TYPE);
 }
 
-void subset_bitset_run_test() {
+DEFINE_TEST(subset_bitset_run_test) {
     generic_subset_test(BITSET_CONTAINER_TYPE, RUN_CONTAINER_TYPE);
 }
 
-void subset_run_bitset_test() {
+DEFINE_TEST(subset_run_bitset_test) {
     generic_subset_test(RUN_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 

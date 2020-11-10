@@ -3,6 +3,10 @@ if (CMAKE_VERSION VERSION_GREATER 3.0.0)
 endif ()
 
 function(add_c_test TEST_NAME)
+  if(ROARING_BUILD_C_TESTS_AS_CPP)  # under C++, container_t* != void*
+    SET_SOURCE_FILES_PROPERTIES(${TEST_NAME}.c PROPERTIES LANGUAGE CXX)
+  endif()
+
   add_executable(${TEST_NAME} ${TEST_NAME}.c)
   target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka)
   add_test(${TEST_NAME} ${TEST_NAME})

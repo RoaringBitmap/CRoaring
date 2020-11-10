@@ -10,9 +10,14 @@
 #include <roaring/containers/array.h>
 #include <roaring/misc/configreport.h>
 
+#ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
+    using namespace roaring::internal;
+#endif
+
 #include "test.h"
 
-void printf_test() {
+
+DEFINE_TEST(printf_test) {
     array_container_t* B = array_container_create();
     assert_non_null(B);
 
@@ -28,7 +33,7 @@ void printf_test() {
     array_container_free(B);
 }
 
-void add_contains_test() {
+DEFINE_TEST(add_contains_test) {
     array_container_t* B = array_container_create();
     assert_non_null(B);
 
@@ -79,7 +84,7 @@ void add_contains_test() {
     array_container_free(B);
 }
 
-void and_or_test() {
+DEFINE_TEST(and_or_test) {
     DESCRIBE_TEST;
 
     array_container_t* B1 = array_container_create();
@@ -127,7 +132,7 @@ void and_or_test() {
     array_container_free(TMP);
 }
 
-void to_uint32_array_test() {
+DEFINE_TEST(to_uint32_array_test) {
     for (size_t offset = 1; offset < 128; offset *= 2) {
         array_container_t* B = array_container_create();
         assert_non_null(B);
@@ -137,7 +142,7 @@ void to_uint32_array_test() {
         }
 
         int card = array_container_cardinality(B);
-        uint32_t* out = malloc(sizeof(uint32_t) * card);
+        uint32_t* out = (uint32_t*)malloc(sizeof(uint32_t) * card);
         assert_non_null(out);
         int nc = array_container_to_uint32_array(out, B, 0);
 
@@ -152,7 +157,7 @@ void to_uint32_array_test() {
     }
 }
 
-void select_test() {
+DEFINE_TEST(select_test) {
     array_container_t* B = array_container_create();
     assert_non_null(B);
     uint16_t base = 27;
@@ -174,7 +179,7 @@ void select_test() {
     array_container_free(B);
 }
 
-void capacity_test() {
+DEFINE_TEST(capacity_test) {
     array_container_t* array = array_container_create();
     for (uint32_t i = 0; i < DEFAULT_MAX_SIZE; i++) {
         array_container_add(array, (uint16_t)i);
