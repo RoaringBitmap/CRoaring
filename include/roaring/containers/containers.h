@@ -92,14 +92,17 @@ typedef struct shared_container_s shared_container_t;
  * is a good candidate.
  */
 #define DECLARE_INPLACE_DEFAULT(T1,T2,OP) \
-    void T1##_##T2##_container_i##OP( \
+    bool T1##_##T2##_container_i##OP( \
         container_t **c1, uint8_t *type1, \
         const T2##_container_t *x2 \
     ){ \
         assert(*type1 == T1##_CONTAINER_TYPE); \
         T1##_container_t *x1 = *movable_CAST_##T1(c1); \
-        *c1 = T1##_##T2##_container_##OP(x1, x2, type1); \
+        container_t *new_c = T1##_##T2##_container_##OP(x1, x2, type1); \
+        if (new_c == NULL) return false; \
+        *c1 = new_c; \
         T1##_container_free(x1); \
+        return true; \
     }
 
 /*
@@ -1697,14 +1700,12 @@ static inline container_t *container_lazy_xor(
 
 /**
  * Compute the xor between two containers, with result in the first container.
- * If the returned pointer is identical to c1, then the container has been
- * modified.
- * If the returned pointer is different from c1, then a new container has been
- * created and the caller is responsible for freeing it.
- * The type of the first container may change. Returns the modified
- * (and possibly new) container
-*/
-static inline void container_ixor(
+ * The container returned as `*c1` may change, and so may its type `*type1`.
+ *
+ * Returns false if there wasn't enough memory for the operation.
+ * The container and type will not have been modified on a false result.
+ */
+static inline bool container_ixor(
     container_t **c1, uint8_t *type1,
     const container_t *c2, uint8_t type2
 ){
@@ -1713,45 +1714,38 @@ static inline void container_ixor(
 
     switch (PAIR_CONTAINER_TYPES(*type1, type2)) {
         case CONTAINER_PAIR(BITSET,BITSET):
-            bitset_bitset_container_ixor(c1, type1, const_CAST_bitset(c2));
-            return;
+            return bitset_bitset_container_ixor(c1, type1,
+                                                const_CAST_bitset(c2));
 
         case CONTAINER_PAIR(ARRAY,ARRAY):
-            array_array_container_ixor(c1, type1, const_CAST_array(c2));
-            return;
+            return array_array_container_ixor(c1, type1, const_CAST_array(c2));
 
         case CONTAINER_PAIR(RUN,RUN):
-            run_run_container_ixor(c1, type1, const_CAST_run(c2));
-            return;
+            return run_run_container_ixor(c1, type1, const_CAST_run(c2));
 
         case CONTAINER_PAIR(BITSET,ARRAY):
-            bitset_array_container_ixor(c1, type1, const_CAST_array(c2));
-            return;
+            return bitset_array_container_ixor(c1, type1, const_CAST_array(c2));
 
         case CONTAINER_PAIR(ARRAY,BITSET):
-            array_bitset_container_ixor(c1, type1, const_CAST_bitset(c2));
-            return;
+            return array_bitset_container_ixor(c1, type1,
+                                               const_CAST_bitset(c2));
 
         case CONTAINER_PAIR(BITSET,RUN):
-            bitset_run_container_ixor(c1, type1, const_CAST_run(c2));
-            return;
+            return bitset_run_container_ixor(c1, type1, const_CAST_run(c2));
 
         case CONTAINER_PAIR(RUN,BITSET):
-            run_bitset_container_ixor(c1, type1, const_CAST_bitset(c2));
-            return;
+            return run_bitset_container_ixor(c1, type1, const_CAST_bitset(c2));
 
         case CONTAINER_PAIR(ARRAY,RUN):
-            array_run_container_ixor(c1, type1, const_CAST_run(c2));
-            return;
+            return array_run_container_ixor(c1, type1, const_CAST_run(c2));
 
         case CONTAINER_PAIR(RUN,ARRAY):
-            run_array_container_ixor(c1, type1, const_CAST_array(c2));
-            return;
+            return run_array_container_ixor(c1, type1, const_CAST_array(c2));
 
         default:
             assert(false);
             __builtin_unreachable();
-            return;
+            return false;
     }
 }
 
@@ -1762,7 +1756,7 @@ static inline void container_ixor(
  * This lazy version delays some operations such as the maintenance of the
  * cardinality. It requires repair later on the generated containers.
 */
-static inline void container_lazy_ixor(
+static inline bool container_lazy_ixor(
     container_t **c1, uint8_t *type1,
     const container_t *c2, uint8_t type2
 ){
@@ -1775,7 +1769,7 @@ static inline void container_lazy_ixor(
             bitset_container_t *bc1 = *movable_CAST_bitset(c1);
             bitset_container_xor_nocard(bc1, const_CAST_bitset(c2), bc1);
             assert(*type1 == BITSET_CONTAINER_TYPE);
-            return; }
+            return true; }  // !!! TBD: Have way to check for failure
 
         // TODO: other cases being lazy, esp. when we know inplace not likely
         // could see the corresponding code for union
@@ -1788,8 +1782,7 @@ static inline void container_lazy_ixor(
                     bc->cardinality = bitset_container_compute_cardinality(bc);
                 }
             }
-            container_ixor(c1, type1, c2, type2);
-            return;
+            return container_ixor(c1, type1, c2, type2);
     }
 }
 

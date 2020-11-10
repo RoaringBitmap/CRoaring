@@ -40,6 +40,8 @@ extern "C" { namespace roaring { namespace api {
 
 #define ROARING_FLAG_COW UINT8_C(0x1)
 #define ROARING_FLAG_FROZEN UINT8_C(0x2)
+#define ROARING_FLAG_INDETERMINATE UINT8_C(0x4)  // can only clear()/init()
+
 
 /**
  * Roaring arrays are array-based key-value pairs having containers as values

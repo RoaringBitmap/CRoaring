@@ -120,39 +120,39 @@ void array_run_container_lazy_xor(const array_container_t *src_1,
  * The type may be modified.
  */
 
-void bitset_array_container_ixor(
+bool bitset_array_container_ixor(
         container_t **c1, uint8_t *type1,
         const array_container_t *ac2);
 
-void bitset_bitset_container_ixor(
+bool bitset_bitset_container_ixor(
         container_t **c1, uint8_t *type1,
         const bitset_container_t *bc2);
 
-void array_bitset_container_ixor(
+bool array_bitset_container_ixor(
         container_t **c1, uint8_t *type1,
         const bitset_container_t *bc2);
 
-void run_bitset_container_ixor(
+bool run_bitset_container_ixor(
         container_t **c1, uint8_t *type1,
         const bitset_container_t *bc2);
 
-void bitset_run_container_ixor(
+bool bitset_run_container_ixor(
         container_t **c1, uint8_t *type1,
         const run_container_t *rc2);
 
-void array_run_container_ixor(
+bool array_run_container_ixor(
         container_t **c1, uint8_t *type1,
         const run_container_t *rc2);
 
-void run_array_container_ixor(
+bool run_array_container_ixor(
         container_t **c1, uint8_t *type1,
         const array_container_t *ac2);
 
-void array_array_container_ixor(
+bool array_array_container_ixor(
         container_t **c1, uint8_t *type1,
         const array_container_t *ac2);
 
-void run_run_container_ixor(
+bool run_run_container_ixor(
         container_t **c1, uint8_t *type1,
         const run_container_t *ac2);
 

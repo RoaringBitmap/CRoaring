@@ -47,6 +47,8 @@ array_container_t *array_container_from_run(const run_container_t *arr) {
 array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     array_container_t *result =
         array_container_create_given_capacity(bits->cardinality);
+    if (result == NULL)
+        return NULL;
     result->cardinality = bits->cardinality;
     //  sse version ends up being slower here
     // (bitset_extract_setbits_sse_uint16)

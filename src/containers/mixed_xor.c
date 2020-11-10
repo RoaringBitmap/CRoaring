@@ -250,7 +250,7 @@ container_t *bitset_bitset_container_xor(
  * approach instead (ie, using smart_append_exclusive)
  */
 
-void bitset_array_container_ixor(
+bool bitset_array_container_ixor(
     container_t **c1, uint8_t *type1,
     const array_container_t *ac2
 ){
@@ -262,13 +262,18 @@ void bitset_array_container_ixor(
                                         ac2->array, ac2->cardinality);
 
     if (bc1->cardinality <= DEFAULT_MAX_SIZE) {
-        *c1 = array_container_from_bitset(bc1);
+        array_container_t *ac1 = array_container_from_bitset(bc1);
+        if (ac1 == NULL)
+            return false;
+
+        *c1 = ac1;
         bitset_container_free(bc1);
         *type1 = ARRAY_CONTAINER_TYPE;
-        return;
+        return true;
     }
 
     assert(*type1 == BITSET_CONTAINER_TYPE);
+    return true;
 }
 
 DECLARE_INPLACE_DEFAULT(bitset, bitset, xor)

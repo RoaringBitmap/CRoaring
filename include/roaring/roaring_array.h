@@ -73,6 +73,21 @@ void ra_clear_without_containers(roaring_array_t *r);
 void ra_clear_containers(roaring_array_t *ra);
 
 /**
+ * Make it so that a crash is likely if a container is used after an operation
+ * partially ran, generating undefined results.
+ *
+ * (API users should only encounter such states when using core versions
+ * that return error conditions vs. panic.  So it would be redundant to check
+ * ROARING_FLAG_INDETERMINATE systemically.  Only roaring_bitmap_clear() and
+ * roaring_bitmap_init() need to tolerate it.)
+ */
+inline static void ra_mark_corrupt(roaring_array_t *ra) {
+    assert(ra->containers == NULL);  // all containers must be free
+    ra->containers = (container_t**)((intptr_t)0xDECAFBAD);
+    ra->flags |= ROARING_FLAG_INDETERMINATE;
+}
+
+/**
  * Get the index corresponding to a 16-bit key
  */
 inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
@@ -96,9 +111,9 @@ inline container_t *ra_get_container_at_index(
 uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
 
 /**
- * Add a new key-value pair at index i
+ * Add a new key-value pair at index i, return false o allocation failure.
  */
-void ra_insert_new_key_value_at(
+bool ra_insert_new_key_value_at(
         roaring_array_t *ra, int32_t i, uint16_t key,
         container_t *c, uint8_t typecode);
 
@@ -168,8 +183,7 @@ inline void ra_set_container_at_index(
 
 /**
  * If needed, increase the capacity of the array so that it can fit k values
- * (at
- * least);
+ * (at least).  Returns false if allocation failed.
  */
 bool extend_array(roaring_array_t *ra, int32_t k);
 

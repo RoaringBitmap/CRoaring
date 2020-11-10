@@ -245,16 +245,43 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
 /**
  * Computes the symmetric difference (xor) between two bitmaps
  * and returns new bitmap. The caller is responsible for memory management.
+ *
+ * The `try_xor()` version will return NULL if there is not enough memory for
+ * the operation, while the inline helper will call a failure handler.
  */
-roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
-                                     const roaring_bitmap_t *x2);
+roaring_bitmap_t *roaring_bitmap_try_xor(const roaring_bitmap_t *x1,
+                                         const roaring_bitmap_t *x2);
+
+static inline roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
+                                                   const roaring_bitmap_t *x2)
+{
+    roaring_bitmap_t *r = roaring_bitmap_try_xor(x1, x2);
+    if (r == NULL)
+        ROARING_FAILURE_HANDLER(ROARING_ERR_ALLOC_FAILED);
+    return r;
+}
+
 
 /**
  * Inplace version of roaring_bitmap_xor, modifies x1. x1 != x2.
  *
+ * Note: In-place operations exist for performance, and don't store undo
+ * information that would allow rolling back to the initial state if memory
+ * runs out partway through.  So if `false` is returned, the auxiliary memory
+ * for `x1` will have been released and it will be in an unusable state.
+ * If it was created with `roaring_create()` then it will still have to be
+ * `roaring_free()'d`.  But the existing structure can be reused with a call
+ * to `roaring_init()`.
  */
-void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
-                                const roaring_bitmap_t *x2);
+bool roaring_bitmap_xor_inplace_completed(roaring_bitmap_t *x1,
+                                          const roaring_bitmap_t *x2);
+
+static inline void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
+                                              const roaring_bitmap_t *x2)
+{
+    if (!roaring_bitmap_xor_inplace_completed(x1,x2))
+        ROARING_FAILURE_HANDLER(ROARING_ERR_ALLOC_FAILED);
+}
 
 /**
  * Compute the xor of 'number' bitmaps.
@@ -641,10 +668,18 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
 /**
  * (For expert users who seek high performance.)
  * Inplace version of roaring_bitmap_lazy_xor, modifies x1. x1 != x2
- *
+ * See xor_inplace() regarding lack of atomicity in case of a false result.
  */
-void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
-                                     const roaring_bitmap_t *x2);
+bool roaring_bitmap_lazy_xor_inplace_completed(roaring_bitmap_t *x1,
+                                               const roaring_bitmap_t *x2);
+
+static inline void roaring_bitmap_lazy_xor_inplace(
+    roaring_bitmap_t *x1,
+    const roaring_bitmap_t *x2
+){
+    if (!roaring_bitmap_lazy_xor_inplace_completed(x1, x2))
+        ROARING_FAILURE_HANDLER(ROARING_ERR_ALLOC_FAILED);
+}
 
 /**
  * compute the negation of the roaring bitmap within a specified

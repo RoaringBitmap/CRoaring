@@ -119,6 +119,7 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
     }
     if (dest->allocation_size < source->size) {
         if (!realloc_array(dest, source->size)) {
+            ra_mark_corrupt(dest);
             return false;
         }
     }
@@ -146,6 +147,7 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                     container_free(dest->containers[j], dest->typecodes[j]);
                 }
                 ra_clear_without_containers(dest);
+                ra_mark_corrupt(dest);
                 return false;
             }
         }
@@ -355,11 +357,12 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos) {
     return pos;
 }
 
-void ra_insert_new_key_value_at(
+bool ra_insert_new_key_value_at(
     roaring_array_t *ra, int32_t i, uint16_t key,
     container_t *c, uint8_t typecode
 ){
-    extend_array(ra, 1);
+    if (!extend_array(ra, 1))
+        return false;
     // May be an optimization opportunity with DIY memmove
     memmove(&(ra->keys[i + 1]), &(ra->keys[i]),
             sizeof(uint16_t) * (ra->size - i));
@@ -371,6 +374,7 @@ void ra_insert_new_key_value_at(
     ra->containers[i] = c;
     ra->typecodes[i] = typecode;
     ra->size++;
+    return true;
 }
 
 // note: Java routine set things to 0, enabling GC.
