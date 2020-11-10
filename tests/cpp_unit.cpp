@@ -10,10 +10,6 @@
 #include <time.h>
 #include <iostream>
 
-extern "C" {
-#include "test.h"
-}
-
 #include <roaring/roaring.h>  // access to pure C exported API for testing
 
 #include "roaring.hh"
@@ -21,6 +17,8 @@ using roaring::Roaring;  // the C++ wrapper class
 
 #include "roaring64map.hh"
 using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
+
+#include "test.h"
 
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
@@ -37,7 +35,7 @@ bool roaring_iterator_sumall64(uint64_t value, void *param) {
 }
 
 
-void serial_test(void **) {
+DEFINE_TEST(serial_test) {
   uint32_t values[] = {5, 2, 3, 4, 1};
   Roaring r1(sizeof(values)/sizeof(uint32_t), values);
   uint32_t serializesize = r1.getSizeInBytes();
@@ -480,27 +478,27 @@ void test_example_cpp_64(bool copy_on_write) {
     }
 }
 
-void test_example_true(void **) { test_example(true); }
+DEFINE_TEST(test_example_true) { test_example(true); }
 
-void test_example_false(void **) { test_example(false); }
+DEFINE_TEST(test_example_false) { test_example(false); }
 
-void test_example_cpp_true(void **) { test_example_cpp(true); }
+DEFINE_TEST(test_example_cpp_true) { test_example_cpp(true); }
 
-void test_example_cpp_false(void **) { test_example_cpp(false); }
+DEFINE_TEST(test_example_cpp_false) { test_example_cpp(false); }
 
-void test_example_cpp_64_true(void **) { test_example_cpp_64(true); }
+DEFINE_TEST(test_example_cpp_64_true) { test_example_cpp_64(true); }
 
-void test_example_cpp_64_false(void **) { test_example_cpp_64(false); }
+DEFINE_TEST(test_example_cpp_64_false) { test_example_cpp_64(false); }
 
-void test_run_compression_cpp_64_true(void **) { test_run_compression_cpp_64(true); }
+DEFINE_TEST(test_run_compression_cpp_64_true) { test_run_compression_cpp_64(true); }
 
-void test_run_compression_cpp_64_false(void **) { test_run_compression_cpp_64(false); }
+DEFINE_TEST(test_run_compression_cpp_64_false) { test_run_compression_cpp_64(false); }
 
-void test_run_compression_cpp_true(void **) { test_run_compression_cpp(true); }
+DEFINE_TEST(test_run_compression_cpp_true) { test_run_compression_cpp(true); }
 
-void test_run_compression_cpp_false(void **) { test_run_compression_cpp(false); }
+DEFINE_TEST(test_run_compression_cpp_false) { test_run_compression_cpp(false); }
 
-void test_cpp_add_remove_checked(void **) {
+DEFINE_TEST(test_cpp_add_remove_checked) {
     Roaring roaring;
     uint32_t values[4] = { 123, 9999, 0xFFFFFFF7, 0xFFFFFFFF};
     for (int i = 0; i < 4; ++i) {
@@ -514,7 +512,7 @@ void test_cpp_add_remove_checked(void **) {
     assert_true(roaring.isEmpty());
 }
 
-void test_cpp_add_remove_checked_64(void **) {
+DEFINE_TEST(test_cpp_add_remove_checked_64) {
     Roaring64Map roaring;
 
     uint32_t values32[4] = { 123, 9999, 0xFFFFFFF7, 0xFFFFFFFF};
@@ -539,7 +537,7 @@ void test_cpp_add_remove_checked_64(void **) {
     assert_true(roaring.isEmpty());
 }
 
-void test_cpp_clear_64(void **) {
+DEFINE_TEST(test_cpp_clear_64) {
     Roaring64Map roaring;
 
     uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};
@@ -552,7 +550,7 @@ void test_cpp_clear_64(void **) {
     assert_true(roaring.isEmpty());
 }
 
-void test_cpp_move_64(void **) {
+DEFINE_TEST(test_cpp_move_64) {
     Roaring64Map roaring;
 
     uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};
@@ -568,7 +566,7 @@ void test_cpp_move_64(void **) {
 	assert_false(i.move(0xFFFFFFFFFFULL));
 }
 
-void test_cpp_bidirectional_iterator_64(void **) {
+DEFINE_TEST(test_cpp_bidirectional_iterator_64) {
     Roaring64Map roaring;
 
     uint64_t values64[4] = { 123ULL, 0xA00000000AULL, 0xAFFFFFFF7ULL, 0xFFFFFFFFFULL};

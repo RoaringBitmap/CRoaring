@@ -11,7 +11,9 @@
 #include <roaring/roaring.h>
 
 #include "config.h"
+
 #include "test.h"
+
 
 long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");
@@ -29,7 +31,7 @@ char* readfile(char const* path) {
     assert_int_not_equal(fseek(fp, 0L, SEEK_END), -1);
 
     long bytes = ftell(fp);
-    char* buf = malloc(bytes);
+    char* buf = (char*)malloc(bytes);
     assert_non_null(buf);
 
     rewind(fp);
@@ -60,7 +62,7 @@ void test_deserialize(char* filename) {
 
     assert_int_equal(expected_size, filesize(filename));
 
-    char* output_buffer = malloc(expected_size);
+    char* output_buffer = (char*)malloc(expected_size);
     size_t actual_size =
         roaring_bitmap_portable_serialize(bitmap, output_buffer);
 
@@ -72,7 +74,7 @@ void test_deserialize(char* filename) {
     roaring_bitmap_free(bitmap);
 }
 
-void test_deserialize_portable_norun() {
+DEFINE_TEST(test_deserialize_portable_norun) {
     char filename[1024];
 
     strcpy(filename, TEST_DATA_DIR);
@@ -81,7 +83,7 @@ void test_deserialize_portable_norun() {
     test_deserialize(filename);
 }
 
-void test_deserialize_portable_wrun() {
+DEFINE_TEST(test_deserialize_portable_wrun) {
     char filename[1024];
 
     strcpy(filename, TEST_DATA_DIR);

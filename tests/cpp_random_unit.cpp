@@ -32,9 +32,7 @@
 #include "roaring_checked.hh"
 using doublechecked::Roaring;  // so `Roaring` means `doublecheck::Roaring` 
 
-extern "C" {
 #include "test.h"
-}
 
 
 // The tests can run as long as one wants.  Ideally, the sanitizer options
@@ -95,7 +93,7 @@ Roaring make_random_bitset() {
 }
 
 
-void sanity_check_doublechecking(void **) {
+DEFINE_TEST(sanity_check_doublechecking) {
     Roaring r;
     while (r.isEmpty())
         r = make_random_bitset();
@@ -118,7 +116,7 @@ void sanity_check_doublechecking(void **) {
 }
 
 
-void random_doublecheck_test(void **) {
+DEFINE_TEST(random_doublecheck_test) {
     //
     // Make a group of bitsets to choose from when performing operations.
     //
