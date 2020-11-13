@@ -1709,7 +1709,22 @@ static inline bool container_ixor(
     container_t **c1, uint8_t *type1,
     const container_t *c2, uint8_t type2
 ){
-    *c1 = get_writable_copy_if_shared(*c1, type1);
+    // Using a shared container safely with in place computation would require
+    // making a copy and then doing the computation in place.  This is likely 
+    // less efficient than always generating a new container.
+    //
+    if (*type1 == SHARED_CONTAINER_TYPE) {
+        container_t *c = container_xor(*c1, *type1, c2, type2, type1);
+        if (c == NULL) {
+            assert(*type1 == SHARED_CONTAINER_TYPE);
+            return false;
+        }
+        shared_container_free(CAST_shared(*c1));
+        *c1 = c;
+        return true;
+    }
+
+    assert(*type1 != SHARED_CONTAINER_TYPE);
     c2 = container_unwrap_shared(c2, &type2);
 
     switch (PAIR_CONTAINER_TYPES(*type1, type2)) {
@@ -1760,8 +1775,22 @@ static inline bool container_lazy_ixor(
     container_t **c1, uint8_t *type1,
     const container_t *c2, uint8_t type2
 ){
+    // Using a shared container safely with in place computation would require
+    // making a copy and then doing the computation in place.  This is likely 
+    // less efficient than always generating a new container.
+    //
+    if (*type1 == SHARED_CONTAINER_TYPE) {
+        container_t *c = container_lazy_xor(*c1, *type1, c2, type2, type1);
+        if (c == NULL) {
+            assert(*type1 == SHARED_CONTAINER_TYPE);  // untouched
+            return false;
+        }
+        shared_container_free(CAST_shared(*c1));
+        *c1 = c;
+        return true;
+    }
+
     assert(*type1 != SHARED_CONTAINER_TYPE);
-    // c1 = get_writable_copy_if_shared(c1,&type1);
     c2 = container_unwrap_shared(c2, &type2);
 
     switch (PAIR_CONTAINER_TYPES(*type1, type2)) {

@@ -1005,26 +1005,8 @@ bool roaring_bitmap_xor_inplace_completed(
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
 
-            // We do the computation "in place" only when c1 is not a shared container.
-            // Rationale: using a shared container safely with in place computation would 
-            // require making a copy and then doing the computation in place which is likely 
-            // less efficient than avoiding in place entirely and always generating a new 
-            // container.
-
-            if (*type1 == SHARED_CONTAINER_TYPE) {
-                container_t *c = container_xor(*c1, *type1, c2, type2,
-                                               type1);
-                if (c == NULL) {
-                    assert(*type1 == SHARED_CONTAINER_TYPE);
-                    goto alloc_failed;
-                }
-                shared_container_free(CAST_shared(*c1));
-                *c1 = c;
-            }
-            else {
-                if (!container_ixor(c1, type1, c2, type2))
-                    goto alloc_failed;  // c1 should still be freeable
-            }
+            if (!container_ixor(c1, type1, c2, type2))
+                goto alloc_failed;  // c1 should still be freeable
 
             if (container_nonzero_cardinality(*c1, *type1)) {
                 ++pos1;  // not recycling this slot, so advance to next one
@@ -2446,26 +2428,8 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
  
-            // We do the computation "in place" only when c1 is not a shared container.
-            // Rationale: using a shared container safely with in place computation would 
-            // require making a copy and then doing the computation in place which is likely 
-            // less efficient than avoiding in place entirely and always generating a new 
-            // container.
-
-            if (*type1 == SHARED_CONTAINER_TYPE) {
-                container_t *c = container_lazy_xor(*c1, *type1, c2, type2,
-                                                    type1);
-                if (c == NULL) {
-                    assert(*type1 == SHARED_CONTAINER_TYPE);  // untouched
-                    goto alloc_failure;
-                }
-                shared_container_free(CAST_shared(*c1));
-                *c1 = c;
-            }
-            else {
-                if (!container_lazy_ixor(c1, type1, c2, type2))
-                    goto alloc_failure;
-            }
+            if (!container_lazy_ixor(c1, type1, c2, type2))
+                goto alloc_failure;
         
             if (container_nonzero_cardinality(*c1, *type1)) {
                 ++pos1;  // not recycling this slot, so advance to next one
