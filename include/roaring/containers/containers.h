@@ -1616,80 +1616,52 @@ static inline container_t *container_lazy_xor(
 ){
     c1 = container_unwrap_shared(c1, &type1);
     c2 = container_unwrap_shared(c2, &type2);
-    container_t *result = NULL;
+
     switch (PAIR_CONTAINER_TYPES(type1, type2)) {
         case CONTAINER_PAIR(BITSET,BITSET):
-            result = bitset_container_create();
-            bitset_container_xor_nocard(
-                const_CAST_bitset(c1), const_CAST_bitset(c2),
-                CAST_bitset(result));  // is lazy
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return bitset_bitset_container_lazy_xor(const_CAST_bitset(c1),
+                                                    const_CAST_bitset(c2),
+                                                    result_type);
 
         case CONTAINER_PAIR(ARRAY,ARRAY):
-            *result_type = array_array_container_lazy_xor(
-                                const_CAST_array(c1),
-                                const_CAST_array(c2), &result)
-                                    ? BITSET_CONTAINER_TYPE
-                                    : ARRAY_CONTAINER_TYPE;
-            return result;
+            return array_array_container_lazy_xor(const_CAST_array(c1),
+                                                  const_CAST_array(c2),
+                                                  result_type);
 
-        case CONTAINER_PAIR(RUN,RUN):  // nothing special done yet.
-            return run_run_container_xor(const_CAST_run(c1),
-                                         const_CAST_run(c2),
-                                         result_type);
+        case CONTAINER_PAIR(RUN,RUN):
+            return run_run_container_lazy_xor(const_CAST_run(c1),
+                                              const_CAST_run(c2),
+                                              result_type);
 
         case CONTAINER_PAIR(BITSET,ARRAY):
-            result = bitset_container_create();
-            *result_type = BITSET_CONTAINER_TYPE;
-            array_bitset_container_lazy_xor(const_CAST_array(c2),
-                                            const_CAST_bitset(c1),
-                                            CAST_bitset(result));
-            return result;
+            return array_bitset_container_lazy_xor(const_CAST_array(c2),
+                                                   const_CAST_bitset(c1),
+                                                   result_type);
 
         case CONTAINER_PAIR(ARRAY,BITSET):
-            result = bitset_container_create();
-            *result_type = BITSET_CONTAINER_TYPE;
-            array_bitset_container_lazy_xor(const_CAST_array(c1),
-                                            const_CAST_bitset(c2),
-                                            CAST_bitset(result));
-            return result;
+            return array_bitset_container_lazy_xor(const_CAST_array(c1),
+                                                   const_CAST_bitset(c2),
+                                                   result_type);
 
         case CONTAINER_PAIR(BITSET,RUN):
-            result = bitset_container_create();
-            run_bitset_container_lazy_xor(const_CAST_run(c2),
-                                          const_CAST_bitset(c1),
-                                          CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return run_bitset_container_lazy_xor(const_CAST_run(c2),
+                                                 const_CAST_bitset(c1),
+                                                 result_type);
 
         case CONTAINER_PAIR(RUN,BITSET):
-            result = bitset_container_create();
-            run_bitset_container_lazy_xor(const_CAST_run(c1),
-                                          const_CAST_bitset(c2),
-                                          CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return run_bitset_container_lazy_xor(const_CAST_run(c1),
+                                                 const_CAST_bitset(c2),
+                                                 result_type);
 
         case CONTAINER_PAIR(ARRAY,RUN):
-            result = run_container_create();
-            array_run_container_lazy_xor(const_CAST_array(c1),
-                                         const_CAST_run(c2),
-                                         CAST_run(result));
-            *result_type = RUN_CONTAINER_TYPE;
-            // next line skipped since we are lazy
-            // result = convert_run_to_efficient_container(result, result_type);
-            return result;
+            return array_run_container_lazy_xor(const_CAST_array(c1),
+                                                const_CAST_run(c2),
+                                                result_type);
 
         case CONTAINER_PAIR(RUN,ARRAY):
-            result = run_container_create();
-            array_run_container_lazy_xor(const_CAST_array(c2),
-                                         const_CAST_run(c1),
-                                         CAST_run(result));
-            *result_type = RUN_CONTAINER_TYPE;
-            // next line skipped since we are lazy
-            // result = convert_run_to_efficient_container(result, result_type);
-            return result;
+            return array_run_container_lazy_xor(const_CAST_array(c2),
+                                                const_CAST_run(c1),
+                                                result_type);
 
         default:
             assert(false);

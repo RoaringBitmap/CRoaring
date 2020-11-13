@@ -249,7 +249,6 @@ DEFINE_TEST(array_bitset_run_lazy_xor_test) {
     array_container_t* AX = array_container_create();
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
-    bitset_container_t* B2copy = bitset_container_create();
     bitset_container_t* BX = bitset_container_create();
     run_container_t* R1 = run_container_create();
     run_container_t* R2 = run_container_create();
@@ -266,7 +265,6 @@ DEFINE_TEST(array_bitset_run_lazy_xor_test) {
     for (int x = 0; x < (1 << 16); x += 62) {
         array_container_add(A2, x);
         bitset_container_set(B2, x);
-        bitset_container_set(B2copy, x);
         run_container_add(R2, x);
     }
 
@@ -280,38 +278,53 @@ DEFINE_TEST(array_bitset_run_lazy_xor_test) {
     // we interleave O and I on purpose (to trigger bugs!)
     int cx = array_container_cardinality(AX);  // expected xor
 
-    array_bitset_container_lazy_xor(A1, B2, BX);
-    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
-                     bitset_container_cardinality(BX));
-    assert_int_equal(cx, bitset_container_compute_cardinality(BX));
+    uint8_t CT;
+    container_t *C;
 
-    array_bitset_container_lazy_xor(A1, B2, B2);  // result onto B2, allowed
+    CT = 255;
+    C = array_bitset_container_lazy_xor(A1, B2, &CT);
+    assert(CT == BITSET_CONTAINER_TYPE);
     assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
-                     bitset_container_cardinality(B2));
-    assert_int_equal(cx, bitset_container_compute_cardinality(B2));
-    bitset_container_copy(B2copy, B2);
+                     bitset_container_cardinality(CAST_bitset(C)));
+    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(C)));
+    bitset_container_free(CAST_bitset(C));
 
-    run_bitset_container_lazy_xor(R1, B2, BX);
+    CT = 255;
+    C = array_bitset_container_lazy_xor(A1, B2, &CT);
+    assert(CT == BITSET_CONTAINER_TYPE);
     assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
-                     bitset_container_cardinality(BX));
-    assert_int_equal(cx, bitset_container_compute_cardinality(BX));
+                     bitset_container_cardinality(CAST_bitset(C)));
+    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(C)));
+    bitset_container_free(CAST_bitset(C));
 
-    run_bitset_container_lazy_xor(
-        R1, B2, B2);  // result onto B2 : not sure it's allowed
+    CT = 255;
+    C = run_bitset_container_lazy_xor(R1, B2, &CT);
+    assert(CT == BITSET_CONTAINER_TYPE);
     assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
-                     bitset_container_cardinality(B2));
-    assert_int_equal(cx, bitset_container_compute_cardinality(B2));
-    bitset_container_copy(B2copy, B2);
+                     bitset_container_cardinality(CAST_bitset(C)));
+    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(C)));
+    bitset_container_free(CAST_bitset(C));
 
-    container_t *ans = 0;
-    assert_true(array_array_container_lazy_xor(A1, A2, &ans));
+    CT = 255;
+    C = run_bitset_container_lazy_xor(R1, B2, &CT);
+    assert(CT == BITSET_CONTAINER_TYPE);
     assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
-                     bitset_container_cardinality(CAST_bitset(ans)));
-    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(ans)));
-    bitset_container_free(CAST_bitset(ans));
+                     bitset_container_cardinality(CAST_bitset(C)));
+    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(C)));
+    bitset_container_free(CAST_bitset(C));
 
-    array_run_container_lazy_xor(A1, R2, RX);  // destroys content of RX
-    assert_int_equal(cx, run_container_cardinality(RX));
+    CT = 255;
+    C = array_array_container_lazy_xor(A1, A2, &CT);
+    assert(CT == BITSET_CONTAINER_TYPE);
+    assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
+                     bitset_container_cardinality(CAST_bitset(C)));
+    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(C)));
+    bitset_container_free(CAST_bitset(C));
+
+    C = array_run_container_lazy_xor(A1, R2, &CT);
+    assert(CT == RUN_CONTAINER_TYPE);
+    assert_int_equal(cx, run_container_cardinality(CAST_run(C)));
+    run_container_free(CAST_run(C));
 
     array_container_free(A1);
     array_container_free(A2);
@@ -319,7 +332,6 @@ DEFINE_TEST(array_bitset_run_lazy_xor_test) {
 
     bitset_container_free(B1);
     bitset_container_free(B2);
-    bitset_container_free(B2copy);
     bitset_container_free(BX);
 
     run_container_free(R1);

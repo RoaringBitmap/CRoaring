@@ -61,44 +61,38 @@ container_t *run_run_container_xor(
         uint8_t *result_type);
 
 
-/* Compute the xor of src_1 and src_2 and write the result to
- * dst. It is allowed for src_2 to be dst.  This version does not
- * update the cardinality of dst (it is set to BITSET_UNKNOWN_CARDINALITY).
- */
-
-void array_bitset_container_lazy_xor(const array_container_t *src_1,
-                                     const bitset_container_t *src_2,
-                                     bitset_container_t *dst);
-
-
-/* lazy xor.  Dst is initialized and may be equal to src_2.
- *  Result is left as a bitset container, even if actual
- *  cardinality would dictate an array container.
- */
-
-void run_bitset_container_lazy_xor(const run_container_t *src_1,
-                                   const bitset_container_t *src_2,
-                                   bitset_container_t *dst);
-
-
-/* dst does not initially have a valid container.  Creates either
- * an array or a bitset container, indicated by return code.
- * A bitset container will not have a valid cardinality and the
- * container type might not be correct for the actual cardinality
- */
-
-bool array_array_container_lazy_xor(
-        const array_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
-
-/* Dst is a valid run container. (Can it be src_2? Let's say not.)
- * Leaves result as run container, even if other options are
+/* LAZY XOR OPERATIONS
+ *
+ * Bitset results will be left as a bitset container, even if actual
+ * cardinality would dictate an array container.  Cardinality may be left
+ * as BITSET_UNKNOWN_CARDINALITY to be calculated on demand.
+ *
+ * Run results will be left as arun container, even if other options are
  * smaller.
  */
 
-void array_run_container_lazy_xor(const array_container_t *src_1,
-                                  const run_container_t *src_2,
-                                  run_container_t *dst);
+container_t *bitset_bitset_container_lazy_xor(
+        const bitset_container_t *bc1, const bitset_container_t *bc2,
+        uint8_t *result_type);
+
+container_t *array_bitset_container_lazy_xor(
+        const array_container_t *ac1, const bitset_container_t *bc2,
+        uint8_t *result_type);
+
+container_t *run_bitset_container_lazy_xor(
+        const run_container_t *rc1, const bitset_container_t *bc2,
+        uint8_t *result_type);
+
+container_t *array_array_container_lazy_xor(
+        const array_container_t *ac1, const array_container_t *ac2,
+        uint8_t *result_type);
+
+run_container_t *array_run_container_lazy_xor(
+        const array_container_t *ac1, const run_container_t *rc2,
+        uint8_t *result_type);
+
+#define run_run_container_lazy_xor \
+        run_run_container_xor  // no `lazy` version yet
 
 
 /* EQUIVALENCIES since order does not matter for non-inplace xor.
