@@ -95,6 +95,15 @@ inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
     return binarySearch(ra->keys, (int32_t)ra->size, x);
 }
 
+
+/**
+ * Accessors for a `container**` and `typecode*` that can be used to update.
+ * Macros for simplicity, but could be inline functions.
+ */
+#define ra_container_slot(ra,i)     &(ra)->containers[i]
+#define ra_typecode_slot(ra,i)      &(ra)->typecodes[i]
+
+
 /**
  * Retrieves the container at index i, filling in the typecode
  */

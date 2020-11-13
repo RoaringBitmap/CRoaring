@@ -981,7 +981,6 @@ bool roaring_bitmap_xor_inplace_completed(
     const roaring_bitmap_t *x2
 ){
     assert(x1 != x2);
-    uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
 
@@ -995,13 +994,14 @@ bool roaring_bitmap_xor_inplace_completed(
     // lose containers when x1 and x2 are nonempty and identical.
 
     int pos1 = 0, pos2 = 0;
-    uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
     uint16_t s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
     while (true) {
         if (s1 == s2) {
-            container_t *c1 = ra_get_container_at_index(
-                                    &x1->high_low_container, pos1, &type1);
+            uint8_t *type1 = ra_typecode_slot(&x1->high_low_container, pos1);
+            container_t **c1 = ra_container_slot(&x1->high_low_container, pos1);
+
+            uint8_t type2;
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
 
@@ -1011,26 +1011,25 @@ bool roaring_bitmap_xor_inplace_completed(
             // less efficient than avoiding in place entirely and always generating a new 
             // container.
 
-            container_t *c;
-            if (type1 == SHARED_CONTAINER_TYPE) {
-                c = container_xor(c1, type1, c2, type2, &result_type);
-                if (c == NULL)
+            if (*type1 == SHARED_CONTAINER_TYPE) {
+                container_t *c = container_xor(*c1, *type1, c2, type2,
+                                               type1);
+                if (c == NULL) {
+                    assert(*type1 == SHARED_CONTAINER_TYPE);
                     goto alloc_failed;
-                shared_container_free((shared_container_t *)c1);  // so release
+                }
+                shared_container_free(CAST_shared(*c1));
+                *c1 = c;
             }
             else {
-                result_type = type1;
-                c = c1;
-                if (!container_ixor(&c, &result_type, c2, type2))
+                if (!container_ixor(c1, type1, c2, type2))
                     goto alloc_failed;  // c1 should still be freeable
             }
 
-            if (container_nonzero_cardinality(c, result_type)) {
-                ra_set_container_at_index(&x1->high_low_container, pos1, c,
-                                          result_type);
-                ++pos1;
+            if (container_nonzero_cardinality(*c1, *type1)) {
+                ++pos1;  // not recycling this slot, so advance to next one
             } else {
-                container_free(c, result_type);
+                container_free(*c1, *type1);
                 ra_remove_at_index(&x1->high_low_container, pos1);
                 --length1;
             }
@@ -1047,6 +1046,7 @@ bool roaring_bitmap_xor_inplace_completed(
             s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
 
         } else {  // s1 > s2
+            uint8_t type2;
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
@@ -2426,7 +2426,6 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
     const roaring_bitmap_t *x2
 ){
     assert(x1 != x2);
-    uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
 
@@ -2436,13 +2435,14 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
         return roaring_bitmap_overwrite(x1, x2);
     }
     int pos1 = 0, pos2 = 0;
-    uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
     uint16_t s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
     while (true) {
         if (s1 == s2) {
-            container_t *c1 = ra_get_container_at_index(
-                                    &x1->high_low_container, pos1, &type1);
+            uint8_t *type1 = ra_typecode_slot(&x1->high_low_container, pos1);
+            container_t **c1 = ra_container_slot(&x1->high_low_container, pos1);
+
+            uint8_t type2;
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
  
@@ -2452,26 +2452,25 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
             // less efficient than avoiding in place entirely and always generating a new 
             // container.
 
-            container_t *c;
-            if (type1 == SHARED_CONTAINER_TYPE) {
-                c = container_lazy_xor(c1, type1, c2, type2, &result_type);
-                if (c == NULL)
+            if (*type1 == SHARED_CONTAINER_TYPE) {
+                container_t *c = container_lazy_xor(*c1, *type1, c2, type2,
+                                                    type1);
+                if (c == NULL) {
+                    assert(*type1 == SHARED_CONTAINER_TYPE);  // untouched
                     goto alloc_failure;
-                shared_container_free((shared_container_t *)c1);  // release
+                }
+                shared_container_free(CAST_shared(*c1));
+                *c1 = c;
             }
             else {
-                result_type = type1;
-                c = c1;
-                if (!container_lazy_ixor(&c, &result_type, c2, type2))
+                if (!container_lazy_ixor(c1, type1, c2, type2))
                     goto alloc_failure;
             }
         
-            if (container_nonzero_cardinality(c, result_type)) {
-                ra_set_container_at_index(&x1->high_low_container, pos1, c,
-                                          result_type);
-                ++pos1;
+            if (container_nonzero_cardinality(*c1, *type1)) {
+                ++pos1;  // not recycling this slot, so advance to next one
             } else {
-                container_free(c, result_type);
+                container_free(*c1, *type1);
                 ra_remove_at_index(&x1->high_low_container, pos1);
                 --length1;
             }
@@ -2487,6 +2486,7 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
             s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
 
         } else {  // s1 > s2
+            uint8_t type2;
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
