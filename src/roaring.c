@@ -972,94 +972,6 @@ roaring_bitmap_t *roaring_bitmap_try_xor(
     return answer;
 }
 
-// inplace xor (modifies its first argument).
-// returns false if there wasn't enough memory for the operation
-// x1 will release its memory and be put into an invalid on a false result
-//
-bool roaring_bitmap_xor_inplace_completed(
-    roaring_bitmap_t *x1,
-    const roaring_bitmap_t *x2
-){
-    assert(x1 != x2);
-    int length1 = x1->high_low_container.size;
-    const int length2 = x2->high_low_container.size;
-
-    if (0 == length2) return true;
-
-    if (0 == length1) {
-        return roaring_bitmap_overwrite(x1, x2);
-    }
-
-    // XOR can have new containers inserted from x2, but can also
-    // lose containers when x1 and x2 are nonempty and identical.
-
-    int pos1 = 0, pos2 = 0;
-    uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
-    uint16_t s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
-    while (true) {
-        if (s1 == s2) {
-            uint8_t *type1 = ra_typecode_slot(&x1->high_low_container, pos1);
-            container_t **c1 = ra_container_slot(&x1->high_low_container, pos1);
-
-            uint8_t type2;
-            container_t *c2 = ra_get_container_at_index(
-                                    &x2->high_low_container, pos2, &type2);
-
-            if (!container_ixor(c1, type1, c2, type2))
-                goto alloc_failed;  // c1 should still be freeable
-
-            if (container_nonzero_cardinality(*c1, *type1)) {
-                ++pos1;  // not recycling this slot, so advance to next one
-            } else {
-                container_free(*c1, *type1);
-                ra_remove_at_index(&x1->high_low_container, pos1);
-                --length1;
-            }
-
-            ++pos2;
-            if (pos1 == length1) break;
-            if (pos2 == length2) break;
-            s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
-            s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
-
-        } else if (s1 < s2) {  // s1 < s2
-            pos1++;
-            if (pos1 == length1) break;
-            s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
-
-        } else {  // s1 > s2
-            uint8_t type2;
-            container_t *c2 = ra_get_container_at_index(
-                                    &x2->high_low_container, pos2, &type2);
-            c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
-                ra_set_container_at_index(&x2->high_low_container, pos2, c2,
-                                          type2);
-            }
-
-            if (!ra_insert_new_key_value_at(&x1->high_low_container,
-                                            pos1, s2, c2, type2))
-            {
-                goto alloc_failed;
-            }
-            pos1++;
-            length1++;
-            pos2++;
-            if (pos2 == length2) break;
-            s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
-        }
-    }
-    if (pos1 == length1) {
-        ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
-    }
-    return true;
-
-  alloc_failed:
-    ra_clear_containers(&x1->high_low_container);
-    ra_mark_corrupt(&x1->high_low_container);
-    return false;
-}
 
 roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
                                         const roaring_bitmap_t *x2) {
@@ -2403,9 +2315,21 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
     return answer;
 }
 
-bool roaring_bitmap_lazy_xor_inplace_completed(
+
+// Common code for "xor_inplace" and "xor_lazy_inplace"
+//
+// modifies its first argument
+// returns false if there wasn't enough memory for the operation
+// x1 will release its memory and be put in an invalid state on a false result
+//
+// Note from non-lazy form (is it true for lazy, too?)
+//    "XOR can have new containers inserted from x2, but can also
+//     lose containers when x1 and x2 are nonempty and identical."
+//
+static bool xor_inplace_core(
     roaring_bitmap_t *x1,
-    const roaring_bitmap_t *x2
+    const roaring_bitmap_t *x2,
+    bool (*dispatcher)(container_t**,uint8_t*,const container_t* c2,uint8_t)
 ){
     assert(x1 != x2);
     int length1 = x1->high_low_container.size;
@@ -2428,9 +2352,9 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
  
-            if (!container_lazy_ixor(c1, type1, c2, type2))
-                goto alloc_failure;
-        
+            if (!(*dispatcher)(c1, type1, c2, type2))
+                goto alloc_failure;  // c1 should still be freeable
+
             if (container_nonzero_cardinality(*c1, *type1)) {
                 ++pos1;  // not recycling this slot, so advance to next one
             } else {
@@ -2483,6 +2407,21 @@ bool roaring_bitmap_lazy_xor_inplace_completed(
     ra_mark_corrupt(&x1->high_low_container);
     return false;
 }
+
+bool roaring_bitmap_lazy_xor_inplace_completed(
+    roaring_bitmap_t *x1,
+    const roaring_bitmap_t *x2
+){
+    return xor_inplace_core(x1, x2, &container_lazy_ixor);
+}
+
+bool roaring_bitmap_xor_inplace_completed(
+    roaring_bitmap_t *x1,
+    const roaring_bitmap_t *x2
+){
+    return xor_inplace_core(x1, x2, &container_ixor);
+}
+
 
 void roaring_bitmap_repair_after_lazy(roaring_bitmap_t *ra) {
     for (int i = 0; i < ra->high_low_container.size; ++i) {
