@@ -921,10 +921,9 @@ roaring_bitmap_t *roaring_bitmap_try_xor(
                                     &x2->high_low_container, pos2, &type2);
             container_t *c = container_xor(c1, type1, c2, type2, &result_type);
 
-            if (container_nonzero_cardinality(c, result_type)) {
+            if (c != CONTAINER_EMPTY) {
+                assert(container_nonzero_cardinality(c, result_type));
                 ra_append(&answer->high_low_container, s1, c, result_type);
-            } else {
-                container_free(c, result_type);
             }
             ++pos1;
             ++pos2;
@@ -2263,10 +2262,9 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
             container_t *c = container_lazy_xor(
                                     c1, type1, c2, type2, &result_type);
 
-            if (container_nonzero_cardinality(c, result_type)) {
+            if (c != CONTAINER_EMPTY) {
+                assert(container_nonzero_cardinality(c, result_type));
                 ra_append(&answer->high_low_container, s1, c, result_type);
-            } else {
-                container_free(c, result_type);
             }
 
             ++pos1;
@@ -2355,10 +2353,10 @@ static bool xor_inplace_core(
             if (!(*dispatcher)(c1, type1, c2, type2))
                 goto alloc_failure;  // c1 should still be freeable
 
-            if (container_nonzero_cardinality(*c1, *type1)) {
+            if (*c1 != CONTAINER_EMPTY) {
+                assert(container_nonzero_cardinality(*c1, *type1));
                 ++pos1;  // not recycling this slot, so advance to next one
             } else {
-                container_free(*c1, *type1);
                 ra_remove_at_index(&x1->high_low_container, pos1);
                 --length1;
             }

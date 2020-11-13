@@ -29,12 +29,10 @@ container_t *array_bitset_container_xor(
     if (new_bc->cardinality <= DEFAULT_MAX_SIZE) {  // compact into array
         array_container_t *new_ac = array_container_from_bitset(new_bc);
         bitset_container_free(new_bc);
-        *result_type = ARRAY_CONTAINER_TYPE;
-        return new_ac;
+        return array_result(result_type, new_ac);
     }
 
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 /* Compute the xor of ac1 and bc2.  This version does not update the
@@ -50,8 +48,7 @@ container_t *array_bitset_container_lazy_xor(
     bitset_flip_list(new_bc->array, ac1->array, ac1->cardinality);
     new_bc->cardinality = BITSET_UNKNOWN_CARDINALITY;
 
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 
@@ -72,12 +69,10 @@ container_t *run_bitset_container_xor(
     if (new_bc->cardinality <= DEFAULT_MAX_SIZE) {
         array_container_t *new_ac = array_container_from_bitset(new_bc);
         bitset_container_free(new_bc);
-        *result_type = ARRAY_CONTAINER_TYPE;
-        return new_ac;
+        return array_result(result_type, new_ac);
     }
 
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 /* lazy xor. Result is left as a bitset container, even if actual
@@ -97,8 +92,7 @@ container_t *run_bitset_container_lazy_xor(
     }
     new_bc->cardinality = BITSET_UNKNOWN_CARDINALITY;
 
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 container_t *array_run_container_xor(
@@ -115,7 +109,9 @@ container_t *array_run_container_xor(
     if (ac1->cardinality < arbitrary_threshold) {
         run_container_t *new_rc = array_run_container_lazy_xor(ac1, rc2,
                                   result_type);  // keeps runs
-        assert(*result_type == RUN_CONTAINER_TYPE);
+        if (new_rc == CONTAINER_EMPTY)
+            return new_rc;
+        assert(*result_type == RUN_CONTAINER_TYPE);  // (and not empty)
         return convert_run_to_efficient_container_and_free(new_rc, result_type);
     }
 
@@ -143,8 +139,8 @@ run_container_t *array_run_container_lazy_xor(
     const array_container_t *ac1, const run_container_t *rc2,
     uint8_t *result_type  // currently always RUN_CONTAINER_TYPE
 ){
-    run_container_t *new_rc = run_container_create();
-    run_container_grow(new_rc, ac1->cardinality + rc2->n_runs, false);
+    run_container_t *new_rc =
+        run_container_create_given_capacity(ac1->cardinality + rc2->n_runs);
 
     int32_t rlepos = 0;
     int32_t arraypos = 0;
@@ -175,8 +171,7 @@ run_container_t *array_run_container_lazy_xor(
     // Since we are lazy, `convert_run_to_efficient_container` is not called.
     // Caller must do it if non-lazy.
     //
-    *result_type = RUN_CONTAINER_TYPE;
-    return new_rc;
+    return run_result(result_type, new_rc);
 }
 
 
@@ -186,6 +181,12 @@ container_t *run_run_container_xor(
 ){
     run_container_t *new_rc = run_container_create();
     run_container_xor(rc1, rc2, new_rc);
+
+    if (run_container_empty(new_rc)) {
+        run_container_free(new_rc);
+        TRASH_TYPECODE_IF_DEBUG(result_type);
+        return CONTAINER_EMPTY;
+    }
     return convert_run_to_efficient_container_and_free(new_rc, result_type);
 }
 
@@ -198,8 +199,7 @@ container_t *array_array_container_xor(
         array_container_t *new_ac =
                 array_container_create_given_capacity(ub_card);
         array_container_xor(ac1, ac2, new_ac);
-        *result_type = ARRAY_CONTAINER_TYPE;
-        return new_ac;
+        return array_result(result_type, new_ac);
     }
     bitset_container_t *new_bc = bitset_container_from_array(ac1);
     new_bc->cardinality = (uint32_t)bitset_flip_list_withcard(
@@ -209,12 +209,10 @@ container_t *array_array_container_xor(
     if (new_bc->cardinality <= DEFAULT_MAX_SIZE) {  // need to convert!
         array_container_t *new_ac = array_container_from_bitset(new_bc);
         bitset_container_free(new_bc);
-        *result_type = ARRAY_CONTAINER_TYPE;
-        return new_ac;
+        return array_result(result_type, new_ac);
     }
 
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 container_t *bitset_bitset_container_lazy_xor(
@@ -223,8 +221,7 @@ container_t *bitset_bitset_container_lazy_xor(
 ){
     bitset_container_t *new_bc = bitset_container_create();
     bitset_container_xor_nocard(bc1, bc2, new_bc);  // is lazy
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 container_t *array_array_container_lazy_xor(
@@ -239,8 +236,7 @@ container_t *array_array_container_lazy_xor(
         if (new_ac == NULL)
             return NULL;
         array_container_xor(ac1, ac2, new_ac);
-        *result_type = ARRAY_CONTAINER_TYPE;
-        return new_ac;
+        return array_result(result_type, new_ac);
     }
 
     bitset_container_t *new_bc = bitset_container_from_array(ac1);
@@ -249,8 +245,7 @@ container_t *array_array_container_lazy_xor(
     bitset_flip_list(new_bc->array, ac2->array, ac2->cardinality);
     new_bc->cardinality = BITSET_UNKNOWN_CARDINALITY;
 
-    *result_type = BITSET_CONTAINER_TYPE;
-    return new_bc;
+    return bitset_result(result_type, new_bc);
 }
 
 
@@ -263,11 +258,9 @@ container_t *bitset_bitset_container_xor(
     if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *new_ac = array_container_from_bitset(new_bc);
         bitset_container_free(new_bc);
-        *result_type = ARRAY_CONTAINER_TYPE;
-        return new_ac;
+        return array_result(result_type, new_ac);
     } else {
-        *result_type = BITSET_CONTAINER_TYPE;
-        return new_bc;
+        return bitset_result(result_type, new_bc);
     }
 }
 
@@ -299,13 +292,12 @@ bool bitset_array_container_ixor(
         if (ac1 == NULL)
             return false;
 
-        *c1 = ac1;
+        *c1 = array_result(type1, ac1);
         bitset_container_free(bc1);
-        *type1 = ARRAY_CONTAINER_TYPE;
         return true;
     }
 
-    assert(*type1 == BITSET_CONTAINER_TYPE);
+    *c1 = bitset_result(type1, bc1);
     return true;
 }
 

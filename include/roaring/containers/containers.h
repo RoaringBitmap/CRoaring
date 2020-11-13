@@ -42,9 +42,70 @@ extern "C" { namespace roaring { namespace internal {
 #define RUN_CONTAINER_TYPE 3
 #define SHARED_CONTAINER_TYPE 4
 
+#if !defined(NDEBUG)
+    #define GARBAGE_CONTAINER_TYPE 255
+#endif
+
 #define bitset_CONTAINER_TYPE BITSET_CONTAINER_TYPE
 #define array_CONTAINER_TYPE ARRAY_CONTAINER_TYPE
 #define run_CONTAINER_TYPE RUN_CONTAINER_TYPE
+
+
+/* In the debug build, when returning CONTAINER_EMPTY or otherwise indiciating
+ * no container is in effect, use this to set a typecode to garbage.
+ */
+#if defined(NDEBUG)
+    #define TRASH_TYPECODE_IF_DEBUG(type_ptr)
+#else
+    #define TRASH_TYPECODE_IF_DEBUG(type_ptr) \
+        (*(type_ptr) = GARBAGE_CONTAINER_TYPE)
+#endif
+
+
+/* These helpers are used to return containers from the mixing functions.
+ * They help avoid a separate `switch()` statement to dispatch cardinality
+ * and freeing in the container enumerators, by taking avantage of the fact
+ * that the mixing function already knows what container type it is returning.
+ */
+
+static inline container_t *bitset_result(
+    uint8_t *result_type,  // set to BITSET_CONTAINER_TYPE if not empty
+    bitset_container_t *bc
+){
+    if (bitset_container_empty(bc)) {
+        bitset_container_free(bc);
+        TRASH_TYPECODE_IF_DEBUG(result_type);
+        return CONTAINER_EMPTY;
+    }
+    *result_type = BITSET_CONTAINER_TYPE;
+    return bc;
+}
+
+static inline container_t *run_result(
+    uint8_t *result_type,  // set to RUN_CONTAINER_TYPE if not empty
+    run_container_t *rc
+){
+    if (run_container_empty(rc)) {
+        run_container_free(rc);
+        TRASH_TYPECODE_IF_DEBUG(result_type);
+        return CONTAINER_EMPTY;
+    }
+    *result_type = RUN_CONTAINER_TYPE;
+    return rc;
+}
+
+static inline container_t *array_result(
+    uint8_t *result_type,  // set to ARRAY_CONTAINER_TYPE if not empty
+    array_container_t *ac
+){
+    if (array_container_empty(ac)) {
+        array_container_free(ac);
+        TRASH_TYPECODE_IF_DEBUG(result_type);
+        return CONTAINER_EMPTY;
+    }
+    *result_type = ARRAY_CONTAINER_TYPE;
+    return ac;
+}
 
 
 /**
@@ -1769,8 +1830,8 @@ static inline bool container_lazy_ixor(
         case CONTAINER_PAIR(BITSET,BITSET): {
             bitset_container_t *bc1 = *movable_CAST_bitset(c1);
             bitset_container_xor_nocard(bc1, const_CAST_bitset(c2), bc1);
-            assert(*type1 == BITSET_CONTAINER_TYPE);
-            return true; }  // !!! TBD: Have way to check for failure
+            *c1 = bitset_result(type1, bc1);
+            return true; }  // reuses memory, so can't fail
 
         // TODO: other cases being lazy, esp. when we know inplace not likely
         // could see the corresponding code for union

@@ -99,6 +99,23 @@ typedef ROARING_CONTAINER_T container_t;
 #define movable_CAST_base(c)   movable_CAST(container_t **, c)
 
 
+/**
+ * At the moment of return()-ing a container, handlers frequently know what
+ * kind of container they have.  This means they don't need to go through a
+ * separate dispatch to re-figure-out the container's type to ask for its
+ * cardinality, in order to free it if it is empty.  This pointer is a fixed
+ * value that is returned to indicate empty containers, heeded by the
+ * container enumeration loop.
+ *
+ * (While using a very low-numbered pointer as a magic number is not strictly
+ * standard C, it is supported by basically all known platforms.  It could
+ * be made standard by pointing at an otherwise-unused global variable, but
+ * that would mean slower comparisons to the constant value.)
+ */
+#define CONTAINER_EMPTY \
+    ((container_t*)32)  // 32-byte alignment should be good enough
+
+
 #ifdef __cplusplus
 } }  // namespace roaring { namespace internal {
 #endif
