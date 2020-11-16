@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include <roaring/roaring.h>
 #include <math.h>
+#include <stdio.h>
 #include "benchmark.h"
 #include "random.h"
 
