@@ -25,7 +25,7 @@ bool array_bitset_container_xor(
     bitset_container_t *result = bitset_container_create();
     bitset_container_copy(src_2, result);
     result->cardinality = (int32_t)bitset_flip_list_withcard(
-        result->array, result->cardinality, src_1->array, src_1->cardinality);
+        result->words, result->cardinality, src_1->array, src_1->cardinality);
 
     // do required type conversions.
     if (result->cardinality <= DEFAULT_MAX_SIZE) {
@@ -46,7 +46,7 @@ void array_bitset_container_lazy_xor(const array_container_t *src_1,
                                      const bitset_container_t *src_2,
                                      bitset_container_t *dst) {
     if (src_2 != dst) bitset_container_copy(src_2, dst);
-    bitset_flip_list(dst->array, src_1->array, src_1->cardinality);
+    bitset_flip_list(dst->words, src_1->array, src_1->cardinality);
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
 }
 
@@ -66,7 +66,7 @@ bool run_bitset_container_xor(
     bitset_container_copy(src_2, result);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
-        bitset_flip_range(result->array, rle.value,
+        bitset_flip_range(result->words, rle.value,
                           rle.value + rle.length + UINT32_C(1));
     }
     result->cardinality = bitset_container_compute_cardinality(result);
@@ -91,7 +91,7 @@ void run_bitset_container_lazy_xor(const run_container_t *src_1,
     if (src_2 != dst) bitset_container_copy(src_2, dst);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
-        bitset_flip_range(dst->array, rle.value,
+        bitset_flip_range(dst->words, rle.value,
                           rle.value + rle.length + UINT32_C(1));
     }
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;
@@ -214,7 +214,7 @@ bool array_array_container_xor(
     bool returnval = true;  // expect a bitset
     bitset_container_t *ourbitset = CAST_bitset(*dst);
     ourbitset->cardinality = (uint32_t)bitset_flip_list_withcard(
-        ourbitset->array, src_1->cardinality, src_2->array, src_2->cardinality);
+        ourbitset->words, src_1->cardinality, src_2->array, src_2->cardinality);
     if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
         // need to convert!
         *dst = array_container_from_bitset(ourbitset);
@@ -241,7 +241,7 @@ bool array_array_container_lazy_xor(
     bool returnval = true;  // expect a bitset (maybe, for XOR??)
     if (*dst != NULL) {
         bitset_container_t *ourbitset = CAST_bitset(*dst);
-        bitset_flip_list(ourbitset->array, src_2->array, src_2->cardinality);
+        bitset_flip_list(ourbitset->words, src_2->array, src_2->cardinality);
         ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
     }
     return returnval;
@@ -281,7 +281,7 @@ bool bitset_array_container_ixor(
 ){
     *dst = src_1;
     src_1->cardinality = (uint32_t)bitset_flip_list_withcard(
-        src_1->array, src_1->cardinality, src_2->array, src_2->cardinality);
+        src_1->words, src_1->cardinality, src_2->array, src_2->cardinality);
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);

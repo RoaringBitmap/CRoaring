@@ -103,7 +103,7 @@ bool bitset_container_is_subset_run(const bitset_container_t* container1,
     int32_t i_bitset = 0, i_run = 0;
     while (i_bitset < BITSET_CONTAINER_SIZE_IN_WORDS &&
            i_run < container2->n_runs) {
-        uint64_t w = container1->array[i_bitset];
+        uint64_t w = container1->words[i_bitset];
         while (w != 0 && i_run < container2->n_runs) {
             uint32_t start = container2->runs[i_run].value;
             uint32_t stop = start + container2->runs[i_run].length;
@@ -128,7 +128,7 @@ bool bitset_container_is_subset_run(const bitset_container_t* container1,
         // terminated iterating on the run containers, check that rest of bitset
         // is empty
         for (; i_bitset < BITSET_CONTAINER_SIZE_IN_WORDS; i_bitset++) {
-            if (container1->array[i_bitset] != 0) {
+            if (container1->words[i_bitset] != 0) {
                 return false;
             }
         }

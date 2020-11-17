@@ -23,7 +23,7 @@ bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     bitset_container_t *answer = bitset_container_create();
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         rle16_t vl = arr->runs[rlepos];
-        bitset_set_lenrange(answer->array, vl.value, vl.length);
+        bitset_set_lenrange(answer->words, vl.value, vl.length);
     }
     answer->cardinality = card;
     return answer;
@@ -51,7 +51,7 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     //  sse version ends up being slower here
     // (bitset_extract_setbits_sse_uint16)
     // because of the sparsity of the data
-    bitset_extract_setbits_uint16(bits->array, BITSET_CONTAINER_SIZE_IN_WORDS,
+    bitset_extract_setbits_uint16(bits->words, BITSET_CONTAINER_SIZE_IN_WORDS,
                                   result->array, 0);
     return result;
 }
@@ -114,7 +114,7 @@ container_t *convert_to_bitset_or_array_container(
     bitset_container_t *answer = bitset_container_create();
     for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
         uint16_t run_start = r->runs[rlepos].value;
-        bitset_set_lenrange(answer->array, run_start, r->runs[rlepos].length);
+        bitset_set_lenrange(answer->words, run_start, r->runs[rlepos].length);
     }
     answer->cardinality = card;
     *resulttype = BITSET_CONTAINER_TYPE;
@@ -170,7 +170,7 @@ container_t *convert_run_to_efficient_container(
     for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
         int start = c->runs[rlepos].value;
         int end = start + c->runs[rlepos].length;
-        bitset_set_range(answer->array, start, end + 1);
+        bitset_set_range(answer->words, start, end + 1);
     }
     answer->cardinality = card;
     *typecode_after = BITSET_CONTAINER_TYPE;
@@ -261,12 +261,12 @@ container_t *convert_run_optimize(
         run_container_t *answer = run_container_create_given_capacity(n_runs);
 
         int long_ctr = 0;
-        uint64_t cur_word = c_qua_bitset->array[0];
+        uint64_t cur_word = c_qua_bitset->words[0];
         int run_count = 0;
         while (true) {
             while (cur_word == UINT64_C(0) &&
                    long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS - 1)
-                cur_word = c_qua_bitset->array[++long_ctr];
+                cur_word = c_qua_bitset->words[++long_ctr];
 
             if (cur_word == UINT64_C(0)) {
                 bitset_container_free(c_qua_bitset);
@@ -281,7 +281,7 @@ container_t *convert_run_optimize(
             int run_end = 0;
             while (cur_word_with_1s == UINT64_C(0xFFFFFFFFFFFFFFFF) &&
                    long_ctr < BITSET_CONTAINER_SIZE_IN_WORDS - 1)
-                cur_word_with_1s = c_qua_bitset->array[++long_ctr];
+                cur_word_with_1s = c_qua_bitset->words[++long_ctr];
 
             if (cur_word_with_1s == UINT64_C(0xFFFFFFFFFFFFFFFF)) {
                 run_end = 64 + long_ctr * 64;  // exclusive, I guess
@@ -315,12 +315,12 @@ container_t *container_from_run_range(
     for (int32_t i = 0; i < run->n_runs; ++i) {
         uint32_t rle_min = run->runs[i].value;
         uint32_t rle_max = rle_min + run->runs[i].length;
-        bitset_set_lenrange(bitset->array, rle_min, rle_max - rle_min);
+        bitset_set_lenrange(bitset->words, rle_min, rle_max - rle_min);
         union_cardinality += run->runs[i].length + 1;
     }
     union_cardinality += max - min + 1;
-    union_cardinality -= bitset_lenrange_cardinality(bitset->array, min, max-min);
-    bitset_set_lenrange(bitset->array, min, max - min);
+    union_cardinality -= bitset_lenrange_cardinality(bitset->words, min, max-min);
+    bitset_set_lenrange(bitset->words, min, max - min);
     bitset->cardinality = union_cardinality;
     if(bitset->cardinality <= DEFAULT_MAX_SIZE) {
         // we need to convert to an array container

@@ -13,40 +13,41 @@ extern "C" { namespace roaring { namespace internal {
 /*
  * Set all bits in indexes [begin,end) to true.
  */
-static inline void bitset_set_range(uint64_t *bitmap, uint32_t start,
+static inline void bitset_set_range(uint64_t *words, uint32_t start,
                                     uint32_t end) {
     if (start == end) return;
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
-        bitmap[firstword] |= ((~UINT64_C(0)) << (start % 64)) &
+        words[firstword] |= ((~UINT64_C(0)) << (start % 64)) &
                              ((~UINT64_C(0)) >> ((~end + 1) % 64));
         return;
     }
-    bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
-    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = ~UINT64_C(0);
-    bitmap[endword] |= (~UINT64_C(0)) >> ((~end + 1) % 64);
+    words[firstword] |= (~UINT64_C(0)) << (start % 64);
+    for (uint32_t i = firstword + 1; i < endword; i++)
+        words[i] = ~UINT64_C(0);
+    words[endword] |= (~UINT64_C(0)) >> ((~end + 1) % 64);
 }
 
 
 /*
  * Find the cardinality of the bitset in [begin,begin+lenminusone]
  */
-static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
+static inline int bitset_lenrange_cardinality(uint64_t *words, uint32_t start,
                                               uint32_t lenminusone) {
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
-        return hamming(bitmap[firstword] &
+        return hamming(words[firstword] &
                        ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
                            << (start % 64));
     }
-    int answer = hamming(bitmap[firstword] & ((~UINT64_C(0)) << (start % 64)));
+    int answer = hamming(words[firstword] & ((~UINT64_C(0)) << (start % 64)));
     for (uint32_t i = firstword + 1; i < endword; i++) {
-        answer += hamming(bitmap[i]);
+        answer += hamming(words[i]);
     }
     answer +=
-        hamming(bitmap[endword] &
+        hamming(words[endword] &
                 (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64));
     return answer;
 }
@@ -54,19 +55,22 @@ static inline int bitset_lenrange_cardinality(uint64_t *bitmap, uint32_t start,
 /*
  * Check whether the cardinality of the bitset in [begin,begin+lenminusone] is 0
  */
-static inline bool bitset_lenrange_empty(uint64_t *bitmap, uint32_t start,
+static inline bool bitset_lenrange_empty(uint64_t *words, uint32_t start,
         uint32_t lenminusone) {
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
-      return (bitmap[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
+        return (words[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
               << (start % 64)) == 0;
     }
-    if(((bitmap[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0) return false;
+    if (((words[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0)
+        return false;
     for (uint32_t i = firstword + 1; i < endword; i++) {
-     if(bitmap[i] != 0) return false;
+        if (words[i] != 0)
+            return false;
     }
-    if((bitmap[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0) return false;
+    if ((words[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0)
+        return false;
     return true;
 }
 
@@ -74,52 +78,54 @@ static inline bool bitset_lenrange_empty(uint64_t *bitmap, uint32_t start,
 /*
  * Set all bits in indexes [begin,begin+lenminusone] to true.
  */
-static inline void bitset_set_lenrange(uint64_t *bitmap, uint32_t start,
+static inline void bitset_set_lenrange(uint64_t *words, uint32_t start,
                                        uint32_t lenminusone) {
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
-        bitmap[firstword] |= ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
+        words[firstword] |= ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
                              << (start % 64);
         return;
     }
-    uint64_t temp = bitmap[endword];
-    bitmap[firstword] |= (~UINT64_C(0)) << (start % 64);
+    uint64_t temp = words[endword];
+    words[firstword] |= (~UINT64_C(0)) << (start % 64);
     for (uint32_t i = firstword + 1; i < endword; i += 2)
-        bitmap[i] = bitmap[i + 1] = ~UINT64_C(0);
-    bitmap[endword] =
+        words[i] = words[i + 1] = ~UINT64_C(0);
+    words[endword] =
         temp | (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64);
 }
 
 /*
  * Flip all the bits in indexes [begin,end).
  */
-static inline void bitset_flip_range(uint64_t *bitmap, uint32_t start,
+static inline void bitset_flip_range(uint64_t *words, uint32_t start,
                                      uint32_t end) {
     if (start == end) return;
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
-    bitmap[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
-    for (uint32_t i = firstword; i < endword; i++) bitmap[i] = ~bitmap[i];
-    bitmap[endword] ^= ((~UINT64_C(0)) >> ((~end + 1) % 64));
+    words[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
+    for (uint32_t i = firstword; i < endword; i++)
+        words[i] = ~words[i];
+    words[endword] ^= ((~UINT64_C(0)) >> ((~end + 1) % 64));
 }
 
 /*
  * Set all bits in indexes [begin,end) to false.
  */
-static inline void bitset_reset_range(uint64_t *bitmap, uint32_t start,
+static inline void bitset_reset_range(uint64_t *words, uint32_t start,
                                       uint32_t end) {
     if (start == end) return;
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
-        bitmap[firstword] &= ~(((~UINT64_C(0)) << (start % 64)) &
+        words[firstword] &= ~(((~UINT64_C(0)) << (start % 64)) &
                                ((~UINT64_C(0)) >> ((~end + 1) % 64)));
         return;
     }
-    bitmap[firstword] &= ~((~UINT64_C(0)) << (start % 64));
-    for (uint32_t i = firstword + 1; i < endword; i++) bitmap[i] = UINT64_C(0);
-    bitmap[endword] &= ~((~UINT64_C(0)) >> ((~end + 1) % 64));
+    words[firstword] &= ~((~UINT64_C(0)) << (start % 64));
+    for (uint32_t i = firstword + 1; i < endword; i++)
+        words[i] = UINT64_C(0);
+    words[endword] &= ~((~UINT64_C(0)) >> ((~end + 1) % 64));
 }
 
 /*
@@ -137,7 +143,7 @@ static inline void bitset_reset_range(uint64_t *bitmap, uint32_t start,
  *
  * This function uses AVX2 decoding.
  */
-size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length, void *vout,
+size_t bitset_extract_setbits_avx2(uint64_t *words, size_t length, void *vout,
                                    size_t outcapacity, uint32_t base);
 
 /*
@@ -149,7 +155,7 @@ size_t bitset_extract_setbits_avx2(uint64_t *bitset, size_t length, void *vout,
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
+size_t bitset_extract_setbits(uint64_t *words, size_t length, void *vout,
                               uint32_t base);
 
 /*
@@ -168,7 +174,7 @@ size_t bitset_extract_setbits(uint64_t *bitset, size_t length, void *vout,
  *
  * This function uses SSE decoding.
  */
-size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
+size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
                                          uint16_t *out, size_t outcapacity,
                                          uint16_t base);
 
@@ -182,7 +188,7 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *bitset, size_t length,
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
+size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
                                      uint16_t *out, uint16_t base);
 
 /*
@@ -195,8 +201,8 @@ size_t bitset_extract_setbits_uint16(const uint64_t *bitset, size_t length,
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ bitset1,
-                                                  const uint64_t * __restrict__ bitset2,
+size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ words1,
+                                                  const uint64_t * __restrict__ words2,
                                                   size_t length, uint16_t *out,
                                                   uint16_t base);
 
@@ -206,13 +212,13 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ 
  * and return the updated cardinality. This evidently assumes that the bitset
  * already contained data.
  */
-uint64_t bitset_set_list_withcard(void *bitset, uint64_t card,
+uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length);
 /*
  * Given a bitset, set all bit values in the list (there
  * are length of them).
  */
-void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length);
+void bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length);
 
 /*
  * Given a bitset having cardinality card, unset all bit values in the list
@@ -220,7 +226,7 @@ void bitset_set_list(void *bitset, const uint16_t *list, uint64_t length);
  * and return the updated cardinality. This evidently assumes that the bitset
  * already contained data.
  */
-uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
+uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length);
 
 /*
@@ -230,10 +236,10 @@ uint64_t bitset_clear_list(void *bitset, uint64_t card, const uint16_t *list,
  * already contained data.
  */
 
-uint64_t bitset_flip_list_withcard(void *bitset, uint64_t card,
+uint64_t bitset_flip_list_withcard(uint64_t *words, uint64_t card,
                                    const uint16_t *list, uint64_t length);
 
-void bitset_flip_list(void *bitset, const uint16_t *list, uint64_t length);
+void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length);
 
 #ifdef USEAVX
 /***

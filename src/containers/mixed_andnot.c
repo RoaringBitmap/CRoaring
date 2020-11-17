@@ -57,7 +57,7 @@ bool bitset_array_container_andnot(
     bitset_container_t *result = bitset_container_create();
     bitset_container_copy(src_1, result);
     result->cardinality =
-        (int32_t)bitset_clear_list(result->array, (uint64_t)result->cardinality,
+        (int32_t)bitset_clear_list(result->words, (uint64_t)result->cardinality,
                                    src_2->array, (uint64_t)src_2->cardinality);
 
     // do required type conversions.
@@ -83,7 +83,7 @@ bool bitset_array_container_iandnot(
 ){
     *dst = src_1;
     src_1->cardinality =
-        (int32_t)bitset_clear_list(src_1->array, (uint64_t)src_1->cardinality,
+        (int32_t)bitset_clear_list(src_1->words, (uint64_t)src_1->cardinality,
                                    src_2->array, (uint64_t)src_2->cardinality);
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
@@ -132,11 +132,11 @@ bool run_bitset_container_andnot(
 
             uint32_t start = rle.value;
             uint32_t end = start + rle.length + 1;
-            bitset_reset_range(answer->array, last_pos, start);
-            bitset_flip_range(answer->array, start, end);
+            bitset_reset_range(answer->words, last_pos, start);
+            bitset_flip_range(answer->words, start, end);
             last_pos = end;
         }
-        bitset_reset_range(answer->array, last_pos, (uint32_t)(1 << 16));
+        bitset_reset_range(answer->words, last_pos, (uint32_t)(1 << 16));
 
         answer->cardinality = bitset_container_compute_cardinality(answer);
 
@@ -184,7 +184,7 @@ bool bitset_run_container_andnot(
     bitset_container_copy(src_1, result);
     for (int32_t rlepos = 0; rlepos < src_2->n_runs; ++rlepos) {
         rle16_t rle = src_2->runs[rlepos];
-        bitset_reset_range(result->array, rle.value,
+        bitset_reset_range(result->words, rle.value,
                            rle.value + rle.length + UINT32_C(1));
     }
     result->cardinality = bitset_container_compute_cardinality(result);
@@ -213,7 +213,7 @@ bool bitset_run_container_iandnot(
 
     for (int32_t rlepos = 0; rlepos < src_2->n_runs; ++rlepos) {
         rle16_t rle = src_2->runs[rlepos];
-        bitset_reset_range(src_1->array, rle.value,
+        bitset_reset_range(src_1->words, rle.value,
                            rle.value + rle.length + UINT32_C(1));
     }
     src_1->cardinality = bitset_container_compute_cardinality(src_1);

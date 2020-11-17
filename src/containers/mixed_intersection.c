@@ -151,11 +151,11 @@ bool run_bitset_container_intersection(
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
             const rle16_t rle = src_1->runs[rlepos];
             uint32_t end = rle.value;
-            bitset_reset_range(src_2->array, start, end);
+            bitset_reset_range(src_2->words, start, end);
 
             start = end + rle.length + 1;
         }
-        bitset_reset_range(src_2->array, start, UINT32_C(1) << 16);
+        bitset_reset_range(src_2->words, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
         if (src_2->cardinality > DEFAULT_MAX_SIZE) {
             return true;
@@ -180,10 +180,10 @@ bool run_bitset_container_intersection(
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
             const rle16_t rle = src_1->runs[rlepos];
             uint32_t end = rle.value;
-            bitset_reset_range(answer->array, start, end);
+            bitset_reset_range(answer->words, start, end);
             start = end + rle.length + 1;
         }
-        bitset_reset_range(answer->array, start, UINT32_C(1) << 16);
+        bitset_reset_range(answer->words, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
 
         if (answer->cardinality > DEFAULT_MAX_SIZE) {
@@ -246,7 +246,7 @@ int run_bitset_container_intersection_cardinality(
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
         answer +=
-            bitset_lenrange_cardinality(src_2->array, rle.value, rle.length);
+            bitset_lenrange_cardinality(src_2->words, rle.value, rle.length);
     }
     return answer;
 }
@@ -292,7 +292,7 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
 	   }
        for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
            rle16_t rle = src_1->runs[rlepos];
-           if(!bitset_lenrange_empty(src_2->array, rle.value,rle.length)) return true;
+           if(!bitset_lenrange_empty(src_2->words, rle.value,rle.length)) return true;
        }
        return false;
 }
@@ -319,7 +319,7 @@ bool bitset_bitset_container_intersection(
     if (*dst != NULL) {
         CAST_array(*dst)->cardinality = newCardinality;
         bitset_extract_intersection_setbits_uint16(
-            src_1->array, src_2->array, BITSET_CONTAINER_SIZE_IN_WORDS,
+            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS,
             CAST_array(*dst)->array, 0);
     }
     return false;  // not a bitset
@@ -340,7 +340,7 @@ bool bitset_bitset_container_intersection_inplace(
     if (*dst != NULL) {
         CAST_array(*dst)->cardinality = newCardinality;
         bitset_extract_intersection_setbits_uint16(
-            src_1->array, src_2->array, BITSET_CONTAINER_SIZE_IN_WORDS,
+            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS,
             CAST_array(*dst)->array, 0);
     }
     return false;  // not a bitset
