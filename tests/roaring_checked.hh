@@ -53,29 +53,35 @@ class Roaring {
   public:  // members public to allow tests access to them
     roaring::Roaring plain;  // ordinary Roaring bitset wrapper class
     std::set<uint32_t> check;  // contents kept in sync with `plain`
+    bool indeterminate;
 
   public:
     Roaring() : plain() {
+        indeterminate = false;
     }
 
     Roaring(size_t n, const uint32_t *data) : plain (n, data) {
         for (size_t i = 0; i < n; ++i)
             check.insert(data[i]);
+        indeterminate = false;
     }
 
     Roaring(const Roaring &r) {
         plain = r.plain;
         check = r.check;
+        indeterminate = r.indeterminate;
     }
 
     Roaring(Roaring &&r) noexcept {
         plain = std::move(r.plain);
         check = std::move(r.check);
+        indeterminate = r.indeterminate;
     }
 
     Roaring(roaring::api::roaring_bitmap_t *s) noexcept : plain (s) {
         for (auto value : plain)
             check.insert(value);
+        indeterminate = false;
     }
 
     // This constructor is unique to doublecheck::Roaring(), for making a
@@ -88,6 +94,7 @@ class Roaring {
         plain = std::move(other_plain);
         for (auto value : plain)
             check.insert(value);
+        indeterminate = false;
     }
 
     // Note: This does not call `::Roaring::bitmapOf()` because variadics can't
@@ -202,18 +209,21 @@ class Roaring {
     }
 
     ~Roaring() {
-        assert(does_std_set_match_roaring());  // always check on destructor
+        if (!indeterminate)
+            assert(does_std_set_match_roaring());  // check on destruct
     }
 
     Roaring &operator=(const Roaring &r) {
         plain = r.plain;
         check = r.check;
+        indeterminate = r.indeterminate;
         return *this;
     }
 
     Roaring &operator=(Roaring &&r) noexcept {
         plain = std::move(r.plain);
         check = std::move(r.check);
+        indeterminate = r.indeterminate;
         return *this;
     }
 
@@ -250,7 +260,13 @@ class Roaring {
     }
 
     Roaring &operator^=(const Roaring &r) {
-        plain ^= r.plain;
+        try {
+            plain ^= r.plain;
+        }
+        catch (const std::bad_alloc &e) {
+            indeterminate = true;
+            throw std::bad_alloc();
+        }
 
         auto it = check.begin();
         auto it_end = check.end();
