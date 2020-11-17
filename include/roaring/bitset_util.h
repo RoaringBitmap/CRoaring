@@ -33,7 +33,8 @@ static inline void bitset_set_range(uint64_t *words, uint32_t start,
 /*
  * Find the cardinality of the bitset in [begin,begin+lenminusone]
  */
-static inline int bitset_lenrange_cardinality(uint64_t *words, uint32_t start,
+static inline int bitset_lenrange_cardinality(const uint64_t *words,
+                                              uint32_t start,
                                               uint32_t lenminusone) {
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
@@ -55,8 +56,8 @@ static inline int bitset_lenrange_cardinality(uint64_t *words, uint32_t start,
 /*
  * Check whether the cardinality of the bitset in [begin,begin+lenminusone] is 0
  */
-static inline bool bitset_lenrange_empty(uint64_t *words, uint32_t start,
-        uint32_t lenminusone) {
+static inline bool bitset_lenrange_empty(const uint64_t *words, uint32_t start,
+                                         uint32_t lenminusone) {
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
@@ -143,8 +144,9 @@ static inline void bitset_reset_range(uint64_t *words, uint32_t start,
  *
  * This function uses AVX2 decoding.
  */
-size_t bitset_extract_setbits_avx2(uint64_t *words, size_t length, uint32_t *out,
-                                   size_t outcapacity, uint32_t base);
+size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
+                                   uint32_t *out, size_t outcapacity,
+                                   uint32_t base);
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
@@ -155,8 +157,8 @@ size_t bitset_extract_setbits_avx2(uint64_t *words, size_t length, uint32_t *out
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_setbits(uint64_t *words, size_t length, uint32_t *out,
-                              uint32_t base);
+size_t bitset_extract_setbits(const uint64_t *words, size_t length,
+                              uint32_t *out, uint32_t base);
 
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
