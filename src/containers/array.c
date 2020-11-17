@@ -31,15 +31,13 @@ extern inline bool array_container_full(const array_container_t *array);
 array_container_t *array_container_create_given_capacity(int32_t size) {
     array_container_t *container;
 
-    if ((container = (array_container_t *)malloc(sizeof(array_container_t))) ==
-        NULL) {
+    if ((container = TRY_ALLOC(array_container_t)) == NULL) {
         return NULL;
     }
 
-    if( size <= 0 ) { // we don't want to rely on malloc(0)
+    if( size <= 0 ) { // we don't want to rely on ALLOC(0)
         container->array = NULL;
-    } else if ((container->array = (uint16_t *)malloc(sizeof(uint16_t) * size)) ==
-        NULL) {
+    } else if ((container->array = TRY_ALLOC_N(uint16_t, size)) == NULL) {
         free(container);
         return NULL;
     }
@@ -126,15 +124,15 @@ void array_container_grow(array_container_t *container, int32_t min,
     uint16_t *array = container->array;
 
     if (preserve) {
-        container->array =
-            (uint16_t *)realloc(array, new_capacity * sizeof(uint16_t));
-        if (container->array == NULL) free(array);
+        container->array = TRY_REALLOC_N(uint16_t, array, new_capacity);
+        if (container->array == NULL)
+            FREE(array);
     } else {
         // Jon Strabala reports that some tools complain otherwise
         if (array != NULL) {
-          free(array);
+            FREE(array);
         }
-        container->array = (uint16_t *)malloc(new_capacity * sizeof(uint16_t));
+        container->array = TRY_ALLOC_N(uint16_t, new_capacity);
     }
 
     //  handle the case where realloc fails

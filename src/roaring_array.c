@@ -41,7 +41,7 @@ static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
     // https://github.com/RoaringBitmap/CRoaring/issues/256
 
     if ( new_capacity == 0 ) {
-      free(ra->containers);
+      FREE(ra->containers);
       ra->containers = NULL;
       ra->keys = NULL;
       ra->typecodes = NULL;
@@ -50,7 +50,7 @@ static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
     }
     const size_t memoryneeded = new_capacity * (
                 sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t));
-    void *bigalloc = malloc(memoryneeded);
+    void *bigalloc = TRY_ALLOC_N(char, memoryneeded);
     if (!bigalloc) return false;
     void *oldbigalloc = ra->containers;
     container_t **newcontainers = (container_t **)bigalloc;
@@ -78,7 +78,7 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
     if (cap > INT32_MAX) { return false; }
 
     if(cap > 0) {
-      void *bigalloc = malloc(cap *
+      void *bigalloc = TRY_ALLOC_N(char, cap *
                 (sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t)));
       if( bigalloc == NULL ) return false;
       new_ra->containers = (container_t **)bigalloc;
@@ -168,7 +168,7 @@ void ra_reset(roaring_array_t *ra) {
 }
 
 void ra_clear_without_containers(roaring_array_t *ra) {
-    free(ra->containers);    // keys and typecodes are allocated with containers
+    FREE(ra->containers);  // keys and typecodes are allocated with containers
     ra->size = 0;
     ra->allocation_size = 0;
     ra->containers = NULL;
@@ -483,7 +483,7 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                 //first_skip = t_limit - (ctr + t_limit - offset);
                 first_skip = offset - ctr;
                 first = true;
-                t_ans = (uint32_t *)malloc(sizeof(*t_ans) * (first_skip + limit));
+                t_ans = TRY_ALLOC_N(uint32_t, first_skip + limit);
                 if(t_ans == NULL) {
                   return false;
                 }
@@ -491,7 +491,7 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limi
                 cur_len = first_skip + limit;
             }
             if (dtr + t_limit > cur_len){
-                uint32_t * append_ans = (uint32_t *)malloc(sizeof(*append_ans) * (cur_len + t_limit));
+                uint32_t *append_ans = TRY_ALLOC_N(uint32_t, cur_len + t_limit);
                 if(append_ans == NULL) {
                   if(t_ans != NULL) free(t_ans);
                   return false;

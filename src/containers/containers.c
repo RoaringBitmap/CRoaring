@@ -140,8 +140,7 @@ container_t *get_copy_of_container(
         }
         assert(*typecode != SHARED_CONTAINER_TYPE);
 
-        if ((shared_container = (shared_container_t *)malloc(
-                 sizeof(shared_container_t))) == NULL) {
+        if ((shared_container = TRY_ALLOC(shared_container_t)) == NULL) {
             return NULL;
         }
 

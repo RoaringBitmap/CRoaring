@@ -182,6 +182,99 @@ static inline int __builtin_popcountll(unsigned long long input_num) {
 
 #endif
 
+
+/*
+ * The definition of the `roaring_bitmap_t` is not opaque, so clients can use
+ * their own memory to hold the main structure.  Use `roaring_bitmap_init()`
+ * directly instead of `roaring_bitmap_create()` to initialize such instances.
+ * (This technique is used by the C++ class.)
+ *
+ * However, a non-empty roaring bitmap makes auxiliary allocations (various
+ * shapes of containers for ranges or runs of bits).  This provides a deeper
+ * hook into how those containers are allocated and freed.
+ *
+ * Making matters more complex than usual for a custom allocator is that the
+ * AVX instructions require specific data alignment guarantees which malloc()
+ * may not provide.
+ */
+#if !defined(ROARING_ALLOC)
+    #if defined(ROARING_REALLOC) || defined(ROARING_FREE)
+        #error "ROARING_XXX must be defined for ALLOC, REALLOC, and FREE"
+    #endif
+    #if defined(ROARING_ALIGNED_ALLOC)
+        #error "ROARING_ALIGNED_ALLOC only definable if ROARING_ALLOC defined"
+    #endif
+
+    #if defined(NDEBUG)
+        #define ROARING_ALLOC malloc
+        #define ROARING_REALLOC realloc
+        #define ROARING_FREE free
+        #define ROARING_ALIGNED_ALLOC roaring_bitmap_aligned_malloc
+        #define ROARING_ALIGNED_FREE roaring_bitmap_aligned_free
+    #else
+        // Allow debug builds to hook the functions at runtime.
+
+        void *roaring_debug_alloc(size_t size);
+        void *roaring_debug_realloc(void *p, size_t size);
+        void roaring_debug_free(void *p);
+        void *roaring_debug_aligned_alloc(size_t alignment, size_t size);
+        void roaring_debug_aligned_free(void *p);
+
+        #define ROARING_ALLOC roaring_debug_alloc
+        #define ROARING_REALLOC roaring_debug_realloc
+        #define ROARING_FREE roaring_debug_free
+        #define ROARING_ALIGNED_ALLOC roaring_debug_aligned_alloc
+        #define ROARING_ALIGNED_FREE roaring_debug_aligned_free
+
+        typedef void* (alloc_hook_t)(size_t);
+        typedef void* (realloc_hook_t)(void*,size_t);
+        typedef void (free_hook_t)(void*);
+        typedef void* (aligned_alloc_hook_t)(size_t,size_t);
+
+        alloc_hook_t *roaring_debug_set_alloc_hook(alloc_hook_t *hook);
+        realloc_hook_t *roaring_debug_set_realloc_hook(realloc_hook_t *hook);
+        free_hook_t *roaring_debug_set_free_hook(free_hook_t *hook);
+        aligned_alloc_hook_t *roaring_debug_set_aligned_alloc_hook(
+                                                aligned_alloc_hook_t *hook);
+        free_hook_t *roaring_debug_set_aligned_free_hook(free_hook_t *hook);
+    #endif
+
+    // Note: Need to think on how ROARING_ALIGNED_ALLOC override works
+#else
+    #if !defined(ROARING_REALLOC) || !defined(ROARING_FREE)
+        #error "ROARING_XXX must be defined for ALLOC, REALLOC, and FREE"
+    #endif
+    #if !defined(DISABLEAVX)
+        #if !defined(ROARING_ALIGNED_ALLOC)
+            #error "ROARING_ALIGNED_ALLOC required if !(DISABLEAVX)"
+        #endif
+    #endif
+#endif
+
+/**
+ * Helper for allocation; gives a clear reminder it might fail ("TRY") and also
+ * makes C++ compatibility easier by doing the cast for you.
+ */
+#define TRY_ALLOC(T) \
+    ((T*)ROARING_ALLOC(sizeof(T)))
+
+#define TRY_ALLOC_N(T,n) \
+    ((T*)ROARING_ALLOC(sizeof(T) * (n)))
+
+#define TRY_ALIGNED_ALLOC_N(align,T,n) \
+    ((T*)ROARING_ALIGNED_ALLOC((align), sizeof(T) * (n)))
+
+#define TRY_REALLOC_N(T,p,n) \
+    ((T*)ROARING_REALLOC((p), sizeof(T) * (n)))
+
+#define TRY_REALLOC_N(T,p,n) \
+    ((T*)ROARING_REALLOC((p), sizeof(T) * (n)))
+
+#define FREE(p) ROARING_FREE(p)
+
+#define ALIGNED_FREE(p) ROARING_ALIGNED_FREE(p)
+
+
 // without the following, we get lots of warnings about posix_memalign
 #ifndef __cplusplus
 extern int posix_memalign(void **__memptr, size_t __alignment, size_t __size);

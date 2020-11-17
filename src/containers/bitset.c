@@ -46,17 +46,15 @@ void bitset_container_set_all(bitset_container_t *bitset) {
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(void) {
-    bitset_container_t *bitset =
-        (bitset_container_t *)malloc(sizeof(bitset_container_t));
-
-    if (!bitset) {
+    bitset_container_t *bitset = TRY_ALLOC(bitset_container_t);
+    if (bitset == NULL) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *)roaring_bitmap_aligned_malloc(
-        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
-    if (!bitset->array) {
-        free(bitset);
+    bitset->array = TRY_ALIGNED_ALLOC_N(32, uint64_t,
+                                        BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (bitset->array == NULL) {
+        FREE(bitset);
         return NULL;
     }
     bitset_container_clear(bitset);
@@ -102,25 +100,23 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     if(bitset->array != NULL) {// Jon Strabala reports that some tools complain otherwise
-      roaring_bitmap_aligned_free(bitset->array);
+      ALIGNED_FREE(bitset->array);
       bitset->array = NULL; // pedantic
     }
-    free(bitset);
+    FREE(bitset);
 }
 
 /* duplicate container. */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
-    bitset_container_t *bitset =
-        (bitset_container_t *)malloc(sizeof(bitset_container_t));
-
-    if (!bitset) {
+    bitset_container_t *bitset = TRY_ALLOC(bitset_container_t);
+    if (bitset == NULL) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->array = (uint64_t *)roaring_bitmap_aligned_malloc(
-        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
-    if (!bitset->array) {
-        free(bitset);
+    bitset->array = TRY_ALIGNED_ALLOC_N(32, uint64_t,
+                                        BITSET_CONTAINER_SIZE_IN_WORDS);
+    if (bitset->array == NULL) {
+        FREE(bitset);
         return NULL;
     }
     bitset->cardinality = src->cardinality;
