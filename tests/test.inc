@@ -64,9 +64,21 @@
 // debugging when a remote build encounters a failure that you don't get
 // to happen locally.
 //
-static unsigned int seed = 123456789;
-static const int OUR_RAND_MAX = (1 << 30) - 1;
-inline static unsigned int our_rand() {
-    seed = (1103515245 * seed + 12345);
-    return seed & OUR_RAND_MAX;
+// http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.43.3639
+// http://www.iro.umontreal.ca/~simardr/rng/lfsr113.c
+//
+#define OUR_RAND_MAX UINT32_MAX
+uint32_t our_rand(void)  // lfsr113_Bits()
+{
+   static uint32_t z1 = 12345, z2 = 12345, z3 = 12345, z4 = 12345;
+   uint32_t b;
+   b  = ((z1 << 6) ^ z1) >> 13;
+   z1 = ((z1 & 4294967294U) << 18) ^ b;
+   b  = ((z2 << 2) ^ z2) >> 27; 
+   z2 = ((z2 & 4294967288U) << 2) ^ b;
+   b  = ((z3 << 13) ^ z3) >> 21;
+   z3 = ((z3 & 4294967280U) << 7) ^ b;
+   b  = ((z4 << 3) ^ z4) >> 12;
+   z4 = ((z4 & 4294967168U) << 13) ^ b;
+   return (z1 ^ z2 ^ z3 ^ z4);
 }
