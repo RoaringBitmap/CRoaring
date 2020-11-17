@@ -554,9 +554,8 @@ static uint16_t vecDecodeTable_uint16[256][8] = {
 
 #ifdef USEAVX
 
-size_t bitset_extract_setbits_avx2(uint64_t *words, size_t length, void *vout,
+size_t bitset_extract_setbits_avx2(uint64_t *words, size_t length, uint32_t *out,
                                    size_t outcapacity, uint32_t base) {
-    uint32_t *out = (uint32_t *)vout;
     uint32_t *initout = out;
     __m256i baseVec = _mm256_set1_epi32(base - 1);
     __m256i incVec = _mm256_set1_epi32(64);
@@ -607,10 +606,9 @@ size_t bitset_extract_setbits_avx2(uint64_t *words, size_t length, void *vout,
 }
 #endif  // USEAVX
 
-size_t bitset_extract_setbits(uint64_t *words, size_t length, void *vout,
+size_t bitset_extract_setbits(uint64_t *words, size_t length, uint32_t *out,
                               uint32_t base) {
     int outpos = 0;
-    uint32_t *out = (uint32_t *)vout;
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = words[i];
         while (w != 0) {
