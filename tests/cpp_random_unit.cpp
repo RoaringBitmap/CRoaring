@@ -53,6 +53,63 @@ const int NUM_ROARS = 30;
 uint32_t gravity;
 
 
+#if !defined(NDEBUG)  // hookable allocator (should be distinct setting)
+    const int failrate = 10; //  Out of 1000 allocations, how many fail
+
+    alloc_hook_t *old_alloc;
+    realloc_hook_t *old_realloc;
+    aligned_alloc_hook_t *old_aligned_alloc;
+
+    void *failing_alloc(size_t size) {
+        if ((rand() % 1000) < failrate)
+            return NULL;
+        return old_alloc(size);
+    }
+
+    void *failing_realloc(void *p, size_t size) {
+        if ((rand() % 1000) < failrate)
+            return NULL;
+        return old_realloc(p, size);
+    }
+
+    void *failing_aligned_alloc(size_t alignment, size_t size) {
+        if ((rand() % 1000) < failrate)
+            return NULL;
+        return old_aligned_alloc(alignment, size);
+    }
+
+    void enable_failing_allocations(void)
+    {
+        assert(old_alloc == NULL);
+        assert(old_realloc == NULL);
+        assert(old_aligned_alloc == NULL);
+
+        old_alloc = roaring_debug_set_alloc_hook(&failing_alloc);
+        old_realloc = roaring_debug_set_realloc_hook(&failing_realloc);
+        old_aligned_alloc = roaring_debug_set_aligned_alloc_hook(
+                              &failing_aligned_alloc);
+    }
+
+    void disable_failing_allocations(void)
+    {
+        assert(old_alloc != NULL);
+        assert(old_realloc != NULL);
+        assert(old_aligned_alloc != NULL);
+
+        roaring_debug_set_alloc_hook(old_alloc);
+        roaring_debug_set_realloc_hook(old_realloc);
+        roaring_debug_set_aligned_alloc_hook(old_aligned_alloc);
+
+        old_alloc = NULL;
+        old_realloc = NULL;
+        old_aligned_alloc = NULL;
+    }
+#else
+    void enable_failing_allocations(void) {}
+    void disable_failing_allocations(void) {}
+#endif
+
+
 Roaring make_random_bitset() {
     Roaring r;
     int num_ops = rand() % 100;
@@ -198,10 +255,19 @@ DEFINE_TEST(random_doublecheck_test) {
             break; }
 
           case 3: {  // XOR
+
+            // !!! At time of writing, XOR is the only category of operations
+            // that is being vetted for robustness w.r.t. out of memory
+            // failures.
+
+          try {
+
             uint64_t card = left.xor_cardinality(right);
             assert_true(card == right.xor_cardinality(left));
 
+            enable_failing_allocations();
             out = left ^ right;
+            disable_failing_allocations();  // don't test intersect, yet.  :-/
 
             assert_int_equal(card, out.cardinality());
             if ((&out != &left) && (&out != &right)) {
@@ -211,6 +277,10 @@ DEFINE_TEST(random_doublecheck_test) {
                         - (2 * left.and_cardinality(right))
                 );
             }
+          } catch (const std::bad_alloc &e) {
+            disable_failing_allocations();
+          }
+
             break; }
 
           case 4: {  // FASTUNION
