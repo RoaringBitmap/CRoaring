@@ -18,7 +18,7 @@
     using namespace roaring::internal;
 #endif
 
-#include "test.h"
+#include "test.inc"
 
 
 static inline void container_checked_add(container_t *container, uint16_t val,

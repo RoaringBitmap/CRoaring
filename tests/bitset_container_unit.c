@@ -16,7 +16,7 @@
     using namespace roaring::internal;
 #endif
 
-#include "test.h"
+#include "test.inc"
 
 
 DEFINE_TEST(test_bitset_lenrange_cardinality) {

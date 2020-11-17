@@ -12,7 +12,7 @@
 
 #include "config.h"
 
-#include "test.h"
+#include "test.inc"
 
 
 long filesize(char const* path) {

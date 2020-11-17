@@ -19,7 +19,7 @@
     using namespace roaring::internal;
 #endif
 
-#include "test.h"
+#include "test.inc"
 
 
 //#define UNVERBOSE_MIXED_CONTAINER

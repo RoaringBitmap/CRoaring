@@ -32,7 +32,7 @@
 #include "roaring_checked.hh"
 using doublechecked::Roaring;  // so `Roaring` means `doublecheck::Roaring` 
 
-#include "test.h"
+#include "test.inc"
 
 
 // The tests can run as long as one wants.  Ideally, the sanitizer options
@@ -61,19 +61,19 @@ uint32_t gravity;
     aligned_alloc_hook_t *old_aligned_alloc;
 
     void *failing_alloc(size_t size) {
-        if ((rand() % 1000) < failrate)
+        if ((our_rand() % 1000) < failrate)
             return NULL;
         return old_alloc(size);
     }
 
     void *failing_realloc(void *p, size_t size) {
-        if ((rand() % 1000) < failrate)
+        if ((our_rand() % 1000) < failrate)
             return NULL;
         return old_realloc(p, size);
     }
 
     void *failing_aligned_alloc(size_t alignment, size_t size) {
-        if ((rand() % 1000) < failrate)
+        if ((our_rand() % 1000) < failrate)
             return NULL;
         return old_aligned_alloc(alignment, size);
     }
@@ -112,27 +112,27 @@ uint32_t gravity;
 
 Roaring make_random_bitset() {
     Roaring r;
-    int num_ops = rand() % 100;
+    int num_ops = our_rand() % 100;
     for (int i = 0; i < num_ops; ++i) {
-        switch (rand() % 4) {
+        switch (our_rand() % 4) {
           case 0:
             r.add(gravity);
             break;
 
           case 1: {
-            uint32_t start = gravity + (rand() % 50) - 25;
-            r.addRange(start, start + rand() % 100);
+            uint32_t start = gravity + (our_rand() % 50) - 25;
+            r.addRange(start, start + our_rand() % 100);
             break; }
 
           case 2: {
-            uint32_t start = gravity + (rand() % 50) - 25;
-            r.flip(start, start + rand() % 50);
+            uint32_t start = gravity + (our_rand() % 50) - 25;
+            r.flip(start, start + our_rand() % 50);
             break; }
 
           case 3: {  // tests remove(), select(), rank()
             uint32_t card = r.cardinality();
             if (card != 0) {
-                uint32_t rnk = rand() % card;
+                uint32_t rnk = our_rand() % card;
                 uint32_t element;
                 assert_true(r.select(rnk, &element));
                 assert_int_equal(rnk + 1, r.rank(element));
@@ -143,7 +143,7 @@ Roaring make_random_bitset() {
           default:
             assert_true(false);
         }
-        gravity += (rand() % 200) - 100;
+        gravity += (our_rand() % 200) - 100;
     }
     assert_true(r.does_std_set_match_roaring());
     return r;
@@ -157,7 +157,7 @@ DEFINE_TEST(sanity_check_doublechecking) {
 
     // Pick a random element out of the guaranteed non-empty bitset
     //
-    uint32_t rnk = rand() % r.cardinality();
+    uint32_t rnk = our_rand() % r.cardinality();
     uint32_t element;
     assert_true(r.select(rnk, &element));
 
@@ -186,14 +186,14 @@ DEFINE_TEST(random_doublecheck_test) {
         // Each step modifies the chosen `out` bitset...possibly just
         // overwriting it completely.
         //
-        Roaring &out = roars[rand() % NUM_ROARS];
+        Roaring &out = roars[our_rand() % NUM_ROARS];
 
         // The left and right bitsets may be used as inputs for operations.
         // They can be a reference to the same object as out, or can be
         // references to each other (which is good to test those conditions).
         //
-        const Roaring &left = roars[rand() % NUM_ROARS];
-        const Roaring &right = roars[rand() % NUM_ROARS];
+        const Roaring &left = roars[our_rand() % NUM_ROARS];
+        const Roaring &right = roars[our_rand() % NUM_ROARS];
 
       #ifdef ROARING_CPP_RANDOM_PRINT_STATUS
         printf(
@@ -205,7 +205,7 @@ DEFINE_TEST(random_doublecheck_test) {
         );
       #endif
 
-        int op = rand() % 6;
+        int op = our_rand() % 6;
 
         // The "doublecheck" in the C++ wrapper for the non-inplace operations
         // does a check against the inplace version (vs. rewrite the `std::set`
@@ -291,14 +291,14 @@ DEFINE_TEST(random_doublecheck_test) {
           case 5: {  // FLIP
             uint32_t card = out.cardinality();
             if (card != 0) {  // pick gravity point inside set somewhere
-                uint32_t rnk = rand() % card;
+                uint32_t rnk = our_rand() % card;
                 uint32_t element;
                 assert_true(out.select(rnk, &element));
                 assert_int_equal(rnk + 1, out.rank(element));
                 gravity = element;
             }
-            uint32_t start = gravity + (rand() % 50) - 25;
-            out.flip(start, start + rand() % 50);
+            uint32_t start = gravity + (our_rand() % 50) - 25;
+            out.flip(start, start + our_rand() % 50);
             break; }
 
           default:
@@ -307,7 +307,7 @@ DEFINE_TEST(random_doublecheck_test) {
 
         // Periodically apply a post-processing step to the out bitset
         //
-        int post = rand() % 15;
+        int post = our_rand() % 15;
         switch (post) {
           case 0:
             out.removeRunCompression();
@@ -335,25 +335,25 @@ DEFINE_TEST(random_doublecheck_test) {
         out.isEmpty();
         out.minimum();
         out.maximum();
-        out.contains(rand());
-        out.containsRange(rand(), rand());
+        out.contains(our_rand());
+        out.containsRange(our_rand(), our_rand());
         for (int i = -50; i < 50; ++i) {
             out.contains(gravity + i);
-            out.containsRange(gravity + i, rand() % 25);
+            out.containsRange(gravity + i, our_rand() % 25);
         }
 
         // When doing random intersections, the tendency is that sets will
         // lose all their data points over time.  So empty sets are usually
         // re-seeded with more data, but a few get through to test empty cases.
         //
-        if (out.isEmpty() && (rand() % 10 != 0))
+        if (out.isEmpty() && (our_rand() % 10 != 0))
             out = make_random_bitset();
     }
 }
 
 
 int main() {
-    gravity = rand() % 10000;  // starting focal point
+    gravity = our_rand() % 10000;  // starting focal point
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(sanity_check_doublechecking),

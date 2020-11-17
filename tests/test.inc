@@ -1,9 +1,12 @@
 //
-// This test.h file is included by all the unit tests.
+// This test.inc file is included by all the unit tests.
 //
 // It contains helpers for working with the cmocka unit tests.  Since that is
 // a third party file, putting common macros and functions here is better
 // than changing it.
+//
+// It is an `.inc` file instead of a `.h` file because it can contain static
+// data declarations (e.g. for the random number generator state)
 //
 
 #include <setjmp.h>
@@ -54,3 +57,16 @@
 #else
     #define DEFINE_TEST(name)   void name()
 #endif
+
+
+// Depending on a system-specific random number generator would lead to
+// different outcomes for tests involving randomness, which makes for difficult
+// debugging when a remote build encounters a failure that you don't get
+// to happen locally.
+//
+static unsigned int seed = 123456789;
+static const int OUR_RAND_MAX = (1 << 30) - 1;
+inline static unsigned int our_rand() {
+    seed = (1103515245 * seed + 12345);
+    return seed & OUR_RAND_MAX;
+}

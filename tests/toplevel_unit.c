@@ -14,16 +14,8 @@
     using namespace roaring::internal;
 #endif
 
-#include "test.h"
+#include "test.inc"
 
-
-static unsigned int seed = 123456789;
-static const int OUR_RAND_MAX = (1 << 30) - 1;
-inline static unsigned int our_rand() {  // we do not want to depend on a system-specific
-                                // random number generator
-    seed = (1103515245 * seed + 12345);
-    return seed & OUR_RAND_MAX;
-}
 
 static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
     return (a < b) ? a : b;

@@ -13,7 +13,7 @@
     using namespace roaring::internal;
 #endif
 
-#include "test.h"
+#include "test.inc"
 
 
 DEFINE_TEST(printf_test) {

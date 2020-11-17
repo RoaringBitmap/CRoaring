@@ -18,7 +18,7 @@ using roaring::Roaring;  // the C++ wrapper class
 #include "roaring64map.hh"
 using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
-#include "test.h"
+#include "test.inc"
 
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
