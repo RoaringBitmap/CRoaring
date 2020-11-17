@@ -69,7 +69,7 @@ Roaring make_random_bitset() {
 
           case 2: {
             uint32_t start = gravity + (rand() % 50) - 25;
-            r.flip(start, rand() % 50);
+            r.flip(start, start + rand() % 50);
             break; }
 
           case 3: {  // tests remove(), select(), rank()
@@ -228,7 +228,7 @@ DEFINE_TEST(random_doublecheck_test) {
                 gravity = element;
             }
             uint32_t start = gravity + (rand() % 50) - 25;
-            out.flip(start, rand() % 50);
+            out.flip(start, start + rand() % 50);
             break; }
 
           default:
