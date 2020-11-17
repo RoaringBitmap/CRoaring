@@ -13,6 +13,8 @@ extern "C" { namespace roaring { namespace internal {
 // types.
 bitset_container_t *bitset_container_from_array(const array_container_t *a) {
     bitset_container_t *ans = bitset_container_create();
+    if (ans == NULL)
+        return NULL;
     int limit = array_container_cardinality(a);
     for (int i = 0; i < limit; ++i) bitset_container_set(ans, a->array[i]);
     return ans;
@@ -21,6 +23,8 @@ bitset_container_t *bitset_container_from_array(const array_container_t *a) {
 bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     int card = run_container_cardinality(arr);
     bitset_container_t *answer = bitset_container_create();
+    if (answer == NULL)
+        return NULL;
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         rle16_t vl = arr->runs[rlepos];
         bitset_set_lenrange(answer->array, vl.value, vl.length);
@@ -32,6 +36,8 @@ bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
 array_container_t *array_container_from_run(const run_container_t *arr) {
     array_container_t *answer =
         array_container_create_given_capacity(run_container_cardinality(arr));
+    if (answer == NULL)
+        return NULL;
     answer->cardinality = 0;
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         int run_start = arr->runs[rlepos].value;

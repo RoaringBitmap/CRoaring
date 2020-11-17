@@ -114,8 +114,8 @@ static inline int32_t clamp(int32_t val, int32_t min, int32_t max) {
     return ((val < min) ? min : (val > max) ? max : val);
 }
 
-void array_container_grow(array_container_t *container, int32_t min,
-                          bool preserve) {
+bool array_container_try_grow(array_container_t *container, int32_t min,
+                              bool preserve) {
 
     int32_t max = (min <= DEFAULT_MAX_SIZE ? DEFAULT_MAX_SIZE : 65536);
     int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
@@ -135,23 +135,21 @@ void array_container_grow(array_container_t *container, int32_t min,
         container->array = TRY_ALLOC_N(uint16_t, new_capacity);
     }
 
-    //  handle the case where realloc fails
-    if (container->array == NULL) {
-      fprintf(stderr, "could not allocate memory\n");
-    }
-    assert(container->array != NULL);
+    return container->array != NULL;
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void array_container_copy(const array_container_t *src,
+bool array_container_try_copy(const array_container_t *src,
                           array_container_t *dst) {
     const int32_t cardinality = src->cardinality;
     if (cardinality > dst->capacity) {
-        array_container_grow(dst, cardinality, false);
+        if (!array_container_try_grow(dst, cardinality, false))
+            return false;
     }
 
     dst->cardinality = cardinality;
     memcpy(dst->array, src->array, cardinality * sizeof(uint16_t));
+    return true;
 }
 
 void array_container_add_from_range(array_container_t *arr, uint32_t min,

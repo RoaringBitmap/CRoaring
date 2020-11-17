@@ -122,7 +122,7 @@ void run_container_free(run_container_t *run) {
     FREE(run);
 }
 
-void run_container_grow(run_container_t *run, int32_t min, bool copy) {
+bool run_container_try_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity =
         (run->capacity == 0)
             ? RUN_DEFAULT_INIT_SIZE
@@ -144,11 +144,7 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
         }
         run->runs = TRY_ALLOC_N(rle16_t, run->capacity);
     }
-    // handle the case where realloc fails
-    if (run->runs == NULL) {
-      fprintf(stderr, "could not allocate memory\n");
-    }
-    assert(run->runs != NULL);
+    return run->runs != NULL;
 }
 
 /* copy one container into another */
@@ -277,44 +273,45 @@ void run_container_union_inplace(run_container_t *src_1,
     }
 }
 
-/* Compute the symmetric difference of `src_1' and `src_2' and write the result
- * to `dst'
- * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_xor(const run_container_t *src_1,
-                       const run_container_t *src_2, run_container_t *dst) {
-    // don't bother to convert xor with full range into negation
+/* Compute the symmetric difference of `src_1' and `src_2'
+ */
+run_container_t *run_container_xor(const run_container_t *rc1,
+                                   const run_container_t *rc2)
+{
     // since negation is implemented similarly
 
-    const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
-    if (dst->capacity < neededcapacity)
-        run_container_grow(dst, neededcapacity, false);
+    const int32_t needed = rc1->n_runs + rc2->n_runs;
+    run_container_t *new_rc = run_container_create_given_capacity(needed);
+    if (new_rc == NULL)
+        return NULL;
 
     int32_t pos1 = 0;
     int32_t pos2 = 0;
-    dst->n_runs = 0;
+    new_rc->n_runs = 0;
 
-    while ((pos1 < src_1->n_runs) && (pos2 < src_2->n_runs)) {
-        if (src_1->runs[pos1].value <= src_2->runs[pos2].value) {
-            run_container_smart_append_exclusive(dst, src_1->runs[pos1].value,
-                                                 src_1->runs[pos1].length);
+    while ((pos1 < rc1->n_runs) && (pos2 < rc2->n_runs)) {
+        if (rc1->runs[pos1].value <= rc2->runs[pos2].value) {
+            run_container_smart_append_exclusive(new_rc, rc1->runs[pos1].value,
+                                                 rc1->runs[pos1].length);
             pos1++;
         } else {
-            run_container_smart_append_exclusive(dst, src_2->runs[pos2].value,
-                                                 src_2->runs[pos2].length);
+            run_container_smart_append_exclusive(new_rc, rc2->runs[pos2].value,
+                                                 rc2->runs[pos2].length);
             pos2++;
         }
     }
-    while (pos1 < src_1->n_runs) {
-        run_container_smart_append_exclusive(dst, src_1->runs[pos1].value,
-                                             src_1->runs[pos1].length);
+    while (pos1 < rc1->n_runs) {
+        run_container_smart_append_exclusive(new_rc, rc1->runs[pos1].value,
+                                             rc1->runs[pos1].length);
         pos1++;
     }
 
-    while (pos2 < src_2->n_runs) {
-        run_container_smart_append_exclusive(dst, src_2->runs[pos2].value,
-                                             src_2->runs[pos2].length);
+    while (pos2 < rc2->n_runs) {
+        run_container_smart_append_exclusive(new_rc, rc2->runs[pos2].value,
+                                             rc2->runs[pos2].length);
         pos2++;
     }
+    return new_rc;
 }
 
 /* Compute the intersection of src_1 and src_2 and write the result to

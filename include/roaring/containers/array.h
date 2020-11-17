@@ -7,6 +7,7 @@
 #define INCLUDE_CONTAINERS_ARRAY_H_
 
 #include <string.h>
+#include <assert.h>
 
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>  // roaring_iterator
@@ -78,7 +79,15 @@ static inline bool array_container_nonzero_cardinality(
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void array_container_copy(const array_container_t *src, array_container_t *dst);
+bool array_container_try_copy(const array_container_t *src,
+                              array_container_t *dst);
+
+static inline void array_container_copy(
+    const array_container_t *src, array_container_t *dst
+){
+    bool success = array_container_try_copy(src, dst);
+    assert(success);
+}
 
 /*  Add all the values in [min,max) (included) at a distance k*step from min.
     The container must have a size less or equal to DEFAULT_MAX_SIZE after this
@@ -174,8 +183,15 @@ static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
  * parameter. If preserve is false, then the new content will be uninitialized,
  * otherwise the old content is copied.
  */
-void array_container_grow(array_container_t *container, int32_t min,
-                          bool preserve);
+bool array_container_try_grow(array_container_t *ac, int32_t min, bool preserve);
+
+inline static void array_container_grow(  // !!! temporary
+                              array_container_t *ac, int32_t min,
+                              bool preserve
+){
+    bool success = array_container_try_grow(ac, min, preserve);
+    assert(success);
+}
 
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr);

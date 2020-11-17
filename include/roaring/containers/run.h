@@ -189,7 +189,14 @@ static inline int32_t rle16_count_greater(const rle16_t* array, int32_t lenarray
  * existing data needs to be copied over depends on copy. If "copy" is false,
  * then the new content will be uninitialized, otherwise a copy is made.
  */
-void run_container_grow(run_container_t *run, int32_t min, bool copy);
+bool run_container_try_grow(run_container_t *run, int32_t min, bool copy);
+
+static inline void run_container_grow(  // !!! temporary
+    run_container_t *run, int32_t min, bool copy
+){
+    bool success = run_container_try_grow(run, min, copy);
+    assert(success);
+}
 
 /**
  * Moves the data so that we can write data at index
@@ -456,11 +463,9 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
 bool run_container_intersect(const run_container_t *src_1,
                                 const run_container_t *src_2);
 
-/* Compute the symmetric difference of `src_1' and `src_2' and write the result
- * to `dst'
- * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_xor(const run_container_t *src_1,
-                       const run_container_t *src_2, run_container_t *dst);
+/* Compute the symmetric difference of `rc1' and `rc2', NULL if no memory */
+run_container_t *run_container_xor(const run_container_t *rc1,
+                                   const run_container_t *rc2);
 
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit

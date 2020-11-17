@@ -897,7 +897,6 @@ roaring_bitmap_t *roaring_bitmap_try_xor(
     const roaring_bitmap_t *x1,
     const roaring_bitmap_t *x2
 ){
-    uint8_t result_type = 0;
     const int length1 = x1->high_low_container.size,
               length2 = x2->high_low_container.size;
     if (0 == length1) {
@@ -908,22 +907,32 @@ roaring_bitmap_t *roaring_bitmap_try_xor(
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
+    if (answer == NULL)
+        return NULL;
+
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
     int pos1 = 0, pos2 = 0;
-    uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
     uint16_t s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
+
+    container_t *c;  // this container will be freed if non-null on failure
+    uint8_t c_type;  // typecode for c
+
     while (true) {
         if (s1 == s2) {
+            uint8_t type1, type2;
             container_t *c1 = ra_get_container_at_index(
                                     &x1->high_low_container, pos1, &type1);
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
-            container_t *c = container_xor(c1, type1, c2, type2, &result_type);
-
+            c = container_xor(c1, type1, c2, type2, &c_type);
+            if (c == NULL) {
+                goto free_answer;
+            }
             if (c != CONTAINER_EMPTY) {
-                assert(container_nonzero_cardinality(c, result_type));
-                ra_append(&answer->high_low_container, s1, c, result_type);
+                assert(container_nonzero_cardinality(c, c_type));
+                if (!ra_append(&answer->high_low_container, s1, c, c_type))
+                    goto free_c_and_answer;
             }
             ++pos1;
             ++pos2;
@@ -933,42 +942,67 @@ roaring_bitmap_t *roaring_bitmap_try_xor(
             s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
 
         } else if (s1 < s2) {  // s1 < s2
-            container_t *c1 = ra_get_container_at_index(
-                                &x1->high_low_container, pos1, &type1);
-            c1 = get_copy_of_container(c1, &type1, is_cow(x1));
-            if (is_cow(x1)) {
-                ra_set_container_at_index(&x1->high_low_container, pos1, c1,
-                                          type1);
+            c = ra_get_container_at_index(&x1->high_low_container,  // use c1
+                                          pos1, &c_type);  // shouldn't fail
+            c = get_copy_of_container(c, &c_type, is_cow(x1));
+            if (c == NULL) {
+                goto free_answer;
             }
-            ra_append(&answer->high_low_container, s1, c1, type1);
+            if (is_cow(x1)) {
+                ra_set_container_at_index(&x1->high_low_container, pos1, c,
+                                          c_type);  // shouldn't fail
+            }
+            if (!ra_append(&answer->high_low_container, s1, c, c_type)) {
+                goto free_c_and_answer;
+            }
             pos1++;
             if (pos1 == length1) break;
             s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
 
         } else {  // s1 > s2
-            container_t *c2 = ra_get_container_at_index(
-                                &x2->high_low_container, pos2, &type2);
-            c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
-                ra_set_container_at_index(&x2->high_low_container, pos2, c2,
-                                          type2);
-            }
-            ra_append(&answer->high_low_container, s2, c2, type2);
+            c = ra_get_container_at_index(&x2->high_low_container,  // use c2
+                                          pos2, &c_type);  // shouldn't fail
+
+            c = get_copy_of_container(c, &c_type, is_cow(x2));
+            if (c == NULL)
+                goto free_answer;
+
+            if (is_cow(x2))
+                ra_set_container_at_index(&x2->high_low_container, pos2, c,
+                                          c_type);  // shouldn't fail
+
+            if (!ra_append(&answer->high_low_container, s2, c, c_type))
+                goto free_c_and_answer;
+
             pos2++;
-            if (pos2 == length2) break;
+            if (pos2 == length2)
+                break;
+
             s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x2->high_low_container, pos2, length2,
-                             is_cow(x2));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))
+        ){
+            goto free_answer;
+        }
     } else if (pos2 == length2) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1,
-                             is_cow(x1));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1,
+                                  is_cow(x1))) {
+            goto free_answer;
+        }
     }
     return answer;
+
+  free_c_and_answer:
+    container_free(c, c_type);
+
+  free_answer:
+    roaring_bitmap_free(answer);
+    return NULL;
 }
 
 
@@ -2401,7 +2435,7 @@ static bool xor_inplace_core(
     return true;
 
   alloc_failure:
-    ra_clear_containers(&x1->high_low_container);
+    ra_reset(&x1->high_low_container);
     ra_mark_corrupt(&x1->high_low_container);
     return false;
 }

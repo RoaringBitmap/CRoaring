@@ -196,17 +196,20 @@ bool extend_array(roaring_array_t *ra, int32_t k) {
     return true;
 }
 
-void ra_append(
+bool ra_append(
     roaring_array_t *ra, uint16_t key,
     container_t *c, uint8_t typecode
 ){
-    extend_array(ra, 1);
+    if (!extend_array(ra, 1))
+        return false;
+
     const int32_t pos = ra->size;
 
     ra->keys[pos] = key;
     ra->containers[pos] = c;
     ra->typecodes[pos] = typecode;
     ra->size++;
+    return true;
 }
 
 void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
@@ -238,25 +241,42 @@ void ra_append_copies_until(roaring_array_t *ra, const roaring_array_t *sa,
     }
 }
 
-void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
+bool ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
                           int32_t start_index, int32_t end_index,
                           bool copy_on_write) {
-    extend_array(ra, end_index - start_index);
-    for (int32_t i = start_index; i < end_index; ++i) {
+    if (!extend_array(ra, end_index - start_index))
+        return false;
+
+    int32_t i = start_index;
+    for (; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
             sa->containers[i] = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
+            if (sa->containers[i] == NULL)
+                goto free_partial;
             ra->containers[pos] = sa->containers[i];
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
             ra->containers[pos] =
                 container_clone(sa->containers[i], sa->typecodes[i]);
+            if (ra->containers[pos] == NULL)
+                goto free_partial;
             ra->typecodes[pos] = sa->typecodes[i];
         }
         ra->size++;
     }
+    return true;
+
+  free_partial:
+    --i;  // it was the `i` container that failed; note ra->size wasn't bumped
+    for (; i >= start_index; --i) {
+        const int32_t pos = ra->size;
+        container_free(ra->containers[pos], ra->typecodes[pos]);
+        --ra->size;
+    }
+    return false;
 }
 
 void ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,

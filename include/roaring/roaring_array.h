@@ -129,7 +129,7 @@ bool ra_insert_new_key_value_at(
 /**
  * Append a new key-value pair
  */
-void ra_append(
+bool ra_append(
         roaring_array_t *ra, uint16_t key,
         container_t *c, uint8_t typecode);
 
@@ -145,7 +145,7 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
  * at indexes
  * [start_index, end_index)
  */
-void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
+bool ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
                           int32_t start_index, int32_t end_index,
                           bool copy_on_write);
 
