@@ -13,7 +13,7 @@ bool array_container_equal_bitset(const array_container_t* container1,
     }
     int32_t pos = 0;
     for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
-        uint64_t w = container2->array[i];
+        uint64_t w = container2->words[i];
         while (w != 0) {
             uint64_t t = w & (~w + 1);
             uint16_t r = i * 64 + __builtin_ctzll(w);

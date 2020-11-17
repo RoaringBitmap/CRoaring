@@ -38,7 +38,7 @@ enum {
 
 STRUCT_CONTAINER(bitset_container_s) {
     int32_t cardinality;
-    uint64_t *array;
+    uint64_t *words;
 };
 
 typedef struct bitset_container_s bitset_container_t;
@@ -76,9 +76,9 @@ static inline void bitset_container_set(bitset_container_t *bitset,
     uint64_t offset;
     uint64_t p = pos;
     ASM_SHIFT_RIGHT(p, shift, offset);
-    uint64_t load = bitset->array[offset];
+    uint64_t load = bitset->words[offset];
     ASM_SET_BIT_INC_WAS_CLEAR(load, p, bitset->cardinality);
-    bitset->array[offset] = load;
+    bitset->words[offset] = load;
 }
 
 /* Unset the ith bit.  */
@@ -88,9 +88,9 @@ static inline void bitset_container_unset(bitset_container_t *bitset,
     uint64_t offset;
     uint64_t p = pos;
     ASM_SHIFT_RIGHT(p, shift, offset);
-    uint64_t load = bitset->array[offset];
+    uint64_t load = bitset->words[offset];
     ASM_CLEAR_BIT_DEC_WAS_SET(load, p, bitset->cardinality);
-    bitset->array[offset] = load;
+    bitset->words[offset] = load;
 }
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
@@ -101,11 +101,11 @@ static inline bool bitset_container_add(bitset_container_t *bitset,
     uint64_t offset;
     uint64_t p = pos;
     ASM_SHIFT_RIGHT(p, shift, offset);
-    uint64_t load = bitset->array[offset];
+    uint64_t load = bitset->words[offset];
     // could be possibly slightly further optimized
     const int32_t oldcard = bitset->cardinality;
     ASM_SET_BIT_INC_WAS_CLEAR(load, p, bitset->cardinality);
-    bitset->array[offset] = load;
+    bitset->words[offset] = load;
     return bitset->cardinality - oldcard;
 }
 
@@ -117,18 +117,18 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
     uint64_t offset;
     uint64_t p = pos;
     ASM_SHIFT_RIGHT(p, shift, offset);
-    uint64_t load = bitset->array[offset];
+    uint64_t load = bitset->words[offset];
     // could be possibly slightly further optimized
     const int32_t oldcard = bitset->cardinality;
     ASM_CLEAR_BIT_DEC_WAS_SET(load, p, bitset->cardinality);
-    bitset->array[offset] = load;
+    bitset->words[offset] = load;
     return oldcard - bitset->cardinality;
 }
 
 /* Get the value of the ith bit.  */
 inline bool bitset_container_get(const bitset_container_t *bitset,
                                  uint16_t pos) {
-    uint64_t word = bitset->array[pos >> 6];
+    uint64_t word = bitset->words[pos >> 6];
     const uint64_t p = pos;
     ASM_INPLACESHIFT_RIGHT(word, p);
     return word & 1;
@@ -139,33 +139,33 @@ inline bool bitset_container_get(const bitset_container_t *bitset,
 /* Set the ith bit.  */
 static inline void bitset_container_set(bitset_container_t *bitset,
                                         uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
+    const uint64_t old_word = bitset->words[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word | (UINT64_C(1) << index);
     bitset->cardinality += (uint32_t)((old_word ^ new_word) >> index);
-    bitset->array[pos >> 6] = new_word;
+    bitset->words[pos >> 6] = new_word;
 }
 
 /* Unset the ith bit.  */
 static inline void bitset_container_unset(bitset_container_t *bitset,
                                           uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
+    const uint64_t old_word = bitset->words[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
     bitset->cardinality -= (uint32_t)((old_word ^ new_word) >> index);
-    bitset->array[pos >> 6] = new_word;
+    bitset->words[pos >> 6] = new_word;
 }
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
  * than bitset_container_set.  */
 static inline bool bitset_container_add(bitset_container_t *bitset,
                                         uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
+    const uint64_t old_word = bitset->words[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word | (UINT64_C(1) << index);
     const uint64_t increment = (old_word ^ new_word) >> index;
     bitset->cardinality += (uint32_t)increment;
-    bitset->array[pos >> 6] = new_word;
+    bitset->words[pos >> 6] = new_word;
     return increment > 0;
 }
 
@@ -173,19 +173,19 @@ static inline bool bitset_container_add(bitset_container_t *bitset,
  * slower than bitset_container_unset.  */
 static inline bool bitset_container_remove(bitset_container_t *bitset,
                                            uint16_t pos) {
-    const uint64_t old_word = bitset->array[pos >> 6];
+    const uint64_t old_word = bitset->words[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
     const uint64_t increment = (old_word ^ new_word) >> index;
     bitset->cardinality -= (uint32_t)increment;
-    bitset->array[pos >> 6] = new_word;
+    bitset->words[pos >> 6] = new_word;
     return increment > 0;
 }
 
 /* Get the value of the ith bit.  */
 inline bool bitset_container_get(const bitset_container_t *bitset,
                                  uint16_t pos) {
-    const uint64_t word = bitset->array[pos >> 6];
+    const uint64_t word = bitset->words[pos >> 6];
     return (word >> (pos & 63)) & 1;
 }
 
@@ -204,17 +204,17 @@ static inline bool bitset_container_get_range(const bitset_container_t *bitset,
     const uint64_t first = ~((1ULL << (pos_start & 0x3F)) - 1);
     const uint64_t last = (1ULL << (pos_end & 0x3F)) - 1;
 
-    if (start == end) return ((bitset->array[end] & first & last) == (first & last));
-    if ((bitset->array[start] & first) != first) return false;
+    if (start == end) return ((bitset->words[end] & first & last) == (first & last));
+    if ((bitset->words[start] & first) != first) return false;
 
-    if ((end < BITSET_CONTAINER_SIZE_IN_WORDS) && ((bitset->array[end] & last) != last)){
+    if ((end < BITSET_CONTAINER_SIZE_IN_WORDS) && ((bitset->words[end] & last) != last)){
 
         return false;
     }
 
     for (uint16_t i = start + 1; (i < BITSET_CONTAINER_SIZE_IN_WORDS) && (i < end); ++i){
 
-        if (bitset->array[i] != UINT64_C(0xFFFFFFFFFFFFFFFF)) return false;
+        if (bitset->words[i] != UINT64_C(0xFFFFFFFFFFFFFFFF)) return false;
     }
 
     return true;
@@ -276,7 +276,7 @@ static inline bool bitset_container_empty(
     const bitset_container_t *bitset) {
   if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY) {
       for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
-          if((bitset->array[i]) != 0) return false;
+          if((bitset->words[i]) != 0) return false;
       }
       return true;
   }

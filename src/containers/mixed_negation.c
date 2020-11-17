@@ -32,7 +32,7 @@ void array_container_negation(const array_container_t *src,
     uint64_t card = UINT64_C(1 << 16);
     bitset_container_set_all(dst);
 
-    dst->cardinality = (int32_t)bitset_clear_list(dst->array, card, src->array,
+    dst->cardinality = (int32_t)bitset_clear_list(dst->words, card, src->array,
                                                   (uint64_t)src->cardinality);
 }
 
@@ -119,7 +119,7 @@ bool array_container_negation_range(
 
     if (new_cardinality > DEFAULT_MAX_SIZE) {
         bitset_container_t *temp = bitset_container_from_array(src);
-        bitset_flip_range(temp->array, (uint32_t)range_start,
+        bitset_flip_range(temp->words, (uint32_t)range_start,
                           (uint32_t)range_end);
         temp->cardinality = new_cardinality;
         *dst = temp;
@@ -190,7 +190,7 @@ bool bitset_container_negation_range(
 
     // keep computation using bitsets as long as possible.
     bitset_container_t *t = bitset_container_clone(src);
-    bitset_flip_range(t->array, (uint32_t)range_start, (uint32_t)range_end);
+    bitset_flip_range(t->words, (uint32_t)range_start, (uint32_t)range_end);
     t->cardinality = bitset_container_compute_cardinality(t);
 
     if (t->cardinality > DEFAULT_MAX_SIZE) {
@@ -217,7 +217,7 @@ bool bitset_container_negation_range_inplace(
     const int range_start, const int range_end,
     container_t **dst
 ){
-    bitset_flip_range(src->array, (uint32_t)range_start, (uint32_t)range_end);
+    bitset_flip_range(src->words, (uint32_t)range_start, (uint32_t)range_end);
     src->cardinality = bitset_container_compute_cardinality(src);
     if (src->cardinality > DEFAULT_MAX_SIZE) {
         *dst = src;

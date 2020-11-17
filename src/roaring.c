@@ -1489,7 +1489,7 @@ static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
 
             uint32_t wordindex = 0;
             uint64_t word;
-            while ((word = bc->array[wordindex]) == 0) {
+            while ((word = bc->words[wordindex]) == 0) {
                 wordindex++;  // advance
             }
             // here "word" is non-zero
@@ -1523,7 +1523,7 @@ static bool loadlastvalue(roaring_uint32_iterator_t* newit) {
             uint32_t wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
             uint64_t word;
             const bitset_container_t* bitset_container = (const bitset_container_t*)newit->container;
-            while ((word = bitset_container->array[wordindex]) == 0)
+            while ((word = bitset_container->words[wordindex]) == 0)
                 --wordindex;
 
             int num_leading_zeros = __builtin_clzll(word);
@@ -1660,13 +1660,13 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
             uint32_t wordindex = it->in_container_index / 64;
             if (wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) break;
 
-            uint64_t word = bc->array[wordindex] &
+            uint64_t word = bc->words[wordindex] &
                    (UINT64_MAX << (it->in_container_index % 64));
             // next part could be optimized/simplified
             while ((word == 0) &&
                    (wordindex + 1 < BITSET_CONTAINER_SIZE_IN_WORDS)) {
                 wordindex++;
-                word = bc->array[wordindex];
+                word = bc->words[wordindex];
             }
             if (word != 0) {
                 it->in_container_index = wordindex * 64 + __builtin_ctzll(word);
@@ -1730,10 +1730,10 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
 
             const bitset_container_t* bitset_container = (const bitset_container_t*)it->container;
             int32_t wordindex = it->in_container_index / 64;
-            uint64_t word = bitset_container->array[wordindex] & (UINT64_MAX >> (63 - (it->in_container_index % 64)));
+            uint64_t word = bitset_container->words[wordindex] & (UINT64_MAX >> (63 - (it->in_container_index % 64)));
 
             while (word == 0 && --wordindex >= 0) {
-                word = bitset_container->array[wordindex];
+                word = bitset_container->words[wordindex];
             }
             if (word == 0)
                 break;
@@ -1791,7 +1791,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
       case BITSET_CONTAINER_TYPE:
         bcont = const_CAST_bitset(it->container);
         wordindex = it->in_container_index / 64;
-        word = bcont->array[wordindex] & (UINT64_MAX << (it->in_container_index % 64));
+        word = bcont->words[wordindex] & (UINT64_MAX << (it->in_container_index % 64));
         do {
           while (word != 0 && ret < count) {
             buf[0] = it->highbits | (wordindex * 64 + __builtin_ctzll(word));
@@ -1801,7 +1801,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
           }
           while (word == 0 && wordindex+1 < BITSET_CONTAINER_SIZE_IN_WORDS) {
             wordindex++;
-            word = bcont->array[wordindex];
+            word = bcont->words[wordindex];
           }
         } while (word != 0 && ret < count);
         it->has_value = (word != 0);
@@ -2833,7 +2833,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
             case BITSET_CONTAINER_TYPE: {
                 const bitset_container_t *bc =
                             const_CAST_bitset(ra->containers[i]);
-                memcpy(bitset_zone, bc->array,
+                memcpy(bitset_zone, bc->words,
                        BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
                 bitset_zone += BITSET_CONTAINER_SIZE_IN_WORDS;
                 if (bc->cardinality != BITSET_UNKNOWN_CARDINALITY) {
@@ -2956,7 +2956,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
             case BITSET_CONTAINER_TYPE: {
                 bitset_container_t *bitset = (bitset_container_t *)
                         arena_alloc(&arena, sizeof(bitset_container_t));
-                bitset->array = bitset_zone;
+                bitset->words = bitset_zone;
                 bitset->cardinality = counts[i] + UINT32_C(1);
                 rb->high_low_container.containers[i] = bitset;
                 bitset_zone += BITSET_CONTAINER_SIZE_IN_WORDS;

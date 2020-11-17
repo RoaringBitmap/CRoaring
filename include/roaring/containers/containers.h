@@ -2313,14 +2313,15 @@ static inline container_t *container_add_range(
             int32_t union_cardinality = 0;
             union_cardinality += bitset->cardinality;
             union_cardinality += max - min + 1;
-            union_cardinality -= bitset_lenrange_cardinality(bitset->array, min, max-min);
+            union_cardinality -= bitset_lenrange_cardinality(bitset->words,
+                                                             min, max-min);
 
             if (union_cardinality == INT32_C(0x10000)) {
                 *result_type = RUN_CONTAINER_TYPE;
                 return run_container_create_range(0, INT32_C(0x10000));
             } else {
                 *result_type = BITSET_CONTAINER_TYPE;
-                bitset_set_lenrange(bitset->array, min, max - min);
+                bitset_set_lenrange(bitset->words, min, max - min);
                 bitset->cardinality = union_cardinality;
                 return bitset;
             }
@@ -2342,7 +2343,7 @@ static inline container_t *container_add_range(
             } else {
                 *result_type = BITSET_CONTAINER_TYPE;
                 bitset_container_t *bitset = bitset_container_from_array(array);
-                bitset_set_lenrange(bitset->array, min, max - min);
+                bitset_set_lenrange(bitset->words, min, max - min);
                 bitset->cardinality = union_cardinality;
                 return bitset;
             }
@@ -2389,18 +2390,18 @@ static inline container_t *container_remove_range(
             bitset_container_t *bitset = CAST_bitset(c);
 
             int32_t result_cardinality = bitset->cardinality -
-                bitset_lenrange_cardinality(bitset->array, min, max-min);
+                bitset_lenrange_cardinality(bitset->words, min, max-min);
 
             if (result_cardinality == 0) {
                 return NULL;
             } else if (result_cardinality < DEFAULT_MAX_SIZE) {
                 *result_type = ARRAY_CONTAINER_TYPE;
-                bitset_reset_range(bitset->array, min, max+1);
+                bitset_reset_range(bitset->words, min, max+1);
                 bitset->cardinality = result_cardinality;
                 return array_container_from_bitset(bitset);
             } else {
                 *result_type = BITSET_CONTAINER_TYPE;
-                bitset_reset_range(bitset->array, min, max+1);
+                bitset_reset_range(bitset->words, min, max+1);
                 bitset->cardinality = result_cardinality;
                 return bitset;
             }
