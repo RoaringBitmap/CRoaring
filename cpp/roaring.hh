@@ -7,7 +7,7 @@ A C++ header for Roaring Bitmaps.
 #include <stdarg.h>
 
 #include <algorithm>
-#include <new>
+#include <new>  // std::bad_alloc (standard error for out-of-memory)
 #include <stdexcept>
 #include <string>
 
@@ -45,7 +45,7 @@ class Roaring {
      */
     Roaring(const Roaring &r) : Roaring() {
         if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
-            throw std::runtime_error("failed memory alloc in constructor");
+            throw std::bad_alloc();
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
             api::roaring_bitmap_get_copy_on_write(&r.roaring));
@@ -173,7 +173,7 @@ class Roaring {
      */
     Roaring &operator=(const Roaring &r) {
         if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
-            throw std::runtime_error("failed memory alloc in assignment");
+            throw std::bad_alloc();
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
             api::roaring_bitmap_get_copy_on_write(&r.roaring));
@@ -236,7 +236,8 @@ class Roaring {
      * modified.
      */
     Roaring &operator^=(const Roaring &r) {
-        api::roaring_bitmap_xor_inplace(&roaring, &r.roaring);
+        if (!api::roaring_bitmap_xor_inplace_completed(&roaring, &r.roaring))
+            throw std::bad_alloc();
         return *this;
     }
 
@@ -516,7 +517,7 @@ class Roaring {
     Roaring operator&(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_and(&roaring, &o.roaring);
         if (r == NULL) {
-            throw std::runtime_error("failed materalization in and");
+            throw std::bad_alloc();
         }
         return Roaring(r);
     }
@@ -528,7 +529,7 @@ class Roaring {
     Roaring operator-(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_andnot(&roaring, &o.roaring);
         if (r == NULL) {
-            throw std::runtime_error("failed materalization in andnot");
+            throw std::bad_alloc();
         }
         return Roaring(r);
     }
@@ -540,7 +541,7 @@ class Roaring {
     Roaring operator|(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_or(&roaring, &o.roaring);
         if (r == NULL) {
-            throw std::runtime_error("failed materalization in or");
+            throw std::bad_alloc();
         }
         return Roaring(r);
     }
@@ -550,9 +551,9 @@ class Roaring {
      * The current bitmap and the provided bitmap are unchanged.
      */
     Roaring operator^(const Roaring &o) const {
-        roaring_bitmap_t *r = api::roaring_bitmap_xor(&roaring, &o.roaring);
+        roaring_bitmap_t *r = api::roaring_bitmap_try_xor(&roaring, &o.roaring);
         if (r == NULL) {
-            throw std::runtime_error("failed materalization in xor");
+            throw std::bad_alloc();
         }
         return Roaring(r);
     }
@@ -609,14 +610,14 @@ class Roaring {
         const roaring_bitmap_t **x =
             (const roaring_bitmap_t **)malloc(n * sizeof(roaring_bitmap_t *));
         if (x == NULL) {
-            throw std::runtime_error("failed memory alloc in fastunion");
+            throw std::bad_alloc();
         }
         for (size_t k = 0; k < n; ++k) x[k] = &inputs[k]->roaring;
 
         roaring_bitmap_t *c_ans = api::roaring_bitmap_or_many(n, x);
         if (c_ans == NULL) {
             free(x);
-            throw std::runtime_error("failed memory alloc in fastunion");
+            throw std::bad_alloc();
         }
         Roaring ans(c_ans);
         free(x);
