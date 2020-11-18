@@ -119,7 +119,7 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
     }
     if (dest->allocation_size < source->size) {
         if (!realloc_array(dest, source->size)) {
-            ra_mark_corrupt(dest);
+            ra_mark_indeterminate(dest);
             return false;
         }
     }
@@ -147,7 +147,7 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                     container_free(dest->containers[j], dest->typecodes[j]);
                 }
                 ra_clear_without_containers(dest);
-                ra_mark_corrupt(dest);
+                ra_mark_indeterminate(dest);
                 return false;
             }
         }

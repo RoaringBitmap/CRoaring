@@ -2436,7 +2436,7 @@ static bool xor_inplace_core(
 
   alloc_failure:
     ra_reset(&x1->high_low_container);
-    ra_mark_corrupt(&x1->high_low_container);
+    ra_mark_indeterminate(&x1->high_low_container);
     return false;
 }
 

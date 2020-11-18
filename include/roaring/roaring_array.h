@@ -73,18 +73,24 @@ void ra_clear_without_containers(roaring_array_t *r);
 void ra_clear_containers(roaring_array_t *ra);
 
 /**
- * Make it so that a crash is likely if a container is used after an operation
- * partially ran, generating undefined results.
- *
- * (API users should only encounter such states when using core versions
- * that return error conditions vs. panic.  So it would be redundant to check
- * ROARING_FLAG_INDETERMINATE systemically.  Only roaring_bitmap_clear() and
- * roaring_bitmap_init() need to tolerate it.)
+ * Partial inplace operations exist for efficiency, so they do not store state
+ * to restore the input if they encounter an out-of-memory condition while
+ * running.  Instead they clear all the containers, and put the bitmap into
+ * an "indeterminate" state, which can only be used with roaring_bitmap_clear()
+ * and roaring_bitmap_init().
  */
-inline static void ra_mark_corrupt(roaring_array_t *ra) {
+inline static void ra_mark_indeterminate(roaring_array_t *ra) {
     assert(ra->containers == NULL);  // all containers must be free
-    ra->containers = (container_t**)((intptr_t)0xDECAFBAD);
     ra->flags |= ROARING_FLAG_INDETERMINATE;
+
+    // By contract, no APIs should be used except roaring_bitmap_init()--which
+    // only writes the structure memory--and roaring_bitmap_clear()--which
+    // checks for ROARING_FLAG_INDETERMINATE to avoid reading ra->containers.
+    // No other code path should read ra->containers.  To help make potential
+    // violations more visible, write a recognizable hex pattern into the
+    // pointer, rather than check for ROARING_FLAG_INDETERMINATE in all apis.
+    //
+    ra->containers = (container_t**)((intptr_t)0xDECAFBAD);
 }
 
 /**
