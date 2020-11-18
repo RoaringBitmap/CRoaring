@@ -24,8 +24,9 @@ static inline void bitset_set_range(uint64_t *words, uint32_t start,
         return;
     }
     words[firstword] |= (~UINT64_C(0)) << (start % 64);
-    for (uint32_t i = firstword + 1; i < endword; i++)
+    for (uint32_t i = firstword + 1; i < endword; i++) {
         words[i] = ~UINT64_C(0);
+    }
     words[endword] |= (~UINT64_C(0)) >> ((~end + 1) % 64);
 }
 
@@ -64,14 +65,17 @@ static inline bool bitset_lenrange_empty(const uint64_t *words, uint32_t start,
         return (words[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
               << (start % 64)) == 0;
     }
-    if (((words[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0)
+    if (((words[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0) {
         return false;
-    for (uint32_t i = firstword + 1; i < endword; i++) {
-        if (words[i] != 0)
-            return false;
     }
-    if ((words[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0)
+    for (uint32_t i = firstword + 1; i < endword; i++) {
+        if (words[i] != 0) {
+            return false;
+        }
+    }
+    if ((words[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0) {
         return false;
+    }
     return true;
 }
 
@@ -105,8 +109,9 @@ static inline void bitset_flip_range(uint64_t *words, uint32_t start,
     uint32_t firstword = start / 64;
     uint32_t endword = (end - 1) / 64;
     words[firstword] ^= ~((~UINT64_C(0)) << (start % 64));
-    for (uint32_t i = firstword; i < endword; i++)
+    for (uint32_t i = firstword; i < endword; i++) {
         words[i] = ~words[i];
+    }
     words[endword] ^= ((~UINT64_C(0)) >> ((~end + 1) % 64));
 }
 
@@ -124,8 +129,9 @@ static inline void bitset_reset_range(uint64_t *words, uint32_t start,
         return;
     }
     words[firstword] &= ~((~UINT64_C(0)) << (start % 64));
-    for (uint32_t i = firstword + 1; i < endword; i++)
+    for (uint32_t i = firstword + 1; i < endword; i++) {
         words[i] = UINT64_C(0);
+    }
     words[endword] &= ~((~UINT64_C(0)) >> ((~end + 1) % 64));
 }
 
