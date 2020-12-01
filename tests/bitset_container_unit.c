@@ -8,30 +8,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <roaring/bitset_util.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/misc/configreport.h>
-#include <roaring/bitset_util.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
 
-
 DEFINE_TEST(test_bitset_lenrange_cardinality) {
-  uint64_t words[] = {~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
-  for(int k = 0; k < 64 * 4; k++) {
-    assert(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
-  }
-  for(int k = 64 * 4; k < 64 * 8; k++) {
-      assert(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
-  }
+    uint64_t words[] = {
+        ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
+    for (int k = 0; k < 64 * 4; k++) {
+        assert(bitset_lenrange_cardinality(words, 0, k) == k + 1);  // ok
+    }
+    for (int k = 64 * 4; k < 64 * 8; k++) {
+        assert(bitset_lenrange_cardinality(words, 0, k) == 4 * 64);  // ok
+    }
 }
 
 DEFINE_TEST(test_bitset_compute_cardinality) {
     // check that overflow doesn't happen
-    bitset_container_t *b = bitset_container_create();
+    bitset_container_t* b = bitset_container_create();
     bitset_container_add_from_range(b, 0, 0x10000, 1);
     assert(bitset_container_compute_cardinality(b) == 0x10000);
     bitset_container_free(b);
@@ -257,9 +257,12 @@ DEFINE_TEST(select_test) {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_bitset_lenrange_cardinality),
-        cmocka_unit_test(printf_test), cmocka_unit_test(set_get_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
-        cmocka_unit_test(andnot_test), cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(set_get_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(xor_test),
+        cmocka_unit_test(andnot_test),
+        cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_bitset_compute_cardinality),
     };

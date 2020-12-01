@@ -12,7 +12,9 @@
 #include <roaring/containers/perfparameters.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" {
+namespace roaring {
+namespace internal {
 #endif
 
 /* Compute the union of src_1 and src_2 and write the result to
@@ -157,17 +159,16 @@ void array_run_container_inplace_union(const array_container_t *src_1,
     }
 }
 
-bool array_array_container_union(
-    const array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_union(const array_container_t *src_1,
+                                 const array_container_t *src_2,
+                                 container_t **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL) {
             array_container_union(src_1, src_2, CAST_array(*dst));
         } else {
-            return true; // otherwise failure won't be caught
+            return true;  // otherwise failure won't be caught
         }
         return false;  // not a bitset
     }
@@ -189,26 +190,28 @@ bool array_array_container_union(
     return returnval;
 }
 
-bool array_array_container_inplace_union(
-    array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_inplace_union(array_container_t *src_1,
+                                         const array_container_t *src_2,
+                                         container_t **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     *dst = NULL;
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
-        if(src_1->capacity < totalCardinality) {
-          *dst = array_container_create_given_capacity(2  * totalCardinality); // be purposefully generous
-          if (*dst != NULL) {
-              array_container_union(src_1, src_2, CAST_array(*dst));
-          } else {
-              return true; // otherwise failure won't be caught
-          }
-          return false;  // not a bitset
+        if (src_1->capacity < totalCardinality) {
+            *dst = array_container_create_given_capacity(
+                2 * totalCardinality);  // be purposefully generous
+            if (*dst != NULL) {
+                array_container_union(src_1, src_2, CAST_array(*dst));
+            } else {
+                return true;  // otherwise failure won't be caught
+            }
+            return false;  // not a bitset
         } else {
-          memmove(src_1->array + src_2->cardinality, src_1->array, src_1->cardinality * sizeof(uint16_t));
-          src_1->cardinality = (int32_t)union_uint16(src_1->array + src_2->cardinality, src_1->cardinality,
-                                  src_2->array, src_2->cardinality, src_1->array);
-          return false; // not a bitset
+            memmove(src_1->array + src_2->cardinality, src_1->array,
+                    src_1->cardinality * sizeof(uint16_t));
+            src_1->cardinality = (int32_t)union_uint16(
+                src_1->array + src_2->cardinality, src_1->cardinality,
+                src_2->array, src_2->cardinality, src_1->array);
+            return false;  // not a bitset
         }
     }
     *dst = bitset_container_create();
@@ -221,13 +224,14 @@ bool array_array_container_inplace_union(
             src_2->cardinality);
         if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
             // need to convert!
-            if(src_1->capacity < ourbitset->cardinality) {
-              array_container_grow(src_1, ourbitset->cardinality, false);
+            if (src_1->capacity < ourbitset->cardinality) {
+                array_container_grow(src_1, ourbitset->cardinality, false);
             }
 
-            bitset_extract_setbits_uint16(ourbitset->words, BITSET_CONTAINER_SIZE_IN_WORDS,
-                                  src_1->array, 0);
-            src_1->cardinality =  ourbitset->cardinality;
+            bitset_extract_setbits_uint16(ourbitset->words,
+                                          BITSET_CONTAINER_SIZE_IN_WORDS,
+                                          src_1->array, 0);
+            src_1->cardinality = ourbitset->cardinality;
             *dst = src_1;
             bitset_container_free(ourbitset);
             returnval = false;  // not going to be a bitset
@@ -236,18 +240,16 @@ bool array_array_container_inplace_union(
     return returnval;
 }
 
-
-bool array_array_container_lazy_union(
-    const array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_lazy_union(const array_container_t *src_1,
+                                      const array_container_t *src_2,
+                                      container_t **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
         if (*dst != NULL) {
             array_container_union(src_1, src_2, CAST_array(*dst));
         } else {
-              return true; // otherwise failure won't be caught
+            return true;  // otherwise failure won't be caught
         }
         return false;  // not a bitset
     }
@@ -262,27 +264,28 @@ bool array_array_container_lazy_union(
     return returnval;
 }
 
-
-bool array_array_container_lazy_inplace_union(
-    array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_lazy_inplace_union(array_container_t *src_1,
+                                              const array_container_t *src_2,
+                                              container_t **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     *dst = NULL;
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
-        if(src_1->capacity < totalCardinality) {
-          *dst = array_container_create_given_capacity(2  * totalCardinality); // be purposefully generous
-          if (*dst != NULL) {
-              array_container_union(src_1, src_2, CAST_array(*dst));
-          } else {
-            return true; // otherwise failure won't be caught
-          }
-          return false;  // not a bitset
+        if (src_1->capacity < totalCardinality) {
+            *dst = array_container_create_given_capacity(
+                2 * totalCardinality);  // be purposefully generous
+            if (*dst != NULL) {
+                array_container_union(src_1, src_2, CAST_array(*dst));
+            } else {
+                return true;  // otherwise failure won't be caught
+            }
+            return false;  // not a bitset
         } else {
-          memmove(src_1->array + src_2->cardinality, src_1->array, src_1->cardinality * sizeof(uint16_t));
-          src_1->cardinality = (int32_t)union_uint16(src_1->array + src_2->cardinality, src_1->cardinality,
-                                  src_2->array, src_2->cardinality, src_1->array);
-          return false; // not a bitset
+            memmove(src_1->array + src_2->cardinality, src_1->array,
+                    src_1->cardinality * sizeof(uint16_t));
+            src_1->cardinality = (int32_t)union_uint16(
+                src_1->array + src_2->cardinality, src_1->cardinality,
+                src_2->array, src_2->cardinality, src_1->array);
+            return false;  // not a bitset
         }
     }
     *dst = bitset_container_create();
@@ -297,5 +300,7 @@ bool array_array_container_lazy_inplace_union(
 }
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace internal {
+}
+}
+}  // extern "C" { namespace roaring { namespace internal {
 #endif

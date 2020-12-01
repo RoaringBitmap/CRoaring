@@ -16,18 +16,26 @@
 #include <roaring/utilasm.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" {
+namespace roaring {
+namespace internal {
 #endif
 
-extern inline int bitset_container_cardinality(const bitset_container_t *bitset);
-extern inline bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
-extern inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
-extern inline void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
+extern inline int bitset_container_cardinality(
+    const bitset_container_t *bitset);
+extern inline bool bitset_container_nonzero_cardinality(
+    bitset_container_t *bitset);
+extern inline void bitset_container_set(bitset_container_t *bitset,
+                                        uint16_t pos);
+extern inline void bitset_container_unset(bitset_container_t *bitset,
+                                          uint16_t pos);
 extern inline bool bitset_container_get(const bitset_container_t *bitset,
                                         uint16_t pos);
 extern inline int32_t bitset_container_serialized_size_in_bytes(void);
-extern inline bool bitset_container_add(bitset_container_t *bitset, uint16_t pos);
-extern inline bool bitset_container_remove(bitset_container_t *bitset, uint16_t pos);
+extern inline bool bitset_container_add(bitset_container_t *bitset,
+                                        uint16_t pos);
+extern inline bool bitset_container_remove(bitset_container_t *bitset,
+                                           uint16_t pos);
 extern inline bool bitset_container_contains(const bitset_container_t *bitset,
                                              uint16_t pos);
 
@@ -41,8 +49,6 @@ void bitset_container_set_all(bitset_container_t *bitset) {
            sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     bitset->cardinality = (1 << 16);
 }
-
-
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(void) {
@@ -101,9 +107,10 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
-    if(bitset->words != NULL) {// Jon Strabala reports that some tools complain otherwise
-      roaring_bitmap_aligned_free(bitset->words);
-      bitset->words = NULL; // pedantic
+    if (bitset->words !=
+        NULL) {  // Jon Strabala reports that some tools complain otherwise
+        roaring_bitmap_aligned_free(bitset->words);
+        bitset->words = NULL;  // pedantic
     }
     free(bitset);
 }
@@ -136,18 +143,16 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
         bitset_container_compute_cardinality(bitset);  // could be smarter
 }
 
-
 bool bitset_container_intersect(const bitset_container_t *src_1,
-                                  const bitset_container_t *src_2) {
-	// could vectorize, but this is probably already quite fast in practice
-    const uint64_t * __restrict__ words_1 = src_1->words;
-    const uint64_t * __restrict__ words_2 = src_2->words;
-	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
-        if((words_1[i] & words_2[i]) != 0) return true;
+                                const bitset_container_t *src_2) {
+    // could vectorize, but this is probably already quite fast in practice
+    const uint64_t *__restrict__ words_1 = src_1->words;
+    const uint64_t *__restrict__ words_2 = src_2->words;
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {
+        if ((words_1[i] & words_2[i]) != 0) return true;
     }
     return false;
 }
-
 
 #ifdef USEAVX
 #ifndef WORDS_IN_AVX2_REG
@@ -155,7 +160,7 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 #endif
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
-    return (int) avx2_harley_seal_popcount256(
+    return (int)avx2_harley_seal_popcount256(
         (const __m256i *)bitset->words,
         BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
 }

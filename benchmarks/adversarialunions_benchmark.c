@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include "benchmark.h"
 int quickfull() {
-    printf("The naive approach works well when the bitmaps quickly become full\n");
+    printf(
+        "The naive approach works well when the bitmaps quickly become full\n");
     uint64_t cycles_start, cycles_final;
     size_t bitmapcount = 100;
     size_t size = 1000000;
@@ -17,19 +18,21 @@ int quickfull() {
     }
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t *answer0 = roaring_bitmap_or_many_heap(bitmapcount, (const roaring_bitmap_t **)bitmaps);
+    roaring_bitmap_t *answer0 = roaring_bitmap_or_many_heap(
+        bitmapcount, (const roaring_bitmap_t **)bitmaps);
     RDTSC_FINAL(cycles_final);
     printf("%f cycles per union (many heap) \n",
            (cycles_final - cycles_start) * 1.0 / bitmapcount);
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t *answer1 = roaring_bitmap_or_many(bitmapcount, (const roaring_bitmap_t **)bitmaps);
+    roaring_bitmap_t *answer1 =
+        roaring_bitmap_or_many(bitmapcount, (const roaring_bitmap_t **)bitmaps);
     RDTSC_FINAL(cycles_final);
     printf("%f cycles per union (many) \n",
            (cycles_final - cycles_start) * 1.0 / bitmapcount);
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t *answer2  = roaring_bitmap_copy(bitmaps[0]);
+    roaring_bitmap_t *answer2 = roaring_bitmap_copy(bitmaps[0]);
     for (size_t i = 1; i < bitmapcount; i++) {
         roaring_bitmap_or_inplace(answer2, bitmaps[i]);
     }
@@ -48,7 +51,9 @@ int quickfull() {
 }
 
 int notsofull() {
-    printf("The naive approach works less well when the bitmaps do not quickly become full\n");
+    printf(
+        "The naive approach works less well when the bitmaps do not quickly "
+        "become full\n");
     uint64_t cycles_start, cycles_final;
     size_t bitmapcount = 100;
     size_t size = 1000000;
@@ -62,19 +67,21 @@ int notsofull() {
     }
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t *answer0 = roaring_bitmap_or_many_heap(bitmapcount, (const roaring_bitmap_t **)bitmaps);
+    roaring_bitmap_t *answer0 = roaring_bitmap_or_many_heap(
+        bitmapcount, (const roaring_bitmap_t **)bitmaps);
     RDTSC_FINAL(cycles_final);
     printf("%f cycles per union (many heap) \n",
            (cycles_final - cycles_start) * 1.0 / bitmapcount);
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t *answer1 = roaring_bitmap_or_many(bitmapcount, (const roaring_bitmap_t **)bitmaps);
+    roaring_bitmap_t *answer1 =
+        roaring_bitmap_or_many(bitmapcount, (const roaring_bitmap_t **)bitmaps);
     RDTSC_FINAL(cycles_final);
     printf("%f cycles per union (many) \n",
            (cycles_final - cycles_start) * 1.0 / bitmapcount);
 
     RDTSC_START(cycles_start);
-    roaring_bitmap_t *answer2  = roaring_bitmap_copy(bitmaps[0]);
+    roaring_bitmap_t *answer2 = roaring_bitmap_copy(bitmaps[0]);
     for (size_t i = 1; i < bitmapcount; i++) {
         roaring_bitmap_or_inplace(answer2, bitmaps[i]);
     }
@@ -91,7 +98,6 @@ int notsofull() {
     roaring_bitmap_free(answer2);
     return 0;
 }
-
 
 int main() {
     printf("How to best aggregate the bitmaps is data-sensitive.\n");

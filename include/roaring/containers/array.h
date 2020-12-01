@@ -8,16 +8,17 @@
 
 #include <string.h>
 
+#include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>  // roaring_iterator
-#include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
 
 #include <roaring/containers/container_defs.h>  // container_t, perfparameters
 
 #ifdef __cplusplus
-extern "C" { namespace roaring {
+extern "C" {
+namespace roaring {
 
-// Note: in pure C++ code, you should avoid putting `using` in header files 
+// Note: in pure C++ code, you should avoid putting `using` in header files
 using api::roaring_iterator;
 using api::roaring_iterator64;
 
@@ -41,8 +42,8 @@ STRUCT_CONTAINER(array_container_s) {
 
 typedef struct array_container_s array_container_t;
 
-#define CAST_array(c)         CAST(array_container_t *, c)  // safer downcast
-#define const_CAST_array(c)   CAST(const array_container_t *, c)
+#define CAST_array(c) CAST(array_container_t *, c)  // safer downcast
+#define const_CAST_array(c) CAST(const array_container_t *, c)
 #define movable_CAST_array(c) movable_CAST(array_container_t **, c)
 
 /* Create a new array with default. Return NULL in case of failure. See also
@@ -54,7 +55,7 @@ array_container_t *array_container_create(void);
 array_container_t *array_container_create_given_capacity(int32_t size);
 
 /* Create a new array containing all values in [min,max). */
-array_container_t * array_container_create_range(uint32_t min, uint32_t max);
+array_container_t *array_container_create_range(uint32_t min, uint32_t max);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -96,11 +97,10 @@ static inline bool array_container_empty(const array_container_t *array) {
 }
 
 /* check whether the cardinality is equal to the capacity (this does not mean
-* that it contains 1<<16 elements) */
+ * that it contains 1<<16 elements) */
 static inline bool array_container_full(const array_container_t *array) {
     return array->cardinality == array->capacity;
 }
-
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
@@ -121,8 +121,7 @@ void array_container_intersection(const array_container_t *src_1,
 
 /* Check whether src_1 and src_2 intersect. */
 bool array_container_intersect(const array_container_t *src_1,
-                                  const array_container_t *src_2);
-
+                               const array_container_t *src_2);
 
 /* computers the size of the intersection between two arrays.
  */
@@ -218,14 +217,13 @@ static inline int32_t array_container_size_in_bytes(
 /**
  * Return true if the two arrays have the same content.
  */
-static inline bool array_container_equals(
-    const array_container_t *container1,
-    const array_container_t *container2) {
-
+static inline bool array_container_equals(const array_container_t *container1,
+                                          const array_container_t *container2) {
     if (container1->cardinality != container2->cardinality) {
         return false;
     }
-    return memequals(container1->array, container2->array, container1->cardinality*2);
+    return memequals(container1->array, container2->array,
+                     container1->cardinality * 2);
 }
 
 /**
@@ -281,7 +279,8 @@ static inline void array_container_append(array_container_t *arr,
  * 0  -- value was already present
  * -1 -- value was not added because cardinality would exceed max_cardinality
  */
-static inline int array_container_try_add(array_container_t *arr, uint16_t value,
+static inline int array_container_try_add(array_container_t *arr,
+                                          uint16_t value,
                                           int32_t max_cardinality) {
     const int32_t cardinality = arr->cardinality;
 
@@ -336,11 +335,11 @@ inline bool array_container_contains(const array_container_t *arr,
     //    return binarySearch(arr->array, arr->cardinality, pos) >= 0;
     // binary search with fallback to linear search for short ranges
     int32_t low = 0;
-    const uint16_t * carr = (const uint16_t *) arr->array;
+    const uint16_t *carr = (const uint16_t *)arr->array;
     int32_t high = arr->cardinality - 1;
     //    while (high - low >= 0) {
-    while(high >= low + 16) {
-        int32_t middleIndex = (low + high)>>1;
+    while (high >= low + 16) {
+        int32_t middleIndex = (low + high) >> 1;
         uint16_t middleValue = carr[middleIndex];
         if (middleValue < pos) {
             low = middleIndex + 1;
@@ -351,32 +350,33 @@ inline bool array_container_contains(const array_container_t *arr,
         }
     }
 
-    for (int i=low; i <= high; i++) {
+    for (int i = low; i <= high; i++) {
         uint16_t v = carr[i];
         if (v == pos) {
             return true;
         }
-        if ( v > pos ) return false;
+        if (v > pos) return false;
     }
     return false;
-
 }
 
-//* Check whether a range of values from range_start (included) to range_end (excluded) is present. */
+//* Check whether a range of values from range_start (included) to range_end
+//(excluded) is present. */
 static inline bool array_container_contains_range(const array_container_t *arr,
-                                                    uint32_t range_start, uint32_t range_end) {
-
+                                                  uint32_t range_start,
+                                                  uint32_t range_end) {
     const uint16_t rs_included = range_start;
     const uint16_t re_included = range_end - 1;
 
-    const uint16_t *carr = (const uint16_t *) arr->array;
+    const uint16_t *carr = (const uint16_t *)arr->array;
 
     const int32_t start = advanceUntil(carr, -1, arr->cardinality, rs_included);
-    const int32_t end = advanceUntil(carr, start - 1, arr->cardinality, re_included);
+    const int32_t end =
+        advanceUntil(carr, start - 1, arr->cardinality, re_included);
 
-    return (start < arr->cardinality) && (end < arr->cardinality)
-            && (((uint16_t)(end - start)) == re_included - rs_included)
-            && (carr[start] == rs_included) && (carr[end] == re_included);
+    return (start < arr->cardinality) && (end < arr->cardinality) &&
+           (((uint16_t)(end - start)) == re_included - rs_included) &&
+           (carr[start] == rs_included) && (carr[end] == re_included);
 }
 
 /* Returns the smallest value (assumes not empty) */
@@ -403,14 +403,15 @@ inline int array_container_rank(const array_container_t *arr, uint16_t x) {
 }
 
 /* Returns the index of the first value equal or smaller than x, or -1 */
-inline int array_container_index_equalorlarger(const array_container_t *arr, uint16_t x) {
+inline int array_container_index_equalorlarger(const array_container_t *arr,
+                                               uint16_t x) {
     const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
     const bool is_present = idx >= 0;
     if (is_present) {
         return idx;
     } else {
-        int32_t candidate = - idx - 1;
-        if(candidate < arr->cardinality) return candidate;
+        int32_t candidate = -idx - 1;
+        if (candidate < arr->cardinality) return candidate;
         return -1;
     }
 }
@@ -442,8 +443,10 @@ static inline void array_container_add_range_nvals(array_container_t *array,
  */
 static inline void array_container_add_range(array_container_t *array,
                                              uint32_t min, uint32_t max) {
-    int32_t nvals_greater = count_greater(array->array, array->cardinality, max);
-    int32_t nvals_less = count_less(array->array, array->cardinality - nvals_greater, min);
+    int32_t nvals_greater =
+        count_greater(array->array, array->cardinality, max);
+    int32_t nvals_less =
+        count_less(array->array, array->cardinality - nvals_greater, min);
     array_container_add_range_nvals(array, min, max, nvals_less, nvals_greater);
 }
 
@@ -452,15 +455,17 @@ static inline void array_container_add_range(array_container_t *array,
  */
 static inline void array_container_remove_range(array_container_t *array,
                                                 uint32_t pos, uint32_t count) {
-  if (count != 0) {
-      memmove(&(array->array[pos]), &(array->array[pos+count]),
-              (array->cardinality - pos - count) * sizeof(uint16_t));
-      array->cardinality -= count;
-  }
+    if (count != 0) {
+        memmove(&(array->array[pos]), &(array->array[pos + count]),
+                (array->cardinality - pos - count) * sizeof(uint16_t));
+        array->cardinality -= count;
+    }
 }
 
 #ifdef __cplusplus
-} } } // extern "C" { namespace roaring { namespace internal {
+}
+}
+}  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

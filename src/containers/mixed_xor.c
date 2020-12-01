@@ -12,16 +12,17 @@
 #include <roaring/containers/perfparameters.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" {
+namespace roaring {
+namespace internal {
 #endif
 
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst (which has no container initially).
  * Result is true iff dst is a bitset  */
-bool array_bitset_container_xor(
-    const array_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
-){
+bool array_bitset_container_xor(const array_container_t *src_1,
+                                const bitset_container_t *src_2,
+                                container_t **dst) {
     bitset_container_t *result = bitset_container_create();
     bitset_container_copy(src_2, result);
     result->cardinality = (int32_t)bitset_flip_list_withcard(
@@ -57,10 +58,9 @@ void array_bitset_container_lazy_xor(const array_container_t *src_1,
  * result true) or an array container.
  */
 
-bool run_bitset_container_xor(
-    const run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
-){
+bool run_bitset_container_xor(const run_container_t *src_1,
+                              const bitset_container_t *src_2,
+                              container_t **dst) {
     bitset_container_t *result = bitset_container_create();
 
     bitset_container_copy(src_2, result);
@@ -101,10 +101,8 @@ void run_bitset_container_lazy_xor(const run_container_t *src_1,
  * can become any kind of container.
  */
 
-int array_run_container_xor(
-    const array_container_t *src_1, const run_container_t *src_2,
-    container_t **dst
-){
+int array_run_container_xor(const array_container_t *src_1,
+                            const run_container_t *src_2, container_t **dst) {
     // semi following Java XOR implementation as of May 2016
     // the C OR implementation works quite differently and can return a run
     // container
@@ -128,15 +126,13 @@ int array_run_container_xor(
         array_container_t *temp = array_container_from_run(src_2);
         bool ret_is_bitset = array_array_container_xor(temp, src_1, dst);
         array_container_free(temp);
-        return ret_is_bitset ? BITSET_CONTAINER_TYPE
-                             : ARRAY_CONTAINER_TYPE;
+        return ret_is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE;
 
     } else {  // guess that it will end up as a bitset
         bitset_container_t *result = bitset_container_from_run(src_2);
         bool is_bitset = bitset_array_container_ixor(result, src_1, dst);
         // any necessary type conversion has been done by the ixor
-        int retval = (is_bitset ? BITSET_CONTAINER_TYPE
-                                : ARRAY_CONTAINER_TYPE);
+        int retval = (is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE);
         return retval;
     }
 }
@@ -180,10 +176,8 @@ void array_run_container_lazy_xor(const array_container_t *src_1,
  * can become any kind of container.
  */
 
-int run_run_container_xor(
-    const run_container_t *src_1, const run_container_t *src_2,
-    container_t **dst
-){
+int run_run_container_xor(const run_container_t *src_1,
+                          const run_container_t *src_2, container_t **dst) {
     run_container_t *ans = run_container_create();
     run_container_xor(src_1, src_2, ans);
     uint8_t typecode_after;
@@ -199,10 +193,9 @@ int run_run_container_xor(
  *
  */
 
-bool array_array_container_xor(
-    const array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_xor(const array_container_t *src_1,
+                               const array_container_t *src_2,
+                               container_t **dst) {
     int totalCardinality =
         src_1->cardinality + src_2->cardinality;  // upper bound
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
@@ -225,16 +218,14 @@ bool array_array_container_xor(
     return returnval;
 }
 
-bool array_array_container_lazy_xor(
-    const array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_lazy_xor(const array_container_t *src_1,
+                                    const array_container_t *src_2,
+                                    container_t **dst) {
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     // upper bound, but probably poor estimate for xor
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        if (*dst != NULL)
-            array_container_xor(src_1, src_2, CAST_array(*dst));
+        if (*dst != NULL) array_container_xor(src_1, src_2, CAST_array(*dst));
         return false;  // not a bitset
     }
     *dst = bitset_container_from_array(src_1);
@@ -252,10 +243,9 @@ bool array_array_container_lazy_xor(
  * "dst is a bitset"
  */
 
-bool bitset_bitset_container_xor(
-    const bitset_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
-){
+bool bitset_bitset_container_xor(const bitset_container_t *src_1,
+                                 const bitset_container_t *src_2,
+                                 container_t **dst) {
     bitset_container_t *ans = bitset_container_create();
     int card = bitset_container_xor(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
@@ -275,10 +265,9 @@ bool bitset_bitset_container_xor(
  * cases, the caller is responsible for deallocating dst.
  * Returns true iff dst is a bitset  */
 
-bool bitset_array_container_ixor(
-    bitset_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool bitset_array_container_ixor(bitset_container_t *src_1,
+                                 const array_container_t *src_2,
+                                 container_t **dst) {
     *dst = src_1;
     src_1->cardinality = (uint32_t)bitset_flip_list_withcard(
         src_1->words, src_1->cardinality, src_2->array, src_2->cardinality);
@@ -296,19 +285,17 @@ bool bitset_array_container_ixor(
  * Anything inplace with a bitset is a good candidate
  */
 
-bool bitset_bitset_container_ixor(
-    bitset_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
-){
+bool bitset_bitset_container_ixor(bitset_container_t *src_1,
+                                  const bitset_container_t *src_2,
+                                  container_t **dst) {
     bool ans = bitset_bitset_container_xor(src_1, src_2, dst);
     bitset_container_free(src_1);
     return ans;
 }
 
-bool array_bitset_container_ixor(
-    array_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
-){
+bool array_bitset_container_ixor(array_container_t *src_1,
+                                 const bitset_container_t *src_2,
+                                 container_t **dst) {
     bool ans = array_bitset_container_xor(src_1, src_2, dst);
     array_container_free(src_1);
     return ans;
@@ -321,19 +308,17 @@ bool array_bitset_container_ixor(
  * result true) or an array container.
  */
 
-bool run_bitset_container_ixor(
-    run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
-){
+bool run_bitset_container_ixor(run_container_t *src_1,
+                               const bitset_container_t *src_2,
+                               container_t **dst) {
     bool ans = run_bitset_container_xor(src_1, src_2, dst);
     run_container_free(src_1);
     return ans;
 }
 
-bool bitset_run_container_ixor(
-    bitset_container_t *src_1, const run_container_t *src_2,
-    container_t **dst
-){
+bool bitset_run_container_ixor(bitset_container_t *src_1,
+                               const run_container_t *src_2,
+                               container_t **dst) {
     bool ans = run_bitset_container_xor(src_2, src_1, dst);
     bitset_container_free(src_1);
     return ans;
@@ -343,42 +328,38 @@ bool bitset_run_container_ixor(
  * can become any kind of container.
  */
 
-int array_run_container_ixor(
-    array_container_t *src_1, const run_container_t *src_2,
-    container_t **dst
-){
+int array_run_container_ixor(array_container_t *src_1,
+                             const run_container_t *src_2, container_t **dst) {
     int ans = array_run_container_xor(src_1, src_2, dst);
     array_container_free(src_1);
     return ans;
 }
 
-int run_array_container_ixor(
-    run_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+int run_array_container_ixor(run_container_t *src_1,
+                             const array_container_t *src_2,
+                             container_t **dst) {
     int ans = array_run_container_xor(src_2, src_1, dst);
     run_container_free(src_1);
     return ans;
 }
 
-bool array_array_container_ixor(
-    array_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
-){
+bool array_array_container_ixor(array_container_t *src_1,
+                                const array_container_t *src_2,
+                                container_t **dst) {
     bool ans = array_array_container_xor(src_1, src_2, dst);
     array_container_free(src_1);
     return ans;
 }
 
-int run_run_container_ixor(
-    run_container_t *src_1, const run_container_t *src_2,
-    container_t **dst
-){
+int run_run_container_ixor(run_container_t *src_1, const run_container_t *src_2,
+                           container_t **dst) {
     int ans = run_run_container_xor(src_1, src_2, dst);
     run_container_free(src_1);
     return ans;
 }
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace internal {
+}
+}
+}  // extern "C" { namespace roaring { namespace internal {
 #endif

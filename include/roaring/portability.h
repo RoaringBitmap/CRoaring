@@ -31,7 +31,8 @@
 extern "C" {  // portability definitions are in global scope, not a namespace
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64) && !defined(ROARING_ACK_32BIT)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(_WIN64) && \
+    !defined(ROARING_ACK_32BIT)
 #pragma message( \
     "You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
 #endif
@@ -51,8 +52,8 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 /// We support X64 hardware in the following manner:
 ///
 /// if IS_X64 is defined then we have at least SSE and SSE2
-/// (All Intel processors sold in the recent past have at least SSE and SSE2 support,
-/// going back to the Pentium 4.)
+/// (All Intel processors sold in the recent past have at least SSE and SSE2
+/// support, going back to the Pentium 4.)
 ///
 /// if USESSE4 is defined then we assume at least SSE4.2, SSE4.1,
 ///                   SSSE3, SSE3... + IS_X64
@@ -85,10 +86,10 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #endif
 
 #if !defined(USENEON) && !defined(DISABLENEON) && defined(__ARM_NEON)
-#  define USENEON
+#define USENEON
 #endif
 #if defined(USENEON)
-#  include <arm_neon.h>
+#include <arm_neon.h>
 #endif
 
 #ifndef _MSC_VER
@@ -155,24 +156,25 @@ inline int __builtin_clzll(unsigned long long input_num) {
 /* USESSE4 flag guarantees POPCNT support */
 inline int __builtin_popcountll(unsigned long long input_num) {
 #ifdef _WIN64  // highly recommended!!!
-	return (int)__popcnt64(input_num);
+    return (int)__popcnt64(input_num);
 #else  // if we must support 32-bit Windows
-	return (int)(__popcnt((uint32_t)input_num) +
-		__popcnt((uint32_t)(input_num >> 32)));
+    return (int)(__popcnt((uint32_t)input_num) +
+                 __popcnt((uint32_t)(input_num >> 32)));
 #endif
 }
 #else
 /* software implementation avoids POPCNT */
 static inline int __builtin_popcountll(unsigned long long input_num) {
-	const uint64_t m1 = 0x5555555555555555; //binary: 0101...
-	const uint64_t m2 = 0x3333333333333333; //binary: 00110011..
-	const uint64_t m4 = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
-	const uint64_t h01 = 0x0101010101010101; //the sum of 256 to the power of 0,1,2,3...
+    const uint64_t m1 = 0x5555555555555555;  // binary: 0101...
+    const uint64_t m2 = 0x3333333333333333;  // binary: 00110011..
+    const uint64_t m4 = 0x0f0f0f0f0f0f0f0f;  // binary:  4 zeros,  4 ones ...
+    const uint64_t h01 =
+        0x0101010101010101;  // the sum of 256 to the power of 0,1,2,3...
 
-	input_num -= (input_num >> 1) & m1;
-	input_num = (input_num & m2) + ((input_num >> 2) & m2);
-	input_num = (input_num + (input_num >> 4)) & m4;
-	return (input_num * h01) >> 56;
+    input_num -= (input_num >> 1) & m1;
+    input_num = (input_num & m2) + ((input_num >> 2) & m2);
+    input_num = (input_num + (input_num >> 4)) & m4;
+    return (input_num * h01) >> 56;
 }
 #endif
 
@@ -188,7 +190,8 @@ extern int posix_memalign(void **__memptr, size_t __alignment, size_t __size);
 #endif  //__cplusplus // C++ does not have a well defined signature
 
 // portable version of  posix_memalign
-static inline void *roaring_bitmap_aligned_malloc(size_t alignment, size_t size) {
+static inline void *roaring_bitmap_aligned_malloc(size_t alignment,
+                                                  size_t size) {
     void *p;
 #ifdef _MSC_VER
     p = _aligned_malloc(size, alignment);
@@ -230,7 +233,7 @@ static inline void roaring_bitmap_aligned_free(void *memblock) {
 
 static inline int hamming(uint64_t x) {
 #ifdef USESSE4
-    return (int) _mm_popcnt_u64(x);
+    return (int)_mm_popcnt_u64(x);
 #else
     // won't work under visual studio, but hopeful we have _mm_popcnt_u64 in
     // many cases

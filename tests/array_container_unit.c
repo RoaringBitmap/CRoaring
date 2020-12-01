@@ -11,11 +11,10 @@
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
-
 
 DEFINE_TEST(printf_test) {
     array_container_t* B = array_container_create();
@@ -196,9 +195,7 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
-        cmocka_unit_test(select_test),
-        cmocka_unit_test(capacity_test)
-    };
+        cmocka_unit_test(select_test), cmocka_unit_test(capacity_test)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

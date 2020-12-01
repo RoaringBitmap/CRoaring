@@ -13,7 +13,9 @@
 #include <roaring/portability.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace misc {
+extern "C" {
+namespace roaring {
+namespace misc {
 #endif
 
 #ifdef IS_X64
@@ -38,7 +40,7 @@ static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
                        "=d"(*edx)  // output equal to "movl  %%eax %1"
                      : "a"(code)   // input equal to "movl %1, %%eax"
                      //:"%eax","%ebx","%ecx","%edx"// clobbered register
-                     );
+    );
 #endif /* not sure what to do when inline assembly is unavailable*/
 }
 
@@ -181,7 +183,9 @@ static inline void tellmeall() {
 #endif
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace misc {
+}
+}
+}  // extern "C" { namespace roaring { namespace misc {
 #endif
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */

@@ -12,21 +12,19 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-    //
-    // It's generally not good to span a header file with `extern "C"`, but
-    // this is how the cpp_unit.cpp test was doing it.  cmocka.h apparently
-    // only has #ifdefs for extern "C" under MSC (?)
-    //
-    extern "C" {
-        #include "vendor/cmocka/cmocka.h"
-    }
+//
+// It's generally not good to span a header file with `extern "C"`, but
+// this is how the cpp_unit.cpp test was doing it.  cmocka.h apparently
+// only has #ifdefs for extern "C" under MSC (?)
+//
+extern "C" {
+#include "vendor/cmocka/cmocka.h"
+}
 #else
-    #include "vendor/cmocka/cmocka.h"
+#include "vendor/cmocka/cmocka.h"
 #endif
 
-
 #define DESCRIBE_TEST fprintf(stderr, "--- %s\n", __func__)
-
 
 // The "cmocka" test functions are supposed to look like:
 //
@@ -50,7 +48,7 @@
 // rather than disabling warnings, this defines a macro to declare the tests.
 //
 #ifdef __cplusplus
-    #define DEFINE_TEST(name)   void name(void**)
+#define DEFINE_TEST(name) void name(void**)
 #else
-    #define DEFINE_TEST(name)   void name()
+#define DEFINE_TEST(name) void name()
 #endif

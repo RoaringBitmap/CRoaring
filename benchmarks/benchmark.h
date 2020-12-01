@@ -41,53 +41,53 @@
 
 #include <time.h>
 #ifdef CLOCK_THREAD_CPUTIME_ID
-#define RDTSC_START(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
+#define RDTSC_START(cycles)                                     \
+    do {                                                        \
+        struct timespec ts;                                     \
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);            \
+        cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
+    } while (0)
 
-#define RDTSC_FINAL(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_REALTIME, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
+#define RDTSC_FINAL(cycles)                                     \
+    do {                                                        \
+        struct timespec ts;                                     \
+        clock_gettime(CLOCK_REALTIME, &ts);                     \
+        cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
+    } while (0)
 
 #elif defined(CLOCK_REALTIME)  // #ifdef CLOCK_THREAD_CPUTIME_ID
-#define RDTSC_START(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_REALTIME, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
+#define RDTSC_START(cycles)                                     \
+    do {                                                        \
+        struct timespec ts;                                     \
+        clock_gettime(CLOCK_REALTIME, &ts);                     \
+        cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
+    } while (0)
 
-#define RDTSC_FINAL(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_REALTIME, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
+#define RDTSC_FINAL(cycles)                                     \
+    do {                                                        \
+        struct timespec ts;                                     \
+        clock_gettime(CLOCK_REALTIME, &ts);                     \
+        cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
+    } while (0)
 
 #else
 #define RDTSC_START(cycles) \
-  do { \
-    cycles = clock(); \
-  } while(0)
+    do {                    \
+        cycles = clock();   \
+    } while (0)
 
 #define RDTSC_FINAL(cycles) \
-  do { \
-    cycles = clock(); \
-  } while(0)
+    do {                    \
+        cycles = clock();   \
+    } while (0)
 
-#endif // #ifdef CLOCK_THREAD_CPUTIME_ID
+#endif  // #ifdef CLOCK_THREAD_CPUTIME_ID
 
 #else
 
 /**
-* Other architectures do not support rdtsc ?
-*/
+ * Other architectures do not support rdtsc ?
+ */
 #include <time.h>
 
 #define RDTSC_START(cycles) \

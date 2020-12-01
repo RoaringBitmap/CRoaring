@@ -14,7 +14,6 @@
 
 #include "test.h"
 
-
 long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");
     assert_non_null(fp);

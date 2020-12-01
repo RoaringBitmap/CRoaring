@@ -2232,10 +2232,12 @@ static int cmocka_run_group_fixture(const char *function_name,
 static int cmocka_run_one_tests(struct CMUnitTestState *test_state) {
 #ifdef HAVE_STRUCT_TIMESPEC
     struct timespec start = {
-        .tv_sec = 0, .tv_nsec = 0,
+        .tv_sec = 0,
+        .tv_nsec = 0,
     };
     struct timespec finish = {
-        .tv_sec = 0, .tv_nsec = 0,
+        .tv_sec = 0,
+        .tv_nsec = 0,
     };
 #endif
     int rc = 0;
@@ -2331,7 +2333,9 @@ int _cmocka_run_group_tests(const char *group_name,
     /* Setup cmocka test array */
     for (i = 0; i < num_tests; i++) {
         cm_tests[i] = (struct CMUnitTestState){
-            .test = &tests[i], .status = CM_TEST_NOT_STARTED, .state = NULL,
+            .test = &tests[i],
+            .status = CM_TEST_NOT_STARTED,
+            .state = NULL,
         };
     }
 

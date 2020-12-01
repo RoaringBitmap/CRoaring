@@ -8,7 +8,8 @@
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
                                              uint32_t **numbers, size_t count,
-                                             bool runoptimize, bool copy_on_write) {
+                                             bool runoptimize,
+                                             bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -16,7 +17,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
-        if(runoptimize) roaring_bitmap_run_optimize(answer[i]);
+        if (runoptimize) roaring_bitmap_run_optimize(answer[i]);
         roaring_bitmap_shrink_to_fit(answer[i]);
         roaring_bitmap_set_copy_on_write(answer[i], copy_on_write);
     }
