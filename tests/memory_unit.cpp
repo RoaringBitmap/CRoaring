@@ -604,21 +604,22 @@ void test_roaring_memory_cpp_example(bool copy_on_write, roaring_options_t* opti
 
       {
          // we can write a bitmap to a pointer and recover it later
-         size_t expectedsize = r1.getSizeInBytes();
+         size_t expectedsize = r1.getSizeInBytes(true);
          char* serializedbytes = new char[expectedsize];
-         
          r1.write(serializedbytes, true);
          Roaring t1 = Roaring::read(serializedbytes, true, options);
-         assert_true(expectedsize == t1.getSizeInBytes());
+         assert_true(expectedsize == t1.getSizeInBytes(true));
          assert_true(r1 == t1);
          ASSERT_HEAP_SIZE_COW(509, 461);
+         delete[] serializedbytes;
 
+         expectedsize = r1.getSizeInBytes(false);
+         serializedbytes = new char[expectedsize];
          r1.write(serializedbytes, false);
          Roaring t2 = Roaring::read(serializedbytes, false, options);
-         assert_true(expectedsize == t2.getSizeInBytes());
+         assert_true(expectedsize == t2.getSizeInBytes(false));
          assert_true(r1 == t2);
          ASSERT_HEAP_SIZE_COW(612, 564);
-
          delete[] serializedbytes;
 
          // we can iterate over all values using custom functions
@@ -827,21 +828,22 @@ void test_roaring_memory_cpp64_example(bool copy_on_write, roaring_options_t* op
 
       {
          // we can write a bitmap to a pointer and recover it later
-         size_t expectedsize = r1.getSizeInBytes();
+         size_t expectedsize = r1.getSizeInBytes(true);
          char* serializedbytes = new char[expectedsize];
-
          r1.write(serializedbytes, true);
          Roaring64Map t1 = Roaring64Map::read(serializedbytes, true, options);
-         assert_true(expectedsize == t1.getSizeInBytes());
+         assert_true(expectedsize == t1.getSizeInBytes(true));
          assert_true(r1 == t1);
          ASSERT_HEAP_SIZE_COW(1124, 1052);
+         delete[] serializedbytes;
 
+         expectedsize = r1.getSizeInBytes(false);
+         serializedbytes = new char[expectedsize];
          r1.write(serializedbytes, false);
          Roaring64Map t2 = Roaring64Map::read(serializedbytes, false, options);
-         assert_true(expectedsize == t2.getSizeInBytes());
+         assert_true(expectedsize == t2.getSizeInBytes(false));
          assert_true(r1 == t2);
          ASSERT_HEAP_SIZE_COW(1188, 1116);
-
          delete[] serializedbytes;
 
          // we can iterate over all values using custom functions
