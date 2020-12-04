@@ -60,7 +60,7 @@ bool bitset_bitset_container_xor(
 
 bool run_bitset_container_xor(
         const run_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* lazy xor.  Dst is initialized and may be equal to src_2.
  *  Result is left as a bitset container, even if actual
@@ -146,11 +146,11 @@ bool array_bitset_container_ixor(
 
 bool run_bitset_container_ixor(
         run_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 bool bitset_run_container_ixor(
         bitset_container_t *src_1, const run_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* dst does not indicate a valid container initially.  Eventually it
  * can become any kind of container.

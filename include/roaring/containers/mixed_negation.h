@@ -33,7 +33,8 @@ void array_container_negation(const array_container_t *src,
  */
 bool bitset_container_negation(
         const bitset_container_t *src,
-        container_t **dst);
+        container_t **dst,
+        roaring_options_t *options);
 
 /* inplace version */
 /*
@@ -55,7 +56,8 @@ bool bitset_container_negation_inplace(
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
-int run_container_negation(const run_container_t *src, container_t **dst);
+int run_container_negation(const run_container_t *src, container_t **dst,
+                           roaring_options_t *options);
 
 /*
  * Same as run_container_negation except that if the output is to
@@ -74,7 +76,7 @@ int run_container_negation_inplace(run_container_t *src, container_t **dst);
 bool array_container_negation_range(
         const array_container_t *src,
         const int range_start, const int range_end,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* Even when the result would fit, it is unclear how to make an
  * inplace version without inefficient copying.  Thus this routine
@@ -95,7 +97,7 @@ bool array_container_negation_range_inplace(
 bool bitset_container_negation_range(
         const bitset_container_t *src,
         const int range_start, const int range_end,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* inplace version */
 /*
@@ -120,7 +122,7 @@ bool bitset_container_negation_range_inplace(
 int run_container_negation_range(
         const run_container_t *src,
         const int range_start, const int range_end,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /*
  * Same as run_container_negation except that if the output is to

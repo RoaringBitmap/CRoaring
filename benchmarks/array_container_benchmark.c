@@ -76,7 +76,7 @@ int main() {
     int size = TESTSIZE;
     tellmeall();
     printf("array container benchmarks\n");
-    array_container_t* B = array_container_create();
+    array_container_t* B = array_container_create(NULL);
     BEST_TIME(add_test(B), 0, repeat, size);
     int answer = contains_test(B);
     size = 1 << 16;
@@ -87,7 +87,7 @@ int main() {
     array_container_free(B);
 
     for (int howmany = 32; howmany <= (1 << 16); howmany *= 8) {
-        array_container_t* Bt = array_container_create();
+        array_container_t* Bt = array_container_create(NULL);
         for (int j = 0; j < howmany; ++j) {
             array_container_add(Bt, (uint16_t)pcg32_random());
         }
@@ -108,16 +108,16 @@ int main() {
     }
     printf("\n");
 
-    array_container_t* B1 = array_container_create();
+    array_container_t* B1 = array_container_create(NULL);
     for (int x = 0; x < 1 << 16; x += 3) {
         array_container_add(B1, (uint16_t)x);
     }
-    array_container_t* B2 = array_container_create();
+    array_container_t* B2 = array_container_create(NULL);
     for (int x = 0; x < 1 << 16; x += 5) {
         array_container_add(B2, (uint16_t)x);
     }
     int32_t inputsize = B1->cardinality + B2->cardinality;
-    array_container_t* BO = array_container_create();
+    array_container_t* BO = array_container_create(NULL);
     printf("\nUnion and intersections...\n");
     printf("\nNote:\n");
     printf(

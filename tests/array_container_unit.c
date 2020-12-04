@@ -18,7 +18,7 @@
 
 
 DEFINE_TEST(printf_test) {
-    array_container_t* B = array_container_create();
+    array_container_t* B = array_container_create(NULL);
     assert_non_null(B);
 
     array_container_add(B, 1U);
@@ -34,7 +34,7 @@ DEFINE_TEST(printf_test) {
 }
 
 DEFINE_TEST(add_contains_test) {
-    array_container_t* B = array_container_create();
+    array_container_t* B = array_container_create(NULL);
     assert_non_null(B);
 
     int expected_card = 0;
@@ -87,11 +87,11 @@ DEFINE_TEST(add_contains_test) {
 DEFINE_TEST(and_or_test) {
     DESCRIBE_TEST;
 
-    array_container_t* B1 = array_container_create();
-    array_container_t* B2 = array_container_create();
-    array_container_t* BI = array_container_create();
-    array_container_t* BO = array_container_create();
-    array_container_t* TMP = array_container_create();
+    array_container_t* B1 = array_container_create(NULL);
+    array_container_t* B2 = array_container_create(NULL);
+    array_container_t* BI = array_container_create(NULL);
+    array_container_t* BO = array_container_create(NULL);
+    array_container_t* TMP = array_container_create(NULL);
 
     assert_non_null(B1);
     assert_non_null(B2);
@@ -134,7 +134,7 @@ DEFINE_TEST(and_or_test) {
 
 DEFINE_TEST(to_uint32_array_test) {
     for (size_t offset = 1; offset < 128; offset *= 2) {
-        array_container_t* B = array_container_create();
+        array_container_t* B = array_container_create(NULL);
         assert_non_null(B);
 
         for (size_t k = 0; k < (1 << 16); k += offset) {
@@ -158,7 +158,7 @@ DEFINE_TEST(to_uint32_array_test) {
 }
 
 DEFINE_TEST(select_test) {
-    array_container_t* B = array_container_create();
+    array_container_t* B = array_container_create(NULL);
     assert_non_null(B);
     uint16_t base = 27;
     for (uint16_t value = base; value < base + 200; value += 5) {
@@ -180,7 +180,7 @@ DEFINE_TEST(select_test) {
 }
 
 DEFINE_TEST(capacity_test) {
-    array_container_t* array = array_container_create();
+    array_container_t* array = array_container_create(NULL);
     for (uint32_t i = 0; i < DEFAULT_MAX_SIZE; i++) {
         array_container_add(array, (uint16_t)i);
         assert_true(array->capacity <= DEFAULT_MAX_SIZE);

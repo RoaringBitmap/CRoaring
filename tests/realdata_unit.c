@@ -54,7 +54,8 @@ bool serialize_correctly(roaring_bitmap_t *r) {
         free(serialized);
         return false;
     }
-    roaring_bitmap_t *r2 = roaring_bitmap_portable_deserialize(serialized);
+    roaring_bitmap_t *r2 =
+        roaring_bitmap_portable_deserialize(serialized, NULL);
     free(serialized);
     if (!roaring_bitmap_equals(r, r2)) {
         printf("Won't recover original bitmap!\n");

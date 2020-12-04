@@ -8,6 +8,7 @@
 
 #include <string.h>
 
+#include <roaring/options.h>
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>  // roaring_iterator
 #include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
@@ -37,6 +38,7 @@ STRUCT_CONTAINER(array_container_s) {
     int32_t cardinality;
     int32_t capacity;
     uint16_t *array;
+    roaring_options_t *options;
 };
 
 typedef struct array_container_s array_container_t;
@@ -47,14 +49,16 @@ typedef struct array_container_s array_container_t;
 
 /* Create a new array with default. Return NULL in case of failure. See also
  * array_container_create_given_capacity. */
-array_container_t *array_container_create(void);
+array_container_t *array_container_create(roaring_options_t *options);
 
 /* Create a new array with a specified capacity size. Return NULL in case of
  * failure. */
-array_container_t *array_container_create_given_capacity(int32_t size);
+array_container_t *array_container_create_given_capacity(
+    int32_t size, roaring_options_t *options);
 
 /* Create a new array containing all values in [min,max). */
-array_container_t * array_container_create_range(uint32_t min, uint32_t max);
+array_container_t *array_container_create_range(uint32_t min, uint32_t max,
+                                                roaring_options_t *options);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -65,7 +69,8 @@ int array_container_shrink_to_fit(array_container_t *src);
 void array_container_free(array_container_t *array);
 
 /* Duplicate container */
-array_container_t *array_container_clone(const array_container_t *src);
+array_container_t *array_container_clone(const array_container_t *src,
+                                         roaring_options_t *options);
 
 /* Get the cardinality of `array'. */
 static inline int array_container_cardinality(const array_container_t *array) {

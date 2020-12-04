@@ -77,7 +77,7 @@ int main() {
     int size = TESTSIZE;
     tellmeall();
     printf("run container benchmarks\n");
-    run_container_t* B = run_container_create();
+    run_container_t* B = run_container_create(NULL);
     BEST_TIME(add_test(B), 0, repeat, size);
     int answer = contains_test(B);
     size = 1 << 16;
@@ -87,7 +87,7 @@ int main() {
     run_container_free(B);
 
     for (int howmany = 32; howmany <= (1 << 16); howmany *= 8) {
-        run_container_t* Bt = run_container_create();
+        run_container_t* Bt = run_container_create(NULL);
         for (int j = 0; j < howmany; ++j) {
             run_container_add(Bt, (uint16_t)pcg32_random());
         }
@@ -109,17 +109,17 @@ int main() {
     }
     printf("\n");
 
-    run_container_t* B1 = run_container_create();
+    run_container_t* B1 = run_container_create(NULL);
     for (int x = 0; x < 1 << 16; x += 3) {
         run_container_add(B1, (uint16_t)x);
     }
-    run_container_t* B2 = run_container_create();
+    run_container_t* B2 = run_container_create(NULL);
     for (int x = 0; x < 1 << 16; x += 5) {
         run_container_add(B2, (uint16_t)x);
     }
     int32_t inputsize;
     inputsize = B1->n_runs + B2->n_runs;
-    run_container_t* BO = run_container_create();
+    run_container_t* BO = run_container_create(NULL);
     printf("\nUnion and intersections...\n");
     printf("\nNote:\n");
     printf(

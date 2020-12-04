@@ -12,7 +12,7 @@ extern "C" { namespace roaring { namespace internal {
 // file contains grubby stuff that must know impl. details of all container
 // types.
 bitset_container_t *bitset_container_from_array(const array_container_t *a) {
-    bitset_container_t *ans = bitset_container_create();
+    bitset_container_t *ans = bitset_container_create(a->options);
     int limit = array_container_cardinality(a);
     for (int i = 0; i < limit; ++i) bitset_container_set(ans, a->array[i]);
     return ans;
@@ -20,7 +20,7 @@ bitset_container_t *bitset_container_from_array(const array_container_t *a) {
 
 bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     int card = run_container_cardinality(arr);
-    bitset_container_t *answer = bitset_container_create();
+    bitset_container_t *answer = bitset_container_create(arr->options);
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         rle16_t vl = arr->runs[rlepos];
         bitset_set_lenrange(answer->words, vl.value, vl.length);
@@ -30,8 +30,8 @@ bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
 }
 
 array_container_t *array_container_from_run(const run_container_t *arr) {
-    array_container_t *answer =
-        array_container_create_given_capacity(run_container_cardinality(arr));
+    array_container_t *answer = array_container_create_given_capacity(
+        run_container_cardinality(arr), arr->options);
     answer->cardinality = 0;
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         int run_start = arr->runs[rlepos].value;
@@ -46,7 +46,7 @@ array_container_t *array_container_from_run(const run_container_t *arr) {
 
 array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     array_container_t *result =
-        array_container_create_given_capacity(bits->cardinality);
+        array_container_create_given_capacity(bits->cardinality, bits->options);
     result->cardinality = bits->cardinality;
     //  sse version ends up being slower here
     // (bitset_extract_setbits_sse_uint16)
@@ -65,7 +65,8 @@ static void add_run(run_container_t *r, int s, int e) {
 
 run_container_t *run_container_from_array(const array_container_t *c) {
     int32_t n_runs = array_container_number_of_runs(c);
-    run_container_t *answer = run_container_create_given_capacity(n_runs);
+    run_container_t *answer =
+        run_container_create_given_capacity(n_runs, c->options);
     int prev = -2;
     int run_start = -1;
     int32_t card = c->cardinality;
@@ -96,7 +97,8 @@ container_t *convert_to_bitset_or_array_container(
     uint8_t *resulttype
 ){
     if (card <= DEFAULT_MAX_SIZE) {
-        array_container_t *answer = array_container_create_given_capacity(card);
+        array_container_t *answer =
+            array_container_create_given_capacity(card, r->options);
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
             uint16_t run_start = r->runs[rlepos].value;
@@ -111,7 +113,7 @@ container_t *convert_to_bitset_or_array_container(
         //run_container_free(r);
         return answer;
     }
-    bitset_container_t *answer = bitset_container_create();
+    bitset_container_t *answer = bitset_container_create(r->options);
     for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
         uint16_t run_start = r->runs[rlepos].value;
         bitset_set_lenrange(answer->words, run_start, r->runs[rlepos].length);
@@ -150,7 +152,8 @@ container_t *convert_run_to_efficient_container(
     }
     if (card <= DEFAULT_MAX_SIZE) {
         // to array
-        array_container_t *answer = array_container_create_given_capacity(card);
+        array_container_t *answer =
+            array_container_create_given_capacity(card, c->options);
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
             int run_start = c->runs[rlepos].value;
@@ -165,7 +168,7 @@ container_t *convert_run_to_efficient_container(
     }
 
     // else to bitset
-    bitset_container_t *answer = bitset_container_create();
+    bitset_container_t *answer = bitset_container_create(c->options);
 
     for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
         int start = c->runs[rlepos].value;
@@ -196,7 +199,7 @@ container_t *convert_run_to_efficient_container_and_free(
 
 container_t *convert_run_optimize(
     container_t *c, uint8_t typecode_original,
-    uint8_t *typecode_after
+    uint8_t *typecode_after, roaring_options_t *options
 ){
     if (typecode_original == RUN_CONTAINER_TYPE) {
         container_t *newc = convert_run_to_efficient_container(
@@ -220,7 +223,8 @@ container_t *convert_run_optimize(
             return c;
         }
         // else convert array to run container
-        run_container_t *answer = run_container_create_given_capacity(n_runs);
+        run_container_t *answer =
+            run_container_create_given_capacity(n_runs, options);
         int prev = -2;
         int run_start = -1;
 
@@ -258,7 +262,8 @@ container_t *convert_run_optimize(
         // bitset to runcontainer (ported from Java  RunContainer(
         // BitmapContainer bc, int nbrRuns))
         assert(n_runs > 0);  // no empty bitmaps
-        run_container_t *answer = run_container_create_given_capacity(n_runs);
+        run_container_t *answer =
+            run_container_create_given_capacity(n_runs, options);
 
         int long_ctr = 0;
         uint64_t cur_word = c_qua_bitset->words[0];
@@ -309,7 +314,7 @@ container_t *container_from_run_range(
     uint32_t min, uint32_t max, uint8_t *typecode_after
 ){
     // We expect most of the time to end up with a bitset container
-    bitset_container_t *bitset = bitset_container_create();
+    bitset_container_t *bitset = bitset_container_create(run->options);
     *typecode_after = BITSET_CONTAINER_TYPE;
     int32_t union_cardinality = 0;
     for (int32_t i = 0; i < run->n_runs; ++i) {

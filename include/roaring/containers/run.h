@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <roaring/options.h>
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>  // roaring_iterator
 #include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
@@ -60,6 +61,7 @@ STRUCT_CONTAINER(run_container_s) {
     int32_t n_runs;
     int32_t capacity;
     rle16_t *runs;
+    roaring_options_t *options;
 };
 
 typedef struct run_container_s run_container_t;
@@ -69,11 +71,12 @@ typedef struct run_container_s run_container_t;
 #define movable_CAST_run(c) movable_CAST(run_container_t **, c)
 
 /* Create a new run container. Return NULL in case of failure. */
-run_container_t *run_container_create(void);
+run_container_t *run_container_create(roaring_options_t *options);
 
 /* Create a new run container with given capacity. Return NULL in case of
  * failure. */
-run_container_t *run_container_create_given_capacity(int32_t size);
+run_container_t *run_container_create_given_capacity(
+    int32_t size, roaring_options_t *options);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -84,7 +87,8 @@ int run_container_shrink_to_fit(run_container_t *src);
 void run_container_free(run_container_t *run);
 
 /* Duplicate container */
-run_container_t *run_container_clone(const run_container_t *src);
+run_container_t *run_container_clone(const run_container_t *src,
+                                     roaring_options_t *options);
 
 /*
  * Effectively deletes the value at index index, repacking data.
@@ -561,9 +565,9 @@ void run_container_smart_append_exclusive(run_container_t *src,
 * The cardinality of the created container is stop - start.
 * Returns NULL on failure
 */
-static inline run_container_t *run_container_create_range(uint32_t start,
-                                                          uint32_t stop) {
-    run_container_t *rc = run_container_create_given_capacity(1);
+static inline run_container_t *run_container_create_range(
+    uint32_t start, uint32_t stop, roaring_options_t *options) {
+    run_container_t *rc = run_container_create_given_capacity(1, options);
     if (rc) {
         rle16_t r;
         r.value = (uint16_t)start;

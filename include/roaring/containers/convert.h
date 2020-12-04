@@ -42,7 +42,7 @@ container_t *convert_to_bitset_or_array_container(
  * The container might be freed. */
 container_t *convert_run_optimize(
         container_t *c, uint8_t typecode_original,
-        uint8_t *typecode_after);
+        uint8_t *typecode_after, roaring_options_t *options);
 
 /* converts a run container to either an array or a bitset, IF it saves space.
  */

@@ -28,36 +28,41 @@ extern inline bool array_container_empty(const array_container_t *array);
 extern inline bool array_container_full(const array_container_t *array);
 
 /* Create a new array with capacity size. Return NULL in case of failure. */
-array_container_t *array_container_create_given_capacity(int32_t size) {
+array_container_t *array_container_create_given_capacity(
+    int32_t size, roaring_options_t *options) {
     array_container_t *container;
 
-    if ((container = (array_container_t *)malloc(sizeof(array_container_t))) ==
-        NULL) {
+    if ((container = (array_container_t *)roaring_malloc(
+             options, sizeof(array_container_t))) == NULL) {
         return NULL;
     }
 
     if( size <= 0 ) { // we don't want to rely on malloc(0)
         container->array = NULL;
-    } else if ((container->array = (uint16_t *)malloc(sizeof(uint16_t) * size)) ==
-        NULL) {
-        free(container);
+    } else if ((container->array = (uint16_t *)roaring_malloc(
+                    options, sizeof(uint16_t) * size)) == NULL) {
+        roaring_free(options, container);
         return NULL;
     }
 
     container->capacity = size;
     container->cardinality = 0;
+    container->options = options;
 
     return container;
 }
 
 /* Create a new array. Return NULL in case of failure. */
-array_container_t *array_container_create() {
-    return array_container_create_given_capacity(ARRAY_DEFAULT_INIT_SIZE);
+array_container_t *array_container_create(roaring_options_t *options) {
+    return array_container_create_given_capacity(ARRAY_DEFAULT_INIT_SIZE,
+                                                 options);
 }
 
 /* Create a new array containing all values in [min,max). */
-array_container_t * array_container_create_range(uint32_t min, uint32_t max) {
-    array_container_t * answer = array_container_create_given_capacity(max - min + 1);
+array_container_t *array_container_create_range(uint32_t min, uint32_t max,
+                                                roaring_options_t *options) {
+    array_container_t *answer =
+        array_container_create_given_capacity(max - min + 1, options);
     if(answer == NULL) return answer;
     answer->cardinality = 0;
     for(uint32_t k = min; k < max; k++) {
@@ -67,9 +72,10 @@ array_container_t * array_container_create_range(uint32_t min, uint32_t max) {
 }
 
 /* Duplicate container */
-array_container_t *array_container_clone(const array_container_t *src) {
+array_container_t *array_container_clone(const array_container_t *src,
+                                         roaring_options_t *options) {
     array_container_t *newcontainer =
-        array_container_create_given_capacity(src->capacity);
+        array_container_create_given_capacity(src->capacity, options);
     if (newcontainer == NULL) return NULL;
 
     newcontainer->cardinality = src->cardinality;
@@ -83,15 +89,18 @@ array_container_t *array_container_clone(const array_container_t *src) {
 int array_container_shrink_to_fit(array_container_t *src) {
     if (src->cardinality == src->capacity) return 0;  // nothing to do
     int savings = src->capacity - src->cardinality;
+    int32_t old_capacity = src->capacity;
     src->capacity = src->cardinality;
     if( src->capacity == 0) { // we do not want to rely on realloc for zero allocs
-      free(src->array);
+      roaring_free(src->options, src->array);
       src->array = NULL;
     } else {
       uint16_t *oldarray = src->array;
-      src->array =
-        (uint16_t *)realloc(oldarray, src->capacity * sizeof(uint16_t));
-      if (src->array == NULL) free(oldarray);  // should never happen?
+      src->array = (uint16_t *)roaring_realloc(
+          src->options, oldarray, old_capacity * sizeof(uint16_t),
+          src->capacity * sizeof(uint16_t));
+      if (src->array == NULL)
+          roaring_free(src->options, oldarray);  // should never happen?
     }
     return savings;
 }
@@ -99,10 +108,10 @@ int array_container_shrink_to_fit(array_container_t *src) {
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
     if(arr->array != NULL) {// Jon Strabala reports that some tools complain otherwise
-      free(arr->array);
+      roaring_free(arr->options, arr->array);
       arr->array = NULL; // pedantic
     }
-    free(arr);
+    roaring_free(arr->options, arr);
 }
 
 static inline int32_t grow_capacity(int32_t capacity) {
@@ -121,20 +130,23 @@ void array_container_grow(array_container_t *container, int32_t min,
 
     int32_t max = (min <= DEFAULT_MAX_SIZE ? DEFAULT_MAX_SIZE : 65536);
     int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
+    int32_t old_capacity = container->capacity;
 
     container->capacity = new_capacity;
     uint16_t *array = container->array;
 
     if (preserve) {
-        container->array =
-            (uint16_t *)realloc(array, new_capacity * sizeof(uint16_t));
-        if (container->array == NULL) free(array);
+        container->array = (uint16_t *)roaring_realloc(
+            container->options, array, old_capacity * sizeof(uint16_t),
+            new_capacity * sizeof(uint16_t));
+        if (container->array == NULL) roaring_free(container->options, array);
     } else {
         // Jon Strabala reports that some tools complain otherwise
         if (array != NULL) {
-          free(array);
+          roaring_free(container->options, array);
         }
-        container->array = (uint16_t *)malloc(new_capacity * sizeof(uint16_t));
+        container->array = (uint16_t *)roaring_malloc(
+            container->options, new_capacity * sizeof(uint16_t));
     }
 
     //  handle the case where realloc fails

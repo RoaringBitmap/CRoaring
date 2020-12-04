@@ -51,13 +51,13 @@ static inline container_t *container_create(uint8_t typecode) {
     container_t *result = NULL;
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
-            result = bitset_container_create();
+            result = bitset_container_create(NULL);
             break;
         case ARRAY_CONTAINER_TYPE:
-            result = array_container_create();
+            result = array_container_create(NULL);
             break;
         case RUN_CONTAINER_TYPE:
-            result = run_container_create();
+            result = run_container_create(NULL);
             break;
         default:
             assert(false);

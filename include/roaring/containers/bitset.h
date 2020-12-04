@@ -6,6 +6,7 @@
 #ifndef INCLUDE_CONTAINERS_BITSET_H_
 #define INCLUDE_CONTAINERS_BITSET_H_
 
+#include <roaring/options.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -39,6 +40,7 @@ enum {
 STRUCT_CONTAINER(bitset_container_s) {
     int32_t cardinality;
     uint64_t *words;
+    roaring_options_t *options;
 };
 
 typedef struct bitset_container_s bitset_container_t;
@@ -48,7 +50,7 @@ typedef struct bitset_container_s bitset_container_t;
 #define movable_CAST_bitset(c) movable_CAST(bitset_container_t **, c)
 
 /* Create a new bitset. Return NULL in case of failure. */
-bitset_container_t *bitset_container_create(void);
+bitset_container_t *bitset_container_create(roaring_options_t *options);
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset);
@@ -60,7 +62,8 @@ void bitset_container_clear(bitset_container_t *bitset);
 void bitset_container_set_all(bitset_container_t *bitset);
 
 /* Duplicate bitset */
-bitset_container_t *bitset_container_clone(const bitset_container_t *src);
+bitset_container_t *bitset_container_clone(const bitset_container_t *src,
+                                           roaring_options_t *options);
 
 /* Set the bit in [begin,end). WARNING: as of April 2016, this method is slow
  * and

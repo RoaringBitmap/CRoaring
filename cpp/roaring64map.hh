@@ -32,43 +32,85 @@ class Roaring64Map {
     /**
      * Create an empty bitmap
      */
-    Roaring64Map() = default;
+    Roaring64Map(roaring_options_t *opts = NULL) { setOptions(opts); };
 
     /**
      * Construct a bitmap from a list of 32-bit integer values.
      */
-    Roaring64Map(size_t n, const uint32_t *data) { addMany(n, data); }
+    Roaring64Map(size_t n, const uint32_t *data,
+                 roaring_options_t *opts = NULL) {
+        setOptions(opts);
+        addMany(n, data);
+    }
 
     /**
      * Construct a bitmap from a list of 64-bit integer values.
      */
-    Roaring64Map(size_t n, const uint64_t *data) { addMany(n, data); }
+    Roaring64Map(size_t n, const uint64_t *data,
+                 roaring_options_t *opts = NULL) {
+        setOptions(opts);
+        addMany(n, data);
+    }
 
     /**
      * Construct a 64-bit map from a 32-bit one
      */
-    Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
+    Roaring64Map(const Roaring &r) {
+        setOptions(r.roaring.options);
+        emplaceOrInsert(0, r);
+    }
 
     /**
      * Construct a roaring object from the C struct.
      *
      * Passing a NULL point is unsafe.
      */
-    Roaring64Map(roaring_bitmap_t *s) { emplaceOrInsert(0, s); }
+    Roaring64Map(roaring_bitmap_t *s) {
+        setOptions(s->options);
+        emplaceOrInsert(0, s);
+    }
 
-    Roaring64Map(const Roaring64Map& r)
-      : roarings(r.roarings),
-        copyOnWrite(r.copyOnWrite) { }
+    /**
+     * Destructor
+     */
+    ~Roaring64Map() {
+        if (options != NULL) {
+            // need to keep these so they can free themselves
+            roaring_options_t *opt = options;
+            roaring_memory_t *mem = opt->memory;
+            roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
+            roaring_free(&tmp_opts, opt);  // free options struct
+            roaring_free(&tmp_opts, mem);  // free memory struct
+        }
+    }
 
-    Roaring64Map(Roaring64Map&& r)
-      : roarings(r.roarings),
-        copyOnWrite(r.copyOnWrite) { }
+    /**
+     * Copy constructor
+     */
+    Roaring64Map(const Roaring64Map &r, roaring_options_t *opts = NULL) {
+        setOptions(opts);
+        for (auto &map_entry : r.roarings) {
+            roarings.emplace(std::piecewise_construct,
+                             std::forward_as_tuple(map_entry.first),
+                             std::forward_as_tuple(map_entry.second, opts));
+        }
+    }
+
+    /**
+     * Move constructor. The moved object remains valid, i.e.
+     * all methods can still be called on it.
+     */
+    Roaring64Map(Roaring64Map &&r) noexcept {
+        roarings = std::move(r.roarings);
+        setOptions(r.options);
+    }
 
 	/**
 	 * Assignment operator.
 	 */
 	Roaring64Map &operator=(const Roaring64Map &r) {
 		roarings = r.roarings;
+        setOptions(r.options);
 		return *this;
 	}
 
@@ -86,15 +128,59 @@ class Roaring64Map {
         return ans;
     }
 
+    static Roaring64Map bitmapOfWithOpts(size_t n, roaring_options_t *options,
+                                         ...) {
+        Roaring64Map ans(options);
+        va_list vl;
+        va_start(vl, options);
+        for (size_t i = 0; i < n; i++) {
+            ans.add(va_arg(vl, uint64_t));
+        }
+        va_end(vl);
+        return ans;
+    }
+
+    /**
+     * Copies and applies the provided option struct.
+     * Should only be called before bit manipulation.
+     */
+    void setOptions(roaring_options_t *opts) {
+        // only set options once
+        if (options != NULL) {
+            return;
+        }
+
+        // incoming options are null
+        if (opts == NULL) {
+            options = NULL;
+        } else {
+            // incoming options are non-null
+            options = (roaring_options_t *)roaring_malloc(
+                opts, sizeof(roaring_options_t));
+            memcpy(options, opts, sizeof(roaring_options_t));
+
+            // incoming memory struct is non-null
+            if (opts->memory != NULL) {
+                options->memory = (roaring_memory_t *)roaring_malloc(
+                    opts, sizeof(roaring_memory_t));
+                memcpy(options->memory, opts->memory, sizeof(roaring_memory_t));
+            } else {
+                options->memory = NULL;
+            }
+        }
+    }
+
     /**
      * Add value x
      *
      */
     void add(uint32_t x) {
+        roarings[0].setOptions(options);
         roarings[0].add(x);
         roarings[0].setCopyOnWrite(copyOnWrite);
     }
     void add(uint64_t x) {
+        roarings[highBytes(x)].setOptions(options);
         roarings[highBytes(x)].add(lowBytes(x));
         roarings[highBytes(x)].setCopyOnWrite(copyOnWrite);
     }
@@ -104,11 +190,13 @@ class Roaring64Map {
      * Returns true if a new value was added, false if the value was already existing.
      */
     bool addChecked(uint32_t x) {
+        roarings[0].setOptions(options);
         bool result = roarings[0].addChecked(x);
         roarings[0].setCopyOnWrite(copyOnWrite);
         return result;
     }
     bool addChecked(uint64_t x) {
+        roarings[highBytes(x)].setOptions(options);
         bool result = roarings[highBytes(x)].addChecked(lowBytes(x));
         roarings[highBytes(x)].setCopyOnWrite(copyOnWrite);
         return result;
@@ -120,12 +208,14 @@ class Roaring64Map {
      */
     void addMany(size_t n_args, const uint32_t *vals) {
         for (size_t lcv = 0; lcv < n_args; lcv++) {
+            roarings[0].setOptions(options);
             roarings[0].add(vals[lcv]);
             roarings[0].setCopyOnWrite(copyOnWrite);
         }
     }
     void addMany(size_t n_args, const uint64_t *vals) {
         for (size_t lcv = 0; lcv < n_args; lcv++) {
+            roarings[highBytes(vals[lcv])].setOptions(options);
             roarings[highBytes(vals[lcv])].add(lowBytes(vals[lcv]));
             roarings[highBytes(vals[lcv])].setCopyOnWrite(copyOnWrite);
         }
@@ -604,8 +694,9 @@ class Roaring64Map {
      * This function is unsafe in the sense that if you provide bad data,
      * many bytes could be read, possibly causing a buffer overflow. See also readSafe.
      */
-    static Roaring64Map read(const char *buf, bool portable = true) {
-        Roaring64Map result;
+    static Roaring64Map read(const char *buf, bool portable = true,
+                             roaring_options_t *options = NULL) {
+        Roaring64Map result(options);
         // get map size
         uint64_t map_size = *((uint64_t *)buf);
         buf += sizeof(uint64_t);
@@ -617,7 +708,7 @@ class Roaring64Map {
 
             buf += sizeof(uint32_t);
             // read map value Roaring
-            Roaring read = Roaring::read(buf, portable);
+            Roaring read = Roaring::read(buf, portable, options);
             result.emplaceOrInsert(key, read);
             // forward buffer past the last Roaring Bitmap
             buf += read.getSizeInBytes(portable);
@@ -633,8 +724,9 @@ class Roaring64Map {
      * can save space compared to the portable format (e.g., for very
      * sparse bitmaps).
      */
-    static Roaring64Map readSafe(const char *buf, size_t maxbytes) {
-        Roaring64Map result;
+    static Roaring64Map readSafe(const char *buf, size_t maxbytes,
+                                 roaring_options_t *options = NULL) {
+        Roaring64Map result(options);
         // get map size
         uint64_t map_size = *((uint64_t *)buf);
         buf += sizeof(uint64_t);
@@ -650,7 +742,7 @@ class Roaring64Map {
             buf += sizeof(uint32_t);
             maxbytes -= sizeof(uint32_t);
             // read map value Roaring
-            Roaring read = Roaring::readSafe(buf, maxbytes);
+            Roaring read = Roaring::readSafe(buf, maxbytes, options);
             result.emplaceOrInsert(key, read);
             // forward buffer past the last Roaring Bitmap
             size_t tz = read.getSizeInBytes(true);
@@ -703,7 +795,7 @@ class Roaring64Map {
      * The current bitmap and the provided bitmap are unchanged.
      */
     Roaring64Map operator|(const Roaring64Map &o) const {
-        return Roaring64Map(*this) |= o;
+        return Roaring64Map(*this, options) |= o;
     }
 
     /**
@@ -822,8 +914,9 @@ class Roaring64Map {
      * computes the logical or (union) between "n" bitmaps (referenced by a
      * pointer).
      */
-    static Roaring64Map fastunion(size_t n, const Roaring64Map **inputs) {
-        Roaring64Map ans;
+    static Roaring64Map fastunion(size_t n, const Roaring64Map **inputs,
+                                  roaring_options_t *options = NULL) {
+        Roaring64Map ans(options);
         // not particularly fast
         for (size_t lcv = 0; lcv < n; ++lcv) {
             ans |= *(inputs[lcv]);
@@ -856,8 +949,11 @@ class Roaring64Map {
     */
     const_iterator end() const;
 	
+    const std::map<uint32_t, Roaring> &getBitmaps() const { return roarings; }
+
    private:
     std::map<uint32_t, Roaring> roarings;
+    roaring_options_t *options = NULL;
     bool copyOnWrite = false;
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }

@@ -115,10 +115,10 @@ void array_run_container_intersection(const array_container_t *src_1,
  * is attempted.*/
 bool run_bitset_container_intersection(
     const run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     if (run_container_is_full(src_1)) {
-        if (*dst != src_2) *dst = bitset_container_clone(src_2);
+        if (*dst != src_2) *dst = bitset_container_clone(src_2, options);
         return true;
     }
     int32_t card = run_container_cardinality(src_1);
@@ -128,7 +128,8 @@ bool run_bitset_container_intersection(
         if (card > src_2->cardinality) {
             card = src_2->cardinality;
         }
-        array_container_t *answer = array_container_create_given_capacity(card);
+        array_container_t *answer =
+            array_container_create_given_capacity(card, options);
         *dst = answer;
         if (*dst == NULL) {
             return false;
@@ -170,7 +171,7 @@ bool run_bitset_container_intersection(
         }
     } else {  // no inplace
         // we expect the answer to be a bitmap (if we are lucky)
-        bitset_container_t *answer = bitset_container_clone(src_2);
+        bitset_container_t *answer = bitset_container_clone(src_2, options);
 
         *dst = answer;
         if (answer == NULL) {
@@ -308,14 +309,15 @@ bool bitset_bitset_container_intersection(
 ){
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
     if (newCardinality > DEFAULT_MAX_SIZE) {
-        *dst = bitset_container_create();
+        *dst = bitset_container_create(src_1->options);
         if (*dst != NULL) {
             bitset_container_and_nocard(src_1, src_2, CAST_bitset(*dst));
             CAST_bitset(*dst)->cardinality = newCardinality;
         }
         return true;  // it is a bitset
     }
-    *dst = array_container_create_given_capacity(newCardinality);
+    *dst =
+        array_container_create_given_capacity(newCardinality, src_1->options);
     if (*dst != NULL) {
         CAST_array(*dst)->cardinality = newCardinality;
         bitset_extract_intersection_setbits_uint16(
@@ -336,7 +338,8 @@ bool bitset_bitset_container_intersection_inplace(
         CAST_bitset(*dst)->cardinality = newCardinality;
         return true;  // it is a bitset
     }
-    *dst = array_container_create_given_capacity(newCardinality);
+    *dst =
+        array_container_create_given_capacity(newCardinality, src_1->options);
     if (*dst != NULL) {
         CAST_array(*dst)->cardinality = newCardinality;
         bitset_extract_intersection_setbits_uint16(

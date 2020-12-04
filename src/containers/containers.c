@@ -17,22 +17,22 @@ extern inline int container_get_cardinality(
 extern inline container_t *container_iand(
         container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_ior(
         container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_ixor(
         container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_typel, roaring_options_t *options);
 
 extern inline container_t *container_iandnot(
         container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_typem, roaring_options_t *options);
 
 void container_free(container_t *c, uint8_t type) {
     switch (type) {
@@ -116,21 +116,21 @@ extern inline bool container_contains(
 extern inline container_t *container_and(
         const container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_or(
         const container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_xor(
         const container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 container_t *get_copy_of_container(
     container_t *c, uint8_t *typecode,
-    bool copy_on_write
+    bool copy_on_write, roaring_options_t *options
 ){
     if (copy_on_write) {
         shared_container_t *shared_container;
@@ -141,11 +141,12 @@ container_t *get_copy_of_container(
         }
         assert(*typecode != SHARED_CONTAINER_TYPE);
 
-        if ((shared_container = (shared_container_t *)malloc(
-                 sizeof(shared_container_t))) == NULL) {
+        if ((shared_container = (shared_container_t *)roaring_malloc(
+                 options, sizeof(shared_container_t))) == NULL) {
             return NULL;
         }
 
+        shared_container->options = options;
         shared_container->container = c;
         shared_container->typecode = *typecode;
 
@@ -157,22 +158,23 @@ container_t *get_copy_of_container(
     // otherwise, no copy on write...
     const container_t *actual_container = container_unwrap_shared(c, typecode);
     assert(*typecode != SHARED_CONTAINER_TYPE);
-    return container_clone(actual_container, *typecode);
+    return container_clone(actual_container, *typecode, options);
 }
 
 /**
  * Copies a container, requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
-container_t *container_clone(const container_t *c, uint8_t typecode) {
+container_t *container_clone(const container_t *c, uint8_t typecode,
+                             roaring_options_t *options) {
     c = container_unwrap_shared(c, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
-            return bitset_container_clone(const_CAST_bitset(c));
+            return bitset_container_clone(const_CAST_bitset(c), options);
         case ARRAY_CONTAINER_TYPE:
-            return array_container_clone(const_CAST_array(c));
+            return array_container_clone(const_CAST_array(c), options);
         case RUN_CONTAINER_TYPE:
-            return run_container_clone(const_CAST_run(c));
+            return run_container_clone(const_CAST_run(c), options);
         case SHARED_CONTAINER_TYPE:
             printf("shared containers are not cloneable\n");
             assert(false);
@@ -195,9 +197,10 @@ container_t *shared_container_extract_copy(
     if (sc->counter == 0) {
         answer = sc->container;
         sc->container = NULL;  // paranoid
-        free(sc);
+        roaring_free(sc->options, sc);
     } else {
-        answer = container_clone(sc->container, *typecode);
+        answer = container_clone(sc->container, *typecode,
+                                 sc->options);
     }
     assert(*typecode != SHARED_CONTAINER_TYPE);
     return answer;
@@ -210,22 +213,22 @@ void shared_container_free(shared_container_t *container) {
         assert(container->typecode != SHARED_CONTAINER_TYPE);
         container_free(container->container, container->typecode);
         container->container = NULL;  // paranoid
-        free(container);
+        roaring_free(container->options, container);
     }
 }
 
 extern inline container_t *container_not(
         const container_t *c1, uint8_t type1,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_not_range(
         const container_t *c1, uint8_t type1,
         uint32_t range_start, uint32_t range_end,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_inot(
         container_t *c1, uint8_t type1,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_inot_range(
         container_t *c1, uint8_t type1,
@@ -234,23 +237,23 @@ extern inline container_t *container_inot_range(
 
 extern inline container_t *container_range_of_ones(
         uint32_t range_start, uint32_t range_end,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 // where are the correponding things for union and intersection??
 extern inline container_t *container_lazy_xor(
         const container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_lazy_ixor(
         container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 extern inline container_t *container_andnot(
         const container_t *c1, uint8_t type1,
         const container_t *c2, uint8_t type2,
-        uint8_t *result_type);
+        uint8_t *result_type, roaring_options_t *options);
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {

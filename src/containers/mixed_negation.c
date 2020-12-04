@@ -44,9 +44,10 @@ void array_container_negation(const array_container_t *src,
  * case of failure, *dst will be NULL.
  */
 bool bitset_container_negation(
-    const bitset_container_t *src, container_t **dst
+    const bitset_container_t *src, container_t **dst,
+    roaring_options_t *options
 ){
-    return bitset_container_negation_range(src, 0, (1 << 16), dst);
+    return bitset_container_negation_range(src, 0, (1 << 16), dst, options);
 }
 
 /* inplace version */
@@ -70,8 +71,9 @@ bool bitset_container_negation_inplace(
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
-int run_container_negation(const run_container_t *src, container_t **dst) {
-    return run_container_negation_range(src, 0, (1 << 16), dst);
+int run_container_negation(const run_container_t *src, container_t **dst,
+                           roaring_options_t *options) {
+    return run_container_negation_range(src, 0, (1 << 16), dst, options);
 }
 
 /*
@@ -93,11 +95,11 @@ int run_container_negation_inplace(run_container_t *src, container_t **dst) {
 bool array_container_negation_range(
     const array_container_t *src,
     const int range_start, const int range_end,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     /* close port of the Java implementation */
     if (range_start >= range_end) {
-        *dst = array_container_clone(src);
+        *dst = array_container_clone(src, options);
         return false;
     }
 
@@ -127,7 +129,7 @@ bool array_container_negation_range(
     }
 
     array_container_t *arr =
-        array_container_create_given_capacity(new_cardinality);
+        array_container_create_given_capacity(new_cardinality, options);
     *dst = (container_t *)arr;
     if(new_cardinality == 0) {
       arr->cardinality = new_cardinality;
@@ -165,7 +167,7 @@ bool array_container_negation_range_inplace(
     const int range_start, const int range_end,
     container_t **dst
 ){
-    bool ans = array_container_negation_range(src, range_start, range_end, dst);
+    bool ans = array_container_negation_range(src, range_start, range_end, dst, src->options);
     // TODO : try a real inplace version
     array_container_free(src);
     return ans;
@@ -181,7 +183,7 @@ bool array_container_negation_range_inplace(
 bool bitset_container_negation_range(
     const bitset_container_t *src,
     const int range_start, const int range_end,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     // TODO maybe consider density-based estimate
     // and sometimes build result directly as array, with
@@ -189,7 +191,7 @@ bool bitset_container_negation_range(
     // actual result cardinality, then go directly for the known final cont.
 
     // keep computation using bitsets as long as possible.
-    bitset_container_t *t = bitset_container_clone(src);
+    bitset_container_t *t = bitset_container_clone(src, options);
     bitset_flip_range(t->words, (uint32_t)range_start, (uint32_t)range_end);
     t->cardinality = bitset_container_compute_cardinality(t);
 
@@ -237,18 +239,18 @@ bool bitset_container_negation_range_inplace(
 int run_container_negation_range(
     const run_container_t *src,
     const int range_start, const int range_end,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     uint8_t return_typecode;
 
     // follows the Java implementation
     if (range_end <= range_start) {
-        *dst = run_container_clone(src);
+        *dst = run_container_clone(src, options);
         return RUN_CONTAINER_TYPE;
     }
 
     run_container_t *ans = run_container_create_given_capacity(
-        src->n_runs + 1);  // src->n_runs + 1);
+        src->n_runs + 1, options);  // src->n_runs + 1);
     int k = 0;
     for (; k < src->n_runs && src->runs[k].value < range_start; ++k) {
         ans->runs[k] = src->runs[k];
@@ -311,8 +313,8 @@ int run_container_negation_range_inplace(
 
             if (last_val_in_range ==
                 first_val_past_range) {  // no space for inplace
-                int ans = run_container_negation_range(src, range_start,
-                                                       range_end, dst);
+                int ans = run_container_negation_range(
+                    src, range_start, range_end, dst, src->options);
                 run_container_free(src);
                 return ans;
             }

@@ -55,7 +55,7 @@ void test_deserialize(char* filename) {
     assert_non_null(input_buffer);
 
     roaring_bitmap_t* bitmap =
-        roaring_bitmap_portable_deserialize(input_buffer);
+        roaring_bitmap_portable_deserialize(input_buffer, NULL);
     assert_non_null(bitmap);
 
     size_t expected_size = roaring_bitmap_portable_size_in_bytes(bitmap);

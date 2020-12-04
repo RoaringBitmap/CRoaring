@@ -29,22 +29,29 @@ class Roaring {
      * Create an empty bitmap in the existing memory for the class.
      * The bitmap will be in the "clear" state with no auxiliary allocations.
      */
-    Roaring() {
-        api::roaring_bitmap_init_cleared(&roaring);
+    Roaring(roaring_options_t *options = NULL) {
+        setOptions(options);
+        internal::ra_init(&roaring.high_low_container);
     }
 
     /**
      * Construct a bitmap from a list of integer values.
      */
-    Roaring(size_t n, const uint32_t *data) : Roaring() {
-        api::roaring_bitmap_add_many(&roaring, n, data);
+    Roaring(size_t n, const uint32_t *data, roaring_options_t *opts = NULL)
+        : Roaring() {
+        setOptions(opts);
+        roaring_bitmap_add_many(&roaring, n, data);
     }
 
     /**
      * Copy constructor
      */
-    Roaring(const Roaring &r) : Roaring() {
-        if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
+    Roaring(const Roaring &r, roaring_options_t *opts = NULL) {
+        setOptions(opts);
+        bool is_ok =
+            internal::ra_copy(&r.roaring.high_low_container, &roaring.high_low_container,
+                    roaring_bitmap_get_copy_on_write(&r.roaring));
+        if (!is_ok) {
             throw std::runtime_error("failed memory alloc in constructor");
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
@@ -56,15 +63,20 @@ class Roaring {
      * all methods can still be called on it.
      */
     Roaring(Roaring &&r) noexcept {
-        //
-        // !!! This clones the bits of the roaring structure to a new location
-        // and then overwrites the old bits...assuming that this will still
-        // work.  There are scenarios where this could break; e.g. if some of
-        // those bits were pointers into the structure memory itself.  If such
-        // things were possible, a roaring_bitmap_move() API would be needed.
-        //
-        roaring = r.roaring;
-        api::roaring_bitmap_init_cleared(&r.roaring);
+        // if options set, free the memory before moving
+        if (roaring.options != NULL) {
+            // need to keep these so they can free themselves
+            roaring_options_t *opt = roaring.options;
+            roaring_memory_t *mem = opt->memory;
+            roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
+            roaring_free(&tmp_opts, opt);  // free options struct
+            roaring_free(&tmp_opts, mem);  // free memory struct
+        }
+
+        roaring = std::move(r.roaring);
+        r.roaring.options = NULL;  // mark moved options as null
+        r.roaring.high_low_container.options = NULL;
+        internal::ra_init(&r.roaring.high_low_container);
     }
 
     /**
@@ -75,7 +87,7 @@ class Roaring {
      */
     Roaring(roaring_bitmap_t *s) noexcept {
         roaring = *s;  // steal the content of the roaring_bitmap_t
-        free(s);  // deallocate the passed-in pointer
+        roaring_free(s->options, s); // deallocate the passed-in pointer
     }
 
     /**
@@ -90,6 +102,40 @@ class Roaring {
         }
         va_end(vl);
         return ans;
+    }
+
+    /**
+     * Construct a bitmap from a list of integer values.
+     */
+    static Roaring bitmapOfWithOpts(size_t n, roaring_options_t *options, ...) {
+        Roaring ans(options);
+        va_list vl;
+        va_start(vl, options);
+        for (size_t i = 0; i < n; i++) {
+            ans.add(va_arg(vl, uint32_t));
+        }
+        va_end(vl);
+        return ans;
+    }
+
+    /**
+     * Copies and applies the provided option struct.
+     * Should only be called before bit manipulation.
+     */
+    void setOptions(roaring_options_t *opts) {
+        // only set options once
+        if (roaring.options != NULL) {
+            return;
+        }
+
+        // incoming options are null
+        if (opts == NULL) {
+            roaring.options = NULL;
+        } else {
+            roaring.options = api::roaring_options_copy(opts);
+        }
+
+        roaring.high_low_container.options = roaring.options;
     }
 
     /**
@@ -165,14 +211,31 @@ class Roaring {
      * Destructor.  By contract, calling roaring_bitmap_clear() is enough to
      * release all auxiliary memory used by the structure.
      */
-    ~Roaring() { api::roaring_bitmap_clear(&roaring); }
+    ~Roaring() {
+        internal::ra_clear(&roaring.high_low_container);
+
+        if (roaring.options != NULL) {
+            // need to keep these so they can free themselves
+            roaring_options_t *opt = roaring.options;
+            roaring_memory_t *mem = opt->memory;
+            roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
+            roaring_free(&tmp_opts, opt);  // free options struct
+            roaring_free(&tmp_opts, mem);  // free memory struct
+        }
+    }
 
     /**
      * Copies the content of the provided bitmap, and
      * discard the current content.
      */
     Roaring &operator=(const Roaring &r) {
-        if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
+        internal::ra_clear(&roaring.high_low_container);
+        roaring.high_low_container.options =
+            roaring.options;  // re-set this after clear
+        bool is_ok =
+            internal::ra_copy(&r.roaring.high_low_container, &roaring.high_low_container,
+                    roaring_bitmap_get_copy_on_write(&r.roaring));
+        if (!is_ok) {
             throw std::runtime_error("failed memory alloc in assignment");
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
@@ -185,13 +248,22 @@ class Roaring {
      * discard the current content.
      */
     Roaring &operator=(Roaring &&r) noexcept {
-        api::roaring_bitmap_clear(&roaring);  // free this class's allocations
+        internal::ra_clear(&roaring.high_low_container);
 
-        // !!! See notes in the Move Constructor regaring roaring_bitmap_move()
-        //
-        roaring = r.roaring;
-        api::roaring_bitmap_init_cleared(&r.roaring);
+        // if options set, free the memory before moving
+        if (roaring.options != NULL) {
+            // need to keep these so they can free themselves
+            roaring_options_t *opt = roaring.options;
+            roaring_memory_t *mem = opt->memory;
+            roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
+            roaring_free(&tmp_opts, opt);  // free options struct
+            roaring_free(&tmp_opts, mem);  // free memory struct
+        }
 
+        roaring = std::move(r.roaring);
+        r.roaring.options = NULL;  // mark moved options as null
+        r.roaring.high_low_container.options = NULL;
+        internal::ra_init(&r.roaring.high_low_container);
         return *this;
     }
 
@@ -471,10 +543,11 @@ class Roaring {
      * This function is unsafe in the sense that if you provide bad data,
      * many, many bytes could be read. See also readSafe.
      */
-    static Roaring read(const char *buf, bool portable = true) {
+    static Roaring read(const char *buf, bool portable = true,
+                        roaring_options_t *options = NULL) {
         roaring_bitmap_t * r = portable
-            ? api::roaring_bitmap_portable_deserialize(buf)
-            : api::roaring_bitmap_deserialize(buf);
+            ? api::roaring_bitmap_portable_deserialize(buf, options)
+            : api::roaring_bitmap_deserialize(buf, options);
         if (r == NULL) {
             throw std::runtime_error("failed alloc while reading");
         }
@@ -485,9 +558,10 @@ class Roaring {
      * This is meant to be compatible with the Java and Go versions.
      *
      */
-    static Roaring readSafe(const char *buf, size_t maxbytes) {
-        roaring_bitmap_t * r =
-                api::roaring_bitmap_portable_deserialize_safe(buf,maxbytes);
+    static Roaring readSafe(const char *buf, size_t maxbytes,
+                            roaring_options_t *options = NULL) {
+        roaring_bitmap_t *r =
+            api::roaring_bitmap_portable_deserialize_safe(buf, maxbytes, options);
         if (r == NULL) {
             throw std::runtime_error("failed alloc while reading");
         }
@@ -605,21 +679,23 @@ class Roaring {
      * computes the logical or (union) between "n" bitmaps (referenced by a
      * pointer).
      */
-    static Roaring fastunion(size_t n, const Roaring **inputs) {
-        const roaring_bitmap_t **x =
-            (const roaring_bitmap_t **)malloc(n * sizeof(roaring_bitmap_t *));
+    static Roaring fastunion(size_t n, const Roaring **inputs,
+                             roaring_options_t *options = NULL) {
+        const roaring_bitmap_t **x = (const roaring_bitmap_t **)roaring_malloc(
+            options, n * sizeof(roaring_bitmap_t *));
         if (x == NULL) {
             throw std::runtime_error("failed memory alloc in fastunion");
         }
         for (size_t k = 0; k < n; ++k) x[k] = &inputs[k]->roaring;
 
-        roaring_bitmap_t *c_ans = api::roaring_bitmap_or_many(n, x);
+        roaring_bitmap_t *c_ans =
+            api::roaring_bitmap_or_many_with_opts(n, x, options);
         if (c_ans == NULL) {
-            free(x);
+            roaring_free(options, x);
             throw std::runtime_error("failed memory alloc in fastunion");
         }
-        Roaring ans(c_ans);
-        free(x);
+        Roaring ans(c_ans, options);
+        roaring_free(options, x);
         return ans;
     }
 
@@ -645,7 +721,7 @@ class Roaring {
     */
     const_iterator &end() const;
 
-    roaring_bitmap_t roaring;
+    roaring_bitmap_t roaring = {.options = NULL};
 };
 
 /**

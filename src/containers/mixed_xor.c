@@ -22,7 +22,7 @@ bool array_bitset_container_xor(
     const array_container_t *src_1, const bitset_container_t *src_2,
     container_t **dst
 ){
-    bitset_container_t *result = bitset_container_create();
+    bitset_container_t *result = bitset_container_create(src_1->options);
     bitset_container_copy(src_2, result);
     result->cardinality = (int32_t)bitset_flip_list_withcard(
         result->words, result->cardinality, src_1->array, src_1->cardinality);
@@ -59,9 +59,9 @@ void array_bitset_container_lazy_xor(const array_container_t *src_1,
 
 bool run_bitset_container_xor(
     const run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
-    bitset_container_t *result = bitset_container_create();
+    bitset_container_t *result = bitset_container_create(src_1->options);
 
     bitset_container_copy(src_2, result);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
@@ -113,7 +113,7 @@ int array_run_container_xor(
     // use of lazy following Java impl.
     const int arbitrary_threshold = 32;
     if (src_1->cardinality < arbitrary_threshold) {
-        run_container_t *ans = run_container_create();
+        run_container_t *ans = run_container_create(src_1->options);
         array_run_container_lazy_xor(src_1, src_2, ans);  // keeps runs.
         uint8_t typecode_after;
         *dst =
@@ -184,7 +184,7 @@ int run_run_container_xor(
     const run_container_t *src_1, const run_container_t *src_2,
     container_t **dst
 ){
-    run_container_t *ans = run_container_create();
+    run_container_t *ans = run_container_create(src_1->options);
     run_container_xor(src_1, src_2, ans);
     uint8_t typecode_after;
     *dst = convert_run_to_efficient_container_and_free(ans, &typecode_after);
@@ -206,7 +206,7 @@ bool array_array_container_xor(
     int totalCardinality =
         src_1->cardinality + src_2->cardinality;  // upper bound
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
-        *dst = array_container_create_given_capacity(totalCardinality);
+        *dst = array_container_create_given_capacity(totalCardinality, src_1->options);
         array_container_xor(src_1, src_2, CAST_array(*dst));
         return false;  // not a bitset
     }
@@ -232,7 +232,8 @@ bool array_array_container_lazy_xor(
     int totalCardinality = src_1->cardinality + src_2->cardinality;
     // upper bound, but probably poor estimate for xor
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
-        *dst = array_container_create_given_capacity(totalCardinality);
+        *dst = array_container_create_given_capacity(totalCardinality,
+                                                     src_1->options);
         if (*dst != NULL)
             array_container_xor(src_1, src_2, CAST_array(*dst));
         return false;  // not a bitset
@@ -256,7 +257,7 @@ bool bitset_bitset_container_xor(
     const bitset_container_t *src_1, const bitset_container_t *src_2,
     container_t **dst
 ){
-    bitset_container_t *ans = bitset_container_create();
+    bitset_container_t *ans = bitset_container_create(src_1->options);
     int card = bitset_container_xor(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);
@@ -323,18 +324,18 @@ bool array_bitset_container_ixor(
 
 bool run_bitset_container_ixor(
     run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
-    bool ans = run_bitset_container_xor(src_1, src_2, dst);
+    bool ans = run_bitset_container_xor(src_1, src_2, dst, options);
     run_container_free(src_1);
     return ans;
 }
 
 bool bitset_run_container_ixor(
     bitset_container_t *src_1, const run_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
-    bool ans = run_bitset_container_xor(src_2, src_1, dst);
+    bool ans = run_bitset_container_xor(src_2, src_1, dst, options);
     bitset_container_free(src_1);
     return ans;
 }

@@ -85,16 +85,16 @@ int get_test(bitset_container_t* B) {
 
 void benchmark_logical_operations() {
     printf("\nLogical operations (time units per single operation):\n");
-    bitset_container_t* B1 = bitset_container_create();
+    bitset_container_t* B1 = bitset_container_create(NULL);
     for (int x = 0; x < 1 << 16; x += 3) {
         bitset_container_set(B1, (uint16_t)x);
     }
-    bitset_container_t* B2 = bitset_container_create();
+    bitset_container_t* B2 = bitset_container_create(NULL);
     for (int x = 0; x < 1 << 16; x += 5) {
         bitset_container_set(B2, (uint16_t)x);
     }
 
-    bitset_container_t* BO = bitset_container_create();
+    bitset_container_t* BO = bitset_container_create(NULL);
 
     const int and_cardinality = DIV_CEIL_64K(3*5);
     BEST_TIME(bitset_container_and_nocard(B1, B2, BO), BITSET_UNKNOWN_CARDINALITY, repeat, 1);
@@ -119,7 +119,7 @@ int main() {
     int size = (1 << 16) / 3;
     tellmeall();
     printf("bitset container benchmarks\n");
-    bitset_container_t* B = bitset_container_create();
+    bitset_container_t* B = bitset_container_create(NULL);
     BEST_TIME(set_test(B), 0, repeat, size);
     int answer = get_test(B);
     size = 1 << 16;
@@ -133,7 +133,7 @@ int main() {
     bitset_container_free(B);
 
     for (int howmany = 4096; howmany <= (1 << 16); howmany *= 2) {
-        bitset_container_t* Bt = bitset_container_create();
+        bitset_container_t* Bt = bitset_container_create(NULL);
         while (bitset_container_cardinality(Bt) < howmany) {
             bitset_container_set(Bt, (uint16_t)pcg32_random());
         }
@@ -159,7 +159,7 @@ int main() {
 
     // next we are going to benchmark conversion from bitset to array (an
     // important step)
-    bitset_container_t* B1 = bitset_container_create();
+    bitset_container_t* B1 = bitset_container_create(NULL);
     for (int k = 0; k < 4096; ++k) {
         bitset_container_set(B1, (uint16_t)ranged_random(1 << 16));
     }

@@ -14,8 +14,8 @@ int32_t run_container_get_nruns(const run_container_t *c) { return c->n_runs; }
 
 #define BENCHMARK_CONTAINER(cname1, cname2, fname, n) \
 { \
-    cname1##_container_t *c1 = cname1##_container_create(); \
-    cname2##_container_t *c2 = cname2##_container_create(); \
+    cname1##_container_t *c1 = cname1##_container_create(NULL); \
+    cname2##_container_t *c2 = cname2##_container_create(NULL); \
     uint16_t* values = malloc(0x10000 * sizeof(uint16_t)); \
     for (uint32_t i = 0; i < 0x10000; i++) { \
         values[i] = i; \

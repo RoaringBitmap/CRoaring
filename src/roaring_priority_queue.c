@@ -41,9 +41,9 @@ static void pq_add(roaring_pq_t *pq, roaring_pq_element_t *t) {
 }
 
 static void pq_free(roaring_pq_t *pq) {
-    free(pq->elements);
+    roaring_free(NULL, pq->elements);
     pq->elements = NULL;  // paranoid
-    free(pq);
+    roaring_free(NULL, pq);
 }
 
 static void percolate_down(roaring_pq_t *pq, uint32_t i) {
@@ -70,11 +70,17 @@ static void percolate_down(roaring_pq_t *pq, uint32_t i) {
 }
 
 static roaring_pq_t *create_pq(const roaring_bitmap_t **arr, uint32_t length) {
-    roaring_pq_t *answer = (roaring_pq_t *)malloc(sizeof(roaring_pq_t));
-    answer->elements =
-        (roaring_pq_element_t *)malloc(sizeof(roaring_pq_element_t) * length);
+    roaring_pq_t *answer =
+        (roaring_pq_t *)roaring_malloc(NULL, sizeof(roaring_pq_t));
+    answer->elements = (roaring_pq_element_t *)roaring_malloc(
+        NULL, sizeof(roaring_pq_element_t) * length);
     answer->size = length;
     for (uint32_t i = 0; i < length; i++) {
+        // return null if unsupported bitmaps (options set) detected
+        if ((roaring_bitmap_t *)arr[i]->options != NULL) {
+            pq_free(answer);
+            return NULL;
+        }
         answer->elements[i].bitmap = (roaring_bitmap_t *)arr[i];
         answer->elements[i].is_temporary = false;
         answer->elements[i].size =
@@ -138,13 +144,13 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
             if ((type2 == BITSET_CONTAINER_TYPE) &&
                 (type1 != BITSET_CONTAINER_TYPE)
             ){
-                c = container_lazy_ior(c2, type2, c1, type1, &result_type);
+                c = container_lazy_ior(c2, type2, c1, type1, &result_type, NULL);
                 container_free(c1, type1);
                 if (c != c2) {
                     container_free(c2, type2);
                 }
             } else {
-                c = container_lazy_ior(c1, type1, c2, type2, &result_type);
+                c = container_lazy_ior(c1, type1, c2, type2, &result_type, NULL);
                 container_free(c2, type2);
                 if (c != c1) {
                     container_free(c1, type1);
@@ -187,8 +193,8 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     }
     ra_clear_without_containers(&x1->high_low_container);
     ra_clear_without_containers(&x2->high_low_container);
-    free(x1);
-    free(x2);
+    roaring_free(NULL, x1);
+    roaring_free(NULL, x2);
     return answer;
 }
 
@@ -196,7 +202,8 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
  * Compute the union of 'number' bitmaps using a heap. This can
  * sometimes be faster than roaring_bitmap_or_many which uses
  * a naive algorithm. Caller is responsible for freeing the
- * result.
+ * result. This only supports bitmaps without options set, and 
+ * will return NULL if an unsupported bitmap is detected.
  */
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
                                               const roaring_bitmap_t **x) {
@@ -207,6 +214,9 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
         return roaring_bitmap_copy(x[0]);
     }
     roaring_pq_t *pq = create_pq(x, number);
+    if (pq == NULL) {
+        return NULL;
+    }
     while (pq->size > 1) {
         roaring_pq_element_t x1 = pq_poll(pq);
         roaring_pq_element_t x2 = pq_poll(pq);

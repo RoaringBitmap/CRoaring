@@ -60,7 +60,7 @@ void array_run_container_intersection(const array_container_t *src_1,
  **/
 bool run_bitset_container_intersection(const run_container_t *src_1,
                                        const bitset_container_t *src_2,
-                                       container_t **dst);
+                                       container_t **dst, roaring_options_t *options);
 
 /* Compute the size of the intersection between src_1 and src_2 . */
 int array_run_container_intersection_cardinality(const array_container_t *src_1,

@@ -45,20 +45,21 @@ void bitset_container_set_all(bitset_container_t *bitset) {
 
 
 /* Create a new bitset. Return NULL in case of failure. */
-bitset_container_t *bitset_container_create(void) {
-    bitset_container_t *bitset =
-        (bitset_container_t *)malloc(sizeof(bitset_container_t));
+bitset_container_t *bitset_container_create(roaring_options_t *options) {
+    bitset_container_t *bitset = (bitset_container_t *)roaring_malloc(
+        options, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->words = (uint64_t *)roaring_bitmap_aligned_malloc(
-        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    bitset->words = (uint64_t *)roaring_aligned_malloc(
+        options, 32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     if (!bitset->words) {
-        free(bitset);
+        roaring_free(options, bitset);
         return NULL;
     }
+    bitset->options = options;
     bitset_container_clear(bitset);
     return bitset;
 }
@@ -102,25 +103,27 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     if(bitset->words != NULL) {// Jon Strabala reports that some tools complain otherwise
-      roaring_bitmap_aligned_free(bitset->words);
+      roaring_aligned_free(bitset->options, bitset->words);
       bitset->words = NULL; // pedantic
     }
-    free(bitset);
+    roaring_free(bitset->options, bitset);
 }
 
 /* duplicate container. */
-bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
-    bitset_container_t *bitset =
-        (bitset_container_t *)malloc(sizeof(bitset_container_t));
+bitset_container_t *bitset_container_clone(const bitset_container_t *src,
+                                           roaring_options_t *options) {
+    bitset_container_t *bitset = (bitset_container_t *)roaring_malloc(
+        options, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;
     }
+    bitset->options = options;
     // sizeof(__m256i) == 32
-    bitset->words = (uint64_t *)roaring_bitmap_aligned_malloc(
-        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    bitset->words = (uint64_t *)roaring_aligned_malloc(
+        options, 32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     if (!bitset->words) {
-        free(bitset);
+        roaring_free(options, bitset);
         return NULL;
     }
     bitset->cardinality = src->cardinality;

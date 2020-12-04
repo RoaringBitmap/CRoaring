@@ -53,7 +53,7 @@ bool bitset_array_container_iandnot(
 
 bool run_bitset_container_andnot(
         const run_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst. Result may be either a bitset or an array container
@@ -64,7 +64,7 @@ bool run_bitset_container_andnot(
 
 bool run_bitset_container_iandnot(
         run_container_t *src_1, const bitset_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst. Result may be either a bitset or an array container
@@ -94,7 +94,7 @@ bool bitset_run_container_iandnot(
 
 int run_array_container_andnot(
         const run_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst (which has no container initially).  It will modify src_1
@@ -105,7 +105,7 @@ int run_array_container_andnot(
 
 int run_array_container_iandnot(
         run_container_t *src_1, const array_container_t *src_2,
-        container_t **dst);
+        container_t **dst, roaring_options_t *options);
 
 /* dst must be a valid array container, allowed to be src_1 */
 

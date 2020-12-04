@@ -17,7 +17,7 @@
 
 
 DEFINE_TEST(printf_test) {
-    run_container_t* B = run_container_create();
+    run_container_t* B = run_container_create(NULL);
 
     assert_non_null(B);
 
@@ -34,7 +34,7 @@ DEFINE_TEST(printf_test) {
 }
 
 DEFINE_TEST(add_contains_test) {
-    run_container_t* B = run_container_create();
+    run_container_t* B = run_container_create(NULL);
     assert_non_null(B);
 
     int expected_card = 0;
@@ -84,11 +84,11 @@ DEFINE_TEST(add_contains_test) {
 }
 
 DEFINE_TEST(and_or_test) {
-    run_container_t* B1 = run_container_create();
-    run_container_t* B2 = run_container_create();
-    run_container_t* BI = run_container_create();
-    run_container_t* BO = run_container_create();
-    run_container_t* TMP = run_container_create();
+    run_container_t* B1 = run_container_create(NULL);
+    run_container_t* B2 = run_container_create(NULL);
+    run_container_t* BI = run_container_create(NULL);
+    run_container_t* BO = run_container_create(NULL);
+    run_container_t* TMP = run_container_create(NULL);
 
     assert_non_null(B1);
     assert_non_null(B2);
@@ -127,7 +127,7 @@ DEFINE_TEST(and_or_test) {
 // returns 0 on error, 1 if ok.
 DEFINE_TEST(to_uint32_array_test) {
     for (size_t offset = 1; offset < 128; offset *= 2) {
-        run_container_t* B = run_container_create();
+        run_container_t* B = run_container_create(NULL);
         assert_non_null(B);
 
         for (int k = 0; k < (1 << 16); k += offset) {
@@ -149,7 +149,7 @@ DEFINE_TEST(to_uint32_array_test) {
 }
 
 DEFINE_TEST(select_test) {
-    run_container_t* B = run_container_create();
+    run_container_t* B = run_container_create(NULL);
     assert_non_null(B);
     uint16_t base = 27;
     for (uint16_t value = base; value < base + 200; value += 5) {
@@ -171,7 +171,7 @@ DEFINE_TEST(select_test) {
 }
 
 DEFINE_TEST(remove_range_test) {
-    run_container_t* run = run_container_create();
+    run_container_t* run = run_container_create(NULL);
     run_container_add_range(run, 100, 150);
     run_container_add_range(run, 200, 250);
     run_container_add_range(run, 300, 350);

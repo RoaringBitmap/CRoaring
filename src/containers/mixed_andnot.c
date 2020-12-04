@@ -54,7 +54,7 @@ bool bitset_array_container_andnot(
     container_t **dst
 ){
     // Java did this directly, but we have option of asm or avx
-    bitset_container_t *result = bitset_container_create();
+    bitset_container_t *result = bitset_container_create(src_1->options);
     bitset_container_copy(src_1, result);
     result->cardinality =
         (int32_t)bitset_clear_list(result->words, (uint64_t)result->cardinality,
@@ -103,13 +103,14 @@ bool bitset_array_container_iandnot(
 
 bool run_bitset_container_andnot(
     const run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     // follows the Java implementation as of June 2016
     int card = run_container_cardinality(src_1);
     if (card <= DEFAULT_MAX_SIZE) {
         // must be an array
-        array_container_t *answer = array_container_create_given_capacity(card);
+        array_container_t *answer =
+            array_container_create_given_capacity(card, src_1->options);
         answer->cardinality = 0;
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
             rle16_t rle = src_1->runs[rlepos];
@@ -124,7 +125,7 @@ bool run_bitset_container_andnot(
         return false;
     } else {  // we guess it will be a bitset, though have to check guess when
               // done
-        bitset_container_t *answer = bitset_container_clone(src_2);
+        bitset_container_t *answer = bitset_container_clone(src_2, options);
 
         uint32_t last_pos = 0;
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
@@ -159,10 +160,10 @@ bool run_bitset_container_andnot(
 
 bool run_bitset_container_iandnot(
     run_container_t *src_1, const bitset_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     // dummy implementation
-    bool ans = run_bitset_container_andnot(src_1, src_2, dst);
+    bool ans = run_bitset_container_andnot(src_1, src_2, dst, options);
     run_container_free(src_1);
     return ans;
 }
@@ -179,7 +180,7 @@ bool bitset_run_container_andnot(
     container_t **dst
 ){
     // follows Java implementation
-    bitset_container_t *result = bitset_container_create();
+    bitset_container_t *result = bitset_container_create(src_1->options);
 
     bitset_container_copy(src_1, result);
     for (int32_t rlepos = 0; rlepos < src_2->n_runs; ++rlepos) {
@@ -280,7 +281,7 @@ static int run_array_array_subtract(const run_container_t *r,
 
 int run_array_container_andnot(
     const run_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     // follows the Java impl as of June 2016
 
@@ -289,12 +290,12 @@ int run_array_container_andnot(
 
     if (card <= arbitrary_threshold) {
         if (src_2->cardinality == 0) {
-            *dst = run_container_clone(src_1);
+            *dst = run_container_clone(src_1, options);
             return RUN_CONTAINER_TYPE;
         }
         // Java's "lazyandNot.toEfficientContainer" thing
         run_container_t *answer = run_container_create_given_capacity(
-            card + array_container_cardinality(src_2));
+            card + array_container_cardinality(src_2), options);
 
         int rlepos = 0;
         int xrlepos = 0;  // "x" is src_2
@@ -352,7 +353,8 @@ int run_array_container_andnot(
     // else it's a bitmap or array
 
     if (card <= DEFAULT_MAX_SIZE) {
-        array_container_t *ac = array_container_create_given_capacity(card);
+        array_container_t *ac =
+            array_container_create_given_capacity(card, options);
         // nb Java code used a generic iterator-based merge to compute
         // difference
         ac->cardinality = run_array_array_subtract(src_1, src_2, ac);
@@ -374,10 +376,10 @@ int run_array_container_andnot(
 
 int run_array_container_iandnot(
     run_container_t *src_1, const array_container_t *src_2,
-    container_t **dst
+    container_t **dst, roaring_options_t *options
 ){
     // dummy implementation same as June 2016 Java
-    int ans = run_array_container_andnot(src_1, src_2, dst);
+    int ans = run_array_container_andnot(src_1, src_2, dst, options);
     run_container_free(src_1);
     return ans;
 }
@@ -443,7 +445,7 @@ int run_run_container_andnot(
     const run_container_t *src_1, const run_container_t *src_2,
     container_t **dst
 ){
-    run_container_t *ans = run_container_create();
+    run_container_t *ans = run_container_create(src_1->options);
     run_container_andnot(src_1, src_2, ans);
     uint8_t typecode_after;
     *dst = convert_run_to_efficient_container_and_free(ans, &typecode_after);
@@ -493,7 +495,7 @@ bool bitset_bitset_container_andnot(
     const bitset_container_t *src_1, const bitset_container_t *src_2,
     container_t **dst
 ){
-    bitset_container_t *ans = bitset_container_create();
+    bitset_container_t *ans = bitset_container_create(src_1->options);
     int card = bitset_container_andnot(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);

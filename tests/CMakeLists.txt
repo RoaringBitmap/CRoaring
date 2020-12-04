@@ -5,6 +5,7 @@
 
 
 add_cpp_test(cpp_unit)
+add_cpp_test(memory_unit)
 add_cpp_test(cpp_random_unit)
 add_cpp_test(cpp_example1)
 add_cpp_test(cpp_example2)

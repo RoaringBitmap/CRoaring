@@ -14,7 +14,6 @@
 
 #include "test.h"
 
-
 long filesize(FILE* fp) {
     fseek(fp, 0L, SEEK_END);
     return ftell(fp);
@@ -61,7 +60,7 @@ int test_deserialize(const char * filename) {
 
 
     roaring_bitmap_t* bitmap =
-        roaring_bitmap_portable_deserialize_safe(input_buffer, bytes);
+        roaring_bitmap_portable_deserialize_safe(input_buffer, bytes, NULL);
 
     if(bitmap == NULL) {
         printf("Null bitmap loaded.\n");

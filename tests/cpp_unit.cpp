@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include <roaring/roaring.h>  // access to pure C exported API for testing
+using namespace roaring::api;
 
 #include "roaring.hh"
 using roaring::Roaring;  // the C++ wrapper class
@@ -130,7 +131,7 @@ void test_example(bool copy_on_write) {
     size_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     char *serializedbytes = (char *)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
-    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
+    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes, NULL);
     assert_true(expectedsize == roaring_bitmap_portable_size_in_bytes(t));
     assert_true(roaring_bitmap_equals(r1, t));
     roaring_bitmap_free(t);

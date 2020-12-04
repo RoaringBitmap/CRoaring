@@ -2,6 +2,7 @@
 #define INCLUDE_ROARING_ARRAY_H
 
 #include <assert.h>
+#include <roaring/options.h>
 #include <stdbool.h>
 #include <stdint.h>
 

@@ -31,14 +31,14 @@ DEFINE_TEST(test_bitset_lenrange_cardinality) {
 
 DEFINE_TEST(test_bitset_compute_cardinality) {
     // check that overflow doesn't happen
-    bitset_container_t *b = bitset_container_create();
+    bitset_container_t* b = bitset_container_create(NULL);
     bitset_container_add_from_range(b, 0, 0x10000, 1);
     assert(bitset_container_compute_cardinality(b) == 0x10000);
     bitset_container_free(b);
 }
 
 DEFINE_TEST(printf_test) {
-    bitset_container_t* B = bitset_container_create();
+    bitset_container_t* B = bitset_container_create(NULL);
     assert_non_null(B);
 
     bitset_container_set(B, 1U);
@@ -54,7 +54,7 @@ DEFINE_TEST(printf_test) {
 }
 
 DEFINE_TEST(set_get_test) {
-    bitset_container_t* B = bitset_container_create();
+    bitset_container_t* B = bitset_container_create(NULL);
     assert_non_null(B);
 
     for (size_t x = 0; x < 1 << 16; x++) {
@@ -90,10 +90,10 @@ DEFINE_TEST(set_get_test) {
 }
 
 DEFINE_TEST(and_or_test) {
-    bitset_container_t* B1 = bitset_container_create();
-    bitset_container_t* B2 = bitset_container_create();
-    bitset_container_t* BI = bitset_container_create();
-    bitset_container_t* BO = bitset_container_create();
+    bitset_container_t* B1 = bitset_container_create(NULL);
+    bitset_container_t* B2 = bitset_container_create(NULL);
+    bitset_container_t* BI = bitset_container_create(NULL);
+    bitset_container_t* BO = bitset_container_create(NULL);
 
     assert_non_null(B1);
     assert_non_null(B2);
@@ -133,10 +133,10 @@ DEFINE_TEST(and_or_test) {
 }
 
 DEFINE_TEST(xor_test) {
-    bitset_container_t* B1 = bitset_container_create();
-    bitset_container_t* B2 = bitset_container_create();
-    bitset_container_t* BI = bitset_container_create();
-    bitset_container_t* TMP = bitset_container_create();
+    bitset_container_t* B1 = bitset_container_create(NULL);
+    bitset_container_t* B2 = bitset_container_create(NULL);
+    bitset_container_t* BI = bitset_container_create(NULL);
+    bitset_container_t* TMP = bitset_container_create(NULL);
 
     assert_non_null(B1);
     assert_non_null(B2);
@@ -168,10 +168,10 @@ DEFINE_TEST(xor_test) {
 }
 
 DEFINE_TEST(andnot_test) {
-    bitset_container_t* B1 = bitset_container_create();
-    bitset_container_t* B2 = bitset_container_create();
-    bitset_container_t* BI = bitset_container_create();
-    bitset_container_t* TMP = bitset_container_create();
+    bitset_container_t* B1 = bitset_container_create(NULL);
+    bitset_container_t* B2 = bitset_container_create(NULL);
+    bitset_container_t* BI = bitset_container_create(NULL);
+    bitset_container_t* TMP = bitset_container_create(NULL);
 
     assert_non_null(B1);
     assert_non_null(B2);
@@ -207,7 +207,7 @@ DEFINE_TEST(andnot_test) {
 
 DEFINE_TEST(to_uint32_array_test) {
     for (size_t offset = 1; offset < 128; offset *= 2) {
-        bitset_container_t* B = bitset_container_create();
+        bitset_container_t* B = bitset_container_create(NULL);
         assert_non_null(B);
 
         for (size_t k = 0; k < (1 << 16); k += offset) {
@@ -233,7 +233,7 @@ DEFINE_TEST(to_uint32_array_test) {
 }
 
 DEFINE_TEST(select_test) {
-    bitset_container_t* B = bitset_container_create();
+    bitset_container_t* B = bitset_container_create(NULL);
     assert_non_null(B);
     uint16_t base = 27;
     for (uint16_t value = base; value < base + 200; value += 5) {

@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
         if (!ptr) {
             die("mmap");
         }
-        const roaring_bitmap_t *r = roaring_bitmap_frozen_view(ptr, st.st_size);
+        const roaring_bitmap_t *r = roaring_bitmap_frozen_view(ptr, st.st_size, NULL);
 #ifdef __GLIBC__
         printf("Allocation size [bytes]: %zu\n", malloc_usable_size((void*)r) );
 #endif
