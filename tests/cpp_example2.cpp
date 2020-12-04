@@ -15,6 +15,7 @@ int main() {
 
     // compute how many bits there are:
     uint32_t cardinality = r1.cardinality();
+    (void)cardinality; // to silence unused variable warnings
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
