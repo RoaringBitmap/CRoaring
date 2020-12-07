@@ -18,6 +18,12 @@ set(PROJECT_VERSION_PATCH 66)
 set(ROARING_LIB_VERSION "0.2.66" CACHE STRING "Roaring library version")
 set(ROARING_LIB_SOVERSION "0" CACHE STRING "Roaring library soversion")
 
+option(ROARING_EXCEPTIONS "Enable exception-throwing interface" ON)
+if(NOT ROARING_EXCEPTIONS)
+  message(STATUS "exception interface turned off. Code that does not check error codes will not compile.")
+endif()
+
+
 option(ROARING_DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX) " OFF)
 option(ROARING_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
 option(ROARING_DISABLE_NEON "Forcefully disable NEON even if hardware supports it" OFF)

@@ -1,0 +1,23 @@
+name: Ubuntu-CI
+
+on: push
+
+
+jobs:
+  ci:
+    name: ubuntu-gcc
+    runs-on: ubuntu-latest
+
+    env:
+      CC: gcc
+      CXX: g++
+
+    steps: 
+      - uses: actions/checkout@v2
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake -DROARING_EXCEPTIONS=OFF ..
+          cmake --build . 
+          ctest . --output-on-failure
