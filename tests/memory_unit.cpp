@@ -211,7 +211,7 @@ void my_free(void* p, void* payload)
    {
       *((int*)payload) += 1;
    }
-   return tracker.free(p);
+   tracker.free(p);
 }
 
 int use_count;

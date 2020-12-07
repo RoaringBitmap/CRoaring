@@ -35,9 +35,10 @@ void* roaring_calloc(roaring_options_t* options, size_t n_elements,
 void roaring_free(roaring_options_t* options, void* p) {
     if (options != NULL && options->memory != NULL &&
         options->memory->free != NULL) {
-        return options->memory->free(p, options->memory->payload);
+        options->memory->free(p, options->memory->payload);
+    } else {
+        free(p);
     }
-    return free(p);
 }
 
 void* roaring_aligned_malloc(roaring_options_t* options, size_t alignment,
@@ -53,7 +54,8 @@ void* roaring_aligned_malloc(roaring_options_t* options, size_t alignment,
 void roaring_aligned_free(roaring_options_t* options, void* p) {
     if (options != NULL && options->memory != NULL &&
         options->memory->aligned_free != NULL) {
-        return options->memory->aligned_free(p, options->memory->payload);
+        options->memory->aligned_free(p, options->memory->payload);
+    } else {
+        roaring_bitmap_aligned_free(p);
     }
-    return roaring_bitmap_aligned_free(p);
 }
