@@ -423,7 +423,7 @@ static inline int32_t bitset_container_serialized_size_in_bytes(void) {
 /**
  * Return the the number of runs.
  */
-int bitset_container_number_of_runs(bitset_container_t *b);
+int bitset_container_number_of_runs(bitset_container_t *bc);
 
 bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base,
                               roaring_iterator iterator, void *ptr);

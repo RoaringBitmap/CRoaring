@@ -371,11 +371,11 @@ void array_container_printf_as_uint32_array(const array_container_t *v,
 }
 
 /* Compute the number of runs */
-int32_t array_container_number_of_runs(const array_container_t *a) {
+int32_t array_container_number_of_runs(const array_container_t *ac) {
     // Can SIMD work here?
     int32_t nr_runs = 0;
     int32_t prev = -2;
-    for (const uint16_t *p = a->array; p != a->array + a->cardinality; ++p) {
+    for (const uint16_t *p = ac->array; p != ac->array + ac->cardinality; ++p) {
         if (*p != prev + 1) nr_runs++;
         prev = *p;
     }

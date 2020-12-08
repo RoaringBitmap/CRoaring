@@ -505,13 +505,13 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 
 
 // TODO: use the fast lower bound, also
-int bitset_container_number_of_runs(bitset_container_t *b) {
+int bitset_container_number_of_runs(bitset_container_t *bc) {
   int num_runs = 0;
-  uint64_t next_word = b->words[0];
+  uint64_t next_word = bc->words[0];
 
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS-1; ++i) {
     uint64_t word = next_word;
-    next_word = b->words[i+1];
+    next_word = bc->words[i+1];
     num_runs += hamming((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
   }
 
