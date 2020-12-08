@@ -745,8 +745,8 @@ class Roaring64Map {
             auto map_iter = roarings.cbegin();
             while (map_iter->second.isEmpty()) ++map_iter;
             struct iter_data {
-                uint32_t high_bits;
-                char first_char = '{';
+                uint32_t high_bits{};
+                char first_char{'{'};
             } outer_iter_data;
             outer_iter_data.high_bits = roarings.begin()->first;
             map_iter->second.iterate(
@@ -782,9 +782,9 @@ class Roaring64Map {
      */
     std::string toString() const {
         struct iter_data {
-            std::string str;
-            uint32_t high_bits;
-            char first_char = '{';
+            std::string str{};
+            uint32_t high_bits{0};
+            char first_char{'{'};
         } outer_iter_data;
         if (!isEmpty()) {
             auto map_iter = roarings.cbegin();
@@ -868,8 +868,8 @@ class Roaring64Map {
     const_iterator end() const;
 	
    private:
-    std::map<uint32_t, Roaring> roarings;
-    bool copyOnWrite = false;
+    std::map<uint32_t, Roaring> roarings{};
+    bool copyOnWrite{false};
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
     static uint64_t uniteBytes(const uint32_t highBytes,
@@ -1011,9 +1011,9 @@ class Roaring64MapSetBitForwardIterator {
 
    protected:
 	const std::map<uint32_t, Roaring>& p;
-    std::map<uint32_t, Roaring>::const_iterator map_iter;
-    std::map<uint32_t, Roaring>::const_iterator map_end;
-    api::roaring_uint32_iterator_t i;
+    std::map<uint32_t, Roaring>::const_iterator map_iter{};
+    std::map<uint32_t, Roaring>::const_iterator map_end{};
+    api::roaring_uint32_iterator_t i{};
 };
 
 class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitForwardIterator {
@@ -1027,7 +1027,7 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
 		return *this;
 	}
 	
-	type_of_iterator& operator--() { //  --i, must return dec.value
+	Roaring64MapSetBitBiDirectionalIterator& operator--() { //  --i, must return dec.value
 		if (map_iter == map_end) {
 			--map_iter;
 			roaring_init_iterator_last(&map_iter->second.roaring, &i);
@@ -1043,7 +1043,7 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
         return *this;
     }
 
-	type_of_iterator operator--(int) {  // i--, must return orig. value
+	Roaring64MapSetBitBiDirectionalIterator operator--(int) {  // i--, must return orig. value
         Roaring64MapSetBitBiDirectionalIterator orig(*this);
 		if (map_iter == map_end) {
 			--map_iter;
