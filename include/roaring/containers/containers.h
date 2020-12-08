@@ -94,10 +94,9 @@ static inline const container_t *container_unwrap_shared(
     const container_t *candidate_shared_container, uint8_t *type
 ){
     if (*type == SHARED_CONTAINER_TYPE) {
-        *type =
-            ((const shared_container_t *)candidate_shared_container)->typecode;
+        *type = const_CAST_shared(candidate_shared_container)->typecode;
         assert(*type != SHARED_CONTAINER_TYPE);
-        return ((const shared_container_t *)candidate_shared_container)->container;
+        return const_CAST_shared(candidate_shared_container)->container;
     } else {
         return candidate_shared_container;
     }
@@ -122,7 +121,7 @@ static inline uint8_t get_container_type(
     const container_t *c, uint8_t type
 ){
     if (type == SHARED_CONTAINER_TYPE) {
-        return ((const shared_container_t *)c)->typecode;
+        return const_CAST_shared(c)->typecode;
     } else {
         return type;
     }
@@ -211,7 +210,7 @@ static inline const char *get_full_container_name(
         case RUN_CONTAINER_TYPE:
             return container_names[2];
         case SHARED_CONTAINER_TYPE:
-            switch (((const shared_container_t *)c)->typecode) {
+            switch (const_CAST_shared(c)->typecode) {
                 case BITSET_CONTAINER_TYPE:
                     return shared_container_names[0];
                 case ARRAY_CONTAINER_TYPE:
@@ -2349,7 +2348,7 @@ static inline container_t *container_add_range(
             }
         }
         case RUN_CONTAINER_TYPE: {
-            run_container_t *run = (run_container_t *) c;
+            run_container_t *run = CAST_run(c);
 
             int32_t nruns_greater = rle16_count_greater(run->runs, run->n_runs, max);
             int32_t nruns_less = rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
@@ -2423,7 +2422,7 @@ static inline container_t *container_remove_range(
             }
         }
         case RUN_CONTAINER_TYPE: {
-            run_container_t *run = (run_container_t *) c;
+            run_container_t *run = CAST_run(c);
 
             if (run->n_runs == 0) {
                 return NULL;
