@@ -11,12 +11,20 @@ A C++ header for Roaring Bitmaps.
 #include <stdexcept>
 #include <string>
 
-#ifndef ROARING_EXCEPTIONS
-#if __cpp_exceptions
-#define ROARING_EXCEPTIONS 1
-#else
-#define ROARING_EXCEPTIONS 0
+#if !defined(ROARING_EXCEPTIONS)
+# if __cpp_exceptions
+#  define ROARING_EXCEPTIONS 1
+# else
+#  define ROARING_EXCEPTIONS 0
+# endif
 #endif
+
+#ifndef ROARING_TERMINATE
+# if ROARING_EXCEPTIONS
+#  define ROARING_TERMINATE(_s) throw std::runtime_error(_s)
+# else
+#  define ROARING_TERMINATE(_s) std::terminate()
+# endif
 #endif
 
 #define ROARING_API_NOT_IN_GLOBAL_NAMESPACE  // see remarks in roaring.h
@@ -53,11 +61,7 @@ class Roaring {
      */
     Roaring(const Roaring &r) : Roaring() {
         if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed memory alloc in constructor");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed memory alloc in constructor");
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
             api::roaring_bitmap_get_copy_on_write(&r.roaring));
@@ -185,11 +189,7 @@ class Roaring {
      */
     Roaring &operator=(const Roaring &r) {
         if (!api::roaring_bitmap_overwrite(&roaring, &r.roaring)) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed memory alloc in assignment");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed memory alloc in assignment");
         }
         api::roaring_bitmap_set_copy_on_write(&roaring,
             api::roaring_bitmap_get_copy_on_write(&r.roaring));
@@ -492,11 +492,7 @@ class Roaring {
             ? api::roaring_bitmap_portable_deserialize(buf)
             : api::roaring_bitmap_deserialize(buf);
         if (r == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed alloc while reading");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed alloc while reading");
         }
         return Roaring(r);
     }
@@ -509,11 +505,7 @@ class Roaring {
         roaring_bitmap_t * r =
                 api::roaring_bitmap_portable_deserialize_safe(buf,maxbytes);
         if (r == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed alloc while reading");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed alloc while reading");
         }
         return Roaring(r);
     }
@@ -540,11 +532,7 @@ class Roaring {
     Roaring operator&(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_and(&roaring, &o.roaring);
         if (r == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed materalization in and");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed materalization in and");
         }
         return Roaring(r);
     }
@@ -556,11 +544,7 @@ class Roaring {
     Roaring operator-(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_andnot(&roaring, &o.roaring);
         if (r == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed materalization in andnot");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed materalization in andnot");
         }
         return Roaring(r);
     }
@@ -572,11 +556,7 @@ class Roaring {
     Roaring operator|(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_or(&roaring, &o.roaring);
         if (r == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed materalization in or");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed materalization in or");
         }
         return Roaring(r);
     }
@@ -588,11 +568,7 @@ class Roaring {
     Roaring operator^(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_xor(&roaring, &o.roaring);
         if (r == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed materalization in xor");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed materalization in xor");
         }
         return Roaring(r);
     }
@@ -649,22 +625,14 @@ class Roaring {
         const roaring_bitmap_t **x =
             (const roaring_bitmap_t **)malloc(n * sizeof(roaring_bitmap_t *));
         if (x == NULL) {
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed memory alloc in fastunion");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed memory alloc in fastunion");
         }
         for (size_t k = 0; k < n; ++k) x[k] = &inputs[k]->roaring;
 
         roaring_bitmap_t *c_ans = api::roaring_bitmap_or_many(n, x);
         if (c_ans == NULL) {
             free(x);
-#if ROARING_EXCEPTIONS
-            throw std::runtime_error("failed memory alloc in fastunion");
-#else
-            std::terminate();
-#endif
+            ROARING_TERMINATE("failed memory alloc in fastunion");
         }
         Roaring ans(c_ans);
         free(x);

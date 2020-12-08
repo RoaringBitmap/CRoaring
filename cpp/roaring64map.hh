@@ -288,11 +288,11 @@ class Roaring64Map {
     uint64_t cardinality() const {
         if (isFull()) {
 #if ROARING_EXCEPTIONS
-            throw std::length_error(
-                "bitmap is full, cardinality is 2^64, "
-                "unable to represent in a 64-bit integer");
+            throw std::length_error("bitmap is full, cardinality is 2^64, "
+                                    "unable to represent in a 64-bit integer");
 #else
-            std::terminate();
+            ROARING_TERMINATE("bitmap is full, cardinality is 2^64, "
+                              "unable to represent in a 64-bit integer");
 #endif
         }
         return std::accumulate(
