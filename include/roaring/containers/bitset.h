@@ -397,7 +397,8 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
  * The out pointer should point to enough memory (the cardinality times 32
  * bits).
  */
-int bitset_container_to_uint32_array(void *out, const bitset_container_t *cont,
+int bitset_container_to_uint32_array(uint32_t *out,
+                                     const bitset_container_t *bc,
                                      uint32_t base);
 
 /*
