@@ -98,23 +98,6 @@ roaring_options_t *roaring_options_copy(roaring_options_t *opts) {
     return ret;
 }
 
-roaring_bitmap_t *roaring_bitmap_create() {
-    return roaring_bitmap_create_with_opts(NULL);
-}
-
-roaring_bitmap_t *roaring_bitmap_create_with_opts(roaring_options_t *opts) {
-    roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)roaring_malloc(opts, sizeof(roaring_bitmap_t));
-    if (!ans) {
-        return NULL;
-    }
-
-    ans->options = roaring_options_copy(opts);
-    ans->high_low_container.options = ans->options;
-    ra_init(&ans->high_low_container);
-    return ans;
-}
-
 roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     return roaring_bitmap_create_with_capacity_and_opts(cap, NULL);
 }

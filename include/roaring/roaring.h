@@ -43,8 +43,10 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity_and_opts(
  * Returns NULL if the allocation fails.
  * Client is responsible for calling `roaring_bitmap_free()`.
  */
-roaring_bitmap_t *roaring_bitmap_create(void);
-roaring_bitmap_t *roaring_bitmap_create_with_opts(roaring_options_t *options);
+static inline roaring_bitmap_t *roaring_bitmap_create(void)
+  { return roaring_bitmap_create_with_capacity_and_opts(0, NULL); }
+static inline roaring_bitmap_t *roaring_bitmap_create_with_opts(roaring_options_t *options)
+  { return roaring_bitmap_create_with_capacity_and_opts(0, options); }
 
 /**
  * Initialize a roaring bitmap structure in memory controlled by client.
