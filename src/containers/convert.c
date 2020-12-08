@@ -11,10 +11,10 @@ extern "C" { namespace roaring { namespace internal {
 
 // file contains grubby stuff that must know impl. details of all container
 // types.
-bitset_container_t *bitset_container_from_array(const array_container_t *a) {
+bitset_container_t *bitset_container_from_array(const array_container_t *ac) {
     bitset_container_t *ans = bitset_container_create();
-    int limit = array_container_cardinality(a);
-    for (int i = 0; i < limit; ++i) bitset_container_set(ans, a->array[i]);
+    int limit = array_container_cardinality(ac);
+    for (int i = 0; i < limit; ++i) bitset_container_set(ans, ac->array[i]);
     return ans;
 }
 
@@ -57,10 +57,10 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
 }
 
 /* assumes that container has adequate space.  Run from [s,e] (inclusive) */
-static void add_run(run_container_t *r, int s, int e) {
-    r->runs[r->n_runs].value = s;
-    r->runs[r->n_runs].length = e - s;
-    r->n_runs++;
+static void add_run(run_container_t *rc, int s, int e) {
+    rc->runs[rc->n_runs].value = s;
+    rc->runs[rc->n_runs].length = e - s;
+    rc->n_runs++;
 }
 
 run_container_t *run_container_from_array(const array_container_t *c) {
@@ -92,15 +92,15 @@ run_container_t *run_container_from_array(const array_container_t *c) {
  * It does not free the run container.
  */
 container_t *convert_to_bitset_or_array_container(
-    run_container_t *r, int32_t card,
+    run_container_t *rc, int32_t card,
     uint8_t *resulttype
 ){
     if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
-        for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
-            uint16_t run_start = r->runs[rlepos].value;
-            uint16_t run_end = run_start + r->runs[rlepos].length;
+        for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
+            uint16_t run_start = rc->runs[rlepos].value;
+            uint16_t run_end = run_start + rc->runs[rlepos].length;
             for (uint16_t run_value = run_start; run_value <= run_end;
                  ++run_value) {
                 answer->array[answer->cardinality++] = run_value;
@@ -112,9 +112,9 @@ container_t *convert_to_bitset_or_array_container(
         return answer;
     }
     bitset_container_t *answer = bitset_container_create();
-    for (int rlepos = 0; rlepos < r->n_runs; ++rlepos) {
-        uint16_t run_start = r->runs[rlepos].value;
-        bitset_set_lenrange(answer->words, run_start, r->runs[rlepos].length);
+    for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
+        uint16_t run_start = rc->runs[rlepos].value;
+        bitset_set_lenrange(answer->words, run_start, rc->runs[rlepos].length);
     }
     answer->cardinality = card;
     *resulttype = BITSET_CONTAINER_TYPE;

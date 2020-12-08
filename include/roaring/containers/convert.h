@@ -35,7 +35,7 @@ run_container_t *run_container_from_array(const array_container_t *c);
 /* convert a run into either an array or a bitset
  * might free the container. This does not free the input run container. */
 container_t *convert_to_bitset_or_array_container(
-        run_container_t *r, int32_t card,
+        run_container_t *rc, int32_t card,
         uint8_t *resulttype);
 
 /* convert containers to and from runcontainers, as is most space efficient.

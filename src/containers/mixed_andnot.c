@@ -234,16 +234,16 @@ bool bitset_run_container_iandnot(
  * to avoid advanceUntil?
  */
 
-static int run_array_array_subtract(const run_container_t *r,
+static int run_array_array_subtract(const run_container_t *rc,
                                     const array_container_t *a_in,
                                     array_container_t *a_out) {
     int out_card = 0;
     int32_t in_array_pos =
         -1;  // since advanceUntil always assumes we start the search AFTER this
 
-    for (int rlepos = 0; rlepos < r->n_runs; rlepos++) {
-        int32_t start = r->runs[rlepos].value;
-        int32_t end = start + r->runs[rlepos].length + 1;
+    for (int rlepos = 0; rlepos < rc->n_runs; rlepos++) {
+        int32_t start = rc->runs[rlepos].value;
+        int32_t end = start + rc->runs[rlepos].length + 1;
 
         in_array_pos = advanceUntil(a_in->array, in_array_pos,
                                     a_in->cardinality, (uint16_t)start);
