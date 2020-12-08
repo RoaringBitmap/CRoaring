@@ -301,8 +301,7 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *ra) {
         if (ra->high_low_container.typecodes[i] == SHARED_CONTAINER_TYPE) {
             printf(
                 "(shared count = %" PRIu32 " )",
-                ((shared_container_t *)(ra->high_low_container.containers[i]))
-                    ->counter);
+                (CAST_shared(ra->high_low_container.containers[i]))->counter);
         }
 
         if (i + 1 < ra->high_low_container.size) printf(", ");
@@ -986,7 +985,7 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
             container_t *c;
             if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_xor(c1, type1, c2, type2, &result_type);
-                shared_container_free((shared_container_t *)c1);  // so release
+                shared_container_free(CAST_shared(c1));  // so release
             }
             else {
                 c = container_ixor(c1, type1, c2, type2, &result_type);
@@ -1139,7 +1138,7 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
             container_t *c;
             if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_andnot(c1, type1, c2, type2, &result_type);
-                shared_container_free((shared_container_t *)c1);  // release
+                shared_container_free(CAST_shared(c1));  // release
             }
             else {
                 c = container_iandnot(c1, type1, c2, type2, &result_type);
@@ -1322,12 +1321,11 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
         if (get_container_type(c, type_original) == RUN_CONTAINER_TYPE) {
             answer = true;
             if (type_original == SHARED_CONTAINER_TYPE) {
-                run_container_t *truec =
-                    (run_container_t *)((shared_container_t *)c)->container;
+                run_container_t *truec = CAST_run(CAST_shared(c)->container);
                 int32_t card = run_container_cardinality(truec);
                 container_t *c1 = convert_to_bitset_or_array_container(
                                         truec, card, &type_after);
-                shared_container_free((shared_container_t *)c);// will free the run container as needed
+                shared_container_free(CAST_shared(c));  // frees run as needed
                 ra_set_container_at_index(&r->high_low_container, i, c1,
                                           type_after);
 
@@ -2412,7 +2410,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             container_t *c;
             if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_lazy_xor(c1, type1, c2, type2, &result_type);
-                shared_container_free((shared_container_t *)c1);  // release
+                shared_container_free(CAST_shared(c1));  // release
             }
             else {
                 c = container_lazy_ixor(c1, type1, c2, type2, &result_type);
