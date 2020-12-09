@@ -903,25 +903,25 @@ class Roaring64MapSetBitForwardIterator {
         return Roaring64Map::uniteBytes(map_iter->first, i.current_value);
     }
 
-    bool operator<(const type_of_iterator &o) {
+    bool operator<(const type_of_iterator &o) const {
         if (map_iter == map_end) return false;
         if (o.map_iter == o.map_end) return true;
         return **this < *o;
     }
 
-    bool operator<=(const type_of_iterator &o) {
+    bool operator<=(const type_of_iterator &o) const {
         if (o.map_iter == o.map_end) return true;
         if (map_iter == map_end) return false;
         return **this <= *o;
     }
 
-    bool operator>(const type_of_iterator &o) {
+    bool operator>(const type_of_iterator &o) const {
         if (o.map_iter == o.map_end) return false;
         if (map_iter == map_end) return true;
         return **this > *o;
     }
 
-    bool operator>=(const type_of_iterator &o) {
+    bool operator>=(const type_of_iterator &o) const {
         if (map_iter == map_end) return true;
         if (o.map_iter == o.map_end) return false;
         return **this >= *o;
@@ -964,13 +964,13 @@ class Roaring64MapSetBitForwardIterator {
       return false;
     }
 
-    bool operator==(const Roaring64MapSetBitForwardIterator &o) {
+    bool operator==(const Roaring64MapSetBitForwardIterator &o) const {
       if (map_iter == map_end && o.map_iter == o.map_end) return true;
       if (o.map_iter == o.map_end) return false;
       return **this == *o;
     }
 
-    bool operator!=(const Roaring64MapSetBitForwardIterator &o) {
+    bool operator!=(const Roaring64MapSetBitForwardIterator &o) const {
       if (map_iter == map_end && o.map_iter == o.map_end) return false;
       if (o.map_iter == o.map_end) return true;
       return **this != *o;
@@ -988,7 +988,7 @@ class Roaring64MapSetBitForwardIterator {
       map_iter(r.map_iter),
       map_end(r.map_end),
       i(r.i)
-  { }
+    { }
 
     Roaring64MapSetBitForwardIterator(const Roaring64Map &parent,
         bool exhausted = false)
