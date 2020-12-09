@@ -26,7 +26,7 @@ typedef struct roaring_bitmap_s {
  * Copies an option struct. This does memory allocation. The caller is
  * responsible for memory management.
  */
-roaring_options_t *roaring_options_copy(roaring_options_t *opts);
+inline roaring_options_t *roaring_options_copy(roaring_options_t *opts);
 
 /**
  * Dynamically allocates a new bitmap (initially empty).
