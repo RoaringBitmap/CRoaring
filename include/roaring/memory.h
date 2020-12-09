@@ -6,6 +6,23 @@ extern "C" {
 
 #include <stddef.h>  // for size_t
 
+#ifndef ENABLECMM
+#define ROARING_MALLOC(options, n) malloc(n)
+#define ROARING_REALLOC(options, p, old_sz, new_sz) realloc(p, new_sz)
+#define ROARING_CALLOC(options, n_elements, element_size) calloc(n_elements, element_size)
+#define ROARING_FREE(options, p) free(p)
+#define ROARING_ALIGNED_MALLOC(options, alignment, size) roaring_bitmap_aligned_malloc(alignment, size)
+#define ROARING_ALIGNED_FREE(options, p) roaring_bitmap_aligned_free(p)
+#else
+#define ROARING_MALLOC(options, n) roaring_malloc(options, n)
+#define ROARING_REALLOC(options, p, old_sz, new_sz) roaring_realloc(options, p, old_sz, new_sz)
+#define ROARING_CALLOC(options, n_elements, element_size) roaring_calloc(options, n_elements, element_size)
+#define ROARING_FREE(options, p) roaring_free(options, p)
+#define ROARING_ALIGNED_MALLOC(options, alignment, size) roaring_aligned_malloc(options, alignment, size)
+#define ROARING_ALIGNED_FREE(options, p) roaring_aligned_free(options, p)
+#endif
+
+
 struct roaring_options_s;  // forward declaration
 typedef struct roaring_options_s roaring_options_t;
 

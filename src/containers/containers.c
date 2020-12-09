@@ -141,7 +141,7 @@ container_t *get_copy_of_container(
         }
         assert(*typecode != SHARED_CONTAINER_TYPE);
 
-        if ((shared_container = (shared_container_t *)roaring_malloc(
+        if ((shared_container = (shared_container_t *)ROARING_MALLOC(
                  options, sizeof(shared_container_t))) == NULL) {
             return NULL;
         }
@@ -197,7 +197,7 @@ container_t *shared_container_extract_copy(
     if (sc->counter == 0) {
         answer = sc->container;
         sc->container = NULL;  // paranoid
-        roaring_free(sc->options, sc);
+        ROARING_FREE(sc->options, sc);
     } else {
         answer = container_clone(sc->container, *typecode,
                                  sc->options);
@@ -213,7 +213,7 @@ void shared_container_free(shared_container_t *container) {
         assert(container->typecode != SHARED_CONTAINER_TYPE);
         container_free(container->container, container->typecode);
         container->container = NULL;  // paranoid
-        roaring_free(container->options, container);
+        ROARING_FREE(container->options, container);
     }
 }
 

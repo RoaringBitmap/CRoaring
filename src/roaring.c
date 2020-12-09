@@ -78,7 +78,7 @@ roaring_options_t *roaring_options_copy(roaring_options_t *opts) {
 
     // allocate and copy into new options struct
     roaring_options_t *ret =
-        (roaring_options_t *)roaring_malloc(opts, sizeof(roaring_options_t));
+        (roaring_options_t *)ROARING_MALLOC(opts, sizeof(roaring_options_t));
     if (!ret) {
         return NULL;
     }
@@ -87,9 +87,9 @@ roaring_options_t *roaring_options_copy(roaring_options_t *opts) {
     // if memory struct is populated, copy that too
     if (opts->memory != NULL) {
         ret->memory =
-            (roaring_memory_t *)roaring_malloc(opts, sizeof(roaring_memory_t));
+            (roaring_memory_t *)ROARING_MALLOC(opts, sizeof(roaring_memory_t));
         if (!ret->memory) {
-            roaring_free(opts, ret);
+            ROARING_FREE(opts, ret);
             return NULL;
         }
         memcpy(ret->memory, opts->memory, sizeof(roaring_memory_t));
@@ -105,7 +105,7 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
 roaring_bitmap_t *roaring_bitmap_create_with_capacity_and_opts(
     uint32_t cap, roaring_options_t *opts) {
     roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)roaring_malloc(opts, sizeof(roaring_bitmap_t));
+        (roaring_bitmap_t *)ROARING_MALLOC(opts, sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
@@ -114,7 +114,7 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity_and_opts(
     ans->high_low_container.options = ans->options;
     bool is_ok = ra_init_with_capacity(&ans->high_low_container, cap);
     if (!is_ok) {
-        roaring_free(opts, ans);
+        ROARING_FREE(opts, ans);
         return NULL;
     }
     return ans;
@@ -443,7 +443,7 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
 roaring_bitmap_t *roaring_bitmap_copy_with_opts(const roaring_bitmap_t *r,
                                                 roaring_options_t *options) {
     roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)roaring_malloc(options, sizeof(roaring_bitmap_t));
+        (roaring_bitmap_t *)ROARING_MALLOC(options, sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
@@ -475,11 +475,11 @@ void roaring_bitmap_free(const roaring_bitmap_t *r) {
         roaring_options_t *opts = r->options;
         roaring_memory_t *mem = opts->memory;
         roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
-        roaring_free(&tmp_opts, (roaring_bitmap_t *)r);
-        roaring_free(&tmp_opts, opts);
-        roaring_free(&tmp_opts, mem);
+        ROARING_FREE(&tmp_opts, (roaring_bitmap_t *)r);
+        ROARING_FREE(&tmp_opts, opts);
+        ROARING_FREE(&tmp_opts, mem);
     } else {
-        roaring_free(r->options, (roaring_bitmap_t *)r);
+        ROARING_FREE(r->options, (roaring_bitmap_t *)r);
     }
 }
 
@@ -1485,7 +1485,7 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *ra) {
 roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(
     const char *buf, size_t maxbytes, roaring_options_t *options) {
     roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)roaring_malloc(options, sizeof(roaring_bitmap_t));
+        (roaring_bitmap_t *)ROARING_MALLOC(options, sizeof(roaring_bitmap_t));
     if (ans == NULL) {
         return NULL;
     }
@@ -1497,7 +1497,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(
     if (is_ok) assert(bytesread <= maxbytes);
     roaring_bitmap_set_copy_on_write(ans, false);
     if (!is_ok) {
-        roaring_free(options, ans);
+        ROARING_FREE(options, ans);
         return NULL;
     }
     return ans;
@@ -1723,7 +1723,7 @@ void roaring_init_iterator_last(const roaring_bitmap_t *ra,
 
 roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *ra) {
     roaring_uint32_iterator_t *newit =
-        (roaring_uint32_iterator_t *)roaring_malloc(
+        (roaring_uint32_iterator_t *)ROARING_MALLOC(
             ra->options, sizeof(roaring_uint32_iterator_t));
     if (newit == NULL) return NULL;
     roaring_init_iterator(ra, newit);
@@ -1733,7 +1733,7 @@ roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *ra) {
 roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
     const roaring_uint32_iterator_t *it) {
     roaring_uint32_iterator_t *newit =
-        (roaring_uint32_iterator_t *)roaring_malloc(
+        (roaring_uint32_iterator_t *)ROARING_MALLOC(
             it->parent->options, sizeof(roaring_uint32_iterator_t));
     memcpy(newit, it, sizeof(roaring_uint32_iterator_t));
     return newit;
@@ -1979,7 +1979,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
 }
 
 void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) {
-    roaring_free(it->parent->options, it);
+    ROARING_FREE(it->parent->options, it);
 }
 
 /****
@@ -3072,7 +3072,7 @@ const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,
     alloc_size += num_run_containers * sizeof(run_container_t);
     alloc_size += num_array_containers * sizeof(array_container_t);
 
-    char *arena = (char *)roaring_malloc(options, alloc_size);
+    char *arena = (char *)ROARING_MALLOC(options, alloc_size);
     if (arena == NULL) {
         return NULL;
     }
@@ -3119,7 +3119,7 @@ const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,
                 break;
             }
             default:
-                roaring_free(options, arena);
+                ROARING_FREE(options, arena);
                 return NULL;
         }
     }

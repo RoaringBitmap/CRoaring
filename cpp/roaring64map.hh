@@ -79,8 +79,8 @@ class Roaring64Map {
             roaring_options_t *opt = options;
             roaring_memory_t *mem = opt->memory;
             roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
-            roaring_free(&tmp_opts, opt);  // free options struct
-            roaring_free(&tmp_opts, mem);  // free memory struct
+            ROARING_FREE(&tmp_opts, opt);  // free options struct
+            ROARING_FREE(&tmp_opts, mem);  // free memory struct
         }
     }
 
@@ -155,13 +155,13 @@ class Roaring64Map {
             options = NULL;
         } else {
             // incoming options are non-null
-            options = (roaring_options_t *)roaring_malloc(
+            options = (roaring_options_t *)ROARING_MALLOC(
                 opts, sizeof(roaring_options_t));
             memcpy(options, opts, sizeof(roaring_options_t));
 
             // incoming memory struct is non-null
             if (opts->memory != NULL) {
-                options->memory = (roaring_memory_t *)roaring_malloc(
+                options->memory = (roaring_memory_t *)ROARING_MALLOC(
                     opts, sizeof(roaring_memory_t));
                 memcpy(options->memory, opts->memory, sizeof(roaring_memory_t));
             } else {

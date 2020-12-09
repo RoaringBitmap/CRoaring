@@ -46,17 +46,17 @@ void bitset_container_set_all(bitset_container_t *bitset) {
 
 /* Create a new bitset. Return NULL in case of failure. */
 bitset_container_t *bitset_container_create(roaring_options_t *options) {
-    bitset_container_t *bitset = (bitset_container_t *)roaring_malloc(
+    bitset_container_t *bitset = (bitset_container_t *)ROARING_MALLOC(
         options, sizeof(bitset_container_t));
 
     if (!bitset) {
         return NULL;
     }
     // sizeof(__m256i) == 32
-    bitset->words = (uint64_t *)roaring_aligned_malloc(
+    bitset->words = (uint64_t *)ROARING_ALIGNED_MALLOC(
         options, 32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     if (!bitset->words) {
-        roaring_free(options, bitset);
+        ROARING_FREE(options, bitset);
         return NULL;
     }
     bitset->options = options;
@@ -103,16 +103,16 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
     if(bitset->words != NULL) {// Jon Strabala reports that some tools complain otherwise
-      roaring_aligned_free(bitset->options, bitset->words);
+      ROARING_ALIGNED_FREE(bitset->options, bitset->words);
       bitset->words = NULL; // pedantic
     }
-    roaring_free(bitset->options, bitset);
+    ROARING_FREE(bitset->options, bitset);
 }
 
 /* duplicate container. */
 bitset_container_t *bitset_container_clone(const bitset_container_t *src,
                                            roaring_options_t *options) {
-    bitset_container_t *bitset = (bitset_container_t *)roaring_malloc(
+    bitset_container_t *bitset = (bitset_container_t *)ROARING_MALLOC(
         options, sizeof(bitset_container_t));
 
     if (!bitset) {
@@ -120,10 +120,10 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src,
     }
     bitset->options = options;
     // sizeof(__m256i) == 32
-    bitset->words = (uint64_t *)roaring_aligned_malloc(
+    bitset->words = (uint64_t *)ROARING_ALIGNED_MALLOC(
         options, 32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     if (!bitset->words) {
-        roaring_free(options, bitset);
+        ROARING_FREE(options, bitset);
         return NULL;
     }
     bitset->cardinality = src->cardinality;

@@ -69,8 +69,8 @@ class Roaring {
             roaring_options_t *opt = roaring.options;
             roaring_memory_t *mem = opt->memory;
             roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
-            roaring_free(&tmp_opts, opt);  // free options struct
-            roaring_free(&tmp_opts, mem);  // free memory struct
+            ROARING_FREE(&tmp_opts, opt);  // free options struct
+            ROARING_FREE(&tmp_opts, mem);  // free memory struct
         }
 
         roaring = std::move(r.roaring);
@@ -87,7 +87,7 @@ class Roaring {
      */
     Roaring(roaring_bitmap_t *s) noexcept {
         roaring = *s;  // steal the content of the roaring_bitmap_t
-        roaring_free(s->options, s); // deallocate the passed-in pointer
+        ROARING_FREE(s->options, s); // deallocate the passed-in pointer
     }
 
     /**
@@ -219,8 +219,8 @@ class Roaring {
             roaring_options_t *opt = roaring.options;
             roaring_memory_t *mem = opt->memory;
             roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
-            roaring_free(&tmp_opts, opt);  // free options struct
-            roaring_free(&tmp_opts, mem);  // free memory struct
+            ROARING_FREE(&tmp_opts, opt);  // free options struct
+            ROARING_FREE(&tmp_opts, mem);  // free memory struct
         }
     }
 
@@ -256,8 +256,8 @@ class Roaring {
             roaring_options_t *opt = roaring.options;
             roaring_memory_t *mem = opt->memory;
             roaring_options_t tmp_opts = (roaring_options_t){.memory = mem};
-            roaring_free(&tmp_opts, opt);  // free options struct
-            roaring_free(&tmp_opts, mem);  // free memory struct
+            ROARING_FREE(&tmp_opts, opt);  // free options struct
+            ROARING_FREE(&tmp_opts, mem);  // free memory struct
         }
 
         roaring = std::move(r.roaring);
@@ -681,7 +681,7 @@ class Roaring {
      */
     static Roaring fastunion(size_t n, const Roaring **inputs,
                              roaring_options_t *options = NULL) {
-        const roaring_bitmap_t **x = (const roaring_bitmap_t **)roaring_malloc(
+        const roaring_bitmap_t **x = (const roaring_bitmap_t **)ROARING_MALLOC(
             options, n * sizeof(roaring_bitmap_t *));
         if (x == NULL) {
             throw std::runtime_error("failed memory alloc in fastunion");
@@ -691,11 +691,11 @@ class Roaring {
         roaring_bitmap_t *c_ans =
             api::roaring_bitmap_or_many_with_opts(n, x, options);
         if (c_ans == NULL) {
-            roaring_free(options, x);
+            ROARING_FREE(options, x);
             throw std::runtime_error("failed memory alloc in fastunion");
         }
         Roaring ans(c_ans, options);
-        roaring_free(options, x);
+        ROARING_FREE(options, x);
         return ans;
     }
 

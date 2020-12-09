@@ -32,16 +32,16 @@ array_container_t *array_container_create_given_capacity(
     int32_t size, roaring_options_t *options) {
     array_container_t *container;
 
-    if ((container = (array_container_t *)roaring_malloc(
+    if ((container = (array_container_t *)ROARING_MALLOC(
              options, sizeof(array_container_t))) == NULL) {
         return NULL;
     }
 
     if( size <= 0 ) { // we don't want to rely on malloc(0)
         container->array = NULL;
-    } else if ((container->array = (uint16_t *)roaring_malloc(
+    } else if ((container->array = (uint16_t *)ROARING_MALLOC(
                     options, sizeof(uint16_t) * size)) == NULL) {
-        roaring_free(options, container);
+        ROARING_FREE(options, container);
         return NULL;
     }
 
@@ -92,15 +92,15 @@ int array_container_shrink_to_fit(array_container_t *src) {
     int32_t old_capacity = src->capacity;
     src->capacity = src->cardinality;
     if( src->capacity == 0) { // we do not want to rely on realloc for zero allocs
-      roaring_free(src->options, src->array);
+      ROARING_FREE(src->options, src->array);
       src->array = NULL;
     } else {
       uint16_t *oldarray = src->array;
-      src->array = (uint16_t *)roaring_realloc(
+      src->array = (uint16_t *)ROARING_REALLOC(
           src->options, oldarray, old_capacity * sizeof(uint16_t),
           src->capacity * sizeof(uint16_t));
       if (src->array == NULL)
-          roaring_free(src->options, oldarray);  // should never happen?
+          ROARING_FREE(src->options, oldarray);  // should never happen?
     }
     return savings;
 }
@@ -108,10 +108,10 @@ int array_container_shrink_to_fit(array_container_t *src) {
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
     if(arr->array != NULL) {// Jon Strabala reports that some tools complain otherwise
-      roaring_free(arr->options, arr->array);
+      ROARING_FREE(arr->options, arr->array);
       arr->array = NULL; // pedantic
     }
-    roaring_free(arr->options, arr);
+    ROARING_FREE(arr->options, arr);
 }
 
 static inline int32_t grow_capacity(int32_t capacity) {
@@ -136,16 +136,16 @@ void array_container_grow(array_container_t *container, int32_t min,
     uint16_t *array = container->array;
 
     if (preserve) {
-        container->array = (uint16_t *)roaring_realloc(
+        container->array = (uint16_t *)ROARING_REALLOC(
             container->options, array, old_capacity * sizeof(uint16_t),
             new_capacity * sizeof(uint16_t));
-        if (container->array == NULL) roaring_free(container->options, array);
+        if (container->array == NULL) ROARING_FREE(container->options, array);
     } else {
         // Jon Strabala reports that some tools complain otherwise
         if (array != NULL) {
-          roaring_free(container->options, array);
+          ROARING_FREE(container->options, array);
         }
-        container->array = (uint16_t *)roaring_malloc(
+        container->array = (uint16_t *)ROARING_MALLOC(
             container->options, new_capacity * sizeof(uint16_t));
     }
 

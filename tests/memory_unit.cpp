@@ -921,6 +921,7 @@ void test_roaring_memory_cpp64_example_true(void**)
 }
 
 int main() {
+#ifdef ENABLECMM
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_roaring_memory_meta),
         cmocka_unit_test(test_roaring_memory_basic),
@@ -934,4 +935,5 @@ int main() {
         };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
+#endif
 }
