@@ -6,7 +6,7 @@ extern "C" {
 
 #include <stddef.h>  // for size_t
 
-#ifndef ENABLECMM
+#ifndef ROARING_ENABLECMM
 #define ROARING_MALLOC(options, n) malloc(n)
 #define ROARING_REALLOC(options, p, old_sz, new_sz) realloc(p, new_sz)
 #define ROARING_CALLOC(options, n_elements, element_size) calloc(n_elements, element_size)

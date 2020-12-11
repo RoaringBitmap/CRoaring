@@ -72,7 +72,7 @@ static inline container_t *containerptr_roaring_bitmap_add(
 }
 
 roaring_options_t *roaring_options_copy(roaring_options_t *opts) {
-#ifndef ENABLECMM
+#ifndef ROARING_ENABLECMM
     return NULL;
 #else
     if (opts == NULL) {

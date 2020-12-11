@@ -32,7 +32,7 @@ if(ROARING_DISABLE_NEON)
   set (OPT_FLAGS "${OPT_FLAGS} -DDISABLENEON" )
 endif()
 if(ROARING_ENABLE_CMM)
-  set (OPT_FLAGS "${OPT_FLAGS} -DENABLECMM" )
+  set (OPT_FLAGS "${OPT_FLAGS} -DROARING_ENABLECMM" )
 endif()
 
 if(FORCE_AVX) # some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
