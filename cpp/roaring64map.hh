@@ -651,7 +651,7 @@ class Roaring64Map {
 #if ROARING_EXCEPTIONS
                 throw std::runtime_error("ran out of bytes");
 #else
-                std::terminate();
+                ROARING_TERMINATE("ran out of bytes");
 #endif
             }
             uint32_t key;
