@@ -1,4 +1,5 @@
-# CRoaring [![Build Status](https://travis-ci.org/RoaringBitmap/CRoaring.svg)](https://travis-ci.org/RoaringBitmap/CRoaring)   [![Build Status](https://img.shields.io/appveyor/ci/lemire/croaring.svg)](https://ci.appveyor.com/project/lemire/croaring) [![Build Status](https://cloud.drone.io/api/badges/RoaringBitmap/CRoaring/status.svg)](https://cloud.drone.io/RoaringBitmap/CRoaring)
+# CRoaring [![Build Status](https://travis-ci.org/RoaringBitmap/CRoaring.svg)](https://travis-ci.org/RoaringBitmap/CRoaring)    [![Build status](https://ci.appveyor.com/api/projects/status/gr4ibsflqs9by1bc/branch/master?svg=true)](https://ci.appveyor.com/project/lemire/croaring/branch/master) [![Build Status](https://cloud.drone.io/api/badges/RoaringBitmap/CRoaring/status.svg)](https://cloud.drone.io/RoaringBitmap/CRoaring)
+
 Portable Roaring bitmaps in C (and C++) with full support for your favorite compiler (GNU GCC, LLVM's clang, Visual Studio). Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open source C software.
 
 # Introduction
