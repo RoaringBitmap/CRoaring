@@ -29,7 +29,8 @@ class Roaring {
      * Create an empty bitmap in the existing memory for the class.
      * The bitmap will be in the "clear" state with no auxiliary allocations.
      */
-    Roaring() : roaring{} {
+    Roaring() : roaring{} { 
+        // The empty constructor roaring{} silences warnings from pedantic static analyzers.
         api::roaring_bitmap_init_cleared(&roaring);
     }
 
@@ -572,7 +573,7 @@ class Roaring {
      */
     std::string toString() const {
         struct iter_data {
-            std::string str{};
+            std::string str{}; // The empty constructor silences warnings from pedantic static analyzers.
             char first_char = '{';
         } outer_iter_data;
         if (!isEmpty()) {
@@ -736,7 +737,7 @@ class RoaringSetBitForwardIterator final {
         }
     }
 
-    api::roaring_uint32_iterator_t i{};
+    api::roaring_uint32_iterator_t i{}; // The empty constructor silences warnings from pedantic static analyzers.
 };
 
 inline RoaringSetBitForwardIterator Roaring::begin() const {
