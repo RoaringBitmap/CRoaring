@@ -26,7 +26,9 @@ extern "C" { namespace roaring { namespace api {
  * code #undefs that after declaring `typedef ROARING_CONTAINER_T container_t;`
  */
 #if defined(__cplusplus)
-    struct container_s {};
+    extern "C++" {
+      struct container_s {};
+    }
     #define ROARING_CONTAINER_T ::roaring::api::container_s
 #else
     #define ROARING_CONTAINER_T void  // no compile-time checking

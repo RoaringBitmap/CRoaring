@@ -18,6 +18,6 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DROARING_EXCEPTIONS=OFF ..
+          cmake -DCMAKE_CXX_FLAGS=-fno-exceptions -DROARING_EXCEPTIONS=OFF ..
           cmake --build . 
           ctest . --output-on-failure
