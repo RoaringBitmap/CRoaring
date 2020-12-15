@@ -782,7 +782,7 @@ class Roaring64Map {
      */
     std::string toString() const {
         struct iter_data {
-            std::string str{};
+            std::string str{}; // The empty constructor silences warnings from pedantic static analyzers.
             uint32_t high_bits{0};
             char first_char{'{'};
         } outer_iter_data;
@@ -868,7 +868,7 @@ class Roaring64Map {
     const_iterator end() const;
 	
    private:
-    std::map<uint32_t, Roaring> roarings{};
+    std::map<uint32_t, Roaring> roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
     bool copyOnWrite{false};
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
@@ -1011,9 +1011,9 @@ class Roaring64MapSetBitForwardIterator {
 
    protected:
 	const std::map<uint32_t, Roaring>& p;
-    std::map<uint32_t, Roaring>::const_iterator map_iter{};
-    std::map<uint32_t, Roaring>::const_iterator map_end{};
-    api::roaring_uint32_iterator_t i{};
+    std::map<uint32_t, Roaring>::const_iterator map_iter{}; // The empty constructor silences warnings from pedantic static analyzers.
+    std::map<uint32_t, Roaring>::const_iterator map_end{}; // The empty constructor silences warnings from pedantic static analyzers.
+    api::roaring_uint32_iterator_t i{}; // The empty constructor silences warnings from pedantic static analyzers.
 };
 
 class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitForwardIterator {
