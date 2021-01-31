@@ -2787,7 +2787,7 @@ inline static void *arena_alloc(char **arena, size_t num_bytes) {
 
 void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
     /*
-     * Note: we do not require user to supply spicificly aligned buffer.
+     * Note: we do not require user to supply a specifically aligned buffer.
      * Thus we have to use memcpy() everywhere.
      */
 
