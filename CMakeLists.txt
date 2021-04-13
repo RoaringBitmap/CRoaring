@@ -47,6 +47,11 @@ SET(ROARING_DISABLE_NATIVE ON) # ARM platforms may not like -march=native
 endif()
 
 option(ROARING_BUILD_STATIC "Build a static library" ON)
+if(BUILD_SHARED_LIBS)
+  MESSAGE( STATUS "BUILD_SHARED_LIBS: " ${BUILD_SHARED_LIBS})
+  MESSAGE( STATUS "Building a shared library by request. ")
+  set(ROARING_BUILD_STATIC OFF)
+endif()
 option(ROARING_LINK_STATIC "Link executables (tests, benchmarks) statically" OFF)
 option(ROARING_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(ROARING_BUILD_C_AS_CPP "Build library C files using C++ compilation" OFF)
