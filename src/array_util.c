@@ -1933,6 +1933,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
 
     return true;
     }
+    return memcmp(s1, s2, n) == 0;
 #else
     return memcmp(s1, s2, n) == 0;
 #endif

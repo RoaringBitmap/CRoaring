@@ -63,7 +63,8 @@ enum croaring_instruction_set {
   CROARING_PCLMULQDQ = 0x10,
   CROARING_BMI1 = 0x20,
   CROARING_BMI2 = 0x40,
-  CROARING_ALTIVEC = 0x80
+  CROARING_ALTIVEC = 0x80,
+  CROARING_UNINITIALIZED = 0x8000
 };
 
 #if defined(__PPC64__)
@@ -164,13 +165,24 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
 
 #endif // end SIMD extension detection code
 
+
+#if defined(__cplusplus)
+#include <atomic>
 static inline uint32_t croaring_detect_supported_architectures() {
-    static uint32_t buffer = 0xFFFFFFFF;
-    if(buffer == 0xFFFFFFFF) {
-      // may be detected as a data race under some systems.
+    static std::atomic<int> buffer{CROARING_UNINITIALIZED};
+    if(buffer == CROARING_UNINITIALIZED) {
       buffer = dynamic_croaring_detect_supported_architectures();
     }
     return buffer;
 }
-
+#else
+#include <stdatomic.h>
+static inline uint32_t croaring_detect_supported_architectures() {
+    static _Atomic int buffer = CROARING_UNINITIALIZED;
+    if(buffer == CROARING_UNINITIALIZED) {
+      buffer = dynamic_croaring_detect_supported_architectures();
+    }
+    return buffer;
+}
+#endif
 #endif // ROARING_ISADETECTION_H
