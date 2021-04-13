@@ -333,7 +333,7 @@ static inline int _scalar_run_container_cardinality(const run_container_t *run) 
 }
 
 static inline int run_container_cardinality(const run_container_t *run) {
-  if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
+  if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
     return _avx2_run_container_cardinality(run);
   } else {
     return _scalar_run_container_cardinality(run);

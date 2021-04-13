@@ -77,9 +77,6 @@ DEFINE_TEST(setandextract_uint32) {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(setandextract_uint16),
-#ifdef CROARING_IS_X64
-        cmocka_unit_test(setandextract_sse_uint16),
-#endif
         cmocka_unit_test(setandextract_uint32),
     };
 

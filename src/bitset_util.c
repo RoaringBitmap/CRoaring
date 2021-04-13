@@ -895,8 +895,8 @@ void _scalar_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t len
 
 uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {
-    if(detect_supported_architectures() & instruction_set::AVX2 == instruction_set::AVX2) {
-        _avx2_bitset_clear_list(words, card, list, length);
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
+        _asm_bitset_clear_list(words, card, list, length);
     } else {
         _scalar_bitset_clear_list(words, card, list, length);
     }
@@ -904,16 +904,16 @@ uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
 
 uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
-    if(detect_supported_architectures() & instruction_set::AVX2 == instruction_set::AVX2) {
-        _avx2_bitset_set_list_withcard(words, card, list, length);
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
+        _asm_bitset_set_list_withcard(words, card, list, length);
     } else {
         _scalar_bitset_set_list_withcard(words, card, list, length);
     }
 }
 
 void bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
-    if(detect_supported_architectures() & instruction_set::AVX2 == instruction_set::AVX2) {
-        _avx2_bitset_set_list(words, list, length);
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
+        _asm_bitset_set_list(words, list, length);
     } else {
         _scalar_bitset_set_list(words, list, length);
     }
