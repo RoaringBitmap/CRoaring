@@ -16,7 +16,7 @@ extern "C" { namespace roaring { namespace internal {
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                                    uint16_t ikey);
 
-#ifdef USESSE4
+#ifdef CROARING_IS_X64
 // used by intersect_vector16
 ALIGNED(0x1000)
 static const uint8_t shuffle_mask16[] = {
@@ -367,6 +367,7 @@ static const uint8_t shuffle_mask16[] = {
  * From Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
  * Optimized by D. Lemire on May 3rd 2013
  */
+CROARING_TARGET_AVX2
 int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a,
                            const uint16_t *__restrict__ B, size_t s_b,
                            uint16_t *C) {
@@ -443,7 +444,9 @@ int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a,
     }
     return (int32_t)count;
 }
+CROARING_UNTARGET_REGION
 
+CROARING_TARGET_AVX2
 int32_t intersect_vector16_cardinality(const uint16_t *__restrict__ A,
                                        size_t s_a,
                                        const uint16_t *__restrict__ B,
@@ -513,7 +516,9 @@ int32_t intersect_vector16_cardinality(const uint16_t *__restrict__ A,
     }
     return (int32_t)count;
 }
+CROARING_UNTARGET_REGION
 
+CROARING_TARGET_AVX2
 /////////
 // Warning:
 // This function may not be safe if A == C or B == C.
@@ -655,51 +660,9 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
     }
     return count;
 }
+CROARING_UNTARGET_REGION
+#endif  // CROARING_IS_X64
 
-#endif  // USESSE4
-
-
-
-#ifdef USE_OLD_SKEW_INTERSECT
-// TODO: given enough experience with the new skew intersect, drop the old one from the code base.
-
-
-/* Computes the intersection between one small and one large set of uint16_t.
- * Stores the result into buffer and return the number of elements. */
-int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
-                                const uint16_t *large, size_t size_l,
-                                uint16_t *buffer) {
-    size_t pos = 0, idx_l = 0, idx_s = 0;
-
-    if (0 == size_s) {
-        return 0;
-    }
-
-    uint16_t val_l = large[idx_l], val_s = small[idx_s];
-
-    while (true) {
-        if (val_l < val_s) {
-            idx_l = advanceUntil(large, (int32_t)idx_l, (int32_t)size_l, val_s);
-            if (idx_l == size_l) break;
-            val_l = large[idx_l];
-        } else if (val_s < val_l) {
-            idx_s++;
-            if (idx_s == size_s) break;
-            val_s = small[idx_s];
-        } else {
-            buffer[pos++] = val_s;
-            idx_s++;
-            if (idx_s == size_s) break;
-            val_s = small[idx_s];
-            idx_l = advanceUntil(large, (int32_t)idx_l, (int32_t)size_l, val_s);
-            if (idx_l == size_l) break;
-            val_l = large[idx_l];
-        }
-    }
-
-    return (int32_t)pos;
-}
-#else // USE_OLD_SKEW_INTERSECT
 
 
 /**
@@ -818,8 +781,6 @@ int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
   return (int32_t)pos;
 }
 
-
-#endif //USE_OLD_SKEW_INTERSECT
 
 
 // TODO: this could be accelerated, possibly, by using binarySearch4 as above.
@@ -1146,7 +1107,7 @@ int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
     return pos_out;
 }
 
-#ifdef USESSE4
+#ifdef CROARING_IS_X64
 
 /***
  * start of the SIMD 16-bit union code
@@ -1564,6 +1525,7 @@ static int uint16_compare(const void *a, const void *b) {
     return (*(uint16_t *)a - *(uint16_t *)b);
 }
 
+CROARING_TARGET_AVX2
 // a one-pass SSE union algorithm
 // This function may not be safe if array1 == output or array2 == output.
 uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
@@ -1645,6 +1607,7 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
     }
     return len;
 }
+CROARING_UNTARGET_REGION
 
 /**
  * End of the SIMD 16-bit union code
@@ -1655,6 +1618,7 @@ uint32_t union_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
  * Start of SIMD 16-bit XOR code
  */
 
+CROARING_TARGET_AVX2
 // write vector new, while omitting repeated values assuming that previously
 // written vector was "old"
 static inline int store_unique_xor(__m128i old, __m128i newval,
@@ -1672,6 +1636,7 @@ static inline int store_unique_xor(__m128i old, __m128i newval,
     _mm_storeu_si128((__m128i *)output, val);
     return numberofnewvalues;
 }
+CROARING_UNTARGET_REGION
 
 // working in-place, this function overwrites the repeated values
 // could be avoided? Warning: assumes len > 0
@@ -1685,7 +1650,7 @@ static inline uint32_t unique_xor(uint16_t *out, uint32_t len) {
     }
     return pos;
 }
-
+CROARING_TARGET_AVX2
 // a one-pass SSE xor algorithm
 uint32_t xor_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
                       const uint16_t *__restrict__ array2, uint32_t length2,
@@ -1789,12 +1754,12 @@ uint32_t xor_vector16(const uint16_t *__restrict__ array1, uint32_t length1,
     }
     return len;
 }
-
+CROARING_UNTARGET_REGION
 /**
  * End of SIMD 16-bit XOR code
  */
 
-#endif  // USESSE4
+#endif  // CROARING_IS_X64
 
 size_t union_uint32(const uint32_t *set_1, size_t size_1, const uint32_t *set_2,
                     size_t size_2, uint32_t *buffer) {
@@ -1893,14 +1858,25 @@ size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
 
 size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
-#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
-    // compute union with smallest array first
-    if (size_1 < size_2) {
+#ifdef CROARING_IS_X64
+    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
+        // compute union with smallest array first
+      if (size_1 < size_2) {
         return union_vector16(set_1, (uint32_t)size_1,
                                           set_2, (uint32_t)size_2, buffer);
-    } else {
+      } else {
         return union_vector16(set_2, (uint32_t)size_2,
                                           set_1, (uint32_t)size_1, buffer);
+      }
+    } else {
+       // compute union with smallest array first
+      if (size_1 < size_2) {
+        return union_uint16(
+            set_1, size_1, set_2, size_2, buffer);
+      } else {
+        return union_uint16(
+            set_2, size_2, set_1, size_1, buffer);
+      }
     }
 #else
     // compute union with smallest array first
@@ -1918,7 +1894,8 @@ bool memequals(const void *s1, const void *s2, size_t n) {
     if (n == 0) {
         return true;
     }
-#ifdef USEAVX
+#ifdef CROARING_IS_X64
+    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
     const uint8_t *ptr2 = (const uint8_t *)s2;
     const uint8_t *end1 = ptr1 + n;
@@ -1955,6 +1932,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
     }
 
     return true;
+    }
 #else
     return memcmp(s1, s2, n) == 0;
 #endif

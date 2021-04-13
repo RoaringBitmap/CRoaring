@@ -20,7 +20,7 @@
 #ifdef __cplusplus
 extern "C" { namespace roaring {
 
-// Note: in pure C++ code, you should avoid putting `using` in header files 
+// Note: in pure C++ code, you should avoid putting `using` in header files
 using api::roaring_iterator;
 using api::roaring_iterator64;
 
@@ -285,10 +285,11 @@ static inline bool run_container_contains_range(const run_container_t *run,
     return count >= (pos_end - pos_start - 1);
 }
 
-#ifdef USEAVX
+#ifdef CROARING_IS_X64
 
+CROARING_TARGET_AVX2
 /* Get the cardinality of `run'. Requires an actual computation. */
-static inline int run_container_cardinality(const run_container_t *run) {
+static inline int _avx2_run_container_cardinality(const run_container_t *run) {
     const int32_t n_runs = run->n_runs;
     const rle16_t *runs = run->runs;
 
@@ -315,7 +316,29 @@ static inline int run_container_cardinality(const run_container_t *run) {
 
     return sum;
 }
+CROARING_UNTARGET_REGION
 
+/* Get the cardinality of `run'. Requires an actual computation. */
+static inline int _scalar_run_container_cardinality(const run_container_t *run) {
+    const int32_t n_runs = run->n_runs;
+    const rle16_t *runs = run->runs;
+
+    /* by initializing with n_runs, we omit counting the +1 for each pair. */
+    int sum = n_runs;
+    for (int k = 0; k < n_runs; ++k) {
+        sum += runs[k].length;
+    }
+
+    return sum;
+}
+
+static inline int run_container_cardinality(const run_container_t *run) {
+  if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
+    return _avx2_run_container_cardinality(run);
+  } else {
+    return _scalar_run_container_cardinality(run);
+  }
+}
 #else
 
 /* Get the cardinality of `run'. Requires an actual computation. */

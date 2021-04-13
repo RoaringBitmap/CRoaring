@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "roaring_checked.hh"
-using doublechecked::Roaring;  // so `Roaring` means `doublecheck::Roaring` 
+using doublechecked::Roaring;  // so `Roaring` means `doublecheck::Roaring`
 
 #include "test.h"
 

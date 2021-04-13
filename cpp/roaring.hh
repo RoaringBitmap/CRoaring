@@ -46,7 +46,7 @@ class Roaring {
      * Create an empty bitmap in the existing memory for the class.
      * The bitmap will be in the "clear" state with no auxiliary allocations.
      */
-    Roaring() : roaring{} { 
+    Roaring() : roaring{} {
         // The empty constructor roaring{} silences warnings from pedantic static analyzers.
         api::roaring_bitmap_init_cleared(&roaring);
     }
@@ -118,7 +118,7 @@ class Roaring {
      * Add value x
      * Returns true if a new value was added, false if the value was already existing.
      */
-    bool addChecked(uint32_t x) { 
+    bool addChecked(uint32_t x) {
         return api::roaring_bitmap_add_checked(&roaring, x);
     }
 
@@ -298,7 +298,7 @@ class Roaring {
     }
     /**
      * to int array with pagination
-     * 
+     *
      */
     void rangeUint32Array(uint32_t *ans, size_t offset, size_t limit) const {
         api::roaring_bitmap_range_uint32_array(&roaring, offset, limit, ans);
@@ -446,18 +446,18 @@ class Roaring {
     *       namespace serialization {
     *
     *       template <class Archive>
-    *       void save(Archive& ar, const Roaring& bitmask, 
+    *       void save(Archive& ar, const Roaring& bitmask,
     *          const unsigned int version) {
     *         std::size_t expected_size_in_bytes = bitmask.getSizeInBytes();
     *         std::vector<char> buffer(expected_size_in_bytes);
     *         std::size_t       size_in_bytes = bitmask.write(buffer.data());
     *
     *         ar& size_in_bytes;
-    *         ar& boost::serialization::make_binary_object(buffer.data(), 
+    *         ar& boost::serialization::make_binary_object(buffer.data(),
     *             size_in_bytes);
     *      }
     *      template <class Archive>
-    *      void load(Archive& ar, Roaring& bitmask, 
+    *      void load(Archive& ar, Roaring& bitmask,
     *          const unsigned int version) {
     *         std::size_t size_in_bytes = 0;
     *         ar& size_in_bytes;

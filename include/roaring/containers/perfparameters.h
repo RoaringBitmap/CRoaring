@@ -14,11 +14,11 @@ long as we can expect them to have  ARRAY_LAZY_LOWERBOUND values.
 */
 enum { ARRAY_LAZY_LOWERBOUND = 1024 };
 
-/* default initial size of a run container 
+/* default initial size of a run container
    setting it to zero delays the malloc.*/
 enum { RUN_DEFAULT_INIT_SIZE = 0 };
 
-/* default initial size of an array container 
+/* default initial size of an array container
    setting it to zero delays the malloc */
 enum { ARRAY_DEFAULT_INIT_SIZE = 0 };
 

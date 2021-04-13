@@ -46,6 +46,7 @@ $SCRIPTPATH/cpp/roaring64map.hh
 # need to be in this order.
 #
 ALL_PRIVATE_H="
+$SCRIPTPATH/include/roaring/isadetection.h
 $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/containers/perfparameters.h
 $SCRIPTPATH/include/roaring/containers/container_defs.h

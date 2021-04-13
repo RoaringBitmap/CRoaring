@@ -189,8 +189,8 @@ void array_container_andnot(const array_container_t *array_1,
                             array_container_t *out) {
     if (out->capacity < array_1->cardinality)
         array_container_grow(out, array_1->cardinality, false);
-#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
-    if((out != array_1) && (out != array_2)) {
+#ifdef CROARING_IS_X64
+    if((detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) && (out != array_1) && (out != array_2)) {
       out->cardinality =
           difference_vector16(array_1->array, array_1->cardinality,
                             array_2->array, array_2->cardinality, out->array);
@@ -220,10 +220,16 @@ void array_container_xor(const array_container_t *array_1,
         array_container_grow(out, max_cardinality, false);
     }
 
-#ifdef ROARING_VECTOR_OPERATIONS_ENABLED
-    out->cardinality =
+#ifdef CROARING_IS_X64
+    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
+      out->cardinality =
         xor_vector16(array_1->array, array_1->cardinality, array_2->array,
                      array_2->cardinality, out->array);
+    } else {
+      out->cardinality =
+        xor_uint16(array_1->array, array_1->cardinality, array_2->array,
+                   array_2->cardinality, out->array);
+    }
 #else
     out->cardinality =
         xor_uint16(array_1->array, array_1->cardinality, array_2->array,
@@ -245,7 +251,7 @@ void array_container_intersection(const array_container_t *array1,
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
             min_card = minimum_int32(card_1, card_2);
     const int threshold = 64;  // subject to tuning
-#ifdef USEAVX
+#ifdef CROARING_IS_X64
     if (out->capacity < min_card) {
       array_container_grow(out, min_card + sizeof(__m128i) / sizeof(uint16_t),
         false);
@@ -263,9 +269,14 @@ void array_container_intersection(const array_container_t *array1,
         out->cardinality = intersect_skewed_uint16(
             array2->array, card_2, array1->array, card_1, out->array);
     } else {
-#ifdef USEAVX
+#ifdef CROARING_IS_X64
+       if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
         out->cardinality = intersect_vector16(
             array1->array, card_1, array2->array, card_2, out->array);
+       } else {
+        out->cardinality = intersect_uint16(array1->array, card_1,
+                                            array2->array, card_2, out->array);
+       }
 #else
         out->cardinality = intersect_uint16(array1->array, card_1,
                                             array2->array, card_2, out->array);
@@ -286,9 +297,14 @@ int array_container_intersection_cardinality(const array_container_t *array1,
         return intersect_skewed_uint16_cardinality(array2->array, card_2,
                                                    array1->array, card_1);
     } else {
-#ifdef USEAVX
+#ifdef CROARING_IS_X64
+    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
         return intersect_vector16_cardinality(array1->array, card_1,
                                               array2->array, card_2);
+    } else {
+        return intersect_uint16_cardinality(array1->array, card_1,
+                                            array2->array, card_2);
+    }
 #else
         return intersect_uint16_cardinality(array1->array, card_1,
                                             array2->array, card_2);

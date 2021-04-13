@@ -8,18 +8,19 @@
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif
+#endif // _GNU_SOURCE
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS 1
-#endif
+#endif // __STDC_FORMAT_MACROS
 
 #if !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
 #define _POSIX_C_SOURCE 200809L
-#endif
+#endif // !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
 #if !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
 #define _XOPEN_SOURCE 700
-#endif
+#endif // !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
 
+#include "isadetection.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>  // will provide posix_memalign with _POSIX_C_SOURCE as defined above
@@ -42,47 +43,19 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
-#endif
+#endif // defined(_MSC_VER
 
-#ifndef DISABLE_X64  // some users may want to compile as if they did not have
-                     // an x64 processor
 
-///////////////////////
-/// We support X64 hardware in the following manner:
-///
-/// if IS_X64 is defined then we have at least SSE and SSE2
-/// (All Intel processors sold in the recent past have at least SSE and SSE2 support,
-/// going back to the Pentium 4.)
-///
-/// if USESSE4 is defined then we assume at least SSE4.2, SSE4.1,
-///                   SSSE3, SSE3... + IS_X64
-/// if USEAVX is defined, then we assume AVX2, AVX + USESSE4
-///
-/// So if you have hardware that supports AVX but not AVX2, then "USEAVX"
-/// won't be enabled.
-/// If you have hardware that supports SSE4.1, but not SSE4.2, then USESSE4
-/// won't be defined.
-//////////////////////
 
-// unless DISABLEAVX was defined, if we have __AVX2__, we enable AVX
-#if (!defined(USEAVX)) && (!defined(DISABLEAVX)) && (defined(__AVX2__))
-#define USEAVX
-#endif
-
-// if we have __SSE4_2__, we enable SSE4
-#if (defined(__POPCNT__)) && (defined(__SSE4_2__))
-#define USESSE4
-#endif
-
-#if defined(USEAVX) || defined(__x86_64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64)
 // we have an x64 processor
-#define IS_X64
+#define CROARING_IS_X64
 // we include the intrinsic header
 #ifndef _MSC_VER
 /* Non-Microsoft C/C++-compatible compiler */
 #include <x86intrin.h>  // on some recent GCC, this will declare posix_memalign
-#endif
-#endif
+#endif // _MSC_VER
+#endif // defined(__x86_64__) || defined(_M_X64)
 
 #if !defined(USENEON) && !defined(DISABLENEON) && defined(__ARM_NEON)
 #  define USENEON
@@ -95,17 +68,8 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 /* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline
  * assembly */
 #define ROARING_INLINE_ASM
-#endif
+#endif  // _MSC_VER
 
-#ifdef USEAVX
-#define USESSE4             // if we have AVX, then we have SSE4
-#define USE_BMI             // we assume that AVX2 and BMI go hand and hand
-#define USEAVX2FORDECODING  // optimization
-// vector operations should work on not just AVX
-#define ROARING_VECTOR_OPERATIONS_ENABLED  // vector unions (optimization)
-#endif
-
-#endif  // DISABLE_X64
 
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
@@ -149,21 +113,9 @@ inline int __builtin_clzll(unsigned long long input_num) {
     return 63 - index;
 }
 
-/* result might be undefined when input_num is zero */
-#ifdef USESSE4
-/* POPCNT support was added to processors around the release of SSE4.2 */
-/* USESSE4 flag guarantees POPCNT support */
-inline int __builtin_popcountll(unsigned long long input_num) {
-#ifdef _WIN64  // highly recommended!!!
-	return (int)__popcnt64(input_num);
-#else  // if we must support 32-bit Windows
-	return (int)(__popcnt((uint32_t)input_num) +
-		__popcnt((uint32_t)(input_num >> 32)));
-#endif
-}
-#else
+
 /* software implementation avoids POPCNT */
-static inline int __builtin_popcountll(unsigned long long input_num) {
+/*static inline int __builtin_popcountll(unsigned long long input_num) {
 	const uint64_t m1 = 0x5555555555555555; //binary: 0101...
 	const uint64_t m2 = 0x3333333333333333; //binary: 00110011..
 	const uint64_t m4 = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
@@ -173,8 +125,7 @@ static inline int __builtin_popcountll(unsigned long long input_num) {
 	input_num = (input_num & m2) + ((input_num >> 2) & m2);
 	input_num = (input_num + (input_num >> 4)) & m4;
 	return (input_num * h01) >> 56;
-}
-#endif
+}*/
 
 /* Use #define so this is effective even under /Ob0 (no inline) */
 #define __builtin_unreachable() __assume(0)
@@ -229,25 +180,75 @@ static inline void roaring_bitmap_aligned_free(void *memblock) {
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
 static inline int hamming(uint64_t x) {
-#ifdef USESSE4
-    return (int) _mm_popcnt_u64(x);
+#if defined(_WIN64) && defined(_MSC_VER) && !defined(__clang__)
+  return (int) __popcnt64(x);
+#elif defined(_WIN32) && defined(_MSC_VER) && !defined(__clang__)
+    return (int) __popcnt(( unsigned int)x) + (int)  __popcnt(( unsigned int)(x>>32));
 #else
-    // won't work under visual studio, but hopeful we have _mm_popcnt_u64 in
-    // many cases
     return __builtin_popcountll(x);
 #endif
 }
 
 #ifndef UINT64_C
 #define UINT64_C(c) (c##ULL)
-#endif
+#endif // UINT64_C
 
 #ifndef UINT32_C
 #define UINT32_C(c) (c##UL)
-#endif
+#endif // UINT32_C
 
 #ifdef __cplusplus
 }  // extern "C" {
+#endif // __cplusplus
+
+
+// this is almost standard?
+#undef STRINGIFY_IMPLEMENTATION_
+#undef STRINGIFY
+#define STRINGIFY_IMPLEMENTATION_(a) #a
+#define STRINGIFY(a) STRINGIFY_IMPLEMENTATION_(a)
+
+// Our fast kernels require 64-bit systems.
+//
+// On 32-bit x86, we lack 64-bit popcnt, lzcnt, blsr instructions.
+// Furthermore, the number of SIMD registers is reduced.
+//
+// On 32-bit ARM, we would have smaller registers.
+//
+// The simdjson users should still have the fallback kernel. It is
+// slower, but it should run everywhere.
+
+//
+// Enable valid runtime implementations, and select CROARING_BUILTIN_IMPLEMENTATION
+//
+
+// We are going to use runtime dispatch.
+#ifdef CROARING_IS_X64
+#ifdef __clang__
+// clang does not have GCC push pop
+// warning: clang attribute push can't be used within a namespace in clang up
+// til 8.0 so CROARING_TARGET_REGION and CROARING_UNTARGET_REGION must be *outside* of a
+// namespace.
+#define CROARING_TARGET_REGION(T)                                                       \
+  _Pragma(STRINGIFY(                                                           \
+      clang attribute push(__attribute__((target(T))), apply_to = function)))
+#define CROARING_UNTARGET_REGION _Pragma("clang attribute pop")
+#elif defined(__GNUC__)
+// GCC is easier
+#define CROARING_TARGET_REGION(T)                                                       \
+  _Pragma("GCC push_options") _Pragma(STRINGIFY(GCC target(T)))
+#define CROARING_UNTARGET_REGION _Pragma("GCC pop_options")
+#endif // clang then gcc
+
+#endif // CROARING_IS_X64
+
+// Default target region macros don't do anything.
+#ifndef CROARING_TARGET_REGION
+#define CROARING_TARGET_REGION(T)
+#define CROARING_UNTARGET_REGION
 #endif
+
+#define CROARING_TARGET_AVX2 CROARING_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+
 
 #endif /* INCLUDE_PORTABILITY_H_ */

@@ -604,7 +604,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
             container_t *c = container_and(c1, type1, c2, type2, &result_type);
-            
+
             if (container_nonzero_cardinality(c, result_type)) {
                 ra_append(&answer->high_low_container, s1, c, result_type);
             } else {
@@ -682,15 +682,15 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
                                     &x2->high_low_container, pos2, &type2);
 
             // We do the computation "in place" only when c1 is not a shared container.
-            // Rationale: using a shared container safely with in place computation would 
-            // require making a copy and then doing the computation in place which is likely 
-            // less efficient than avoiding in place entirely and always generating a new 
+            // Rationale: using a shared container safely with in place computation would
+            // require making a copy and then doing the computation in place which is likely
+            // less efficient than avoiding in place entirely and always generating a new
             // container.
             container_t *c =
                 (type1 == SHARED_CONTAINER_TYPE)
                     ? container_and(c1, type1, c2, type2, &result_type)
                     : container_iand(c1, type1, c2, type2, &result_type);
-            
+
             if (c != c1) {  // in this instance a new container was created, and
                             // we need to free the old one
                 container_free(c1, type1);
@@ -830,7 +830,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                     (type1 == SHARED_CONTAINER_TYPE)
                         ? container_or(c1, type1, c2, type2, &result_type)
                         : container_ior(c1, type1, c2, type2, &result_type);
-                
+
                 if (c != c1) {  // in this instance a new container was created,
                                 // and we need to free the old one
                     container_free(c1, type1);
@@ -983,9 +983,9 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
                                     &x2->high_low_container, pos2, &type2);
 
             // We do the computation "in place" only when c1 is not a shared container.
-            // Rationale: using a shared container safely with in place computation would 
-            // require making a copy and then doing the computation in place which is likely 
-            // less efficient than avoiding in place entirely and always generating a new 
+            // Rationale: using a shared container safely with in place computation would
+            // require making a copy and then doing the computation in place which is likely
+            // less efficient than avoiding in place entirely and always generating a new
             // container.
 
             container_t *c;
@@ -1136,9 +1136,9 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
                                     &x2->high_low_container, pos2, &type2);
 
             // We do the computation "in place" only when c1 is not a shared container.
-            // Rationale: using a shared container safely with in place computation would 
-            // require making a copy and then doing the computation in place which is likely 
-            // less efficient than avoiding in place entirely and always generating a new 
+            // Rationale: using a shared container safely with in place computation would
+            // require making a copy and then doing the computation in place which is likely
+            // less efficient than avoiding in place entirely and always generating a new
             // container.
 
             container_t *c;
@@ -1567,7 +1567,7 @@ static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit, uint32
 
     switch (newit->typecode) {
         case BITSET_CONTAINER_TYPE: {
-            const bitset_container_t *bc = const_CAST_bitset(newit->container); 
+            const bitset_container_t *bc = const_CAST_bitset(newit->container);
             newit->in_container_index =
                         bitset_container_index_equalorlarger(bc, lb);
             newit->current_value = newit->highbits | newit->in_container_index;
@@ -2413,11 +2413,11 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                     &x1->high_low_container, pos1, &type1);
             container_t *c2 = ra_get_container_at_index(
                                     &x2->high_low_container, pos2, &type2);
- 
+
             // We do the computation "in place" only when c1 is not a shared container.
-            // Rationale: using a shared container safely with in place computation would 
-            // require making a copy and then doing the computation in place which is likely 
-            // less efficient than avoiding in place entirely and always generating a new 
+            // Rationale: using a shared container safely with in place computation would
+            // require making a copy and then doing the computation in place which is likely
+            // less efficient than avoiding in place entirely and always generating a new
             // container.
 
             container_t *c;
@@ -2428,7 +2428,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             else {
                 c = container_lazy_ixor(c1, type1, c2, type2, &result_type);
             }
-        
+
             if (container_nonzero_cardinality(c, result_type)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c,
                                           result_type);
