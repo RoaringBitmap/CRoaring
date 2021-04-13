@@ -50,6 +50,18 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #if defined(__x86_64__) || defined(_M_X64)
 // we have an x64 processor
 #define CROARING_IS_X64
+
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+// Old visual studio systems won't support AVX2 well.
+#undef CROARING_IS_X64
+#endif
+
+#if defined(__clang_major__) && (__clang_major__<= 8)
+// Older versions of clang have a bug affecting us
+// https://stackoverflow.com/questions/57228537/how-does-one-use-pragma-clang-attribute-push-with-c-namespaces
+#undef CROARING_IS_X64
+#endif
+
 // we include the intrinsic header
 #ifndef _MSC_VER
 /* Non-Microsoft C/C++-compatible compiler */
