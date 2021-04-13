@@ -121,16 +121,16 @@ DEFINE_TEST(issue245) {
     for (uint32_t count = 1; count < targetEntries; count++, offset += 2) {
         roaring_bitmap_add_range_closed(bitmap, offset, offset);
     }
-    
+
     if (!check_serialization(bitmap)) {
         printf("Bitmaps do not match at 2048 entries\n");
         abort();
     }
-    
+
     // Add one more, forcing it to become a bitset
     offset += 2;
     roaring_bitmap_add_range_closed(bitmap, offset, offset);
-    
+
     if (!check_serialization(bitmap)) {
         printf("Bitmaps do not match at 2049 entries\n");
         abort();
@@ -337,7 +337,7 @@ void sbs_compare(sbs_t *sbs) {
     }
 
     uint32_t actual_cardinality = roaring_bitmap_get_cardinality(sbs->roaring);
-    uint32_t *actual_values = 
+    uint32_t *actual_values =
             (uint32_t*)malloc(actual_cardinality * sizeof(uint32_t));
     memset(actual_values, 0, actual_cardinality * sizeof(uint32_t));
     roaring_bitmap_to_uint32_array(sbs->roaring, actual_values);

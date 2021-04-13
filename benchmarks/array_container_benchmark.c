@@ -6,7 +6,7 @@
 
 enum { TESTSIZE = 2048 };
 // flushes the array from cache
-#if defined(IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
+#if defined(CROARING_IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
 void array_cache_flush(array_container_t* B) {
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
@@ -22,7 +22,7 @@ void array_cache_flush(array_container_t* B) { (void)B; }
 
 // tries to put the array in cache
 void array_cache_prefetch(array_container_t* B) {
-#ifdef IS_X64
+#ifdef CROARING_IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else

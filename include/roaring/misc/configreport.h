@@ -16,7 +16,7 @@
 extern "C" { namespace roaring { namespace misc {
 #endif
 
-#ifdef IS_X64
+#ifdef CROARING_IS_X64
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {
@@ -123,15 +123,7 @@ static inline void tellmeall() {
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
-    printf("\tBuild option USEAVX ");
-#ifdef USEAVX
-    printf("enabled\n");
-#else
-    printf("disabled\n");
-#endif
-#ifndef __AVX2__
-    printf("AVX2 is NOT available.\n");
-#endif
+
 
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
         printf("number of bytes: int = %lu long = %lu \n",

@@ -10,7 +10,7 @@
 extern "C" { namespace roaring { namespace internal {
 #endif
 
-#ifdef IS_X64
+#ifdef CROARING_IS_X64
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
     2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -25,7 +25,7 @@ static uint8_t lengthTable[256] = {
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 #endif
 
-#ifdef USEAVX
+#ifdef CROARING_IS_X64
 ALIGNED(32)
 static uint32_t vecDecodeTable[256][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
@@ -286,9 +286,9 @@ static uint32_t vecDecodeTable[256][8] = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
-#endif  // #ifdef USEAVX
+#endif  // #ifdef CROARING_IS_X64
 
-#ifdef IS_X64
+#ifdef CROARING_IS_X64
 // same as vecDecodeTable but in 16 bits
 ALIGNED(32)
 static uint16_t vecDecodeTable_uint16[256][8] = {
@@ -552,8 +552,8 @@ static uint16_t vecDecodeTable_uint16[256][8] = {
 
 #endif
 
-#ifdef USEAVX
-
+#ifdef CROARING_IS_X64
+CROARING_TARGET_AVX2
 size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
                                    uint32_t *out, size_t outcapacity,
                                    uint32_t base) {
@@ -605,7 +605,8 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
     }
     return out - initout;
 }
-#endif  // USEAVX
+CROARING_UNTARGET_REGION
+#endif  // CROARING_IS_X64
 
 size_t bitset_extract_setbits(const uint64_t *words, size_t length,
                               uint32_t *out, uint32_t base) {
@@ -644,7 +645,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ 
     return outpos;
 }
 
-#ifdef IS_X64
+#ifdef CROARING_IS_X64
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out" as 16-bit integers, values start at "base" (can
@@ -657,6 +658,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ 
  *
  * This function uses SSE decoding.
  */
+CROARING_TARGET_AVX2
 size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
                                          uint16_t *out, size_t outcapacity,
                                          uint16_t base) {
@@ -707,6 +709,7 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
     }
     return out - initout;
 }
+CROARING_UNTARGET_REGION
 #endif
 
 /*
@@ -734,9 +737,9 @@ size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
     return outpos;
 }
 
-#if defined(ASMBITMANIPOPTIMIZATION)
+#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(CROARING_IS_X64)
 
-uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
+uint64_t _asm_bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
     uint64_t offset, load, pos;
     uint64_t shift = 6;
@@ -761,7 +764,7 @@ uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
     return card;
 }
 
-void bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
+void _asm_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
     uint64_t pos;
     const uint16_t *end = list + length;
 
@@ -816,7 +819,7 @@ void bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
     }
 }
 
-uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
+uint64_t _asm_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {
     uint64_t offset, load, pos;
     uint64_t shift = 6;
@@ -842,6 +845,79 @@ uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
     return card;
 }
 
+uint64_t _scalar_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
+                           uint64_t length) {
+    uint64_t offset, load, newload, pos, index;
+    const uint16_t *end = list + length;
+    while (list != end) {
+        pos = *(const uint16_t *)list;
+        offset = pos >> 6;
+        index = pos % 64;
+        load = words[offset];
+        newload = load & ~(UINT64_C(1) << index);
+        card -= (load ^ newload) >> index;
+        words[offset] = newload;
+        list++;
+    }
+    return card;
+}
+
+uint64_t _scalar_bitset_set_list_withcard(uint64_t *words, uint64_t card,
+                                  const uint16_t *list, uint64_t length) {
+    uint64_t offset, load, newload, pos, index;
+    const uint16_t *end = list + length;
+    while (list != end) {
+        pos = *list;
+        offset = pos >> 6;
+        index = pos % 64;
+        load = words[offset];
+        newload = load | (UINT64_C(1) << index);
+        card += (load ^ newload) >> index;
+        words[offset] = newload;
+        list++;
+    }
+    return card;
+}
+
+void _scalar_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
+    uint64_t offset, load, newload, pos, index;
+    const uint16_t *end = list + length;
+    while (list != end) {
+        pos = *list;
+        offset = pos >> 6;
+        index = pos % 64;
+        load = words[offset];
+        newload = load | (UINT64_C(1) << index);
+        words[offset] = newload;
+        list++;
+    }
+}
+
+uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
+                           uint64_t length) {
+    if(detect_supported_architectures() & instruction_set::AVX2 == instruction_set::AVX2) {
+        _avx2_bitset_clear_list(words, card, list, length);
+    } else {
+        _scalar_bitset_clear_list(words, card, list, length);
+    }
+}
+
+uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
+                                  const uint16_t *list, uint64_t length) {
+    if(detect_supported_architectures() & instruction_set::AVX2 == instruction_set::AVX2) {
+        _avx2_bitset_set_list_withcard(words, card, list, length);
+    } else {
+        _scalar_bitset_set_list_withcard(words, card, list, length);
+    }
+}
+
+void bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
+    if(detect_supported_architectures() & instruction_set::AVX2 == instruction_set::AVX2) {
+        _avx2_bitset_set_list(words, list, length);
+    } else {
+        _scalar_bitset_set_list(words, list, length);
+    }
+}
 #else
 uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {

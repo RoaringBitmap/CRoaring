@@ -168,7 +168,7 @@ class Roaring {
 
     bool containsRange(const uint64_t x, const uint64_t y) const {
         bool ans = plain.containsRange(x, y);
- 
+
         auto it = check.find(x);
         if (x >= y)
             assert(ans == true);  // roaring says true for this
@@ -237,7 +237,7 @@ class Roaring {
 
         for (auto value : r.check)
             check.erase(value);  // Note std::remove() is not for ordered sets
-    
+
         return *this;
     }
 
@@ -326,7 +326,7 @@ class Roaring {
 
     void flip(uint64_t range_start, uint64_t range_end) {
         plain.flip(range_start, range_end);
-  
+
         if (range_start < range_end) {
             if (range_end >= UINT64_C(0x100000000))
                 range_end = UINT64_C(0x100000000);
@@ -424,7 +424,7 @@ class Roaring {
 
     uint64_t or_cardinality(const Roaring &r) const {
         uint64_t ans = plain.or_cardinality(r.plain);
-    
+
         auto it = check.begin();
         auto it_end = check.end();
         auto r_it = r.check.begin();
@@ -475,7 +475,7 @@ class Roaring {
 
     uint64_t xor_cardinality(const Roaring &r) const {
         uint64_t ans = plain.xor_cardinality(r.plain);
-  
+
         auto it = check.begin();
         auto it_end = check.end();
         auto r_it = r.check.begin();
@@ -495,20 +495,20 @@ class Roaring {
             }
             assert(ans == count);
         }
- 
+
         return ans;
     }
 
     uint64_t rank(uint32_t x) const {
         uint64_t ans = plain.rank(x);
- 
+
         uint64_t count = 0;
         auto it = check.begin();
         auto it_end = check.end();
         for (; it != it_end && *it <= x; ++it)
             ++count;
         assert(ans == count);
- 
+
         return ans;
     }
 
@@ -532,7 +532,7 @@ class Roaring {
 
     Roaring operator&(const Roaring &o) const {
         Roaring ans(plain & o.plain);
-    
+
         Roaring inplace(*this);
         assert(ans == (inplace &= o));  // validate against in-place version
 

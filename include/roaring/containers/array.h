@@ -17,7 +17,7 @@
 #ifdef __cplusplus
 extern "C" { namespace roaring {
 
-// Note: in pure C++ code, you should avoid putting `using` in header files 
+// Note: in pure C++ code, you should avoid putting `using` in header files
 using api::roaring_iterator;
 using api::roaring_iterator64;
 

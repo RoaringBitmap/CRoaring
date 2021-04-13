@@ -546,7 +546,7 @@ DEFINE_TEST(test_cpp_clear_64) {
     }
 
 	roaring.clear();
-	
+
     assert_true(roaring.isEmpty());
 }
 
@@ -581,7 +581,7 @@ DEFINE_TEST(test_cpp_bidirectional_iterator_64) {
 	assert_true(*i++ == 0xFFFFFFFFFULL);
 	assert_true(*i++ == 0xA00000000AULL);
 	assert_true(i == roaring.end());
-	assert_true(*--i == 0xA00000000AULL);	
+	assert_true(*--i == 0xA00000000AULL);
 	assert_true(*--i == 0xFFFFFFFFFULL);
 	assert_true(*--i == 0xAFFFFFFF7ULL);
 	assert_true(*--i == 123ULL);

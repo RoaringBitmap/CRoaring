@@ -18,18 +18,14 @@
 #ifdef __cplusplus
 extern "C" { namespace roaring {
 
-// Note: in pure C++ code, you should avoid putting `using` in header files 
+// Note: in pure C++ code, you should avoid putting `using` in header files
 using api::roaring_iterator;
 using api::roaring_iterator64;
 
 namespace internal {
 #endif
 
-#ifdef USEAVX
-#define ALIGN_AVX __attribute__((aligned(sizeof(__m256i))))
-#else
-#define ALIGN_AVX
-#endif
+
 
 enum {
     BITSET_CONTAINER_SIZE_IN_WORDS = (1 << 16) / 64,
@@ -68,7 +64,7 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
                                 uint32_t end);
 
-#ifdef ASMBITMANIPOPTIMIZATION
+#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(__AVX2__)
 /* Set the ith bit.  */
 static inline void bitset_container_set(bitset_container_t *bitset,
                                         uint16_t pos) {

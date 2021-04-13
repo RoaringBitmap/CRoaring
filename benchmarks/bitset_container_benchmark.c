@@ -11,7 +11,7 @@
 const int repeat = 500;
 
 
-#if defined(IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
+#if defined(CROARING_IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
 // flushes the array of words from cache
 void bitset_cache_flush(bitset_container_t* B) {
     const int32_t CACHELINESIZE =
@@ -28,7 +28,7 @@ void bitset_cache_flush(bitset_container_t* B) { (void)B; }
 
 // tries to put array of words in cache
 void bitset_cache_prefetch(bitset_container_t* B) {
-#ifdef IS_X64
+#ifdef CROARING_IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else

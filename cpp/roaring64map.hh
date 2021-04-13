@@ -56,7 +56,7 @@ class Roaring64Map {
      */
     explicit Roaring64Map(roaring_bitmap_t *s) {
         Roaring r(s);
-        emplaceOrInsert(0, r); 
+        emplaceOrInsert(0, r);
     }
 
     Roaring64Map(const Roaring64Map& r)
@@ -165,7 +165,7 @@ class Roaring64Map {
 	void clear() {
 		roarings.clear();
 	}
-	
+
     /**
      * Return the largest value (if not empty)
      *
@@ -845,7 +845,7 @@ class Roaring64Map {
     friend class Roaring64MapSetBitForwardIterator;
 	friend class Roaring64MapSetBitBiDirectionalIterator;
     typedef Roaring64MapSetBitForwardIterator const_iterator;
-    typedef Roaring64MapSetBitBiDirectionalIterator const_bidirectional_iterator;	
+    typedef Roaring64MapSetBitBiDirectionalIterator const_bidirectional_iterator;
 
     /**
     * Returns an iterator that can be used to access the position of the
@@ -866,7 +866,7 @@ class Roaring64Map {
     * i!=b.end(); ++i) {}
     */
     const_iterator end() const;
-	
+
    private:
     std::map<uint32_t, Roaring> roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
     bool copyOnWrite{false};
@@ -1026,14 +1026,14 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
 		*(Roaring64MapSetBitForwardIterator*)this = r;
 		return *this;
 	}
-	
+
 	Roaring64MapSetBitBiDirectionalIterator& operator--() { //  --i, must return dec.value
 		if (map_iter == map_end) {
 			--map_iter;
 			roaring_init_iterator_last(&map_iter->second.roaring, &i);
 			if (i.has_value) return *this;
 		}
-		
+
 		roaring_previous_uint32_iterator(&i);
         while (!i.has_value) {
 			if (map_iter == map_begin) return *this;
@@ -1050,7 +1050,7 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
 			roaring_init_iterator_last(&map_iter->second.roaring, &i);
 			return orig;
 		}
-		
+
         roaring_previous_uint32_iterator(&i);
         while (!i.has_value) {
             if (map_iter == map_begin) return orig;
@@ -1059,7 +1059,7 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
         }
         return orig;
     }
-	
+
  protected:
 	std::map<uint32_t, Roaring>::const_iterator map_begin;
 };
