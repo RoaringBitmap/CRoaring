@@ -175,6 +175,16 @@ static inline uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
+#elif defined(_MSC_VER) && !defined(__clang__)
+// Visual Studio does not seem to support C11 atomics. Let us try with C++ code.
+#include <atomic>
+static inline uint32_t croaring_detect_supported_architectures() {
+    static std::atomic<int> buffer{CROARING_UNINITIALIZED};
+    if(buffer == CROARING_UNINITIALIZED) {
+      buffer = dynamic_croaring_detect_supported_architectures();
+    }
+    return buffer;
+}
 #else
 #include <stdatomic.h>
 static inline uint32_t croaring_detect_supported_architectures() {
@@ -185,4 +195,6 @@ static inline uint32_t croaring_detect_supported_architectures() {
     return buffer;
 }
 #endif
+
+
 #endif // ROARING_ISADETECTION_H
