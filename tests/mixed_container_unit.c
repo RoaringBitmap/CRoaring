@@ -14,6 +14,7 @@
 #include <roaring/containers/mixed_negation.h>
 #include <roaring/containers/mixed_union.h>
 #include <roaring/containers/mixed_xor.h>
+#include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
     using namespace roaring::internal;
@@ -1999,6 +2000,8 @@ DEFINE_TEST(run_negation_range_test9) {
 }
 
 int main() {
+    tellmeall();
+
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_xor_andnot_test),
         cmocka_unit_test(array_bitset_run_lazy_xor_test),

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include <roaring/containers/run.h>
+#include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
     using namespace roaring::internal;
@@ -209,6 +210,8 @@ DEFINE_TEST(remove_range_test) {
 }
 
 int main() {
+    tellmeall();
+
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include <roaring/bitset_util.h>
+#include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
     using namespace roaring::internal;
@@ -75,6 +76,8 @@ DEFINE_TEST(setandextract_uint32) {
 
 
 int main() {
+    tellmeall();
+
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(setandextract_uint16),
         cmocka_unit_test(setandextract_uint32),

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <roaring/roaring.h>
+#include <roaring/misc/configreport.h>
 
 #include "config.h"
 
@@ -172,6 +173,8 @@ DEFINE_TEST(test_robust_deserialize8) {
 }
 
 int main() {
+    tellmeall();
+
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_robust_deserialize1),
         cmocka_unit_test(test_robust_deserialize2),

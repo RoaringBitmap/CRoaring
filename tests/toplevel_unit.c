@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include <roaring/roaring.h>
+#include <roaring/misc/configreport.h>
 
 // include internal headers for invasive testing
 #include <roaring/containers/containers.h>
@@ -4135,6 +4136,8 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
 
 
 int main() {
+    tellmeall();
+
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),

@@ -8,6 +8,7 @@
 #include <roaring/roaring.h>  // public api
 
 #include <roaring/array_util.h>  // union_uint32(), intersection_uint32()
+#include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
     using namespace roaring::internal;
@@ -862,6 +863,8 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
 }
 
 int main() {
+    tellmeall();
+
     char dirbuffer[1024];
     size_t bddl = strlen(BENCHMARK_DATA_DIR);
     strcpy(dirbuffer, BENCHMARK_DATA_DIR);
