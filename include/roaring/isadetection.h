@@ -187,7 +187,7 @@ static inline uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
-#else
+#else // defined(__cplusplus) and defined(_MSC_VER) && !defined(__clang__)
 #include <stdatomic.h>
 static inline uint32_t croaring_detect_supported_architectures() {
     static _Atomic int buffer = CROARING_UNINITIALIZED;
@@ -196,7 +196,7 @@ static inline uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
-
+#endif // defined(_MSC_VER) && !defined(__clang__)
 
 #ifdef __AVX2__
 static inline bool croaring_avx2() {
@@ -207,7 +207,7 @@ static inline bool croaring_avx2() {
   return  (dynamic_croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
 }
 #endif
-#endif
+
 
 #else // defined(__x86_64__) || defined(_M_AMD64) // x64
 
