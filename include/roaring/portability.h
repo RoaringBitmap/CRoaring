@@ -56,7 +56,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #undef CROARING_IS_X64
 #endif
 
-#if defined(__clang_major__) && (__clang_major__<= 8)
+#if defined(__clang_major__) && (__clang_major__<= 8) && !defined(__AVX2__)
 // Older versions of clang have a bug affecting us
 // https://stackoverflow.com/questions/57228537/how-does-one-use-pragma-clang-attribute-push-with-c-namespaces
 #undef CROARING_IS_X64
@@ -262,5 +262,13 @@ static inline int hamming(uint64_t x) {
 
 #define CROARING_TARGET_AVX2 CROARING_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
 
+#ifdef __AVX2__
+// No need for runtime dispatching.
+// It is unnecessary and harmful to old clang to tag regions.
+#undef CROARING_TARGET_AVX2
+#define CROARING_TARGET_AVX2
+#undef CROARING_UNTARGET_REGION
+#define CROARING_UNTARGET_REGION
+#endif
 
 #endif /* INCLUDE_PORTABILITY_H_ */
