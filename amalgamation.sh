@@ -261,6 +261,3 @@ else
   echo "cc -march=native -O3 -std=c11 -shared -o libroaring.so -fPIC roaring.c"
 fi
 
-newline
-echo "You can try compiling with flags -DDISABLEAVX or -DROARING_DISABLE_X64"
-echo "(which disables AVX and all x64 optimization respectively)"
