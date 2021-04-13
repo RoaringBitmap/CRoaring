@@ -896,18 +896,18 @@ void _scalar_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t len
 uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {
     if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
-        _asm_bitset_clear_list(words, card, list, length);
+        return _asm_bitset_clear_list(words, card, list, length);
     } else {
-        _scalar_bitset_clear_list(words, card, list, length);
+        return _scalar_bitset_clear_list(words, card, list, length);
     }
 }
 
 uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
     if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
-        _asm_bitset_set_list_withcard(words, card, list, length);
+        return _asm_bitset_set_list_withcard(words, card, list, length);
     } else {
-        _scalar_bitset_set_list_withcard(words, card, list, length);
+        return _scalar_bitset_set_list_withcard(words, card, list, length);
     }
 }
 
