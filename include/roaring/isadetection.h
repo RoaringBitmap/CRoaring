@@ -55,7 +55,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif // defined(_MSC_VER)
 
 
-enum instruction_set {
+enum croaring_instruction_set {
   CROARING_DEFAULT = 0x0,
   CROARING_NEON = 0x1,
   CROARING_AVX2 = 0x4,
@@ -68,7 +68,7 @@ enum instruction_set {
 
 #if defined(__PPC64__)
 
-static inline uint32_t dynamic_detect_supported_architectures() {
+static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   return CROARING_ALTIVEC;
 }
 
@@ -76,13 +76,13 @@ static inline uint32_t dynamic_detect_supported_architectures() {
 
 #if defined(__ARM_NEON)
 
-static inline uint32_t dynamic_detect_supported_architectures() {
+static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   return CROARING_NEON;
 }
 
 #else // ARM without NEON
 
-static inline uint32_t dynamic_detect_supported_architectures() {
+static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   return CROARING_DEFAULT;
 }
 
@@ -91,19 +91,11 @@ static inline uint32_t dynamic_detect_supported_architectures() {
 #elif defined(__x86_64__) || defined(_M_AMD64) // x64
 
 
-namespace {
-// Can be found on Intel ISA Reference for CPUID
-constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
-constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
-constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
-}
-
 
 
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
+
 #if defined(_MSC_VER)
   int cpu_info[4];
   __cpuid(cpu_info, *eax);
@@ -116,7 +108,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
   __get_cpuid(level, eax, ebx, ecx, edx);
 #else
   uint32_t a = *eax, b, c = *ecx, d;
-  asm volatile("cpuid\n\t" : "+a"(a), "=b"(b), "+c"(c), "=d"(d));
+  __asm__("cpuid\n\t" : "+a"(a), "=b"(b), "+c"(c), "=d"(d));
   *eax = a;
   *ebx = b;
   *ecx = c;
@@ -124,10 +116,15 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 #endif
 }
 
-static inline uint32_t dynamic_detect_supported_architectures() {
+static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   uint32_t eax, ebx, ecx, edx;
   uint32_t host_isa = 0x0;
-
+  // Can be found on Intel ISA Reference for CPUID
+  static uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
+  static uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
+  static uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
+  static uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
+  static uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
   // ECX for EAX=0x7
   eax = 0x7;
   ecx = 0x0;
@@ -160,15 +157,19 @@ static inline uint32_t dynamic_detect_supported_architectures() {
 #else // fallback
 
 
-static inline uint32_t dynamic_detect_supported_architectures() {
+static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   return CROARING_DEFAULT;
 }
 
 
 #endif // end SIMD extension detection code
 
-static inline uint32_t detect_supported_architectures() {
-    static uint32_t buffer =1;// dynamic_detect_supported_architectures();
+static inline uint32_t croaring_detect_supported_architectures() {
+    static uint32_t buffer = 0xFFFFFFFF;
+    if(buffer == 0xFFFFFFFF) {
+      // may be detected as a data race under some systems.
+      buffer = dynamic_croaring_detect_supported_architectures();
+    }
     return buffer;
 }
 

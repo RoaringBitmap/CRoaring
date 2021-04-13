@@ -154,24 +154,26 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
 #endif
 /* Get the number of bits set (force computation) */
-int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
-    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
-      return (int) avx2_harley_seal_popcount256(
-        (const __m256i *)bitset->words,
-        BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
-    } else {
-      /* Get the number of bits set (force computation) */
-      int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
-        const uint64_t *words = bitset->words;
-        int32_t sum = 0;
-        for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
+int _scalar_bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+  const uint64_t *words = bitset->words;
+  int32_t sum = 0;
+  for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
           sum += hamming(words[i]);
           sum += hamming(words[i + 1]);
           sum += hamming(words[i + 2]);
           sum += hamming(words[i + 3]);
-        }
-        return sum;
-      }
+  }
+  return sum;
+}
+/* Get the number of bits set (force computation) */
+int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
+      return (int) avx2_harley_seal_popcount256(
+        (const __m256i *)bitset->words,
+        BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
+    } else {
+      return _scalar_bitset_container_compute_cardinality(bitset);
+
     }
 }
 
@@ -348,28 +350,28 @@ int _scalar_bitset_container_##opname##_justcard(const bitset_container_t *src_1
         sum += hamming(word_2);                                    \
     }                                                                     \
     return sum;                                                           \
-}
+}\
 int bitset_container_##opname(const bitset_container_t *src_1,            \
                               const bitset_container_t *src_2,            \
                               bitset_container_t *dst) {                  \
-    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) { \
-      return _avx2_bitset_container_##opname(src_1, src_2, dest);                          \
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) { \
+      return _avx2_bitset_container_##opname(src_1, src_2, dst);                          \
     } else {                                                                                \
-      return _scalar_bitset_container_##opname(src_1, src_2, dest);                        \
+      return _scalar_bitset_container_##opname(src_1, src_2, dst);                        \
     }                                                                                       \
 }                                                                         \
 int bitset_container_##opname##_nocard(const bitset_container_t *src_1,   \
                                        const bitset_container_t *src_2,   \
                                        bitset_container_t *dst) {         \
-    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) { \
-      return _avx2_bitset_container_##opname##_nocard(src_1, src_2, dest);                  \
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) { \
+      return _avx2_bitset_container_##opname##_nocard(src_1, src_2, dst);                  \
     } else {                                                                                \
-      return _scalar_bitset_container_##opname##_nocard(src_1, src_2, dest);                \
+      return _scalar_bitset_container_##opname##_nocard(src_1, src_2, dst);                \
     }                                                                                       \
 }                                                                         \
 int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
                               const bitset_container_t *src_2) {          \
-    if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) { \
+    if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) { \
       return _avx2_bitset_container_##opname##_justcard(src_1, src_2);                      \
     } else {                                                                                \
       return _scalar_bitset_container_##opname##_justcard(src_1, src_2);                    \
@@ -535,7 +537,7 @@ int bitset_container_to_uint32_array(
     uint32_t base
 ){
 #ifdef CROARING_IS_X64
-    if((detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) &&  (bc->cardinality >= 8192))  // heuristic
+    if(((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) &&  (bc->cardinality >= 8192))  // heuristic
 		return (int) bitset_extract_setbits_avx2(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, bc->cardinality, base);
 	else
@@ -668,7 +670,7 @@ bool bitset_container_equals(const bitset_container_t *container1, const bitset_
     }
 	}
 #ifdef CROARING_IS_X64
-  if(detect_supported_architectures() & CROARING_AVX2 == CROARING_AVX2) {
+  if((croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2) {
     const __m256i *ptr1 = (const __m256i*)container1->words;
     const __m256i *ptr2 = (const __m256i*)container2->words;
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/32; i++) {
