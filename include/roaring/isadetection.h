@@ -47,6 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define ROARING_ISADETECTION_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #if defined(_MSC_VER)
 #include <intrin.h>
@@ -166,6 +167,8 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
 #endif // end SIMD extension detection code
 
 
+#if defined(__x86_64__) || defined(_M_AMD64) // x64
+
 #if defined(__cplusplus)
 #include <atomic>
 static inline uint32_t croaring_detect_supported_architectures() {
@@ -176,10 +179,9 @@ static inline uint32_t croaring_detect_supported_architectures() {
     return buffer;
 }
 #elif defined(_MSC_VER) && !defined(__clang__)
-// Visual Studio does not seem to support C11 atomics. Let us try with C++ code.
-#include <atomic>
+// Visual Studio does not support C11 atomics.
 static inline uint32_t croaring_detect_supported_architectures() {
-    static std::atomic<int> buffer{CROARING_UNINITIALIZED};
+    static int buffer = CROARING_UNINITIALIZED;
     if(buffer == CROARING_UNINITIALIZED) {
       buffer = dynamic_croaring_detect_supported_architectures();
     }
@@ -194,7 +196,29 @@ static inline uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
+
+
+#ifdef __AVX2__
+static inline bool croaring_avx2() {
+  return true;
+}
+#else
+static inline bool croaring_avx2() {
+  return  (dynamic_croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
+}
+#endif
 #endif
 
+#else // defined(__x86_64__) || defined(_M_AMD64) // x64
+
+static inline bool croaring_avx2() {
+  return false;
+}
+
+static inline uint32_t croaring_detect_supported_architectures() {
+    // no runtime dispatch
+    return dynamic_croaring_detect_supported_architectures();
+}
+#endif // defined(__x86_64__) || defined(_M_AMD64) // x64
 
 #endif // ROARING_ISADETECTION_H

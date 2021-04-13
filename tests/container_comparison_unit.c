@@ -13,6 +13,7 @@
 #include <roaring/containers/mixed_equal.h>
 #include <roaring/containers/mixed_subset.h>
 #include <roaring/containers/run.h>
+#include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
     using namespace roaring::internal;
@@ -214,6 +215,7 @@ DEFINE_TEST(subset_run_bitset_test) {
 }
 
 int main() {
+    tellmeall();
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(equal_array_array_test),
         cmocka_unit_test(equal_bitset_bitset_test),
