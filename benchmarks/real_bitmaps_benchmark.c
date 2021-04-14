@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <roaring/roaring.h>
+#include <roaring/misc/configreport.h>
 #include "benchmark.h"
 #include "numbersfromtextfiles.h"
 
@@ -42,6 +43,7 @@ static void printusage(char *command) {
 #define KWHT "\x1B[37m"
 
 int main(int argc, char **argv) {
+    tellmeall();
     int c;
     const char *extension = ".txt";
     bool copy_on_write = false;
