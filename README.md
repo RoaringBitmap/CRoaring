@@ -393,19 +393,25 @@ the project (CRoaring), you can do:
 mkdir -p build
 cd build
 cmake ..
-make
-# follow by 'make test' if you want to test.
+cmake --build .
+# follow by 'ctest' if you want to test.
 # you can also type 'make install' to install the library on your system
 # C header files typically get installed to /usr/local/include/roaring
 # whereas C++ header files get installed to /usr/local/include/roaring
 ```
 (You can replace the ``build`` directory with any other directory name.)
-You can generate a static library by adding ``-DROARING_BUILD_STATIC=ON`` to the command line.
 By default all tests are built on all platforms, to skip building and running tests add `` -DENABLE_ROARING_TESTS=OFF `` to the command line.
 
 As with all ``cmake`` projects, you can specify the compilers you wish to use by adding (for example) ``-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++`` to the ``cmake`` command line.
 
+If you are using clang or gcc and you know your target architecture,  you can set the architecture by specifying `-DROARING_ARCH=arch`. For example, if you have many server but the oldest server is running the Intel `haswell` architecture, you can specify -`DROARING_ARCH=haswell`. In such cases, the produced binary will be optimized for processors having the characteristics of a haswell process and may not run on older architectures. You can find out the list of valid architecture values by typing `man gcc`.
 
+ ```
+ mkdir -p build_haswell
+ cd build_haswell
+ cmake -DROARING_ARCH=haswell ..
+ cmake --build .
+ ```
 
 For a debug release, starting from the root directory of the project (CRoaring), try
 
@@ -413,20 +419,9 @@ For a debug release, starting from the root directory of the project (CRoaring),
 mkdir -p debug
 cd debug
 cmake -DCMAKE_BUILD_TYPE=Debug -DROARING_SANITIZE=ON ..
-make
+ctest
 ```
 
-
-(Of course you can replace the ``debug`` directory with any other directory name.)
-
-
-To run unit tests (you must first run ``make``):
-
-```
-make test
-```
-
-The detailed output of the tests can be found in ``Testing/Temporary/LastTest.log``.
 
 To run real-data benchmark
 
