@@ -62,6 +62,9 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #undef CROARING_IS_X64
 #endif
 
+#ifdef ROARING_DISABLE_X64
+#undef CROARING_IS_X64
+#endif
 // we include the intrinsic header
 #ifndef _MSC_VER
 /* Non-Microsoft C/C++-compatible compiler */

@@ -130,9 +130,15 @@ static inline void tellmeall() {
  #ifdef __AVX2__
     printf(" Building for AVX2\t");
  #endif
+    if(croaring_avx2()) {
+        printf( "AVX2 usable\t");
+    }
     if((config & CROARING_AVX2) == CROARING_AVX2) {
         printf( "AVX2 detected\t");
-    }
+       if(!croaring_avx2()) {
+         printf( "AVX2 not used\t");
+       }
+     }
     if((config & CROARING_SSE42) == CROARING_SSE42) {
         printf(" SSE4.2 detected\t");
     }

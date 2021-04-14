@@ -198,7 +198,11 @@ static inline uint32_t croaring_detect_supported_architectures() {
 }
 #endif // defined(_MSC_VER) && !defined(__clang__)
 
-#ifdef __AVX2__
+#ifdef ROARING_DISABLE_AVX
+static inline bool croaring_avx2() {
+  return false;
+}
+#elif defined(__AVX2__)
 static inline bool croaring_avx2() {
   return true;
 }
