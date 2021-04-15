@@ -165,6 +165,20 @@ DEFINE_TEST(issue208b) {
     roaring_bitmap_free(r);
 }
 
+DEFINE_TEST(issue288) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    assert_true(roaring_bitmap_get_cardinality(r1) == 0);
+    assert_true(roaring_bitmap_get_cardinality(r2) == 0);
+
+    roaring_bitmap_add(r1, 42);
+    assert_true(roaring_bitmap_get_cardinality(r1) == 1);
+    roaring_bitmap_overwrite(r1, r2);
+    assert_true(roaring_bitmap_get_cardinality(r1) == 0);
+    assert_true(roaring_bitmap_get_cardinality(r2) == 0);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+}
 
 DEFINE_TEST(can_copy_empty_true) {
   can_copy_empty(true);
@@ -4139,6 +4153,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue288),
         cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),
         cmocka_unit_test(issue208b),
