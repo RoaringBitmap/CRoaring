@@ -114,7 +114,8 @@ void ra_init(roaring_array_t *new_ra) {
 bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                   bool copy_on_write) {
     ra_clear_containers(dest);  // we are going to overwrite them
-    if (source->size == 0) {  // Note: can't call memcpy(NULL), even w/size 0
+    if (source->size == 0) {  // Note: can't call memcpy(NULL), even w/size
+        dest->size = 0; // <--- This is important.
         return true;  // output was just cleared, so they match
     }
     if (dest->allocation_size < source->size) {
