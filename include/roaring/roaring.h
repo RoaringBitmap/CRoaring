@@ -528,6 +528,8 @@ const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,
  *
  * Returns true if the roaring_iterator returned true throughout (so that all
  * data points were necessarily visited).
+ *
+ * Iteration is ordered: from the smallest to the largest elements.
  */
 bool roaring_iterate(const roaring_bitmap_t *r, roaring_iterator iterator,
                      void *ptr);
