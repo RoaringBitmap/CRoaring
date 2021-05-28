@@ -285,6 +285,7 @@ int main() {
 #include <iostream>
 
 #include "roaring.hh"
+#include "roaring.c"
 
 using namespace roaring;
 
