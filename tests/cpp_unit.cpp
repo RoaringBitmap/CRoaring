@@ -13,10 +13,10 @@
 
 #include <roaring/roaring.h>  // access to pure C exported API for testing
 
-#include "roaring.hh"
+#include <roaring/roaring.hh>
 using roaring::Roaring;  // the C++ wrapper class
 
-#include "roaring64map.hh"
+#include "roaring/roaring64map.hh"
 using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 #include "test.h"

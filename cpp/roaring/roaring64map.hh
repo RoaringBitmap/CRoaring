@@ -17,7 +17,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include <string>
 #include <utility>
 
-#include "roaring.hh"
+#include <roaring/roaring.hh>
 using roaring::Roaring;
 
 namespace roaring {

@@ -45,7 +45,7 @@
 #include <assert.h>
 
 #define ROARING_CPP_NAMESPACE unchecked  // can't be overridden if global
-#include "roaring.hh"  // contains Roaring unchecked class
+#include <roaring/roaring.hh>  // contains Roaring unchecked class
 
 namespace doublechecked {  // put the checked class in its own namespace
 

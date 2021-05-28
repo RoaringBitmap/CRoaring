@@ -138,6 +138,8 @@ Some users have to deal with large volumes of data. It  may be important for the
 
 # Example (C)
 
+This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory.
+
 ```c
 #include <roaring/roaring.h>
 #include <stdio.h>
@@ -223,7 +225,7 @@ int main() {
 
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
-    char *serializedbytes = malloc(expectedsize);
+    char *serializedbytes = (char*)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
     assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
@@ -281,10 +283,13 @@ int main() {
 
 # Example (C++)
 
+
+This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory.
+
 ```c++
 #include <iostream>
 
-#include "roaring.hh"
+#include <roaring/roaring.hh>
 
 using namespace roaring;
 

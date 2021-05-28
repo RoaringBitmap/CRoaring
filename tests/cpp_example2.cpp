@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "roaring.hh"
+#include "roaring/roaring.hh"
 
 using namespace roaring;
 
