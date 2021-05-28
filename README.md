@@ -139,7 +139,7 @@ Some users have to deal with large volumes of data. It  may be important for the
 # Example (C)
 
 
-This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory. If you are working from the amalgamation script, you may add the line `#include "roaring.c"` and replace `#include <roaring/roaring.h>` by `#include "roaring.h"`. 
+This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory. If you are working from the amalgamation script, you may add the line `#include "roaring.c"` if you are not linking against a prebuilt CRoaring library and replace `#include <roaring/roaring.h>` by `#include "roaring.h"`. 
 
 ```c
 #include <roaring/roaring.h>
@@ -285,7 +285,7 @@ int main() {
 # Example (C++)
 
 
-This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory. If you are working from the amalgamation script, you may add the line `#include "roaring.c"` and replace `#include <roaring/roaring.hh>` by `#include "roaring.hh"`. 
+This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory so you may need to replace `#include "roaring.hh"` by `#include <roaring/roaring.hh>`. If you are working from the amalgamation script, you may add the line `#include "roaring.c"` if you are not linking against a CRoaring prebuilt library. 
 
 ```c++
 #include <iostream>
