@@ -194,16 +194,28 @@ static inline void roaring_bitmap_aligned_free(void *memblock) {
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
+static inline int hammingbackup(uint64_t x) {
+  uint64_t c1 = UINT64_C(0x5555555555555555);
+  uint64_t c2 = UINT64_C(0x3333333333333333);
+  uint64_t c4 = UINT64_C(0x0F0F0F0F0F0F0F0F);
+  x -= (x >> 1) & c1;
+  x = (( x >> 2) & c2) + (x & c2); x=(x +(x>>4))&c4;
+  x *= UINT64_C(0x0101010101010101);
+  return x >> 56;
+}
+
 static inline int hamming(uint64_t x) {
 #if defined(_WIN64) && defined(_MSC_VER) && !defined(__clang__)
 #ifdef _M_ARM64
-  return (int) _CountOneBits64(x);
+  return hammingbackup(x)
+  // (int) _CountOneBits64(x); is unavailable
 #else  // _M_ARM64
   return (int) __popcnt64(x);
 #endif // _M_ARM64
 #elif defined(_WIN32) && defined(_MSC_VER) && !defined(__clang__)
 #ifdef _M_ARM
-    return (int) _CountOneBits(( unsigned int)x) + (int)  _CountOneBits(( unsigned int)(x>>32));
+  return hammingbackup(x);
+  // _CountOneBits is unavailable
 #else // _M_ARM
     return (int) __popcnt(( unsigned int)x) + (int)  __popcnt(( unsigned int)(x>>32));
 #endif // _M_ARM
