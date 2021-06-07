@@ -441,6 +441,9 @@ DEFINE_TEST(check_interval) {
     assert_non_null(range2);
     assert_false(roaring_bitmap_intersect(r,range2));
 
+    assert_true(roaring_bitmap_intersect_with_range(r, 10, 1000+1));
+    assert_false(roaring_bitmap_intersect_with_range(r, 10, 1000));
+
     roaring_bitmap_free(r);
     roaring_bitmap_free(range);
     roaring_bitmap_free(range2);

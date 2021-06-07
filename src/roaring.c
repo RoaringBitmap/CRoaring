@@ -2599,6 +2599,25 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
     return answer != 0;
 }
 
+bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm,
+                                         uint64_t x, uint64_t y) {
+    if (x >= y) {
+        // Empty range.
+        return false;
+    }
+    roaring_uint32_iterator_t it;
+    roaring_init_iterator(bm, &it);
+    if (!roaring_move_uint32_iterator_equalorlarger(&it, x)) {
+        // No values above x.
+        return false;
+    }
+    if (it.current_value >= y) {
+        // No values below y.
+        return false;
+    }
+    return true;
+}
+
 
 uint64_t roaring_bitmap_and_cardinality(const roaring_bitmap_t *x1,
                                         const roaring_bitmap_t *x2) {
