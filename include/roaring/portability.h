@@ -207,7 +207,7 @@ static inline int hammingbackup(uint64_t x) {
 static inline int hamming(uint64_t x) {
 #if defined(_WIN64) && defined(_MSC_VER) && !defined(__clang__)
 #ifdef _M_ARM64
-  return hammingbackup(x)
+  return hammingbackup(x);
   // (int) _CountOneBits64(x); is unavailable
 #else  // _M_ARM64
   return (int) __popcnt64(x);
