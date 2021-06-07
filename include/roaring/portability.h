@@ -196,9 +196,17 @@ static inline void roaring_bitmap_aligned_free(void *memblock) {
 
 static inline int hamming(uint64_t x) {
 #if defined(_WIN64) && defined(_MSC_VER) && !defined(__clang__)
+#ifdef _M_ARM64
+  return (int) _CountOneBits64(x);
+#else  // _M_ARM64
   return (int) __popcnt64(x);
+#endif // _M_ARM64
 #elif defined(_WIN32) && defined(_MSC_VER) && !defined(__clang__)
+#ifdef _M_ARM
+    return (int) _CountOneBits(( unsigned int)x) + (int)  _CountOneBits(( unsigned int)(x>>32));
+#else // _M_ARM
     return (int) __popcnt(( unsigned int)x) + (int)  __popcnt(( unsigned int)(x>>32));
+#endif // _M_ARM
 #else
     return __builtin_popcountll(x);
 #endif
