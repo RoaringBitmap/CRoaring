@@ -1584,6 +1584,43 @@ static inline container_t* container_xor(
     }
 }
 
+/* Applies an offset to the non-empty container 'c'.
+ * The results are stored in new containers returned via 'lo' and 'hi', for the
+ * low and high halves of the result (where the low half matches the original key
+ * and the high one corresponds to values for the following key).
+ * Either one of 'lo' and 'hi' are allowed to be 'NULL', but not both.
+ * Whenever one of them is not 'NULL', it should point to a 'NULL' container.
+ * Whenever one of them is 'NULL' the shifted elements for that part will not be
+ * computed.
+ * If either of the resulting containers turns out to be empty, the pointed
+ * container will remain 'NULL'.
+ */
+static inline void container_add_offset(const container_t *c, uint8_t type,
+                                        container_t **lo, container_t **hi,
+                                        uint16_t offset) {
+    assert(offset != 0);
+    assert(container_nonzero_cardinality(c, type));
+    assert(lo != NULL || hi != NULL);
+    assert(lo == NULL || *lo == NULL);
+    assert(hi == NULL || *hi == NULL);
+
+    switch (type) {
+    case BITSET_CONTAINER_TYPE:
+        bitset_container_offset(const_CAST_bitset(c), lo, hi, offset);
+        break;
+    case ARRAY_CONTAINER_TYPE:
+        array_container_offset(const_CAST_array(c), lo, hi, offset);
+        break;
+    case RUN_CONTAINER_TYPE:
+        run_container_offset(const_CAST_run(c), lo, hi, offset);
+        break;
+    default:
+        assert(false);
+        __builtin_unreachable();
+        break;
+    }
+}
+
 /**
  * Compute xor between two containers, generate a new container (having type
  * result_type), requires a typecode. This allocates new memory, caller

@@ -383,6 +383,9 @@ int bitset_container_andnot_nocard(const bitset_container_t *src_1,
                                    const bitset_container_t *src_2,
                                    bitset_container_t *dst);
 
+void bitset_container_offset(const bitset_container_t *c,
+                             container_t **loc, container_t **hic,
+                             uint16_t offset);
 /*
  * Write out the 16-bit integers contained in this container as a list of 32-bit
  * integers using base
