@@ -152,6 +152,14 @@ void test_example(bool copy_on_write) {
     roaring_bitmap_free(r3);
 }
 
+void test_issue304(void) {
+    Roaring64Map roaring;
+    assert_false(roaring.isFull());
+}
+
+DEFINE_TEST(test_issue304) { test_issue304(); }
+
+
 void test_example_cpp(bool copy_on_write) {
     // create a new empty bitmap
     Roaring r1;
@@ -599,6 +607,7 @@ DEFINE_TEST(test_cpp_bidirectional_iterator_64) {
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_issue304),
         cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
