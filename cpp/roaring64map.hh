@@ -325,7 +325,7 @@ class Roaring64Map {
         // we put std::numeric_limits<>::max/min in parenthesis
         // to avoid a clash with the Windows.h header under Windows
         return roarings.size() ==
-                       ((size_t)(std::numeric_limits<uint32_t>::max)()) + 1
+                       ((uint64_t)(std::numeric_limits<uint32_t>::max)()) + 1
                    ? std::all_of(
                          roarings.cbegin(), roarings.cend(),
                          [](const std::pair<uint32_t, Roaring> &roaring_map_entry) {
