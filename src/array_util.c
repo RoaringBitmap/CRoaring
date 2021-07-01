@@ -1893,7 +1893,7 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
 }
 #ifdef CROARING_IS_X64
 CROARING_TARGET_AVX2
-bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
+static inline bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
     const uint8_t *ptr2 = (const uint8_t *)s2;
     const uint8_t *end1 = ptr1 + n;

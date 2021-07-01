@@ -154,7 +154,7 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
 #endif
 /* Get the number of bits set (force computation) */
-int _scalar_bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+static inline int _scalar_bitset_container_compute_cardinality(const bitset_container_t *bitset) {
   const uint64_t *words = bitset->words;
   int32_t sum = 0;
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
@@ -233,7 +233,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 // clang-format off
 #define AVX_BITSET_CONTAINER_FN1(before, opname, opsymbol, avx_intrinsic,               \
                                 neon_intrinsic, after)                                \
-  int _avx2_bitset_container_##opname##_nocard(                                \
+  static inline int _avx2_bitset_container_##opname##_nocard(                                \
       const bitset_container_t *src_1, const bitset_container_t *src_2,        \
       bitset_container_t *dst) {                                               \
     const uint8_t *__restrict__ words_1 = (const uint8_t *)src_1->words;       \
@@ -288,7 +288,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 #define AVX_BITSET_CONTAINER_FN2(before, opname, opsymbol, avx_intrinsic,               \
                                 neon_intrinsic, after)                                \
   /* next, a version that updates cardinality*/                                \
-  int _avx2_bitset_container_##opname(const bitset_container_t *src_1,         \
+  static inline int _avx2_bitset_container_##opname(const bitset_container_t *src_1,         \
                                       const bitset_container_t *src_2,         \
                                       bitset_container_t *dst) {               \
     const __m256i *__restrict__ words_1 = (const __m256i *)src_1->words;       \
@@ -303,7 +303,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 #define AVX_BITSET_CONTAINER_FN3(before, opname, opsymbol, avx_intrinsic,               \
                                 neon_intrinsic, after)                                \
   /* next, a version that just computes the cardinality*/                      \
-  int _avx2_bitset_container_##opname##_justcard(                              \
+  static inline int _avx2_bitset_container_##opname##_justcard(                              \
       const bitset_container_t *src_1, const bitset_container_t *src_2) {      \
     const __m256i *__restrict__ data1 = (const __m256i *)src_1->words;         \
     const __m256i *__restrict__ data2 = (const __m256i *)src_2->words;         \
@@ -384,7 +384,7 @@ CROARING_UNTARGET_REGION
 
 #define SCALAR_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic,            \
                                    neon_intrinsic)                             \
-  int _scalar_bitset_container_##opname(const bitset_container_t *src_1,       \
+  static inline int _scalar_bitset_container_##opname(const bitset_container_t *src_1,       \
                                         const bitset_container_t *src_2,       \
                                         bitset_container_t *dst) {             \
     const uint64_t *__restrict__ words_1 = src_1->words;                       \
@@ -402,7 +402,7 @@ CROARING_UNTARGET_REGION
     dst->cardinality = sum;                                                    \
     return dst->cardinality;                                                   \
   }                                                                            \
-  int _scalar_bitset_container_##opname##_nocard(                              \
+  static inline int _scalar_bitset_container_##opname##_nocard(                              \
       const bitset_container_t *src_1, const bitset_container_t *src_2,        \
       bitset_container_t *dst) {                                               \
     const uint64_t *__restrict__ words_1 = src_1->words;                       \
@@ -414,7 +414,7 @@ CROARING_UNTARGET_REGION
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                             \
     return dst->cardinality;                                                   \
   }                                                                            \
-  int _scalar_bitset_container_##opname##_justcard(                            \
+  static inline int _scalar_bitset_container_##opname##_justcard(                            \
       const bitset_container_t *src_1, const bitset_container_t *src_2) {      \
     const uint64_t *__restrict__ words_1 = src_1->words;                       \
     const uint64_t *__restrict__ words_2 = src_2->words;                       \
@@ -751,7 +751,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
 
 #ifdef CROARING_IS_X64
 CROARING_TARGET_AVX2
-bool _avx2_bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
+static inline bool _avx2_bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
     const __m256i *ptr1 = (const __m256i*)container1->words;
     const __m256i *ptr2 = (const __m256i*)container2->words;
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/32; i++) {

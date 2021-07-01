@@ -739,7 +739,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
 
 #if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(CROARING_IS_X64)
 
-uint64_t _asm_bitset_set_list_withcard(uint64_t *words, uint64_t card,
+static inline uint64_t _asm_bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
     uint64_t offset, load, pos;
     uint64_t shift = 6;
@@ -764,7 +764,7 @@ uint64_t _asm_bitset_set_list_withcard(uint64_t *words, uint64_t card,
     return card;
 }
 
-void _asm_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
+static inline void _asm_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
     uint64_t pos;
     const uint16_t *end = list + length;
 
@@ -819,7 +819,7 @@ void _asm_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length
     }
 }
 
-uint64_t _asm_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
+static inline uint64_t _asm_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {
     uint64_t offset, load, pos;
     uint64_t shift = 6;
@@ -845,7 +845,7 @@ uint64_t _asm_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *
     return card;
 }
 
-uint64_t _scalar_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
+static inline uint64_t _scalar_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {
     uint64_t offset, load, newload, pos, index;
     const uint16_t *end = list + length;
@@ -862,7 +862,7 @@ uint64_t _scalar_bitset_clear_list(uint64_t *words, uint64_t card, const uint16_
     return card;
 }
 
-uint64_t _scalar_bitset_set_list_withcard(uint64_t *words, uint64_t card,
+static inline uint64_t _scalar_bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
     uint64_t offset, load, newload, pos, index;
     const uint16_t *end = list + length;
@@ -879,7 +879,7 @@ uint64_t _scalar_bitset_set_list_withcard(uint64_t *words, uint64_t card,
     return card;
 }
 
-void _scalar_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
+static inline void _scalar_bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
     uint64_t offset, load, newload, pos, index;
     const uint16_t *end = list + length;
     while (list != end) {
