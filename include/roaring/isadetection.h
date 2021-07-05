@@ -208,7 +208,7 @@ static inline bool croaring_avx2() {
 }
 #else
 static inline bool croaring_avx2() {
-  return  (dynamic_croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
+  return  (croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
 }
 #endif
 
