@@ -643,14 +643,10 @@ static inline bool container_equals(
                                                const_CAST_bitset(c2));
 
         case CONTAINER_PAIR(BITSET,ARRAY):
-            // java would always return false?
-            return array_container_equal_bitset(const_CAST_array(c2),
-                                                const_CAST_bitset(c1));
+            return false;  // by construction, size(c1) > size(c2)
 
         case CONTAINER_PAIR(ARRAY,BITSET):
-            // java would always return false?
-            return array_container_equal_bitset(const_CAST_array(c1),
-                                                const_CAST_bitset(c2));
+            return false;  // by construction, size(c1) < size(c2)
 
         case CONTAINER_PAIR(ARRAY,RUN):
             return run_container_equals_array(const_CAST_run(c2),
