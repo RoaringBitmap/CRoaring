@@ -509,7 +509,7 @@ We have optimizations specific to AVX2 in the code, and they are turned dynamica
 You can install the library using the conan package manager:
 
 ```
-$ echo -e "[requires]\nroaring/0.2.66" > conanfile.txt
+$ echo -e "[requires]\nroaring/0.3.3" > conanfile.txt
 $ conan install .
 ```
 
