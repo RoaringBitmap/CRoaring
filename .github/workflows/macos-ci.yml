@@ -1,0 +1,20 @@
+name: Macos-CI
+
+on: push
+
+
+jobs:
+  ci:
+    name: macos-llvm
+    runs-on: macos-latest
+    steps: 
+      - uses: actions/checkout@v2
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=destination ..
+          cmake --build . 
+          ctest . --output-on-failure
+          cmake --install . 
+          cd ../tests/installation/find && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .
