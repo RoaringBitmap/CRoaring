@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-18.04
 
     env:
-      CC: clang-6
-      CXX: clang++-6
+      CC: clang-7
+      CXX: clang++-7
 
     steps: 
       - uses: actions/checkout@v2
