@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build and Test
         run: |
-          xcversion select 11
+          xcversion select 11.2.1
           mkdir build
           cd build
           cmake -DCMAKE_INSTALL_PREFIX:PATH=destination ..
