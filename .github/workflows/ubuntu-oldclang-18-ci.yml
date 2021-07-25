@@ -1,12 +1,12 @@
-name: Ubuntu-18-CI (clang 8)
+name: Ubuntu-CI (old llvm)
 
 on: push
 
 
 jobs:
   ci:
-    name: ubuntu-clang6-gcc
-    runs-on: ubuntu-18.04
+    name: ubuntu-clangold-gcc
+    runs-on: ubuntu-latest
 
     env:
       CC: clang-8
