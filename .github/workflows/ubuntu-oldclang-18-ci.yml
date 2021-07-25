@@ -1,4 +1,4 @@
-name: Ubuntu-18-CI (clang 6)
+name: Ubuntu-18-CI (clang 8)
 
 on: push
 
@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-18.04
 
     env:
-      CC: clang-7
-      CXX: clang++-7
+      CC: clang-8
+      CXX: clang++-8
 
     steps: 
       - uses: actions/checkout@v2
