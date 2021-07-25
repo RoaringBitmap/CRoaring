@@ -768,24 +768,22 @@ CROARING_UNTARGET_REGION
 #endif // CROARING_IS_X64
 
 bool bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
-	if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
-		if(container1->cardinality != container2->cardinality) {
-			return false;
-		}
-    if (container1->cardinality == INT32_C(0x10000)) {
-        return true;
+  if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
+    if(container1->cardinality != container2->cardinality) {
+      return false;
     }
-	}
+    if (container1->cardinality == INT32_C(0x10000)) {
+      return true;
+    }
+  }
 #ifdef CROARING_IS_X64
   if( croaring_avx2() ) {
     return _avx2_bitset_container_equals(container1, container2);
   }
-#else
+#endif
   return memcmp(container1->words,
                 container2->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)) == 0;
-#endif
-	return true;
 }
 
 bool bitset_container_is_subset(const bitset_container_t *container1,
