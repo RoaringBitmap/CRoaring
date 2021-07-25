@@ -250,7 +250,7 @@ static inline int hamming(uint64_t x) {
 //
 // On 32-bit ARM, we would have smaller registers.
 //
-// The simdjson users should still have the fallback kernel. It is
+// The library should still have the fallback kernel. It is
 // slower, but it should run everywhere.
 
 //
