@@ -227,7 +227,7 @@ inline bool bitset_container_contains(const bitset_container_t *bitset,
 * is present in `bitset'.  Calls bitset_container_get_all.
 */
 static inline bool bitset_container_contains_range(const bitset_container_t *bitset,
-					uint32_t pos_start, uint32_t pos_end) {
+          uint32_t pos_start, uint32_t pos_end) {
     return bitset_container_get_range(bitset, pos_start, pos_end);
 }
 
