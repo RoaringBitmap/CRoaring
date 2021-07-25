@@ -131,15 +131,15 @@ inline int __builtin_clzll(unsigned long long input_num) {
 
 /* software implementation avoids POPCNT */
 /*static inline int __builtin_popcountll(unsigned long long input_num) {
-	const uint64_t m1 = 0x5555555555555555; //binary: 0101...
-	const uint64_t m2 = 0x3333333333333333; //binary: 00110011..
-	const uint64_t m4 = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
-	const uint64_t h01 = 0x0101010101010101; //the sum of 256 to the power of 0,1,2,3...
+  const uint64_t m1 = 0x5555555555555555; //binary: 0101...
+  const uint64_t m2 = 0x3333333333333333; //binary: 00110011..
+  const uint64_t m4 = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
+  const uint64_t h01 = 0x0101010101010101; //the sum of 256 to the power of 0,1,2,3...
 
-	input_num -= (input_num >> 1) & m1;
-	input_num = (input_num & m2) + ((input_num >> 2) & m2);
-	input_num = (input_num + (input_num >> 4)) & m4;
-	return (input_num * h01) >> 56;
+  input_num -= (input_num >> 1) & m1;
+  input_num = (input_num & m2) + ((input_num >> 2) & m2);
+  input_num = (input_num + (input_num >> 4)) & m4;
+  return (input_num * h01) >> 56;
 }*/
 
 /* Use #define so this is effective even under /Ob0 (no inline) */
