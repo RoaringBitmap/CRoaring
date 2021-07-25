@@ -9,11 +9,15 @@ jobs:
     runs-on: ubuntu-18.04
 
     env:
-      CC: clang
-      CXX: clang++
+      CC: clang-7
+      CXX: clang++-7
 
     steps: 
       - uses: actions/checkout@v2
+      - name: install clang 7
+        run: |
+          sudo apt update
+          sudo apt install clang-7
       - name: Build and Test
         run: |
           mkdir build
