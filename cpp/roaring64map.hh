@@ -510,21 +510,22 @@ class Roaring64Map {
     }
 
     /**
-     * Iterate over the bitmap elements. The function iterator is called once
-     * for all the values with ptr (can be NULL) as the second parameter of each
-     * call.
+     * Iterate over the bitmap elements in order(start from the smallest one)
+     * and call iterator once for every element until the iterator tells stop.
      *
-     * roaring_iterator is simply a pointer to a function that returns bool
+     * roaring_iterator64 is simply a pointer to a function that returns bool
      * (true means that the iteration should continue while false means that it
-     * should stop), and takes (uint32_t,void*) as inputs.
+     * should stop), and takes (uint64_t element, void* ptr) as inputs.
      */
     void iterate(api::roaring_iterator64 iterator, void *ptr) const {
-        std::for_each(roarings.begin(), roarings.cend(),
-                      [=](const std::pair<const uint32_t, Roaring> &map_entry) {
-                          roaring_iterate64(&map_entry.second.roaring, iterator,
-                                            uint64_t(map_entry.first) << 32,
-                                            ptr);
-                      });
+	for (const auto &map_entry : roarings) {
+            bool should_continue =
+                roaring_iterate64(&map_entry.second.roaring, iterator,
+                                  uint64_t(map_entry.first) << 32, ptr);
+            if (!should_continue) {
+                break;
+            }
+        }
     }
 
     /**

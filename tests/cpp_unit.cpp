@@ -159,6 +159,27 @@ void test_issue304(void) {
 
 DEFINE_TEST(test_issue304) { test_issue304(); }
 
+void test_roaring64_iterate_multi_roaring(void) {
+    Roaring64Map roaring;
+
+    assert_true(roaring.addChecked(uint64_t(1)));
+    assert_true(roaring.addChecked(uint64_t(2)));
+    assert_true(roaring.addChecked(uint64_t(1) << 32));
+    assert_true(roaring.addChecked(uint64_t(2) << 32));
+
+    uint64_t iterate_count = 0;
+    auto iterate_func = [](uint64_t value, void *param) -> bool {
+        auto *count = static_cast<uint64_t *>(param);
+        *count += 1;
+        return *count < 2;
+    };
+    roaring.iterate(iterate_func, &iterate_count);
+    assert_true(iterate_count == 2);
+}
+
+DEFINE_TEST(test_roaring64_iterate_multi_roaring) {
+    test_roaring64_iterate_multi_roaring();
+}
 
 void test_example_cpp(bool copy_on_write) {
     // create a new empty bitmap
@@ -623,6 +644,7 @@ int main() {
         cmocka_unit_test(test_run_compression_cpp_false),
 		cmocka_unit_test(test_cpp_clear_64),
 		cmocka_unit_test(test_cpp_move_64),
+		cmocka_unit_test(test_roaring64_iterate_multi_roaring),
 		cmocka_unit_test(test_cpp_bidirectional_iterator_64)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
