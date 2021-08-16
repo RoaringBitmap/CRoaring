@@ -3,6 +3,7 @@ macro(append var string)
 endmacro(append)
 
 set(SANITIZE_FLAGS "")
+
 if(ROARING_SANITIZE)
   set(ROARING_SANITIZE_FLAGS "-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all")
   if (CMAKE_COMPILER_IS_GNUCC)
