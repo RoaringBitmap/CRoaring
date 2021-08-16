@@ -165,7 +165,8 @@ container_t *get_copy_of_container(
  * is responsible for deallocation.
  */
 container_t *container_clone(const container_t *c, uint8_t typecode) {
-    c = container_unwrap_shared(c, &typecode);
+    // We do not want to allow cloning of shared containers.
+    // c = container_unwrap_shared(c, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
             return bitset_container_clone(const_CAST_bitset(c));
@@ -174,8 +175,7 @@ container_t *container_clone(const container_t *c, uint8_t typecode) {
         case RUN_CONTAINER_TYPE:
             return run_container_clone(const_CAST_run(c));
         case SHARED_CONTAINER_TYPE:
-            printf("shared containers are not cloneable\n");
-            assert(false);
+            // Shared containers are not cloneable. Are you mixing COW and non-COW bitmaps?
             return NULL;
         default:
             assert(false);

@@ -3429,6 +3429,26 @@ DEFINE_TEST(test_intersect_small_run_bitset) {
     roaring_bitmap_free(rb2);
 }
 
+
+DEFINE_TEST(issue316) {
+    roaring_bitmap_t *rb1 = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(rb1, true);
+    roaring_bitmap_add_range(rb1, 1, 100);
+    roaring_bitmap_t *rb2 = roaring_bitmap_create();
+    roaring_bitmap_or_inplace(rb2, rb1);
+    assert_true(roaring_bitmap_is_subset(rb2, rb1));
+    assert_true(roaring_bitmap_is_subset(rb1, rb2));
+    assert_true(roaring_bitmap_equals(rb1, rb2));
+    roaring_bitmap_t *rb3 = roaring_bitmap_copy(rb2);
+    assert_true(roaring_bitmap_is_subset(rb3, rb1));
+    assert_true(roaring_bitmap_is_subset(rb1, rb3));
+    assert_true(roaring_bitmap_equals(rb1, rb3));
+    assert_true(roaring_bitmap_equals(rb1, rb2));
+    roaring_bitmap_free(rb1);
+    roaring_bitmap_free(rb2);
+    roaring_bitmap_free(rb3);
+}
+
 DEFINE_TEST(test_subset) {
     uint32_t value;
     roaring_bitmap_t *rb1 = roaring_bitmap_create();
@@ -4156,6 +4176,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
         cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),

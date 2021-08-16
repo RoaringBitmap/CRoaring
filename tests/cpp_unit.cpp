@@ -159,6 +159,23 @@ void test_issue304(void) {
 
 DEFINE_TEST(test_issue304) { test_issue304(); }
 
+DEFINE_TEST(issue316) {
+    Roaring r1;
+    r1.setCopyOnWrite(true);
+    r1.addRange(1, 100);
+    Roaring r2;
+    r2 |= r1;
+    assert_true(r2.isSubset(r1));
+    assert_true(r1.isSubset(r2));
+    assert_true(r1 == r2);
+
+    Roaring r3 = r2;
+    assert_true(r3.isSubset(r1));
+    assert_true(r1.isSubset(r3));
+    assert_true(r1 == r3);
+    assert_true(r1 == r2);
+}
+
 void test_roaring64_iterate_multi_roaring(void) {
     Roaring64Map roaring;
 
@@ -168,7 +185,7 @@ void test_roaring64_iterate_multi_roaring(void) {
     assert_true(roaring.addChecked(uint64_t(2) << 32));
 
     uint64_t iterate_count = 0;
-    auto iterate_func = [](uint64_t value, void *param) -> bool {
+    auto iterate_func = [](uint64_t , void *param) -> bool {
         auto *count = static_cast<uint64_t *>(param);
         *count += 1;
         return *count < 2;
@@ -628,6 +645,7 @@ DEFINE_TEST(test_cpp_bidirectional_iterator_64) {
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue316),
         cmocka_unit_test(test_issue304),
         cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),

@@ -300,7 +300,6 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *r) {
         printf("%d: %s (%d)", ra->keys[i],
                get_full_container_name(ra->containers[i], ra->typecodes[i]),
                container_get_cardinality(ra->containers[i], ra->typecodes[i]));
-
         if (ra->typecodes[i] == SHARED_CONTAINER_TYPE) {
             printf(
                 "(shared count = %" PRIu32 " )",
@@ -402,6 +401,7 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
 
 bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
                                      const roaring_bitmap_t *src) {
+    roaring_bitmap_set_copy_on_write(dest, is_cow(src));
     return ra_overwrite(&src->high_low_container, &dest->high_low_container,
                         is_cow(src));
 }
@@ -589,7 +589,7 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
               length2 = x2->high_low_container.size;
     uint32_t neededcap = length1 > length2 ? length2 : length1;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
-    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
+    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
 
     int pos1 = 0, pos2 = 0;
 
@@ -737,7 +737,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
-    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
+    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
@@ -888,7 +888,7 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
-    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
+    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
@@ -1049,14 +1049,14 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
               length2 = x2->high_low_container.size;
     if (0 == length1) {
         roaring_bitmap_t *empty_bitmap = roaring_bitmap_create();
-        roaring_bitmap_set_copy_on_write(empty_bitmap, is_cow(x1) && is_cow(x2));
+        roaring_bitmap_set_copy_on_write(empty_bitmap, is_cow(x1) || is_cow(x2));
         return empty_bitmap;
     }
     if (0 == length2) {
         return roaring_bitmap_copy(x1);
     }
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1);
-    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
+    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
 
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
@@ -2147,7 +2147,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
-    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
+    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
@@ -2324,7 +2324,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
-    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) && is_cow(x2));
+    roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
