@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include <roaring/containers/array.h>
+#include <roaring/containers/single.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/convert.h>
 #include <roaring/containers/mixed_andnot.h>
@@ -32,9 +33,10 @@
 #define ARRAY_CONTAINER_TYPE_CODE 2
 #define RUN_CONTAINER_TYPE_CODE 3
 #define SHARED_CONTAINER_TYPE_CODE 4
+#define SINGLE_CONTAINER_TYPE_CODE 5
 
 // macro for pairing container type codes
-#define CONTAINER_PAIR(c1, c2) (4 * (c1) + (c2))
+#define CONTAINER_PAIR(c1, c2) (8 * (c1) + (c2))
 
 /**
  * A shared container is a wrapper around a container
@@ -224,6 +226,8 @@ static inline int container_get_cardinality(const void *container,
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_cardinality(
                 (const run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_container_cardinality(container_to_single(container));
     }
     assert(false);
     __builtin_unreachable();
@@ -246,6 +250,8 @@ static inline bool container_is_full(const void *container, uint8_t typecode) {
                        (const array_container_t *)container) == (1 << 16);
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_is_full((const run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return false;
     }
     assert(false);
     __builtin_unreachable();
@@ -262,6 +268,8 @@ static inline int container_shrink_to_fit(void *container, uint8_t typecode) {
                 (array_container_t *)container);
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_shrink_to_fit((run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return 0;
     }
     assert(false);
     __builtin_unreachable();
@@ -292,6 +300,7 @@ static inline void *container_range_of_ones(uint32_t range_start,
 
 /*  Create a container with all the values between in [min,max) at a
     distance k*step from min. */
+// TODO:
 static inline void *container_from_range(uint8_t *type, uint32_t min,
                                          uint32_t max, uint16_t step) {
     if (step == 0) return NULL;  // being paranoid
@@ -320,6 +329,7 @@ static inline void *container_from_range(uint8_t *type, uint32_t min,
 /**
  * "repair" the container after lazy operations.
  */
+// TODO:
 static inline void *container_repair_after_lazy(void *container,
                                                 uint8_t *typecode) {
     container = get_writable_copy_if_shared(
@@ -370,6 +380,8 @@ static inline int32_t container_write(const void *container, uint8_t typecode,
             return array_container_write((const array_container_t *)container, buf);
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_write((const run_container_t *)container, buf);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_container_write(container_to_single(container), buf);
     }
     assert(false);
     __builtin_unreachable();
@@ -393,6 +405,8 @@ static inline int32_t container_size_in_bytes(const void *container,
                 (const array_container_t *)container);
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_size_in_bytes((const run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_container_size_in_bytes(container_to_single(container));
     }
     assert(false);
     __builtin_unreachable();
@@ -427,6 +441,8 @@ static inline bool container_nonzero_cardinality(const void *container,
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_nonzero_cardinality(
                 (const run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_container_nozero_cardinality(container_to_single(container));
     }
     assert(false);
     __builtin_unreachable();
@@ -457,6 +473,8 @@ static inline int container_to_uint32_array(uint32_t *output,
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_to_uint32_array(
                 output, (const run_container_t *)container, base);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_container_to_uint32_array(output , container_to_single(container), base);
     }
     assert(false);
     __builtin_unreachable();
@@ -494,6 +512,18 @@ static inline void *container_add(void *container, uint16_t val,
             run_container_add((run_container_t *)container, val);
             *new_typecode = RUN_CONTAINER_TYPE_CODE;
             return container;
+        case SINGLE_CONTAINER_TYPE_CODE: {
+            // single_container_t single = container_to_single(container);
+            // if (single_container_try_add(&single, val) != -1) {
+            //     *new_typecode = SINGLE_CONTAINER_TYPE_CODE;
+            //     return single_to_container(single);
+            // } else {
+            //     *new_typecode = ARRAY_CONTAINER_TYPE_CODE;
+            //     return single_to_array(single, val);
+            // }
+            // return NULL;
+        }
+
         default:
             assert(false);
             __builtin_unreachable();
@@ -508,6 +538,7 @@ static inline void *container_add(void *container, uint16_t val,
  * This function may allocate a new container, and caller is responsible for
  * memory deallocation
  */
+// TODO:
 static inline void *container_remove(void *container, uint16_t val,
                                      uint8_t typecode, uint8_t *new_typecode) {
     container = get_writable_copy_if_shared(container, &typecode);
@@ -1241,6 +1272,13 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
                                         (const run_container_t *)c2);
             return convert_run_to_efficient_container((run_container_t *)c1,
                                                       result_type);
+        case CONTAINER_PAIR(SINGLE_CONTAINER_TYPE_CODE, SINGLE_CONTAINER_TYPE_CODE): {
+            void* res = single_single_container_inplace_union(c1, c2, result_type);
+            int car1 = container_get_cardinality(c1, SINGLE_CONTAINER_TYPE_CODE);
+            int car2 = container_get_cardinality(c2, SINGLE_CONTAINER_TYPE_CODE);
+            int car3 = container_get_cardinality(res, *result_type);
+            assert(car1 + car2 == car3);
+            return res;}
         case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE,
                             ARRAY_CONTAINER_TYPE_CODE):
             array_bitset_container_union((const array_container_t *)c2,
@@ -1298,6 +1336,14 @@ static inline void *container_ior(void *c1, uint8_t type1, const void *c2,
             c1 = convert_run_to_efficient_container((run_container_t *)c1,
                                                     result_type);
             return c1;
+        case CONTAINER_PAIR(ARRAY_CONTAINER_TYPE_CODE, SINGLE_CONTAINER_TYPE_CODE):
+            return array_single_container_inplace_union((array_container_t*)c1, c2, result_type);
+        case CONTAINER_PAIR(SINGLE_CONTAINER_TYPE_CODE, ARRAY_CONTAINER_TYPE_CODE):
+            return single_array_container_inplace_union(c1, (const array_container_t*)c2, result_type);
+        case CONTAINER_PAIR(SINGLE_CONTAINER_TYPE_CODE, BITSET_CONTAINER_TYPE_CODE):
+        case CONTAINER_PAIR(BITSET_CONTAINER_TYPE_CODE, SINGLE_CONTAINER_TYPE_CODE):
+        case CONTAINER_PAIR(SINGLE_CONTAINER_TYPE_CODE, RUN_CONTAINER_TYPE_CODE):
+        case CONTAINER_PAIR(RUN_CONTAINER_TYPE_CODE, SINGLE_CONTAINER_TYPE_CODE):
         default:
             assert(false);
             __builtin_unreachable();
@@ -2161,6 +2207,8 @@ static inline uint16_t container_maximum(const void *container,
             return array_container_maximum((const array_container_t *)container);
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_maximum((const run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_container_maximum(container_to_single(container));
         default:
             assert(false);
             __builtin_unreachable();

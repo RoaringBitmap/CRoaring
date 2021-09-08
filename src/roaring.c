@@ -415,15 +415,17 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
         uint8_t newtypecode = typecode;
         void *container2 =
             container_add(container, val & 0xFFFF, typecode, &newtypecode);
-        if (container2 != container) {
+        if (container2 != container || typecode != newtypecode) {
             container_free(container, typecode);
             ra_set_container_at_index(&r->high_low_container, i, container2,
                                       newtypecode);
         }
     } else {
-        array_container_t *newac = array_container_create();
-        void *container = container_add(newac, val & 0xFFFF,
-                                        ARRAY_CONTAINER_TYPE_CODE, &typecode);
+        // array container
+        single_container_t newsingle;
+        newsingle.len = 0;
+        void *container = container_add(single_to_container(newsingle), val & 0xFFFF,
+                                        SINGLE_CONTAINER_TYPE_CODE, &typecode);
         // we could just assume that it stays an array container
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, typecode);
@@ -813,8 +815,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                 void *c =
                     container_ior(c1, container_type_1, c2, container_type_2,
                                   &container_result_type);
-                if (c !=
-                    c1) {  // in this instance a new container was created, and
+                if (c != c1 || container_type_1 != container_result_type) {  // in this instance a new container was created, and
                            // we need to free the old one
                     container_free(c1, container_type_1);
                 }
@@ -843,7 +844,6 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           container_type_2);
             }
-
             // void *c2_clone = container_clone(c2, container_type_2);
             ra_insert_new_key_value_at(&x1->high_low_container, pos1, s2, c2,
                                        container_type_2);

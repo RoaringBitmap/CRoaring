@@ -607,6 +607,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
     uint32_t startOffset = 0;
     bool hasrun = ra_has_run_container(ra);
     if (hasrun) {
+        assert(false);
         uint32_t cookie = SERIAL_COOKIE | ((ra->size - 1) << 16);
         memcpy(buf, &cookie, sizeof(cookie));
         buf += sizeof(cookie);
@@ -901,18 +902,33 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
               ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
               return false;
             }
-            // it is now safe to read
-            array_container_t *c =
-                array_container_create_given_capacity(thiscard);
-            if(c == NULL) {// memory allocation failure
-              fprintf(stderr, "Failed to allocate memory for an array container.\n");
-              ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
-              return false;
+            void* container = NULL;
+            uint16_t typecodes = 0;
+            if (thiscard > SINGLE_CONTAINER_MAX_CAPTAIN) {
+            // if (true) {
+                // it is now safe to read
+                array_container_t *c =
+                    array_container_create_given_capacity(thiscard);
+                if(c == NULL) {// memory allocation failure
+                  fprintf(stderr, "Failed to allocate memory for an array container.\n");
+                  ra_clear(answer);// we need to clear the containers already allocated, and the roaring array
+                  return false;
+                }
+                buf += array_container_read(thiscard, c, buf);
+
+                container = c;
+                typecodes = ARRAY_CONTAINER_TYPE_CODE;
+            } else {
+                single_container_t single;
+                memset(&single,0, sizeof(single_container_t));
+                buf += single_container_read(thiscard, &single, buf);
+                container = single_to_container(single);
+                typecodes = SINGLE_CONTAINER_TYPE_CODE;
             }
+
             answer->size++;
-            buf += array_container_read(thiscard, c, buf);
-            answer->containers[k] = c;
-            answer->typecodes[k] = ARRAY_CONTAINER_TYPE_CODE;
+            answer->containers[k] = container;
+            answer->typecodes[k] = typecodes;
         }
     }
     return true;

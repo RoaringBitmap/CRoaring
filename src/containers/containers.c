@@ -36,6 +36,8 @@ void container_free(void *container, uint8_t typecode) {
         case SHARED_CONTAINER_TYPE_CODE:
             shared_container_free((shared_container_t *)container);
             break;
+        case SINGLE_CONTAINER_TYPE_CODE:
+            break;
         default:
             assert(false);
             __builtin_unreachable();
@@ -93,6 +95,8 @@ int32_t container_serialize(const void *container, uint8_t typecode,
                 array_container_serialize((const array_container_t *)container, buf));
         case RUN_CONTAINER_TYPE_CODE:
             return (run_container_serialize((const run_container_t *)container, buf));
+        case SINGLE_CONTAINER_TYPE_CODE:
+            // return single_container_serialize(container_to_single(container), buf);
         default:
             assert(0);
             __builtin_unreachable();
@@ -111,6 +115,8 @@ uint32_t container_serialization_len(const void *container, uint8_t typecode) {
         case RUN_CONTAINER_TYPE_CODE:
             return run_container_serialization_len(
                 (const run_container_t *)container);
+        case SINGLE_CONTAINER_TYPE_CODE:
+            // return single_container_serialization_len(container_to_single(container));
         default:
             assert(0);
             __builtin_unreachable();
@@ -126,6 +132,8 @@ void *container_deserialize(uint8_t typecode, const char *buf, size_t buf_len) {
             return (array_container_deserialize(buf, buf_len));
         case RUN_CONTAINER_TYPE_CODE:
             return (run_container_deserialize(buf, buf_len));
+        case SINGLE_CONTAINER_TYPE_CODE:
+            // return single_container_deserialize(buf, buf_len);
         case SHARED_CONTAINER_TYPE_CODE:
             printf("this should never happen.\n");
             assert(0);
@@ -209,6 +217,8 @@ void *container_clone(const void *container, uint8_t typecode) {
             printf("shared containers are not cloneable\n");
             assert(false);
             return NULL;
+        case SINGLE_CONTAINER_TYPE_CODE:
+            return single_to_container(container_to_single(container));
         default:
             assert(false);
             __builtin_unreachable();
