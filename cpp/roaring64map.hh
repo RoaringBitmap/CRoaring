@@ -601,18 +601,6 @@ class Roaring64Map {
         return buf - orig;
     }
 
-#if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
-    #define ROARING64_EMPLACE(roaring64, key, val) \
-        (roaring64).emplaceOrInsert((key), (val))
-#else
-    #define ROARING64_EMPLACE(roaring64, key, val) \
-        (roaring64).emplace((key), std::move(val))
-
-    void emplace(const uint32_t key, Roaring &&value) {
-        roarings.emplace(key, std::move(value));
-    }
-#endif
-
     /**
      * read a bitmap from a serialized version. This is meant to be compatible
      * with
@@ -642,7 +630,7 @@ class Roaring64Map {
             Roaring read_var = Roaring::read(buf, portable);
             // forward buffer past the last Roaring Bitmap
             buf += read_var.getSizeInBytes(portable);
-            ROARING64_EMPLACE(result, key, read_var);
+            result.emplaceOrInsert(key, std::move(read_var));
         }
         return result;
     }
@@ -681,7 +669,7 @@ class Roaring64Map {
             size_t tz = read_var.getSizeInBytes(true);
             buf += tz;
             maxbytes -= tz;
-            ROARING64_EMPLACE(result, key, read_var);
+            result.emplaceOrInsert(key, std::move(read_var));
         }
         return result;
     }
@@ -898,6 +886,14 @@ class Roaring64Map {
         roarings.insert(std::make_pair(key, value));
 #else
         roarings.emplace(std::make_pair(key, value));
+#endif
+    }
+
+    void emplaceOrInsert(const uint32_t key, Roaring &&value) {
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
+        roarings.insert(std::make_pair(key, std::move(value)));
+#else
+        roarings.emplace(key, value);
 #endif
     }
 };
