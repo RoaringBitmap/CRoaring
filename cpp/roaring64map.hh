@@ -601,6 +601,18 @@ class Roaring64Map {
         return buf - orig;
     }
 
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
+    #define ROARING64_EMPLACE(roaring64, key, val) \
+        (roaring64).emplaceOrInsert((key), (val))
+#else
+    #define ROARING64_EMPLACE(roaring64, key, val) \
+        (roaring64).emplace((key), std::move(val))
+
+    void emplace(const uint32_t key, Roaring &&value) {
+        roarings.emplace(key, std::move(value));
+    }
+#endif
+
     /**
      * read a bitmap from a serialized version. This is meant to be compatible
      * with
@@ -628,9 +640,9 @@ class Roaring64Map {
             buf += sizeof(uint32_t);
             // read map value Roaring
             Roaring read_var = Roaring::read(buf, portable);
-            result.emplaceOrInsert(key, read_var);
             // forward buffer past the last Roaring Bitmap
             buf += read_var.getSizeInBytes(portable);
+            ROARING64_EMPLACE(result, key, read_var);
         }
         return result;
     }
@@ -665,11 +677,11 @@ class Roaring64Map {
             maxbytes -= sizeof(uint32_t);
             // read map value Roaring
             Roaring read_var = Roaring::readSafe(buf, maxbytes);
-            result.emplaceOrInsert(key, read_var);
             // forward buffer past the last Roaring Bitmap
             size_t tz = read_var.getSizeInBytes(true);
             buf += tz;
             maxbytes -= tz;
+            ROARING64_EMPLACE(result, key, read_var);
         }
         return result;
     }
