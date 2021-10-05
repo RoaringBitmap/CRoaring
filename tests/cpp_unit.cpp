@@ -667,12 +667,14 @@ DEFINE_TEST(test_cpp_frozen) {
     const Roaring r2 = Roaring::frozenView(buf, num_bytes);
     assert_true(r1 == r2);
 
+#if ROARING_EXCEPTIONS
     // try viewing a misaligned/invalid buffer
     try {
         Roaring::frozenView(buf + 1, num_bytes - 1);
         assert(false);
     } catch (...) {
     }
+#endif
 
     free(buf);
 }
