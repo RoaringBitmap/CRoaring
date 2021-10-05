@@ -184,7 +184,19 @@ class Roaring {
      * Destructor.  By contract, calling roaring_bitmap_clear() is enough to
      * release all auxiliary memory used by the structure.
      */
-    ~Roaring() { api::roaring_bitmap_clear(&roaring); }
+    ~Roaring() { 
+        if (!(roaring.high_low_container.flags & ROARING_FLAG_FROZEN)) {
+            api::roaring_bitmap_clear(&roaring);
+        } else {
+            // The roaring member variable copies the `roaring_bitmap_t` and
+            // nested `roaring_array_t` structures by value and is freed in the
+            // constructor, however the underlying memory arena used for the
+            // container data is not freed with it. Here we derive the arena
+            // pointer from the second arena allocation in
+            // `roaring_bitmap_frozen_view` and free it as well.
+            roaring_bitmap_free((roaring_bitmap_t *)((char *)roaring.high_low_container.containers - sizeof(roaring_bitmap_t)));
+        }
+    }
 
     /**
      * Copies the content of the provided bitmap, and
@@ -526,6 +538,24 @@ class Roaring {
             return api::roaring_bitmap_portable_size_in_bytes(&roaring);
         else
             return api::roaring_bitmap_size_in_bytes(&roaring);
+    }
+
+    static const Roaring frozenView(const char *buf, size_t length) {
+        const roaring_bitmap_t *s = api::roaring_bitmap_frozen_view(buf, length);
+        if (s == NULL) {
+            throw std::runtime_error("failed to read frozen bitmap");
+        }
+        Roaring r;
+        r.roaring = *s;
+        return r;
+    }
+
+    void writeFrozen(char *buf) const {
+        roaring_bitmap_frozen_serialize(&roaring, buf);
+    }
+
+    size_t getFrozenSizeInBytes() const {
+        return roaring_bitmap_frozen_size_in_bytes(&roaring);
     }
 
     /**

@@ -2983,6 +2983,12 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     rb->high_low_container.containers =
         (container_t **)arena_alloc(&arena,
                                     sizeof(container_t*) * num_containers);
+    // Ensure offset of high_low_container.containers is known distance used in
+    // C++ wrapper. sizeof(roaring_bitmap_t) is used as it is the size of the
+    // only allocation that precedes high_low_container.containers. If this is
+    // changed (new allocation or changed order), this offset will also need to
+    // be changed in the C++ wrapper.
+    assert(rb == (roaring_bitmap_t *)((char *)rb->high_low_container.containers - sizeof(roaring_bitmap_t)));
     for (int32_t i = 0; i < num_containers; i++) {
         switch (typecodes[i]) {
             case BITSET_CONTAINER_TYPE: {

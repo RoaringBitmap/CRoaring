@@ -696,6 +696,96 @@ class Roaring64Map {
             });
     }
 
+    static const Roaring64Map frozenView(const char *buf) {
+        // size of bitmap buffer and key
+        const size_t metadata_size = sizeof(size_t) + sizeof(uint32_t);
+
+        Roaring64Map result;
+
+        // get map size
+        uint64_t map_size = *((uint64_t *)buf);
+        buf += sizeof(uint64_t);
+
+        for (uint64_t lcv = 0; lcv < map_size; lcv++) {
+            // pad to 32 bytes minus the metadata size
+            while(((uintptr_t)buf + metadata_size) % 32 != 0) buf++;
+
+            // get bitmap size
+            size_t len;
+            memcpy(&len, buf, sizeof(size_t));
+            buf += sizeof(size_t);
+
+            // get map key
+            uint32_t key;
+            memcpy(&key, buf, sizeof(uint32_t));
+            buf += sizeof(uint32_t);
+
+            // read map value Roaring
+            const Roaring read = Roaring::frozenView(buf, len);
+            result.emplaceOrInsert(key, read);
+
+            // forward buffer past the last Roaring Bitmap
+            buf += len;
+        }
+        return result;
+    }
+
+    // As with serialized 64-bit bitmaps, 64-bit frozen bitmaps are serialized
+    // by concatenating one or more Roaring::write output buffers with the
+    // preceeding map key. Unlike standard bitmap serialization, frozen bitmaps
+    // must be 32-byte aligned and requires a buffer length to parse. As a
+    // result, each concatenated output of Roaring::writeFrozen is preceeded by
+    // padding, the buffer size (size_t), and the map key (uint32_t). The
+    // padding is used to ensure 32-byte alignment, but since it is followed by
+    // the buffer size and map key, it actually pads to `(x - sizeof(size_t) +
+    // sizeof(uint32_t)) mod 32` to leave room for the metadata.
+    void writeFrozen(char *buf) const {
+        // size of bitmap buffer and key
+        const size_t metadata_size = sizeof(size_t) + sizeof(uint32_t);
+
+        // push map size
+        *((uint64_t *)buf) = roarings.size();
+        buf += sizeof(uint64_t);
+
+        for (auto &map_entry : roarings) {
+            size_t frozenSizeInBytes = map_entry.second.getFrozenSizeInBytes();
+
+            // pad to 32 bytes minus the metadata size
+            while(((uintptr_t)buf + metadata_size) % 32 != 0) buf++;
+
+            // push bitmap size
+            memcpy(buf, &frozenSizeInBytes, sizeof(size_t));
+            buf += sizeof(size_t);
+
+            // push map key
+            memcpy(buf, &map_entry.first, sizeof(uint32_t));
+            buf += sizeof(uint32_t);
+
+            // push map value Roaring
+            map_entry.second.writeFrozen(buf);
+            buf += map_entry.second.getFrozenSizeInBytes();
+        }
+    }
+
+    size_t getFrozenSizeInBytes() const {
+        // size of bitmap size and map key
+        const size_t metadata_size = sizeof(size_t) + sizeof(uint32_t);
+        size_t ret = 0;
+
+        // map size
+        ret += sizeof(uint64_t);
+
+        for (auto &map_entry : roarings) {
+            // pad to 32 bytes minus the metadata size
+            while((ret + metadata_size) % 32 != 0) ret++;
+            ret += metadata_size;
+
+            // frozen bitmaps must be 32-byte aligned
+            ret += map_entry.second.getFrozenSizeInBytes(); 
+        }
+        return ret;
+    }
+
     /**
      * Computes the intersection between two bitmaps and returns new bitmap.
      * The current bitmap and the provided bitmap are unchanged.

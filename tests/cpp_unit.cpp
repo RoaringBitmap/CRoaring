@@ -642,6 +642,76 @@ DEFINE_TEST(test_cpp_bidirectional_iterator_64) {
 	assert_true(i == roaring.begin());
 }
 
+DEFINE_TEST(test_cpp_frozen) {
+    const uint64_t s = 65536;
+
+    Roaring r1;
+    r1.add(0);
+    r1.add(UINT32_MAX);
+    r1.add(1000);
+    r1.add(2000);
+    r1.add(100000);
+    r1.add(200000);
+    r1.addRange(s * 10 + 100, s * 13 - 100);
+    for (uint64_t i = 0; i < s * 3; i += 2) {
+        r1.add(s * 20 + i);
+    }
+    r1.runOptimize();
+
+    // allocate a buffer and serialize to it
+    size_t num_bytes = r1.getFrozenSizeInBytes();
+    char *buf = (char *)roaring_bitmap_aligned_malloc(32, num_bytes);
+    r1.writeFrozen(buf);
+
+    // ensure the frozen bitmap is the same as the original
+    const Roaring r2 = Roaring::frozenView(buf, num_bytes);
+    assert_true(r1 == r2);
+
+    // try viewing a misaligned/invalid buffer
+    try {
+        Roaring::frozenView(buf + 1, num_bytes - 1);
+        assert(false);
+    } catch (...) {
+    }
+
+    free(buf);
+}
+
+DEFINE_TEST(test_cpp_frozen_64) {
+    const uint64_t s = 65536;
+
+    Roaring64Map r1;
+    r1.add((uint64_t)0);
+    r1.add((uint64_t)UINT32_MAX);
+    r1.add((uint64_t)1000);
+    r1.add((uint64_t)2000);
+    r1.add((uint64_t)100000);
+    r1.add((uint64_t)200000);
+    r1.add((uint64_t)5);
+    r1.add((uint64_t)1ull);
+    r1.add((uint64_t)2ull);
+    r1.add((uint64_t)234294967296ull);
+    r1.add((uint64_t)195839473298ull);
+    r1.add((uint64_t)14000000000000000100ull);
+    for(uint64_t i = s*10 + 100; i < s*13 - 100; i++) {
+        r1.add(i);
+    }
+    // r1.addRange(s * 10 + 100, s * 13 - 100);
+    for (uint64_t i = 0; i < s * 3; i += 2) {
+        r1.add(s * 20 + i);
+    }
+    r1.runOptimize();
+
+    size_t num_bytes = r1.getFrozenSizeInBytes();
+    char *buf = (char *)roaring_bitmap_aligned_malloc(32, num_bytes);
+    r1.writeFrozen(buf);
+
+    const Roaring64Map r2 = Roaring64Map::frozenView(buf);
+    assert_true(r1 == r2);
+
+    free(buf);
+}
+
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
@@ -663,7 +733,9 @@ int main() {
 		cmocka_unit_test(test_cpp_clear_64),
 		cmocka_unit_test(test_cpp_move_64),
 		cmocka_unit_test(test_roaring64_iterate_multi_roaring),
-		cmocka_unit_test(test_cpp_bidirectional_iterator_64)};
+		cmocka_unit_test(test_cpp_bidirectional_iterator_64),
+        cmocka_unit_test(test_cpp_frozen),
+		cmocka_unit_test(test_cpp_frozen_64)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
