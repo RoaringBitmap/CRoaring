@@ -184,7 +184,7 @@ class Roaring {
      * Destructor.  By contract, calling roaring_bitmap_clear() is enough to
      * release all auxiliary memory used by the structure.
      */
-    ~Roaring() { 
+    ~Roaring() {
         if (!(roaring.high_low_container.flags & ROARING_FLAG_FROZEN)) {
             api::roaring_bitmap_clear(&roaring);
         } else {
@@ -194,7 +194,10 @@ class Roaring {
             // container data is not freed with it. Here we derive the arena
             // pointer from the second arena allocation in
             // `roaring_bitmap_frozen_view` and free it as well.
-            roaring_bitmap_free((roaring_bitmap_t *)((char *)roaring.high_low_container.containers - sizeof(roaring_bitmap_t)));
+            roaring_bitmap_free(
+                (roaring_bitmap_t *)((char *)
+                                         roaring.high_low_container.containers -
+                                     sizeof(roaring_bitmap_t)));
         }
     }
 
@@ -541,7 +544,8 @@ class Roaring {
     }
 
     static const Roaring frozenView(const char *buf, size_t length) {
-        const roaring_bitmap_t *s = api::roaring_bitmap_frozen_view(buf, length);
+        const roaring_bitmap_t *s =
+            api::roaring_bitmap_frozen_view(buf, length);
         if (s == NULL) {
             throw std::runtime_error("failed to read frozen bitmap");
         }

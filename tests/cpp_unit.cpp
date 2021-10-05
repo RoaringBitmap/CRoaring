@@ -693,7 +693,7 @@ DEFINE_TEST(test_cpp_frozen_64) {
     r1.add((uint64_t)234294967296ull);
     r1.add((uint64_t)195839473298ull);
     r1.add((uint64_t)14000000000000000100ull);
-    for(uint64_t i = s*10 + 100; i < s*13 - 100; i++) {
+    for (uint64_t i = s * 10 + 100; i < s * 13 - 100; i++) {
         r1.add(i);
     }
     // r1.addRange(s * 10 + 100, s * 13 - 100);
@@ -734,7 +734,7 @@ int main() {
 		cmocka_unit_test(test_cpp_move_64),
 		cmocka_unit_test(test_roaring64_iterate_multi_roaring),
 		cmocka_unit_test(test_cpp_bidirectional_iterator_64),
-        cmocka_unit_test(test_cpp_frozen),
+		cmocka_unit_test(test_cpp_frozen),
 		cmocka_unit_test(test_cpp_frozen_64)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
