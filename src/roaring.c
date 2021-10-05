@@ -2988,7 +2988,9 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     // only allocation that precedes high_low_container.containers. If this is
     // changed (new allocation or changed order), this offset will also need to
     // be changed in the C++ wrapper.
-    assert(rb == (roaring_bitmap_t *)((char *)rb->high_low_container.containers - sizeof(roaring_bitmap_t)));
+    assert(rb ==
+           (roaring_bitmap_t *)((char *)rb->high_low_container.containers -
+                                sizeof(roaring_bitmap_t)));
     for (int32_t i = 0; i < num_containers; i++) {
         switch (typecodes[i]) {
             case BITSET_CONTAINER_TYPE: {
