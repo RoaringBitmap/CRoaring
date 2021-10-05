@@ -708,7 +708,7 @@ class Roaring64Map {
 
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // pad to 32 bytes minus the metadata size
-            while(((uintptr_t)buf + metadata_size) % 32 != 0) buf++;
+            while (((uintptr_t)buf + metadata_size) % 32 != 0) buf++;
 
             // get bitmap size
             size_t len;
@@ -751,7 +751,7 @@ class Roaring64Map {
             size_t frozenSizeInBytes = map_entry.second.getFrozenSizeInBytes();
 
             // pad to 32 bytes minus the metadata size
-            while(((uintptr_t)buf + metadata_size) % 32 != 0) buf++;
+            while (((uintptr_t)buf + metadata_size) % 32 != 0) buf++;
 
             // push bitmap size
             memcpy(buf, &frozenSizeInBytes, sizeof(size_t));
@@ -777,11 +777,11 @@ class Roaring64Map {
 
         for (auto &map_entry : roarings) {
             // pad to 32 bytes minus the metadata size
-            while((ret + metadata_size) % 32 != 0) ret++;
+            while ((ret + metadata_size) % 32 != 0) ret++;
             ret += metadata_size;
 
             // frozen bitmaps must be 32-byte aligned
-            ret += map_entry.second.getFrozenSizeInBytes(); 
+            ret += map_entry.second.getFrozenSizeInBytes();
         }
         return ret;
     }
