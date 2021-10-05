@@ -676,7 +676,7 @@ DEFINE_TEST(test_cpp_frozen) {
     }
 #endif
 
-    free(buf);
+    roaring_bitmap_aligned_free(buf);
 }
 
 DEFINE_TEST(test_cpp_frozen_64) {
@@ -711,7 +711,7 @@ DEFINE_TEST(test_cpp_frozen_64) {
     const Roaring64Map r2 = Roaring64Map::frozenView(buf);
     assert_true(r1 == r2);
 
-    free(buf);
+    roaring_bitmap_aligned_free(buf);
 }
 
 int main() {
