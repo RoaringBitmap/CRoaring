@@ -547,7 +547,7 @@ class Roaring {
         const roaring_bitmap_t *s =
             api::roaring_bitmap_frozen_view(buf, length);
         if (s == NULL) {
-            throw std::runtime_error("failed to read frozen bitmap");
+            ROARING_TERMINATE("failed to read frozen bitmap");
         }
         Roaring r;
         r.roaring = *s;
