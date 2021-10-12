@@ -676,6 +676,34 @@ DEFINE_TEST(test_cpp_frozen) {
     }
 #endif
 
+    // copy constructor
+    {
+        Roaring tmp(r2);
+        assert_true(tmp == r1);
+    }
+
+    // copy operator
+    {
+        Roaring tmp;
+        tmp = r2;
+        assert_true(tmp == r1);
+    }
+
+    // move constructor
+    {
+        Roaring a = Roaring::frozenView(buf, num_bytes);
+        Roaring b(std::move(a));
+        assert_true(b == r1);
+    }
+
+    // move assignment operator
+    {
+        Roaring a = Roaring::frozenView(buf, num_bytes);
+        Roaring b;
+        b = std::move(a);
+        assert_true(b == r1);
+    }
+
     roaring_bitmap_aligned_free(buf);
 }
 
@@ -710,6 +738,34 @@ DEFINE_TEST(test_cpp_frozen_64) {
 
     const Roaring64Map r2 = Roaring64Map::frozenView(buf);
     assert_true(r1 == r2);
+
+    // copy constructor
+    {
+        Roaring64Map tmp(r2);
+        assert_true(tmp == r1);
+    }
+
+    // copy operator
+    {
+        Roaring64Map tmp;
+        tmp = r2;
+        assert_true(tmp == r1);
+    }
+
+    // move constructor
+    {
+        Roaring64Map a = Roaring64Map::frozenView(buf);
+        Roaring64Map b(std::move(a));
+        assert_true(b == r1);
+    }
+
+    // move assignment operator
+    {
+        Roaring64Map a = Roaring64Map::frozenView(buf);
+        Roaring64Map b;
+        b = std::move(a);
+        assert_true(b == r1);
+    }
 
     roaring_bitmap_aligned_free(buf);
 }
