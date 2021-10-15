@@ -293,7 +293,7 @@ public:
         return std::accumulate(
             roarings.cbegin(), roarings.cend(), (uint64_t)0,
             [](uint64_t previous,
-               const std::pair<uint32_t, Roaring> &map_entry) {
+               const std::pair<const uint32_t, Roaring> &map_entry) {
                 return previous + map_entry.second.cardinality();
             });
     }
@@ -303,7 +303,7 @@ public:
      */
     bool isEmpty() const {
         return std::all_of(roarings.cbegin(), roarings.cend(),
-                           [](const std::pair<uint32_t, Roaring> &map_entry) {
+                           [](const std::pair<const uint32_t, Roaring> &map_entry) {
                                return map_entry.second.isEmpty();
                            });
     }
@@ -320,7 +320,7 @@ public:
             ((uint64_t)(std::numeric_limits<uint32_t>::max)()) + 1
             ? std::all_of(
                 roarings.cbegin(), roarings.cend(),
-                [](const std::pair<uint32_t, Roaring> &roaring_map_entry) {
+                [](const std::pair<const uint32_t, Roaring> &roaring_map_entry) {
                     // roarings within map are saturated if cardinality
                     // is uint32_t max + 1
                     return roaring_map_entry.second.cardinality() ==
@@ -364,7 +364,7 @@ public:
         // Annoyingly, VS 2017 marks std::accumulate() as [[nodiscard]]
         (void)std::accumulate(roarings.cbegin(), roarings.cend(), ans,
                               [](uint64_t *previous,
-                                 const std::pair<uint32_t, Roaring> &map_entry) {
+                                 const std::pair<const uint32_t, Roaring> &map_entry) {
                                   for (uint32_t low_bits : map_entry.second)
                                       *previous++ =
                                           uniteBytes(map_entry.first, low_bits);
@@ -677,7 +677,7 @@ public:
             roarings.cbegin(), roarings.cend(),
             sizeof(uint64_t) + roarings.size() * sizeof(uint32_t),
             [=](size_t previous,
-                const std::pair<uint32_t, Roaring> &map_entry) {
+                const std::pair<const uint32_t, Roaring> &map_entry) {
                 // add in bytes used by each Roaring
                 return previous + map_entry.second.getSizeInBytes(portable);
             });
