@@ -18,8 +18,6 @@ using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace api {
 #endif
 
-extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
-                                           uint32_t val);
 extern inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r);
 extern inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r, bool cow);
 
