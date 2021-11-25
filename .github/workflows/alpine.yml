@@ -25,3 +25,12 @@ jobs:
       - name: test
         run: |
           ./alpine.sh bash -c "cd build_for_alpine && ctest"
+      - name: cmakedebug
+        run: |
+          ./alpine.sh cmake -B build_for_alpine_debug -DCMAKE_BUILD_TYPE=Debug
+      - name: builddebug
+        run: |
+          ./alpine.sh cmake --build build_for_alpine_debug
+      - name: testdebug
+        run: |
+          ./alpine.sh bash -c "cd build_for_alpine_debug && ctest"
