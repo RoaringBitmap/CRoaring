@@ -300,9 +300,15 @@ bool bitset_bitset_container_ixor(
     bitset_container_t *src_1, const bitset_container_t *src_2,
     container_t **dst
 ){
-    bool ans = bitset_bitset_container_xor(src_1, src_2, dst);
-    bitset_container_free(src_1);
-    return ans;
+    int card = bitset_container_xor(src_1, src_2, src_1);
+    if (card <= DEFAULT_MAX_SIZE) {
+        *dst = array_container_from_bitset(src_1);
+        bitset_container_free(src_1);
+        return false;  // not bitset
+    } else {
+        *dst = src_1;
+        return true;
+    }
 }
 
 bool array_bitset_container_ixor(
