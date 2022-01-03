@@ -576,7 +576,8 @@ public:
     size_t write(char *buf, bool portable = true) const {
         const char *orig = buf;
         // push map size
-        *((uint64_t *)buf) = roarings.size();
+        uint64_t map_size = roarings.size();
+        std::memcpy(buf, &map_size, sizeof(uint64_t));
         buf += sizeof(uint64_t);
         std::for_each(
             roarings.cbegin(), roarings.cend(),
@@ -607,7 +608,8 @@ public:
     static Roaring64Map read(const char *buf, bool portable = true) {
         Roaring64Map result;
         // get map size
-        uint64_t map_size = *((uint64_t *)buf);
+        uint64_t map_size;
+        std::memcpy(&map_size, buf, sizeof(uint64_t));
         buf += sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
@@ -635,7 +637,8 @@ public:
     static Roaring64Map readSafe(const char *buf, size_t maxbytes) {
         Roaring64Map result;
         // get map size
-        uint64_t map_size = *((uint64_t *)buf);
+        uint64_t map_size;
+        std::memcpy(&map_size, buf, sizeof(uint64_t));
         buf += sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
@@ -690,7 +693,8 @@ public:
         Roaring64Map result;
 
         // get map size
-        uint64_t map_size = *((uint64_t *)buf);
+        uint64_t map_size;
+        memcpy(&map_size, buf, sizeof(uint64_t));
         buf += sizeof(uint64_t);
 
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
@@ -731,7 +735,8 @@ public:
         const size_t metadata_size = sizeof(size_t) + sizeof(uint32_t);
 
         // push map size
-        *((uint64_t *)buf) = roarings.size();
+        uint64_t map_size = roarings.size();
+        memcpy(buf, &map_size, sizeof(uint64_t));
         buf += sizeof(uint64_t);
 
         for (auto &map_entry : roarings) {
