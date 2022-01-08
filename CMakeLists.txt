@@ -51,6 +51,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 find_package(CTargets)
 find_package(Options)
 find_package(LTO)
+include(Import)
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/roaring.pc.in"
                "${CMAKE_CURRENT_BINARY_DIR}/roaring.pc" @ONLY)
