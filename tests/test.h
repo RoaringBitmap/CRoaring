@@ -18,10 +18,10 @@
     // only has #ifdefs for extern "C" under MSC (?)
     //
     extern "C" {
-        #include "vendor/cmocka/cmocka.h"
+        #include <cmocka.h>
     }
 #else
-    #include "vendor/cmocka/cmocka.h"
+    #include <cmocka.h>
 #endif
 
 

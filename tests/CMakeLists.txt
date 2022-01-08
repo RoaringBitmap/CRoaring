@@ -37,6 +37,12 @@ if(MSVC)
 endif()
 
 
+configure_file(${CMAKE_SOURCE_DIR}/tools/cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})
 
+include(FetchContent)
+FetchContent_Declare(
+  cmocka
+  URL https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz)
 
-add_subdirectory(vendor/cmocka)
+set(BUILD_STATIC_LIB ON)
+FetchContent_MakeAvailable(cmocka)
