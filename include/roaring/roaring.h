@@ -358,7 +358,7 @@ bool roaring_bitmap_is_empty(const roaring_bitmap_t *r);
 void roaring_bitmap_clear(roaring_bitmap_t *r);
 
 /**
- * Convert the bitmap to an array, output in `ans`,
+ * Convert the bitmap to a sorted array, output in `ans`.
  *
  * Caller is responsible to ensure that there is enough memory allocated, e.g.
  *
@@ -368,7 +368,7 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
 
 
 /**
- * Convert the bitmap to an array from `offset` by `limit`, output in `ans`.
+ * Convert the bitmap to a sorted array from `offset` by `limit`, output in `ans`.
  *
  * Caller is responsible to ensure that there is enough memory allocated, e.g.
  *
