@@ -72,9 +72,6 @@ MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " $
 endif()
 
 if(MSVC AND (ROARING_LIB_TYPE STREQUAL "SHARED"))
-  if (CMAKE_VERSION VERSION_LESS 3.4)
-    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
-  endif()
   MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
  set_target_properties(${ROARING_LIB_NAME}
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
