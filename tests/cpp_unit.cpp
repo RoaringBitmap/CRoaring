@@ -176,6 +176,24 @@ DEFINE_TEST(issue316) {
     assert_true(r1 == r2);
 }
 
+DEFINE_TEST(issue_336) {
+    Roaring64Map r1, r2;
+
+    r1.add((uint64_t)0x000000000UL);
+    r1.add((uint64_t)0x100000000UL);
+    r1.add((uint64_t)0x200000000UL);
+    r1.add((uint64_t)0x300000000UL);
+
+    r1.remove((uint64_t)0x100000000UL);
+    r1.remove((uint64_t)0x200000000UL);
+
+    r2.add((uint64_t)0x000000000UL);
+    r2.add((uint64_t)0x300000000UL);
+
+    assert_true(r1 == r2);
+    assert_true(r2 == r1);
+}
+
 void test_roaring64_iterate_multi_roaring(void) {
     Roaring64Map roaring;
 
@@ -775,6 +793,7 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(issue316),
         cmocka_unit_test(test_issue304),
+        cmocka_unit_test(issue_336),
         cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
