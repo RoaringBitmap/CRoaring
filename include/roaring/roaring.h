@@ -84,6 +84,8 @@ static inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r,
     }
 }
 
+roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
+                                            int64_t offset);
 /**
  * Describe the inner structure of the bitmap.
  */

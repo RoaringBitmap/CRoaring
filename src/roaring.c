@@ -2131,6 +2131,114 @@ void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
     }
 }
 
+static void offset_append_with_merge(roaring_array_t *ra, int k, container_t *c, uint8_t t) {
+    int size = ra_get_size(ra);
+    if (size == 0 || ra_get_key_at_index(ra, size-1) != k) {
+        // No merge.
+        ra_append(ra, k, c, t);
+        return;
+    }
+
+    uint8_t last_t, new_t;
+    container_t *last_c, *new_c;
+
+    // NOTE: we don't need to unwrap here, since we added last_c ourselves
+    // we have the certainty it's not a shared container.
+    // The same applies to c, as it's the result of calling container_offset.
+    last_c = ra_get_container_at_index(ra, size-1, &last_t);
+    new_c = container_ior(last_c, last_t, c, t, &new_t);
+
+    ra_set_container_at_index(ra, size-1, new_c, new_t);
+
+    // Comparison of pointers of different origin is UB (or so claim some compiler
+    // makers), so we compare their bit representation only.
+    if ((uintptr_t)last_c != (uintptr_t)new_c) {
+        container_free(last_c, last_t);
+    }
+    container_free(c, t);
+}
+
+// roaring_bitmap_add_offset adds the value 'offset' to each and every value in
+// a bitmap, generating a new bitmap in the process. If offset + element is
+// outside of the range [0,2^32), that the element will be dropped.
+// We need "offset" to be 64 bits because we want to support values
+// between -0xFFFFFFFF up to +0xFFFFFFFF.
+roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
+                                            int64_t offset) {
+    roaring_bitmap_t *answer;
+    roaring_array_t *ans_ra;
+    uint64_t container_offset_64;
+    int container_offset;
+    uint16_t in_offset;
+
+    const roaring_array_t *bm_ra = &bm->high_low_container;
+    int length = bm_ra->size;
+
+    if (offset == 0) {
+        return roaring_bitmap_copy(bm);
+    }
+
+    container_offset_64 = (uint64_t)offset >> 16;
+    container_offset = 0xffffffff & container_offset_64;
+    in_offset = (uint16_t)(offset - container_offset_64 * (1 << 16));
+
+    answer = roaring_bitmap_create();
+    ans_ra = &answer->high_low_container;
+
+    if (in_offset == 0) {
+        ans_ra = &answer->high_low_container;
+
+        for (int i = 0, j = 0; i < length; ++i) {
+            int key = ra_get_key_at_index(bm_ra, i);
+            key += container_offset;
+
+            if (key < 0 || key >= (1 << 16)) {
+                continue;
+            }
+
+            ra_append_copy(ans_ra, bm_ra, i, false);
+            ans_ra->keys[j++] = key;
+        }
+
+        return answer;
+    }
+
+    uint8_t t;
+    const container_t *c;
+    container_t *lo, *hi, **lo_ptr, **hi_ptr;
+    int k;
+
+    for (int i = 0; i < length; ++i) {
+        lo = hi = lo_ptr = hi_ptr = NULL;
+
+        k = ra_get_key_at_index(bm_ra, i)+container_offset;
+        if (k >= 0 && k < (1 << 16)) {
+            lo_ptr = &lo;
+        }
+        if (k+1 >= 0 && k+1 < (1 << 16)) {
+            hi_ptr = &hi;
+        }
+        if (lo_ptr == NULL && hi_ptr == NULL) {
+            continue;
+        }
+
+        c = ra_get_container_at_index(bm_ra, i, &t);
+        c = container_unwrap_shared(c, &t);
+
+        container_add_offset(c, t, lo_ptr, hi_ptr, in_offset);
+        if (lo != NULL) {
+            offset_append_with_merge(ans_ra, k, lo, t);
+        }
+        if (hi != NULL) {
+            ra_append(ans_ra, k+1, hi, t);
+        }
+    }
+
+    // TODO: repair after lazy
+
+    return answer;
+}
+
 roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                          const roaring_bitmap_t *x2,
                                          const bool bitsetconversion) {

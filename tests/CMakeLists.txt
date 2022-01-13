@@ -18,6 +18,7 @@ add_c_test(util_unit)
 add_c_test(format_portability_unit)
 add_c_test(robust_deserialization_unit)
 add_c_test(container_comparison_unit)
+add_c_test(add_offset)
 
 if (NOT WIN32)
 # We exclude POSIX tests from Microsoft Windows

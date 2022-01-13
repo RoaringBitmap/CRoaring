@@ -362,6 +362,10 @@ inline bool array_container_contains(const array_container_t *arr,
 
 }
 
+void array_container_offset(const array_container_t *c,
+                            container_t **loc, container_t **hic,
+                            uint16_t offset);
+
 //* Check whether a range of values from range_start (included) to range_end (excluded) is present. */
 static inline bool array_container_contains_range(const array_container_t *arr,
                                                     uint32_t range_start, uint32_t range_end) {

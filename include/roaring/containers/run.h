@@ -544,6 +544,10 @@ bool run_container_select(const run_container_t *container,
 void run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst);
 
+void run_container_offset(const run_container_t *c,
+                         container_t **loc, container_t **hic,
+                         uint16_t offset);
+
 /* Returns the smallest value (assumes not empty) */
 inline uint16_t run_container_minimum(const run_container_t *run) {
     if (run->n_runs == 0) return 0;
