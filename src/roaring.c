@@ -2181,6 +2181,8 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
     in_offset = (uint16_t)(offset - container_offset * (1 << 16));
 
     answer = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(answer, is_cow(bm));
+
     ans_ra = &answer->high_low_container;
 
     if (in_offset == 0) {
