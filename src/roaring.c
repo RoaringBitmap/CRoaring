@@ -2206,7 +2206,7 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
     uint8_t t;
     const container_t *c;
     container_t *lo, *hi, **lo_ptr, **hi_ptr;
-    int k;
+    int64_t k;
 
     for (int i = 0; i < length; ++i) {
         lo = hi = lo_ptr = hi_ptr = NULL;
@@ -2233,8 +2233,6 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
             ra_append(ans_ra, k+1, hi, t);
         }
     }
-
-    // TODO: repair after lazy
 
     return answer;
 }

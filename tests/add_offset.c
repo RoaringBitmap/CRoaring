@@ -327,8 +327,9 @@ int main() {
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, UINT32_MAX-UINT16_MAX),
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, UINT32_MAX-UINT16_MAX+1),
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, 1L << 50),
+        ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, 281474976710657L),
     };
-    i = 8;
+    i = 9;
     for (int64_t offset = 3; offset < 1000000; offset *= 3) {
         roaring_add_offset_test_state_t state = ROARING_ADD_OFFSET_TEST_CASE(dense_bitmap, offset);
         roaring_state[i++] = state;
