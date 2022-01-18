@@ -2167,8 +2167,7 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
                                             int64_t offset) {
     roaring_bitmap_t *answer;
     roaring_array_t *ans_ra;
-    uint64_t container_offset_64;
-    int container_offset;
+    int64_t container_offset;
     uint16_t in_offset;
 
     const roaring_array_t *bm_ra = &bm->high_low_container;
@@ -2178,18 +2177,19 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
         return roaring_bitmap_copy(bm);
     }
 
-    container_offset_64 = (uint64_t)offset >> 16;
-    container_offset = 0xffffffff & container_offset_64;
-    in_offset = (uint16_t)(offset - container_offset_64 * (1 << 16));
+    container_offset = offset >> 16;
+    in_offset = (uint16_t)(offset - container_offset * (1 << 16));
 
     answer = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(answer, is_cow(bm));
+
     ans_ra = &answer->high_low_container;
 
     if (in_offset == 0) {
         ans_ra = &answer->high_low_container;
 
         for (int i = 0, j = 0; i < length; ++i) {
-            int key = ra_get_key_at_index(bm_ra, i);
+            int64_t key = ra_get_key_at_index(bm_ra, i);
             key += container_offset;
 
             if (key < 0 || key >= (1 << 16)) {
@@ -2206,7 +2206,7 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
     uint8_t t;
     const container_t *c;
     container_t *lo, *hi, **lo_ptr, **hi_ptr;
-    int k;
+    int64_t k;
 
     for (int i = 0; i < length; ++i) {
         lo = hi = lo_ptr = hi_ptr = NULL;
@@ -2233,8 +2233,6 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
             ra_append(ans_ra, k+1, hi, t);
         }
     }
-
-    // TODO: repair after lazy
 
     return answer;
 }
