@@ -742,6 +742,11 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const siz
         memcpy(&size, buf, sizeof(int32_t));
         buf += sizeof(uint32_t);
     }
+    if (size < 0) {
+       fprintf(stderr, "You cannot have a negative number of containers, the data must be corrupted: %" PRId32 "\n",
+                size);
+       return false; // logically impossible
+    }
     if (size > (1<<16)) {
        fprintf(stderr, "You cannot have so many containers, the data must be corrupted: %" PRId32 "\n",
                 size);
