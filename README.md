@@ -4,8 +4,9 @@ Portable Roaring bitmaps in C (and C++) with full support for your favorite comp
 
 # Introduction
 
+
 Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortunately, they can use too much memory.
- To compensate, we often use compressed bitmaps.
+To compensate, we often use compressed bitmaps.
 
 Roaring bitmaps are compressed bitmaps which tend to outperform conventional compressed bitmaps such as WAH, EWAH or Concise.
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
