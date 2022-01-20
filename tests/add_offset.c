@@ -85,11 +85,11 @@ static int teardown_container_add_offset_test(void **state_) {
         container_free(state->hi, test.type);
         state->hi = NULL;
     }
-    if (state->lo) {
+    if (state->lo_only) {
         container_free(state->lo_only, test.type);
         state->lo_only = NULL;
     }
-    if (state->hi) {
+    if (state->hi_only) {
         container_free(state->hi_only, test.type);
         state->hi_only = NULL;
     }
