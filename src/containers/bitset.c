@@ -163,6 +163,10 @@ void bitset_container_offset(const bitset_container_t *c,
     }
 
     if (hic == NULL) {
+        // Both hic and loc can't be NULL, so bc is never NULL here
+        if (bc->cardinality == 0) {
+            bitset_container_free(bc);
+	}
         return;
     }
 
