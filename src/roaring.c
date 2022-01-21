@@ -2209,7 +2209,8 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
     int64_t k;
 
     for (int i = 0; i < length; ++i) {
-        lo = hi = lo_ptr = hi_ptr = NULL;
+        lo = hi = NULL;
+        lo_ptr = hi_ptr = NULL;
 
         k = ra_get_key_at_index(bm_ra, i)+container_offset;
         if (k >= 0 && k < (1 << 16)) {
