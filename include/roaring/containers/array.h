@@ -123,6 +123,8 @@ void array_container_intersection(const array_container_t *src_1,
 bool array_container_intersect(const array_container_t *src_1,
                                   const array_container_t *src_2);
 
+bool array_container_andnot_nonzero(const array_container_t *src_1,
+                                    const array_container_t *src_2);
 
 /* computers the size of the intersection between two arrays.
  */

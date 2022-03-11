@@ -411,6 +411,9 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
 bool run_container_intersect(const run_container_t *src_1,
                                 const run_container_t *src_2);
 
+bool run_container_andnot_nonzero(const run_container_t *src_1,
+                                  const run_container_t *src_2);
+
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result
  * to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */

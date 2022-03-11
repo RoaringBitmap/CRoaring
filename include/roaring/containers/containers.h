@@ -11,6 +11,7 @@
 #include <roaring/containers/mixed_andnot.h>
 #include <roaring/containers/mixed_equal.h>
 #include <roaring/containers/mixed_intersection.h>
+#include <roaring/containers/mixed_andnot_nonzero.h>
 #include <roaring/containers/mixed_negation.h>
 #include <roaring/containers/mixed_subset.h>
 #include <roaring/containers/mixed_union.h>
@@ -921,6 +922,56 @@ static inline bool container_intersect(
         case CONTAINER_PAIR(RUN,ARRAY):
             return array_run_container_intersect(const_CAST_array(c2),
                                                  const_CAST_run(c1));
+
+        default:
+            assert(false);
+            __builtin_unreachable();
+            return 0;
+    }
+}
+
+static inline bool container_andnot_nonzero(const container_t *c1,
+                                            uint8_t type1,
+                                            const container_t *c2,
+                                            uint8_t type2) {
+    c1 = container_unwrap_shared(c1, &type1);
+    c2 = container_unwrap_shared(c2, &type2);
+    switch (PAIR_CONTAINER_TYPES(type1, type2)) {
+        case CONTAINER_PAIR(BITSET, BITSET):
+            return bitset_container_andnot_nonzero(const_CAST_bitset(c1),
+                                                   const_CAST_bitset(c2));
+
+        case CONTAINER_PAIR(ARRAY, ARRAY):
+            return array_container_andnot_nonzero(const_CAST_array(c1),
+                                                  const_CAST_array(c2));
+
+        case CONTAINER_PAIR(RUN, RUN):
+            return run_container_andnot_nonzero(const_CAST_run(c1),
+                                                const_CAST_run(c2));
+
+        case CONTAINER_PAIR(BITSET, ARRAY):
+            return bitset_array_container_andnot_nonzero(const_CAST_bitset(c1),
+                                                         const_CAST_array(c2));
+
+        case CONTAINER_PAIR(ARRAY, BITSET):
+            return array_bitset_container_andnot_nonzero(const_CAST_array(c1),
+                                                         const_CAST_bitset(c2));
+
+        case CONTAINER_PAIR(BITSET, RUN):
+            return bitset_run_container_andnot_nonzero(const_CAST_bitset(c1),
+                                                       const_CAST_run(c2));
+
+        case CONTAINER_PAIR(RUN, BITSET):
+            return run_bitset_container_andnot_nonzero(const_CAST_run(c1),
+                                                       const_CAST_bitset(c2));
+
+        case CONTAINER_PAIR(ARRAY, RUN):
+            return array_run_container_andnot_nonzero(const_CAST_array(c1),
+                                                      const_CAST_run(c2));
+
+        case CONTAINER_PAIR(RUN, ARRAY):
+            return run_array_container_andnot_nonzero(const_CAST_run(c1),
+                                                      const_CAST_array(c2));
 
         default:
             assert(false);

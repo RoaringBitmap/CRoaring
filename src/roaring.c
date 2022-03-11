@@ -2704,6 +2704,41 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
     return answer != 0;
 }
 
+bool roaring_bitmap_andnot_nonzero(const roaring_bitmap_t *x1,
+                                   const roaring_bitmap_t *x2) {
+    const int length1 = x1->high_low_container.size;
+    const int length2 = x2->high_low_container.size;
+    if (length1 > length2) {
+        return true;
+    }
+
+    int pos1 = 0;
+    int pos2 = 0;
+    while (pos1 < length1 && pos2 < length2) {
+        const uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, pos1);
+        const uint16_t s2 = ra_get_key_at_index(&x2->high_low_container, pos2);
+        if (s1 == s2) {
+            uint8_t type1 = 0;
+            uint8_t type2 = 0;
+            container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
+                                                        pos1, &type1);
+            container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
+                                                        pos2, &type2);
+            if (container_andnot_nonzero(c1, type1, c2, type2)) {
+                return true;
+            }
+            ++pos1;
+            ++pos2;
+        } else if (s1 > s2) {
+            pos2 = ra_advance_until(&x2->high_low_container, s1, pos2);
+        } else {  // s1 < s2
+            return true;
+        }
+    }
+
+    return pos1 < length1;
+}
+
 bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm,
                                          uint64_t x, uint64_t y) {
     if (x >= y) {

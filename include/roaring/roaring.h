@@ -138,6 +138,12 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *r1,
                               const roaring_bitmap_t *r2);
 
 /**
+ * Check whether the difference (andnot) of two bitmaps is nonzero.
+ */
+bool roaring_bitmap_andnot_nonzero(const roaring_bitmap_t *r1,
+                                   const roaring_bitmap_t *r2);
+
+/**
  * Check whether a bitmap and a closed range intersect.
  */
 bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm,

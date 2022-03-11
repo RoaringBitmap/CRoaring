@@ -4,14 +4,12 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
-
-#include <roaring/roaring.h>  // public api
-
 #include <roaring/array_util.h>  // union_uint32(), intersection_uint32()
 #include <roaring/misc/configreport.h>
+#include <roaring/roaring.h>  // public api
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "../benchmarks/numbersfromtextfiles.h"
@@ -26,7 +24,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer =
-            (roaring_bitmap_t**)malloc(sizeof(roaring_bitmap_t *) * count);
+        (roaring_bitmap_t **)malloc(sizeof(roaring_bitmap_t *) * count);
     for (size_t i = 0; i < count; i++) {
         printf(".");
         fflush(stdout);
@@ -44,7 +42,7 @@ const char *datadir[] = {
 
 bool serialize_correctly(roaring_bitmap_t *r) {
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r);
-    char *serialized = (char*)malloc(expectedsize);
+    char *serialized = (char *)malloc(expectedsize);
     if (serialized == NULL) {
         printf("failure to allocate memory!\n");
         return false;
@@ -302,25 +300,55 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     return answer;
 }
 
-
 bool is_intersect_correct(roaring_bitmap_t *bitmap1,
-                             roaring_bitmap_t *bitmap2) {
-	uint64_t c = roaring_bitmap_and_cardinality(bitmap1, bitmap2);
-	if(roaring_bitmap_intersect(bitmap1,bitmap2) != (c>0)) return false;
-	roaring_bitmap_t * bitmap1minus2 = roaring_bitmap_andnot(bitmap1, bitmap2);
-	bool answer = true;
-	if(roaring_bitmap_intersect(bitmap1minus2,bitmap2)) {
-		answer = false;
-	}
-	roaring_bitmap_t * bitmap1plus2 = roaring_bitmap_or(bitmap1, bitmap2);
-	if(!roaring_bitmap_intersect(bitmap1plus2,bitmap2)) {
-		answer =  false;
-	}
-	roaring_bitmap_free(bitmap1minus2);
-	roaring_bitmap_free(bitmap1plus2);
-	return answer;
+                          roaring_bitmap_t *bitmap2) {
+    uint64_t c = roaring_bitmap_and_cardinality(bitmap1, bitmap2);
+    if (roaring_bitmap_intersect(bitmap1, bitmap2) != (c > 0)) return false;
+    roaring_bitmap_t *bitmap1minus2 = roaring_bitmap_andnot(bitmap1, bitmap2);
+    bool answer = true;
+    if (roaring_bitmap_intersect(bitmap1minus2, bitmap2)) {
+        answer = false;
+    }
+    roaring_bitmap_t *bitmap1plus2 = roaring_bitmap_or(bitmap1, bitmap2);
+    if (!roaring_bitmap_intersect(bitmap1plus2, bitmap2)) {
+        answer = false;
+    }
+    roaring_bitmap_free(bitmap1minus2);
+    roaring_bitmap_free(bitmap1plus2);
+    return answer;
 }
 
+bool is_andnot_nonzero_correct(roaring_bitmap_t *bitmap1,
+                               roaring_bitmap_t *bitmap2) {
+    uint64_t c = roaring_bitmap_andnot_cardinality(bitmap1, bitmap2);
+    if (roaring_bitmap_andnot_nonzero(bitmap1, bitmap2) != (c > 0)) {
+        return false;
+    }
+
+    if (roaring_bitmap_andnot_nonzero(bitmap1, bitmap1)) return false;
+
+    roaring_bitmap_t *bitmap1minus2 = roaring_bitmap_andnot(bitmap1, bitmap2);
+    roaring_bitmap_t *bitmap1plus2 = roaring_bitmap_or(bitmap1, bitmap2);
+
+    bool answer = true;
+    if (roaring_bitmap_andnot_nonzero(bitmap1, bitmap1plus2)) {
+        answer = false;
+    }
+    if (roaring_bitmap_andnot_nonzero(bitmap2, bitmap1plus2)) {
+        answer = false;
+    }
+
+    if (roaring_bitmap_andnot_nonzero(bitmap1minus2, bitmap1)) {
+        answer = false;
+    }
+    if (!roaring_bitmap_andnot_nonzero(bitmap2, bitmap1minus2)) {
+        answer = false;
+    }
+
+    roaring_bitmap_free(bitmap1minus2);
+    roaring_bitmap_free(bitmap1plus2);
+    return answer;
+}
 
 roaring_bitmap_t *inplace_union(roaring_bitmap_t *bitmap1,
                                 roaring_bitmap_t *bitmap2) {
@@ -409,8 +437,8 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
             return false;
         }
         if (!is_intersect_correct(rnorun[i], rnorun[i + 1])) {
-             printf("[inplace] no run intersect incorrect\n");
-             return false;
+            printf("[inplace] no run intersect incorrect\n");
+            return false;
         }
         tempandruns = inplace_intersection(rruns[i], rruns[i + 1]);
         if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
@@ -436,6 +464,32 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
         }
         roaring_bitmap_free(tempandnorun);
         roaring_bitmap_free(tempandruns);
+    }
+    return true;
+}
+
+bool check_andnot_nonzero(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
+                          size_t count) {
+    for (size_t i = 0; i + 1 < count; ++i) {
+        if (!is_andnot_nonzero_correct(rnorun[i], rnorun[i + 1])) {
+            printf("no run andnot_nonzero incorrect\n");
+            return false;
+        }
+
+        if (!is_andnot_nonzero_correct(rruns[i], rruns[i + 1])) {
+            printf("runs andnot_nonzero incorrect\n");
+            return false;
+        }
+
+        if (!is_andnot_nonzero_correct(rnorun[i], rruns[i + 1])) {
+            printf("norun/run andnot_nonzero incorrect\n");
+            return false;
+        }
+
+        if (!is_andnot_nonzero_correct(rruns[i], rnorun[i + 1])) {
+            printf("run/norun andnot_nonzero incorrect\n");
+            return false;
+        }
     }
     return true;
 }
@@ -796,7 +850,7 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
     }
 
     roaring_bitmap_t **bitmapswrun =
-            (roaring_bitmap_t**)malloc(sizeof(roaring_bitmap_t *) * count);
+        (roaring_bitmap_t **)malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
         bitmapswrun[i] = roaring_bitmap_copy(bitmaps[i]);
         roaring_bitmap_run_optimize(bitmapswrun[i]);
@@ -822,6 +876,9 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
     }
     if (!compare_intersections(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks
+    }
+    if (!check_andnot_nonzero(bitmaps, bitmapswrun, count)) {
+        return false;
     }
     if (!compare_unions(bitmaps, bitmapswrun, count)) {
         return false;  //  memory leaks

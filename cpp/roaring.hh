@@ -393,6 +393,13 @@ public:
     }
 
     /**
+     * Check whether the difference (andnot) of two bitmaps is nonzero.
+     */
+    bool andnot_nonzero(const Roaring &r) const {
+        return api::roaring_bitmap_andnot_nonzero(&roaring, &r.roaring);
+    }
+
+    /**
      * Computes the Jaccard index between two bitmaps. (Also known as the
      * Tanimoto distance,
      * or the Jaccard similarity coefficient)

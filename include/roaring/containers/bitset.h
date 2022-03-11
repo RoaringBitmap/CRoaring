@@ -293,6 +293,9 @@ static inline bool bitset_container_const_nonzero_cardinality(
 bool bitset_container_intersect(const bitset_container_t *src_1,
                                   const bitset_container_t *src_2);
 
+bool bitset_container_andnot_nonzero(const bitset_container_t *src_1,
+                                     const bitset_container_t *src_2);
+
 /* Computes the union of bitsets `src_1' and `src_2' into `dst'  and return the
  * cardinality. */
 int bitset_container_or(const bitset_container_t *src_1,

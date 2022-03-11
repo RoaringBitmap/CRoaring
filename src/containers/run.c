@@ -625,6 +625,67 @@ void run_container_andnot(const run_container_t *src_1,
     }
 }
 
+bool run_container_andnot_nonzero(const run_container_t *src_1,
+                                  const run_container_t *src_2) {
+    const bool if1 = run_container_is_full(src_1);
+    const bool if2 = run_container_is_full(src_2);
+    if (if1) {
+        return !if2;
+    }
+    if (if2) {
+        return false;
+    }
+
+    int32_t rlepos = 0;
+    int32_t xrlepos = 0;
+    int32_t start = src_1->runs[rlepos].value;
+    int32_t end = start + src_1->runs[rlepos].length + 1;
+    int32_t xstart = src_2->runs[xrlepos].value;
+    int32_t xend = xstart + src_2->runs[xrlepos].length + 1;
+    while ((rlepos < src_1->n_runs) && (xrlepos < src_2->n_runs)) {
+        if (start < xstart) {
+            return true;
+        }
+
+        if (start >= xend) {
+            ++xrlepos;
+            if (xrlepos < src_2->n_runs) {
+                xstart = src_2->runs[xrlepos].value;
+                xend = xstart + src_2->runs[xrlepos].length + 1;
+                continue;
+            }
+            return true;
+        }
+
+        // start >= xstart and start < xend
+        if (end > xend) {
+            return true;
+        }
+        const bool advance_xrlepos = end == xend;
+
+        // advance rlepos first
+        ++rlepos;
+        if (rlepos < src_1->n_runs) {
+            start = src_1->runs[rlepos].value;
+            end = start + src_1->runs[rlepos].length + 1;
+        } else {
+            return false;
+        }
+
+        if (advance_xrlepos) {
+            ++xrlepos;
+            if (xrlepos < src_2->n_runs) {
+                xstart = src_2->runs[xrlepos].value;
+                xend = xstart + src_2->runs[xrlepos].length + 1;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    return rlepos < src_1->n_runs;
+}
+
 int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
     int outpos = 0;

@@ -356,6 +356,28 @@ bool array_container_intersect(const array_container_t *array1,
     }
 }
 
+bool array_container_andnot_nonzero(const array_container_t *array1,
+                                    const array_container_t *array2) {
+    int32_t card_1 = array1->cardinality, card_2 = array2->cardinality;
+    if (card_1 > card_2) return true;
+
+    const uint16_t* A = array1->array;
+    const uint16_t* B = array2->array;
+    const uint16_t *endA = A + card_1;
+    const uint16_t *endB = B + card_2;
+
+    while (1) {
+        while (*A > *B) {
+            if (++B == endB) return true;
+        }
+        if (*A < *B) return true;
+
+        if (++A == endA) return false;
+        if(++B == endB) return true;
+    }
+    return false;  // NOTREACHED
+}
+
 /* computes the intersection of array1 and array2 and write the result to
  * array1.
  * */

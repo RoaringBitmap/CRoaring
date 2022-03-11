@@ -22,6 +22,7 @@ set(ROARING_SRC
     containers/containers.c
     containers/convert.c
     containers/mixed_intersection.c
+    containers/mixed_andnot_nonzero.c
     containers/mixed_union.c
     containers/mixed_equal.c
     containers/mixed_subset.c
