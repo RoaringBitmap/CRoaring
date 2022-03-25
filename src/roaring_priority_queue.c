@@ -41,7 +41,7 @@ static void pq_add(roaring_pq_t *pq, roaring_pq_element_t *t) {
 }
 
 static void pq_free(roaring_pq_t *pq) {
-    free(pq);
+    roaring_free(pq);
 }
 
 static void percolate_down(roaring_pq_t *pq, uint32_t i) {
@@ -69,7 +69,7 @@ static void percolate_down(roaring_pq_t *pq, uint32_t i) {
 
 static roaring_pq_t *create_pq(const roaring_bitmap_t **arr, uint32_t length) {
     size_t alloc_size = sizeof(roaring_pq_t) + sizeof(roaring_pq_element_t) * length;
-    roaring_pq_t *answer = (roaring_pq_t *)malloc(alloc_size);
+    roaring_pq_t *answer = (roaring_pq_t *)roaring_malloc(alloc_size);
     answer->elements = (roaring_pq_element_t *)(answer + 1);
     answer->size = length;
     for (uint32_t i = 0; i < length; i++) {
@@ -185,8 +185,8 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
     }
     ra_clear_without_containers(&x1->high_low_container);
     ra_clear_without_containers(&x2->high_low_container);
-    free(x1);
-    free(x2);
+    roaring_free(x1);
+    roaring_free(x2);
     return answer;
 }
 

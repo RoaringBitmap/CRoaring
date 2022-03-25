@@ -32,6 +32,7 @@ ALL_PUBLIC_H="
 $SCRIPTPATH/include/roaring/roaring_version.h
 $SCRIPTPATH/include/roaring/roaring_types.h
 $SCRIPTPATH/include/roaring/roaring.h
+$SCRIPTPATH/include/roaring/memory.h
 "
 
 # .hh header files for the C++ API wrapper => Order does not matter at present

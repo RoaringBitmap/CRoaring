@@ -678,7 +678,7 @@ DEFINE_TEST(test_cpp_frozen) {
 
     // allocate a buffer and serialize to it
     size_t num_bytes = r1.getFrozenSizeInBytes();
-    char *buf = (char *)roaring_bitmap_aligned_malloc(32, num_bytes);
+    char *buf = (char *)roaring_aligned_malloc(32, num_bytes);
     r1.writeFrozen(buf);
 
     // ensure the frozen bitmap is the same as the original
@@ -722,7 +722,7 @@ DEFINE_TEST(test_cpp_frozen) {
         assert_true(b == r1);
     }
 
-    roaring_bitmap_aligned_free(buf);
+    roaring_aligned_free(buf);
 }
 
 DEFINE_TEST(test_cpp_frozen_64) {
@@ -751,7 +751,7 @@ DEFINE_TEST(test_cpp_frozen_64) {
     r1.runOptimize();
 
     size_t num_bytes = r1.getFrozenSizeInBytes();
-    char *buf = (char *)roaring_bitmap_aligned_malloc(32, num_bytes);
+    char *buf = (char *)roaring_aligned_malloc(32, num_bytes);
     r1.writeFrozen(buf);
 
     const Roaring64Map r2 = Roaring64Map::frozenView(buf);
@@ -785,7 +785,7 @@ DEFINE_TEST(test_cpp_frozen_64) {
         assert_true(b == r1);
     }
 
-    roaring_bitmap_aligned_free(buf);
+    roaring_aligned_free(buf);
 }
 
 int main() {
