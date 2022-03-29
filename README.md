@@ -168,6 +168,22 @@ The C interface is found in the file ``include/roaring/roaring.h``. We have C++ 
 
 Some users have to deal with large volumes of data. It  may be important for these users to be aware of the `addMany` (C++) `roaring_bitmap_or_many` (C) functions as it is much faster and economical to add values in batches when possible. Furthermore, calling periodically the `runOptimize` (C++) or `roaring_bitmap_run_optimize` (C) functions may help.
 
+# Custom memory allocators
+For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example:
+```C
+#include <roaring.h>
+
+int main(){
+    // define with your own memory hook
+    roaring_memory_t my_hook{my_malloc, my_free ...};
+    // initialize global memory hook
+    init_roaring_memory_hook(my_hook); 
+    // write you code here
+    ...
+}
+```
+
+
 # Example (C)
 
 

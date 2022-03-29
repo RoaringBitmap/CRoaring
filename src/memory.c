@@ -7,7 +7,7 @@ extern int posix_memalign(void **__memptr, size_t __alignment, size_t __size);
 #endif  //__cplusplus // C++ does not have a well defined signature
 
 // portable version of  posix_memalign
-void *roaring_bitmap_aligned_malloc(size_t alignment, size_t size) {
+static void *roaring_bitmap_aligned_malloc(size_t alignment, size_t size) {
     void *p;
 #ifdef _MSC_VER
     p = _aligned_malloc(size, alignment);
@@ -21,7 +21,7 @@ void *roaring_bitmap_aligned_malloc(size_t alignment, size_t size) {
     return p;
 }
 
-void roaring_bitmap_aligned_free(void *memblock) {
+static void roaring_bitmap_aligned_free(void *memblock) {
 #ifdef _MSC_VER
     _aligned_free(memblock);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
@@ -31,7 +31,7 @@ void roaring_bitmap_aligned_free(void *memblock) {
 #endif
 }
 
-roaring_memory_t global_memory_hook = {
+static roaring_memory_t global_memory_hook = {
     .malloc = malloc,
     .realloc = realloc,
     .calloc = calloc,
