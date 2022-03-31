@@ -1,5 +1,6 @@
 
 #include <roaring/containers/containers.h>
+#include <roaring/memory.h>
 
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace internal {
@@ -141,7 +142,7 @@ container_t *get_copy_of_container(
         }
         assert(*typecode != SHARED_CONTAINER_TYPE);
 
-        if ((shared_container = (shared_container_t *)malloc(
+        if ((shared_container = (shared_container_t *)roaring_malloc(
                  sizeof(shared_container_t))) == NULL) {
             return NULL;
         }
@@ -195,7 +196,7 @@ container_t *shared_container_extract_copy(
     if (sc->counter == 0) {
         answer = sc->container;
         sc->container = NULL;  // paranoid
-        free(sc);
+        roaring_free(sc);
     } else {
         answer = container_clone(sc->container, *typecode);
     }
@@ -210,7 +211,7 @@ void shared_container_free(shared_container_t *container) {
         assert(container->typecode != SHARED_CONTAINER_TYPE);
         container_free(container->container, container->typecode);
         container->container = NULL;  // paranoid
-        free(container);
+        roaring_free(container);
     }
 }
 

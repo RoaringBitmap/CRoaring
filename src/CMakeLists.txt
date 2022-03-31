@@ -29,6 +29,7 @@ set(ROARING_SRC
     containers/mixed_xor.c
     containers/mixed_andnot.c
     containers/run.c
+    memory.c
     roaring.c
     roaring_priority_queue.c
     roaring_array.c)

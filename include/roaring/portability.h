@@ -148,36 +148,6 @@ inline int __builtin_clzll(unsigned long long input_num) {
 
 #endif
 
-// without the following, we get lots of warnings about posix_memalign
-#ifndef __cplusplus
-extern int posix_memalign(void **__memptr, size_t __alignment, size_t __size);
-#endif  //__cplusplus // C++ does not have a well defined signature
-
-// portable version of  posix_memalign
-static inline void *roaring_bitmap_aligned_malloc(size_t alignment, size_t size) {
-    void *p;
-#ifdef _MSC_VER
-    p = _aligned_malloc(size, alignment);
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-    p = __mingw_aligned_malloc(size, alignment);
-#else
-    // somehow, if this is used before including "x86intrin.h", it creates an
-    // implicit defined warning.
-    if (posix_memalign(&p, alignment, size) != 0) return NULL;
-#endif
-    return p;
-}
-
-static inline void roaring_bitmap_aligned_free(void *memblock) {
-#ifdef _MSC_VER
-    _aligned_free(memblock);
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-    __mingw_aligned_free(memblock);
-#else
-    free(memblock);
-#endif
-}
-
 #if defined(_MSC_VER)
 #define ALIGNED(x) __declspec(align(x))
 #else

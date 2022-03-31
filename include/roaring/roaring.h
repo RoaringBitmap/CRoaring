@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>  // for `size_t`
 
+#include <roaring/memory.h>
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
 

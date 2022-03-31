@@ -68,13 +68,13 @@ static inline container_t *containerptr_roaring_bitmap_add(
 
 roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap) {
     roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
+        (roaring_bitmap_t *)roaring_malloc(sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
     bool is_ok = ra_init_with_capacity(&ans->high_low_container, cap);
     if (!is_ok) {
-        free(ans);
+        roaring_free(ans);
         return NULL;
     }
     return ans;
@@ -377,14 +377,14 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
 
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
+        (roaring_bitmap_t *)roaring_malloc(sizeof(roaring_bitmap_t));
     if (!ans) {
         return NULL;
     }
     if (!ra_init_with_capacity(  // allocation of list of containers can fail
                 &ans->high_low_container, r->high_low_container.size)
     ){
-        free(ans);
+        roaring_free(ans);
         return NULL;
     }
     if (!ra_overwrite(  // memory allocation of individual containers may fail
@@ -408,7 +408,7 @@ void roaring_bitmap_free(const roaring_bitmap_t *r) {
     if (!is_frozen(r)) {
       ra_clear((roaring_array_t*)&r->high_low_container);
     }
-    free((roaring_bitmap_t*)r);
+    roaring_free((roaring_bitmap_t*)r);
 }
 
 void roaring_bitmap_clear(roaring_bitmap_t *r) {
@@ -1378,7 +1378,7 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *r) {
 
 roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes) {
     roaring_bitmap_t *ans =
-        (roaring_bitmap_t *)malloc(sizeof(roaring_bitmap_t));
+        (roaring_bitmap_t *)roaring_malloc(sizeof(roaring_bitmap_t));
     if (ans == NULL) {
         return NULL;
     }
@@ -1387,7 +1387,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size
     if(is_ok) assert(bytesread <= maxbytes);
     roaring_bitmap_set_copy_on_write(ans, false);
     if (!is_ok) {
-        free(ans);
+        roaring_free(ans);
         return NULL;
     }
     return ans;
@@ -1613,7 +1613,7 @@ void roaring_init_iterator_last(const roaring_bitmap_t *r,
 
 roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *r) {
     roaring_uint32_iterator_t *newit =
-        (roaring_uint32_iterator_t *)malloc(sizeof(roaring_uint32_iterator_t));
+        (roaring_uint32_iterator_t *)roaring_malloc(sizeof(roaring_uint32_iterator_t));
     if (newit == NULL) return NULL;
     roaring_init_iterator(r, newit);
     return newit;
@@ -1622,7 +1622,7 @@ roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *r) {
 roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
     const roaring_uint32_iterator_t *it) {
     roaring_uint32_iterator_t *newit =
-        (roaring_uint32_iterator_t *)malloc(sizeof(roaring_uint32_iterator_t));
+        (roaring_uint32_iterator_t *)roaring_malloc(sizeof(roaring_uint32_iterator_t));
     memcpy(newit, it, sizeof(roaring_uint32_iterator_t));
     return newit;
 }
@@ -1868,7 +1868,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* b
 
 
 
-void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) { free(it); }
+void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) { roaring_free(it); }
 
 /****
 * end of roaring_uint32_iterator_t
@@ -3073,7 +3073,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     alloc_size += num_run_containers * sizeof(run_container_t);
     alloc_size += num_array_containers * sizeof(array_container_t);
 
-    char *arena = (char *)malloc(alloc_size);
+    char *arena = (char *)roaring_malloc(alloc_size);
     if (arena == NULL) {
         return NULL;
     }
@@ -3128,7 +3128,7 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
                 break;
             }
             default:
-                free(arena);
+                roaring_free(arena);
                 return NULL;
         }
     }

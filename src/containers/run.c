@@ -3,6 +3,7 @@
 
 #include <roaring/containers/run.h>
 #include <roaring/portability.h>
+#include <roaring/memory.h>
 
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace internal {
@@ -77,13 +78,13 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
 run_container_t *run_container_create_given_capacity(int32_t size) {
     run_container_t *run;
     /* Allocate the run container itself. */
-    if ((run = (run_container_t *)malloc(sizeof(run_container_t))) == NULL) {
+    if ((run = (run_container_t *)roaring_malloc(sizeof(run_container_t))) == NULL) {
         return NULL;
     }
     if (size <= 0 ) { // we don't want to rely on malloc(0)
         run->runs = NULL;
-    } else if ((run->runs = (rle16_t *)malloc(sizeof(rle16_t) * size)) == NULL) {
-        free(run);
+    } else if ((run->runs = (rle16_t *)roaring_malloc(sizeof(rle16_t) * size)) == NULL) {
+        roaring_free(run);
         return NULL;
     }
     run->capacity = size;
@@ -96,8 +97,8 @@ int run_container_shrink_to_fit(run_container_t *src) {
     int savings = src->capacity - src->n_runs;
     src->capacity = src->n_runs;
     rle16_t *oldruns = src->runs;
-    src->runs = (rle16_t *)realloc(oldruns, src->capacity * sizeof(rle16_t));
-    if (src->runs == NULL) free(oldruns);  // should never happen?
+    src->runs = (rle16_t *)roaring_realloc(oldruns, src->capacity * sizeof(rle16_t));
+    if (src->runs == NULL) roaring_free(oldruns);  // should never happen?
     return savings;
 }
 /* Create a new run container. Return NULL in case of failure. */
@@ -174,10 +175,10 @@ void run_container_offset(const run_container_t *c,
 /* Free memory. */
 void run_container_free(run_container_t *run) {
     if(run->runs != NULL) {// Jon Strabala reports that some tools complain otherwise
-      free(run->runs);
+      roaring_free(run->runs);
       run->runs = NULL;  // pedantic
     }
-    free(run);
+    roaring_free(run);
 }
 
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
@@ -193,14 +194,14 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     if (copy) {
         rle16_t *oldruns = run->runs;
         run->runs =
-            (rle16_t *)realloc(oldruns, run->capacity * sizeof(rle16_t));
-        if (run->runs == NULL) free(oldruns);
+            (rle16_t *)roaring_realloc(oldruns, run->capacity * sizeof(rle16_t));
+        if (run->runs == NULL) roaring_free(oldruns);
     } else {
         // Jon Strabala reports that some tools complain otherwise
         if (run->runs != NULL) {
-          free(run->runs);
+          roaring_free(run->runs);
         }
-        run->runs = (rle16_t *)malloc(run->capacity * sizeof(rle16_t));
+        run->runs = (rle16_t *)roaring_malloc(run->capacity * sizeof(rle16_t));
     }
     // handle the case where realloc fails
     if (run->runs == NULL) {
