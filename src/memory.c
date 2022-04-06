@@ -40,7 +40,7 @@ static roaring_memory_t global_memory_hook = {
     .aligned_free = roaring_bitmap_aligned_free,
 };
 
-void init_roaring_memory_hook(roaring_memory_t memory_hook) {
+void roaring_init_memory_hook(roaring_memory_t memory_hook) {
     global_memory_hook = memory_hook;
 }
 

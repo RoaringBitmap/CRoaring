@@ -177,7 +177,7 @@ int main(){
     // define with your own memory hook
     roaring_memory_t my_hook{my_malloc, my_free ...};
     // initialize global memory hook
-    init_roaring_memory_hook(my_hook); 
+    roaring_init_memory_hook(my_hook);
     // write you code here
     ...
 }
