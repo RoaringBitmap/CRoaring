@@ -34,12 +34,6 @@ extern "C" { namespace roaring { namespace api {
     #define ROARING_CONTAINER_T void  // no compile-time checking
 #endif
 
-
-#define MAX_CONTAINERS 65536
-
-#define SERIALIZATION_ARRAY_UINT32 1
-#define SERIALIZATION_CONTAINER 2
-
 #define ROARING_FLAG_COW UINT8_C(0x1)
 #define ROARING_FLAG_FROZEN UINT8_C(0x2)
 
