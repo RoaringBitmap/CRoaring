@@ -7,23 +7,23 @@ extern "C" {
 
 #include <stddef.h>  // for size_t
 
-typedef void* (*p_roaring_malloc)(size_t);
-typedef void* (*p_roaring_realloc)(void*, size_t);
-typedef void* (*p_roaring_calloc)(size_t, size_t);
-typedef void (*p_roaring_free)(void*);
-typedef void* (*p_roaring_aligned_malloc)(size_t, size_t);
-typedef void (*p_roaring_aligned_free)(void*);
+typedef void* (*roaring_malloc_p)(size_t);
+typedef void* (*roaring_realloc_p)(void*, size_t);
+typedef void* (*roaring_calloc_p)(size_t, size_t);
+typedef void (*roaring_free_p)(void*);
+typedef void* (*roaring_aligned_malloc_p)(size_t, size_t);
+typedef void (*roaring_aligned_free_p)(void*);
 
 typedef struct roaring_memory_s {
-    p_roaring_malloc malloc;
-    p_roaring_realloc realloc;
-    p_roaring_calloc calloc;
-    p_roaring_free free;
-    p_roaring_aligned_malloc aligned_malloc;
-    p_roaring_aligned_free aligned_free;
+    roaring_malloc_p malloc;
+    roaring_realloc_p realloc;
+    roaring_calloc_p calloc;
+    roaring_free_p free;
+    roaring_aligned_malloc_p aligned_malloc;
+    roaring_aligned_free_p aligned_free;
 } roaring_memory_t;
 
-void init_roaring_memory_hook(roaring_memory_t memory_hook);
+void roaring_init_memory_hook(roaring_memory_t memory_hook);
 
 void* roaring_malloc(size_t);
 void* roaring_realloc(void*, size_t);
