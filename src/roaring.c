@@ -129,6 +129,29 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
     }
 }
 
+void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
+                             const uint32_t *vals, bool *results) {
+    if (n_argx == 0) return;
+    memset(results, 0, n_args);
+    uint32_t prev = 0;       // previous key
+    void *container = NULL;  // hold value of last container touched
+    uint8_t typecode = 0;    // typecode of last container touched
+    int containerindex = 0;
+    for (size_t i = 0; i < n_args; i++) {
+        if ((container != NULL) && (((prev ^ vals[i]) >> 16) == 0)) {
+            results[i] = container_contains(container, vals[i] & 0xFFFF, typecode);
+        } else {
+            containerindex = ra_get_index(&r->high_low_container, vals[i] >> 16);
+            if (containerindex >= 0) { // find the container
+                container = ra_get_container_at_index(&r->high_low_container, containerindex, &typecode);
+                // rest might be a tad expensive, possibly involving another round of binary search
+                results[i] = container_contains(container, vals[i] & 0xFFFF, typecode);
+            } // case else: just let results[i] false
+        }
+        prev = vals[i];
+    }
+}
+
 roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
     roaring_bitmap_t *answer = roaring_bitmap_create();
     roaring_bitmap_add_many(answer, n_args, vals);
