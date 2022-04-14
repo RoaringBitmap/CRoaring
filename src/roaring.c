@@ -131,7 +131,7 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
 
 void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals, bool *results) {
-    if (n_argx == 0) return;
+    if (n_args == 0) return;
     memset(results, 0, n_args);
     uint32_t prev = 0;       // previous key
     void *container = NULL;  // hold value of last container touched
