@@ -131,24 +131,36 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
 
 void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals, bool *results) {
-    if (n_args == 0) return;
-    memset(results, 0, n_args);
-    uint32_t prev = 0;       // previous key
-    void *container = NULL;  // hold value of last container touched
-    uint8_t typecode = 0;    // typecode of last container touched
-    int containerindex = 0;
+    if (n_args == 0 || r == NULL)  {
+        return;
+    }
+    uint32_t prev_container_key = 0;   // previous container key
+    void *container = NULL;     // hold value of last container touched
+    uint8_t typecode = 0;       // typecode of last container touched
+    int container_index = 0;    // current container pos
+    const int container_count= r->high_low_container.size;
     for (size_t i = 0; i < n_args; i++) {
-        if ((container != NULL) && (((prev ^ vals[i]) >> 16) == 0)) {
-            results[i] = container_contains(container, vals[i] & 0xFFFF, typecode);
-        } else {
-            containerindex = ra_get_index(&r->high_low_container, vals[i] >> 16);
-            if (containerindex >= 0) { // find the container
-                container = ra_get_container_at_index(&r->high_low_container, containerindex, &typecode);
-                // rest might be a tad expensive, possibly involving another round of binary search
+        if (container_index < container_count) {
+            if ((container != NULL) && (((prev_container_key^ vals[i]) >> 16) == 0)) {
+                // we currently still in the same container
                 results[i] = container_contains(container, vals[i] & 0xFFFF, typecode);
-            } // case else: just let results[i] false
+            } else {
+                if (vals[i] < (prev_container_key & 0xFFFF0000)) { // current value belong to the lower index container
+                    container_index = 0;
+                }
+                container_index = ra_advance_until(&r->high_low_container, vals[i]&0xFFFF0000, container_index);
+
+                if ((ra_get_key_at_index(&r->high_low_container, container_index)^ vals[i]) >> 16 == 0) {
+                    container = ra_get_container_at_index(&r->high_low_container, container_index, &typecode);
+                    results[i] = container_contains(container, vals[i]&0xFFFF, typecode);
+                } else {
+                    results[i] = false;
+                }
+                prev_container_key = vals[i]; // update previous container
+            }
+        } else { // did not found
+            results[i] = false;
         }
-        prev = vals[i];
     }
 }
 
