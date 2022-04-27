@@ -344,6 +344,10 @@ uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
     return ra->keys[i];
 }
 
+extern inline bool ra_test_value_at_index(const roaring_array_t *ra, uint16_t i, uint32_t value) {
+    return (ra_get_key_at_index(ra, i) ^ (uint16_t)(value >> 16)) == 0;
+}
+
 extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
 
 extern inline int32_t ra_advance_until(const roaring_array_t *ra, uint16_t x,
