@@ -57,6 +57,45 @@ DEFINE_TEST(range_contains) {
     roaring_bitmap_free(bm);
 }
 
+DEFINE_TEST(contains_multi) {
+    // create rbm with RLE conatainer form 0 1000
+    roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 1000, 1);
+    // add array container from 66000
+    for (size_t i = 66000; i < 68000; i+=2) {
+        roaring_bitmap_add(bm, i);
+    }
+    // add bitset container from 20000
+    for (size_t i = 132000; i < 140000; i+=2) {
+        roaring_bitmap_add(bm, i);
+    }
+
+    size_t length = 10;
+    bool results[length];
+    bool expected_results[length];
+    uint32_t values[length];
+    for (size_t i = 0; i < length; i+=2) {
+        expected_results[i] = 1;
+    }
+    values[0] =  1000;   // 1
+    values[1] =  1001;   // 0
+    values[2] =  66000;  // 1
+    values[3] =  66001;  // 0
+    values[3] =  66002;  // 1
+    values[4] =  1002;   // 0
+    values[5] =  132000; // 1
+    values[6] =  132001; // 0
+    values[7] =  132002; // 1
+    values[8] =  66003;  // 0
+    values[9] =  132004; // 1
+
+    roaring_bitmap_contains_multi(bm, length, values, results);
+
+    for (size_t i = 0; i < length; ++i) {
+        assert(expected_results[i] == results[i]);
+    }
+    roaring_bitmap_free(bm);
+}
+
 DEFINE_TEST(is_really_empty) {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     assert_true(roaring_bitmap_is_empty(bm));
@@ -94,10 +133,6 @@ void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
-
-
-
-
 bool check_serialization(roaring_bitmap_t *bitmap) {
     const int32_t size = roaring_bitmap_portable_size_in_bytes(bitmap);
     char *data = (char *)malloc(size);
@@ -108,7 +143,6 @@ bool check_serialization(roaring_bitmap_t *bitmap) {
     free(data);
     return ret;
 }
-
 
 DEFINE_TEST(issue245) {
     roaring_bitmap_t *bitmap = roaring_bitmap_create();
@@ -4182,6 +4216,7 @@ int main() {
         cmocka_unit_test(issue208),
         cmocka_unit_test(issue208b),
         cmocka_unit_test(range_contains),
+        cmocka_unit_test(contains_multi),
         cmocka_unit_test(inplaceorwide),
         cmocka_unit_test(test_contains_range),
         cmocka_unit_test(check_range_contains_from_end),
