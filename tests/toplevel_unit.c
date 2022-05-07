@@ -75,6 +75,7 @@ DEFINE_TEST(contains_multi) {
     uint32_t values[length];
     for (size_t i = 0; i < length; i+=2) {
         expected_results[i] = 1;
+        expected_results[i+1] = 0;
     }
     values[0] =  1000;   // 1
     values[1] =  1001;   // 0
