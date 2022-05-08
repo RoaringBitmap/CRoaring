@@ -264,7 +264,7 @@ void roaring_bitmap_free(const roaring_bitmap_t *r);
  * Callers should treat it as an opaque type
  */
 typedef struct roaring_bulk_context_s {
-    void *container;
+    ROARING_CONTAINER_T *container;
     int idx;
     uint16_t key;
     uint8_t typecode;
