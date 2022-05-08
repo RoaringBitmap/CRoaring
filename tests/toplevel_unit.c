@@ -916,6 +916,19 @@ DEFINE_TEST(test_addremove) {
     roaring_bitmap_free(bm);
 }
 
+DEFINE_TEST(test_addremove_bulk) {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    roaring_bulk_context_t context = {0};
+    for (uint32_t value = 33057; value < 147849; value += 8) {
+        roaring_bitmap_add_bulk(bm, &context, value);
+    }
+    for (uint32_t value = 33057; value < 147849; value += 8) {
+        roaring_bitmap_remove(bm, value);
+    }
+    assert_true(roaring_bitmap_is_empty(bm));
+    roaring_bitmap_free(bm);
+}
+
 DEFINE_TEST(test_addremoverun) {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     for (uint32_t value = 33057; value < 147849; value += 8) {
