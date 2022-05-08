@@ -258,6 +258,33 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
 void roaring_bitmap_free(const roaring_bitmap_t *r);
 
 /**
+ * A bit of context usable with `roaring_bitmap_add_bulk()`
+ *
+ * Should be initialized with `{0}` (or `memset()` to all zeros).
+ * Callers should treat it as an opaque type
+ */
+typedef struct roaring_bulk_context_s {
+    void *container;
+    int idx;
+    uint16_t key;
+    uint8_t typecode;
+} roaring_bulk_context_t;
+
+/**
+ * Add an item, using context from a previous insert for speed optimization.
+ *
+ * `context` will be used to store information between calls to make bulk loads
+ * faster. `*context` should be zero-initialized before the first call to this
+ * function.
+ *
+ * Modifying the bitmap in any way will invalidate the stored context, calling
+ * this function with a non-zero context after doing any modification invokes
+ * undefined behavior.
+ */
+void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
+                             roaring_bulk_context_t *context, uint32_t val);
+
+/**
  * Add value n_args from pointer vals, faster than repeatedly calling
  * `roaring_bitmap_add()`
  */
