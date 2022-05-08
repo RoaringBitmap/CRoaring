@@ -90,9 +90,11 @@ bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap) {
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals) {
     size_t i;
+    uint32_t val;
     roaring_bulk_context_t context = {0};
     for (i = 0; i < n_args; i++) {
-        roaring_bitmap_add_bulk(r, &context, vals[i]);
+        memcpy(&val, &vals[i], sizeof(val));
+        roaring_bitmap_add_bulk(r, &context, val);
     }
 }
 
