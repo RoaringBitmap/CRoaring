@@ -61,11 +61,11 @@ DEFINE_TEST(contains_multi) {
     // create rbm with RLE conatainer form 0 1000
     roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 1001, 1);
     // add array container from 66000
-    for (size_t i = 66000; i < 68000; i+=2) {
+    for (uint32_t i = 77000; i < 87000; i+=2) {
         roaring_bitmap_add(bm, i);
     }
     // add bitset container from 20000
-    for (size_t i = 132000; i < 140000; i+=2) {
+    for (uint32_t i = 132000; i < 140000; i+=2) {
         roaring_bitmap_add(bm, i);
     }
 
