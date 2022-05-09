@@ -59,7 +59,7 @@ DEFINE_TEST(range_contains) {
 
 DEFINE_TEST(contains_multi) {
     // create rbm with RLE conatainer form 0 1000
-    roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 1000, 1);
+    roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 1001, 1);
     // add array container from 66000
     for (size_t i = 66000; i < 68000; i+=2) {
         roaring_bitmap_add(bm, i);
@@ -77,20 +77,19 @@ DEFINE_TEST(contains_multi) {
         expected_results[i] = 1;
         expected_results[i+1] = 0;
     }
+
     values[0] =  1000;   // 1
     values[1] =  1001;   // 0
-    values[2] =  66000;  // 1
-    values[3] =  66001;  // 0
-    values[3] =  66002;  // 1
-    values[4] =  1002;   // 0
-    values[5] =  132000; // 1
-    values[6] =  132001; // 0
-    values[7] =  132002; // 1
-    values[8] =  66003;  // 0
-    values[9] =  132004; // 1
+    values[2] =  77000;  // 1
+    values[3] =  77001;  // 0
+    values[4] =  77002;  // 1
+    values[5] =  1002;   // 0
+    values[6] =  132000; // 1
+    values[7] =  132001; // 0
+    values[8] =  132002; // 1
+    values[9] =  77003;  // 0
 
     roaring_bitmap_contains_multi(bm, length, values, results);
-
     for (size_t i = 0; i < length; ++i) {
         assert(expected_results[i] == results[i]);
     }
