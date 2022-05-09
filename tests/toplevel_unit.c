@@ -69,11 +69,10 @@ DEFINE_TEST(contains_multi) {
         roaring_bitmap_add(bm, i);
     }
 
-    const size_t length = 10;
-    bool results[length];
-    bool expected_results[length];
-    uint32_t values[length];
-    for (size_t i = 0; i < length; i+=2) {
+    bool results[10];
+    bool expected_results[10];
+    uint32_t values[10];
+    for (size_t i = 0; i < 10; i+=2) {
         expected_results[i] = 1;
         expected_results[i+1] = 0;
     }
@@ -89,8 +88,8 @@ DEFINE_TEST(contains_multi) {
     values[8] =  132002; // 1
     values[9] =  77003;  // 0
 
-    roaring_bitmap_contains_multi(bm, length, values, results);
-    for (size_t i = 0; i < length; ++i) {
+    roaring_bitmap_contains_multi(bm, 10, values, results);
+    for (size_t i = 0; i < 10; ++i) {
         assert(expected_results[i] == results[i]);
     }
     roaring_bitmap_free(bm);
