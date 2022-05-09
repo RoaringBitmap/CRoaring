@@ -69,7 +69,7 @@ DEFINE_TEST(contains_multi) {
         roaring_bitmap_add(bm, i);
     }
 
-    size_t length = 10;
+    const size_t length = 10;
     bool results[length];
     bool expected_results[length];
     uint32_t values[length];
