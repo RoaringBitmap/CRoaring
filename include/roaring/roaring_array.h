@@ -96,14 +96,6 @@ inline container_t *ra_get_container_at_index(
 uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
 
 /**
- * Check whether value should be placed in the container at index i
- */
-static inline bool ra_test_value_at_index(const roaring_array_t *ra, uint16_t i, uint32_t value) {
-    return (ra_get_key_at_index(ra, i) ^ (uint16_t)(value >> 16)) == 0;
-}
-
-
-/**
  * Add a new key-value pair at index i
  */
 void ra_insert_new_key_value_at(

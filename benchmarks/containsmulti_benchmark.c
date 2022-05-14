@@ -60,27 +60,27 @@ int main(int argc, char* argv[]) {
     printf("Data:\n");
     printf("  cardinality: %"PRIu64"\n", roaring_bitmap_get_cardinality(bm));
 
-    printf("Cycles/element:\n");
+    const int num_passes = 10;
+    printf("Cycles/element: %d\n", num_passes);
     uint64_t cycles_start, cycles_final;
-    const int num_passes = 5;
 
-    printf("  roaring_bitmap_contains:");
+    printf("                          roaring_bitmap_contains:");
     for (int p = 0; p < num_passes; p++) {
         bool result[count[p]];
         RDTSC_START(cycles_start);
         contains_multi_via_contains(bm, values[p], result, count[p]);
         RDTSC_FINAL(cycles_final);
-        printf(" %f", (cycles_final - cycles_start) * 1.0 / count[p]);
+        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
     }
     printf("\n");
 
-    printf("  roaring_bitmap_contains_multi:");
+    printf("                    roaring_bitmap_contains_multi:");
     for (int p = 0; p < num_passes; p++) {
         bool result[count[p]];
         RDTSC_START(cycles_start);
-        contains_multi_via_contains(bm, values[p], result, count[p]);
+        contains_multi(bm, values[p], result, count[p]);
         RDTSC_FINAL(cycles_final);
-        printf(" %f", (cycles_final - cycles_start) * 1.0 / count[p]);
+        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
     }
     printf("\n");
 
@@ -89,13 +89,13 @@ int main(int argc, char* argv[]) {
         qsort(values[i], count[i], sizeof(uint32_t), compare_uint32);
     }
 
-    printf("  roaring_bitmap_contains with sorted input:");
+    printf("        roaring_bitmap_contains with sorted input:");
     for (int p = 0; p < num_passes; p++) {
         bool result[count[p]];
         RDTSC_START(cycles_start);
         contains_multi_via_contains(bm, values[p], result, count[p]);
         RDTSC_FINAL(cycles_final);
-        printf(" %f", (cycles_final - cycles_start) * 1.0 / count[p]);
+        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
     }
     printf("\n");
 
@@ -103,9 +103,9 @@ int main(int argc, char* argv[]) {
     for (int p = 0; p < num_passes; p++) {
         bool result[count[p]];
         RDTSC_START(cycles_start);
-        contains_multi_via_contains(bm, values[p], result, count[p]);
+        contains_multi(bm, values[p], result, count[p]);
         RDTSC_FINAL(cycles_final);
-        printf(" %f", (cycles_final - cycles_start) * 1.0 / count[p]);
+        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
     }
     printf("\n");
 
