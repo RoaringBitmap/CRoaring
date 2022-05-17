@@ -100,8 +100,9 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
 
 void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
                              roaring_bulk_context_t *context, uint32_t val) {
+    roaring_bulk_context_t ctx = *context;
     uint16_t key = val >> 16;
-    if ((context->key != key) || context->container == NULL) {
+    if ((ctx.key != key) || ctx.container == NULL) {
         context->container = containerptr_roaring_bitmap_add(
             r, val, &context->typecode, &context->idx);
         context->key = val >> 16;
@@ -109,13 +110,13 @@ void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
         // no need to seek the container, it is at hand
         // because we already have the container at hand, we can do the
         // insertion directly, bypassing the roaring_bitmap_add call
-        uint8_t new_typecode = context->typecode;
+        uint8_t new_typecode = ctx.typecode;
         container_t *container2 = container_add(
-            context->container, val & 0xFFFF, context->typecode, &new_typecode);
-        if (container2 != context->container) {
+            ctx.container, val & 0xFFFF, ctx.typecode, &new_typecode);
+        if (container2 != ctx.container) {
             // rare instance when we need to change the container type
-            container_free(context->container, context->typecode);
-            ra_set_container_at_index(&r->high_low_container, context->idx,
+            container_free(ctx.container, ctx.typecode);
+            ra_set_container_at_index(&r->high_low_container, ctx.idx,
                                       container2, new_typecode);
             context->typecode = new_typecode;
             context->container = container2;
