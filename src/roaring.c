@@ -101,7 +101,7 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
 void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
                              roaring_bulk_context_t *context, uint32_t val) {
     uint16_t key = val >> 16;
-    if ((context->key != key) || context->container == NULL) {
+    if (context->container == NULL || (context->key != key)) {
         context->container = containerptr_roaring_bitmap_add(
             r, val, &context->typecode, &context->idx);
         context->key = key;
