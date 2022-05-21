@@ -111,8 +111,8 @@ void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
         // because we already have the container at hand, we can do the
         // insertion directly, bypassing the roaring_bitmap_add call
         uint8_t new_typecode = ctx.typecode;
-        container_t *container2 = container_add(
-            ctx.container, val & 0xFFFF, ctx.typecode, &new_typecode);
+        container_t *container2 = container_add(ctx.container, val & 0xFFFF,
+                                                ctx.typecode, &new_typecode);
         if (container2 != ctx.container) {
             // rare instance when we need to change the container type
             container_free(ctx.container, ctx.typecode);
