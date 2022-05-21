@@ -48,12 +48,7 @@
     cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
   } while (0)
 
-#define RDTSC_FINAL(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_REALTIME, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
+#define RDTSC_FINAL(cycles) RDTSC_START(cycles)
 
 #elif defined(CLOCK_REALTIME)  // #ifdef CLOCK_THREAD_CPUTIME_ID
 #define RDTSC_START(cycles) \
@@ -63,12 +58,7 @@
     cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
   } while (0)
 
-#define RDTSC_FINAL(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_REALTIME, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
+#define RDTSC_FINAL(cycles) RDTSC_START(cycles)
 
 #else
 #define RDTSC_START(cycles) \
@@ -76,10 +66,7 @@
     cycles = clock(); \
   } while(0)
 
-#define RDTSC_FINAL(cycles) \
-  do { \
-    cycles = clock(); \
-  } while(0)
+#define RDTSC_FINAL(cycles) RDTSC_START(cycles)
 
 #endif // #ifdef CLOCK_THREAD_CPUTIME_ID
 
@@ -95,10 +82,7 @@
         cycles = clock();   \
     } while (0)
 
-#define RDTSC_FINAL(cycles) \
-    do {                    \
-        cycles = clock();   \
-    } while (0)
+#define RDTSC_FINAL(cycles) RDTSC_START(cycles)
 
 #endif
 
