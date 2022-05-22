@@ -92,14 +92,10 @@ static inline void add_bulk_impl(roaring_bitmap_t *r,
                                  uint32_t val) {
     uint16_t key = val >> 16;
     if ((context->key != key) || !context->initialized) {
-        uint8_t typecode;
-        int idx;
         context->container = containerptr_roaring_bitmap_add(
-            r, val, &typecode, &idx);
+            r, val, &context->typecode, &context->idx);
         context->key = key;
         context->initialized = true;
-        context->typecode = typecode;
-        context->idx = idx;
     } else {
         // no need to seek the container, it is at hand
         // because we already have the container at hand, we can do the
