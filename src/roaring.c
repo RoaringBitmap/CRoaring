@@ -101,8 +101,8 @@ static inline void add_bulk_impl(roaring_bitmap_t *r,
         // because we already have the container at hand, we can do the
         // insertion directly, bypassing the roaring_bitmap_add call
         uint8_t new_typecode;
-        container_t *container2 = container_add(context->container, val & 0xFFFF,
-                                                context->typecode, &new_typecode);
+        container_t *container2 = container_add(
+            context->container, val & 0xFFFF, context->typecode, &new_typecode);
         if (container2 != context->container) {
             // rare instance when we need to change the container type
             container_free(context->container, context->typecode);
@@ -130,7 +130,8 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
     int idx;
     container_t *container;
     container = containerptr_roaring_bitmap_add(r, val, &typecode, &idx);
-    roaring_bulk_context_t context = {container, idx, val >> 16, typecode, true};
+    roaring_bulk_context_t context = {container, idx, val >> 16, typecode,
+                                      true};
 
     for (; current_val != end; current_val++) {
         memcpy(&val, current_val, sizeof(val));
