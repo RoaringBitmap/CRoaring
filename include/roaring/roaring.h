@@ -281,6 +281,9 @@ typedef struct roaring_bulk_context_s {
  * Modifying the bitmap in any way will invalidate the stored context, calling
  * this function with a non-zero context after doing any modification invokes
  * undefined behavior.
+ *
+ * In order to exploit this optimization, the caller should call this function
+ * with values with the same "key" (high 16 bits of the value) consecutively.
  */
 void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
                              roaring_bulk_context_t *context, uint32_t val);
@@ -288,6 +291,10 @@ void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
 /**
  * Add value n_args from pointer vals, faster than repeatedly calling
  * `roaring_bitmap_add()`
+ *
+ * In order to exploit this optimization, the caller should attempt to keep
+ * values with the same "key" (high 16 bits of the value) as consecutive
+ * elements in `vals`
  */
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals);
