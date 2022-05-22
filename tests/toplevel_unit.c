@@ -923,7 +923,7 @@ DEFINE_TEST(test_addremove_bulk) {
         roaring_bitmap_add_bulk(bm, &context, value);
     }
     for (uint32_t value = 33057; value < 147849; value += 8) {
-        roaring_bitmap_remove(bm, value);
+        assert_true(roaring_bitmap_remove_checked(bm, value));
     }
     assert_true(roaring_bitmap_is_empty(bm));
     roaring_bitmap_free(bm);
