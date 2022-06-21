@@ -7,7 +7,7 @@
 #define INCLUDE_PORTABILITY_H_
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#define _GNU_SOURCE 1
 #endif // _GNU_SOURCE
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS 1
