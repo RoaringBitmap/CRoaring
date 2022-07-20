@@ -17,10 +17,10 @@ if(CMAKE_C_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_C_COMPILER_VERSION VERSIO
 endif()
 set(ROARING_LIB_NAME roaring)
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 5)
+set(PROJECT_VERSION_MINOR 6)
 set(PROJECT_VERSION_PATCH 0)
-set(ROARING_LIB_VERSION "0.5.0" CACHE STRING "Roaring library version")
-set(ROARING_LIB_SOVERSION "3" CACHE STRING "Roaring library soversion")
+set(ROARING_LIB_VERSION "0.6.0" CACHE STRING "Roaring library version")
+set(ROARING_LIB_SOVERSION "4" CACHE STRING "Roaring library soversion")
 
 option(ROARING_EXCEPTIONS "Enable exception-throwing interface" ON)
 if(NOT ROARING_EXCEPTIONS)
