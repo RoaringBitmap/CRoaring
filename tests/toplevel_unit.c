@@ -60,37 +60,32 @@ DEFINE_TEST(range_contains) {
 DEFINE_TEST(contains_multi) {
     // create rbm with RLE conatainer form 0 1000
     roaring_bitmap_t *bm = roaring_bitmap_from_range(0, 1001, 1);
-    // add array container from 66000
+    // add array container from 77000
     for (uint32_t i = 77000; i < 87000; i+=2) {
         roaring_bitmap_add(bm, i);
     }
-    // add bitset container from 20000
+    // add bitset container from 132000
     for (uint32_t i = 132000; i < 140000; i+=2) {
         roaring_bitmap_add(bm, i);
     }
 
     bool results[10];
-    bool expected_results[10];
-    uint32_t values[10];
-    for (size_t i = 0; i < 10; i+=2) {
-        expected_results[i] = 1;
-        expected_results[i+1] = 0;
-    }
-
-    values[0] =  1000;   // 1
-    values[1] =  1001;   // 0
-    values[2] =  77000;  // 1
-    values[3] =  77001;  // 0
-    values[4] =  77002;  // 1
-    values[5] =  1002;   // 0
-    values[6] =  132000; // 1
-    values[7] =  132001; // 0
-    values[8] =  132002; // 1
-    values[9] =  77003;  // 0
+    uint32_t values[10] = {
+      1000,   // 1
+      1001,   // 0
+      77000,  // 1
+      77001,  // 0
+      77002,  // 1
+      1002,  // 0
+      132000, // 1
+      132001, // 0
+      132002, // 1
+      77003  // 0
+    };
 
     roaring_bitmap_contains_multi(bm, 10, values, results);
     for (size_t i = 0; i < 10; ++i) {
-        assert(expected_results[i] == results[i]);
+        assert(roaring_bitmap_contains(bm, values[i]) == results[i]);
     }
     roaring_bitmap_free(bm);
 }

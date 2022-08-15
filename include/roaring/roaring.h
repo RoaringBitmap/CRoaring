@@ -336,10 +336,11 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_end);
 
 /**
- * Check multiple values(vals) sized by n_args.
- * Returns the results sized by n_args represent the existence of each value.
+ * Checks presence of n_args values in bitmap r, where the values are in the array vals,
+ * returning the results as Boolean values in array results. The caller is responsible
+ * for the memory allocation of the arrays.
  */
-void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
+void roaring_bitmap_contains_multi(const roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals, bool *results);
 
 /**

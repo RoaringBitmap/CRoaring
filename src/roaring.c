@@ -129,7 +129,7 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
     }
 }
 
-void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
+void roaring_bitmap_contains_multi(const roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals, bool *results) {
     if (n_args == 0 || r == NULL)  {
         return;
@@ -159,14 +159,14 @@ void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
             container_index = -1; // reset the container index to the beginning
             continue;
         }
-        if (ra_get_key_at_index(&r->high_low_container, temp_container_index) == (uint16_t)(vals[i] >> 16)) {
-            container = ra_get_container_at_index(&r->high_low_container, temp_container_index, &typecode);
-            results[i] = container_contains(container, vals[i]&0xFFFF, typecode);
-            prev_container_key = vals[i]; // update previous key, cause we really found a container
-            container_index = temp_container_index; // update the current container index
-        } else {
+        if (ra_get_key_at_index(&r->high_low_container, temp_container_index) != (uint16_t)(vals[i] >> 16)) {
             results[i] = false;
+            continue;
         }
+        container = ra_get_container_at_index(&r->high_low_container, temp_container_index, &typecode);
+        results[i] = container_contains(container, vals[i]&0xFFFF, typecode);
+        prev_container_key = vals[i]; // update previous key, cause we really found a container
+        container_index = temp_container_index; // update the current container index
     }
 }
 
