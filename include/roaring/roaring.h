@@ -336,6 +336,13 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_end);
 
 /**
+ * Check multiple values(vals) sized by n_args.
+ * Returns the results sized by n_args represent the existence of each value.
+ */
+void roaring_bitmap_contains_multi(roaring_bitmap_t *r, size_t n_args,
+                             const uint32_t *vals, bool *results);
+
+/**
  * Get the cardinality of the bitmap (number of elements).
  */
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r);
@@ -814,4 +821,3 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
         using namespace ::roaring::api;
     #endif
 #endif
-
