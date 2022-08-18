@@ -37,38 +37,26 @@
         (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                      \
     } while (0)
 
-#elif defined(__linux__) && defined(__GLIBC__)
+#elif _POSIX_C_SOURCE >= 199309L // Posix check for clock_gettime
 
 #include <time.h>
-#ifdef CLOCK_THREAD_CPUTIME_ID
+
+#if defined(CLOCK_THREAD_CPUTIME_ID)
+#define RDTSC_CLOCK_ID CLOCK_THREAD_CPUTIME_ID
+#elif defined(CLOCK_MONOTONIC)
+#define RDTSC_CLOCK_ID CLOCK_MONOTONIC
+#elif defined(CLOCK_REALTIME)
+#define RDTSC_CLOCK_ID CLOCK_REALTIME
+#endif
+
 #define RDTSC_START(cycles) \
   do { \
     struct timespec ts; \
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts); \
+    clock_gettime(RDTSC_CLOCK_ID, &ts); \
     cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
   } while (0)
 
 #define RDTSC_FINAL(cycles) RDTSC_START(cycles)
-
-#elif defined(CLOCK_REALTIME)  // #ifdef CLOCK_THREAD_CPUTIME_ID
-#define RDTSC_START(cycles) \
-  do { \
-    struct timespec ts; \
-    clock_gettime(CLOCK_REALTIME, &ts); \
-    cycles = ts.tv_sec * UINT64_C(1000000000) + ts.tv_nsec; \
-  } while (0)
-
-#define RDTSC_FINAL(cycles) RDTSC_START(cycles)
-
-#else
-#define RDTSC_START(cycles) \
-  do { \
-    cycles = clock(); \
-  } while(0)
-
-#define RDTSC_FINAL(cycles) RDTSC_START(cycles)
-
-#endif // #ifdef CLOCK_THREAD_CPUTIME_ID
 
 #else
 
