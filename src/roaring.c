@@ -91,11 +91,14 @@ static inline void add_bulk_impl(roaring_bitmap_t *r,
                                  roaring_bulk_context_t *context,
                                  uint32_t val) {
     uint16_t key = val >> 16;
-    if ((context->key != key) || !context->initialized) {
+    if (context->container == NULL || context->key != key) {
+        uint8_t typecode;
+        int idx;
         context->container = containerptr_roaring_bitmap_add(
-            r, val, &context->typecode, &context->idx);
+            r, val, &typecode, &idx);
+        context->typecode = typecode;
+        context->idx = idx;
         context->key = key;
-        context->initialized = true;
     } else {
         // no need to seek the container, it is at hand
         // because we already have the container at hand, we can do the
@@ -125,13 +128,12 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
         return;
     }
 
-    memcpy(&val, current_val++, sizeof(val));
     uint8_t typecode;
     int idx;
     container_t *container;
+    val = *current_val;
     container = containerptr_roaring_bitmap_add(r, val, &typecode, &idx);
-    roaring_bulk_context_t context = {container, idx, val >> 16, typecode,
-                                      true};
+    roaring_bulk_context_t context = {container, idx, val >> 16, typecode};
 
     for (; current_val != end; current_val++) {
         memcpy(&val, current_val, sizeof(val));
@@ -1470,14 +1472,24 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *r,
 
 roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf) {
     const char *bufaschar = (const char *)buf;
-    if (*(const unsigned char *)buf == CROARING_SERIALIZATION_ARRAY_UINT32) {
+    if (bufaschar[0] == CROARING_SERIALIZATION_ARRAY_UINT32) {
         /* This looks like a compressed set of uint32_t elements */
         uint32_t card;
         memcpy(&card, bufaschar + 1, sizeof(uint32_t));
         const uint32_t *elems =
             (const uint32_t *)(bufaschar + 1 + sizeof(uint32_t));
-
-        return roaring_bitmap_of_ptr(card, elems);
+        roaring_bitmap_t *bitmap = roaring_bitmap_create();
+        if (bitmap == NULL) {
+            return NULL;
+        }
+        roaring_bulk_context_t context = {0};
+        for (uint32_t i = 0; i < card; i++) {
+            // elems may not be aligned, read with memcpy
+            uint32_t elem;
+            memcpy(&elem, elems + i, sizeof(elem));
+            roaring_bitmap_add_bulk(bitmap, &context, elem);
+        }
+        return bitmap;
     } else if (bufaschar[0] == CROARING_SERIALIZATION_CONTAINER) {
         return roaring_bitmap_portable_deserialize(bufaschar + 1);
     } else

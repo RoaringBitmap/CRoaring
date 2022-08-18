@@ -268,7 +268,6 @@ typedef struct roaring_bulk_context_s {
     int idx;
     uint16_t key;
     uint8_t typecode;
-    bool initialized;
 } roaring_bulk_context_t;
 
 /**
