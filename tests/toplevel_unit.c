@@ -4269,6 +4269,7 @@ int main() {
         cmocka_unit_test(test_maximum_minimum),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_addremove),
+        cmocka_unit_test(test_addremove_bulk),
         cmocka_unit_test(test_addremoverun),
         cmocka_unit_test(test_basic_add),
         cmocka_unit_test(test_remove_withrun),
