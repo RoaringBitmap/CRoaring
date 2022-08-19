@@ -4253,6 +4253,7 @@ int main() {
         cmocka_unit_test(test_array_to_run),
         cmocka_unit_test(test_array_to_self),
         cmocka_unit_test(test_bitset_to_self),
+        cmocka_unit_test(test_bitset_to_run),
         cmocka_unit_test(test_conversion_to_int_array_with_runoptimize),
         cmocka_unit_test(test_run_to_self),
         cmocka_unit_test(test_remove_run_to_bitset_cow),
