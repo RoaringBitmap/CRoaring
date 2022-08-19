@@ -389,14 +389,6 @@ bool roaring_bitmap_contains_bulk(const roaring_bitmap_t *r,
                                   uint32_t val);
 
 /**
- * Checks presence of n_args values in bitmap r, where the values are in the array vals,
- * returning the results as Boolean values in array results. The caller is responsible
- * for the memory allocation of the arrays.
- */
-void roaring_bitmap_contains_multi(const roaring_bitmap_t *r, size_t n_args,
-                             const uint32_t *vals, bool *results);
-
-/**
  * Get the cardinality of the bitmap (number of elements).
  */
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r);

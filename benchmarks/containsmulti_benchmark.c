@@ -10,16 +10,8 @@
 
 void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
     for (size_t i = 0; i < count; ++i) {
-        if (roaring_bitmap_contains(bm, values[i])) {
-            results[i] = true;
-        } else {
-            results[i] = false;
-        }
+        results[i] = roaring_bitmap_contains(bm, values[i]);
     }
-}
-
-void contains_multi(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
-    roaring_bitmap_contains_multi(bm, count, values, results);
 }
 
 void contains_multi_bulk(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
@@ -69,6 +61,8 @@ int main(int argc, char* argv[]) {
 
     printf("Data:\n");
     printf("  cardinality: %"PRIu64"\n", roaring_bitmap_get_cardinality(bm));
+    printf("  buckets: %d\n", (int)bm->high_low_container.size);
+    printf("  range: %"PRIu32"-%"PRIu32"\n", roaring_bitmap_minimum(bm) >> 16, roaring_bitmap_maximum(bm) >> 16);
 
     const int num_passes = 10;
     printf("Cycles/element: %d\n", num_passes);
@@ -84,15 +78,6 @@ int main(int argc, char* argv[]) {
     }
     printf("\n");
 
-    printf("                    roaring_bitmap_contains_multi:");
-    for (int p = 0; p < num_passes; p++) {
-        bool result[count[p]];
-        RDTSC_START(cycles_start);
-        contains_multi(bm, values[p], result, count[p]);
-        RDTSC_FINAL(cycles_final);
-        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
-    }
-    printf("\n");
     printf("                     roaring_bitmap_contains_bulk:");
     for (int p = 0; p < num_passes; p++) {
         bool result[count[p]];
@@ -118,15 +103,6 @@ int main(int argc, char* argv[]) {
     }
     printf("\n");
 
-    printf("  roaring_bitmap_contains_multi with sorted input:");
-    for (int p = 0; p < num_passes; p++) {
-        bool result[count[p]];
-        RDTSC_START(cycles_start);
-        contains_multi(bm, values[p], result, count[p]);
-        RDTSC_FINAL(cycles_final);
-        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
-    }
-    printf("\n");
     printf("   roaring_bitmap_contains_bulk with sorted input:");
     for (int p = 0; p < num_passes; p++) {
         bool result[count[p]];
