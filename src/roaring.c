@@ -146,6 +146,30 @@ void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
     add_bulk_impl(r, context, val);
 }
 
+bool roaring_bitmap_contains_bulk(const roaring_bitmap_t *r,
+                                  roaring_bulk_context_t *context,
+                                  uint32_t val)
+{
+    uint16_t key = val >> 16;
+    if (context->container == NULL || context->key != key) {
+        int32_t start_idx = -1;
+        if (context->container != NULL && context->key < key) {
+            start_idx = context->idx;
+        }
+        int idx = ra_advance_until(&r->high_low_container, key, start_idx);
+        if (idx == ra_get_size(&r->high_low_container)) {
+            return false;
+        }
+        uint8_t typecode;
+        context->container = ra_get_container_at_index(&r->high_low_container, key, &typecode);
+        context->typecode = typecode;
+        context->idx = idx;
+        context->key = key;
+    }
+    // context is now set up
+    return container_contains(context->container, val & 0xFFFF, context->typecode);
+}
+
 void roaring_bitmap_contains_multi(const roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals, bool *results) {
     if (n_args == 0 || r == NULL)  {
@@ -200,7 +224,7 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     roaring_bulk_context_t context = {0};
     va_list ap;
     va_start(ap, n_args);
-    for (size_t i = 1; i <= n_args; i++) {
+    for (size_t i = 0; i < n_args; i++) {
         uint32_t val = va_arg(ap, uint32_t);
         roaring_bitmap_add_bulk(answer, &context, val);
     }

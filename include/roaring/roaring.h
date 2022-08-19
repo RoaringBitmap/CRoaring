@@ -273,13 +273,13 @@ typedef struct roaring_bulk_context_s {
 /**
  * Add an item, using context from a previous insert for speed optimization.
  *
- * `context` will be used to store information between calls to make bulk loads
- * faster. `*context` should be zero-initialized before the first call to this
- * function.
+ * `context` will be used to store information between calls to make bulk
+ * operations faster. `*context` should be zero-initialized before the first
+ * call to this function.
  *
- * Modifying the bitmap in any way will invalidate the stored context, calling
- * this function with a non-zero context after doing any modification invokes
- * undefined behavior.
+ * Modifying the bitmap in any way (other than `-bulk` suffixed functions)
+ * will invalidate the stored context, calling this function with a non-zero
+ * context after doing any modification invokes undefined behavior.
  *
  * In order to exploit this optimization, the caller should call this function
  * with values with the same "key" (high 16 bits of the value) consecutively.
@@ -368,6 +368,25 @@ bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
 bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_start,
                                    uint64_t range_end);
+
+/**
+ * Check if an items is present, using context from a previous insert for speed
+ * optimization.
+ *
+ * `context` will be used to store information between calls to make bulk
+ * operations faster. `*context` should be zero-initialized before the first
+ * call to this function.
+ *
+ * Modifying the bitmap in any way (other than `-bulk` suffixed functions)
+ * will invalidate the stored context, calling this function with a non-zero
+ * context after doing any modification invokes undefined behavior.
+ *
+ * In order to exploit this optimization, the caller should call this function
+ * with values with the same "key" (high 16 bits of the value) consecutively.
+ */
+bool roaring_bitmap_contains_bulk(const roaring_bitmap_t *r,
+                                  roaring_bulk_context_t *context,
+                                  uint32_t val);
 
 /**
  * Checks presence of n_args values in bitmap r, where the values are in the array vals,

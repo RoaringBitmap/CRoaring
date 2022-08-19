@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "benchmark.h"
+#include "random.h"
 #include "numbersfromtextfiles.h"
 
 void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
@@ -19,6 +20,13 @@ void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values, b
 
 void contains_multi(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
     roaring_bitmap_contains_multi(bm, count, values, results);
+}
+
+void contains_multi_bulk(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
+    roaring_bulk_context_t context = {0};
+    for (size_t i = 0; i < count; ++i) {
+        results[i] = roaring_bitmap_contains_bulk(bm, &context, values[i]);
+    }
 }
 
 int compare_uint32(const void* a, const void* b) {
@@ -52,6 +60,8 @@ int main(int argc, char* argv[]) {
         }
         roaring_bitmap_add_many(bm, t_count, t_values);
 
+        shuffle_uint32(t_values, t_count);
+
         values[i-1] = t_values;
         count[i-1] = t_count;
     }
@@ -83,6 +93,15 @@ int main(int argc, char* argv[]) {
         printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
     }
     printf("\n");
+    printf("                     roaring_bitmap_contains_bulk:");
+    for (int p = 0; p < num_passes; p++) {
+        bool result[count[p]];
+        RDTSC_START(cycles_start);
+        contains_multi_bulk(bm, values[p], result, count[p]);
+        RDTSC_FINAL(cycles_final);
+        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
+    }
+    printf("\n");
 
     // sort input array
     for (size_t i = 0; i < fields; ++i) {
@@ -104,6 +123,15 @@ int main(int argc, char* argv[]) {
         bool result[count[p]];
         RDTSC_START(cycles_start);
         contains_multi(bm, values[p], result, count[p]);
+        RDTSC_FINAL(cycles_final);
+        printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
+    }
+    printf("\n");
+    printf("   roaring_bitmap_contains_bulk with sorted input:");
+    for (int p = 0; p < num_passes; p++) {
+        bool result[count[p]];
+        RDTSC_START(cycles_start);
+        contains_multi_bulk(bm, values[p], result, count[p]);
         RDTSC_FINAL(cycles_final);
         printf(" %10f", (cycles_final - cycles_start) * 1.0 / count[p]);
     }
