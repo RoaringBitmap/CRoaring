@@ -77,7 +77,7 @@ public:
      * Move constructor. The moved object remains valid, i.e.
      * all methods can still be called on it.
      */
-    explicit Roaring(Roaring &&r) noexcept : roaring(r.roaring) {
+    Roaring(Roaring &&r) noexcept : roaring(r.roaring) {
         //
         // !!! This clones the bits of the roaring structure to a new location
         // and then overwrites the old bits...assuming that this will still
