@@ -106,6 +106,9 @@ DEFINE_TEST(contains_bulk) {
                 printf("i: %d, val: %u\n", (int)i, (unsigned)values[i]);
                 printf("key: %d\n", (int)context.key);
                 printf("idx: %d\n", (int)context.idx);
+#ifdef NDEBUG
+                printf("NDEBUG was set for tests?!\n");
+#endif
             }
             assert_int_equal(context.key, values[i] >> 16);
         }
