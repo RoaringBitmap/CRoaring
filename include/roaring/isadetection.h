@@ -49,11 +49,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#if defined(_MSC_VER)
+#if CROARING_REGULAR_VISUAL_STUDIO
 #include <intrin.h>
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
 #include <cpuid.h>
-#endif // defined(_MSC_VER)
+#endif // defined(CROARING_REGULAR_VISUAL_STUDIO)
 
 
 enum croaring_instruction_set {
@@ -98,7 +98,7 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 
-#if defined(_MSC_VER)
+#if CROARING_REGULAR_VISUAL_STUDIO
   int cpu_info[4];
   __cpuid(cpu_info, *eax);
   *eax = cpu_info[0];
@@ -178,7 +178,7 @@ static inline uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
-#elif defined(_MSC_VER) && !defined(__clang__)
+#elif CROARING_VISUAL_STUDIO
 // Visual Studio does not support C11 atomics.
 static inline uint32_t croaring_detect_supported_architectures() {
     static int buffer = CROARING_UNINITIALIZED;
@@ -187,7 +187,7 @@ static inline uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
-#else // defined(__cplusplus) and defined(_MSC_VER) && !defined(__clang__)
+#else // CROARING_VISUAL_STUDIO
 #include <stdatomic.h>
 static inline uint32_t croaring_detect_supported_architectures() {
     static _Atomic int buffer = CROARING_UNINITIALIZED;

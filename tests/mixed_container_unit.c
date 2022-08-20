@@ -1581,7 +1581,6 @@ DEFINE_TEST(bitset_negation_range_inplace_test2) {
 static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
                                     int r_end, int expected_type, bool inplace,
                                     bool expected_actual_inplace) {
-    int card = 0;
     run_container_t* RI =
         run_container_create_given_capacity((1 << 16) / k + 1);
     container_t* BO;
@@ -1603,7 +1602,6 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
             // array
             run_container_append_first(
                 RI, MAKE_RLE16(offsetx, actual_runlen - 1));
-            card += actual_runlen;
             if (++runlen == k) runlen = h;  // wrap after k-1 back to h.
         }
     }
@@ -1664,7 +1662,6 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
 static int run_negation_range_tests_simpler(int k, int h, int start_offset,
                                             int r_start, int r_end,
                                             bool inplace) {
-    int card = 0;
     run_container_t* RI =
         run_container_create_given_capacity((1 << 16) / k + 1);
     container_t* BO;
@@ -1684,7 +1681,6 @@ static int run_negation_range_tests_simpler(int k, int h, int start_offset,
 
             run_container_append_first(
                 RI, MAKE_RLE16(offsetx, actual_runlen));
-            card += actual_runlen;
             if (++runlen == k) runlen = h;
         }
     }
