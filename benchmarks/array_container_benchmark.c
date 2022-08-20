@@ -22,18 +22,18 @@ void array_cache_flush(array_container_t* B) { (void)B; }
 
 // tries to put the array in cache
 void array_cache_prefetch(array_container_t* B) {
+#if !CROARING_REGULAR_VISUAL_STUDIO
 #ifdef CROARING_IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else
     const int32_t CACHELINESIZE = 64;
 #endif
-#if !(defined(_MSC_VER) && !defined(__clang__))
     for (int32_t k = 0; k < B->cardinality;
          k += CACHELINESIZE / (int32_t)sizeof(uint16_t)) {
         __builtin_prefetch(B->array + k);
     }
-#endif
+#endif // !CROARING_REGULAR_VISUAL_STUDIO
 }
 
 int add_test(array_container_t* B) {

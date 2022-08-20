@@ -1,6 +1,8 @@
 name: Ubuntu-Sanitized-CI
 
-on: push
+'on':
+  - push
+  - pull_request
 
 
 jobs:
