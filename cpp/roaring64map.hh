@@ -50,6 +50,11 @@ public:
     explicit Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
 
     /**
+     * Construct a 64-bit map from a 32-bit rvalue
+     */
+    explicit Roaring64Map(Roaring &&r) { emplaceOrInsert(0, std::move(r)); }
+
+    /**
      * Construct a roaring object from the C struct.
      *
      * Passing a NULL point is unsafe.
