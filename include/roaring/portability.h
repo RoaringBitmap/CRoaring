@@ -212,13 +212,14 @@ inline int __builtin_clzll(unsigned long long input_num) {
 
 #if CROARING_REGULAR_VISUAL_STUDIO
 #define ALIGNED(x) __declspec(align(x))
-#else
-#if defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__clang__)
 #define ALIGNED(x) __attribute__((aligned(x)))
-#endif
+#else
+#warning "Warning. Unrecognized compiler."
+#define ALIGNED(x)
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 #define WARN_UNUSED __attribute__((warn_unused_result))
 #else
 #define WARN_UNUSED
