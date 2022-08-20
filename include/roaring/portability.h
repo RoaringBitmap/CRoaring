@@ -3,6 +3,16 @@
  *
  */
 
+ /**
+  * All macros should be prefixed with either CROARING or ROARING.
+  * The library uses both ROARING_...
+  * as well as CROAIRING_ as prefixes. The ROARING_ prefix is for
+  * macros that are provided by the build system or that are closely
+  * related to the format. The header macros may also use ROARING_.
+  * The CROARING_ prefix is for internal macros that a user is unlikely
+  * to ever interact with.
+  */
+
 #ifndef INCLUDE_PORTABILITY_H_
 #define INCLUDE_PORTABILITY_H_
 
@@ -12,7 +22,6 @@
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS 1
 #endif // __STDC_FORMAT_MACROS
-
 
 #ifdef _MSC_VER
 #define CROARING_VISUAL_STUDIO 1
@@ -49,7 +58,7 @@
 extern "C" {  // portability definitions are in global scope, not a namespace
 #endif
 
-#if CROARING_REGULAR_VISUAL_STUDIO && !defined(_WIN64) && !defined(ROARING_ACK_32BIT)
+#if CROARING_REGULAR_VISUAL_STUDIO && !defined(_WIN64) && !defined(CROARING_ACK_32BIT)
 #pragma message( \
     "You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
 #endif
@@ -66,7 +75,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 
 #if defined(__x86_64__) || defined(_M_X64)
 // we have an x64 processor
-#define CROARING_IS_X64
+#define CROARING_IS_X64 1
 
 #if defined(_MSC_VER) && (_MSC_VER < 1910)
 // Old visual studio systems won't support AVX2 well.
@@ -79,7 +88,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #undef CROARING_IS_X64
 #endif
 
-#ifdef ROARING_DISABLE_X64
+#ifdef CROARING_DISABLE_X64
 #undef CROARING_IS_X64
 #endif
 // we include the intrinsic header
@@ -136,11 +145,10 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #if !CROARING_REGULAR_VISUAL_STUDIO
 /* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline
  * assembly */
-#define ROARING_INLINE_ASM
+#define CROARING_INLINE_ASM 1
 #endif  // _MSC_VER
 
-
-#if !CROARING_REGULAR_VISUAL_STUDIO
+#if CROARING_REGULAR_VISUAL_STUDIO
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 
@@ -202,7 +210,7 @@ inline int __builtin_clzll(unsigned long long input_num) {
 
 #endif
 
-#if defined(_MSC_VER)
+#if CROARING_REGULAR_VISUAL_STUDIO
 #define ALIGNED(x) __declspec(align(x))
 #else
 #if defined(__GNUC__)
@@ -229,14 +237,14 @@ static inline int hammingbackup(uint64_t x) {
 }
 
 static inline int hamming(uint64_t x) {
-#if defined(_WIN64) && defined(_MSC_VER) && !defined(__clang__)
+#if defined(_WIN64) && defined(CROARING_REGULAR_VISUAL_STUDIO) && CROARING_REGULAR_VISUAL_STUDIO
 #ifdef _M_ARM64
   return hammingbackup(x);
   // (int) _CountOneBits64(x); is unavailable
 #else  // _M_ARM64
   return (int) __popcnt64(x);
 #endif // _M_ARM64
-#elif defined(_WIN32) && defined(_MSC_VER) && !defined(__clang__)
+#elif defined(_WIN32) && defined(CROARING_REGULAR_VISUAL_STUDIO) && CROARING_REGULAR_VISUAL_STUDIO
 #ifdef _M_ARM
   return hammingbackup(x);
   // _CountOneBits is unavailable
