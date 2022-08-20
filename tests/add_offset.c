@@ -326,7 +326,7 @@ int main() {
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, UINT32_MAX),
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, UINT32_MAX-UINT16_MAX),
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, UINT32_MAX-UINT16_MAX+1),
-        ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, 1L << 50),
+        ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, ((uint64_t)1) << 50),
         ROARING_ADD_OFFSET_TEST_CASE(sparse_bitmap, 281474976710657L),
     };
     i = 9;
