@@ -1,6 +1,8 @@
 name: Ubuntu-18-CI
 
-on: push
+'on':
+  - push
+  - pull_request
 
 
 jobs:
