@@ -133,7 +133,7 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
     container_t *container;
     val = *current_val;
     container = containerptr_roaring_bitmap_add(r, val, &typecode, &idx);
-    roaring_bulk_context_t context = {container, idx, val >> 16, typecode};
+    roaring_bulk_context_t context = {container, idx, (uint16_t)(val >> 16), typecode};
 
     for (; current_val != end; current_val++) {
         memcpy(&val, current_val, sizeof(val));
