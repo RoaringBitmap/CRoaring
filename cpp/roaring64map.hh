@@ -58,21 +58,19 @@ public:
         emplaceOrInsert(0, Roaring(s));
     }
 
-    Roaring64Map(const Roaring64Map& r)
-        : roarings(r.roarings),
-          copyOnWrite(r.copyOnWrite) { }
+    Roaring64Map(const Roaring64Map& r) = default;
 
-    Roaring64Map(Roaring64Map&& r)
-        : roarings(r.roarings),
-          copyOnWrite(r.copyOnWrite) { }
+    Roaring64Map(Roaring64Map&& r) noexcept = default;
 
     /**
-     * Assignment operator.
+     * Copy assignment operator.
      */
-    Roaring64Map &operator=(const Roaring64Map &r) {
-        roarings = r.roarings;
-        return *this;
-    }
+    Roaring64Map &operator=(const Roaring64Map &r) = default;
+
+    /**
+     * Move assignment operator.
+     */
+     Roaring64Map &operator=(Roaring64Map &&r) noexcept = default;
 
     /**
      * Construct a bitmap from a list of integer values.
