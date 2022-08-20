@@ -4,7 +4,7 @@ A C++ header for Roaring Bitmaps.
 #ifndef INCLUDE_ROARING_HH_
 #define INCLUDE_ROARING_HH_
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include <algorithm>
 #include <new>
