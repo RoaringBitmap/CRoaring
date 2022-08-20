@@ -62,8 +62,8 @@ DEFINE_TEST(contains_bulk) {
     roaring_bulk_context_t context = {0};
 
     // Ensure checking an empty bitmap is okay
-    assert(!roaring_bitmap_contains_bulk(bm, &context, 0));
-    assert(!roaring_bitmap_contains_bulk(bm, &context, 0xFFFFFFFF));
+    assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0));
+    assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0xFFFFFFFF));
 
     // create RLE container from [0, 1000]
     roaring_bitmap_add_range_closed(bm, 0, 1000);
@@ -98,18 +98,10 @@ DEFINE_TEST(contains_bulk) {
     for (size_t i = 0; i < test_count; i++) {
         roaring_bulk_context_t empty_context = {0};
         bool expected_contains = roaring_bitmap_contains(bm, values[i]);
-        assert(expected_contains == roaring_bitmap_contains_bulk(bm, &empty_context, values[i]));
-        assert(expected_contains == roaring_bitmap_contains_bulk(bm, &context, values[i]));
+        assert_true(expected_contains == roaring_bitmap_contains_bulk(bm, &empty_context, values[i]));
+        assert_true(expected_contains == roaring_bitmap_contains_bulk(bm, &context, values[i]));
 
         if (expected_contains) {
-            if (context.key != (values[i] >> 16)) {
-                printf("i: %d, val: %u\n", (int)i, (unsigned)values[i]);
-                printf("key: %d\n", (int)context.key);
-                printf("idx: %d\n", (int)context.idx);
-#ifdef NDEBUG
-                printf("NDEBUG was set for tests?!\n");
-#endif
-            }
             assert_int_equal(context.key, values[i] >> 16);
         }
         if (context.container != NULL) {

@@ -45,6 +45,7 @@ set(WARNING_FLAGS "-Wall")
 if(NOT MSVC)
 set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
 set(CMAKE_C_FLAGS_DEBUG "-ggdb")
+message("C FLAGS RELEASE: ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 endif()
 
