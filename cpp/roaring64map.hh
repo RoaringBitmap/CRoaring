@@ -55,8 +55,7 @@ public:
      * Passing a NULL point is unsafe.
      */
     explicit Roaring64Map(roaring_bitmap_t *s) {
-        Roaring r(s);
-        emplaceOrInsert(0, r);
+        emplaceOrInsert(0, Roaring(s));
     }
 
     Roaring64Map(const Roaring64Map& r)
@@ -965,7 +964,7 @@ private:
 #if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
         roarings.insert(std::make_pair(key, std::move(value)));
 #else
-        roarings.emplace(key, value);
+        roarings.emplace(key, std::move(value));
 #endif
     }
 };
