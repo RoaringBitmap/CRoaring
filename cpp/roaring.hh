@@ -766,8 +766,8 @@ public:
         return i.current_value != *o || i.has_value != o.i.has_value;
     }
 
-    RoaringSetBitForwardIterator(const Roaring &parent,
-                                 bool exhausted = false) {
+    explicit RoaringSetBitForwardIterator(const Roaring &parent,
+                                          bool exhausted = false) {
         if (exhausted) {
             i.parent = &parent.roaring;
             i.container_index = INT32_MAX;
