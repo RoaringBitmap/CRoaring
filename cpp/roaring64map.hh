@@ -171,7 +171,7 @@ public:
                                   roaring_iter->second.maximum());
             }
         }
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         return (std::numeric_limits<uint64_t>::min)();
     }
@@ -187,7 +187,7 @@ public:
                                   roaring_iter->second.minimum());
             }
         }
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         return (std::numeric_limits<uint64_t>::max)();
     }
@@ -311,7 +311,7 @@ public:
     bool isFull() const {
         // only bother to check if map is fully saturated
         //
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         return roarings.size() ==
             ((uint64_t)(std::numeric_limits<uint32_t>::max)()) + 1
@@ -428,7 +428,7 @@ public:
             roarings[start_high].flip(start_low, end_low);
             return;
         }
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         roarings[start_high].flip(start_low,
                                   (std::numeric_limits<uint32_t>::max)());
