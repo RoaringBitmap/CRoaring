@@ -435,13 +435,15 @@ public:
         }
         // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
-        roarings[start_high].flip(start_low,
-                                  (std::numeric_limits<uint32_t>::max)());
+        // flip operates on the range [lower_bound, upper_bound)
+        const uint64_t max_upper_bound =
+            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1;
+        roarings[start_high].flip(start_low, max_upper_bound);
         roarings[start_high++].setCopyOnWrite(copyOnWrite);
 
         for (; start_high <= highBytes(range_end) - 1; ++start_high) {
             roarings[start_high].flip((std::numeric_limits<uint32_t>::min)(),
-                                      (std::numeric_limits<uint32_t>::max)());
+                                      max_upper_bound);
             roarings[start_high].setCopyOnWrite(copyOnWrite);
         }
 

@@ -325,6 +325,7 @@ public:
 
     /**
      * Compute the negation of the roaring bitmap within a specified interval.
+     * interval: [range_start, range_end).
      * Areas outside the range are passed through unchanged.
      */
     void flip(uint64_t range_start, uint64_t range_end) {
