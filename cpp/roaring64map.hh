@@ -122,11 +122,11 @@ public:
      * Add value n_args from pointer vals
      */
     void addMany(size_t n_args, const uint32_t *vals) {
-        for (size_t lcv = 0; lcv < n_args; lcv++) {
-            roarings[0].add(vals[lcv]);
-            roarings[0].setCopyOnWrite(copyOnWrite);
-        }
+        Roaring &roaring = roarings[0];
+        roaring.addMany(n_args, vals);
+        roaring.setCopyOnWrite(copyOnWrite);
     }
+
     void addMany(size_t n_args, const uint64_t *vals) {
         for (size_t lcv = 0; lcv < n_args; lcv++) {
             roarings[highBytes(vals[lcv])].add(lowBytes(vals[lcv]));
