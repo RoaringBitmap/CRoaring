@@ -319,27 +319,6 @@ extern inline container_t *ra_get_container_at_index(
     const roaring_array_t *ra, uint16_t i,
     uint8_t *typecode);
 
-#ifdef ROARING_NOT_USED
-container_t *ra_get_writable_container(
-    roaring_array_t *ra, uint16_t x,
-    uint8_t *typecode
-){
-    int i = binarySearch(ra->keys, (int32_t)ra->size, x);
-    if (i < 0) return NULL;
-    *typecode = ra->typecodes[i];
-    return get_writable_copy_if_shared(ra->containers[i], typecode);
-}
-
-container_t *ra_get_writable_container_at_index(
-    roaring_array_t *ra, uint16_t i,
-    uint8_t *typecode
-){
-    assert(i < ra->size);
-    *typecode = ra->typecodes[i];
-    return get_writable_copy_if_shared(ra->containers[i], typecode);
-}
-#endif
-
 uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
     return ra->keys[i];
 }

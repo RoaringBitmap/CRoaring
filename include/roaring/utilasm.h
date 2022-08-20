@@ -12,7 +12,7 @@
 extern "C" { namespace roaring {
 #endif
 
-#if defined(ROARING_INLINE_ASM)
+#if defined(CROARING_INLINE_ASM)
 #define CROARING_ASMBITMANIPOPTIMIZATION  // optimization flag
 
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
