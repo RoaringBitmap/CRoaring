@@ -163,15 +163,6 @@ DEFINE_TEST(test_robust_deserialize7) {
     test_deserialize(filename);
 }
 
-DEFINE_TEST(test_robust_deserialize8) {
-    char filename[1024];
-
-    strcpy(filename, TEST_DATA_DIR);
-    strcat(filename, "crashproneinput8.bin");
-
-    test_deserialize(filename);
-}
-
 int main() {
     tellmeall();
 

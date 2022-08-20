@@ -1675,12 +1675,12 @@ static int run_negation_range_tests_simpler(int k, int h, int start_offset,
     for (int x = 0; x < (1 << 16) - start_offset; x++) {
         int offsetx = x + start_offset;
         if (x % k == 0) {
-            int actual_runlen = runlen;
-            if (offsetx + runlen > (1 << 16))
+            int actual_runlen = runlen + 1;
+            if (offsetx + actual_runlen > (1 << 16))
                 actual_runlen = (1 << 16) - offsetx;
 
             run_container_append_first(
-                RI, MAKE_RLE16(offsetx, actual_runlen));
+                RI, MAKE_RLE16(offsetx, actual_runlen - 1));
             if (++runlen == k) runlen = h;
         }
     }
@@ -2018,6 +2018,8 @@ int main() {
         cmocka_unit_test(bitset_negation_range_test2),
         cmocka_unit_test(bitset_negation_range_inplace_test1),
         cmocka_unit_test(bitset_negation_range_inplace_test2),
+        cmocka_unit_test(run_many_negation_range_tests_simpler_notinplace),
+        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),
         cmocka_unit_test(run_negation_range_inplace_test1),
         cmocka_unit_test(run_negation_range_inplace_test2),
         cmocka_unit_test(run_negation_range_inplace_test3),
