@@ -340,9 +340,8 @@ container_t *ra_get_writable_container_at_index(
 }
 #endif
 
-uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
-    return ra->keys[i];
-}
+extern inline uint16_t ra_get_key_at_index(const roaring_array_t *ra,
+                                           uint16_t i);
 
 extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
 

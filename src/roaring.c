@@ -161,10 +161,14 @@ bool roaring_bitmap_contains_bulk(const roaring_bitmap_t *r,
             return false;
         }
         uint8_t typecode;
-        context->container = ra_get_container_at_index(&r->high_low_container, key, &typecode);
+        context->container = ra_get_container_at_index(&r->high_low_container, idx, &typecode);
         context->typecode = typecode;
         context->idx = idx;
-        context->key = key;
+        context->key = ra_get_key_at_index(&r->high_low_container, idx);
+        // ra_advance_until finds the next key >= the target, we found a later container.
+        if (context->key != key) {
+            return false;
+        }
     }
     // context is now set up
     return container_contains(context->container, val & 0xFFFF, context->typecode);

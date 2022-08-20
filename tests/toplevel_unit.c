@@ -77,6 +77,8 @@ DEFINE_TEST(contains_bulk) {
         roaring_bitmap_add(bm, i);
     }
 
+    roaring_bitmap_add(bm, UINT32_MAX);
+
     uint32_t values[] = {
       1000,   // 1
       1001,   // 0
@@ -87,7 +89,9 @@ DEFINE_TEST(contains_bulk) {
       132000, // 1
       132001, // 0
       132002, // 1
-      77003  // 0
+      77003,  // 0
+      UINT32_MAX, // 1
+      UINT32_MAX - 1, // 0
     };
     size_t test_count = sizeof(values) / sizeof(values[0]);
 

@@ -93,7 +93,9 @@ inline container_t *ra_get_container_at_index(
 /**
  * Retrieves the key at index i
  */
-uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
+inline uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
+    return ra->keys[i];
+}
 
 /**
  * Add a new key-value pair at index i
