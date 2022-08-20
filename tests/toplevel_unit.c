@@ -102,6 +102,11 @@ DEFINE_TEST(contains_bulk) {
         assert(expected_contains == roaring_bitmap_contains_bulk(bm, &context, values[i]));
 
         if (expected_contains) {
+            if (context.key != (values[i] >> 16)) {
+                printf("i: %d, val: %u\n", (int)i, (unsigned)values[i]);
+                printf("key: %d\n", (int)context.key);
+                printf("idx: %d\n", (int)context.idx);
+            }
             assert_int_equal(context.key, values[i] >> 16);
         }
         if (context.container != NULL) {
@@ -110,7 +115,6 @@ DEFINE_TEST(contains_bulk) {
             assert_int_equal(context.key, bm->high_low_container.keys[context.idx]);
             assert_int_equal(context.typecode, bm->high_low_container.typecodes[context.idx]);
         }
-
     }
     roaring_bitmap_free(bm);
 }
