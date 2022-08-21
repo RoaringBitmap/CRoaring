@@ -20,7 +20,7 @@ extern "C" { namespace roaring { namespace misc {
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {
-#ifdef ROARING_INLINE_ASM
+#ifdef CROARING_INLINE_ASM
     __asm volatile("cpuid"
                    : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
                    : "0"(*eax), "2"(*ecx));
@@ -32,7 +32,7 @@ static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
 // The EAX register should be loaded with a value specifying what information to
 // return
 static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
-#ifdef ROARING_INLINE_ASM
+#ifdef CROARING_INLINE_ASM
     __asm__ volatile("cpuid;"  //  call cpuid instruction
                      : "=a"(*eax), "=b"(*ebx), "=c"(*ecx),
                        "=d"(*edx)  // output equal to "movl  %%eax %1"
