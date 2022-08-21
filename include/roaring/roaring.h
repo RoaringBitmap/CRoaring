@@ -258,10 +258,15 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
 void roaring_bitmap_free(const roaring_bitmap_t *r);
 
 /**
- * A bit of context usable with `roaring_bitmap_add_bulk()`
+ * A bit of context usable with `roaring_bitmap_*_bulk()` functions
  *
  * Should be initialized with `{0}` (or `memset()` to all zeros).
- * Callers should treat it as an opaque type
+ * Callers should treat it as an opaque type.
+ *
+ * A context may only be used with a single bitmap
+ * (unless re-initialized to zero), and any modification to a bitmap
+ * (other than modifications performed with `_bulk()` functions with the context
+ * passed) will invalidate any contexts associated with that bitmap.
  */
 typedef struct roaring_bulk_context_s {
     ROARING_CONTAINER_T *container;
