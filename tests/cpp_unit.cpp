@@ -877,7 +877,7 @@ DEFINE_TEST(test_cpp_flip_64) {
     {
         // uint32 max can be flipped
         Roaring64Map r1 =
-            Roaring64Map::bitmapOf(1, (std::numeric_limits<uint32_t>::max)());
+            Roaring64Map::bitmapOf(1, static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()));
         r1.flip(
             (std::numeric_limits<uint32_t>::max)(),
             static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1);
@@ -895,10 +895,6 @@ DEFINE_TEST(test_cpp_flip_64) {
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(issue316),
-        cmocka_unit_test(test_issue304),
-        cmocka_unit_test(issue_336),
-        cmocka_unit_test(issue_372),
         cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
@@ -920,6 +916,10 @@ int main() {
         cmocka_unit_test(test_cpp_frozen_64),
         cmocka_unit_test(test_cpp_flip),
         cmocka_unit_test(test_cpp_flip_64),
+        cmocka_unit_test(issue316),
+        cmocka_unit_test(test_issue304),
+        cmocka_unit_test(issue_336),
+        cmocka_unit_test(issue_372),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
