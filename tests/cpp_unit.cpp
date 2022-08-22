@@ -847,29 +847,29 @@ DEFINE_TEST(test_cpp_flip) {
 DEFINE_TEST(test_cpp_flip_64) {
     {
         // nothing is affected outside of the given range
-        Roaring64Map r1 = Roaring64Map::bitmapOf(3, (1ul << 32) - 3, 1ul << 32,
-                                                 (1ul << 32) + 3);
-        r1.flip((1ul << 32) - 2, (1ul << 32) + 2);
+        Roaring64Map r1 = Roaring64Map::bitmapOf(3, (((uint64_t)1) << 32) - 3, ((uint64_t)1) << 32,
+                                                 (((uint64_t)1) << 32) + 3);
+        r1.flip((((uint64_t)1) << 32) - 2, (((uint64_t)1) << 32) + 2);
         Roaring64Map r2 = Roaring64Map::bitmapOf(
-            5, (1ul << 32) - 3, (1ul << 32) - 2, (1ul << 32) - 1,
-            (1ul << 32) + 1, (1ul << 32) + 3);
+            5, (((uint64_t)1) << 32) - 3, (((uint64_t)1) << 32) - 2, (((uint64_t)1) << 32) - 1,
+            (((uint64_t)1) << 32) + 1, (((uint64_t)1) << 32) + 3);
         assert_true(r1 == r2);
     }
     {
         // given range can go outside of existing range
-        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (1ul << 32) - 2, 1ul << 32);
-        r1.flip((1ul << 32) - 3, (1ul << 32) + 2);
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (((uint64_t)1) << 32) - 2, ((uint64_t)1) << 32);
+        r1.flip((((uint64_t)1) << 32) - 3, (((uint64_t)1) << 32) + 2);
         Roaring64Map r2 = Roaring64Map::bitmapOf(
-            3, (1ul << 32) - 3, (1ul << 32) - 1, (1ul << 32) + 1);
+            3, (((uint64_t)1) << 32) - 3, (((uint64_t)1) << 32) - 1, (((uint64_t)1) << 32) + 1);
         assert_true(r1 == r2);
     }
     {
         // range end is exclusive
         Roaring64Map r1 =
-            Roaring64Map::bitmapOf(2, (2ul << 32) - 1, (2ul << 32) + 2);
-        r1.flip((2ul << 32) - 1, (2ul << 32) + 2);
+            Roaring64Map::bitmapOf(2, (((uint64_t)2) << 32) - 1, (((uint64_t)2) << 32) + 2);
+        r1.flip((((uint64_t)2) << 32) - 1, (((uint64_t)2) << 32) + 2);
         Roaring64Map r2;
-        for (uint64_t i = 2ul << 32; i <= (2ul << 32) + 2; ++i) {
+        for (uint64_t i = (((uint64_t)2) << 32); i <= (((uint64_t)2) << 32) + 2; ++i) {
             r2.add(i);
         }
         assert_true(r1 == r2);
@@ -885,9 +885,9 @@ DEFINE_TEST(test_cpp_flip_64) {
     }
     {
         // empty range does nothing
-        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (1ul << 32) - 1, 1ul << 32);
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (((uint64_t)1) << 32) - 1, ((uint64_t)1) << 32);
         Roaring64Map r2 = r1;
-        r1.flip((1ul << 32) - 1, (1ul << 32) - 1);
+        r1.flip((((uint64_t)1) << 32) - 1, (((uint64_t)1) << 32) - 1);
         assert_true(r1 == r2);
     }
 }
