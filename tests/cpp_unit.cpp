@@ -194,6 +194,16 @@ DEFINE_TEST(issue_336) {
     assert_true(r2 == r1);
 }
 
+DEFINE_TEST(issue_372) {
+    Roaring64Map roaring;
+    // Flip multiple buckets
+    uint64_t upper_bound = ((uint64_t)1 << 32) * 3;
+    roaring.flip(0, upper_bound);
+    assert_int_equal(roaring.cardinality(), upper_bound);
+    roaring.flip(1, upper_bound - 1);
+    assert_int_equal(roaring.cardinality(), 2);
+}
+
 void test_roaring64_iterate_multi_roaring(void) {
     Roaring64Map roaring;
 
@@ -794,6 +804,7 @@ int main() {
         cmocka_unit_test(issue316),
         cmocka_unit_test(test_issue304),
         cmocka_unit_test(issue_336),
+        cmocka_unit_test(issue_372),
         cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),

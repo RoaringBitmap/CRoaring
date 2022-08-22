@@ -50,30 +50,32 @@ public:
     explicit Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
 
     /**
+     * Construct a 64-bit map from a 32-bit rvalue
+     */
+    explicit Roaring64Map(Roaring &&r) { emplaceOrInsert(0, std::move(r)); }
+
+    /**
      * Construct a roaring object from the C struct.
      *
      * Passing a NULL point is unsafe.
      */
     explicit Roaring64Map(roaring_bitmap_t *s) {
-        Roaring r(s);
-        emplaceOrInsert(0, r);
+        emplaceOrInsert(0, Roaring(s));
     }
 
-    Roaring64Map(const Roaring64Map& r)
-        : roarings(r.roarings),
-          copyOnWrite(r.copyOnWrite) { }
+    Roaring64Map(const Roaring64Map& r) = default;
 
-    Roaring64Map(Roaring64Map&& r)
-        : roarings(r.roarings),
-          copyOnWrite(r.copyOnWrite) { }
+    Roaring64Map(Roaring64Map&& r) noexcept = default;
 
     /**
-     * Assignment operator.
+     * Copy assignment operator.
      */
-    Roaring64Map &operator=(const Roaring64Map &r) {
-        roarings = r.roarings;
-        return *this;
-    }
+    Roaring64Map &operator=(const Roaring64Map &r) = default;
+
+    /**
+     * Move assignment operator.
+     */
+     Roaring64Map &operator=(Roaring64Map &&r) noexcept = default;
 
     /**
      * Construct a bitmap from a list of integer values.
@@ -120,11 +122,11 @@ public:
      * Add value n_args from pointer vals
      */
     void addMany(size_t n_args, const uint32_t *vals) {
-        for (size_t lcv = 0; lcv < n_args; lcv++) {
-            roarings[0].add(vals[lcv]);
-            roarings[0].setCopyOnWrite(copyOnWrite);
-        }
+        Roaring &roaring = roarings[0];
+        roaring.addMany(n_args, vals);
+        roaring.setCopyOnWrite(copyOnWrite);
     }
+
     void addMany(size_t n_args, const uint64_t *vals) {
         for (size_t lcv = 0; lcv < n_args; lcv++) {
             roarings[highBytes(vals[lcv])].add(lowBytes(vals[lcv]));
@@ -174,7 +176,7 @@ public:
                                   roaring_iter->second.maximum());
             }
         }
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         return (std::numeric_limits<uint64_t>::min)();
     }
@@ -190,7 +192,7 @@ public:
                                   roaring_iter->second.minimum());
             }
         }
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         return (std::numeric_limits<uint64_t>::max)();
     }
@@ -314,7 +316,7 @@ public:
     bool isFull() const {
         // only bother to check if map is fully saturated
         //
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
         return roarings.size() ==
             ((uint64_t)(std::numeric_limits<uint32_t>::max)()) + 1
@@ -431,15 +433,17 @@ public:
             roarings[start_high].flip(start_low, end_low);
             return;
         }
-        // we put std::numeric_limits<>::max/min in parenthesis
+        // we put std::numeric_limits<>::max/min in parentheses
         // to avoid a clash with the Windows.h header under Windows
-        roarings[start_high].flip(start_low,
-                                  (std::numeric_limits<uint32_t>::max)());
+        // flip operates on the range [lower_bound, upper_bound)
+        const uint64_t max_upper_bound =
+            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1;
+        roarings[start_high].flip(start_low, max_upper_bound);
         roarings[start_high++].setCopyOnWrite(copyOnWrite);
 
         for (; start_high <= highBytes(range_end) - 1; ++start_high) {
             roarings[start_high].flip((std::numeric_limits<uint32_t>::min)(),
-                                      (std::numeric_limits<uint32_t>::max)());
+                                      max_upper_bound);
             roarings[start_high].setCopyOnWrite(copyOnWrite);
         }
 
@@ -965,7 +969,7 @@ private:
 #if defined(__GLIBCXX__) && __GLIBCXX__ < 20130322
         roarings.insert(std::make_pair(key, std::move(value)));
 #else
-        roarings.emplace(key, value);
+        roarings.emplace(key, std::move(value));
 #endif
     }
 };
