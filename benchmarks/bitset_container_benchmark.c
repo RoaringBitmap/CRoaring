@@ -28,18 +28,18 @@ void bitset_cache_flush(bitset_container_t* B) { (void)B; }
 
 // tries to put array of words in cache
 void bitset_cache_prefetch(bitset_container_t* B) {
+#if !CROARING_REGULAR_VISUAL_STUDIO
 #ifdef CROARING_IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else
     const int32_t CACHELINESIZE = 64;
 #endif
-#if !(defined(_MSC_VER) && !defined(__clang__))
     for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_prefetch(B->words + k);
     }
-#endif
+#endif // !CROARING_REGULAR_VISUAL_STUDIO
 }
 
 // used to benchmark array_container_from_bitset
