@@ -91,6 +91,7 @@ int main() {
     // reading it
     size_t sizeofbitmap =
         roaring_bitmap_portable_deserialize_size(serializedbytes, expectedsize);
+    printf("sizeofbitmap = %zu \n", sizeofbitmap);
     assert(sizeofbitmap ==
            expectedsize);  // sizeofbitmap would be zero if no bitmap were found
     // we can also read the bitmap "safely" by specifying a byte size limit:
