@@ -57,7 +57,7 @@ Roaring make_random_bitset() {
     Roaring r;
     int num_ops = rand() % 100;
     for (int i = 0; i < num_ops; ++i) {
-        switch (rand() % 4) {
+        switch (rand() % 5) {
           case 0:
             r.add(gravity);
             break;
@@ -68,11 +68,16 @@ Roaring make_random_bitset() {
             break; }
 
           case 2: {
+            uint32_t start = gravity + (rand() % 10) - 5;
+            r.removeRange(start, start + rand() % 5);
+            break; }
+
+          case 3: {
             uint32_t start = gravity + (rand() % 50) - 25;
             r.flip(start, rand() % 50);
             break; }
 
-          case 3: {  // tests remove(), select(), rank()
+          case 4: {  // tests remove(), select(), rank()
             uint32_t card = r.cardinality();
             if (card != 0) {
                 uint32_t rnk = rand() % card;

@@ -127,10 +127,17 @@ public:
     }
 
     /**
-     * Add all values from x (included) to y (excluded)
+     * Add all values in range [min, max)
      */
-    void addRange(const uint64_t x, const uint64_t y)  {
-        return api::roaring_bitmap_add_range(&roaring, x, y);
+    void addRange(const uint64_t min, const uint64_t max)  {
+        return api::roaring_bitmap_add_range(&roaring, min, max);
+    }
+
+    /**
+     * Add all values in range [min, max]
+     */
+    void addRangeClosed(const uint32_t min, const uint32_t max)  {
+        return api::roaring_bitmap_add_range_closed(&roaring, min, max);
     }
 
     /**
@@ -152,6 +159,20 @@ public:
      */
     bool removeChecked(uint32_t x) {
         return api::roaring_bitmap_remove_checked(&roaring, x);
+    }
+
+    /**
+     * Remove all values in range [min, max)
+     */
+    void removeRange(uint64_t min, uint64_t max) {
+        return api::roaring_bitmap_remove_range(&roaring, min, max);
+    }
+
+    /**
+     * Remove all values in range [min, max]
+     */
+    void removeRangeClosed(uint32_t min, uint32_t max) {
+        return api::roaring_bitmap_remove_range_closed(&roaring, min, max);
     }
 
     /**
