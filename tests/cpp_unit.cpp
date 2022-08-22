@@ -788,6 +788,97 @@ DEFINE_TEST(test_cpp_frozen_64) {
     roaring_aligned_free(buf);
 }
 
+DEFINE_TEST(test_cpp_flip) {
+    {
+        // nothing is affected outside of the given range
+        Roaring r1 = Roaring::bitmapOf(3, 1, 3, 6);
+        r1.flip(2, 5);
+        Roaring r2 = Roaring::bitmapOf(4, 1, 2, 4, 6);
+        r1.printf();
+        r2.printf();
+        assert_true(r1 == r2);
+    }
+    {
+        // given range can go outside of existing range
+        Roaring r1 = Roaring::bitmapOf(2, 1, 3);
+        r1.flip(0, 5);
+        Roaring r2 = Roaring::bitmapOf(3, 0, 2, 4);
+        assert_true(r1 == r2);
+    }
+    {
+        // range end is exclusive
+        Roaring r1 = Roaring::bitmapOf(2, 1, 3);
+        r1.flip(1, 3);
+        Roaring r2 = Roaring::bitmapOf(2, 2, 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // uint32 max can be flipped
+        Roaring r1 =
+            Roaring::bitmapOf(1, (std::numeric_limits<uint32_t>::max)());
+        r1.flip(
+            (std::numeric_limits<uint32_t>::max)(),
+            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1);
+        assert_true(r1.isEmpty());
+    }
+    {
+      // empty range does nothing
+      Roaring r1 = Roaring::bitmapOf(2, 2, 3);
+      Roaring r2 = r1;
+      r1.flip(2,2);
+      assert_true(r1 == r2);
+    }
+}
+
+DEFINE_TEST(test_cpp_flip_64) {
+    {
+        // nothing is affected outside of the given range
+        Roaring64Map r1 = Roaring64Map::bitmapOf(3, (1ul << 32) - 3, 1ul << 32,
+                                                 (1ul << 32) + 3);
+        r1.flip((1ul << 32) - 2, (1ul << 32) + 2);
+        Roaring64Map r2 = Roaring64Map::bitmapOf(
+            5, (1ul << 32) - 3, (1ul << 32) - 2, (1ul << 32) - 1,
+            (1ul << 32) + 1, (1ul << 32) + 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // given range can go outside of existing range
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (1ul << 32) - 2, 1ul << 32);
+        r1.flip((1ul << 32) - 3, (1ul << 32) + 2);
+        Roaring64Map r2 = Roaring64Map::bitmapOf(
+            3, (1ul << 32) - 3, (1ul << 32) - 1, (1ul << 32) + 1);
+        assert_true(r1 == r2);
+    }
+    {
+        // range end is exclusive
+        Roaring64Map r1 =
+            Roaring64Map::bitmapOf(2, (2ul << 32) - 1, (2ul << 32) + 2);
+        r1.flip((2ul << 32) - 1, (2ul << 32) + 2);
+        Roaring64Map r2;
+        for (uint64_t i = 2ul << 32; i <= (2ul << 32) + 2; ++i) {
+            r2.add(i);
+        }
+        assert_true(r1 == r2);
+    }
+    {
+        // uint32 max can be flipped
+        Roaring64Map r1 =
+            Roaring64Map::bitmapOf(1, (std::numeric_limits<uint32_t>::max)());
+        r1.flip(
+            (std::numeric_limits<uint32_t>::max)(),
+            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1);
+        assert_true(r1.isEmpty());
+    }
+    {
+        // empty range does nothing
+        Roaring64Map r1 =
+            Roaring64Map::bitmapOf(2, (1ul << 32) - 1, 1ul << 32);
+        Roaring64Map r2 = r1;
+        r1.flip((1ul << 32) - 1, (1ul << 32) - 1);
+        assert_true(r1 == r2);
+    }
+}
+
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
@@ -812,7 +903,10 @@ int main() {
 		cmocka_unit_test(test_roaring64_iterate_multi_roaring),
 		cmocka_unit_test(test_cpp_bidirectional_iterator_64),
 		cmocka_unit_test(test_cpp_frozen),
-		cmocka_unit_test(test_cpp_frozen_64)};
+		cmocka_unit_test(test_cpp_frozen_64),
+		cmocka_unit_test(test_cpp_flip),
+		cmocka_unit_test(test_cpp_flip_64),
+    };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

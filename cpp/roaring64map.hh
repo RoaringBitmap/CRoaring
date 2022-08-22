@@ -423,9 +423,9 @@ public:
      */
     void flip(uint64_t range_start, uint64_t range_end) {
         uint32_t start_high = highBytes(range_start);
-        uint32_t start_low = lowBytes(range_start);
+        uint64_t start_low = lowBytes(range_start);
         uint32_t end_high = highBytes(range_end);
-        uint32_t end_low = lowBytes(range_end);
+        uint64_t end_low = lowBytes(range_end);
 
         if (start_high == end_high) {
             roarings[start_high].flip(start_low, end_low);
@@ -433,18 +433,19 @@ public:
         }
         // we put std::numeric_limits<>::max/min in parenthesis
         // to avoid a clash with the Windows.h header under Windows
-        roarings[start_high].flip(start_low,
-                                  (std::numeric_limits<uint32_t>::max)());
-        roarings[start_high++].setCopyOnWrite(copyOnWrite);
+        const uint64_t min_val_low = (std::numeric_limits<uint64_t>::min)();
+        const uint64_t max_val_low =
+            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1;
 
+        roarings[start_high].flip(start_low, max_val_low);
+        roarings[start_high++].setCopyOnWrite(copyOnWrite);
+        
         for (; start_high <= highBytes(range_end) - 1; ++start_high) {
-            roarings[start_high].flip((std::numeric_limits<uint32_t>::min)(),
-                                      (std::numeric_limits<uint32_t>::max)());
+            roarings[start_high].flip(min_val_low, max_val_low);
             roarings[start_high].setCopyOnWrite(copyOnWrite);
         }
 
-        roarings[start_high].flip((std::numeric_limits<uint32_t>::min)(),
-                                  end_low);
+        roarings[start_high].flip(min_val_low, end_low);
         roarings[start_high].setCopyOnWrite(copyOnWrite);
     }
 
