@@ -3,7 +3,6 @@
  *
  */
 
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,10 +21,10 @@
 DEFINE_TEST(test_bitset_lenrange_cardinality) {
   uint64_t words[] = {~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
   for(int k = 0; k < 64 * 4; k++) {
-    assert(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
+    assert_true(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
   }
   for(int k = 64 * 4; k < 64 * 8; k++) {
-      assert(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
+      assert_true(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
   }
 }
 
@@ -33,7 +32,7 @@ DEFINE_TEST(test_bitset_compute_cardinality) {
     // check that overflow doesn't happen
     bitset_container_t *b = bitset_container_create();
     bitset_container_add_from_range(b, 0, 0x10000, 1);
-    assert(bitset_container_compute_cardinality(b) == 0x10000);
+    assert_true(bitset_container_compute_cardinality(b) == 0x10000);
     bitset_container_free(b);
 }
 
@@ -66,7 +65,7 @@ DEFINE_TEST(set_get_test) {
 
         assert_false(bitset_container_get(B, x));
         bitset_container_set(B, x);
-        assert(bitset_container_get(B, x));
+        assert_true(bitset_container_get(B, x));
 
         assert_int_equal(bitset_container_cardinality(B), x / 3 + 1);
     }
