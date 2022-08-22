@@ -50,7 +50,7 @@
 // rather than disabling warnings, this defines a macro to declare the tests.
 //
 #ifdef __cplusplus
-    #define DEFINE_TEST(name)   void name(void**)
+    #define DEFINE_TEST(name)   static void name(void**)
 #else
-    #define DEFINE_TEST(name)   void name()
+    #define DEFINE_TEST(name)   static void name()
 #endif
