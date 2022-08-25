@@ -706,12 +706,12 @@ DEFINE_TEST(test_cpp_frozen) {
         r.runOptimize();
 
         // allocate a buffer and serialize to it
-        num_bytes = r.getFrozenSizeInBytes();
-        char *buf1 = (char *)roaring_aligned_malloc(32, num_bytes);
+        size_t num_bytes1 = r.getFrozenSizeInBytes();
+        char *buf1 = (char *)roaring_aligned_malloc(32, num_bytes1);
         r.writeFrozen(buf1);
 
         // ensure the frozen bitmap is the same as the original
-        const Roaring rr = Roaring::frozenView(buf1, num_bytes);
+        const Roaring rr = Roaring::frozenView(buf1, num_bytes1);
         assert_true(r == rr);
         roaring_aligned_free(buf1);
     }
