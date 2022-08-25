@@ -8,8 +8,12 @@
 
 #include <roaring/portability.h>
 
-#if defined(USE_BMI) & defined(ROARING_INLINE_ASM)
-#define ASMBITMANIPOPTIMIZATION  // optimization flag
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+#endif
+
+#if defined(CROARING_INLINE_ASM)
+#define CROARING_ASMBITMANIPOPTIMIZATION  // optimization flag
 
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
     __asm volatile("shrx %1, %2, %0"              \
@@ -65,5 +69,10 @@
         "r"(testBit)   /* read only */     \
         )
 
-#endif  // USE_BMI
+#endif
+
+#ifdef __cplusplus
+} }  // extern "C" { namespace roaring {
+#endif
+
 #endif  /* INCLUDE_UTILASM_H_ */

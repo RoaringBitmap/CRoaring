@@ -1,3 +1,6 @@
+# Downloaded dependencies
+tests/vendor/cmocka
+
 # Object files
 *.o
 *.ko

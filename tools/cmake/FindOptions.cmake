@@ -3,6 +3,7 @@ macro(append var string)
 endmacro(append)
 
 set(SANITIZE_FLAGS "")
+
 if(ROARING_SANITIZE)
   set(ROARING_SANITIZE_FLAGS "-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all")
   if (CMAKE_COMPILER_IS_GNUCC)
@@ -12,22 +13,17 @@ if(ROARING_SANITIZE)
   endif()
 endif()
 
-## -march=native is not supported on some platforms
-if(NOT MSVC)
-
-if(NOT ROARING_DISABLE_NATIVE)
+if((NOT MSVC) AND ROARING_ARCH)
 set(OPT_FLAGS "-march=${ROARING_ARCH}")
 endif()
-endif()
-
 if(ROARING_DISABLE_X64)
   # we can manually disable any optimization for x64
-  set (OPT_FLAGS "${OPT_FLAGS} -DDISABLE_X64" )
+  set (OPT_FLAGS "${OPT_FLAGS} -DROARING_DISABLE_X64" )
 endif()
 if(ROARING_DISABLE_AVX)
-  # we can manually disable AVX by defining DISABLEAVX
-  set (OPT_FLAGS "${OPT_FLAGS} -DDISABLEAVX" )
-endif()
+   # we can manually disable AVX by defining DISABLEAVX
+   set (OPT_FLAGS "${OPT_FLAGS} -DROARING_DISABLE_AVX" )
+ endif()
 if(ROARING_DISABLE_NEON)
   set (OPT_FLAGS "${OPT_FLAGS} -DDISABLENEON" )
 endif()
@@ -48,22 +44,18 @@ endif()
 set(WARNING_FLAGS "-Wall")
 if(NOT MSVC)
 set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
-set(CMAKE_C_FLAGS_DEBUG "-ggdb")
-set(CMAKE_C_FLAGS_RELEASE "-O3")
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${ROARING_SANITIZE_FLAGS} ")
 
-if(NOT MSVC)
-set(CMAKE_CXX_FLAGS_DEBUG "-ggdb")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXSTD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${ROARING_SANITIZE_FLAGS} ")
 
 if(MSVC)
 add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4267 /wd4244  /wd4113 /nologo")
 endif()
-
+if(MSVC_VERSION GREATER 1910)
+  add_definitions("/permissive-")
+endif()
 if(ROARING_LINK_STATIC)
   if(NOT MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")

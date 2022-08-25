@@ -1,5 +1,9 @@
 #include <roaring/containers/mixed_equal.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 bool array_container_equal_bitset(const array_container_t* container1,
                                   const bitset_container_t* container2) {
     if (container2->cardinality != BITSET_UNKNOWN_CARDINALITY) {
@@ -9,7 +13,7 @@ bool array_container_equal_bitset(const array_container_t* container1,
     }
     int32_t pos = 0;
     for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
-        uint64_t w = container2->array[i];
+        uint64_t w = container2->words[i];
         while (w != 0) {
             uint64_t t = w & (~w + 1);
             uint16_t r = i * 64 + __builtin_ctzll(w);
@@ -75,3 +79,7 @@ bool run_container_equals_bitset(const run_container_t* container1,
 
     return true;
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

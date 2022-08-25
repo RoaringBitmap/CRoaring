@@ -1,22 +1,21 @@
 #ifndef INCLUDE_ROARING_ARRAY_H
 #define INCLUDE_ROARING_ARRAY_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <assert.h>
-#include <roaring/array_util.h>
-#include <roaring/containers/containers.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#define MAX_CONTAINERS 65536
+#include <roaring/containers/containers.h>  // get_writable_copy_if_shared()
+#include <roaring/array_util.h>
 
-#define SERIALIZATION_ARRAY_UINT32 1
-#define SERIALIZATION_CONTAINER 2
+#ifdef __cplusplus
+extern "C" { namespace roaring {
 
-#define ROARING_FLAG_COW UINT8_C(0x1)
-#define ROARING_FLAG_FROZEN UINT8_C(0x2)
+// Note: in pure C++ code, you should avoid putting `using` in header files
+using api::roaring_array_t;
+
+namespace internal {
+#endif
 
 enum {
     SERIAL_COOKIE_NO_RUNCONTAINER = 12346,
@@ -24,25 +23,6 @@ enum {
     FROZEN_COOKIE = 13766,
     NO_OFFSET_THRESHOLD = 4
 };
-
-/**
- * Roaring arrays are array-based key-value pairs having containers as values
- * and 16-bit integer keys. A roaring bitmap  might be implemented as such.
- */
-
-// parallel arrays.  Element sizes quite different.
-// Alternative is array
-// of structs.  Which would have better
-// cache performance through binary searches?
-
-typedef struct roaring_array_s {
-    int32_t size;
-    int32_t allocation_size;
-    void **containers;
-    uint16_t *keys;
-    uint8_t *typecodes;
-    uint8_t flags;
-} roaring_array_t;
 
 /**
  * Create a new roaring array
@@ -103,8 +83,9 @@ inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
 /**
  * Retrieves the container at index i, filling in the typecode
  */
-inline void *ra_get_container_at_index(const roaring_array_t *ra, uint16_t i,
-                                       uint8_t *typecode) {
+inline container_t *ra_get_container_at_index(
+    const roaring_array_t *ra, uint16_t i, uint8_t *typecode
+){
     *typecode = ra->typecodes[i];
     return ra->containers[i];
 }
@@ -117,13 +98,16 @@ uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i);
 /**
  * Add a new key-value pair at index i
  */
-void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
-                                void *container, uint8_t typecode);
+void ra_insert_new_key_value_at(
+        roaring_array_t *ra, int32_t i, uint16_t key,
+        container_t *c, uint8_t typecode);
 
 /**
  * Append a new key-value pair
  */
-void ra_append(roaring_array_t *ra, uint16_t s, void *c, uint8_t typecode);
+void ra_append(
+        roaring_array_t *ra, uint16_t key,
+        container_t *c, uint8_t typecode);
 
 /**
  * Append a new key-value pair to ra, cloning (in COW sense) a value from sa
@@ -173,8 +157,10 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
  * Set the container at the corresponding index using the specified
  * typecode.
  */
-inline void ra_set_container_at_index(const roaring_array_t *ra, int32_t i,
-                                      void *c, uint8_t typecode) {
+inline void ra_set_container_at_index(
+    const roaring_array_t *ra, int32_t i,
+    container_t *c, uint8_t typecode
+){
     assert(i < ra->size);
     ra->containers[i] = c;
     ra->typecodes[i] = typecode;
@@ -198,9 +184,10 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos);
 
 void ra_downsize(roaring_array_t *ra, int32_t new_length);
 
-inline void ra_replace_key_and_container_at_index(roaring_array_t *ra,
-                                                  int32_t i, uint16_t key,
-                                                  void *c, uint8_t typecode) {
+inline void ra_replace_key_and_container_at_index(
+    roaring_array_t *ra, int32_t i, uint16_t key,
+    container_t *c, uint8_t typecode
+){
     assert(i < ra->size);
 
     ra->keys[i] = key;
@@ -266,8 +253,8 @@ uint32_t ra_portable_header_size(const roaring_array_t *ra);
 static inline void ra_unshare_container_at_index(roaring_array_t *ra,
                                                  uint16_t i) {
     assert(i < ra->size);
-    ra->containers[i] =
-        get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+    ra->containers[i] = get_writable_copy_if_shared(ra->containers[i],
+                                                    &ra->typecodes[i]);
 }
 
 /**
@@ -308,7 +295,8 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
 void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance);
 
 #ifdef __cplusplus
-}
+}  // namespace internal
+} }  // extern "C" { namespace roaring {
 #endif
 
 #endif

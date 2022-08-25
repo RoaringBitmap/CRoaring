@@ -3,7 +3,6 @@
  *
  */
 
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,27 +10,33 @@
 #include <roaring/containers/bitset.h>
 #include <roaring/misc/configreport.h>
 #include <roaring/bitset_util.h>
+
+#ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
+    using namespace roaring::internal;
+#endif
+
 #include "test.h"
 
-void test_bitset_lenrange_cardinality() {
+
+DEFINE_TEST(test_bitset_lenrange_cardinality) {
   uint64_t words[] = {~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
   for(int k = 0; k < 64 * 4; k++) {
-    assert(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
+    assert_true(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
   }
   for(int k = 64 * 4; k < 64 * 8; k++) {
-      assert(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
+      assert_true(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
   }
 }
 
-void test_bitset_compute_cardinality() {
+DEFINE_TEST(test_bitset_compute_cardinality) {
     // check that overflow doesn't happen
     bitset_container_t *b = bitset_container_create();
     bitset_container_add_from_range(b, 0, 0x10000, 1);
-    assert(bitset_container_compute_cardinality(b) == 0x10000);
+    assert_true(bitset_container_compute_cardinality(b) == 0x10000);
     bitset_container_free(b);
 }
 
-void printf_test() {
+DEFINE_TEST(printf_test) {
     bitset_container_t* B = bitset_container_create();
     assert_non_null(B);
 
@@ -47,7 +52,7 @@ void printf_test() {
     bitset_container_free(B);
 }
 
-void set_get_test() {
+DEFINE_TEST(set_get_test) {
     bitset_container_t* B = bitset_container_create();
     assert_non_null(B);
 
@@ -60,7 +65,7 @@ void set_get_test() {
 
         assert_false(bitset_container_get(B, x));
         bitset_container_set(B, x);
-        assert(bitset_container_get(B, x));
+        assert_true(bitset_container_get(B, x));
 
         assert_int_equal(bitset_container_cardinality(B), x / 3 + 1);
     }
@@ -83,7 +88,7 @@ void set_get_test() {
     bitset_container_free(B);
 }
 
-void and_or_test() {
+DEFINE_TEST(and_or_test) {
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
@@ -126,7 +131,7 @@ void and_or_test() {
     bitset_container_free(BO);
 }
 
-void xor_test() {
+DEFINE_TEST(xor_test) {
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
@@ -161,7 +166,7 @@ void xor_test() {
     bitset_container_free(TMP);
 }
 
-void andnot_test() {
+DEFINE_TEST(andnot_test) {
     bitset_container_t* B1 = bitset_container_create();
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
@@ -199,7 +204,7 @@ void andnot_test() {
     bitset_container_free(TMP);
 }
 
-void to_uint32_array_test() {
+DEFINE_TEST(to_uint32_array_test) {
     for (size_t offset = 1; offset < 128; offset *= 2) {
         bitset_container_t* B = bitset_container_create();
         assert_non_null(B);
@@ -210,7 +215,7 @@ void to_uint32_array_test() {
 
         int card = bitset_container_cardinality(B);
 
-        uint32_t* out = malloc(sizeof(uint32_t) * card);
+        uint32_t* out = (uint32_t*)malloc(sizeof(uint32_t) * card);
         assert_non_null(out);
 
         int nc = bitset_container_to_uint32_array(out, B, 0);
@@ -226,7 +231,7 @@ void to_uint32_array_test() {
     }
 }
 
-void select_test() {
+DEFINE_TEST(select_test) {
     bitset_container_t* B = bitset_container_create();
     assert_non_null(B);
     uint16_t base = 27;

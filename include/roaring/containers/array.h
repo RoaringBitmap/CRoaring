@@ -8,10 +8,21 @@
 
 #include <string.h>
 
-#include <roaring/array_util.h>
-#include <roaring/containers/perfparameters.h>
 #include <roaring/portability.h>
-#include <roaring/roaring_types.h>
+#include <roaring/roaring_types.h>  // roaring_iterator
+#include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
+
+#include <roaring/containers/container_defs.h>  // container_t, perfparameters
+
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+
+// Note: in pure C++ code, you should avoid putting `using` in header files
+using api::roaring_iterator;
+using api::roaring_iterator64;
+
+namespace internal {
+#endif
 
 /* Containers with DEFAULT_MAX_SIZE or less integers should be arrays */
 enum { DEFAULT_MAX_SIZE = 4096 };
@@ -22,13 +33,17 @@ enum { DEFAULT_MAX_SIZE = 4096 };
  * @capacity:    allocated size of `array`
  * @array:       sorted list of integers
  */
-struct array_container_s {
+STRUCT_CONTAINER(array_container_s) {
     int32_t cardinality;
     int32_t capacity;
     uint16_t *array;
 };
 
 typedef struct array_container_s array_container_t;
+
+#define CAST_array(c)         CAST(array_container_t *, c)  // safer downcast
+#define const_CAST_array(c)   CAST(const array_container_t *, c)
+#define movable_CAST_array(c) movable_CAST(array_container_t **, c)
 
 /* Create a new array with default. Return NULL in case of failure. See also
  * array_container_create_given_capacity. */
@@ -51,13 +66,6 @@ void array_container_free(array_container_t *array);
 
 /* Duplicate container */
 array_container_t *array_container_clone(const array_container_t *src);
-
-int32_t array_container_serialize(const array_container_t *container,
-                                  char *buf) WARN_UNUSED;
-
-uint32_t array_container_serialization_len(const array_container_t *container);
-
-void *array_container_deserialize(const char *buf, size_t buf_len);
 
 /* Get the cardinality of `array'. */
 static inline int array_container_cardinality(const array_container_t *array) {
@@ -139,7 +147,7 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base);
 
 /* Compute the number of runs */
-int32_t array_container_number_of_runs(const array_container_t *a);
+int32_t array_container_number_of_runs(const array_container_t *ac);
 
 /*
  * Print this container using printf (useful for debugging).
@@ -354,6 +362,10 @@ inline bool array_container_contains(const array_container_t *arr,
 
 }
 
+void array_container_offset(const array_container_t *c,
+                            container_t **loc, container_t **hic,
+                            uint16_t offset);
+
 //* Check whether a range of values from range_start (included) to range_end (excluded) is present. */
 static inline bool array_container_contains_range(const array_container_t *arr,
                                                     uint32_t range_start, uint32_t range_end) {
@@ -450,5 +462,9 @@ static inline void array_container_remove_range(array_container_t *array,
       array->cardinality -= count;
   }
 }
+
+#ifdef __cplusplus
+} } } // extern "C" { namespace roaring { namespace internal {
+#endif
 
 #endif /* INCLUDE_CONTAINERS_ARRAY_H_ */

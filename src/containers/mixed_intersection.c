@@ -8,6 +8,10 @@
 #include <roaring/containers/convert.h>
 #include <roaring/containers/mixed_intersection.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace internal {
+#endif
+
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst.  */
 void array_bitset_container_intersection(const array_container_t *src_1,
@@ -109,9 +113,10 @@ void array_run_container_intersection(const array_container_t *src_1,
  * *dst. If the result is true then the result is a bitset_container_t
  * otherwise is a array_container_t. If *dst ==  src_2, an in-place processing
  * is attempted.*/
-bool run_bitset_container_intersection(const run_container_t *src_1,
-                                       const bitset_container_t *src_2,
-                                       void **dst) {
+bool run_bitset_container_intersection(
+    const run_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst
+){
     if (run_container_is_full(src_1)) {
         if (*dst != src_2) *dst = bitset_container_clone(src_2);
         return true;
@@ -141,16 +146,16 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         return false;
     }
     if (*dst == src_2) {  // we attempt in-place
-        bitset_container_t *answer = (bitset_container_t *)*dst;
+        bitset_container_t *answer = CAST_bitset(*dst);
         uint32_t start = 0;
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
             const rle16_t rle = src_1->runs[rlepos];
             uint32_t end = rle.value;
-            bitset_reset_range(src_2->array, start, end);
+            bitset_reset_range(src_2->words, start, end);
 
             start = end + rle.length + 1;
         }
-        bitset_reset_range(src_2->array, start, UINT32_C(1) << 16);
+        bitset_reset_range(src_2->words, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
         if (src_2->cardinality > DEFAULT_MAX_SIZE) {
             return true;
@@ -175,17 +180,17 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
             const rle16_t rle = src_1->runs[rlepos];
             uint32_t end = rle.value;
-            bitset_reset_range(answer->array, start, end);
+            bitset_reset_range(answer->words, start, end);
             start = end + rle.length + 1;
         }
-        bitset_reset_range(answer->array, start, UINT32_C(1) << 16);
+        bitset_reset_range(answer->words, start, UINT32_C(1) << 16);
         answer->cardinality = bitset_container_compute_cardinality(answer);
 
         if (answer->cardinality > DEFAULT_MAX_SIZE) {
             return true;
         } else {
             array_container_t *newanswer = array_container_from_bitset(answer);
-            bitset_container_free((bitset_container_t *)*dst);
+            bitset_container_free(CAST_bitset(*dst));
             if (newanswer == NULL) {
                 *dst = NULL;
                 return false;
@@ -241,7 +246,7 @@ int run_bitset_container_intersection_cardinality(
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
         rle16_t rle = src_1->runs[rlepos];
         answer +=
-            bitset_lenrange_cardinality(src_2->array, rle.value, rle.length);
+            bitset_lenrange_cardinality(src_2->words, rle.value, rle.length);
     }
     return answer;
 }
@@ -287,7 +292,7 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
 	   }
        for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
            rle16_t rle = src_1->runs[rlepos];
-           if(!bitset_lenrange_empty(src_2->array, rle.value,rle.length)) return true;
+           if(!bitset_lenrange_empty(src_2->words, rle.value,rle.length)) return true;
        }
        return false;
 }
@@ -297,48 +302,50 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
  * to *dst. If the return function is true, the result is a bitset_container_t
  * otherwise is a array_container_t.
  */
-bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
-                                          const bitset_container_t *src_2,
-                                          void **dst) {
+bool bitset_bitset_container_intersection(
+    const bitset_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst
+){
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
     if (newCardinality > DEFAULT_MAX_SIZE) {
         *dst = bitset_container_create();
         if (*dst != NULL) {
-            bitset_container_and_nocard(src_1, src_2,
-                                        (bitset_container_t *)*dst);
-            ((bitset_container_t *)*dst)->cardinality = newCardinality;
+            bitset_container_and_nocard(src_1, src_2, CAST_bitset(*dst));
+            CAST_bitset(*dst)->cardinality = newCardinality;
         }
         return true;  // it is a bitset
     }
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
-        ((array_container_t *)*dst)->cardinality = newCardinality;
+        CAST_array(*dst)->cardinality = newCardinality;
         bitset_extract_intersection_setbits_uint16(
-            ((const bitset_container_t *)src_1)->array,
-            ((const bitset_container_t *)src_2)->array,
-            BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
-            0);
+            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS,
+            CAST_array(*dst)->array, 0);
     }
     return false;  // not a bitset
 }
 
 bool bitset_bitset_container_intersection_inplace(
-    bitset_container_t *src_1, const bitset_container_t *src_2, void **dst) {
+    bitset_container_t *src_1, const bitset_container_t *src_2,
+    container_t **dst
+){
     const int newCardinality = bitset_container_and_justcard(src_1, src_2);
     if (newCardinality > DEFAULT_MAX_SIZE) {
         *dst = src_1;
         bitset_container_and_nocard(src_1, src_2, src_1);
-        ((bitset_container_t *)*dst)->cardinality = newCardinality;
+        CAST_bitset(*dst)->cardinality = newCardinality;
         return true;  // it is a bitset
     }
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
-        ((array_container_t *)*dst)->cardinality = newCardinality;
+        CAST_array(*dst)->cardinality = newCardinality;
         bitset_extract_intersection_setbits_uint16(
-            ((const bitset_container_t *)src_1)->array,
-            ((const bitset_container_t *)src_2)->array,
-            BITSET_CONTAINER_SIZE_IN_WORDS, ((array_container_t *)*dst)->array,
-            0);
+            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS,
+            CAST_array(*dst)->array, 0);
     }
     return false;  // not a bitset
 }
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif

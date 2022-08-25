@@ -3,8 +3,15 @@ if (CMAKE_VERSION VERSION_GREATER 3.0.0)
 endif ()
 
 function(add_c_test TEST_NAME)
+  if(ROARING_BUILD_C_TESTS_AS_CPP)  # under C++, container_t* != void*
+    SET_SOURCE_FILES_PROPERTIES(${TEST_NAME}.c PROPERTIES LANGUAGE CXX)
+  endif()
+
   add_executable(${TEST_NAME} ${TEST_NAME}.c)
-  target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka)
+
+  include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/vendor/cmocka)
+  target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka-static)
+
   add_test(${TEST_NAME} ${TEST_NAME})
 endfunction(add_c_test)
 
@@ -12,8 +19,16 @@ endfunction(add_c_test)
 if (CMAKE_VERSION VERSION_GREATER 2.8.10)
   function(add_cpp_test TEST_NAME)
     add_executable(${TEST_NAME} ${TEST_NAME}.cpp)
+    if(ROARING_EXCEPTIONS)
+      target_compile_definitions(${TEST_NAME} PUBLIC ROARING_EXCEPTIONS=1)
+    else()
+      target_compile_definitions(${TEST_NAME} PUBLIC ROARING_EXCEPTIONS=0)
+    endif()
     target_include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cpp)
-    target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka)
+
+    include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/vendor/cmocka)
+    target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka-static)
+
     add_test(${TEST_NAME} ${TEST_NAME})
   endfunction(add_cpp_test)
 else()

@@ -1,4 +1,5 @@
-# CRoaring [![Build Status](https://travis-ci.org/RoaringBitmap/CRoaring.svg)](https://travis-ci.org/RoaringBitmap/CRoaring)   [![Build Status](https://img.shields.io/appveyor/ci/lemire/croaring.svg)](https://ci.appveyor.com/project/lemire/croaring)
+# CRoaring [![Build status](https://ci.appveyor.com/api/projects/status/gr4ibsflqs9by1bc/branch/master?svg=true)](https://ci.appveyor.com/project/lemire/croaring/branch/master) [![Build Status](https://cloud.drone.io/api/badges/RoaringBitmap/CRoaring/status.svg)](https://cloud.drone.io/RoaringBitmap/CRoaring)
+
 Portable Roaring bitmaps in C (and C++) with full support for your favorite compiler (GNU GCC, LLVM's clang, Visual Studio). Included in the [Awesome C](https://github.com/kozross/awesome-c) list of open source C software.
 
 # Introduction
@@ -8,7 +9,7 @@ Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortu
 
 Roaring bitmaps are compressed bitmaps which tend to outperform conventional compressed bitmaps such as WAH, EWAH or Concise.
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
-[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [OpenSearchServer][opensearchserver], [Cloud Torrent][cloudtorrent], [Whoosh][whoosh], [InfluxDB](https://www.influxdata.com), [Pilosa][pilosa], [Bleve](http://www.blevesearch.com), [Microsoft Visual Studio Team Services (VSTS)][vsts], and eBay's [Apache Kylin][kylin].
+[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas],  [Apache Spark][spark], [OpenSearchServer][opensearchserver], [Cloud Torrent][cloudtorrent], [Whoosh][whoosh], [InfluxDB](https://www.influxdata.com), [Pilosa][pilosa], [Bleve](http://www.blevesearch.com), [Microsoft Visual Studio Team Services (VSTS)][vsts], and eBay's [Apache Kylin][kylin]. The CRoaring library is used in several systems such as [Apache Doris](http://doris.incubator.apache.org). The YouTube SQL Engine, [Google Procella](https://research.google/pubs/pub48388/), uses Roaring bitmaps for indexing.
 
 We published a peer-reviewed article on the design and evaluation of this library:
 
@@ -33,7 +34,7 @@ Roaring bitmaps are found to work well in many important applications:
 > Use Roaring for bitmap compression whenever possible. Do not use other bitmap compression methods ([Wang et al., SIGMOD 2017](http://db.ucsd.edu/wp-content/uploads/2017/03/sidm338-wangA.pdf))
 
 
-There is a serialized format specification for interoperability between implementations: https://github.com/RoaringBitmap/RoaringFormatSpec/
+[There is a serialized format specification for interoperability between implementations](https://github.com/RoaringBitmap/RoaringFormatSpec/). Hence, it is possible to serialize a Roaring Bitmap from C++, read it in Java, modify it, serialize it back and read it in Go and Python. 
 
 # Objective
 
@@ -41,20 +42,54 @@ The primary goal of the CRoaring is to provide a high performance low-level impl
 of the latest hardware. Roaring bitmaps are already available on a variety of platform through Java, Go, Rust... implementations. CRoaring is a library that seeks to achieve superior performance by staying close to the latest hardware.
 
 
-(c) 2016-2017 The CRoaring authors.
+(c) 2016-... The CRoaring authors.
 
 
 
 # Requirements
 
-- The library should build on a  Linux-like operating system (including MacOS).
-- We also support Microsoft Visual studio.
-- Though most reasonable processors should be supported, we expect a recent Intel processor: Haswell (2013) or better but support all x64/x86 processors. The library builds without problem on ARM processors.
-- Recent C compiler supporting the C11 standard (GCC 4.8 or better or clang), there is also an optional C++ class that requires a C++ compiler supporting the C++11 standard.
-- CMake (to contribute to the project, users can rely on amalgamation/unity builds).
-- clang-format (optional).
+- Linux, macOS, FreeBSD, Windows (MSYS2 and Microsoft Visual studio).
+- We test the library with ARM, x64/x86 and POWER processors. We only support little endian systems (big endian systems are vanishingly rare).
+- Recent C compiler supporting the C11 standard (GCC 7 or better, LLVM 7.0 or better, Xcode 11 or better), there is also an optional C++ class that requires a C++ compiler supporting the C++11 standard.
+- CMake (to contribute to the project, users can rely on amalgamation/unity builds if they do not wish to use CMake).
+- Under x64 systems, the library provides runtime dispatch so that optimized functions are called based on the detected CPU features. It works with GCC, clang (version 9 and up) and Visual Studio (2017 and up). Other systems (e.g., ARM) do not need runtime dispatch.
 
-Serialization on big endian hardware may not be compatible with serialization on little endian hardware.
+# Using as a CMake dependency
+
+If you like CMake, you can just a few lines in you `CMakeLists.txt` file to grab a `CRoaring` release. [See our demonstration for further details](https://github.com/RoaringBitmap/croaring_cmake_demo_single_file).
+
+If you installed the CRoaring library locally, you may use it with CMake's `find_package` function as in this example:
+
+```CMake
+cmake_minimum_required(VERSION 3.15)
+
+project(test_roaring_install VERSION 0.1.0 LANGUAGES CXX C)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+find_package(roaring REQUIRED)
+
+file(WRITE main.cpp "
+#include <iostream>
+#include \"roaring/roaring.hh\"
+int main() {
+  roaring::Roaring r1;
+  for (uint32_t i = 100; i < 1000; i++) {
+    r1.add(i);
+  }
+  std::cout << \"cardinality = \" << r1.cardinality() << std::endl;
+  return 0;
+}")
+
+add_executable(repro main.cpp)
+target_link_libraries(repro PUBLIC roaring::roaring)
+```
+
 
 # Amalgamation/Unity Build
 
@@ -81,7 +116,7 @@ it from any directory where you want the amalgamation files to be written.
 It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``amalgamation_demo.c``... as well as some brief instructions. The ``amalgamation_demo.c`` file is a short example, whereas ``roaring.h`` and ``roaring.c`` are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files ``roaring.h`` and ``roaring.c`` into your project and be ready to go! No need to produce a library! See the ``amalgamation_demo.c`` file.
 
 For example, you can use the C code as follows:
-```
+```C++
 #include <stdio.h>
 #include "roaring.c"
 int main() {
@@ -95,23 +130,27 @@ int main() {
 
 The script will also generate C++ files for C++ users, including an example. You can use the C++ as follows.
 
-```
+```C++
 #include <iostream>
-#include "roaring.hh"
-#include "roaring.c"
-int main() {
-  Roaring r1;
-  for (uint32_t i = 100; i < 1000; i++) {
-    r1.add(i);
-  }
-  std::cout << "cardinality = " << r1.cardinality() << std::endl;
 
-  Roaring64Map r2;
-  for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {
-    r2.add(i);
-  }
-  std::cout << "cardinality = " << r2.cardinality() << std::endl;
-  return 0;
+#include "roaring.hh"
+#include "roaring64map.hh"
+
+using namespace roaring;
+int main() {
+    Roaring r1;
+    for (uint32_t i = 100; i < 1000; i++) {
+        r1.add(i);
+    }
+    std::cout << "cardinality = " << r1.cardinality() << std::endl;
+
+    Roaring64Map r2;
+    for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull;
+         i++) {
+        r2.add(i);
+    }
+    std::cout << "cardinality = " << r2.cardinality() << std::endl;
+    return EXIT_SUCCESS;
 }
 ```
 
@@ -123,244 +162,278 @@ If you prefer a silent output, you can use the following command to redirect ``s
 
 # API
 
-The interface is found in the file ``include/roaring/roaring.h``.
+The C interface is found in the file ``include/roaring/roaring.h``. We have C++ interface at `cpp/roaring.hh`.
+
+# Dealing with large volumes
+
+Some users have to deal with large volumes of data. It  may be important for these users to be aware of the `addMany` (C++) `roaring_bitmap_or_many` (C) functions as it is much faster and economical to add values in batches when possible. Furthermore, calling periodically the `runOptimize` (C++) or `roaring_bitmap_run_optimize` (C) functions may help.
+
+# Custom memory allocators
+For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example:
+```C
+#include <roaring.h>
+
+int main(){
+    // define with your own memory hook
+    roaring_memory_t my_hook{my_malloc, my_free ...};
+    // initialize global memory hook
+    roaring_init_memory_hook(my_hook);
+    // write you code here
+    ...
+}
+```
+
 
 # Example (C)
 
+
+This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory. If you are working from the amalgamation script, you may add the line `#include "roaring.c"` if you are not linking against a prebuilt CRoaring library and replace `#include <roaring/roaring.h>` by `#include "roaring.h"`. 
+
 ```c
-////
-//// #include <roaring/roaring.h>
-////
+#include <roaring/roaring.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-// create a new empty bitmap
-roaring_bitmap_t *r1 = roaring_bitmap_create();
-// then we can add values
-for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(r1, i);
-// check whether a value is contained
-assert(roaring_bitmap_contains(r1, 500));
-// compute how many bits there are:
-uint32_t cardinality = roaring_bitmap_get_cardinality(r1);
-printf("Cardinality = %d \n", cardinality);
-
-// if your bitmaps have long runs, you can compress them by calling
-// run_optimize
-uint32_t expectedsizebasic = roaring_bitmap_portable_size_in_bytes(r1);
-roaring_bitmap_run_optimize(r1);
-uint32_t expectedsizerun = roaring_bitmap_portable_size_in_bytes(r1);
-printf("size before run optimize %d bytes, and after %d bytes\n",
-       expectedsizebasic, expectedsizerun);
-
-// create a new bitmap containing the values {1,2,3,5,6}
-roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
-roaring_bitmap_printf(r2);  // print it
-
-// we can also create a bitmap from a pointer to 32-bit integers
-uint32_t somevalues[] = {2, 3, 4};
-roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, somevalues);
-
-// we can also go in reverse and go from arrays to bitmaps
-uint64_t card1 = roaring_bitmap_get_cardinality(r1);
-uint32_t *arr1 = (uint32_t *) malloc(card1 * sizeof(uint32_t));
-assert(arr1  != NULL);
-roaring_bitmap_to_uint32_array(r1, arr1);
-roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
-free(arr1);
-assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
-roaring_bitmap_free(r1f);
-
-// we can go from arrays to bitmaps from "offset" by "limit"
-size_t offset = 100;
-size_t limit = 1000;
-uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
-assert(arr3 != NULL);
-roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
-free(arr3)
-
-// we can copy and compare bitmaps
-roaring_bitmap_t *z = roaring_bitmap_copy(r3);
-assert(roaring_bitmap_equals(r3, z));  // what we recover is equal
-roaring_bitmap_free(z);
-
-// we can compute union two-by-two
-roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
-roaring_bitmap_or_inplace(r1_2_3, r3);
-
-// we can compute a big union
-const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
-roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
-assert(
-    roaring_bitmap_equals(r1_2_3, bigunion));  // what we recover is equal
-// can also do the big union with a heap
-roaring_bitmap_t *bigunionheap = roaring_bitmap_or_many_heap(3, allmybitmaps);
-assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
-
-roaring_bitmap_free(r1_2_3);
-roaring_bitmap_free(bigunion);
-roaring_bitmap_free(bigunionheap);
-
-// we can compute intersection two-by-two
-roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);
-roaring_bitmap_free(i1_2);
-
-// we can write a bitmap to a pointer and recover it later
-uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
-char *serializedbytes = malloc(expectedsize);
-roaring_bitmap_portable_serialize(r1, serializedbytes);
-roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
-assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
-roaring_bitmap_free(t);
-// we can also check whether there is a bitmap at a memory location without reading it
-size_t sizeofbitmap = roaring_bitmap_portable_deserialize_size(serializedbytes,expectedsize);
-assert(sizeofbitmap == expectedsize);  // sizeofbitmap would be zero if no bitmap were found
-// we can also read the bitmap "safely" by specifying a byte size limit:
-t = roaring_bitmap_portable_deserialize_safe(serializedbytes,expectedsize);
-assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
-roaring_bitmap_free(t);
-
-free(serializedbytes);
-
-
-// we can iterate over all values using custom functions
-uint32_t counter = 0;
-roaring_iterate(r1, roaring_iterator_sumall, &counter);
-/**
- * bool roaring_iterator_sumall(uint32_t value, void *param) {
- *        *(uint32_t *) param += value;
- *        return true; //iterate till the end
- *  }
- *
- */
-// we can also create iterator structs
-counter = 0;
-roaring_uint32_iterator_t *  i = roaring_create_iterator(r1);
-while(i->has_value) {
-   counter++; // could use    i->current_value
-   roaring_advance_uint32_iterator(i);
+bool roaring_iterator_sumall(uint32_t value, void *param) {
+    *(uint32_t *)param += value;
+    return true;  // iterate till the end
 }
-// you can skip over values and move the iterator with
-// roaring_move_uint32_iterator_equalorlarger(i,someintvalue)
 
-roaring_free_uint32_iterator(i);
-// roaring_bitmap_get_cardinality(r1) == counter
+int main() {
+    // create a new empty bitmap
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    // then we can add values
+    for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(r1, i);
+    // check whether a value is contained
+    assert(roaring_bitmap_contains(r1, 500));
+    // compute how many bits there are:
+    uint32_t cardinality = roaring_bitmap_get_cardinality(r1);
+    printf("Cardinality = %d \n", cardinality);
 
-// for greater speed, you can iterate over the data in bulk
-i = roaring_create_iterator(r1);
-uint32_t buffer[256];
-while (1) {
-    uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
-    for (uint32_t j = 0; j < ret; j++) {
-             counter += buffer[j];
+    // if your bitmaps have long runs, you can compress them by calling
+    // run_optimize
+    uint32_t expectedsizebasic = roaring_bitmap_portable_size_in_bytes(r1);
+    roaring_bitmap_run_optimize(r1);
+    uint32_t expectedsizerun = roaring_bitmap_portable_size_in_bytes(r1);
+    printf("size before run optimize %d bytes, and after %d bytes\n",
+           expectedsizebasic, expectedsizerun);
+
+    // create a new bitmap containing the values {1,2,3,5,6}
+    roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
+    roaring_bitmap_printf(r2);  // print it
+
+    // we can also create a bitmap from a pointer to 32-bit integers
+    uint32_t somevalues[] = {2, 3, 4};
+    roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, somevalues);
+
+    // we can also go in reverse and go from arrays to bitmaps
+    uint64_t card1 = roaring_bitmap_get_cardinality(r1);
+    uint32_t *arr1 = (uint32_t *)malloc(card1 * sizeof(uint32_t));
+    assert(arr1 != NULL);
+    roaring_bitmap_to_uint32_array(r1, arr1);
+    roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
+    free(arr1);
+    assert(roaring_bitmap_equals(r1, r1f));  // what we recover is equal
+    roaring_bitmap_free(r1f);
+
+    // we can go from arrays to bitmaps from "offset" by "limit"
+    size_t offset = 100;
+    size_t limit = 1000;
+    uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
+    assert(arr3 != NULL);
+    roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
+    free(arr3);
+
+    // we can copy and compare bitmaps
+    roaring_bitmap_t *z = roaring_bitmap_copy(r3);
+    assert(roaring_bitmap_equals(r3, z));  // what we recover is equal
+    roaring_bitmap_free(z);
+
+    // we can compute union two-by-two
+    roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
+    roaring_bitmap_or_inplace(r1_2_3, r3);
+
+    // we can compute a big union
+    const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
+    roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
+    assert(
+        roaring_bitmap_equals(r1_2_3, bigunion));  // what we recover is equal
+    // can also do the big union with a heap
+    roaring_bitmap_t *bigunionheap =
+        roaring_bitmap_or_many_heap(3, allmybitmaps);
+    assert(roaring_bitmap_equals(r1_2_3, bigunionheap));
+
+    roaring_bitmap_free(r1_2_3);
+    roaring_bitmap_free(bigunion);
+    roaring_bitmap_free(bigunionheap);
+
+    // we can compute intersection two-by-two
+    roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);
+    roaring_bitmap_free(i1_2);
+
+    // we can write a bitmap to a pointer and recover it later
+    uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
+    char *serializedbytes = malloc(expectedsize);
+    roaring_bitmap_portable_serialize(r1, serializedbytes);
+    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
+    assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
+    roaring_bitmap_free(t);
+    // we can also check whether there is a bitmap at a memory location without
+    // reading it
+    size_t sizeofbitmap =
+        roaring_bitmap_portable_deserialize_size(serializedbytes, expectedsize);
+    assert(sizeofbitmap ==
+           expectedsize);  // sizeofbitmap would be zero if no bitmap were found
+    // we can also read the bitmap "safely" by specifying a byte size limit:
+    t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
+    assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
+    roaring_bitmap_free(t);
+
+    free(serializedbytes);
+
+    // we can iterate over all values using custom functions
+    uint32_t counter = 0;
+    roaring_iterate(r1, roaring_iterator_sumall, &counter);
+
+    // we can also create iterator structs
+    counter = 0;
+    roaring_uint32_iterator_t *i = roaring_create_iterator(r1);
+    while (i->has_value) {
+        counter++;  // could use    i->current_value
+        roaring_advance_uint32_iterator(i);
     }
-    if (ret < 256) {
-             break;
-     }
+    // you can skip over values and move the iterator with
+    // roaring_move_uint32_iterator_equalorlarger(i,someintvalue)
+
+    roaring_free_uint32_iterator(i);
+    // roaring_bitmap_get_cardinality(r1) == counter
+
+    // for greater speed, you can iterate over the data in bulk
+    i = roaring_create_iterator(r1);
+    uint32_t buffer[256];
+    while (1) {
+        uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
+        for (uint32_t j = 0; j < ret; j++) {
+            counter += buffer[j];
+        }
+        if (ret < 256) {
+            break;
+        }
+    }
+    roaring_free_uint32_iterator(i);
+
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r3);
+    return EXIT_SUCCESS;
 }
-roaring_free_uint32_iterator(i);
-
-
-roaring_bitmap_free(r1);
-roaring_bitmap_free(r2);
-roaring_bitmap_free(r3);
 ```
 
 # Example (C++)
 
+
+This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a `roaring` directory so you may need to replace `#include "roaring.hh"` by `#include <roaring/roaring.hh>`. If you are working from the amalgamation script, you may add the line `#include "roaring.c"` if you are not linking against a CRoaring prebuilt library. 
+
 ```c++
-////
-//// #include "roaring.hh" from cpp directory
-////
-Roaring r1;
-for (uint32_t i = 100; i < 1000; i++) {
-  r1.add(i);
+#include <iostream>
+
+#include "roaring.hh"
+
+using namespace roaring;
+
+int main() {
+    Roaring r1;
+    for (uint32_t i = 100; i < 1000; i++) {
+        r1.add(i);
+    }
+
+    // check whether a value is contained
+    assert(r1.contains(500));
+
+    // compute how many bits there are:
+    uint32_t cardinality = r1.cardinality();
+
+    // if your bitmaps have long runs, you can compress them by calling
+    // run_optimize
+    uint32_t size = r1.getSizeInBytes();
+    r1.runOptimize();
+
+    // you can enable "copy-on-write" for fast and shallow copies
+    r1.setCopyOnWrite(true);
+
+    uint32_t compact_size = r1.getSizeInBytes();
+    std::cout << "size before run optimize " << size << " bytes, and after "
+              << compact_size << " bytes." << std::endl;
+
+    // create a new bitmap with varargs
+    Roaring r2 = Roaring::bitmapOf(5, 1, 2, 3, 5, 6);
+
+    r2.printf();
+    printf("\n");
+
+    // we can also create a bitmap from a pointer to 32-bit integers
+    const uint32_t values[] = {2, 3, 4};
+    Roaring r3(3, values);
+
+    // we can also go in reverse and go from arrays to bitmaps
+    uint64_t card1 = r1.cardinality();
+    uint32_t *arr1 = new uint32_t[card1];
+    r1.toUint32Array(arr1);
+    Roaring r1f(card1, arr1);
+    delete[] arr1;
+
+    // bitmaps shall be equal
+    assert(r1 == r1f);
+
+    // we can copy and compare bitmaps
+    Roaring z(r3);
+    assert(r3 == z);
+
+    // we can compute union two-by-two
+    Roaring r1_2_3 = r1 | r2;
+    r1_2_3 |= r3;
+
+    // we can compute a big union
+    const Roaring *allmybitmaps[] = {&r1, &r2, &r3};
+    Roaring bigunion = Roaring::fastunion(3, allmybitmaps);
+    assert(r1_2_3 == bigunion);
+
+    // we can compute intersection two-by-two
+    Roaring i1_2 = r1 & r2;
+
+    // we can write a bitmap to a pointer and recover it later
+    uint32_t expectedsize = r1.getSizeInBytes();
+    char *serializedbytes = new char[expectedsize];
+    r1.write(serializedbytes);
+    Roaring t = Roaring::read(serializedbytes);
+    assert(r1 == t);
+    delete[] serializedbytes;
+
+    // we can iterate over all values using custom functions
+    uint32_t counter = 0;
+    r1.iterate(
+        [](uint32_t value, void *param) {
+            *(uint32_t *)param += value;
+            return true;
+        },
+        &counter);
+
+    // we can also iterate the C++ way
+    counter = 0;
+    for (Roaring::const_iterator i = t.begin(); i != t.end(); i++) {
+        ++counter;
+    }
+    // counter == t.cardinality()
+
+    // we can move iterators to skip values
+    const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
+    Roaring rogue(5, manyvalues);
+    Roaring::const_iterator j = rogue.begin();
+    j.equalorlarger(4);  // *j == 4
+    return EXIT_SUCCESS;
 }
 
-// check whether a value is contained
-assert(r1.contains(500));
-
-// compute how many bits there are:
-uint32_t cardinality = r1.cardinality();
-
-// if your bitmaps have long runs, you can compress them by calling
-// run_optimize
-uint32_t size = r1.getSizeInBytes();
-r1.runOptimize();
-
-// you can enable "copy-on-write" for fast and shallow copies
-r1.setCopyOnWrite(true);
-
-
-uint32_t compact_size = r1.getSizeInBytes();
-std::cout << "size before run optimize " << size << " bytes, and after "
-            <<  compact_size << " bytes." << std::endl;
-
-
-// create a new bitmap with varargs
-Roaring r2 = Roaring::bitmapOf(5, 1, 2, 3, 5, 6);
-
-r2.printf();
-printf("\n");
-
-// we can also create a bitmap from a pointer to 32-bit integers
-const uint32_t values[] = {2, 3, 4};
-Roaring r3(3, values);
-
-// we can also go in reverse and go from arrays to bitmaps
-uint64_t card1 = r1.cardinality();
-uint32_t *arr1 = new uint32_t[card1];
-r1.toUint32Array(arr1);
-Roaring r1f(card1, arr1);
-delete[] arr1;
-
-// bitmaps shall be equal
-assert(r1 == r1f);
-
-// we can copy and compare bitmaps
-Roaring z (r3);
-assert(r3 == z);
-
-// we can compute union two-by-two
-Roaring r1_2_3 = r1 | r2;
-r1_2_3 |= r3;
-
-// we can compute a big union
-const Roaring *allmybitmaps[] = {&r1, &r2, &r3};
-Roaring bigunion = Roaring::fastunion(3, allmybitmaps);
-assert(r1_2_3 == bigunion);
-
-// we can compute intersection two-by-two
-Roaring i1_2 = r1 & r2;
-
-// we can write a bitmap to a pointer and recover it later
-uint32_t expectedsize = r1.getSizeInBytes();
-char *serializedbytes = new char [expectedsize];
-r1.write(serializedbytes);
-Roaring t = Roaring::read(serializedbytes);
-assert(r1 == t);
-delete[] serializedbytes;
-
-// we can iterate over all values using custom functions
-uint32_t counter = 0;
-r1.iterate(roaring_iterator_sumall, &counter);
-    /**
-     * bool roaring_iterator_sumall(uint32_t value, void *param) {
-     *        *(uint32_t *) param += value;
-     *        return true; // iterate till the end
-     *  }
-     *
-     */
-
-// we can also iterate the C++ way
-counter = 0;
-for(Roaring::const_iterator i = t.begin() ; i != t.end() ; i++) {
-   ++counter;
-}
-// counter == t.cardinality()
-
-// we can move iterators to skip values
-const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
-Roaring rogue(5, manyvalues);
-Roaring::const_iterator j = rogue.begin();
-j.equalorlarger(4); // *j == 4
 ```
 
 
@@ -374,76 +447,25 @@ the project (CRoaring), you can do:
 mkdir -p build
 cd build
 cmake ..
-make
-# follow by 'make test' if you want to test.
+cmake --build .
+# follow by 'ctest' if you want to test.
 # you can also type 'make install' to install the library on your system
 # C header files typically get installed to /usr/local/include/roaring
 # whereas C++ header files get installed to /usr/local/include/roaring
 ```
 (You can replace the ``build`` directory with any other directory name.)
-
-By default, on all platforms, we build a dynamic library. You can generate a static library by adding ``-DROARING_BUILD_STATIC=ON`` to the command line.
 By default all tests are built on all platforms, to skip building and running tests add `` -DENABLE_ROARING_TESTS=OFF `` to the command line.
 
 As with all ``cmake`` projects, you can specify the compilers you wish to use by adding (for example) ``-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++`` to the ``cmake`` command line.
 
+If you are using clang or gcc and you know your target architecture,  you can set the architecture by specifying `-DROARING_ARCH=arch`. For example, if you have many server but the oldest server is running the Intel `haswell` architecture, you can specify -`DROARING_ARCH=haswell`. In such cases, the produced binary will be optimized for processors having the characteristics of a haswell process and may not run on older architectures. You can find out the list of valid architecture values by typing `man gcc`.
 
-
-If you wish to build an x64 version while disabling AVX2 and BMI2 support at the expense of performance, you can do the following :
-
-```
-mkdir -p buildnoavx
-cd buildnoavx
-cmake -DROARING_DISABLE_AVX=ON ..
-make
-```
-
-The reverse is also possible. Some compilers may not enable AVX2 support, but you can force it in the following manner:
-
-```
-mkdir -p buildwithavx
-cd buildwithavx
-cmake -DFORCE_AVX=ON ..
-make
-```
-
-
-If you have x64 hardware, but you wish to disable all x64-specific optimizations (including AVX), then you can
-do the following...
-
-```
-mkdir -p buildnox64
-cd buildnoavx
-cmake -DROARING_DISABLE_X64=ON ..
-make
-```
-
-We tell the compiler to target the architecture of the build machine by using the `march=native` flag. This give the
-compiler the freedom to use instructions that your CPU support, but can be dangerous if you are going to use the built
-binaries on different machines. For example, you could get a `SIGILL` crash if you run the code on an older machine
-which does not have some of the instructions (e.g. `POPCOUNT`). There are two ways to deal with this:
-
-First, you can disable this feature altogether by specifying `-DROARING_DISABLE_NATIVE=OFF`:
-
-```
-mkdir -p buildnonative
-cd buildnoavx
-cmake -DROARING_DISABLE_NATIVE=ON ..
-make
-```
-
-Second, you can specify the architecture by specifying `-DROARING_ARCH=arch`. For example, if you have many servers
-but the oldest server is running the Intel `westmere` architecture, you can specify -`DROARING_ARCH=westmere`. You can
-find out the list of valid architecture values by typing `man gcc`. If `-DROARING_DISABLE_NATIVE=on` is specified, then
-this option has no effect.
-
-```
-mkdir -p build_westmere
-cd build_westmere
-cmake -DROARING_ARCH=westmere ..
-make
-```
-
+ ```
+ mkdir -p build_haswell
+ cd build_haswell
+ cmake -DROARING_ARCH=haswell ..
+ cmake --build .
+ ```
 
 For a debug release, starting from the root directory of the project (CRoaring), try
 
@@ -451,21 +473,9 @@ For a debug release, starting from the root directory of the project (CRoaring),
 mkdir -p debug
 cd debug
 cmake -DCMAKE_BUILD_TYPE=Debug -DROARING_SANITIZE=ON ..
-make
+ctest
 ```
 
-(Again, you can use the ``-DROARING_DISABLE_AVX=ON`` flag if you need it.)
-
-(Of course you can replace the ``debug`` directory with any other directory name.)
-
-
-To run unit tests (you must first run ``make``):
-
-```
-make test
-```
-
-The detailed output of the tests can be found in ``Testing/Temporary/LastTest.log``.
 
 To run real-data benchmark
 
@@ -507,32 +517,17 @@ To build with at least Visual Studio 2017 directly in the IDE:
 - For testing, in the Standard toolbar, drop the ``Select Startup Item...`` menu and choose one of the tests. Run the test by pressing the button to the left of the dropdown.
 
 
-We have optimizations specific to AVX2 in the code, and they are turned only if the ``__AVX2__`` macro is defined. In turn, these optimizations should only be enabled if you know that your target machines will support AVX2. Given that all recent Intel and AMD processors support AVX2, you may want to make this assumption. Thankfully, Visual Studio does define the ``__AVX2__`` macro whenever the ``/arch:AVX2`` compiler option is set. Unfortunately, this option might not be set by default. Thankfully, you can enable it with CMake by adding the ``-DFORCE_AVX=ON`` flag (e.g., type ``cmake -DFORCE_AVX=ON -DCMAKE_GENERATOR_PLATFORM=x64 ..`` instead of  ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..``). If you are building directly in the IDE (with at least Visual Studio 2017 and the Visual C++ tools for CMake component), then right click on ``CMakeLists.txt`` and select "Change CMake Settings". This opens a JSON file called ``CMakeSettings.json``. This file allows you to add CMake flags by editing the ``"cmakeCommandArgs"`` keys. [E.g., you can modify the lines that read ``"cmakeCommandArgs" : ""`` so that they become ``"cmakeCommandArgs" : "-DFORCE_AVX=ON"``.](https://goo.gl/photos/XH7peTKYRCSxWzph9) The relevant part of the JSON file might look at follows:
+We have optimizations specific to AVX2 in the code, and they are turned dynamically based on the detected hardware at runtime.
 
-      {
-        "name": "x64-Debug",
-        "generator": "Visual Studio 15 2017 Win64",
-        "configurationType": "Debug",
-        "buildRoot": "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
-        "cmakeCommandArgs": "-DFORCE_AVX=ON",
-        "buildCommandArgs": "-m -v:minimal"
-      },
-      {
-        "name": "x64-Release",
-        "generator": "Visual Studio 15 2017 Win64",
-        "configurationType" : "Release",
-        "buildRoot":  "${env.LOCALAPPDATA}\\CMakeBuild\\${workspaceHash}\\build\\${name}",
-        "cmakeCommandArgs":  "-DFORCE_AVX=ON",
-        "buildCommandArgs": "-m -v:minimal"
-       }
 
-After this modification, the output of CMake should include a line such as this one:
+## Usage (Using `conan`)
 
-       CMAKE_C_FLAGS:   /arch:AVX2  -Wall
+You can install the library using the conan package manager:
 
-You must understand that this implies that the produced binaries will not run on hardware that does not support AVX2. However, you might get better performance.
-
-We have additionnal optimizations that use inline assembly. However, Visual Studio does not support inline assembly so you cannot benefit from these optimizations under Visual Studio.
+```
+$ echo -e "[requires]\nroaring/0.3.3" > conanfile.txt
+$ conan install .
+```
 
 
 ## Usage (Using `vcpkg` on Windows, Linux and macOS)
@@ -624,7 +619,7 @@ npm install roaring
 
 # Swift Wrapper
 
-Jérémie Piotte wrote a [Swift wrapper](https://github.com/piotte13/SwiftRoaring).
+Jérémie Piotte wrote a [Swift wrapper](https://github.com/RoaringBitmap/SwiftRoaring).
 
 
 # C# Wrapper
@@ -648,11 +643,6 @@ Yuce Tekol wrote a D wrapper available at https://github.com/yuce/droaring
 
 Antonio Guilherme Ferreira Viggiano wrote a Redis Module available at https://github.com/aviggiano/redis-roaring
 
-
-# References and further reading
-
--  Array layouts for comparison-based searching http://arxiv.org/pdf/1509.05053.pdf
--  Schlegel et al., Fast Sorted-Set Intersection using SIMD Instructions
 
 
 # Mailing list/discussion group

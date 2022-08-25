@@ -12,7 +12,7 @@
 #define CLOBBER_MEMORY
 #endif
 
-#if defined(IS_X64) && defined(ROARING_INLINE_ASM)
+#if defined(CROARING_IS_X64) && defined(ROARING_INLINE_ASM)
 #define RDTSC_START(cycles)                                                   \
     do {                                                                      \
         register unsigned cyc_high, cyc_low;                                  \

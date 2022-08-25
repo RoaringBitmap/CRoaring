@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include <roaring/roaring.h>
+#include <stdio.h>
 #include "benchmark.h"
+#include <stdio.h>
 
 // see https://github.com/saulius/croaring-rs/issues/6#issuecomment-243341270
 int main() {

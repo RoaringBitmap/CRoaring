@@ -11,10 +11,21 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <roaring/containers/perfparameters.h>
 #include <roaring/portability.h>
-#include <roaring/roaring_types.h>
-#include <roaring/array_util.h>
+#include <roaring/roaring_types.h>  // roaring_iterator
+#include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
+
+#include <roaring/containers/container_defs.h>  // container_t, perfparameters
+
+#ifdef __cplusplus
+extern "C" { namespace roaring {
+
+// Note: in pure C++ code, you should avoid putting `using` in header files
+using api::roaring_iterator;
+using api::roaring_iterator64;
+
+namespace internal {
+#endif
 
 /* struct rle16_s - run length pair
  *
@@ -31,20 +42,31 @@ struct rle16_s {
 
 typedef struct rle16_s rle16_t;
 
+#ifdef __cplusplus
+    #define MAKE_RLE16(val,len) \
+        {(uint16_t)(val), (uint16_t)(len)}  // no tagged structs until c++20
+#else
+    #define MAKE_RLE16(val,len) \
+        (rle16_t){.value = (uint16_t)(val), .length = (uint16_t)(len)}
+#endif
+
 /* struct run_container_s - run container bitmap
  *
  * @n_runs:   number of rle_t pairs in `runs`.
  * @capacity: capacity in rle_t pairs `runs` can hold.
  * @runs:     pairs of rle_t.
- *
  */
-struct run_container_s {
+STRUCT_CONTAINER(run_container_s) {
     int32_t n_runs;
     int32_t capacity;
     rle16_t *runs;
 };
 
 typedef struct run_container_s run_container_t;
+
+#define CAST_run(c)         CAST(run_container_t *, c)  // safer downcast
+#define const_CAST_run(c)   CAST(const run_container_t *, c)
+#define movable_CAST_run(c) movable_CAST(run_container_t **, c)
 
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create(void);
@@ -63,13 +85,6 @@ void run_container_free(run_container_t *run);
 
 /* Duplicate container */
 run_container_t *run_container_clone(const run_container_t *src);
-
-int32_t run_container_serialize(const run_container_t *container,
-                                char *buf) WARN_UNUSED;
-
-uint32_t run_container_serialization_len(const run_container_t *container);
-
-void *run_container_deserialize(const char *buf, size_t buf_len);
 
 /*
  * Effectively deletes the value at index index, repacking data.
@@ -270,53 +285,8 @@ static inline bool run_container_contains_range(const run_container_t *run,
     return count >= (pos_end - pos_start - 1);
 }
 
-#ifdef USEAVX
-
 /* Get the cardinality of `run'. Requires an actual computation. */
-static inline int run_container_cardinality(const run_container_t *run) {
-    const int32_t n_runs = run->n_runs;
-    const rle16_t *runs = run->runs;
-
-    /* by initializing with n_runs, we omit counting the +1 for each pair. */
-    int sum = n_runs;
-    int32_t k = 0;
-    const int32_t step = sizeof(__m256i) / sizeof(rle16_t);
-    if (n_runs > step) {
-        __m256i total = _mm256_setzero_si256();
-        for (; k + step <= n_runs; k += step) {
-            __m256i ymm1 = _mm256_lddqu_si256((const __m256i *)(runs + k));
-            __m256i justlengths = _mm256_srli_epi32(ymm1, 16);
-            total = _mm256_add_epi32(total, justlengths);
-        }
-        // a store might be faster than extract?
-        uint32_t buffer[sizeof(__m256i) / sizeof(rle16_t)];
-        _mm256_storeu_si256((__m256i *)buffer, total);
-        sum += (buffer[0] + buffer[1]) + (buffer[2] + buffer[3]) +
-               (buffer[4] + buffer[5]) + (buffer[6] + buffer[7]);
-    }
-    for (; k < n_runs; ++k) {
-        sum += runs[k].length;
-    }
-
-    return sum;
-}
-
-#else
-
-/* Get the cardinality of `run'. Requires an actual computation. */
-static inline int run_container_cardinality(const run_container_t *run) {
-    const int32_t n_runs = run->n_runs;
-    const rle16_t *runs = run->runs;
-
-    /* by initializing with n_runs, we omit counting the +1 for each pair. */
-    int sum = n_runs;
-    for (int k = 0; k < n_runs; ++k) {
-        sum += runs[k].length;
-    }
-
-    return sum;
-}
-#endif
+int run_container_cardinality(const run_container_t *run);
 
 /* Card > 0?, see run_container_empty for the reverse */
 static inline bool run_container_nonzero_cardinality(
@@ -390,10 +360,7 @@ static inline void run_container_append_value(run_container_t *run,
                                               rle16_t *previousrl) {
     const uint32_t previousend = previousrl->value + previousrl->length;
     if (val > previousend + 1) {  // we add a new one
-        //*previousrl = (rle16_t){.value = val, .length = 0};// requires C99
-        previousrl->value = val;
-        previousrl->length = 0;
-
+        *previousrl = MAKE_RLE16(val, 0);
         run->runs[run->n_runs] = *previousrl;
         run->n_runs++;
     } else if (val == previousend + 1) {  // we merge
@@ -408,11 +375,7 @@ static inline void run_container_append_value(run_container_t *run,
  */
 static inline rle16_t run_container_append_value_first(run_container_t *run,
                                                        uint16_t val) {
-    // rle16_t newrle = (rle16_t){.value = val, .length = 0};// requires C99
-    rle16_t newrle;
-    newrle.value = val;
-    newrle.length = 0;
-
+    rle16_t newrle = MAKE_RLE16(val, 0);
     run->runs[run->n_runs] = newrle;
     run->n_runs++;
     return newrle;
@@ -581,6 +544,10 @@ bool run_container_select(const run_container_t *container,
 void run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst);
 
+void run_container_offset(const run_container_t *c,
+                         container_t **loc, container_t **hic,
+                         uint16_t offset);
+
 /* Returns the smallest value (assumes not empty) */
 inline uint16_t run_container_minimum(const run_container_t *run) {
     if (run->n_runs == 0) return 0;
@@ -718,5 +685,8 @@ static inline void run_container_remove_range(run_container_t *run, uint32_t min
     }
 }
 
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace internal {
+#endif
 
 #endif /* INCLUDE_CONTAINERS_RUN_H_ */

@@ -5,6 +5,58 @@
 #ifndef ROARING_TYPES_H
 #define ROARING_TYPES_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace api {
+#endif
+
+
+/**
+ * When building .c files as C++, there's added compile-time checking if the
+ * container types are derived from a `container_t` base class.  So long as
+ * such a base class is empty, the struct will behave compatibly with C structs
+ * despite the derivation.  This is due to the Empty Base Class Optimization:
+ *
+ * https://en.cppreference.com/w/cpp/language/ebo
+ *
+ * But since C isn't namespaced, taking `container_t` globally might collide
+ * with other projects.  So roaring.h uses ROARING_CONTAINER_T, while internal
+ * code #undefs that after declaring `typedef ROARING_CONTAINER_T container_t;`
+ */
+#if defined(__cplusplus)
+    extern "C++" {
+      struct container_s {};
+    }
+    #define ROARING_CONTAINER_T ::roaring::api::container_s
+#else
+    #define ROARING_CONTAINER_T void  // no compile-time checking
+#endif
+
+#define ROARING_FLAG_COW UINT8_C(0x1)
+#define ROARING_FLAG_FROZEN UINT8_C(0x2)
+
+/**
+ * Roaring arrays are array-based key-value pairs having containers as values
+ * and 16-bit integer keys. A roaring bitmap  might be implemented as such.
+ */
+
+// parallel arrays.  Element sizes quite different.
+// Alternative is array
+// of structs.  Which would have better
+// cache performance through binary searches?
+
+typedef struct roaring_array_s {
+    int32_t size;
+    int32_t allocation_size;
+    ROARING_CONTAINER_T **containers;  // Use container_t in non-API files!
+    uint16_t *keys;
+    uint8_t *typecodes;
+    uint8_t flags;
+} roaring_array_t;
+
+
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
 typedef bool (*roaring_iterator64)(uint64_t value, void *param);
 
@@ -44,5 +96,9 @@ typedef struct roaring_statistics_s {
 
     // and n_values_arrays, n_values_rle, n_values_bitmap
 } roaring_statistics_t;
+
+#ifdef __cplusplus
+} } }  // extern "C" { namespace roaring { namespace api {
+#endif
 
 #endif /* ROARING_TYPES_H */
