@@ -1912,8 +1912,9 @@ static inline bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
     }
 
     while (ptr1 < end8) {
-        uint64_t v1 = *((const uint64_t*)ptr1);
-        uint64_t v2 = *((const uint64_t*)ptr2);
+        uint64_t v1, v2;
+        memcpy(&v1,ptr1,sizeof(uint64_t));
+        memcpy(&v2,ptr2,sizeof(uint64_t));
         if (v1 != v2) {
             return false;
         }

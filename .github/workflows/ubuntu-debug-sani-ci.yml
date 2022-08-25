@@ -1,0 +1,25 @@
+name: Ubuntu-Debug-Sanitized-CI
+
+'on':
+  - push
+  - pull_request
+
+
+jobs:
+  ci:
+    name: ubuntu-gcc
+    runs-on: ubuntu-latest
+
+    env:
+      CC: gcc
+      CXX: g++
+
+    steps: 
+      - uses: actions/checkout@v2
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake  -DCMAKE_BUILD_TYPE=Debug -DROARING_SANITIZE=ON ..
+          cmake --build . 
+          ctest . --output-on-failure

@@ -699,6 +699,22 @@ DEFINE_TEST(test_cpp_frozen) {
     const Roaring r2 = Roaring::frozenView(buf, num_bytes);
     assert_true(r1 == r2);
 
+    {
+        Roaring r;
+        r.addRange(0, 100000);
+        r.flip(90000, 91000);
+        r.runOptimize();
+
+        // allocate a buffer and serialize to it
+        size_t num_bytes1 = r.getFrozenSizeInBytes();
+        char *buf1 = (char *)roaring_aligned_malloc(32, num_bytes1);
+        r.writeFrozen(buf1);
+
+        // ensure the frozen bitmap is the same as the original
+        const Roaring rr = Roaring::frozenView(buf1, num_bytes1);
+        assert_true(r == rr);
+        roaring_aligned_free(buf1);
+    }
 #if ROARING_EXCEPTIONS
     // try viewing a misaligned/invalid buffer
     try {
