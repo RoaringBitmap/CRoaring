@@ -57,6 +57,63 @@ DEFINE_TEST(range_contains) {
     roaring_bitmap_free(bm);
 }
 
+DEFINE_TEST(contains_bulk) {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    roaring_bulk_context_t context = {0};
+
+    // Ensure checking an empty bitmap is okay
+    assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0));
+    assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0xFFFFFFFF));
+
+    // create RLE container from [0, 1000]
+    roaring_bitmap_add_range_closed(bm, 0, 1000);
+
+    // add array container from 77000
+    for (uint32_t i = 77000; i < 87000; i+=2) {
+        roaring_bitmap_add(bm, i);
+    }
+    // add bitset container from 132000
+    for (uint32_t i = 132000; i < 140000; i+=2) {
+        roaring_bitmap_add(bm, i);
+    }
+
+    roaring_bitmap_add(bm, UINT32_MAX);
+
+    uint32_t values[] = {
+      1000,   // 1
+      1001,   // 0
+      77000,  // 1
+      77001,  // 0
+      77002,  // 1
+      1002,  // 0
+      132000, // 1
+      132001, // 0
+      132002, // 1
+      77003,  // 0
+      UINT32_MAX, // 1
+      UINT32_MAX - 1, // 0
+    };
+    size_t test_count = sizeof(values) / sizeof(values[0]);
+
+    for (size_t i = 0; i < test_count; i++) {
+        roaring_bulk_context_t empty_context = {0};
+        bool expected_contains = roaring_bitmap_contains(bm, values[i]);
+        assert_true(expected_contains == roaring_bitmap_contains_bulk(bm, &empty_context, values[i]));
+        assert_true(expected_contains == roaring_bitmap_contains_bulk(bm, &context, values[i]));
+
+        if (expected_contains) {
+            assert_int_equal(context.key, values[i] >> 16);
+        }
+        if (context.container != NULL) {
+            assert_in_range(context.idx, 0, bm->high_low_container.size - 1);
+            assert_ptr_equal(context.container, bm->high_low_container.containers[context.idx]);
+            assert_int_equal(context.key, bm->high_low_container.keys[context.idx]);
+            assert_int_equal(context.typecode, bm->high_low_container.typecodes[context.idx]);
+        }
+    }
+    roaring_bitmap_free(bm);
+}
+
 DEFINE_TEST(is_really_empty) {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     assert_true(roaring_bitmap_is_empty(bm));
@@ -94,10 +151,6 @@ void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_free(bm2);
 }
 
-
-
-
-
 bool check_serialization(roaring_bitmap_t *bitmap) {
     const int32_t size = roaring_bitmap_portable_size_in_bytes(bitmap);
     char *data = (char *)malloc(size);
@@ -108,7 +161,6 @@ bool check_serialization(roaring_bitmap_t *bitmap) {
     free(data);
     return ret;
 }
-
 
 DEFINE_TEST(issue245) {
     roaring_bitmap_t *bitmap = roaring_bitmap_create();
@@ -883,6 +935,19 @@ DEFINE_TEST(test_addremove) {
     }
     for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_remove(bm, value);
+    }
+    assert_true(roaring_bitmap_is_empty(bm));
+    roaring_bitmap_free(bm);
+}
+
+DEFINE_TEST(test_addremove_bulk) {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    roaring_bulk_context_t context = {0};
+    for (uint32_t value = 33057; value < 147849; value += 8) {
+        roaring_bitmap_add_bulk(bm, &context, value);
+    }
+    for (uint32_t value = 33057; value < 147849; value += 8) {
+        assert_true(roaring_bitmap_remove_checked(bm, value));
     }
     assert_true(roaring_bitmap_is_empty(bm));
     roaring_bitmap_free(bm);
@@ -4182,6 +4247,7 @@ int main() {
         cmocka_unit_test(issue208),
         cmocka_unit_test(issue208b),
         cmocka_unit_test(range_contains),
+        cmocka_unit_test(contains_bulk),
         cmocka_unit_test(inplaceorwide),
         cmocka_unit_test(test_contains_range),
         cmocka_unit_test(check_range_contains_from_end),
@@ -4206,6 +4272,7 @@ int main() {
         cmocka_unit_test(test_maximum_minimum),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_addremove),
+        cmocka_unit_test(test_addremove_bulk),
         cmocka_unit_test(test_addremoverun),
         cmocka_unit_test(test_basic_add),
         cmocka_unit_test(test_remove_withrun),

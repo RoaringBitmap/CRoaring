@@ -98,13 +98,31 @@ void run_test(uint32_t spanlen, uint32_t intvlen, double density, order_t order)
     printf("  roaring_bitmap_add_many():");
     for (int p = 0; p < num_passes; p++) {
         roaring_bitmap_t *r = roaring_bitmap_create();
-        RDTSC_START(cycles_start);
-        uint32_t values[intvlen];
+        uint32_t values[intvlen * count];
         for (int64_t i = 0; i < count; i++) {
             for (uint32_t j = 0; j < intvlen; j++) {
-                values[j] = offsets[i] + j;
+                values[i * intvlen + j] = offsets[i] + j;
             }
-            roaring_bitmap_add_many(r, intvlen, values);
+        }
+        RDTSC_START(cycles_start);
+        for (int64_t i = 0; i < count; i++) {
+            roaring_bitmap_add_many(r, intvlen, values + (i * intvlen));
+        }
+        RDTSC_FINAL(cycles_final);
+        results[p] = (cycles_final - cycles_start) * 1.0 / count / intvlen;
+        roaring_bitmap_free(r);
+    }
+    printf("     %6.1f\n", array_min(results, num_passes));
+
+    printf("  roaring_bitmap_add_bulk():");
+    for (int p = 0; p < num_passes; p++) {
+        roaring_bitmap_t *r = roaring_bitmap_create();
+        RDTSC_START(cycles_start);
+        roaring_bulk_context_t context = {0};
+        for (int64_t i = 0; i < count; i++) {
+            for (uint32_t j = 0; j < intvlen; j++) {
+                roaring_bitmap_add_bulk(r, &context, offsets[i] + j);
+            }
         }
         RDTSC_FINAL(cycles_final);
         results[p] = (cycles_final - cycles_start) * 1.0 / count / intvlen;

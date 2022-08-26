@@ -87,46 +87,91 @@ bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap) {
     return ra_init_with_capacity(&r->high_low_container, cap);
 }
 
+static inline void add_bulk_impl(roaring_bitmap_t *r,
+                                 roaring_bulk_context_t *context,
+                                 uint32_t val) {
+    uint16_t key = val >> 16;
+    if (context->container == NULL || context->key != key) {
+        uint8_t typecode;
+        int idx;
+        context->container = containerptr_roaring_bitmap_add(
+            r, val, &typecode, &idx);
+        context->typecode = typecode;
+        context->idx = idx;
+        context->key = key;
+    } else {
+        // no need to seek the container, it is at hand
+        // because we already have the container at hand, we can do the
+        // insertion directly, bypassing the roaring_bitmap_add call
+        uint8_t new_typecode;
+        container_t *container2 = container_add(
+            context->container, val & 0xFFFF, context->typecode, &new_typecode);
+        if (container2 != context->container) {
+            // rare instance when we need to change the container type
+            container_free(context->container, context->typecode);
+            ra_set_container_at_index(&r->high_low_container, context->idx,
+                                      container2, new_typecode);
+            context->typecode = new_typecode;
+            context->container = container2;
+        }
+    }
+}
 
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals) {
-    container_t *container = NULL;  // hold value of last container touched
-    uint8_t typecode = 0;    // typecode of last container touched
-    uint32_t prev = 0;       // previous valued inserted
-    size_t i = 0;            // index of value
-    int containerindex = 0;
-    if (n_args == 0) return;
     uint32_t val;
-    memcpy(&val, vals + i, sizeof(val));
-    container =
-        containerptr_roaring_bitmap_add(r, val, &typecode, &containerindex);
-    prev = val;
-    i++;
-    for (; i < n_args; i++) {
-        memcpy(&val, vals + i, sizeof(val));
-        if (((prev ^ val) >> 16) ==
-            0) {  // no need to seek the container, it is at hand
-            // because we already have the container at hand, we can do the
-            // insertion
-            // automatically, bypassing the roaring_bitmap_add call
-            uint8_t newtypecode = typecode;
-            container_t *container2 =
-                container_add(container, val & 0xFFFF, typecode, &newtypecode);
-            if (container2 != container) {  // rare instance when we need to
-                                            // change the container type
-                container_free(container, typecode);
-                ra_set_container_at_index(&r->high_low_container,
-                                          containerindex, container2,
-                                          newtypecode);
-                typecode = newtypecode;
-                container = container2;
-            }
-        } else {
-            container = containerptr_roaring_bitmap_add(r, val, &typecode,
-                                                        &containerindex);
-        }
-        prev = val;
+    const uint32_t *start = vals;
+    const uint32_t *end = vals + n_args;
+    const uint32_t *current_val = start;
+
+    if (n_args == 0) {
+        return;
     }
+
+    uint8_t typecode;
+    int idx;
+    container_t *container;
+    val = *current_val;
+    container = containerptr_roaring_bitmap_add(r, val, &typecode, &idx);
+    roaring_bulk_context_t context = {container, idx, (uint16_t)(val >> 16), typecode};
+
+    for (; current_val != end; current_val++) {
+        memcpy(&val, current_val, sizeof(val));
+        add_bulk_impl(r, &context, val);
+    }
+}
+
+void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
+                             roaring_bulk_context_t *context, uint32_t val) {
+    add_bulk_impl(r, context, val);
+}
+
+bool roaring_bitmap_contains_bulk(const roaring_bitmap_t *r,
+                                  roaring_bulk_context_t *context,
+                                  uint32_t val)
+{
+    uint16_t key = val >> 16;
+    if (context->container == NULL || context->key != key) {
+        int32_t start_idx = -1;
+        if (context->container != NULL && context->key < key) {
+            start_idx = context->idx;
+        }
+        int idx = ra_advance_until(&r->high_low_container, key, start_idx);
+        if (idx == ra_get_size(&r->high_low_container)) {
+            return false;
+        }
+        uint8_t typecode;
+        context->container = ra_get_container_at_index(&r->high_low_container, idx, &typecode);
+        context->typecode = typecode;
+        context->idx = idx;
+        context->key = ra_get_key_at_index(&r->high_low_container, idx);
+        // ra_advance_until finds the next key >= the target, we found a later container.
+        if (context->key != key) {
+            return false;
+        }
+    }
+    // context is now set up
+    return container_contains(context->container, val & 0xFFFF, context->typecode);
 }
 
 roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals) {
@@ -139,11 +184,12 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     // todo: could be greatly optimized but we do not expect this call to ever
     // include long lists
     roaring_bitmap_t *answer = roaring_bitmap_create();
+    roaring_bulk_context_t context = {0};
     va_list ap;
     va_start(ap, n_args);
-    for (size_t i = 1; i <= n_args; i++) {
+    for (size_t i = 0; i < n_args; i++) {
         uint32_t val = va_arg(ap, uint32_t);
-        roaring_bitmap_add(answer, val);
+        roaring_bitmap_add_bulk(answer, &context, val);
     }
     va_end(ap);
     return answer;
@@ -1413,14 +1459,24 @@ size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *r,
 
 roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf) {
     const char *bufaschar = (const char *)buf;
-    if (*(const unsigned char *)buf == CROARING_SERIALIZATION_ARRAY_UINT32) {
+    if (bufaschar[0] == CROARING_SERIALIZATION_ARRAY_UINT32) {
         /* This looks like a compressed set of uint32_t elements */
         uint32_t card;
         memcpy(&card, bufaschar + 1, sizeof(uint32_t));
         const uint32_t *elems =
             (const uint32_t *)(bufaschar + 1 + sizeof(uint32_t));
-
-        return roaring_bitmap_of_ptr(card, elems);
+        roaring_bitmap_t *bitmap = roaring_bitmap_create();
+        if (bitmap == NULL) {
+            return NULL;
+        }
+        roaring_bulk_context_t context = {0};
+        for (uint32_t i = 0; i < card; i++) {
+            // elems may not be aligned, read with memcpy
+            uint32_t elem;
+            memcpy(&elem, elems + i, sizeof(elem));
+            roaring_bitmap_add_bulk(bitmap, &context, elem);
+        }
+        return bitmap;
     } else if (bufaschar[0] == CROARING_SERIALIZATION_CONTAINER) {
         return roaring_bitmap_portable_deserialize(bufaschar + 1);
     } else

@@ -258,8 +258,47 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
 void roaring_bitmap_free(const roaring_bitmap_t *r);
 
 /**
+ * A bit of context usable with `roaring_bitmap_*_bulk()` functions
+ *
+ * Should be initialized with `{0}` (or `memset()` to all zeros).
+ * Callers should treat it as an opaque type.
+ *
+ * A context may only be used with a single bitmap
+ * (unless re-initialized to zero), and any modification to a bitmap
+ * (other than modifications performed with `_bulk()` functions with the context
+ * passed) will invalidate any contexts associated with that bitmap.
+ */
+typedef struct roaring_bulk_context_s {
+    ROARING_CONTAINER_T *container;
+    int idx;
+    uint16_t key;
+    uint8_t typecode;
+} roaring_bulk_context_t;
+
+/**
+ * Add an item, using context from a previous insert for speed optimization.
+ *
+ * `context` will be used to store information between calls to make bulk
+ * operations faster. `*context` should be zero-initialized before the first
+ * call to this function.
+ *
+ * Modifying the bitmap in any way (other than `-bulk` suffixed functions)
+ * will invalidate the stored context, calling this function with a non-zero
+ * context after doing any modification invokes undefined behavior.
+ *
+ * In order to exploit this optimization, the caller should call this function
+ * with values with the same "key" (high 16 bits of the value) consecutively.
+ */
+void roaring_bitmap_add_bulk(roaring_bitmap_t *r,
+                             roaring_bulk_context_t *context, uint32_t val);
+
+/**
  * Add value n_args from pointer vals, faster than repeatedly calling
  * `roaring_bitmap_add()`
+ *
+ * In order to exploit this optimization, the caller should attempt to keep
+ * values with the same "key" (high 16 bits of the value) as consecutive
+ * elements in `vals`
  */
 void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
                              const uint32_t *vals);
@@ -334,6 +373,25 @@ bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
 bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_start,
                                    uint64_t range_end);
+
+/**
+ * Check if an items is present, using context from a previous insert for speed
+ * optimization.
+ *
+ * `context` will be used to store information between calls to make bulk
+ * operations faster. `*context` should be zero-initialized before the first
+ * call to this function.
+ *
+ * Modifying the bitmap in any way (other than `-bulk` suffixed functions)
+ * will invalidate the stored context, calling this function with a non-zero
+ * context after doing any modification invokes undefined behavior.
+ *
+ * In order to exploit this optimization, the caller should call this function
+ * with values with the same "key" (high 16 bits of the value) consecutively.
+ */
+bool roaring_bitmap_contains_bulk(const roaring_bitmap_t *r,
+                                  roaring_bulk_context_t *context,
+                                  uint32_t val);
 
 /**
  * Get the cardinality of the bitmap (number of elements).
@@ -814,4 +872,3 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
         using namespace ::roaring::api;
     #endif
 #endif
-
