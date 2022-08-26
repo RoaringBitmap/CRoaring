@@ -119,6 +119,52 @@ public:
     }
 
     /**
+     * Add all values in range [min, max)
+     */
+    void addRange(uint64_t min, uint64_t max) {
+        if (min >= max) {
+            return;
+        }
+        addRangeClosed(min, max - 1);
+    }
+
+    /**
+     * Add all values in range [min, max]
+     */
+    void addRangeClosed(uint32_t min, uint32_t max) {
+        roarings[0].addRangeClosed(min, max);
+    }
+    void addRangeClosed(uint64_t min, uint64_t max) {
+        if (min > max) {
+            return;
+        }
+        uint32_t start_high = highBytes(min);
+        uint32_t start_low = lowBytes(min);
+        uint32_t end_high = highBytes(max);
+        uint32_t end_low = lowBytes(max);
+        if (start_high == end_high) {
+            roarings[start_high].addRangeClosed(start_low, end_low);
+            roarings[start_high].setCopyOnWrite(copyOnWrite);
+            return;
+        }
+        // we put std::numeric_limits<>::max/min in parenthesis to avoid a clash
+        // with the Windows.h header under Windows
+        roarings[start_high].addRangeClosed(
+            start_low, (std::numeric_limits<uint32_t>::max)());
+        roarings[start_high].setCopyOnWrite(copyOnWrite);
+        start_high++;
+        for (; start_high < end_high; ++start_high) {
+            roarings[start_high].addRangeClosed(
+                (std::numeric_limits<uint32_t>::min)(),
+                (std::numeric_limits<uint32_t>::max)());
+            roarings[start_high].setCopyOnWrite(copyOnWrite);
+        }
+        roarings[end_high].addRangeClosed(
+            (std::numeric_limits<uint32_t>::min)(), end_low);
+        roarings[end_high].setCopyOnWrite(copyOnWrite);
+    }
+
+    /**
      * Add value n_args from pointer vals
      */
     void addMany(size_t n_args, const uint32_t *vals) {
@@ -156,6 +202,58 @@ public:
         if (roaring_iter != roarings.cend())
             return roaring_iter->second.removeChecked(lowBytes(x));
         return false;
+    }
+
+    /**
+     * Remove all values in range [min, max)
+     */
+    void removeRange(uint64_t min, uint64_t max) {
+        if (min >= max) {
+            return;
+        }
+        return removeRangeClosed(min, max - 1);
+    }
+
+    /**
+     * Remove all values in range [min, max]
+     */
+    void removeRangeClosed(uint32_t min, uint32_t max) {
+        return roarings[0].removeRangeClosed(min, max);
+    }
+    void removeRangeClosed(uint64_t min, uint64_t max) {
+        if (min > max) {
+            return;
+        }
+        uint32_t start_high = highBytes(min);
+        uint32_t start_low = lowBytes(min);
+        uint32_t end_high = highBytes(max);
+        uint32_t end_low = lowBytes(max);
+
+        if (roarings.empty() || end_high < roarings.cbegin()->first ||
+            start_high > (roarings.crbegin())->first) {
+            return;
+        }
+
+        auto start_iter = roarings.lower_bound(start_high);
+        auto end_iter = roarings.lower_bound(end_high);
+        if (start_iter->first == start_high) {
+            if (start_iter == end_iter) {
+                start_iter->second.removeRangeClosed(start_low, end_low);
+                return;
+            }
+            // we put std::numeric_limits<>::max/min in parenthesis
+            // to avoid a clash with the Windows.h header under Windows
+            start_iter->second.removeRangeClosed(
+                start_low, (std::numeric_limits<uint32_t>::max)());
+            start_iter++;
+        }
+
+        roarings.erase(start_iter, end_iter);
+
+        if (end_iter != roarings.cend() && end_iter->first == end_high) {
+            end_iter->second.removeRangeClosed(
+                (std::numeric_limits<uint32_t>::min)(), end_low);
+        }
     }
 
     /**

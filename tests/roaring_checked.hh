@@ -117,15 +117,17 @@ class Roaring {
         return ans;
     }
 
-    void addRange(const uint64_t x, const uint64_t y)  {
-        plain.addRange(x, y);
+    void addRange(const uint64_t x, const uint64_t y) {
         if (x != y) {  // repeat add_range_closed() cast and bounding logic
-            uint32_t min = static_cast<uint32_t>(x);
-            uint32_t max = static_cast<uint32_t>(y - 1);
-            if (min <= max) {
-                for (uint32_t val = max; val != min - 1; --val)
-                    check.insert(val);
-            }
+            addRangeClosed(x, y - 1);
+        }
+    }
+
+    void addRangeClosed(uint32_t min, uint32_t max) {
+        plain.addRangeClosed(min, max);
+        if (min <= max) {
+            for (uint32_t val = max; val != min - 1; --val)
+                check.insert(val);
         }
     }
 
@@ -146,6 +148,19 @@ class Roaring {
         assert(ans == (num_removed == 1));
         (void)num_removed;  // unused besides assert
         return ans;
+    }
+
+    void removeRange(const uint64_t x, const uint64_t y) {
+        if (x != y) {  // repeat remove_range_closed() cast and bounding logic
+            removeRangeClosed(x, y - 1);
+        }
+    }
+
+    void removeRangeClosed(uint32_t min, uint32_t max) {
+        plain.removeRangeClosed(min, max);
+        if (min <= max) {
+            check.erase(check.lower_bound(min), check.upper_bound(max));
+        }
     }
 
     uint32_t maximum() const {
