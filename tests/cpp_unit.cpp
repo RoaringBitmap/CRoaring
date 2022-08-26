@@ -13,9 +13,12 @@
 #include <vector>
 
 
+#include <fstream>
 #include <iostream>
 #include <type_traits>
+#include <vector>
 
+#include "config.h"
 #include "roaring.hh"
 using roaring::Roaring;  // the C++ wrapper class
 
@@ -1036,8 +1039,6 @@ DEFINE_TEST(test_cpp_flip) {
         Roaring r1 = Roaring::bitmapOf(3, 1, 3, 6);
         r1.flip(2, 5);
         Roaring r2 = Roaring::bitmapOf(4, 1, 2, 4, 6);
-        r1.printf();
-        r2.printf();
         assert_true(r1 == r2);
     }
     {
@@ -1120,6 +1121,65 @@ DEFINE_TEST(test_cpp_flip_64) {
     }
 }
 
+// Returns true on success, false on exception.
+bool test64Deserialize(const std::string& filename) {
+    std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
+    std::vector<char> buf1(std::istreambuf_iterator<char>(in), {});
+    printf("Reading %lu bytes\n", buf1.size());
+    Roaring64Map roaring;
+#if ROARING_EXCEPTIONS
+    try {
+        roaring = Roaring64Map::readSafe(buf1.data(), buf1.size());
+    } catch (...) {
+        return false;
+    }
+#else
+    roaring = Roaring64Map::readSafe(buf1.data(), buf1.size());
+#endif
+    std::vector<char> buf2(roaring.getSizeInBytes());
+    assert_true(buf1.size() == buf2.size());
+    assert_true(roaring.write(buf2.data()) == buf2.size());
+    for (size_t i = 0; i < buf1.size(); ++i) {
+        assert_true(buf1[i] == buf2[i]);
+    }
+    return true;
+}
+
+// The valid files were created with cpp_unit_util.cpp.
+DEFINE_TEST(test_cpp_deserialize_64_empty) {
+  assert_true(test64Deserialize("64mapempty.bin"));
+}
+
+DEFINE_TEST(test_cpp_deserialize_64_32bit_vals) {
+  assert_true(test64Deserialize("64map32bitvals.bin"));
+}
+
+DEFINE_TEST(test_cpp_deserialize_64_spread_vals) {
+  assert_true(test64Deserialize("64mapspreadvals.bin"));
+}
+
+DEFINE_TEST(test_cpp_deserialize_64_high_vals) {
+  assert_true(test64Deserialize("64maphighvals.bin"));
+}
+
+#if ROARING_EXCEPTIONS
+DEFINE_TEST(test_cpp_deserialize_64_empty_input) {
+  assert_false(test64Deserialize("64mapemptyinput.bin"));
+}
+
+DEFINE_TEST(test_cpp_deserialize_64_size_too_small) {
+  assert_false(test64Deserialize("64mapsizetoosmall.bin"));
+}
+
+DEFINE_TEST(test_cpp_deserialize_64_invalid_size) {
+  assert_false(test64Deserialize("64mapinvalidsize.bin"));
+}
+
+DEFINE_TEST(test_cpp_deserialize_64_key_too_small) {
+  assert_false(test64Deserialize("64mapkeytoosmall.bin"));
+}
+#endif
+
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
@@ -1148,6 +1208,16 @@ int main() {
         cmocka_unit_test(test_cpp_frozen_64),
         cmocka_unit_test(test_cpp_flip),
         cmocka_unit_test(test_cpp_flip_64),
+        cmocka_unit_test(test_cpp_deserialize_64_empty),
+        cmocka_unit_test(test_cpp_deserialize_64_32bit_vals),
+        cmocka_unit_test(test_cpp_deserialize_64_spread_vals),
+        cmocka_unit_test(test_cpp_deserialize_64_high_vals),
+#if ROARING_EXCEPTIONS
+        cmocka_unit_test(test_cpp_deserialize_64_empty_input),
+        cmocka_unit_test(test_cpp_deserialize_64_size_too_small),
+        cmocka_unit_test(test_cpp_deserialize_64_invalid_size),
+        cmocka_unit_test(test_cpp_deserialize_64_key_too_small),
+#endif
         cmocka_unit_test(issue316),
         cmocka_unit_test(test_issue304),
         cmocka_unit_test(issue_336),

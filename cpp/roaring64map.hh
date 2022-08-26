@@ -730,19 +730,17 @@ public:
      * space compared to the portable format (e.g., for very sparse bitmaps).
      */
     static Roaring64Map readSafe(const char *buf, size_t maxbytes) {
+        if (maxbytes < sizeof(uint64_t)) {
+            ROARING_TERMINATE("ran out of bytes");
+        }
         Roaring64Map result;
-        // get map size
         uint64_t map_size;
         std::memcpy(&map_size, buf, sizeof(uint64_t));
         buf += sizeof(uint64_t);
+        maxbytes -= sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
-            // get map key
             if(maxbytes < sizeof(uint32_t)) {
-#if ROARING_EXCEPTIONS
-                throw std::runtime_error("ran out of bytes");
-#else
                 ROARING_TERMINATE("ran out of bytes");
-#endif
             }
             uint32_t key;
             std::memcpy(&key, buf, sizeof(uint32_t));
