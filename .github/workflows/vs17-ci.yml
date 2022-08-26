@@ -12,7 +12,7 @@ jobs:
         include:
           - {gen: Visual Studio 17 2022, arch: Win32}
           - {gen: Visual Studio 17 2022, arch: x64}
-   steps:
+    steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: Configure
