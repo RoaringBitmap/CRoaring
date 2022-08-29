@@ -369,18 +369,24 @@ void array_container_offset(const array_container_t *c,
 //* Check whether a range of values from range_start (included) to range_end (excluded) is present. */
 static inline bool array_container_contains_range(const array_container_t *arr,
                                                     uint32_t range_start, uint32_t range_end) {
-
+    const int32_t range_count = range_end - range_start;
     const uint16_t rs_included = range_start;
     const uint16_t re_included = range_end - 1;
 
-    const uint16_t *carr = (const uint16_t *) arr->array;
+    // Empty range is always included
+    if (range_count <= 0) {
+        return true;
+    }
+    if (range_count > arr->cardinality) {
+        return false;
+    }
 
-    const int32_t start = advanceUntil(carr, -1, arr->cardinality, rs_included);
-    const int32_t end = advanceUntil(carr, start - 1, arr->cardinality, re_included);
-
-    return (start < arr->cardinality) && (end < arr->cardinality)
-            && (((uint16_t)(end - start)) == re_included - rs_included)
-            && (carr[start] == rs_included) && (carr[end] == re_included);
+    const int32_t start = binarySearch(arr->array, arr->cardinality, rs_included);
+    // If this sorted array contains all items in the range:
+    // * the start item must be found
+    // * the last item in range range_count must exist, and be the expected end value
+    return (start >= 0) && (arr->cardinality >= start + range_count) &&
+           (arr->array[start + range_count - 1] == re_included);
 }
 
 /* Returns the smallest value (assumes not empty) */
