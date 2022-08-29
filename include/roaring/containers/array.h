@@ -384,9 +384,9 @@ static inline bool array_container_contains_range(const array_container_t *arr,
     const int32_t start = binarySearch(arr->array, arr->cardinality, rs_included);
     // If this sorted array contains all items in the range:
     // * the start item must be found
-    // * the item at start + range_count must exist, and be the expected end value
-    return (start >= 0) && (arr->cardinality > start + range_count) &&
-           (arr->array[start + range_count] == re_included);
+    // * the last item in range range_count must exist, and be the expected end value
+    return (start >= 0) && (arr->cardinality >= start + range_count) &&
+           (arr->array[start + range_count - 1] == re_included);
 }
 
 /* Returns the smallest value (assumes not empty) */
