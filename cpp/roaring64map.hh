@@ -403,7 +403,7 @@ public:
      */
     bool isEmpty() const {
         return std::all_of(roarings.cbegin(), roarings.cend(),
-                           [](const std::pair<const uint32_t, Roaring> &map_entry) {
+                           [](const std::pair<const uint32_t, const Roaring> &map_entry) {
                                return map_entry.second.isEmpty();
                            });
     }
