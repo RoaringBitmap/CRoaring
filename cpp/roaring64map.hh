@@ -18,9 +18,10 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include <utility>
 
 #include "roaring.hh"
-using roaring::Roaring;
 
 namespace roaring {
+
+using roaring::Roaring;
 
 class Roaring64MapSetBitForwardIterator;
 class Roaring64MapSetBitBiDirectionalIterator;
