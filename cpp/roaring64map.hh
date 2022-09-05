@@ -437,6 +437,9 @@ public:
      */
     bool isSubset(const Roaring64Map &r) const {
         for (const auto &map_entry : roarings) {
+            if (map_entry.second.isEmpty()) {
+                continue;
+            }
             auto roaring_iter = r.roarings.find(map_entry.first);
             if (roaring_iter == r.roarings.cend())
                 return false;
