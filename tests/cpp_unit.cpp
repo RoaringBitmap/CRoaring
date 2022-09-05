@@ -1129,6 +1129,16 @@ DEFINE_TEST(test_cpp_is_subset_64) {
   assert_true(r3.isSubset(r2));
 }
 
+DEFINE_TEST(test_cpp_remove_run_compression) {
+  Roaring r;
+  uint32_t max = (std::numeric_limits<uint32_t>::max)();
+  for (uint32_t i = max - 10; i != 0; ++i) {
+    r.add(i);
+  }
+  r.runOptimize();
+  r.removeRunCompression();
+}
+
 // Returns true on success, false on exception.
 bool test64Deserialize(const std::string& filename) {
     std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
@@ -1231,6 +1241,7 @@ int main() {
         cmocka_unit_test(issue_336),
         cmocka_unit_test(issue_372),
         cmocka_unit_test(test_cpp_is_subset_64),
+        cmocka_unit_test(test_cpp_remove_run_compression),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
