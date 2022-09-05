@@ -523,6 +523,9 @@ public:
      * areas outside the range are passed through unchanged.
      */
     void flip(uint64_t range_start, uint64_t range_end) {
+        if (range_start >= range_end) {
+          return;
+        }
         uint32_t start_high = highBytes(range_start);
         uint32_t start_low = lowBytes(range_start);
         uint32_t end_high = highBytes(range_end);
