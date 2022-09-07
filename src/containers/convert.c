@@ -101,10 +101,11 @@ container_t *convert_to_bitset_or_array_container(
         for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
             uint16_t run_start = rc->runs[rlepos].value;
             uint16_t run_end = run_start + rc->runs[rlepos].length;
-            for (uint16_t run_value = run_start; run_value <= run_end;
+            for (uint16_t run_value = run_start; run_value < run_end;
                  ++run_value) {
                 answer->array[answer->cardinality++] = run_value;
             }
+            answer->array[answer->cardinality++] = run_end;
         }
         assert(card == answer->cardinality);
         *resulttype = ARRAY_CONTAINER_TYPE;

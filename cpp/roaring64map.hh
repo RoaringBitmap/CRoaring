@@ -18,9 +18,10 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include <utility>
 
 #include "roaring.hh"
-using roaring::Roaring;
 
 namespace roaring {
+
+using roaring::Roaring;
 
 class Roaring64MapSetBitForwardIterator;
 class Roaring64MapSetBitBiDirectionalIterator;
@@ -436,6 +437,9 @@ public:
      */
     bool isSubset(const Roaring64Map &r) const {
         for (const auto &map_entry : roarings) {
+            if (map_entry.second.isEmpty()) {
+                continue;
+            }
             auto roaring_iter = r.roarings.find(map_entry.first);
             if (roaring_iter == r.roarings.cend())
                 return false;
@@ -522,6 +526,9 @@ public:
      * areas outside the range are passed through unchanged.
      */
     void flip(uint64_t range_start, uint64_t range_end) {
+        if (range_start >= range_end) {
+          return;
+        }
         uint32_t start_high = highBytes(range_start);
         uint32_t start_low = lowBytes(range_start);
         uint32_t end_high = highBytes(range_end);

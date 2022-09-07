@@ -1,9 +1,10 @@
 //
 // cpp_random_unit.cpp
 //
-// The `roaring_checked.hh` variation of the C++ wrapper for roaring bitmaps
-// keeps a C++ `std::set` in sync with changes made using the object's methods.
-// That class has the same name (Roaring) and is in namespace `doublecheck`.
+// The `roaring_checked.hh` / `roaring64map_checked.hh variations of the C++
+// wrapper for roaring bitmaps keep a C++ `std::set` in sync with changes made
+// using the object's methods. Those classes have the same name and are in
+// namespace `doublecheck`.
 //
 // This test generates bitsets with randomized content and runs through the
 // various operations with them.
@@ -19,21 +20,22 @@
 // https://www.llvm.org/docs/LibFuzzer.html
 //
 
-#include <type_traits>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <iostream>
 
+#include <iostream>
+#include <type_traits>
 #include <vector>
 
 #include "roaring_checked.hh"
 using doublechecked::Roaring;  // so `Roaring` means `doublecheck::Roaring`
+#include "roaring64map_checked.hh"
+using doublechecked::Roaring64Map;
 
 #include "test.h"
-
 
 // The tests can run as long as one wants.  Ideally, the sanitizer options
 // for `address` and `undefined behavior` should be enabled (see the CMake
@@ -46,12 +48,12 @@ const unsigned long NUM_STEPS = 1000;
 //
 const int NUM_ROARS = 30;
 
-// If we generated data fully at random in the uint32_t space, then sets would
-// be unlikely to intersect very often.  Use a rolling focal point to kind of
-// distribute the values near enough to each other to be likely to interfere.
-//
+// If we generated data fully at random in the uint32_t / uint64_t space, then
+// sets would be unlikely to intersect very often.  Use a rolling focal point to
+// kind of distribute the values near enough to each other to be likely to
+// interfere.
 uint32_t gravity;
-
+uint64_t gravity64;
 
 Roaring make_random_bitset() {
     Roaring r;
@@ -74,7 +76,7 @@ Roaring make_random_bitset() {
 
           case 3: {
             uint32_t start = gravity + (rand() % 50) - 25;
-            r.flip(start, rand() % 50);
+            r.flip(start, start + rand() % 50);
             break; }
 
           case 4: {  // tests remove(), select(), rank()
@@ -97,6 +99,53 @@ Roaring make_random_bitset() {
     return r;
 }
 
+Roaring64Map make_random_bitset64() {
+    Roaring64Map r;
+    int num_ops = rand() % 100;
+    for (int i = 0; i < num_ops; ++i) {
+        switch (rand() % 5) {
+            case 0:
+                r.add(gravity64);
+                break;
+
+            case 1: {
+                uint64_t start = gravity64 + (rand() % 50) - 25;
+                r.addRange(start, start + rand() % 100);
+                break;
+            }
+
+            case 2: {
+                uint64_t start = gravity64 + (rand() % 10) - 5;
+                r.removeRange(start, start + rand() % 5);
+                break;
+            }
+
+            case 3: {
+                uint64_t start = gravity64 + (rand() % 50) - 25;
+                r.flip(start, start + rand() % 50);
+                break;
+            }
+
+            case 4: {  // tests remove(), select(), rank()
+                uint64_t card = r.cardinality();
+                if (card != 0) {
+                    uint64_t rnk = rand() % card;
+                    uint64_t element;
+                    assert_true(r.select(rnk, &element));
+                    assert_int_equal(rnk + 1, r.rank(element));
+                    r.remove(rnk);
+                }
+                break;
+            }
+
+            default:
+                assert_true(false);
+        }
+        gravity64 += (rand() % 200) - 100;
+    }
+    assert_true(r.does_std_set_match_roaring());
+    return r;
+}
 
 DEFINE_TEST(sanity_check_doublechecking) {
     Roaring r;
@@ -120,6 +169,26 @@ DEFINE_TEST(sanity_check_doublechecking) {
     assert_true(r.does_std_set_match_roaring());
 }
 
+DEFINE_TEST(sanity_check_doublechecking_64) {
+    Roaring64Map r;
+    while (r.isEmpty()) r = make_random_bitset64();
+
+    // Pick a random element out of the guaranteed non-empty bitset
+    //
+    uint64_t rnk = rand() % r.cardinality();
+    uint64_t element;
+    assert_true(r.select(rnk, &element));
+
+    // Deliberately get check (the std::set) out of sync to ensure match fails
+    //
+    r.check.erase(element);
+    assert_false(r.does_std_set_match_roaring());
+
+    // Put the std::set back in sync so the destructor doesn't assert
+    //
+    r.check.insert(element);
+    assert_true(r.does_std_set_match_roaring());
+}
 
 DEFINE_TEST(random_doublecheck_test) {
     //
@@ -233,7 +302,7 @@ DEFINE_TEST(random_doublecheck_test) {
                 gravity = element;
             }
             uint32_t start = gravity + (rand() % 50) - 25;
-            out.flip(start, rand() % 50);
+            out.flip(start, start + rand() % 50);
             break; }
 
           default:
@@ -286,13 +355,147 @@ DEFINE_TEST(random_doublecheck_test) {
     }
 }
 
+DEFINE_TEST(random_doublecheck_test_64) {
+    //
+    // Make a group of bitsets to choose from when performing operations.
+    //
+    std::vector<Roaring64Map> roars;
+    for (int i = 0; i < NUM_ROARS; ++i)
+        roars.insert(roars.end(), make_random_bitset64());
+
+    for (unsigned long step = 0; step < NUM_STEPS; ++step) {
+        //
+        // Each step modifies the chosen `out` bitset...possibly just
+        // overwriting it completely.
+        //
+        Roaring64Map &out = roars[rand() % NUM_ROARS];
+
+        // The left and right bitsets may be used as inputs for operations.
+        // They can be a reference to the same object as out, or can be
+        // references to each other (which is good to test those conditions).
+        //
+        const Roaring64Map &left = roars[rand() % NUM_ROARS];
+        const Roaring64Map &right = roars[rand() % NUM_ROARS];
+
+#ifdef ROARING_CPP_RANDOM_PRINT_STATUS
+        printf("[%lu]: %llu %llu %llu\n", step,
+               static_cast<unsigned long long>(left.cardinality()),
+               static_cast<unsigned long long>(right.cardinality()),
+               static_cast<unsigned long long>(out.cardinality()));
+#endif
+
+        int op = rand() % 6;
+
+        switch (op) {
+            case 0: {  // AND
+                out = left & right;
+                if (&out != &left) assert_true(out.isSubset(left));
+                if (&out != &right) assert_true(out.isSubset(right));
+                break;
+            }
+
+            case 1: {  // ANDNOT
+                out = left - right;
+                if (&out != &left) assert_true(out.isSubset(left));
+                break;
+            }
+
+            case 2: {  // OR
+                out = left | right;
+                if (&out != &left) assert_true(left.isSubset(out));
+                if (&out != &right) assert_true(right.isSubset(out));
+                break;
+            }
+
+            case 3: {  // XOR
+                out = left ^ right;
+                break;
+            }
+
+            case 4: {  // FASTUNION
+                const Roaring64Map *inputs[3] = {&out, &left, &right};
+                out = Roaring64Map::fastunion(
+                    3, inputs);  // result checked internally
+                break;
+            }
+
+            case 5: {  // FLIP
+                uint64_t card = out.cardinality();
+                if (card != 0) {  // pick gravity point inside set somewhere
+                    uint64_t rnk = rand() % card;
+                    uint64_t element;
+                    assert_true(out.select(rnk, &element));
+                    assert_int_equal(rnk + 1, out.rank(element));
+                    gravity64 = element;
+                }
+                uint64_t start = gravity64 + (rand() % 50) - 25;
+                out.flip(start, start + rand() % 50);
+                break;
+            }
+
+            default:
+                assert_true(false);
+        }
+
+        // Periodically apply a post-processing step to the out bitset
+        //
+        int post = rand() % 15;
+        switch (post) {
+            case 0:
+                out.removeRunCompression();
+                break;
+
+            case 1:
+                out.runOptimize();
+                break;
+
+            case 2:
+                out.shrinkToFit();
+                break;
+
+            default:
+                break;
+        }
+
+        // Explicitly ask if the `std::set` matches the roaring bitmap in out
+        //
+        assert_true(out.does_std_set_match_roaring());
+
+        // Do some arbitrary query operations.  No need to test the results, as
+        // the doublecheck code ensures the `std::set` matches internally.
+        //
+        out.isEmpty();
+        out.minimum();
+        out.maximum();
+        for (int i = -50; i < 50; ++i) {
+            out.contains(gravity64 + i);
+        }
+
+        // When doing random intersections, the tendency is that sets will
+        // lose all their data points over time.  So empty sets are usually
+        // re-seeded with more data, but a few get through to test empty cases.
+        //
+        if (out.isEmpty() && (rand() % 10 != 0)) out = make_random_bitset64();
+    }
+}
 
 int main() {
+    uint64_t seed = time(nullptr);
+    srand(seed);
+    printf("Seed: %lu\n", seed);
+
     gravity = rand() % 10000;  // starting focal point
+
+    // Make the 64-bit gravity focus around the edge of a 32-bit value to better
+    // test edge cases.
+    gravity64 = (static_cast<uint64_t>(rand()) << 32) + rand() % 20000 - 10000;
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(sanity_check_doublechecking),
-        cmocka_unit_test(random_doublecheck_test)};
+        cmocka_unit_test(sanity_check_doublechecking_64),
+        cmocka_unit_test(random_doublecheck_test),
+        cmocka_unit_test(random_doublecheck_test_64),
+    };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
