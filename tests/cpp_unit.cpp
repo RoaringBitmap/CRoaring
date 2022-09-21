@@ -770,7 +770,7 @@ DEFINE_TEST(test_cpp_remove_range) {
     }
 }
 
-DEFINE_TEST(test_cpp_add_range_64) {
+DEFINE_TEST(test_cpp_add_range_closed_64) {
     {
         // 32-bit integers
         Roaring64Map r1;
@@ -781,10 +781,12 @@ DEFINE_TEST(test_cpp_add_range_64) {
         }
         assert_true(r1 == r2);
     }
+    auto b1 = uint64_t(1) << 32;
     std::vector<std::pair<uint64_t, uint64_t>> ranges = {
-        {uint64_t(1) << 32, (uint64_t(1) << 32) + 10},
-        {(uint64_t(1) << 32) - 10, (uint64_t(1) << 32) + 10},
-        {(uint64_t(1) << 32) + 2, (uint64_t(1) << 32) - 2}};
+        {b1, b1 + 10},
+        {b1 + 100, b1 + 100},  // one element
+        {b1 - 10, b1 + 10},
+        {b1 + 2, b1 - 2}};
     for (const auto &range : ranges) {
         uint64_t min = range.first;
         uint64_t max = range.second;
@@ -796,6 +798,98 @@ DEFINE_TEST(test_cpp_add_range_64) {
         }
         assert_true(r1 == r2);
     }
+}
+
+DEFINE_TEST(test_cpp_add_range_open_64) {
+    {
+        // 32-bit integers
+        Roaring64Map r1;
+        r1.addRange(uint32_t(1), uint32_t(5));
+        Roaring64Map r2;
+        for (uint32_t v = 1; v < 5; ++v) {
+            r2.add(v);
+        }
+        assert_true(r1 == r2);
+    }
+    auto b1 = uint64_t(1) << 32;
+    std::vector<std::pair<uint64_t, uint64_t>> ranges = {
+        {b1, b1 + 10},
+        {b1 - 10, b1 + 10},
+        {b1 + 100, b1 + 100}, // empty
+        {b1 + 2, b1 - 2}};
+    for (const auto &range : ranges) {
+        uint64_t min = range.first;
+        uint64_t max = range.second;
+        Roaring64Map r1;
+        r1.addRange(min, max);
+        Roaring64Map r2;
+        for (uint64_t v = min; v < max; ++v) {
+            r2.add(v);
+        }
+        assert_true(r1 == r2);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_range_closed_large_64) {
+    uint32_t start_high = 300;
+    for (uint32_t end_high = start_high; end_high != 305; ++end_high) {
+        auto begin = (uint64_t(start_high) << 32) + 0x01234567;
+        auto end = (uint64_t(end_high) << 32) + 0x89abcdef;
+        Roaring64Map r1;
+        r1.addRangeClosed(begin, end);
+        auto size = end - begin + 1;
+        assert_true(r1.cardinality() == size);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_range_open_large_64) {
+    uint32_t start_high = 300;
+    for (uint32_t end_high = start_high; end_high != 305; ++end_high) {
+        auto begin = (uint64_t(start_high) << 32) + 0x01234567;
+        auto end = (uint64_t(end_high) << 32) + 0x89abcdef;
+        Roaring64Map r1;
+        r1.addRange(begin, end);
+        auto size = end - begin;
+        assert_true(r1.cardinality() == size);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_many) {
+    std::vector<uint32_t> values = { 9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 9999};
+    Roaring r1;
+    r1.addMany(values.size(), values.data());
+    Roaring r2;
+    for (const auto value : values) {
+        r2.add(value);
+    }
+    assert_true(r1 == r2);
+}
+
+DEFINE_TEST(test_cpp_add_many_64) {
+    {
+        // 32-bit integers
+        std::vector<uint32_t> values = { 9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 0, 9999};
+        Roaring64Map r1;
+        r1.addMany(values.size(), values.data());
+        Roaring64Map r2;
+        for (const auto value : values) {
+            r2.add(value);
+        }
+        assert_true(r1 == r2);
+    }
+
+    auto b1 = uint64_t(1) << 32;
+    auto b555 = uint64_t(555) << 32;
+
+    std::vector<uint64_t> values = {
+        b555 + 9999, b1 + 123, b1 + 0xFFFFFFFF, b555 + 0xFFFFFFF7, 0, b555 + 9999};
+    Roaring64Map r1;
+    r1.addMany(values.size(), values.data());
+    Roaring64Map r2;
+    for (const auto value : values) {
+        r2.add(value);
+    }
+    assert_true(r1 == r2);
 }
 
 DEFINE_TEST(test_cpp_remove_range_closed_64) {
@@ -1436,7 +1530,12 @@ int main() {
         cmocka_unit_test(test_cpp_add_remove_checked_64),
         cmocka_unit_test(test_cpp_add_range),
         cmocka_unit_test(test_cpp_remove_range),
-        cmocka_unit_test(test_cpp_add_range_64),
+        cmocka_unit_test(test_cpp_add_range_closed_64),
+        cmocka_unit_test(test_cpp_add_range_open_64),
+        cmocka_unit_test(test_cpp_add_range_closed_large_64),
+        cmocka_unit_test(test_cpp_add_range_open_large_64),
+        cmocka_unit_test(test_cpp_add_many),
+        cmocka_unit_test(test_cpp_add_many_64),
         cmocka_unit_test(test_cpp_remove_range_closed_64),
         cmocka_unit_test(test_cpp_remove_range_64),
         cmocka_unit_test(test_run_compression_cpp_64_true),
