@@ -1212,6 +1212,10 @@ DEFINE_TEST(test_cpp_frozen_64) {
 }
 
 DEFINE_TEST(test_cpp_flip) {
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
     {
         // nothing is affected outside of the given range
         Roaring r1 = Roaring::bitmapOf(3, 1, 3, 6);
@@ -1235,11 +1239,8 @@ DEFINE_TEST(test_cpp_flip) {
     }
     {
         // uint32 max can be flipped
-        Roaring r1 =
-            Roaring::bitmapOf(1, (std::numeric_limits<uint32_t>::max)());
-        r1.flip(
-            (std::numeric_limits<uint32_t>::max)(),
-            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1);
+        Roaring r1 = Roaring::bitmapOf(1, uint32_max);
+        r1.flip(uint32_max, static_cast<uint64_t>(uint32_max) + 1);
         assert_true(r1.isEmpty());
     }
     {
@@ -1251,32 +1252,78 @@ DEFINE_TEST(test_cpp_flip) {
     }
 }
 
-DEFINE_TEST(test_cpp_flip_64) {
+DEFINE_TEST(test_cpp_flip_closed) {
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
     {
         // nothing is affected outside of the given range
-        Roaring64Map r1 = Roaring64Map::bitmapOf(3, (((uint64_t)1) << 32) - 3, ((uint64_t)1) << 32,
-                                                 (((uint64_t)1) << 32) + 3);
-        r1.flip((((uint64_t)1) << 32) - 2, (((uint64_t)1) << 32) + 2);
-        Roaring64Map r2 = Roaring64Map::bitmapOf(
-            5, (((uint64_t)1) << 32) - 3, (((uint64_t)1) << 32) - 2, (((uint64_t)1) << 32) - 1,
-            (((uint64_t)1) << 32) + 1, (((uint64_t)1) << 32) + 3);
+        Roaring r1 = Roaring::bitmapOf(3, 1, 3, 6);
+        r1.flipClosed(2, 4);
+        Roaring r2 = Roaring::bitmapOf(4, 1, 2, 4, 6);
         assert_true(r1 == r2);
     }
     {
         // given range can go outside of existing range
-        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (((uint64_t)1) << 32) - 2, ((uint64_t)1) << 32);
-        r1.flip((((uint64_t)1) << 32) - 3, (((uint64_t)1) << 32) + 2);
+        Roaring r1 = Roaring::bitmapOf(2, 1, 3);
+        r1.flipClosed(0, 4);
+        Roaring r2 = Roaring::bitmapOf(3, 0, 2, 4);
+        assert_true(r1 == r2);
+    }
+    {
+        // range end is inclusive
+        Roaring r1 = Roaring::bitmapOf(2, 1, 3);
+        r1.flipClosed(1, 2);
+        Roaring r2 = Roaring::bitmapOf(2, 2, 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // uint32 max can be flipped
+        Roaring r1 = Roaring::bitmapOf(1, uint32_max);
+        r1.flipClosed(uint32_max, uint32_max);
+        assert_true(r1.isEmpty());
+    }
+    {
+        // empty range does nothing
+        Roaring r1 = Roaring::bitmapOf(2, 2, 3);
+        Roaring r2 = r1;
+        r1.flipClosed(2, 1);
+        assert_true(r1 == r2);
+    }
+}
+
+
+DEFINE_TEST(test_cpp_flip_64) {
+    const auto b1 = uint64_t(1) << 32;
+    const auto b2 = uint64_t(2) << 32;
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+
+    {
+        // nothing is affected outside of the given range
+        Roaring64Map r1 = Roaring64Map::bitmapOf(3, b1 - 3, b1, b1 + 3);
+        r1.flip(b1 - 2, b1 + 2);
         Roaring64Map r2 = Roaring64Map::bitmapOf(
-            3, (((uint64_t)1) << 32) - 3, (((uint64_t)1) << 32) - 1, (((uint64_t)1) << 32) + 1);
+            5, b1 - 3, b1 - 2, b1 - 1, b1 + 1, b1 + 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // given range can go outside of existing range
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, b1 - 2, b1);
+        r1.flip(b1 - 3, b1 + 2);
+        Roaring64Map r2 = Roaring64Map::bitmapOf(
+            3, b1 - 3, b1 - 1, b1 + 1);
         assert_true(r1 == r2);
     }
     {
         // range end is exclusive
-        Roaring64Map r1 =
-            Roaring64Map::bitmapOf(2, (((uint64_t)2) << 32) - 1, (((uint64_t)2) << 32) + 2);
-        r1.flip((((uint64_t)2) << 32) - 1, (((uint64_t)2) << 32) + 2);
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, b2 - 1, b2 + 2);
+        r1.flip(b2 - 1, b2 + 2);
         Roaring64Map r2;
-        for (uint64_t i = (((uint64_t)2) << 32); i <= (((uint64_t)2) << 32) + 2; ++i) {
+        for (uint64_t i = b2; i <= b2 + 2; ++i) {
             r2.add(i);
         }
         assert_true(r1 == r2);
@@ -1284,18 +1331,118 @@ DEFINE_TEST(test_cpp_flip_64) {
     {
         // uint32 max can be flipped
         Roaring64Map r1 =
-            Roaring64Map::bitmapOf(1, static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()));
-        r1.flip(
-            (std::numeric_limits<uint32_t>::max)(),
-            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1);
+            Roaring64Map::bitmapOf(1, static_cast<uint64_t>(uint32_max));
+        r1.flip(uint32_max, static_cast<uint64_t>(uint32_max) + 1);
         assert_true(r1.isEmpty());
     }
     {
         // empty range does nothing
-        Roaring64Map r1 = Roaring64Map::bitmapOf(2, (((uint64_t)1) << 32) - 1, ((uint64_t)1) << 32);
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, b1 - 1, b1);
         Roaring64Map r2 = r1;
-        r1.flip((((uint64_t)1) << 32) - 1, (((uint64_t)1) << 32) - 1);
+        r1.flip(b1 - 1, b1 - 1);
         assert_true(r1 == r2);
+    }
+}
+
+DEFINE_TEST(test_cpp_flip_closed_64) {
+    const auto b1 = uint64_t(1) << 32;
+    const auto b2 = uint64_t(2) << 32;
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+
+    {
+        // nothing is affected outside of the given range
+        Roaring64Map r1 = Roaring64Map::bitmapOf(3, b1 - 3, b1, b1 + 3);
+        r1.flipClosed(b1 - 2, b1 + 1);
+        Roaring64Map r2 = Roaring64Map::bitmapOf(
+            5, b1 - 3, b1 - 2, b1 - 1, b1 + 1, b1 + 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // given range can go outside of existing range
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, b1 - 2, b1);
+        r1.flipClosed(b1 - 3, b1 + 1);
+        Roaring64Map r2 = Roaring64Map::bitmapOf(
+            3, b1 - 3, b1 - 1, b1 + 1);
+        assert_true(r1 == r2);
+    }
+    {
+        // range end is inclusive
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, b2 - 1, b2 + 2);
+        r1.flipClosed(b2 - 1, b2 + 1);
+        Roaring64Map r2;
+        for (uint64_t i = b2; i <= b2 + 2; ++i) {
+            r2.add(i);
+        }
+        assert_true(r1 == r2);
+    }
+    {
+        // uint32 max can be flipped
+        Roaring64Map r1 =
+            Roaring64Map::bitmapOf(1, static_cast<uint64_t>(uint32_max));
+        r1.flipClosed(uint32_max, uint32_max);
+        assert_true(r1.isEmpty());
+    }
+    {
+        // empty range does nothing
+        Roaring64Map r1 = Roaring64Map::bitmapOf(2, b1 - 1, b1);
+        Roaring64Map r2 = r1;
+        r1.flipClosed(b1 - 1, b1 - 2);
+        assert_true(r1 == r2);
+    }
+}
+
+DEFINE_TEST(test_combinatoric_flip_many_64) {
+    // Given 'num_slots_to_test' outer slots, we repeatedly seed a Roaring64Map
+    // with all combinations of present and absent outer slots (basically the
+    // powerset of {0...num_slots_to_test - 1}), then we invert
+    // the whole range and see if the cardinality is what we expect.
+    // For example (assuming num_slots_to_test = 5), we:
+    // create a Roaring64Map, (do nothing), flip 5 slots, and check
+    // Then we:
+    // create a Roaring64Map, set a bit in slot 0, flip 5 slots, and check
+    // Then we:
+    // create a Roaring64Map, set a bit in slot 1, flip 5 slots, and check
+    // Then we:
+    // create a Roaring64Map, set a bit in slots 0 and 1, flip 5 slots, and check
+    // etc.
+    const uint32_t num_slots_to_test = 5;
+    const uint32_t base_slot = 50;
+
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+    const uint32_t bitmask_limit = 1 << num_slots_to_test;
+
+    for (uint32_t bitmask = 0; bitmask < bitmask_limit; ++bitmask) {
+        Roaring64Map roaring;
+        uint32_t num_one_bits = 0;
+
+        // The 1-bits in 'bitmask' indicate which slots we want to seed
+        // with a value.
+        for (uint32_t bit_index = 0; bit_index < num_slots_to_test; ++bit_index) {
+            if ((bitmask & (1 << bit_index)) == 0) {
+                continue;
+            }
+            auto slot = base_slot + bit_index;
+            auto value = (uint64_t(slot) << 32) + 0x1234567 + bit_index;
+            roaring.add(value);
+            ++num_one_bits;
+        }
+
+        auto first_bucket = uint64_t(base_slot) << 32;
+        auto last_bucket = uint64_t(base_slot + num_slots_to_test - 1) << 32;
+
+        roaring.flipClosed(first_bucket, last_bucket + uint32_max);
+
+        // Slots not initalized with a bit will now have cardinality 2^32
+        // Slots initialized with a bit will have cardinality 2^32 - 1
+        auto expected_cardinality = num_slots_to_test * (uint64_t(1) << 32)
+          - num_one_bits;
+        assert_int_equal(expected_cardinality, roaring.cardinality());
     }
 }
 
@@ -1447,7 +1594,10 @@ int main() {
         cmocka_unit_test(test_cpp_frozen),
         cmocka_unit_test(test_cpp_frozen_64),
         cmocka_unit_test(test_cpp_flip),
+        cmocka_unit_test(test_cpp_flip_closed),
         cmocka_unit_test(test_cpp_flip_64),
+        cmocka_unit_test(test_cpp_flip_closed_64),
+        cmocka_unit_test(test_combinatoric_flip_many_64),
         cmocka_unit_test(test_cpp_deserialize_64_empty),
         cmocka_unit_test(test_cpp_deserialize_64_32bit_vals),
         cmocka_unit_test(test_cpp_deserialize_64_spread_vals),
