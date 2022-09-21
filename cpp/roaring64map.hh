@@ -15,6 +15,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include <map>
 #include <new>
 #include <numeric>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -1237,12 +1238,120 @@ public:
      * pointer).
      */
     static Roaring64Map fastunion(size_t n, const Roaring64Map **inputs) {
-        Roaring64Map ans;
-        // not particularly fast
-        for (size_t lcv = 0; lcv < n; ++lcv) {
-            ans |= *(inputs[lcv]);
+        // The strategy here is to basically do a "group by" operation.
+        // We group the input roarings by key, do a 32-bit
+        // roaring_bitmap_or_many on each group, and collect the results.
+        // We accomplish the "group by" operation using a priority queue, which
+        // tracks the next key for each of our input maps. At each step, our
+        // algorithm takes the next subset of maps that share the same next key,
+        // runs roaring_bitmap_or_many on those bitmaps, and then advances the
+        // current_iter on all the affected entries and then repeats.
+
+        // There is an entry in our priority queue for each of the 'n' inputs.
+        // For a given Roaring64Map, we look at its underlying 'roarings'
+        // std::map, and take its begin() and end(). This forms our half-open
+        // interval [current_iter, end_iter), which we keep in the priority
+        // queue as a std::pair. These entries are updated as our algorithm
+        // progresses. When the interval becomes empty, it is removed from the
+        // priority queue.
+        typedef std::pair<roarings_t::const_iterator, roarings_t::const_iterator> pq_entry_t;
+
+        // Custom comparator for the priority queue.
+        auto pq_comp = [](const pq_entry_t &lhs, const pq_entry_t &rhs) {
+            auto left_current_iter = lhs.first;
+            auto right_current_iter = rhs.first;
+
+            auto left_key = left_current_iter->first;
+            auto right_key = right_current_iter->first;
+
+            // We compare in the opposite direction than normal because priority
+            // queues normally order from largest to smallest, but we want
+            // smallest to largest.
+            return left_key > right_key;
+        };
+
+        // Create and populate the priority queue.
+        std::priority_queue<pq_entry_t, std::vector<pq_entry_t>, decltype(pq_comp)> pq(pq_comp);
+        for (size_t i = 0; i < n; ++i) {
+            const auto &roarings = inputs[i]->roarings;
+            if (roarings.begin() != roarings.end()) {
+                pq.emplace(roarings.begin(), roarings.end());
+            }
         }
-        return ans;
+
+        // A reusable vector that holds the pointers to the inner bitmaps that
+        // we pass to the underlying 32-bit fastunion operation.
+        std::vector<const roaring_bitmap_t*> group_bitmaps;
+
+        // Summary of the algorithm:
+        // 1. While the pq is not empty:
+        //    A. Get its lowest key. Call this group_key
+        //    B. While the lowest entry in the map has a key equal to group_key:
+        //       1. Remove this entry (the pair {current_iter, end_iter}) from
+        //          the map.
+        //       2. Add the bitmap pointed to by current_iter to a list of
+        //          32-bit bitmaps to process.
+        //       3. Advance current_iter. Now it will point to a bitmap entry
+        //          with some key greater than group_key (or it will point to
+        //          end()).
+        //       4. If current_iter != end_iter, reinsert the pair into the
+        //          priority queue.
+        //    C. Invoke the 32-bit roaring_bitmap_or_many() and add to result
+        Roaring64Map result;
+        while (!pq.empty()) {
+            // Find the next key in the priority queue.
+            auto group_current_iter = pq.top().first;
+            auto group_key = group_current_iter->first;
+
+            // The purpose of the inner loop is to gather all the inner bitmaps
+            // that share "group_key" into "group_bitmaps" so that they can be
+            // fed to roaring_bitmap_or_many(). While we are doing this, we
+            // advance those iterators to their next value and reinsert them
+            // into the priority queue (unless they reach their end).
+            group_bitmaps.clear();
+            while (!pq.empty()) {
+                auto candidate_current_iter = pq.top().first;
+                auto candidate_end_iter = pq.top().second;
+
+                auto candidate_key = candidate_current_iter->first;
+                const auto &candidate_bitmap = candidate_current_iter->second;
+
+                // This element will either be in the group (having
+                // key == top_key) or it will not be in the group (having
+                // key > top_key). (Note it cannot have key < top_key because of
+                // the ordered nature of the PQ itself and the ordered nature
+                // of all the underlying roaring maps).
+                if (candidate_key != group_key) {
+                    // This entry, and (thanks to the nature of the PQ) all
+                    // other entries as well, are all greater than group_key,
+                    // so we're done collecting elements for the current group.
+                    // Because of the way this loop was written, the group will
+                    // will always contain at least one element.
+                    break;
+                }
+
+                group_bitmaps.push_back(&candidate_bitmap.roaring);
+                // Remove this entry from the PQ.
+                pq.pop();
+
+                // Advance 'candidate_current_iter'  and insert a new entry
+                // {candidate_current_iter, candidate_end_iter} into the PQ
+                // (unless it has reached its end).
+                ++candidate_current_iter;
+                if (candidate_current_iter != candidate_end_iter) {
+                    pq.emplace(candidate_current_iter, candidate_end_iter);
+                }
+            }
+
+            // Use the fast inner union to combine these.
+            auto innerResult = roaring_bitmap_or_many(group_bitmaps.size(),
+                                                      group_bitmaps.data());
+            // Insert the 32-bit result at end of the 'roarings' map of the
+            // result we are building.
+            result.roarings.insert(result.roarings.end(),
+                                   std::make_pair(group_key, Roaring(innerResult)));
+        }
+        return result;
     }
 
     friend class Roaring64MapSetBitForwardIterator;
