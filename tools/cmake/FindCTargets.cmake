@@ -41,3 +41,8 @@ function(add_c_benchmark BENCH_NAME)
   add_executable(${BENCH_NAME} ${BENCH_NAME}.c)
   target_link_libraries(${BENCH_NAME} ${ROARING_LIB_NAME})
 endfunction(add_c_benchmark)
+
+function(add_cpp_benchmark BENCH_NAME)
+  add_executable(${BENCH_NAME} ${BENCH_NAME}.cpp)
+  target_link_libraries(${BENCH_NAME} ${ROARING_LIB_NAME})
+endfunction(add_cpp_benchmark)
