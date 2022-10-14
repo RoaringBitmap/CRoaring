@@ -217,6 +217,33 @@ static inline bool croaring_avx2() {
 }
 #endif
 
+#ifdef ROARING_DISABLE_SSE
+static inline bool croaring_sse42() {
+  return false;
+}
+#elif defined(__SSE4_2__)
+static inline bool croaring_sse42() {
+  return true;
+}
+#else
+static inline bool croaring_sse42() {
+  return  (croaring_detect_supported_architectures() & CROARING_SSE42) == CROARING_SSE42;
+}
+#endif
+
+#ifndef CROARING_ASMBITMANIPOPTIMIZATION
+static inline bool croaring_bmi2() {
+  return false;
+}
+#elif defined(__BMI2__)
+static inline bool croaring_bmi2() {
+  return true;
+}
+#else
+static inline bool croaring_bmi2() {
+  return  (croaring_detect_supported_architectures() & CROARING_BMI2) == CROARING_BMI2;
+}
+#endif
 
 #else // defined(__x86_64__) || defined(_M_AMD64) // x64
 

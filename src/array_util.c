@@ -1861,7 +1861,7 @@ size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
 size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
 #ifdef CROARING_IS_X64
-    if( croaring_avx2() ) {
+    if( croaring_sse42() ) {
         // compute union with smallest array first
       if (size_1 < size_2) {
         return union_vector16(set_1, (uint32_t)size_1,

@@ -64,7 +64,7 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
                                 uint32_t end);
 
-#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(__AVX2__)
+#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(__BMI2__)
 /* Set the ith bit.  */
 static inline void bitset_container_set(bitset_container_t *bitset,
                                         uint16_t pos) {
