@@ -231,7 +231,7 @@ static inline bool croaring_sse42() {
 }
 #endif
 
-#ifndef CROARING_ASMBITMANIPOPTIMIZATION
+#ifdef ROARING_DISABLE_BMI
 static inline bool croaring_bmi2() {
   return false;
 }

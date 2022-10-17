@@ -64,10 +64,50 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src);
 void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
                                 uint32_t end);
 
-#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(__BMI2__)
-/* Set the ith bit.  */
-static inline void bitset_container_set(bitset_container_t *bitset,
-                                        uint16_t pos) {
+static inline void _scalar_bitset_container_set(bitset_container_t* bitset, uint16_t pos) {
+    const uint64_t old_word = bitset->words[pos >> 6];
+    const int index = pos & 63;
+    const uint64_t new_word = old_word | (UINT64_C(1) << index);
+    bitset->cardinality += (uint32_t)((old_word ^ new_word) >> index);
+    bitset->words[pos >> 6] = new_word;
+}
+
+static inline void _scalar_bitset_container_unset(bitset_container_t* bitset, uint16_t pos) {
+    const uint64_t old_word = bitset->words[pos >> 6];
+    const int index = pos & 63;
+    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
+    bitset->cardinality -= (uint32_t)((old_word ^ new_word) >> index);
+    bitset->words[pos >> 6] = new_word;
+}
+
+static inline bool _scalar_bitset_container_add(bitset_container_t* bitset, uint16_t pos) {
+    const uint64_t old_word = bitset->words[pos >> 6];
+    const int index = pos & 63;
+    const uint64_t new_word = old_word | (UINT64_C(1) << index);
+    const uint64_t increment = (old_word ^ new_word) >> index;
+    bitset->cardinality += (uint32_t)increment;
+    bitset->words[pos >> 6] = new_word;
+    return increment > 0;
+}
+
+static inline bool _scalar_bitset_container_remove(bitset_container_t* bitset, uint16_t pos) {
+    const uint64_t old_word = bitset->words[pos >> 6];
+    const int index = pos & 63;
+    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
+    const uint64_t increment = (old_word ^ new_word) >> index;
+    bitset->cardinality -= (uint32_t)increment;
+    bitset->words[pos >> 6] = new_word;
+    return increment > 0;
+}
+
+static inline bool _scalar_bitset_container_get(const bitset_container_t* bitset, uint16_t pos) {
+    const uint64_t word = bitset->words[pos >> 6];
+    return (word >> (pos & 63)) & 1;
+}
+
+#if defined(CROARING_ASMBITMANIPOPTIMIZATION)
+
+static inline void _asm_bitset_container_set(bitset_container_t* bitset, uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -77,9 +117,7 @@ static inline void bitset_container_set(bitset_container_t *bitset,
     bitset->words[offset] = load;
 }
 
-/* Unset the ith bit.  */
-static inline void bitset_container_unset(bitset_container_t *bitset,
-                                          uint16_t pos) {
+static inline void _asm_bitset_container_unset(bitset_container_t* bitset, uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -89,10 +127,7 @@ static inline void bitset_container_unset(bitset_container_t *bitset,
     bitset->words[offset] = load;
 }
 
-/* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
- * than bitset_container_set.  */
-static inline bool bitset_container_add(bitset_container_t *bitset,
-                                        uint16_t pos) {
+static inline bool _asm_bitset_container_add(bitset_container_t* bitset, uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -105,10 +140,7 @@ static inline bool bitset_container_add(bitset_container_t *bitset,
     return bitset->cardinality - oldcard;
 }
 
-/* Remove `pos' from `bitset'. Returns true if `pos' was present.  Might be
- * slower than bitset_container_unset.  */
-static inline bool bitset_container_remove(bitset_container_t *bitset,
-                                           uint16_t pos) {
+static inline bool _asm_bitset_container_remove(bitset_container_t* bitset, uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
     uint64_t p = pos;
@@ -121,68 +153,85 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
     return oldcard - bitset->cardinality;
 }
 
-/* Get the value of the ith bit.  */
-inline bool bitset_container_get(const bitset_container_t *bitset,
-                                 uint16_t pos) {
+static inline bool _asm_bitset_container_get(const bitset_container_t* bitset, uint16_t pos) {
     uint64_t word = bitset->words[pos >> 6];
     const uint64_t p = pos;
     ASM_INPLACESHIFT_RIGHT(word, p);
     return word & 1;
 }
 
-#else
-
-/* Set the ith bit.  */
-static inline void bitset_container_set(bitset_container_t *bitset,
-                                        uint16_t pos) {
-    const uint64_t old_word = bitset->words[pos >> 6];
-    const int index = pos & 63;
-    const uint64_t new_word = old_word | (UINT64_C(1) << index);
-    bitset->cardinality += (uint32_t)((old_word ^ new_word) >> index);
-    bitset->words[pos >> 6] = new_word;
+inline void bitset_container_set(bitset_container_t* bitset, uint16_t pos) {
+    if (croaring_bmi2()) {
+        _asm_bitset_container_set(bitset, pos);
+    } else {
+        _scalar_bitset_container_set(bitset, pos);
+    }
 }
 
 /* Unset the ith bit.  */
-static inline void bitset_container_unset(bitset_container_t *bitset,
-                                          uint16_t pos) {
-    const uint64_t old_word = bitset->words[pos >> 6];
-    const int index = pos & 63;
-    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
-    bitset->cardinality -= (uint32_t)((old_word ^ new_word) >> index);
-    bitset->words[pos >> 6] = new_word;
+inline void bitset_container_unset(bitset_container_t* bitset, uint16_t pos) {
+    if (croaring_bmi2()) {
+        _asm_bitset_container_unset(bitset, pos);
+    } else {
+        _scalar_bitset_container_unset(bitset, pos);
+    }
 }
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
  * than bitset_container_set.  */
-static inline bool bitset_container_add(bitset_container_t *bitset,
-                                        uint16_t pos) {
-    const uint64_t old_word = bitset->words[pos >> 6];
-    const int index = pos & 63;
-    const uint64_t new_word = old_word | (UINT64_C(1) << index);
-    const uint64_t increment = (old_word ^ new_word) >> index;
-    bitset->cardinality += (uint32_t)increment;
-    bitset->words[pos >> 6] = new_word;
-    return increment > 0;
+inline bool bitset_container_add(bitset_container_t* bitset, uint16_t pos) {
+    if (croaring_bmi2()) {
+        return _asm_bitset_container_add(bitset, pos);
+    } else {
+        return _scalar_bitset_container_add(bitset, pos);
+    }
 }
 
 /* Remove `pos' from `bitset'. Returns true if `pos' was present.  Might be
  * slower than bitset_container_unset.  */
-static inline bool bitset_container_remove(bitset_container_t *bitset,
-                                           uint16_t pos) {
-    const uint64_t old_word = bitset->words[pos >> 6];
-    const int index = pos & 63;
-    const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
-    const uint64_t increment = (old_word ^ new_word) >> index;
-    bitset->cardinality -= (uint32_t)increment;
-    bitset->words[pos >> 6] = new_word;
-    return increment > 0;
+inline bool bitset_container_remove(bitset_container_t* bitset, uint16_t pos) {
+    if (croaring_bmi2()) {
+        return _asm_bitset_container_remove(bitset, pos);
+    } else {
+        return _scalar_bitset_container_remove(bitset, pos);
+    }
 }
 
 /* Get the value of the ith bit.  */
-inline bool bitset_container_get(const bitset_container_t *bitset,
-                                 uint16_t pos) {
-    const uint64_t word = bitset->words[pos >> 6];
-    return (word >> (pos & 63)) & 1;
+inline bool bitset_container_get(const bitset_container_t* bitset, uint16_t pos) {
+    if (croaring_bmi2()) {
+        return _asm_bitset_container_get(bitset, pos);
+    } else {
+        return _scalar_bitset_container_get(bitset, pos);
+    }
+}
+
+#else
+
+inline void bitset_container_set(bitset_container_t* bitset, uint16_t pos) {
+    _scalar_bitset_container_set(bitset, pos);
+}
+
+/* Unset the ith bit.  */
+inline void bitset_container_unset(bitset_container_t* bitset, uint16_t pos) {
+    _scalar_bitset_container_unset(bitset, pos);
+}
+
+/* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
+ * than bitset_container_set.  */
+inline bool bitset_container_add(bitset_container_t* bitset, uint16_t pos) {
+    return _scalar_bitset_container_add(bitset, pos);
+}
+
+/* Remove `pos' from `bitset'. Returns true if `pos' was present.  Might be
+ * slower than bitset_container_unset.  */
+inline bool bitset_container_remove(bitset_container_t* bitset, uint16_t pos) {
+    return _scalar_bitset_container_remove(bitset, pos);
+}
+
+/* Get the value of the ith bit.  */
+inline bool bitset_container_get(const bitset_container_t* bitset, uint16_t pos) {
+    return _scalar_bitset_container_get(bitset, pos);
 }
 
 #endif

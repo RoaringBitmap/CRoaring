@@ -15,7 +15,6 @@ extern "C" { namespace roaring {
 #if defined(CROARING_INLINE_ASM)
 #define CROARING_ASMBITMANIPOPTIMIZATION  // optimization flag
 
-#if defined(__BMI2__)
 #define ASM_SHIFT_RIGHT(srcReg, bitsReg, destReg) \
     __asm volatile("shrx %1, %2, %0"              \
                    : "=r"(destReg)                \
@@ -70,8 +69,7 @@ extern "C" { namespace roaring {
         "r"(testBit)   /* read only */     \
         )
 
-#endif // defined(__BMI2__)
-#endif // defined(CROARING_INLINE_ASM)
+#endif
 
 #ifdef __cplusplus
 } }  // extern "C" { namespace roaring {

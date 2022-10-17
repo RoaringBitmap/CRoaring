@@ -737,7 +737,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
     return outpos;
 }
 
-#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(CROARING_IS_X64) && defined(__BMI2__)
+#if defined(CROARING_ASMBITMANIPOPTIMIZATION) && defined(CROARING_IS_X64)
 
 static inline uint64_t _asm_bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
