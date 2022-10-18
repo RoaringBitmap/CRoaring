@@ -217,8 +217,9 @@ void array_container_andnot(const array_container_t *array_1,
                             array_container_t *out) {
     if (out->capacity < array_1->cardinality)
         array_container_grow(out, array_1->cardinality, false);
-#ifdef CROARING_IS_X64
-    if(( croaring_sse42() ) && (out != array_1) && (out != array_2)) {
+// Somehow difference_vector16 doesn't work on macOS+llvm13
+#if defined(CROARING_IS_X64) && false
+    if(croaring_sse42() && (out != array_1) && (out != array_2)) {
       out->cardinality =
           difference_vector16(array_1->array, array_1->cardinality,
                             array_2->array, array_2->cardinality, out->array);
@@ -247,8 +248,8 @@ void array_container_xor(const array_container_t *array_1,
     if (out->capacity < max_cardinality) {
         array_container_grow(out, max_cardinality, false);
     }
-
-#ifdef CROARING_IS_X64
+// Somehow xor_vector16 doesn't work on macOS+llvm13
+#if defined(CROARING_IS_X64) && false
     if( croaring_sse42() ) {
       out->cardinality =
         xor_vector16(array_1->array, array_1->cardinality, array_2->array,
