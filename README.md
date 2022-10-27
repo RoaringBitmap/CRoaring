@@ -651,11 +651,9 @@ https://groups.google.com/forum/#!forum/roaring-bitmaps
 
 # References about Roaring
 
-- Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience Volume 48, Issue 4 April 2018 Pages 867-895
- [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
+- Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience Volume 48, Issue 4 April 2018 Pages 867-895 [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
 -  Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin,
 Better bitmap performance with Roaring bitmaps,
-Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016
-http://arxiv.org/abs/1402.6407 
-- Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience Volume 46, Issue 11, pages 1547-1569, November 2016 http://arxiv.org/abs/1603.06549
+Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016  [arXiv:1402.6407](http://arxiv.org/abs/1402.6407)
+- Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience Volume 46, Issue 11, pages 1547-1569, November 2016 [arXiv:1603.06549](http://arxiv.org/abs/1603.06549)
 - Samy Chambi, Daniel Lemire, Robert Godin, Kamel Boukhalfa, Charles Allen, Fangjin Yang, Optimizing Druid with Roaring bitmaps, IDEAS 2016, 2016. http://r-libre.teluq.ca/950/
