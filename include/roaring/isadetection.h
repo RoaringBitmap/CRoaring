@@ -46,9 +46,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef ROARING_ISADETECTION_H
 #define ROARING_ISADETECTION_H
 
+// isadetection.h does not define any macro (except for ROARING_ISADETECTION_H).
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+// We need portability.h to be included first, see
+// https://github.com/RoaringBitmap/CRoaring/issues/394
+#include <roaring/portability.h>
 #if CROARING_REGULAR_VISUAL_STUDIO
 #include <intrin.h>
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)

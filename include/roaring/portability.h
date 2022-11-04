@@ -46,7 +46,6 @@
 #define _XOPEN_SOURCE 700
 #endif // !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
 
-#include "isadetection.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>  // will provide posix_memalign with _POSIX_C_SOURCE as defined above
@@ -327,4 +326,13 @@ static inline int hamming(uint64_t x) {
 #define CROARING_UNTARGET_REGION
 #endif
 
+
+// We need portability.h to be included first,
+// but we also always want isadetection.h to be
+// included (right after).
+// See https://github.com/RoaringBitmap/CRoaring/issues/394
+// There is no scenario where we want portability.h to
+// be included, but not isadetection.h: the latter is a
+// strict requirement.
+#include <roaring/isadetection.h> // include it last!
 #endif /* INCLUDE_PORTABILITY_H_ */
