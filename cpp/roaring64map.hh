@@ -525,7 +525,7 @@ public:
             if (insert_happened) {
                 // Key was not present in self, so insert was performed above.
                 // In the logic table above, this reflects the case
-                // (self.absent | other.present). Because the copy has already
+                // (self.absent ^ other.present). Because the copy has already
                 // happened, thanks to the 'insert' operation above, we just
                 // need to set the copyOnWrite flag.
                 self_bitmap.setCopyOnWrite(copyOnWrite);
