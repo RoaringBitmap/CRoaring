@@ -832,7 +832,7 @@ DEFINE_TEST(test_cpp_remove_range_64) {
 }
 
 std::pair<doublechecked::Roaring64Map, doublechecked::Roaring64Map>
-    makeTwoBigRoaring64Maps() {
+    make_two_big_roaring64_maps() {
     // Insert a large number of pseudorandom numbers into two sets.
     const uint32_t randomSeed = 0xdeadbeef;
     const size_t numValues = 1000000;  // 1 million
@@ -883,40 +883,40 @@ std::pair<doublechecked::Roaring64Map, doublechecked::Roaring64Map>
 }
 
 DEFINE_TEST(test_cpp_union_64) {
-    auto twoMaps = makeTwoBigRoaring64Maps();
+    auto two_maps = make_two_big_roaring64_maps();
 
-    auto &lhs = twoMaps.first;
-    const auto &rhs = twoMaps.second;
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
 
     lhs |= rhs;
     assert_true(lhs.does_std_set_match_roaring());
 }
 
 DEFINE_TEST(test_cpp_intersect_64) {
-    auto twoMaps = makeTwoBigRoaring64Maps();
+    auto two_maps = make_two_big_roaring64_maps();
 
-    auto &lhs = twoMaps.first;
-    const auto &rhs = twoMaps.second;
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
 
     lhs &= rhs;
     assert_true(lhs.does_std_set_match_roaring());
 }
 
 DEFINE_TEST(test_cpp_difference_64) {
-    auto twoMaps = makeTwoBigRoaring64Maps();
+    auto two_maps = make_two_big_roaring64_maps();
 
-    auto &lhs = twoMaps.first;
-    const auto &rhs = twoMaps.second;
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
 
     lhs -= rhs;
     assert_true(lhs.does_std_set_match_roaring());
 }
 
 DEFINE_TEST(test_cpp_xor_64) {
-    auto twoMaps = makeTwoBigRoaring64Maps();
+    auto two_maps = make_two_big_roaring64_maps();
 
-    auto &lhs = twoMaps.first;
-    const auto &rhs = twoMaps.second;
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
 
     lhs ^= rhs;
     assert_true(lhs.does_std_set_match_roaring());
