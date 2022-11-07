@@ -5,10 +5,12 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #ifndef INCLUDE_ROARING_64_MAP_HH_
 #define INCLUDE_ROARING_64_MAP_HH_
 
+#include <inttypes.h>
 #include <algorithm>
 #include <cstdarg>  // for va_list handling in bitmapOf()
 #include <cstdio>  // for std::printf() in the printf() method
 #include <cstring>  // for std::memcpy()
+#include <functional>
 #include <limits>
 #include <map>
 #include <new>
@@ -1193,90 +1195,27 @@ public:
     }
 
     /**
-     * Print the content of the bitmap
+     * Print the contents of the bitmap to stdout.
+     * Note: this method adds a final newline, but toString() does not.
      */
     void printf() const {
-        if (!isEmpty()) {
-            auto map_iter = roarings.cbegin();
-            while (map_iter->second.isEmpty()) ++map_iter;
-            struct iter_data {
-                uint32_t high_bits{};
-                char first_char{'{'};
-            } outer_iter_data;
-            outer_iter_data.high_bits = roarings.begin()->first;
-            map_iter->second.iterate(
-                [](uint32_t low_bits, void *inner_iter_data) -> bool {
-                    std::printf("%c%llu",
-                                ((iter_data *)inner_iter_data)->first_char,
-                                (long long unsigned)uniteBytes(
-                                    ((iter_data *)inner_iter_data)->high_bits,
-                                    low_bits));
-                    ((iter_data *)inner_iter_data)->first_char = ',';
-                    return true;
-                },
-                (void *)&outer_iter_data);
-            std::for_each(
-                ++map_iter, roarings.cend(),
-                [](const std::pair<const uint32_t, Roaring> &map_entry) {
-                    map_entry.second.iterate(
-                        [](uint32_t low_bits, void *high_bits) -> bool {
-                            std::printf(",%llu",
-                                        (long long unsigned)uniteBytes(
-                                            *(uint32_t *)high_bits, low_bits));
-                            return true;
-                        },
-                        (void *)&map_entry.first);
-                });
-        } else
-            std::printf("{");
-        std::printf("}\n");
+        auto sink = [](const std::string &s) {
+            fputs(s.c_str(), stdout);
+        };
+        printToSink(sink);
+        sink("\n");
     }
 
     /**
-     * Print the content of the bitmap into a string
+     * Print the contents of the bitmap into a string.
      */
     std::string toString() const {
-        struct iter_data {
-            std::string str{}; // The empty constructor silences warnings from pedantic static analyzers.
-            uint32_t high_bits{0};
-            char first_char{'{'};
-        } outer_iter_data;
-        if (!isEmpty()) {
-            auto map_iter = roarings.cbegin();
-            while (map_iter->second.isEmpty()) ++map_iter;
-            outer_iter_data.high_bits = roarings.begin()->first;
-            map_iter->second.iterate(
-                [](uint32_t low_bits, void *inner_iter_data) -> bool {
-                    ((iter_data *)inner_iter_data)->str +=
-                        ((iter_data *)inner_iter_data)->first_char;
-                    ((iter_data *)inner_iter_data)->str += std::to_string(
-                        uniteBytes(((iter_data *)inner_iter_data)->high_bits,
-                                   low_bits));
-                    ((iter_data *)inner_iter_data)->first_char = ',';
-                    return true;
-                },
-                (void *)&outer_iter_data);
-            std::for_each(
-                ++map_iter, roarings.cend(),
-                [&outer_iter_data](
-                    const std::pair<const uint32_t, Roaring> &map_entry) {
-                    outer_iter_data.high_bits = map_entry.first;
-                    map_entry.second.iterate(
-                        [](uint32_t low_bits, void *inner_iter_data) -> bool {
-                            ((iter_data *)inner_iter_data)->str +=
-                                ((iter_data *)inner_iter_data)->first_char;
-                            ((iter_data *)inner_iter_data)->str +=
-                                std::to_string(uniteBytes(
-                                    ((iter_data *)inner_iter_data)->high_bits,
-                                    low_bits));
-                            return true;
-                        },
-                        (void *)&outer_iter_data);
-                });
-        } else
-            outer_iter_data.str = '{';
-        outer_iter_data.str += '}';
-        return outer_iter_data.str;
+        std::string result;
+        auto sink = [&result](const std::string &s) {
+            result += s;
+        };
+        printToSink(sink);
+        return result;
     }
 
     /**
@@ -1345,6 +1284,33 @@ private:
 #else
         roarings.emplace(key, std::move(value));
 #endif
+    }
+
+    /**
+     * Prints the contents of the bitmap to a caller-provided sink function.
+     */
+    void printToSink(const std::function<void(const std::string &)> &sink) const {
+        sink("{");
+
+        // Storage for snprintf. Big enough to store the decimal representation
+        // of the largest uint64_t value and trailing \0.
+        char buffer[32];
+        const char *separator = "";
+        // Reusable, and therefore avoids many repeated heap allocations.
+        std::string callback_string;
+        for (const auto &entry : roarings) {
+            auto high_bits = entry.first;
+            const auto &bitmap = entry.second;
+            for (const auto low_bits : bitmap) {
+                auto value = uniteBytes(high_bits, low_bits);
+                snprintf(buffer, sizeof(buffer), "%" PRIu64, value);
+                callback_string = separator;
+                callback_string.append(buffer);
+                sink(callback_string);
+                separator = ",";
+            }
+        }
+        sink("}");
     }
 
     /**

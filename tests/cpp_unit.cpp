@@ -1307,6 +1307,43 @@ DEFINE_TEST(test_cpp_is_subset_64) {
   assert_true(r3.isSubset(r2));
 }
 
+DEFINE_TEST(test_cpp_to_string) {
+    // test toString
+    const auto b5 = uint64_t(5) << 32;
+    const auto uint32_max = std::numeric_limits<uint32_t>::max();
+    const auto uint64_max = std::numeric_limits<uint64_t>::max();
+
+    {
+        // 32-bit test.
+        Roaring a;
+        assert_string_equal("{}", a.toString().c_str());
+
+        a.add(1);
+        assert_string_equal("{1}", a.toString().c_str());
+
+        a.add(2);
+        a.add(3);
+        a.add(uint32_max);
+        assert_string_equal("{1,2,3,4294967295}", a.toString().c_str());
+    }
+
+    {
+        // 64-bit test.
+        Roaring64Map r;
+        assert_string_equal("{}", r.toString().c_str());
+
+        r.add(b5 + 100);
+        assert_string_equal("{21474836580}", r.toString().c_str());
+
+        r.add(1u);
+        r.add(2u);
+        r.add(uint32_max);
+        r.add(uint64_max);
+        assert_string_equal("{1,2,4294967295,21474836580,18446744073709551615}",
+                            r.toString().c_str());
+    }
+}
+
 DEFINE_TEST(test_cpp_remove_run_compression) {
   Roaring r;
   uint32_t max = (std::numeric_limits<uint32_t>::max)();
@@ -1426,6 +1463,7 @@ int main() {
         cmocka_unit_test(issue_336),
         cmocka_unit_test(issue_372),
         cmocka_unit_test(test_cpp_is_subset_64),
+        cmocka_unit_test(test_cpp_to_string),
         cmocka_unit_test(test_cpp_remove_run_compression),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
