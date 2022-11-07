@@ -309,16 +309,58 @@ public:
     }
 
     /**
-     * Compute the intersection between the current bitmap and the provided
-     * bitmap, writing the result in the current bitmap. The provided bitmap
-     * is not modified.
+     * Compute the intersection of the current bitmap and the provided bitmap,
+     * writing the result in the current bitmap. The provided bitmap is not
+     * modified.
      */
-    Roaring64Map &operator&=(const Roaring64Map &r) {
-        for (auto &map_entry : roarings) {
-            if (r.roarings.count(map_entry.first) == 1)
-                map_entry.second &= r.roarings.at(map_entry.first);
-            else
-                map_entry.second = Roaring();
+    Roaring64Map &operator&=(const Roaring64Map &other) {
+        if (this == &other) {
+            // ANDing *this with itself is a no-op.
+            return *this;
+        }
+
+        // Logic table summarizing what to do when a given outer key is
+        // present vs. absent from self and other.
+        //
+        // self     other    (self & other)  work to do
+        // --------------------------------------------
+        // absent   absent   empty           None
+        // absent   present  empty           None
+        // present  absent   empty           Erase self
+        // present  present  empty or not    Intersect self with other, but
+        //                                   erase self if result is empty.
+        //
+        // Because there is only work to do when a key is present in 'self', the
+        // main for loop iterates over entries in 'self'.
+
+        decltype(roarings.begin()) self_next;
+        for (auto self_iter = roarings.begin(); self_iter != roarings.end();
+             self_iter = self_next) {
+            // Do the 'next' operation now, so we don't have to worry about
+            // invalidation of self_iter down below with the 'erase' operation.
+            self_next = std::next(self_iter);
+
+            auto self_key = self_iter->first;
+            auto &self_bitmap = self_iter->second;
+
+            auto other_iter = other.roarings.find(self_key);
+            if (other_iter == other.roarings.end()) {
+                // 'other' doesn't have self_key. In the logic table above,
+                // this reflects the case (self.present & other.absent).
+                // So, erase self.
+                roarings.erase(self_iter);
+                continue;
+            }
+
+            // Both sides have self_key. In the logic table above, this reflects
+            // the case (self.present & other.present). So, intersect self with
+            // other.
+            const auto &other_bitmap = other_iter->second;
+            self_bitmap &= other_bitmap;
+            if (self_bitmap.isEmpty()) {
+                // ...but if intersection is empty, remove it altogether.
+                roarings.erase(self_iter);
+            }
         }
         return *this;
     }
@@ -328,44 +370,177 @@ public:
      * bitmap, writing the result in the current bitmap. The provided bitmap
      * is not modified.
      */
-    Roaring64Map &operator-=(const Roaring64Map &r) {
-        for (auto &map_entry : roarings) {
-            if (r.roarings.count(map_entry.first) == 1)
-                map_entry.second -= r.roarings.at(map_entry.first);
+    Roaring64Map &operator-=(const Roaring64Map &other) {
+        if (this == &other) {
+            // Subtracting *this from itself results in the empty map.
+            roarings.clear();
+            return *this;
+        }
+
+        // Logic table summarizing what to do when a given outer key is
+        // present vs. absent from self and other.
+        //
+        // self     other    (self - other)  work to do
+        // --------------------------------------------
+        // absent   absent   empty           None
+        // absent   present  empty           None
+        // present  absent   unchanged       None
+        // present  present  empty or not    Subtract other from self, but
+        //                                   erase self if result is empty
+        //
+        // Because there is only work to do when a key is present in both 'self'
+        // and 'other', the main while loop ping-pongs back and forth until it
+        // finds the next key that is the same on both sides.
+
+        auto self_iter = roarings.begin();
+        auto other_iter = other.roarings.cbegin();
+
+        while (self_iter != roarings.end() &&
+               other_iter != other.roarings.cend()) {
+            auto self_key = self_iter->first;
+            auto other_key = other_iter->first;
+            if (self_key < other_key) {
+                // Because self_key is < other_key, advance self_iter to the
+                // first point where self_key >= other_key (or end).
+                self_iter = roarings.lower_bound(other_key);
+                continue;
+            }
+
+            if (self_key > other_key) {
+                // Because self_key is > other_key, advance other_iter to the
+                // first point where other_key >= self_key (or end).
+                other_iter = other.roarings.lower_bound(self_key);
+                continue;
+            }
+
+            // Both sides have self_key. In the logic table above, this reflects
+            // the case (self.present & other.present). So subtract other from
+            // self.
+            auto &self_bitmap = self_iter->second;
+            const auto &other_bitmap = other_iter->second;
+            self_bitmap -= other_bitmap;
+
+            if (self_bitmap.isEmpty()) {
+                // ...but if subtraction is empty, remove it altogether.
+                self_iter = roarings.erase(self_iter);
+            } else {
+                ++self_iter;
+            }
+            ++other_iter;
         }
         return *this;
     }
 
     /**
-     * Compute the union between the current bitmap and the provided bitmap,
+     * Compute the union of the current bitmap and the provided bitmap,
      * writing the result in the current bitmap. The provided bitmap is not
      * modified.
      *
      * See also the fastunion function to aggregate many bitmaps more quickly.
      */
-    Roaring64Map &operator|=(const Roaring64Map &r) {
-        for (const auto &map_entry : r.roarings) {
-            if (roarings.count(map_entry.first) == 0) {
-                roarings[map_entry.first] = map_entry.second;
-                roarings[map_entry.first].setCopyOnWrite(copyOnWrite);
-            } else
-                roarings[map_entry.first] |= map_entry.second;
+    Roaring64Map &operator|=(const Roaring64Map &other) {
+        if (this == &other) {
+            // ORing *this with itself is a no-op.
+            return *this;
+        }
+
+        // Logic table summarizing what to do when a given outer key is
+        // present vs. absent from self and other.
+        //
+        // self     other    (self | other)  work to do
+        // --------------------------------------------
+        // absent   absent   empty           None
+        // absent   present  not empty       Copy other to self and set flags
+        // present  absent   unchanged       None
+        // present  present  not empty       self |= other
+        //
+        // Because there is only work to do when a key is present in 'other',
+        // the main for loop iterates over entries in 'other'.
+
+        for (const auto &other_entry : other.roarings) {
+            const auto &other_bitmap = other_entry.second;
+
+            // Try to insert other_bitmap into self at other_key. We take
+            // advantage of the fact that std::map::insert will not overwrite an
+            // existing entry.
+            auto insert_result = roarings.insert(other_entry);
+            auto self_iter = insert_result.first;
+            auto insert_happened = insert_result.second;
+            auto &self_bitmap = self_iter->second;
+
+            if (insert_happened) {
+                // Key was not present in self, so insert was performed above.
+                // In the logic table above, this reflects the case
+                // (self.absent | other.present). Because the copy has already
+                // happened, thanks to the 'insert' operation above, we just
+                // need to set the copyOnWrite flag.
+                self_bitmap.setCopyOnWrite(copyOnWrite);
+                continue;
+            }
+
+            // Both sides have self_key, and the insert was not performed. In
+            // the logic table above, this reflects the case
+            // (self.present & other.present). So OR other into self.
+            self_bitmap |= other_bitmap;
         }
         return *this;
     }
 
     /**
-     * Compute the symmetric union between the current bitmap and the provided
-     * bitmap, writing the result in the current bitmap. The provided bitmap
-     * is not modified.
+     * Compute the XOR of the current bitmap and the provided bitmap, writing
+     * the result in the current bitmap. The provided bitmap is not modified.
      */
-    Roaring64Map &operator^=(const Roaring64Map &r) {
-        for (const auto &map_entry : r.roarings) {
-            if (roarings.count(map_entry.first) == 0) {
-                roarings[map_entry.first] = map_entry.second;
-                roarings[map_entry.first].setCopyOnWrite(copyOnWrite);
-            } else
-                roarings[map_entry.first] ^= map_entry.second;
+    Roaring64Map &operator^=(const Roaring64Map &other) {
+        if (this == &other) {
+            // XORing *this with itself results in the empty map.
+            roarings.clear();
+            return *this;
+        }
+
+        // Logic table summarizing what to do when a given outer key is
+        // present vs. absent from self and other.
+        //
+        // self     other    (self ^ other)  work to do
+        // --------------------------------------------
+        // absent   absent   empty           None
+        // absent   present  non-empty       Copy other to self and set flags
+        // present  absent   unchanged       None
+        // present  present  empty or not    XOR other into self, but erase self
+        //                                   if result is empty.
+        //
+        // Because there is only work to do when a key is present in 'other',
+        // the main for loop iterates over entries in 'other'.
+
+        for (const auto &other_entry : other.roarings) {
+            const auto &other_bitmap = other_entry.second;
+
+            // Try to insert other_bitmap into self at other_key. We take
+            // advantage of the fact that std::map::insert will not overwrite an
+            // existing entry.
+            auto insert_result = roarings.insert(other_entry);
+            auto self_iter = insert_result.first;
+            auto insert_happened = insert_result.second;
+            auto &self_bitmap = self_iter->second;
+
+            if (insert_happened) {
+                // Key was not present in self, so insert was performed above.
+                // In the logic table above, this reflects the case
+                // (self.absent ^ other.present). Because the copy has already
+                // happened, thanks to the 'insert' operation above, we just
+                // need to set the copyOnWrite flag.
+                self_bitmap.setCopyOnWrite(copyOnWrite);
+                continue;
+            }
+
+            // Both sides have self_key, and the insert was not performed. In
+            // the logic table above, this reflects the case
+            // (self.present ^ other.present). So XOR other into self.
+            self_bitmap ^= other_bitmap;
+
+            if (self_bitmap.isEmpty()) {
+                // ...but if intersection is empty, remove it altogether.
+                roarings.erase(self_iter);
+            }
         }
         return *this;
     }

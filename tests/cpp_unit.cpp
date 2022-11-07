@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <random>
 #include <vector>
 
 
@@ -24,6 +25,8 @@ using roaring::Roaring;  // the C++ wrapper class
 
 #include "roaring64map.hh"
 using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
+
+#include "roaring64map_checked.hh"
 
 #include "test.h"
 
@@ -828,6 +831,97 @@ DEFINE_TEST(test_cpp_remove_range_64) {
     }
 }
 
+std::pair<doublechecked::Roaring64Map, doublechecked::Roaring64Map>
+    make_two_big_roaring64_maps() {
+    // Insert a large number of pseudorandom numbers into two sets.
+    const uint32_t randomSeed = 0xdeadbeef;
+    const size_t numValues = 1000000;  // 1 million
+
+    doublechecked::Roaring64Map roaring1;
+    doublechecked::Roaring64Map roaring2;
+
+    std::default_random_engine engine(randomSeed);
+    std::uniform_int_distribution<uint64_t> rng;
+
+    for (size_t i = 0; i < numValues; ++i) {
+        auto value = rng(engine);
+        auto choice = rng(engine) % 4;
+        switch (choice) {
+            case 0: {
+                // Value is added only to set 1.
+                roaring1.add(value);
+                break;
+            }
+
+            case 1: {
+                // Value is added only to set 2.
+                roaring2.add(value);
+                break;
+            }
+
+            case 2: {
+                // Value is added to both sets.
+                roaring1.add(value);
+                roaring2.add(value);
+                break;
+            }
+
+            case 3: {
+                // Value is added to set 1, and a slightly different value
+                // is added to set 2. This makes it likely that they are in
+                // the same "outer" bin, but at a different "inner" position.
+                roaring1.add(value);
+                roaring2.add(value + 1);
+                break;
+            }
+
+            default:
+                assert_true(false);
+        }
+    }
+    return std::make_pair(std::move(roaring1), std::move(roaring2));
+}
+
+DEFINE_TEST(test_cpp_union_64) {
+    auto two_maps = make_two_big_roaring64_maps();
+
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
+
+    lhs |= rhs;
+    assert_true(lhs.does_std_set_match_roaring());
+}
+
+DEFINE_TEST(test_cpp_intersect_64) {
+    auto two_maps = make_two_big_roaring64_maps();
+
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
+
+    lhs &= rhs;
+    assert_true(lhs.does_std_set_match_roaring());
+}
+
+DEFINE_TEST(test_cpp_difference_64) {
+    auto two_maps = make_two_big_roaring64_maps();
+
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
+
+    lhs -= rhs;
+    assert_true(lhs.does_std_set_match_roaring());
+}
+
+DEFINE_TEST(test_cpp_xor_64) {
+    auto two_maps = make_two_big_roaring64_maps();
+
+    auto &lhs = two_maps.first;
+    const auto &rhs = two_maps.second;
+
+    lhs ^= rhs;
+    assert_true(lhs.does_std_set_match_roaring());
+}
+
 DEFINE_TEST(test_cpp_clear_64) {
     Roaring64Map roaring;
 
@@ -1218,6 +1312,10 @@ int main() {
         cmocka_unit_test(test_run_compression_cpp_64_false),
         cmocka_unit_test(test_run_compression_cpp_true),
         cmocka_unit_test(test_run_compression_cpp_false),
+        cmocka_unit_test(test_cpp_union_64),
+        cmocka_unit_test(test_cpp_intersect_64),
+        cmocka_unit_test(test_cpp_difference_64),
+        cmocka_unit_test(test_cpp_xor_64),
         cmocka_unit_test(test_cpp_clear_64),
         cmocka_unit_test(test_cpp_move_64),
         cmocka_unit_test(test_roaring64_iterate_multi_roaring),
