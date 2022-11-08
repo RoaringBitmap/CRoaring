@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <algorithm>
 #include <random>
 #include <vector>
 
@@ -227,6 +228,67 @@ void test_roaring64_iterate_multi_roaring(void) {
     };
     roaring.iterate(iterate_func, &iterate_count);
     assert_true(iterate_count == 2);
+}
+
+namespace {
+bool roaringEqual(const Roaring64Map &actual,
+                  std::initializer_list<uint64_t> expected) {
+    return expected.size() == actual.cardinality() &&
+           std::equal(expected.begin(), expected.end(), actual.begin());
+}
+}  // namespace
+
+DEFINE_TEST(test_roaring64_remove_32) {
+    Roaring64Map roaring;
+
+    // A specific test to make sure we don't get slots confused.
+    // Specifically, we make Roaring64Map with only one slot (namely slot 5)
+    // with values {100, 200, 300} in its inner bitmap. Then we do a 32-bit
+    // remove of 100 from slot 0. A correct implementation of 'remove' would
+    // be a no-op.
+    const uint64_t b5 = uint64_t(5) << 32;
+    Roaring64Map r;
+    r.add(b5 + 100);
+    r.add(b5 + 200);
+    r.add(b5 + 300);
+    r.remove(uint32_t(100));
+
+    // No change
+    assert_true(roaringEqual(r, {b5 + 100, b5 + 200, b5 + 300}));
+}
+
+DEFINE_TEST(test_roaring64_add_and_remove) {
+    Roaring64Map r;
+
+    const uint64_t b5 = uint64_t(5) << 32;
+
+    // 32-bit adds
+    r.add(300u);
+    r.add(200u);
+    r.add(100u);
+    assert_true(roaringEqual(r, {100, 200, 300}));
+
+    // 64-bit adds
+    r.add(uint64_t(200));  // Duplicate
+    r.add(uint64_t(400));  // New
+    r.add(b5 + 400);  // All new
+    r.add(b5 + 300);
+    r.add(b5 + 200);
+    r.add(b5 + 100);
+    assert_true(roaringEqual(r,
+        {100, 200, 300, 400, b5 + 100, b5 + 200, b5 + 300, b5 + 400}));
+
+    // 32-bit removes
+    r.remove(200u);  // Exists.
+    r.remove(500u);  // Doesn't exist
+    assert_true(roaringEqual(r,
+        {100, 300, 400, b5 + 100, b5 + 200, b5 + 300, b5 + 400}));
+
+    // 64-bit removes
+    r.remove(b5 + 100);  // Exists.
+    r.remove(b5 + 500);  // Doesn't exist
+    assert_true(roaringEqual(r,
+        {100, 300, 400, b5 + 200, b5 + 300, b5 + 400}));
 }
 
 DEFINE_TEST(test_roaring64_iterate_multi_roaring) {
@@ -736,7 +798,7 @@ DEFINE_TEST(test_cpp_add_range_64) {
     }
 }
 
-DEFINE_TEST(test_cpp_remove_range_64) {
+DEFINE_TEST(test_cpp_remove_range_closed_64) {
     {
         // 32-bit integers
         Roaring64Map r1 =
@@ -829,6 +891,28 @@ DEFINE_TEST(test_cpp_remove_range_64) {
             3, uint64_t(1) << 32, uint64_t(2) << 32, uint64_t(4) << 32);
         assert_true(r1 == r2);
     }
+}
+
+DEFINE_TEST(test_cpp_remove_range_64) {
+    // Because removeRange delegates to removeRangeClosed, we do most of the
+    // unit testing in test_cpp_remove_range_closed_64(). We just do a couple of
+    // sanity checks here.
+    Roaring64Map r1;
+    auto b5 = uint64_t(5) << 32;
+
+    auto uint64_max = std::numeric_limits<uint64_t>::max();
+
+    r1.add(0u);  // 32-bit add
+    r1.add(b5 + 1000);  // arbitrary 64 bit add
+    r1.add(b5 + 1001);  // arbitrary 64 bit add
+    r1.add(uint64_max - 1000);
+    r1.add(uint64_max);  // highest possible bit
+
+    // Half-open interval: result should be the set {0, maxUint64}
+    r1.removeRange(1, uint64_max);
+
+    Roaring64Map r2 = Roaring64Map::bitmapOf(2, uint64_t(0), uint64_max);
+    assert_true(r1 == r2);
 }
 
 std::pair<doublechecked::Roaring64Map, doublechecked::Roaring64Map>
@@ -1307,6 +1391,7 @@ int main() {
         cmocka_unit_test(test_cpp_add_range),
         cmocka_unit_test(test_cpp_remove_range),
         cmocka_unit_test(test_cpp_add_range_64),
+        cmocka_unit_test(test_cpp_remove_range_closed_64),
         cmocka_unit_test(test_cpp_remove_range_64),
         cmocka_unit_test(test_run_compression_cpp_64_true),
         cmocka_unit_test(test_run_compression_cpp_64_false),
@@ -1319,6 +1404,8 @@ int main() {
         cmocka_unit_test(test_cpp_clear_64),
         cmocka_unit_test(test_cpp_move_64),
         cmocka_unit_test(test_roaring64_iterate_multi_roaring),
+        cmocka_unit_test(test_roaring64_remove_32),
+        cmocka_unit_test(test_roaring64_add_and_remove),
         cmocka_unit_test(test_cpp_bidirectional_iterator_64),
         cmocka_unit_test(test_cpp_frozen),
         cmocka_unit_test(test_cpp_frozen_64),

@@ -182,31 +182,73 @@ public:
     }
 
     /**
-     * Remove value x
+     * Removes value x.
      */
-    void remove(uint32_t x) { roarings[0].remove(x); }
-    void remove(uint64_t x) {
-        auto roaring_iter = roarings.find(highBytes(x));
-        if (roaring_iter != roarings.cend())
-            roaring_iter->second.remove(lowBytes(x));
+    void remove(uint32_t x) {
+        auto iter = roarings.begin();
+        // Since x is a uint32_t, highbytes(x) == 0. The inner bitmap we are
+        // looking for, if it exists, will be at the first slot of 'roarings'.
+        if (iter == roarings.end() || iter->first != 0) {
+            return;
+        }
+        auto &bitmap = iter->second;
+        bitmap.remove(x);
+        eraseIfEmpty(iter);
     }
 
     /**
-     * Remove value x
-     * Returns true if a new value was removed, false if the value was not existing.
+     * Removes value x.
+     */
+    void remove(uint64_t x) {
+        auto iter = roarings.find(highBytes(x));
+        if (iter == roarings.end()) {
+            return;
+        }
+        auto &bitmap = iter->second;
+        bitmap.remove(lowBytes(x));
+        eraseIfEmpty(iter);
+    }
+
+    /**
+     * Removes value x
+     * Returns true if a new value was removed, false if the value was not
+     * present.
      */
     bool removeChecked(uint32_t x) {
-        return roarings[0].removeChecked(x);
-    }
-    bool removeChecked(uint64_t x) {
-        auto roaring_iter = roarings.find(highBytes(x));
-        if (roaring_iter != roarings.cend())
-            return roaring_iter->second.removeChecked(lowBytes(x));
-        return false;
+        auto iter = roarings.begin();
+        // Since x is a uint32_t, highbytes(x) == 0. The inner bitmap we are
+        // looking for, if it exists, will be at the first slot of 'roarings'.
+        if (iter == roarings.end() || iter->first != 0) {
+            return false;
+        }
+        auto &bitmap = iter->second;
+        if (!bitmap.removeChecked(x)) {
+            return false;
+        }
+        eraseIfEmpty(iter);
+        return true;
     }
 
     /**
-     * Remove all values in range [min, max)
+     * Remove value x
+     * Returns true if a new value was removed, false if the value was not
+     * present.
+     */
+    bool removeChecked(uint64_t x) {
+        auto iter = roarings.find(highBytes(x));
+        if (iter == roarings.end()) {
+            return false;
+        }
+        auto &bitmap = iter->second;
+        if (!bitmap.removeChecked(lowBytes(x))) {
+            return false;
+        }
+        eraseIfEmpty(iter);
+        return true;
+    }
+
+    /**
+     * Removes all values in the half-open interval [min, max).
      */
     void removeRange(uint64_t min, uint64_t max) {
         if (min >= max) {
@@ -216,11 +258,24 @@ public:
     }
 
     /**
-     * Remove all values in range [min, max]
+     * Removes all values in the closed interval [min, max].
      */
     void removeRangeClosed(uint32_t min, uint32_t max) {
-        return roarings[0].removeRangeClosed(min, max);
+        auto iter = roarings.begin();
+        // Since min and max are uint32_t, highbytes(min or max) == 0. The inner
+        // bitmap we are looking for, if it exists, will be at the first slot of
+        // 'roarings'.
+        if (iter == roarings.end() || iter->first != 0) {
+            return;
+        }
+        auto &bitmap = iter->second;
+        bitmap.removeRangeClosed(min, max);
+        eraseIfEmpty(iter);
     }
+
+    /**
+     * Removes all values in the closed interval [min, max].
+     */
     void removeRangeClosed(uint64_t min, uint64_t max) {
         if (min > max) {
             return;
@@ -230,35 +285,75 @@ public:
         uint32_t end_high = highBytes(max);
         uint32_t end_low = lowBytes(max);
 
+        // We put std::numeric_limits<>::max in parentheses to avoid a
+        // clash with the Windows.h header under Windows.
+        const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+        // If the outer map is empty, end_high is less than the first key,
+        // or start_high is greater than the last key, then exit now because
+        // there is no work to do.
         if (roarings.empty() || end_high < roarings.cbegin()->first ||
             start_high > (roarings.crbegin())->first) {
             return;
         }
 
+        // If we get here, start_iter points to the first entry in the outer map
+        // with key >= start_high. Such an entry is known to exist (i.e. the
+        // iterator will not be equal to end()) because start_high <= the last
+        // key in the map (thanks to the above if statement).
         auto start_iter = roarings.lower_bound(start_high);
+        // end_iter points to the first entry in the outer map with
+        // key >= end_high, if such a key exists. Otherwise, it equals end().
         auto end_iter = roarings.lower_bound(end_high);
+
+        // Note that the 'lower_bound' method will find the start and end slots,
+        // if they exist; otherwise it will find the next-higher slots.
+        // In the case where 'start' landed on an existing slot, we need to do a
+        // partial erase of that slot, and likewise for 'end'. But all the slots
+        // in between can be fully erased. More precisely:
+        //
+        // 1. If the start point falls on an existing entry, there are two
+        //    subcases:
+        //    a. if the end point falls on that same entry, remove the closed
+        //       interval [start_low, end_low] from that entry and we are done.
+        //    b. Otherwise, remove the closed interval [start_low, uint32_max]
+        //       from that entry, advance start_iter, and fall through to step 2.
+        // 2. Completely erase all slots in the half-open interval
+        //    [start_iter, end_iter)
+        // 3. If the end point falls on an existing entry, remove the closed
+        //    interval [0, end_high] from it.
+
+        // Step 1. If the start point falls on an existing entry...
         if (start_iter->first == start_high) {
+            auto &start_inner = start_iter->second;
+            // 1a. if the end point falls on that same entry...
             if (start_iter == end_iter) {
-                start_iter->second.removeRangeClosed(start_low, end_low);
+                start_inner.removeRangeClosed(start_low, end_low);
+                eraseIfEmpty(start_iter);
                 return;
             }
-            // we put std::numeric_limits<>::max/min in parenthesis
-            // to avoid a clash with the Windows.h header under Windows
-            start_iter->second.removeRangeClosed(
-                start_low, (std::numeric_limits<uint32_t>::max)());
-            start_iter++;
+
+            // 1b. Otherwise, remove the closed range [start_low, uint32_max]...
+            start_inner.removeRangeClosed(start_low, uint32_max);
+            // Advance start_iter, but keep the old value so we can check the
+            // bitmap we just modified for emptiness and erase if it necessary.
+            auto temp = start_iter++;
+            eraseIfEmpty(temp);
         }
 
+        // 2. Completely erase all slots in the half-open interval...
         roarings.erase(start_iter, end_iter);
 
-        if (end_iter != roarings.cend() && end_iter->first == end_high) {
-            end_iter->second.removeRangeClosed(
-                (std::numeric_limits<uint32_t>::min)(), end_low);
+        // 3. If the end point falls on an existing entry...
+        if (end_iter != roarings.end() && end_iter->first == end_high) {
+            auto &end_inner = end_iter->second;
+            end_inner.removeRangeClosed(0, end_low);
+            eraseIfEmpty(end_iter);
         }
     }
 
     /**
-     * Clear the bitmap
+     * Clears the bitmap.
      */
     void clear() {
         roarings.clear();
@@ -1225,7 +1320,8 @@ public:
     const_iterator end() const;
 
 private:
-    std::map<uint32_t, Roaring> roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
+    typedef std::map<uint32_t, Roaring> roarings_t;
+    roarings_t roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
     bool copyOnWrite{false};
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
@@ -1250,6 +1346,17 @@ private:
         roarings.emplace(key, std::move(value));
 #endif
     }
+
+    /**
+     * Erases the entry pointed to by 'iter' from the 'roarings' map. Warning:
+     * this invalidates 'iter'.
+     */
+    void eraseIfEmpty(roarings_t::iterator iter) {
+        const auto &bitmap = iter->second;
+        if (bitmap.isEmpty()) {
+            roarings.erase(iter);
+        }
+    }
 };
 
 /**
@@ -1259,7 +1366,7 @@ class Roaring64MapSetBitForwardIterator {
 public:
     typedef std::forward_iterator_tag iterator_category;
     typedef uint64_t *pointer;
-    typedef uint64_t &reference_type;
+    typedef uint64_t &reference;
     typedef uint64_t value_type;
     typedef int64_t difference_type;
     typedef Roaring64MapSetBitForwardIterator type_of_iterator;
