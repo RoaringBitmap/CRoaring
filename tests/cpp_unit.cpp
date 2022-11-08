@@ -900,18 +900,18 @@ DEFINE_TEST(test_cpp_remove_range_64) {
     Roaring64Map r1;
     auto b5 = uint64_t(5) << 32;
 
-    auto maxUint64 = std::numeric_limits<uint64_t>::max();
+    auto uint64_max = std::numeric_limits<uint64_t>::max();
 
     r1.add(0u);  // 32-bit add
     r1.add(b5 + 1000);  // arbitrary 64 bit add
     r1.add(b5 + 1001);  // arbitrary 64 bit add
-    r1.add(maxUint64 - 1000);
-    r1.add(maxUint64);  // highest possible bit
+    r1.add(uint64_max - 1000);
+    r1.add(uint64_max);  // highest possible bit
 
     // Half-open interval: result should be the set {0, maxUint64}
-    r1.removeRange(1, maxUint64);
+    r1.removeRange(1, uint64_max);
 
-    Roaring64Map r2 = Roaring64Map::bitmapOf(2, uint64_t(0), maxUint64);
+    Roaring64Map r2 = Roaring64Map::bitmapOf(2, uint64_t(0), uint64_max);
     assert_true(r1 == r2);
 }
 
