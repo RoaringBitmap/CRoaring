@@ -5,7 +5,7 @@
 ########################################################################
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
-timestamp=$(date)  # capture to label files with their generation time
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")  # capture to label files with their generation time
 
 function newline {
     echo ""
