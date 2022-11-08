@@ -172,22 +172,39 @@ class Roaring64Map {
         return ans;
     }
 
-    void removeRange(const uint64_t x, const uint64_t y) {
-        if (x != y) {  // repeat remove_range_closed() cast and bounding logic
-            removeRangeClosed(x, y - 1);
+    void removeRange(const uint64_t min, const uint64_t max) {
+        plain.removeRange(min, max);
+        if (min < max) {
+            // Points to the first entry with key >= min, or end
+            auto start = check.lower_bound(min);
+            // Points to the first entry with key >= max, or end.
+            auto end = check.lower_bound(max);
+            // Removes the half-open interval [start, end) (i.e. does not include max).
+            check.erase(start, end);
         }
     }
 
     void removeRangeClosed(uint32_t min, uint32_t max) {
         plain.removeRangeClosed(min, max);
         if (min <= max) {
-            check.erase(check.lower_bound(min), check.upper_bound(max));
+            // Points to the first entry with key >= min, or end
+            auto start = check.lower_bound(min);
+            // Points to the first entry with key > max, or end.
+            auto end = check.upper_bound(max);
+            // Removes the half-open interval [start, end) (i.e. includes max).
+            check.erase(start, end);
         }
     }
+
     void removeRangeClosed(uint64_t min, uint64_t max) {
         plain.removeRangeClosed(min, max);
         if (min <= max) {
-            check.erase(check.lower_bound(min), check.upper_bound(max));
+            // Points to the first entry with key >= min, or end
+            auto start = check.lower_bound(min);
+            // Points to the first entry with key > max, or end.
+            auto end = check.upper_bound(max);
+            // Removes the half-open interval [start, end) (i.e. includes max).
+            check.erase(start, end);
         }
     }
 
