@@ -817,13 +817,8 @@ public:
                 // Casting rank to uint32_t is safe because
                 // rank < sub_cardinality and sub_cardinality <= 2^32.
                 if (!bitmap.select((uint32_t)rank, &low_bytes)) {
-                    const char *message = "Logic error: bitmap.select() "
-                        "returned false on rank < cardinality()";
-#if ROARING_EXCEPTIONS
-                    throw std::runtime_error(message);
-#else
-                    ROARING_TERMINATE(message);
-#endif
+                    ROARING_TERMINATE("Logic error: bitmap.select() "
+                        "returned false despite rank < cardinality()");
                 }
                 *element = uniteBytes(key, low_bytes);
                 return true;
