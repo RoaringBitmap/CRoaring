@@ -188,10 +188,12 @@ public:
         auto iter = roarings.begin();
         // Since x is a uint32_t, highbytes(x) == 0. The inner bitmap we are
         // looking for, if it exists, will be at the first slot of 'roarings'.
-        if (iter != roarings.end() && iter->first == 0) {
-            auto &bitmap = iter->second;
-            bitmap.remove(x);
+        if (iter == roarings.end() || iter->first != 0) {
+            return;
         }
+        auto &bitmap = iter->second;
+        bitmap.remove(x);
+        eraseIfEmpty(iter);
     }
 
     /**
@@ -199,10 +201,12 @@ public:
      */
     void remove(uint64_t x) {
         auto iter = roarings.find(highBytes(x));
-        if (iter != roarings.end()) {
-            auto &bitmap = iter->second;
-            bitmap.remove(lowBytes(x));
+        if (iter == roarings.end()) {
+            return;
         }
+        auto &bitmap = iter->second;
+        bitmap.remove(lowBytes(x));
+        eraseIfEmpty(iter);
     }
 
     /**
@@ -214,11 +218,15 @@ public:
         auto iter = roarings.begin();
         // Since x is a uint32_t, highbytes(x) == 0. The inner bitmap we are
         // looking for, if it exists, will be at the first slot of 'roarings'.
-        if (iter != roarings.end() && iter->first == 0) {
-            auto &bitmap = iter->second;
-            return bitmap.removeChecked(x);
+        if (iter == roarings.end() || iter->first != 0) {
+            return false;
         }
-        return false;
+        auto &bitmap = iter->second;
+        if (!bitmap.removeChecked(x)) {
+            return false;
+        }
+        eraseIfEmpty(iter);
+        return true;
     }
 
     /**
@@ -228,11 +236,15 @@ public:
      */
     bool removeChecked(uint64_t x) {
         auto iter = roarings.find(highBytes(x));
-        if (iter != roarings.end()) {
-            auto &bitmap = iter->second;
-            return bitmap.removeChecked(lowBytes(x));
+        if (iter == roarings.end()) {
+            return false;
         }
-        return false;
+        auto &bitmap = iter->second;
+        if (!bitmap.removeChecked(lowBytes(x))) {
+            return false;
+        }
+        eraseIfEmpty(iter);
+        return true;
     }
 
     /**
@@ -253,10 +265,12 @@ public:
         // Since min and max are uint32_t, highbytes(min or max) == 0. The inner
         // bitmap we are looking for, if it exists, will be at the first slot of
         // 'roarings'.
-        if (iter != roarings.end() && iter->first == 0) {
-            auto &bitmap = iter->second;
-            bitmap.removeRangeClosed(min, max);
+        if (iter == roarings.end() || iter->first != 0) {
+            return;
         }
+        auto &bitmap = iter->second;
+        bitmap.removeRangeClosed(min, max);
+        eraseIfEmpty(iter);
     }
 
     /**
@@ -273,7 +287,7 @@ public:
 
         // We put std::numeric_limits<>::max in parentheses to avoid a
         // clash with the Windows.h header under Windows.
-        const uint32_t maxUint32 = (std::numeric_limits<uint32_t>::max)();
+        const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
 
         // If the outer map is empty, end_high is less than the first key,
         // or start_high is greater than the last key, then exit now because
@@ -302,8 +316,8 @@ public:
         //    subcases:
         //    a. if the end point falls on that same entry, remove the closed
         //       interval [start_low, end_low] from that entry and we are done.
-        //    b. Otherwise, remove the closed range [start_low, maxUint32] from
-        //       that entry, advance start_iter, and fall through to step 2.
+        //    b. Otherwise, remove the closed interval [start_low, uint32_max]
+        //       from that entry, advance start_iter, and fall through to step 2.
         // 2. Completely erase all slots in the half-open interval
         //    [start_iter, end_iter)
         // 3. If the end point falls on an existing entry, remove the closed
@@ -315,12 +329,16 @@ public:
             // 1a. if the end point falls on that same entry...
             if (start_iter == end_iter) {
                 start_inner.removeRangeClosed(start_low, end_low);
+                eraseIfEmpty(start_iter);
                 return;
             }
 
-            // 1b. Otherwise, remove the closed range [start_low, maxUint32]...
-            start_inner.removeRangeClosed(start_low, maxUint32);
-            ++start_iter;
+            // 1b. Otherwise, remove the closed range [start_low, uint32_max]...
+            start_inner.removeRangeClosed(start_low, uint32_max);
+            // Advance start_iter, but keep the old value so we can check the
+            // bitmap we just modified for emptiness and erase if it necessary.
+            auto temp = start_iter++;
+            eraseIfEmpty(temp);
         }
 
         // 2. Completely erase all slots in the half-open interval...
@@ -330,6 +348,7 @@ public:
         if (end_iter != roarings.end() && end_iter->first == end_high) {
             auto &end_inner = end_iter->second;
             end_inner.removeRangeClosed(0, end_low);
+            eraseIfEmpty(end_iter);
         }
     }
 
@@ -1301,7 +1320,8 @@ public:
     const_iterator end() const;
 
 private:
-    std::map<uint32_t, Roaring> roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
+    typedef std::map<uint32_t, Roaring> roarings_t;
+    roarings_t roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
     bool copyOnWrite{false};
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
@@ -1325,6 +1345,17 @@ private:
 #else
         roarings.emplace(key, std::move(value));
 #endif
+    }
+
+    /**
+     * Erases the entry pointed to by 'iter' from the 'roarings' map. Warning:
+     * this invalidates 'iter'.
+     */
+    void eraseIfEmpty(roarings_t::iterator iter) {
+        const auto &bitmap = iter->second;
+        if (bitmap.isEmpty()) {
+            roarings.erase(iter);
+        }
     }
 };
 
