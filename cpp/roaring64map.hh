@@ -1415,7 +1415,7 @@ private:
             }
 
             // Make a note of the iterator of the starting slot. It will be
-            // needed for the second pass.
+            // needed for the return value.
             if (slot == start_high) {
                 start_iter = slot_iter;
             }
