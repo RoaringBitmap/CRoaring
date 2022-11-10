@@ -892,6 +892,56 @@ DEFINE_TEST(test_cpp_add_many_64) {
     assert_true(r1 == r2);
 }
 
+DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
+    // Given 'num_slots_to_test' outer slots, we repeatedly seed a Roaring64Map
+    // with all combinations of present and absent outer slots (basically the
+    // powerset of {0...num_slots_to_test - 1}), then we add_range_closed
+    // and see if the cardinality is what we expect.
+    // For example (assuming num_slots_to_test = 5), we:
+    // create a Roaring64Map, (do nothing), fill 5 slots, and check
+    // Then we:
+    // create a Roaring64Map, set a bit in slot 0, fill 5 slots, and check
+    // Then we:
+    // create a Roaring64Map, set a bit in slot 1, fill 5 slots, and check
+    // Then we:
+    // create a Roaring64Map, set a bit in slots 0 and 1, fill 5 slots, and check
+    // etc.
+    const uint32_t num_slots_to_test = 5;
+    const uint32_t base_slot = 50;
+
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+    const uint32_t bitmask_limit = 1 << num_slots_to_test;
+
+    for (uint32_t bitmask = 0; bitmask < bitmask_limit; ++bitmask) {
+        Roaring64Map roaring;
+        uint32_t num_one_bits = 0;
+
+        // The 1-bits in 'bitmask' indicate which slots we want to seed
+        // with a value.
+        for (uint32_t bit_index = 0; bit_index < num_slots_to_test; ++bit_index) {
+            if ((bitmask & (1 << bit_index)) == 0) {
+                continue;
+            }
+            auto slot = base_slot + bit_index;
+            auto value = (uint64_t(slot) << 32) + bit_index;
+            roaring.add(value);
+            ++num_one_bits;
+        }
+
+        auto first_bucket = uint64_t(base_slot) << 32;
+        auto last_bucket = uint64_t(base_slot + num_slots_to_test - 1) << 32;
+
+        roaring.addRangeClosed(first_bucket,
+                               last_bucket + uint32_max);
+
+        auto expected_cardinality = num_slots_to_test * (uint64_t(1) << 32);
+        assert_int_equal(expected_cardinality, roaring.cardinality());
+    }
+}
+
 DEFINE_TEST(test_cpp_remove_range_closed_64) {
     {
         // 32-bit integers
@@ -1536,6 +1586,7 @@ int main() {
         cmocka_unit_test(test_cpp_add_range_open_large_64),
         cmocka_unit_test(test_cpp_add_many),
         cmocka_unit_test(test_cpp_add_many_64),
+        cmocka_unit_test(test_cpp_add_range_closed_combinatoric_64),
         cmocka_unit_test(test_cpp_remove_range_closed_64),
         cmocka_unit_test(test_cpp_remove_range_64),
         cmocka_unit_test(test_run_compression_cpp_64_true),

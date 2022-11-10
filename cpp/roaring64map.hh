@@ -159,10 +159,14 @@ public:
         // clash with the Windows.h header under Windows.
         const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
 
+        // Fill in any nonexistent slots with empty Roarings.
+        auto start_iter = ensureRangePopulated(start_high, end_high);
+
         // If start and end land on the same inner bitmap, then we can do the
         // whole operation in one call.
         if (start_high == end_high) {
-            lookupOrCreateInner(start_high).addRangeClosed(start_low, end_low);
+            auto &bitmap = start_iter->second;
+            bitmap.addRangeClosed(start_low, end_low);
             return;
         }
 
@@ -170,28 +174,35 @@ public:
         // we need to do this in multiple steps:
         // 1. Partially fill the first bitmap with values from the closed
         //    interval [start_low, maxUint32]
-        // 2. Fill intermediate bitmaps completely: [0, maxUint32]
+        // 2. Fill intermediate bitmaps completely: [0, uint32_max]
         // 3. Partially fill the last bitmap with values from the closed
         //    interval [0, end_low]
+        auto num_intermediate_bitmaps = end_high - start_high - 1;
 
-        // Step 1: Partially fill the first bitmap
-        lookupOrCreateInner(start_high++).addRangeClosed(start_low, uint32_max);
-
-        // Step 2a: fill the first (if any) intermediate bitmap "manually" by
-        // calling addRangeClosed on the inner bitmap.
-        if (start_high != end_high) {
-            lookupOrCreateInner(start_high++).addRangeClosed(0, uint32_max);
+        // Step 1: Partially fill the first bitmap...
+        {
+            auto &bitmap = start_iter->second;
+            bitmap.addRangeClosed(start_low, uint32_max);
+            ++start_iter;
         }
 
-        // Step 2b: fill the remaining (if any) intermediate bitmaps by copying
-        // the full bitmap we created in step 2a.
-        while (start_high != end_high) {
-            roarings[start_high] = roarings[start_high - 1];
-            ++start_high;
+        // Step 2. Fill intermediate bitmaps completely...
+        if (num_intermediate_bitmaps != 0) {
+            auto &first_intermediate = start_iter->second;
+            first_intermediate.addRangeClosed(0, uint32_max);
+            ++start_iter;
+
+            // Now make (num_intermediate_bitmaps - 1) copies of this
+            for (uint32_t i = 1; i != num_intermediate_bitmaps; ++i) {
+                auto &next_intermediate = start_iter->second;
+                next_intermediate = first_intermediate;
+                ++start_iter;
+            }
         }
 
-        // Step 3: Partially fill the last bitmap.
-        lookupOrCreateInner(end_high).addRangeClosed(0, end_low);
+        // Step 3: Partially fill the last bitmap...
+        auto &bitmap = start_iter->second;
+        bitmap.addRangeClosed(0, end_low);
     }
 
     /**
@@ -1369,6 +1380,53 @@ private:
             }
         }
         sink("}");
+    }
+
+    /**
+     * Ensures that every key in the closed interval [start_high, end_high]
+     * refers to a Roaring bitmap rather being an empty slot. Inserts empty
+     * Roaring bitmaps if necessary. The interval must be valid and non-empty.
+     * Returns an iterator to the bitmap at start_high.
+     */
+    roarings_t::iterator ensureRangePopulated(uint32_t start_high,
+                                              uint32_t end_high) {
+        if (start_high > end_high) {
+            ROARING_TERMINATE("Logic error: start_high > end_high");
+        }
+        // next_populated_iter points to the first entry in the outer map with
+        // key >= start_high, or end().
+        auto next_populated_iter = roarings.lower_bound(start_high);
+
+        // Use uint64_t to avoid an infinite loop when end_high == uint32_max.
+        roarings_t::iterator start_iter{};  // Definitely assigned in loop.
+        for (uint64_t slot = start_high; slot <= end_high; ++slot) {
+            roarings_t::iterator slot_iter;
+            if (next_populated_iter != roarings.end() &&
+                next_populated_iter->first == slot) {
+                // 'slot' index has caught up to next_populated_iter.
+                // Note it here and advance next_populated_iter.
+                slot_iter = next_populated_iter++;
+            } else {
+                // 'slot' index has not yet caught up to next_populated_iter.
+                // Make a fresh entry {key = 'slot', value = Roaring()}, insert
+                // it just prior to next_populated_iter, and set its copy
+                // on write flag. We take pains to use emplace_hint and
+                // piecewise_construct to minimize effort.
+                slot_iter = roarings.emplace_hint(
+                    next_populated_iter, std::piecewise_construct,
+                    std::forward_as_tuple(uint32_t(slot)),
+                    std::forward_as_tuple());
+                auto &bitmap = slot_iter->second;
+                bitmap.setCopyOnWrite(copyOnWrite);
+            }
+
+            // Make a note of the iterator of the starting slot. It will be
+            // needed for the return value.
+            if (slot == start_high) {
+                start_iter = slot_iter;
+            }
+        }
+        return start_iter;
     }
 
     /**
