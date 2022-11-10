@@ -898,20 +898,29 @@ public:
     }
 
     /**
-     * If the size of the roaring bitmap is strictly greater than rank, then
-     * this function returns true and set element to the element of given
-     * rank.  Otherwise, it returns false.
+     * Selects the value at index 'rank' in the bitmap, where the smallest value
+     * is at index 0. If 'rank' < cardinality(), returns true with *element set
+     * to the element of the specified rank. Otherwise, returns false and the
+     * contents of *element are unspecified.
      */
-    bool select(uint64_t rnk, uint64_t *element) const {
+    bool select(uint64_t rank, uint64_t *element) const {
         for (const auto &map_entry : roarings) {
-            uint64_t sub_cardinality = (uint64_t)map_entry.second.cardinality();
-            if (rnk < sub_cardinality) {
-                *element = ((uint64_t)map_entry.first) << 32;
-                // assuming little endian
-                return map_entry.second.select((uint32_t)rnk,
-                                               ((uint32_t *)element));
+            auto key = map_entry.first;
+            const auto &bitmap = map_entry.second;
+
+            uint64_t sub_cardinality = bitmap.cardinality();
+            if (rank < sub_cardinality) {
+                uint32_t low_bytes;
+                // Casting rank to uint32_t is safe because
+                // rank < sub_cardinality and sub_cardinality <= 2^32.
+                if (!bitmap.select((uint32_t)rank, &low_bytes)) {
+                    ROARING_TERMINATE("Logic error: bitmap.select() "
+                        "returned false despite rank < cardinality()");
+                }
+                *element = uniteBytes(key, low_bytes);
+                return true;
             }
-            rnk -= sub_cardinality;
+            rank -= sub_cardinality;
         }
         return false;
     }
