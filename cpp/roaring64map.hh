@@ -811,7 +811,7 @@ public:
             auto key = map_entry.first;
             const auto &bitmap = map_entry.second;
 
-            auto sub_cardinality = bitmap.cardinality();
+            uint64_t sub_cardinality = bitmap.cardinality();
             if (rank < sub_cardinality) {
                 uint32_t low_bytes;
                 // Casting rank to uint32_t is safe because
