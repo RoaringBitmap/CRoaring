@@ -1413,6 +1413,15 @@ DEFINE_TEST(test_cpp_deserialize_64_key_too_small) {
 }
 #endif
 
+DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
+    Roaring roaring;
+    // Range from last position in first container up to second position in 3rd container.
+    roaring.addRange(0xFFFF, 0x1FFFF + 2);
+    // Query from last position in 2nd container up to second position in 4th container.
+    // There is no 4th container in the bitmap.
+    roaring.containsRange(0x1FFFF, 0x2FFFF + 2);
+}
+
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
@@ -1465,6 +1474,7 @@ int main() {
         cmocka_unit_test(test_cpp_is_subset_64),
         cmocka_unit_test(test_cpp_to_string),
         cmocka_unit_test(test_cpp_remove_run_compression),
+        cmocka_unit_test(test_cpp_contains_range_interleaved_containers),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
