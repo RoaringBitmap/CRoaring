@@ -2880,7 +2880,7 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r, uint64_t range_sta
     int32_t is = ra_get_index(&r->high_low_container, hb_rs);
     int32_t ie = ra_get_index(&r->high_low_container, hb_re);
     ie = (ie < 0 ? -ie - 1 : ie);
-    if ((is < 0) || ((ie - is) != span)) {
+    if ((is < 0) || ((ie - is) != span) || ie >= hlc_sz) {
        return false;
     }
     const uint32_t lb_rs = range_start & 0xFFFF;
@@ -2894,7 +2894,6 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r, uint64_t range_sta
     if (!container_contains_range(c, lb_rs, 1 << 16, type)) {
       return false;
     }
-    assert(ie < hlc_sz); // would indicate an algorithmic bug
     c = ra_get_container_at_index(&r->high_low_container, ie, &type);
     if (!container_contains_range(c, 0, lb_re, type)) {
         return false;
