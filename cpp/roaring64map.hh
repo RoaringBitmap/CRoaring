@@ -81,7 +81,7 @@ public:
      Roaring64Map &operator=(Roaring64Map &&r) noexcept = default;
 
     /**
-     * Construct a bitmap from a list of integer values.
+     * Construct a bitmap from a list of uint64_t values.
      */
     static Roaring64Map bitmapOf(size_t n...) {
         Roaring64Map ans;
@@ -812,9 +812,13 @@ public:
         auto iter = roarings.begin();
         // Since min and max are uint32_t, highbytes(min or max) == 0. The inner
         // bitmap we are looking for, if it exists, will be at the first slot of
-        // 'roarings'.
+        // 'roarings'. If it does not exist, we have to create it.
         if (iter == roarings.end() || iter->first != 0) {
-            return;
+            iter = roarings.emplace_hint(iter, std::piecewise_construct,
+                                         std::forward_as_tuple(0),
+                                         std::forward_as_tuple());
+            auto &bitmap = iter->second;
+            bitmap.setCopyOnWrite(true);
         }
         auto &bitmap = iter->second;
         bitmap.flipClosed(min, max);
@@ -838,47 +842,50 @@ public:
         // clash with the Windows.h header under Windows.
         const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
 
-        auto start_iter = ensureRangePopulated(start_high, end_high);
+        // Fill in any nonexistent slots with empty Roarings. This simplifies
+        // the logic below, allowing it to simply iterate over the map between
+        // 'start_high' and 'end_high' in a linear fashion.
+        auto current_iter = ensureRangePopulated(start_high, end_high);
 
         // If start and end land on the same inner bitmap, then we can do the
         // whole operation in one call.
         if (start_high == end_high) {
-            auto &bitmap = start_iter->second;
+            auto &bitmap = current_iter->second;
             bitmap.flipClosed(start_low, end_low);
-            eraseIfEmpty(start_iter);
+            eraseIfEmpty(current_iter);
             return;
         }
 
         // Because start and end don't land on the same inner bitmap,
         // we need to do this in multiple steps:
         // 1. Partially flip the first bitmap in the closed interval
-        //    [start_low, maxUint32]
-        // 2. Flip intermediate bitmaps completely: [0, maxUint32]
+        //    [start_low, uint32_max]
+        // 2. Flip intermediate bitmaps completely: [0, uint32_max]
         // 3. Partially flip the last bitmap in the closed interval
         //    [0, end_low]
 
         auto num_intermediate_bitmaps = end_high - start_high - 1;
 
-        // 1. Partially flip the first bitmap...
+        // 1. Partially flip the first bitmap.
         {
-            auto &bitmap = start_iter->second;
+            auto &bitmap = current_iter->second;
             bitmap.flipClosed(start_low, uint32_max);
-            auto temp = start_iter++;
+            auto temp = current_iter++;
             eraseIfEmpty(temp);
         }
 
-        // 2. Flip intermediate bitmaps completely...
+        // 2. Flip intermediate bitmaps completely.
         for (uint32_t i = 0; i != num_intermediate_bitmaps; ++i) {
-            auto &bitmap = start_iter->second;
+            auto &bitmap = current_iter->second;
             bitmap.flipClosed(0, uint32_max);
-            auto temp = start_iter++;
+            auto temp = current_iter++;
             eraseIfEmpty(temp);
         }
 
-        // 3. Partially flip the last bitmap...
-        auto &bitmap = start_iter->second;
+        // 3. Partially flip the last bitmap.
+        auto &bitmap = current_iter->second;
         bitmap.flipClosed(0, end_low);
-        eraseIfEmpty(start_iter);
+        eraseIfEmpty(current_iter);
     }
 
     /**

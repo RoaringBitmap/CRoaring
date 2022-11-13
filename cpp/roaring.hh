@@ -99,7 +99,7 @@ public:
     }
 
     /**
-     * Construct a bitmap from a list of integer values.
+     * Construct a bitmap from a list of uint32_t values.
      */
     static Roaring bitmapOf(size_t n, ...) {
         Roaring ans;
