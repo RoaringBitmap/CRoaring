@@ -911,7 +911,7 @@ DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
     // 9. {3}
     // and so forth...
     //
-    // For example, in step 6 representing set {0, 2}) we set a bit somewhere
+    // For example, in step 6 (representing set {0, 2}) we set a bit somewhere
     // in slot 0 and we set another bit somehwere in slot 2. The purpose of this
     // is to make sure 'addRangeClosed' does the right thing when it encounters
     // an arbitrary mix of present and absent slots. Then we call
