@@ -801,6 +801,15 @@ public:
         if (min >= max) {
             return;
         }
+        if (max <= (uint64_t(1) << 32)) {
+            // If the interval falls completely within the first 2^32 values,
+            // delegate to the 32-bit version of flipClosed(), which is slightly
+            // faster.
+            flipClosed(uint32_t(min), uint32_t(max - 1));
+            return;
+        }
+        // Otherwise (if the interval does not fall completely within the
+        // first 2^32 values), delegate to the 64-bit version of flipClosed().
         flipClosed(min, max - 1);
     }
 
