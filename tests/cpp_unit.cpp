@@ -897,15 +897,26 @@ DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
     // with all combinations of present and absent outer slots (basically the
     // powerset of {0...num_slots_to_test - 1}), then we add_range_closed
     // and see if the cardinality is what we expect.
-    // For example (assuming num_slots_to_test = 5), we:
-    // create a Roaring64Map, (do nothing), fill 5 slots, and check
-    // Then we:
-    // create a Roaring64Map, set a bit in slot 0, fill 5 slots, and check
-    // Then we:
-    // create a Roaring64Map, set a bit in slot 1, fill 5 slots, and check
-    // Then we:
-    // create a Roaring64Map, set a bit in slots 0 and 1, fill 5 slots, and check
-    // etc.
+    //
+    // For example (assuming num_slots_to_test = 5), the iterations of the outer
+    // loop represent these sets:
+    // 1. {}
+    // 2. {0}
+    // 3. {1}
+    // 4. {0, 1}
+    // 5. {2}
+    // 6. {0, 2}
+    // 7. {1, 2}
+    // 8. {0, 1, 2}
+    // 9. {3}
+    // and so forth...
+    //
+    // For example, in step 6 representing set {0, 2}) we set a bit somewhere
+    // in slot 0 and we set another bit somehwere in slot 2. The purpose of this
+    // is to make sure 'addRangeClosed' does the right thing when it encounters
+    // an arbitrary mix of present and absent slots. Then we call
+    // 'addRangeClosed' over the whole range and confirm that the cardinality
+    // is what we expect.
     const uint32_t num_slots_to_test = 5;
     const uint32_t base_slot = 50;
 
@@ -917,7 +928,6 @@ DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
 
     for (uint32_t bitmask = 0; bitmask < bitmask_limit; ++bitmask) {
         Roaring64Map roaring;
-        uint32_t num_one_bits = 0;
 
         // The 1-bits in 'bitmask' indicate which slots we want to seed
         // with a value.
@@ -928,7 +938,6 @@ DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
             auto slot = base_slot + bit_index;
             auto value = (uint64_t(slot) << 32) + bit_index;
             roaring.add(value);
-            ++num_one_bits;
         }
 
         auto first_bucket = uint64_t(base_slot) << 32;

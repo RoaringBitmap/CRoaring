@@ -159,13 +159,15 @@ public:
         // clash with the Windows.h header under Windows.
         const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
 
-        // Fill in any nonexistent slots with empty Roarings.
-        auto start_iter = ensureRangePopulated(start_high, end_high);
+        // Fill in any nonexistent slots with empty Roarings. This simplifies
+        // the logic below, allowing it to simply iterate over the map between
+        // 'start_high' and 'end_high' in a linear fashion.
+        auto current_iter = ensureRangePopulated(start_high, end_high);
 
         // If start and end land on the same inner bitmap, then we can do the
         // whole operation in one call.
         if (start_high == end_high) {
-            auto &bitmap = start_iter->second;
+            auto &bitmap = current_iter->second;
             bitmap.addRangeClosed(start_low, end_low);
             return;
         }
@@ -173,35 +175,35 @@ public:
         // Because start and end don't land on the same inner bitmap,
         // we need to do this in multiple steps:
         // 1. Partially fill the first bitmap with values from the closed
-        //    interval [start_low, maxUint32]
+        //    interval [start_low, uint32_max]
         // 2. Fill intermediate bitmaps completely: [0, uint32_max]
         // 3. Partially fill the last bitmap with values from the closed
         //    interval [0, end_low]
         auto num_intermediate_bitmaps = end_high - start_high - 1;
 
-        // Step 1: Partially fill the first bitmap...
+        // Step 1: Partially fill the first bitmap.
         {
-            auto &bitmap = start_iter->second;
+            auto &bitmap = current_iter->second;
             bitmap.addRangeClosed(start_low, uint32_max);
-            ++start_iter;
+            ++current_iter;
         }
 
-        // Step 2. Fill intermediate bitmaps completely...
+        // Step 2. Fill intermediate bitmaps completely.
         if (num_intermediate_bitmaps != 0) {
-            auto &first_intermediate = start_iter->second;
+            auto &first_intermediate = current_iter->second;
             first_intermediate.addRangeClosed(0, uint32_max);
-            ++start_iter;
+            ++current_iter;
 
-            // Now make (num_intermediate_bitmaps - 1) copies of this
+            // Now make (num_intermediate_bitmaps - 1) copies of this.
             for (uint32_t i = 1; i != num_intermediate_bitmaps; ++i) {
-                auto &next_intermediate = start_iter->second;
+                auto &next_intermediate = current_iter->second;
                 next_intermediate = first_intermediate;
-                ++start_iter;
+                ++current_iter;
             }
         }
 
-        // Step 3: Partially fill the last bitmap...
-        auto &bitmap = start_iter->second;
+        // Step 3: Partially fill the last bitmap.
+        auto &bitmap = current_iter->second;
         bitmap.addRangeClosed(0, end_low);
     }
 
