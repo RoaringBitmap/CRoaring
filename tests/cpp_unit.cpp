@@ -326,7 +326,7 @@ void test_example_cpp(bool copy_on_write) {
     r2.printf();
     printf("\n");
     // create a new bitmap with initializer list
-    Roaring r2i = Roaring::bitmapOf({1, 2, 3, 5, 6});
+    Roaring r2i = Roaring::bitmapOfList({1, 2, 3, 5, 6});
 
     assert(r2i == r2);
     // create a new bitmap directly from initializer list
@@ -533,7 +533,7 @@ void test_example_cpp_64(bool copy_on_write) {
     printf("\n");
     // create a new bitmap with initializer list
     Roaring64Map r2i =
-        Roaring64Map::bitmapOf({1ull, 2ull, 234294967296ull, 195839473298ull,
+        Roaring64Map::bitmapOfList({1ull, 2ull, 234294967296ull, 195839473298ull,
                                14000000000000000100ull});
     assert(r2i == r2);
 
@@ -816,7 +816,7 @@ DEFINE_TEST(test_cpp_add_range_64) {
 }
 DEFINE_TEST(test_bitmap_of_32) {
         Roaring r1 =
-            Roaring::bitmapOf({1,2,4});
+            Roaring::bitmapOfList({1,2,4});
         Roaring r2 =
             Roaring::bitmapOf(3, uint64_t(1), uint64_t(2), uint64_t(4));
         assert_true(r1 == r2);
@@ -826,7 +826,7 @@ DEFINE_TEST(test_bitmap_of_32) {
 
 DEFINE_TEST(test_bitmap_of_64) {
         Roaring64Map r1 =
-            Roaring64Map::bitmapOf({1,2,4});
+            Roaring64Map::bitmapOfList({1,2,4});
         Roaring64Map r2 =
             Roaring64Map::bitmapOf(3, uint64_t(1), uint64_t(2), uint64_t(4));
         assert_true(r1 == r2);

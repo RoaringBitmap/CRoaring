@@ -373,7 +373,7 @@ int main() {
     printf("\n");
 
     // create a new bitmap with initializer list
-    Roaring r2i = Roaring::bitmapOf({1, 2, 3, 5, 6});
+    Roaring r2i = Roaring::bitmapOfList({1, 2, 3, 5, 6});
 
     assert(r2i == r2);
 

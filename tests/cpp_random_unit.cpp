@@ -380,9 +380,9 @@ DEFINE_TEST(random_doublecheck_test_64) {
 
 #ifdef ROARING_CPP_RANDOM_PRINT_STATUS
         printf("[%lu]: %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", step,
-               static_cast<unsigned long long>(left.cardinality()),
-               static_cast<unsigned long long>(right.cardinality()),
-               static_cast<unsigned long long>(out.cardinality()));
+               left.cardinality(),
+               right.cardinality(),
+               out.cardinality());
 #endif
 
         int op = rand() % 6;

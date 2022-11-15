@@ -108,9 +108,9 @@ public:
 
     /**
      * Construct a bitmap from a list of uint64_t values.
-     * E.g., bitmapOf({1,2,3}).
+     * E.g., bitmapOfList({1,2,3}).
      */
-    static Roaring64Map bitmapOf(std::initializer_list<uint64_t> l) {
+    static Roaring64Map bitmapOfList(std::initializer_list<uint64_t> l) {
         Roaring64Map ans;
         for(uint64_t x : l) {
             ans.add(x);
