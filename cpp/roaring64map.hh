@@ -53,14 +53,6 @@ public:
     Roaring64Map(size_t n, const uint64_t *data) { addMany(n, data); }
 
     /**
-     * Construct a bitmap from an initializer list.
-     */
-    Roaring64Map(std::initializer_list<uint64_t> l)  {
-        for(uint64_t x : l) {
-            add(x);
-        }
-    }
-    /**
      * Construct a 64-bit map from a 32-bit one
      */
     explicit Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
@@ -113,9 +105,7 @@ public:
      */
     static Roaring64Map bitmapOfList(std::initializer_list<uint64_t> l) {
         Roaring64Map ans;
-        for(uint64_t x : l) {
-            ans.add(x);
-        }
+        ans.addMany(l.size(), l.begin());
         return ans;
     }
     /**
