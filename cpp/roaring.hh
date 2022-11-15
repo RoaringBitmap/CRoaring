@@ -115,7 +115,7 @@ public:
 
     /**
      * Construct a bitmap from a list of uint32_t values.
-     * E.g., bitmapOf({1,2,3}).
+     * E.g., bitmapOfList({1,2,3}).
      */
     static Roaring bitmapOfList(std::initializer_list<uint32_t> l) {
         Roaring ans;
