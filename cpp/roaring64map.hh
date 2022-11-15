@@ -818,7 +818,7 @@ public:
                                          std::forward_as_tuple(0),
                                          std::forward_as_tuple());
             auto &bitmap = iter->second;
-            bitmap.setCopyOnWrite(true);
+            bitmap.setCopyOnWrite(copyOnWrite);
         }
         auto &bitmap = iter->second;
         bitmap.flipClosed(min, max);
