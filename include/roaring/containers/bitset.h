@@ -448,6 +448,15 @@ int32_t bitset_container_write(const bitset_container_t *container, char *buf);
  */
 int32_t bitset_container_read(int32_t cardinality,
                               bitset_container_t *container, const char *buf);
+
+/**
+ * Return the size in bytes of the memory used by the container.
+ */
+static inline size_t bitset_container_memory_size_in_bytes(
+    const bitset_container_t *container) {
+    return sizeof(*container) + BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+}
+
 /**
  * Return the serialized size in bytes of a container (see
  * bitset_container_write).

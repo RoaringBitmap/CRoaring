@@ -1397,6 +1397,10 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
     return answer;
 }
 
+size_t roaring_bitmap_memory_size_in_bytes(const roaring_bitmap_t *r) {
+    return ra_memory_size_in_bytes(&r->high_low_container);
+}
+
 size_t roaring_bitmap_serialize(const roaring_bitmap_t *r, char *buf) {
     size_t portablesize = roaring_bitmap_portable_size_in_bytes(r);
     uint64_t cardinality = roaring_bitmap_get_cardinality(r);

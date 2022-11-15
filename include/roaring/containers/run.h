@@ -475,6 +475,14 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
                            const char *buf);
 
 /**
+ * Return the size in bytes of the memory used by the container.
+ */
+static inline size_t run_container_memory_size_in_bytes(
+    const run_container_t *container) {
+    return sizeof(*container) + (container->capacity * sizeof(container->runs[0]));
+}
+
+/**
  * Return the serialized size in bytes of a container (see run_container_write).
  * This is meant to be compatible with the Java and Go versions of Roaring.
  */
