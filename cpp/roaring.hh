@@ -62,6 +62,15 @@ public:
     }
 
     /**
+     * Construct a bitmap from an initializer list.
+     */
+    Roaring(std::initializer_list<uint32_t> l) : Roaring() {
+        for(uint32_t x : l) {
+            add(x);
+        }
+    }
+
+    /**
      * Copy constructor
      */
     Roaring(const Roaring &r) : Roaring() {

@@ -482,7 +482,7 @@ DEFINE_TEST(random_doublecheck_test_64) {
 int main() {
     uint64_t seed = time(nullptr);
     srand(seed);
-    printf("Seed: %lu\n", seed);
+    printf("Seed: %llu\n", seed);
 
     gravity = rand() % 10000;  // starting focal point
 

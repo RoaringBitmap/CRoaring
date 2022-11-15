@@ -377,6 +377,11 @@ int main() {
 
     assert(r2i == r2);
 
+    // create a new bitmap directly from initializer list
+    Roaring r2id = {1, 2, 3, 5, 6};
+
+    assert(r2id == r2);
+
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     Roaring r3(3, values);
