@@ -15,6 +15,7 @@
 #include <cstdio>  // for std::printf() in the printf() method
 #include <cstring>  // for std::memcpy()
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <map>
 #include <new>

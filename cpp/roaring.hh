@@ -7,6 +7,7 @@ A C++ header for Roaring Bitmaps.
 #include <cstdarg>
 
 #include <algorithm>
+#include <initializer_list>
 #include <new>
 #include <stdexcept>
 #include <string>
