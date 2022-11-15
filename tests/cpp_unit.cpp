@@ -815,8 +815,7 @@ DEFINE_TEST(test_cpp_add_range_64) {
     }
 }
 DEFINE_TEST(test_bitmap_of_32) {
-        Roaring r1 =
-            Roaring::bitmapOfList({1,2,4});
+        Roaring r1 = Roaring::bitmapOfList({1,2,4});
         Roaring r2 =
             Roaring::bitmapOf(3, uint64_t(1), uint64_t(2), uint64_t(4));
         assert_true(r1 == r2);
