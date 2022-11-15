@@ -99,34 +99,39 @@ public:
     }
 
     /**
-     * Add value x
+     * Adds value x.
      */
     void add(uint32_t x) {
-        roarings[0].add(x);
-        roarings[0].setCopyOnWrite(copyOnWrite);
-    }
-    void add(uint64_t x) {
-        roarings[highBytes(x)].add(lowBytes(x));
-        roarings[highBytes(x)].setCopyOnWrite(copyOnWrite);
+        lookupOrCreateInner(0).add(x);
     }
 
     /**
-     * Add value x
-     * Returns true if a new value was added, false if the value was already existing.
+     * Adds value x.
+     */
+    void add(uint64_t x) {
+        lookupOrCreateInner(highBytes(x)).add(lowBytes(x));
+    }
+
+    /**
+     * Adds value x.
+     * Returns true if a new value was added, false if the value was already
+     * present.
      */
     bool addChecked(uint32_t x) {
-        bool result = roarings[0].addChecked(x);
-        roarings[0].setCopyOnWrite(copyOnWrite);
-        return result;
-    }
-    bool addChecked(uint64_t x) {
-        bool result = roarings[highBytes(x)].addChecked(lowBytes(x));
-        roarings[highBytes(x)].setCopyOnWrite(copyOnWrite);
-        return result;
+        return lookupOrCreateInner(0).addChecked(x);
     }
 
     /**
-     * Add all values in range [min, max)
+     * Adds value x.
+     * Returns true if a new value was added, false if the value was already
+     * present.
+     */
+    bool addChecked(uint64_t x) {
+        return lookupOrCreateInner(highBytes(x)).addChecked(lowBytes(x));
+    }
+
+    /**
+     * Adds all values in the half-open interval [min, max).
      */
     void addRange(uint64_t min, uint64_t max) {
         if (min >= max) {
@@ -136,11 +141,15 @@ public:
     }
 
     /**
-     * Add all values in range [min, max]
+     * Adds all values in the closed interval [min, max].
      */
     void addRangeClosed(uint32_t min, uint32_t max) {
-        roarings[0].addRangeClosed(min, max);
+        lookupOrCreateInner(0).addRangeClosed(min, max);
     }
+
+    /**
+     * Adds all values in the closed interval [min, max]
+     */
     void addRangeClosed(uint64_t min, uint64_t max) {
         if (min > max) {
             return;
@@ -149,41 +158,83 @@ public:
         uint32_t start_low = lowBytes(min);
         uint32_t end_high = highBytes(max);
         uint32_t end_low = lowBytes(max);
+
+        // We put std::numeric_limits<>::max in parentheses to avoid a
+        // clash with the Windows.h header under Windows.
+        const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+        // Fill in any nonexistent slots with empty Roarings. This simplifies
+        // the logic below, allowing it to simply iterate over the map between
+        // 'start_high' and 'end_high' in a linear fashion.
+        auto current_iter = ensureRangePopulated(start_high, end_high);
+
+        // If start and end land on the same inner bitmap, then we can do the
+        // whole operation in one call.
         if (start_high == end_high) {
-            roarings[start_high].addRangeClosed(start_low, end_low);
-            roarings[start_high].setCopyOnWrite(copyOnWrite);
+            auto &bitmap = current_iter->second;
+            bitmap.addRangeClosed(start_low, end_low);
             return;
         }
-        // we put std::numeric_limits<>::max/min in parenthesis to avoid a clash
-        // with the Windows.h header under Windows
-        roarings[start_high].addRangeClosed(
-            start_low, (std::numeric_limits<uint32_t>::max)());
-        roarings[start_high].setCopyOnWrite(copyOnWrite);
-        start_high++;
-        for (; start_high < end_high; ++start_high) {
-            roarings[start_high].addRangeClosed(
-                (std::numeric_limits<uint32_t>::min)(),
-                (std::numeric_limits<uint32_t>::max)());
-            roarings[start_high].setCopyOnWrite(copyOnWrite);
+
+        // Because start and end don't land on the same inner bitmap,
+        // we need to do this in multiple steps:
+        // 1. Partially fill the first bitmap with values from the closed
+        //    interval [start_low, uint32_max]
+        // 2. Fill intermediate bitmaps completely: [0, uint32_max]
+        // 3. Partially fill the last bitmap with values from the closed
+        //    interval [0, end_low]
+        auto num_intermediate_bitmaps = end_high - start_high - 1;
+
+        // Step 1: Partially fill the first bitmap.
+        {
+            auto &bitmap = current_iter->second;
+            bitmap.addRangeClosed(start_low, uint32_max);
+            ++current_iter;
         }
-        roarings[end_high].addRangeClosed(
-            (std::numeric_limits<uint32_t>::min)(), end_low);
-        roarings[end_high].setCopyOnWrite(copyOnWrite);
+
+        // Step 2. Fill intermediate bitmaps completely.
+        if (num_intermediate_bitmaps != 0) {
+            auto &first_intermediate = current_iter->second;
+            first_intermediate.addRangeClosed(0, uint32_max);
+            ++current_iter;
+
+            // Now make (num_intermediate_bitmaps - 1) copies of this.
+            for (uint32_t i = 1; i != num_intermediate_bitmaps; ++i) {
+                auto &next_intermediate = current_iter->second;
+                next_intermediate = first_intermediate;
+                ++current_iter;
+            }
+        }
+
+        // Step 3: Partially fill the last bitmap.
+        auto &bitmap = current_iter->second;
+        bitmap.addRangeClosed(0, end_low);
     }
 
     /**
-     * Add value n_args from pointer vals
+     * Adds 'n_args' values from the contiguous memory range starting at 'vals'.
      */
     void addMany(size_t n_args, const uint32_t *vals) {
-        Roaring &roaring = roarings[0];
-        roaring.addMany(n_args, vals);
-        roaring.setCopyOnWrite(copyOnWrite);
+        lookupOrCreateInner(0).addMany(n_args, vals);
     }
 
+    /**
+     * Adds 'n_args' values from the contiguous memory range starting at 'vals'.
+     */
     void addMany(size_t n_args, const uint64_t *vals) {
+        // Potentially reduce outer map lookups by optimistically
+        // assuming that adjacent values will belong to the same inner bitmap.
+        Roaring *last_inner_bitmap = nullptr;
+        uint32_t last_value_high = 0;
         for (size_t lcv = 0; lcv < n_args; lcv++) {
-            roarings[highBytes(vals[lcv])].add(lowBytes(vals[lcv]));
-            roarings[highBytes(vals[lcv])].setCopyOnWrite(copyOnWrite);
+            auto value = vals[lcv];
+            auto value_high = highBytes(value);
+            auto value_low = lowBytes(value);
+            if (last_inner_bitmap == nullptr || value_high != last_value_high) {
+                last_inner_bitmap = &lookupOrCreateInner(value_high);
+                last_value_high = value_high;
+            }
+            last_inner_bitmap->add(value_low);
         }
     }
 
@@ -1358,6 +1409,17 @@ private:
 #endif
     }
 
+    /*
+     * Look up 'key' in the 'roarings' map. If it does not exist, create it.
+     * Also, set its copyOnWrite flag to 'copyOnWrite'. Then return a reference
+     * to the (already existing or newly created) inner bitmap.
+     */
+    Roaring &lookupOrCreateInner(uint32_t key) {
+        auto &bitmap = roarings[key];
+        bitmap.setCopyOnWrite(copyOnWrite);
+        return bitmap;
+    }
+
     /**
      * Prints the contents of the bitmap to a caller-provided sink function.
      */
@@ -1383,6 +1445,53 @@ private:
             }
         }
         sink("}");
+    }
+
+    /**
+     * Ensures that every key in the closed interval [start_high, end_high]
+     * refers to a Roaring bitmap rather being an empty slot. Inserts empty
+     * Roaring bitmaps if necessary. The interval must be valid and non-empty.
+     * Returns an iterator to the bitmap at start_high.
+     */
+    roarings_t::iterator ensureRangePopulated(uint32_t start_high,
+                                              uint32_t end_high) {
+        if (start_high > end_high) {
+            ROARING_TERMINATE("Logic error: start_high > end_high");
+        }
+        // next_populated_iter points to the first entry in the outer map with
+        // key >= start_high, or end().
+        auto next_populated_iter = roarings.lower_bound(start_high);
+
+        // Use uint64_t to avoid an infinite loop when end_high == uint32_max.
+        roarings_t::iterator start_iter{};  // Definitely assigned in loop.
+        for (uint64_t slot = start_high; slot <= end_high; ++slot) {
+            roarings_t::iterator slot_iter;
+            if (next_populated_iter != roarings.end() &&
+                next_populated_iter->first == slot) {
+                // 'slot' index has caught up to next_populated_iter.
+                // Note it here and advance next_populated_iter.
+                slot_iter = next_populated_iter++;
+            } else {
+                // 'slot' index has not yet caught up to next_populated_iter.
+                // Make a fresh entry {key = 'slot', value = Roaring()}, insert
+                // it just prior to next_populated_iter, and set its copy
+                // on write flag. We take pains to use emplace_hint and
+                // piecewise_construct to minimize effort.
+                slot_iter = roarings.emplace_hint(
+                    next_populated_iter, std::piecewise_construct,
+                    std::forward_as_tuple(uint32_t(slot)),
+                    std::forward_as_tuple());
+                auto &bitmap = slot_iter->second;
+                bitmap.setCopyOnWrite(copyOnWrite);
+            }
+
+            // Make a note of the iterator of the starting slot. It will be
+            // needed for the return value.
+            if (slot == start_high) {
+                start_iter = slot_iter;
+            }
+        }
+        return start_iter;
     }
 
     /**

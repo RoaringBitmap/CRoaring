@@ -778,7 +778,7 @@ DEFINE_TEST(test_cpp_remove_range) {
     }
 }
 
-DEFINE_TEST(test_cpp_add_range_64) {
+DEFINE_TEST(test_cpp_add_range_closed_64) {
     {
         // 32-bit integers
         Roaring64Map r1;
@@ -789,10 +789,12 @@ DEFINE_TEST(test_cpp_add_range_64) {
         }
         assert_true(r1 == r2);
     }
+    auto b1 = uint64_t(1) << 32;
     std::vector<std::pair<uint64_t, uint64_t>> ranges = {
-        {uint64_t(1) << 32, (uint64_t(1) << 32) + 10},
-        {(uint64_t(1) << 32) - 10, (uint64_t(1) << 32) + 10},
-        {(uint64_t(1) << 32) + 2, (uint64_t(1) << 32) - 2}};
+        {b1, b1 + 10},
+        {b1 + 100, b1 + 100},  // one element
+        {b1 - 10, b1 + 10},
+        {b1 + 2, b1 - 2}};
     for (const auto &range : ranges) {
         uint64_t min = range.first;
         uint64_t max = range.second;
@@ -803,6 +805,157 @@ DEFINE_TEST(test_cpp_add_range_64) {
             r2.add(v);
         }
         assert_true(r1 == r2);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_range_open_64) {
+    {
+        // 32-bit integers
+        Roaring64Map r1;
+        r1.addRange(uint32_t(1), uint32_t(5));
+        Roaring64Map r2;
+        for (uint32_t v = 1; v < 5; ++v) {
+            r2.add(v);
+        }
+        assert_true(r1 == r2);
+    }
+    auto b1 = uint64_t(1) << 32;
+    std::vector<std::pair<uint64_t, uint64_t>> ranges = {
+        {b1, b1 + 10},
+        {b1 - 10, b1 + 10},
+        {b1 + 100, b1 + 100}, // empty
+        {b1 + 2, b1 - 2}};
+    for (const auto &range : ranges) {
+        uint64_t min = range.first;
+        uint64_t max = range.second;
+        Roaring64Map r1;
+        r1.addRange(min, max);
+        Roaring64Map r2;
+        for (uint64_t v = min; v < max; ++v) {
+            r2.add(v);
+        }
+        assert_true(r1 == r2);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_range_closed_large_64) {
+    uint32_t start_high = 300;
+    for (uint32_t end_high = start_high; end_high != 305; ++end_high) {
+        auto begin = (uint64_t(start_high) << 32) + 0x01234567;
+        auto end = (uint64_t(end_high) << 32) + 0x89abcdef;
+        Roaring64Map r1;
+        r1.addRangeClosed(begin, end);
+        auto size = end - begin + 1;
+        assert_true(r1.cardinality() == size);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_range_open_large_64) {
+    uint32_t start_high = 300;
+    for (uint32_t end_high = start_high; end_high != 305; ++end_high) {
+        auto begin = (uint64_t(start_high) << 32) + 0x01234567;
+        auto end = (uint64_t(end_high) << 32) + 0x89abcdef;
+        Roaring64Map r1;
+        r1.addRange(begin, end);
+        auto size = end - begin;
+        assert_true(r1.cardinality() == size);
+    }
+}
+
+DEFINE_TEST(test_cpp_add_many) {
+    std::vector<uint32_t> values = { 9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 9999};
+    Roaring r1;
+    r1.addMany(values.size(), values.data());
+    Roaring r2;
+    for (const auto value : values) {
+        r2.add(value);
+    }
+    assert_true(r1 == r2);
+}
+
+DEFINE_TEST(test_cpp_add_many_64) {
+    {
+        // 32-bit integers
+        std::vector<uint32_t> values = { 9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 0, 9999};
+        Roaring64Map r1;
+        r1.addMany(values.size(), values.data());
+        Roaring64Map r2;
+        for (const auto value : values) {
+            r2.add(value);
+        }
+        assert_true(r1 == r2);
+    }
+
+    auto b1 = uint64_t(1) << 32;
+    auto b555 = uint64_t(555) << 32;
+
+    std::vector<uint64_t> values = {
+        b555 + 9999, b1 + 123, b1 + 0xFFFFFFFF, b555 + 0xFFFFFFF7, 0, b555 + 9999};
+    Roaring64Map r1;
+    r1.addMany(values.size(), values.data());
+    Roaring64Map r2;
+    for (const auto value : values) {
+        r2.add(value);
+    }
+    assert_true(r1 == r2);
+}
+
+DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
+    // Given 'num_slots_to_test' outer slots, we repeatedly seed a Roaring64Map
+    // with all combinations of present and absent outer slots (basically the
+    // powerset of {0...num_slots_to_test - 1}), then we add_range_closed
+    // and see if the cardinality is what we expect.
+    //
+    // For example (assuming num_slots_to_test = 5), the iterations of the outer
+    // loop represent these sets:
+    // 1. {}
+    // 2. {0}
+    // 3. {1}
+    // 4. {0, 1}
+    // 5. {2}
+    // 6. {0, 2}
+    // 7. {1, 2}
+    // 8. {0, 1, 2}
+    // 9. {3}
+    // and so forth...
+    //
+    // For example, in step 6 (representing set {0, 2}) we set a bit somewhere
+    // in slot 0 and we set another bit somehwere in slot 2. The purpose of this
+    // is to make sure 'addRangeClosed' does the right thing when it encounters
+    // an arbitrary mix of present and absent slots. Then we call
+    // 'addRangeClosed' over the whole range and confirm that the cardinality
+    // is what we expect.
+    const uint32_t num_slots_to_test = 5;
+    const uint32_t base_slot = 50;
+
+    // We put std::numeric_limits<>::max in parentheses to avoid a
+    // clash with the Windows.h header under Windows.
+    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+    const uint32_t bitmask_limit = 1 << num_slots_to_test;
+
+    for (uint32_t bitmask = 0; bitmask < bitmask_limit; ++bitmask) {
+        Roaring64Map roaring;
+
+        // The 1-bits in 'bitmask' indicate which slots we want to seed
+        // with a value.
+        for (uint32_t bit_index = 0; bit_index < num_slots_to_test; ++bit_index) {
+            if ((bitmask & (1 << bit_index)) == 0) {
+                continue;
+            }
+            auto slot = base_slot + bit_index;
+            auto value = (uint64_t(slot) << 32) + bit_index;
+            roaring.add(value);
+        }
+
+        auto first_bucket = uint64_t(base_slot) << 32;
+        auto last_bucket = uint64_t(base_slot + num_slots_to_test - 1) << 32;
+
+        roaring.addRangeClosed(first_bucket,
+                               last_bucket + uint32_max);
+
+        auto expected_cardinality = num_slots_to_test * (uint64_t(1) << 32);
+        assert_int_equal(expected_cardinality, roaring.cardinality());
     }
 }
 
@@ -1690,7 +1843,13 @@ int main() {
         cmocka_unit_test(test_cpp_add_remove_checked_64),
         cmocka_unit_test(test_cpp_add_range),
         cmocka_unit_test(test_cpp_remove_range),
-        cmocka_unit_test(test_cpp_add_range_64),
+        cmocka_unit_test(test_cpp_add_range_closed_64),
+        cmocka_unit_test(test_cpp_add_range_open_64),
+        cmocka_unit_test(test_cpp_add_range_closed_large_64),
+        cmocka_unit_test(test_cpp_add_range_open_large_64),
+        cmocka_unit_test(test_cpp_add_many),
+        cmocka_unit_test(test_cpp_add_many_64),
+        cmocka_unit_test(test_cpp_add_range_closed_combinatoric_64),
         cmocka_unit_test(test_cpp_remove_range_closed_64),
         cmocka_unit_test(test_cpp_remove_range_64),
         cmocka_unit_test(test_run_compression_cpp_64_true),

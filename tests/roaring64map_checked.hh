@@ -116,9 +116,10 @@ class Roaring64Map {
         return ans;
     }
 
-    void addRange(const uint64_t x, const uint64_t y) {
-        if (x != y) {  // repeat add_range_closed() cast and bounding logic
-            addRangeClosed(x, y - 1);
+    void addRange(const uint64_t min, const uint64_t max) {
+        plain.addRange(min, max);
+        for (uint64_t val = min; val < max; ++val) {
+            check.insert(val);
         }
     }
 
