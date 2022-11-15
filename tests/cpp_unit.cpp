@@ -811,7 +811,7 @@ DEFINE_TEST(test_bitmap_of_32) {
         r1.printf();
         printf("\n");
         Roaring r2 =
-            Roaring::bitmapOf(3, uint64_t(1), uint64_t(2), uint64_t(4));
+            Roaring::bitmapOf(3, 1, 2, 4);
         r2.printf();
         printf("\n");
         assert_true(r1 == r2);
