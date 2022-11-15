@@ -21,6 +21,7 @@
 //
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -378,7 +379,7 @@ DEFINE_TEST(random_doublecheck_test_64) {
         const Roaring64Map &right = roars[rand() % NUM_ROARS];
 
 #ifdef ROARING_CPP_RANDOM_PRINT_STATUS
-        printf("[%lu]: %llu %llu %llu\n", step,
+        printf("[%lu]: %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", step,
                static_cast<unsigned long long>(left.cardinality()),
                static_cast<unsigned long long>(right.cardinality()),
                static_cast<unsigned long long>(out.cardinality()));
@@ -482,7 +483,7 @@ DEFINE_TEST(random_doublecheck_test_64) {
 int main() {
     uint64_t seed = time(nullptr);
     srand(seed);
-    printf("Seed: %llu\n", seed);
+    printf("Seed:  %" PRIu64 "\n", seed);
 
     gravity = rand() % 10000;  // starting focal point
 
