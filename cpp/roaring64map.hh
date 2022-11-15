@@ -1,6 +1,10 @@
-/*
-A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
-32-bit Roaring Bitmaps.
+/**
+ * A C++ header for 64-bit Roaring Bitmaps, 
+ * implemented by way of a map of many
+ * 32-bit Roaring Bitmaps.
+ * 
+ * Reference (format specification) :
+ * https://github.com/RoaringBitmap/RoaringFormatSpec#extention-for-64-bit-implementations
 */
 #ifndef INCLUDE_ROARING_64_MAP_HH_
 #define INCLUDE_ROARING_64_MAP_HH_
