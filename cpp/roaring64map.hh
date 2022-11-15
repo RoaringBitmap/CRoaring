@@ -85,7 +85,7 @@ public:
      Roaring64Map &operator=(Roaring64Map &&r) noexcept = default;
 
     /**
-     * Construct a bitmap from a list of integer values.
+     * Construct a bitmap from a list of uint64_t values.
      */
     static Roaring64Map bitmapOf(size_t n...) {
         Roaring64Map ans;
@@ -798,39 +798,98 @@ public:
     }
 
     /**
-     * Compute the negation of the roaring bitmap within a specified interval.
-     * areas outside the range are passed through unchanged.
+     * Computes the negation of the roaring bitmap within the half-open interval
+     * [min, max). Areas outside the interval are unchanged.
      */
-    void flip(uint64_t range_start, uint64_t range_end) {
-        if (range_start >= range_end) {
-          return;
-        }
-        uint32_t start_high = highBytes(range_start);
-        uint32_t start_low = lowBytes(range_start);
-        uint32_t end_high = highBytes(range_end);
-        uint32_t end_low = lowBytes(range_end);
-
-        if (start_high == end_high) {
-            roarings[start_high].flip(start_low, end_low);
+    void flip(uint64_t min, uint64_t max) {
+        if (min >= max) {
             return;
         }
-        // we put std::numeric_limits<>::max/min in parentheses
-        // to avoid a clash with the Windows.h header under Windows
-        // flip operates on the range [lower_bound, upper_bound)
-        const uint64_t max_upper_bound =
-            static_cast<uint64_t>((std::numeric_limits<uint32_t>::max)()) + 1;
-        roarings[start_high].flip(start_low, max_upper_bound);
-        roarings[start_high++].setCopyOnWrite(copyOnWrite);
+        flipClosed(min, max - 1);
+    }
 
-        for (; start_high <= highBytes(range_end) - 1; ++start_high) {
-            roarings[start_high].flip((std::numeric_limits<uint32_t>::min)(),
-                                      max_upper_bound);
-            roarings[start_high].setCopyOnWrite(copyOnWrite);
+    /**
+     * Computes the negation of the roaring bitmap within the closed interval
+     * [min, max]. Areas outside the interval are unchanged.
+     */
+    void flipClosed(uint32_t min, uint32_t max) {
+        auto iter = roarings.begin();
+        // Since min and max are uint32_t, highbytes(min or max) == 0. The inner
+        // bitmap we are looking for, if it exists, will be at the first slot of
+        // 'roarings'. If it does not exist, we have to create it.
+        if (iter == roarings.end() || iter->first != 0) {
+            iter = roarings.emplace_hint(iter, std::piecewise_construct,
+                                         std::forward_as_tuple(0),
+                                         std::forward_as_tuple());
+            auto &bitmap = iter->second;
+            bitmap.setCopyOnWrite(copyOnWrite);
+        }
+        auto &bitmap = iter->second;
+        bitmap.flipClosed(min, max);
+        eraseIfEmpty(iter);
+    }
+
+    /**
+     * Computes the negation of the roaring bitmap within the closed interval
+     * [min, max]. Areas outside the interval are unchanged.
+     */
+    void flipClosed(uint64_t min, uint64_t max) {
+        if (min > max) {
+          return;
+        }
+        uint32_t start_high = highBytes(min);
+        uint32_t start_low = lowBytes(min);
+        uint32_t end_high = highBytes(max);
+        uint32_t end_low = lowBytes(max);
+
+        // We put std::numeric_limits<>::max in parentheses to avoid a
+        // clash with the Windows.h header under Windows.
+        const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+        // Fill in any nonexistent slots with empty Roarings. This simplifies
+        // the logic below, allowing it to simply iterate over the map between
+        // 'start_high' and 'end_high' in a linear fashion.
+        auto current_iter = ensureRangePopulated(start_high, end_high);
+
+        // If start and end land on the same inner bitmap, then we can do the
+        // whole operation in one call.
+        if (start_high == end_high) {
+            auto &bitmap = current_iter->second;
+            bitmap.flipClosed(start_low, end_low);
+            eraseIfEmpty(current_iter);
+            return;
         }
 
-        roarings[start_high].flip((std::numeric_limits<uint32_t>::min)(),
-                                  end_low);
-        roarings[start_high].setCopyOnWrite(copyOnWrite);
+        // Because start and end don't land on the same inner bitmap,
+        // we need to do this in multiple steps:
+        // 1. Partially flip the first bitmap in the closed interval
+        //    [start_low, uint32_max]
+        // 2. Flip intermediate bitmaps completely: [0, uint32_max]
+        // 3. Partially flip the last bitmap in the closed interval
+        //    [0, end_low]
+
+        auto num_intermediate_bitmaps = end_high - start_high - 1;
+
+        // 1. Partially flip the first bitmap.
+        {
+            auto &bitmap = current_iter->second;
+            bitmap.flipClosed(start_low, uint32_max);
+            auto temp = current_iter++;
+            eraseIfEmpty(temp);
+        }
+
+        // 2. Flip intermediate bitmaps completely.
+        for (uint32_t i = 0; i != num_intermediate_bitmaps; ++i) {
+            auto &bitmap = current_iter->second;
+            bitmap.flipClosed(0, uint32_max);
+            auto temp = current_iter++;
+            eraseIfEmpty(temp);
+        }
+
+        // 3. Partially flip the last bitmap.
+        auto &bitmap = current_iter->second;
+        bitmap.flipClosed(0, end_low);
+        eraseIfEmpty(current_iter);
     }
 
     /**
@@ -1335,6 +1394,53 @@ private:
         if (bitmap.isEmpty()) {
             roarings.erase(iter);
         }
+    }
+
+    /**
+     * Ensure that every key in the closed interval [start_high, end_high]
+     * refers to a Roaring bitmap rather being an empty slot. Inserts empty
+     * Roaring bitmaps if necessary. The interval must be valid and non-empty.
+     * Returns an iterator to the bitmap at start_high.
+     */
+    roarings_t::iterator ensureRangePopulated(uint32_t start_high,
+                                              uint32_t end_high) {
+        if (start_high > end_high) {
+            ROARING_TERMINATE("Logic error: start_high > end_high");
+        }
+        // next_populated_iter points to the first entry in the outer map with
+        // key >= start_high, or end().
+        auto next_populated_iter = roarings.lower_bound(start_high);
+
+        // Use uint64_t to avoid an infinite loop when end_high == uint32_max.
+        roarings_t::iterator start_iter{};  // Definitely assigned in loop.
+        for (uint64_t slot = start_high; slot <= end_high; ++slot) {
+            roarings_t::iterator slot_iter;
+            if (next_populated_iter != roarings.end() &&
+                next_populated_iter->first == slot) {
+                // 'slot' index has caught up to next_populated_iter.
+                // Note it here and advance next_populated_iter.
+                slot_iter = next_populated_iter++;
+            } else {
+                // 'slot' index has not yet caught up to next_populated_iter.
+                // Make a fresh entry {key = 'slot', value = Roaring()}, insert
+                // it just prior to next_populated_iter, and set its copy
+                // on write flag. We take pains to use emplace_hint and
+                // piecewise_construct to minimize effort.
+                slot_iter = roarings.emplace_hint(
+                    next_populated_iter, std::piecewise_construct,
+                    std::forward_as_tuple(uint32_t(slot)),
+                    std::forward_as_tuple());
+                auto &bitmap = slot_iter->second;
+                bitmap.setCopyOnWrite(copyOnWrite);
+            }
+
+            // Make a note of the iterator of the starting slot. It will be
+            // needed for the return value.
+            if (slot == start_high) {
+                start_iter = slot_iter;
+            }
+        }
+        return start_iter;
     }
 };
 

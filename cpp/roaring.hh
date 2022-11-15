@@ -99,7 +99,7 @@ public:
     }
 
     /**
-     * Construct a bitmap from a list of integer values.
+     * Construct a bitmap from a list of uint32_t values.
      */
     static Roaring bitmapOf(size_t n, ...) {
         Roaring ans;
@@ -345,12 +345,20 @@ public:
     }
 
     /**
-     * Compute the negation of the roaring bitmap within a specified interval.
-     * interval: [range_start, range_end).
-     * Areas outside the range are passed through unchanged.
+     * Compute the negation of the roaring bitmap within the half-open interval
+     * [range_start, range_end). Areas outside the interval are unchanged.
      */
     void flip(uint64_t range_start, uint64_t range_end) {
         api::roaring_bitmap_flip_inplace(&roaring, range_start, range_end);
+    }
+
+    /**
+     * Compute the negation of the roaring bitmap within the closed interval
+     * [range_start, range_end]. Areas outside the interval are unchanged.
+     */
+    void flipClosed(uint32_t range_start, uint32_t range_end) {
+        api::roaring_bitmap_flip_inplace(
+            &roaring, range_start, uint64_t(range_end) + 1);
     }
 
     /**
