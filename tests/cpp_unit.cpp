@@ -533,12 +533,12 @@ void test_example_cpp_64(bool copy_on_write) {
     printf("\n");
     // create a new bitmap with initializer list
     Roaring64Map r2i =
-        Roaring64Map::bitmapOfList({1ull, 2ull, 234294967296ull, 195839473298ull,
+        Roaring64Map::bitmapOfList({1, 2, 234294967296, 195839473298,
                                14000000000000000100ull});
     assert(r2i == r2);
 
     // create a new bitmap directly from initializer list
-    Roaring64Map r2id = {1ull, 2ull, 234294967296ull, 195839473298ull,
+    Roaring64Map r2id = {1, 2, 234294967296, 195839473298,
                                14000000000000000100ull};
     assert(r2id == r2);
 
