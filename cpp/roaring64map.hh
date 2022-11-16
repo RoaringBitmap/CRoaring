@@ -1504,53 +1504,6 @@ private:
             roarings.erase(iter);
         }
     }
-
-    /**
-     * Ensure that every key in the closed interval [start_high, end_high]
-     * refers to a Roaring bitmap rather being an empty slot. Inserts empty
-     * Roaring bitmaps if necessary. The interval must be valid and non-empty.
-     * Returns an iterator to the bitmap at start_high.
-     */
-    roarings_t::iterator ensureRangePopulated(uint32_t start_high,
-                                              uint32_t end_high) {
-        if (start_high > end_high) {
-            ROARING_TERMINATE("Logic error: start_high > end_high");
-        }
-        // next_populated_iter points to the first entry in the outer map with
-        // key >= start_high, or end().
-        auto next_populated_iter = roarings.lower_bound(start_high);
-
-        // Use uint64_t to avoid an infinite loop when end_high == uint32_max.
-        roarings_t::iterator start_iter{};  // Definitely assigned in loop.
-        for (uint64_t slot = start_high; slot <= end_high; ++slot) {
-            roarings_t::iterator slot_iter;
-            if (next_populated_iter != roarings.end() &&
-                next_populated_iter->first == slot) {
-                // 'slot' index has caught up to next_populated_iter.
-                // Note it here and advance next_populated_iter.
-                slot_iter = next_populated_iter++;
-            } else {
-                // 'slot' index has not yet caught up to next_populated_iter.
-                // Make a fresh entry {key = 'slot', value = Roaring()}, insert
-                // it just prior to next_populated_iter, and set its copy
-                // on write flag. We take pains to use emplace_hint and
-                // piecewise_construct to minimize effort.
-                slot_iter = roarings.emplace_hint(
-                    next_populated_iter, std::piecewise_construct,
-                    std::forward_as_tuple(uint32_t(slot)),
-                    std::forward_as_tuple());
-                auto &bitmap = slot_iter->second;
-                bitmap.setCopyOnWrite(copyOnWrite);
-            }
-
-            // Make a note of the iterator of the starting slot. It will be
-            // needed for the return value.
-            if (slot == start_high) {
-                start_iter = slot_iter;
-            }
-        }
-        return start_iter;
-    }
 };
 
 /**
