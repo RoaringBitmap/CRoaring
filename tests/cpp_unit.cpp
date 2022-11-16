@@ -1716,6 +1716,45 @@ DEFINE_TEST(test_cpp_is_subset_64) {
   assert_true(r3.isSubset(r2));
 }
 
+DEFINE_TEST(test_cpp_fast_union_64) {
+    auto update = [](Roaring64Map *dest, uint32_t bitmask, uint32_t offset) {
+        for (uint32_t i = 0; i != 32; ++i) {
+            if ((bitmask & (1 << i)) != 0) {
+                dest->add(offset + i);
+            }
+        }
+    };
+
+    // Generate three Roaring64Maps that have a variety of combinations of
+    // present and absent slots and calculate their union with fastunion.
+    const uint32_t num_slots_to_test = 4;
+    const uint32_t bitmask_limit = 1 << num_slots_to_test;
+
+    for (size_t r0_bitmask = 0; r0_bitmask != bitmask_limit; ++r0_bitmask) {
+        for (size_t r1_bitmask = 0; r1_bitmask != bitmask_limit; ++r1_bitmask) {
+            for (size_t r2_bitmask = 0; r2_bitmask != bitmask_limit;
+                 ++r2_bitmask) {
+                Roaring64Map r0_map, r1_map, r2_map;
+                update(&r0_map, r0_bitmask, 0);
+                update(&r1_map, r1_bitmask, 0x1000);
+                update(&r2_map, r2_bitmask, 0x2000);
+
+                const Roaring64Map *maps[] = {
+                    &r0_map, &r1_map, &r2_map
+                };
+                auto actual = Roaring64Map::fastunion(3, maps);
+
+                Roaring64Map expected;
+                update(&expected, r0_bitmask, 0);
+                update(&expected, r1_bitmask, 0x1000);
+                update(&expected, r2_bitmask, 0x2000);
+
+                assert_true(expected == actual);
+            }
+        }
+    }
+}
+
 DEFINE_TEST(test_cpp_to_string) {
     // test toString
     const auto b5 = uint64_t(5) << 32;
@@ -1888,6 +1927,7 @@ int main() {
         cmocka_unit_test(issue_336),
         cmocka_unit_test(issue_372),
         cmocka_unit_test(test_cpp_is_subset_64),
+        cmocka_unit_test(test_cpp_fast_union_64),
         cmocka_unit_test(test_cpp_to_string),
         cmocka_unit_test(test_cpp_remove_run_compression),
         cmocka_unit_test(test_cpp_contains_range_interleaved_containers),
