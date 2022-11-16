@@ -928,10 +928,6 @@ DEFINE_TEST(test_cpp_add_range_closed_combinatoric_64) {
     const uint32_t num_slots_to_test = 5;
     const uint32_t base_slot = 50;
 
-    // We put std::numeric_limits<>::max in parentheses to avoid a
-    // clash with the Windows.h header under Windows.
-    const auto uint32_max = (std::numeric_limits<uint32_t>::max)();
-
     const uint32_t bitmask_limit = 1 << num_slots_to_test;
 
     for (uint32_t bitmask = 0; bitmask < bitmask_limit; ++bitmask) {
