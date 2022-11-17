@@ -20,11 +20,12 @@
 // https://www.llvm.org/docs/LibFuzzer.html
 //
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cassert>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include <iostream>
 #include <type_traits>
@@ -378,10 +379,10 @@ DEFINE_TEST(random_doublecheck_test_64) {
         const Roaring64Map &right = roars[rand() % NUM_ROARS];
 
 #ifdef ROARING_CPP_RANDOM_PRINT_STATUS
-        printf("[%lu]: %llu %llu %llu\n", step,
-               static_cast<unsigned long long>(left.cardinality()),
-               static_cast<unsigned long long>(right.cardinality()),
-               static_cast<unsigned long long>(out.cardinality()));
+        printf("[%lu]: %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", step,
+               left.cardinality(),
+               right.cardinality(),
+               out.cardinality());
 #endif
 
         int op = rand() % 6;
@@ -482,7 +483,7 @@ DEFINE_TEST(random_doublecheck_test_64) {
 int main() {
     uint64_t seed = time(nullptr);
     srand(seed);
-    printf("Seed: %lu\n", seed);
+    printf("Seed:  %" PRIu64 "\n", seed);
 
     gravity = rand() % 10000;  // starting focal point
 

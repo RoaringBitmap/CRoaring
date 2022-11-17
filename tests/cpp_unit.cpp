@@ -333,6 +333,10 @@ void test_example_cpp(bool copy_on_write) {
 
     r2.printf();
     printf("\n");
+    // create a new bitmap with initializer list
+    Roaring r2i = Roaring::bitmapOfList({1, 2, 3, 5, 6});
+
+    assert(r2i == r2);
 
     // test select
     uint32_t element;
@@ -532,6 +536,11 @@ void test_example_cpp_64(bool copy_on_write) {
 
     r2.printf();
     printf("\n");
+    // create a new bitmap with initializer list
+    Roaring64Map r2i =
+        Roaring64Map::bitmapOfList({1, 2, 234294967296, 195839473298,
+                               14000000000000000100ull});
+    assert(r2i == r2);
 
     // test select
     uint64_t element;
@@ -806,6 +815,25 @@ DEFINE_TEST(test_cpp_add_range_closed_64) {
         }
         assert_true(r1 == r2);
     }
+}
+DEFINE_TEST(test_bitmap_of_32) {
+        Roaring r1 = Roaring::bitmapOfList({1,2,4});
+        r1.printf();
+        printf("\n");
+        Roaring r2 =
+            Roaring::bitmapOf(3, 1, 2, 4);
+        r2.printf();
+        printf("\n");
+        assert_true(r1 == r2);
+}
+
+DEFINE_TEST(test_bitmap_of_64) {
+        Roaring64Map r1 = Roaring64Map::bitmapOfList({1,2,4});
+        r1.printf();
+        Roaring64Map r2 =
+            Roaring64Map::bitmapOf(3, uint64_t(1), uint64_t(2), uint64_t(4));
+        r2.printf();
+        assert_true(r1 == r2);
 }
 
 DEFINE_TEST(test_cpp_add_range_open_64) {
@@ -1867,6 +1895,8 @@ DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_bitmap_of_32),
+        cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),

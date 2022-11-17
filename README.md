@@ -372,6 +372,11 @@ int main() {
     r2.printf();
     printf("\n");
 
+    // create a new bitmap with initializer list
+    Roaring r2i = Roaring::bitmapOfList({1, 2, 3, 5, 6});
+
+    assert(r2i == r2);
+
     // we can also create a bitmap from a pointer to 32-bit integers
     const uint32_t values[] = {2, 3, 4};
     Roaring r3(3, values);

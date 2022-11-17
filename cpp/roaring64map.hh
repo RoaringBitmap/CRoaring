@@ -15,6 +15,7 @@
 #include <cstdio>  // for std::printf() in the printf() method
 #include <cstring>  // for std::memcpy()
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <map>
 #include <new>
@@ -96,6 +97,16 @@ public:
             ans.add(va_arg(vl, uint64_t));
         }
         va_end(vl);
+        return ans;
+    }
+
+    /**
+     * Construct a bitmap from a list of uint64_t values.
+     * E.g., bitmapOfList({1,2,3}).
+     */
+    static Roaring64Map bitmapOfList(std::initializer_list<uint64_t> l) {
+        Roaring64Map ans;
+        ans.addMany(l.size(), l.begin());
         return ans;
     }
 
