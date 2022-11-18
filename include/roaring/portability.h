@@ -316,6 +316,7 @@ static inline int hamming(uint64_t x) {
 #endif
 
 #define CROARING_TARGET_AVX2 CROARING_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+#define CROARING_TARGET_SSE42 CROARING_TARGET_REGION("sse4.2,bmi,pclmul,lzcnt")
 
 #ifdef __AVX2__
 // No need for runtime dispatching.
