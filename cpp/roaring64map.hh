@@ -54,6 +54,13 @@ public:
     Roaring64Map(size_t n, const uint64_t *data) { addMany(n, data); }
 
     /**
+     * Construct a bitmap from an initializer list.
+     */
+    Roaring64Map(std::initializer_list<uint64_t> l) {
+        addMany(l.size(), l.begin());
+    }
+
+    /**
      * Construct a 64-bit map from a 32-bit one
      */
     explicit Roaring64Map(const Roaring &r) { emplaceOrInsert(0, r); }
@@ -84,7 +91,16 @@ public:
     /**
      * Move assignment operator.
      */
-     Roaring64Map &operator=(Roaring64Map &&r) noexcept = default;
+    Roaring64Map &operator=(Roaring64Map &&r) noexcept = default;
+
+    /**
+     * Assignment from an initializer list.
+     */
+    Roaring64Map &operator=(std::initializer_list<uint64_t> l) {
+        // Delegate to move assignment operator
+        *this = Roaring64Map(l);
+        return *this;
+    }
 
     /**
      * Construct a bitmap from a list of uint64_t values.
