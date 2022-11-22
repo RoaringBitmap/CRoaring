@@ -56,10 +56,17 @@ public:
     }
 
     /**
-     * Construct a bitmap from a list of integer values.
+     * Construct a bitmap from a list of 32-bit integer values.
      */
     Roaring(size_t n, const uint32_t *data) : Roaring() {
         api::roaring_bitmap_add_many(&roaring, n, data);
+    }
+
+    /**
+     * Construct a bitmap from an initializer list.
+     */
+    Roaring(std::initializer_list<uint32_t> l) : Roaring() {
+        addMany(l.size(), l.begin());
     }
 
     /**
@@ -75,8 +82,8 @@ public:
     }
 
     /**
-     * Move constructor. The moved object remains valid, i.e.
-     * all methods can still be called on it.
+     * Move constructor. The moved-from object remains valid but empty, i.e.
+     * it behaves as though it was just freshly constructed.
      */
     Roaring(Roaring &&r) noexcept : roaring(r.roaring) {
         //
@@ -257,6 +264,15 @@ public:
         roaring = r.roaring;
         api::roaring_bitmap_init_cleared(&r.roaring);
 
+        return *this;
+    }
+
+    /**
+     * Assignment from an initializer list.
+     */
+    Roaring &operator=(std::initializer_list<uint32_t> l) {
+        // Delegate to move assignment operator
+        *this = Roaring(l);
         return *this;
     }
 
