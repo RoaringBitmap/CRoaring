@@ -648,6 +648,9 @@ Yuce Tekol wrote a D wrapper available at https://github.com/yuce/droaring
 
 Antonio Guilherme Ferreira Viggiano wrote a Redis Module available at https://github.com/aviggiano/redis-roaring
 
+# Zig Wrapper
+
+Justin Whear wrote a Zig wrapper available at https://github.com/jwhear/roaring-zig
 
 
 # Mailing list/discussion group
