@@ -492,6 +492,9 @@ public:
      * Compute the intersection of the current bitmap and the provided bitmap,
      * writing the result in the current bitmap. The provided bitmap is not
      * modified.
+     *
+     * Performance hint: if you are computing the intersection between several
+     * bitmaps, two-by-two, it is best to start with the smallest bitmap.
      */
     Roaring64Map &operator&=(const Roaring64Map &other) {
         if (this == &other) {
@@ -1304,6 +1307,11 @@ public:
     /**
      * Computes the intersection between two bitmaps and returns new bitmap.
      * The current bitmap and the provided bitmap are unchanged.
+     *
+     * Performance hint: if you are computing the intersection between several
+     * bitmaps, two-by-two, it is best to start with the smallest bitmap.
+     * Consider also using the operator &= to avoid needlessly creating
+     * many temporary bitmaps.
      */
     Roaring64Map operator&(const Roaring64Map &o) const {
         return Roaring64Map(*this) &= o;

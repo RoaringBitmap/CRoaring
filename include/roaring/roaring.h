@@ -122,6 +122,11 @@ void roaring_bitmap_printf(const roaring_bitmap_t *r);
 /**
  * Computes the intersection between two bitmaps and returns new bitmap. The
  * caller is responsible for memory management.
+ *
+ * Performance hint: if you are computing the intersection between several
+ * bitmaps, two-by-two, it is best to start with the smallest bitmap.
+ * You may also rely on roaring_bitmap_and_inplace to avoid creating
+ * many temporary bitmaps.
  */
 roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *r1,
                                      const roaring_bitmap_t *r2);
@@ -173,7 +178,10 @@ uint64_t roaring_bitmap_xor_cardinality(const roaring_bitmap_t *r1,
 
 /**
  * Inplace version of `roaring_bitmap_and()`, modifies r1
- * r1 == r2 is allowed
+ * r1 == r2 is allowed.
+ *
+ * Performance hint: if you are computing the intersection between several
+ * bitmaps, two-by-two, it is best to start with the smallest bitmap.
  */
 void roaring_bitmap_and_inplace(roaring_bitmap_t *r1,
                                 const roaring_bitmap_t *r2);
