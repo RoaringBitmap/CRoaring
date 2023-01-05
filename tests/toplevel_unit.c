@@ -53,7 +53,8 @@ DEFINE_TEST(range_contains) {
     uint32_t start = end-2;
     roaring_bitmap_t *bm = roaring_bitmap_from_range(start, end-1, 1);
     roaring_bitmap_printf_describe(bm);printf("\n");
-    roaring_bitmap_contains_range(bm, start, end);
+    assert_true(roaring_bitmap_contains_range(bm, start, end-1));
+    assert_false(roaring_bitmap_contains_range(bm, start, end));
     roaring_bitmap_free(bm);
 }
 
@@ -1469,7 +1470,7 @@ DEFINE_TEST(test_contains_range) {
             values[i] = val;
       }
       for (uint64_t i = 0; i < 100000; ++i){
-            if (roaring_bitmap_contains_range(r1, values[i], values[i] + length_range)){
+            if (roaring_bitmap_contains_range(r1, values[i], values[i] + length_range)) {
                 for (uint32_t j = values[i]; j < values[i] + length_range; ++j) assert_true(roaring_bitmap_contains(r1, j));
             }
             else {
@@ -1499,6 +1500,14 @@ DEFINE_TEST(test_contains_range) {
         }
         roaring_bitmap_free(r1);
     }
+}
+
+DEFINE_TEST(test_contains_range_PyRoaringBitMap_issue81) {
+    roaring_bitmap_t* r = roaring_bitmap_create();
+    roaring_bitmap_add_range(r, 1, 1900544);
+    assert_true(roaring_bitmap_contains_range(r,1,1900544));
+    assert_false(roaring_bitmap_contains_range(r,1,1900545));
+    roaring_bitmap_free(r);
 }
 
 DEFINE_TEST(test_intersection_array_x_array) {
@@ -4241,6 +4250,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_contains_range_PyRoaringBitMap_issue81),
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
         cmocka_unit_test(issue245),
