@@ -1506,7 +1506,7 @@ DEFINE_TEST(test_contains_range_PyRoaringBitMap_issue81) {
     roaring_bitmap_t* r = roaring_bitmap_create();
     roaring_bitmap_add_range(r, 1, 1900544);
     assert_true(roaring_bitmap_contains_range(r,1,1900544));
-    assert_false(roaring_bitmap_contains_range(r,1,1900545));
+    assert_false(roaring_bitmap_contains_range(r,1900543,1900545));
     roaring_bitmap_free(r);
 }
 
