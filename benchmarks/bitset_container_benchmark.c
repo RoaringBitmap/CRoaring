@@ -69,7 +69,7 @@ int set_test(bitset_container_t* B) {
 int unset_test(bitset_container_t* B) {
     int x;
     for (x = 0; x < 1 << 16; x += 3) {
-        bitset_container_unset(B, (uint16_t)x);
+        bitset_container_remove(B, (uint16_t)x);
     }
     return 0;
 }

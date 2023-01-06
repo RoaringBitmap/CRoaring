@@ -67,7 +67,6 @@ $SCRIPTPATH/include/roaring/containers/mixed_union.h
 $SCRIPTPATH/include/roaring/containers/mixed_xor.h
 $SCRIPTPATH/include/roaring/containers/containers.h
 $SCRIPTPATH/include/roaring/roaring_array.h
-$SCRIPTPATH/include/roaring/misc/configreport.h
 "
 
 # .c implementation files

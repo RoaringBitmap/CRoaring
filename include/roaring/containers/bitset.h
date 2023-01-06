@@ -77,8 +77,8 @@ static inline void bitset_container_set(bitset_container_t *bitset,
     bitset->words[offset] = load;
 }
 
-/* Unset the ith bit.  */
-static inline void bitset_container_unset(bitset_container_t *bitset,
+/* Unset the ith bit. Currently unused. Could be used for optimization. */
+/*static inline void bitset_container_unset(bitset_container_t *bitset,
                                           uint16_t pos) {
     uint64_t shift = 6;
     uint64_t offset;
@@ -87,7 +87,7 @@ static inline void bitset_container_unset(bitset_container_t *bitset,
     uint64_t load = bitset->words[offset];
     ASM_CLEAR_BIT_DEC_WAS_SET(load, p, bitset->cardinality);
     bitset->words[offset] = load;
-}
+}*/
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
  * than bitset_container_set.  */
@@ -142,15 +142,15 @@ static inline void bitset_container_set(bitset_container_t *bitset,
     bitset->words[pos >> 6] = new_word;
 }
 
-/* Unset the ith bit.  */
-static inline void bitset_container_unset(bitset_container_t *bitset,
+/* Unset the ith bit. Currently unused.  */
+/*static inline void bitset_container_unset(bitset_container_t *bitset,
                                           uint16_t pos) {
     const uint64_t old_word = bitset->words[pos >> 6];
     const int index = pos & 63;
     const uint64_t new_word = old_word & (~(UINT64_C(1) << index));
     bitset->cardinality -= (uint32_t)((old_word ^ new_word) >> index);
     bitset->words[pos >> 6] = new_word;
-}
+}*/
 
 /* Add `pos' to `bitset'. Returns true if `pos' was not present. Might be slower
  * than bitset_container_set.  */
@@ -254,19 +254,7 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
  * bitset->cardinality =  bitset_container_compute_cardinality(bitset).*/
 int bitset_container_compute_cardinality(const bitset_container_t *bitset);
 
-/* Get whether there is at least one bit set  (see bitset_container_empty for the reverse),
-   when the cardinality is unknown, it is computed and stored in the struct */
-static inline bool bitset_container_nonzero_cardinality(
-    bitset_container_t *bitset) {
-    // account for laziness
-    if (bitset->cardinality == BITSET_UNKNOWN_CARDINALITY) {
-        // could bail early instead with a nonzero result
-        bitset->cardinality = bitset_container_compute_cardinality(bitset);
-    }
-    return bitset->cardinality > 0;
-}
-
-/* Check whether this bitset is empty (see bitset_container_nonzero_cardinality for the reverse),
+/* Check whether this bitset is empty,
  *  it never modifies the bitset struct. */
 static inline bool bitset_container_empty(
     const bitset_container_t *bitset) {

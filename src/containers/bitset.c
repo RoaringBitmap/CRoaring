@@ -21,9 +21,9 @@ extern "C" { namespace roaring { namespace internal {
 #endif
 
 extern inline int bitset_container_cardinality(const bitset_container_t *bitset);
-extern inline bool bitset_container_nonzero_cardinality(bitset_container_t *bitset);
 extern inline void bitset_container_set(bitset_container_t *bitset, uint16_t pos);
-extern inline void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
+// unused at this time:
+//extern inline void bitset_container_unset(bitset_container_t *bitset, uint16_t pos);
 extern inline bool bitset_container_get(const bitset_container_t *bitset,
                                         uint16_t pos);
 extern inline int32_t bitset_container_serialized_size_in_bytes(void);

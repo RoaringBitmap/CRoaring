@@ -141,8 +141,8 @@ int main() {
     printf("intersection cardinality = %d \n", answer);
     BEST_TIME(intersection_test(B1, B2, BO), answer, repeat, answer);
     printf("==intersection and union test 2 \n");
-    run_container_clear(B1);
-    run_container_clear(B2);
+    B1->n_runs = 0;
+    B2->n_runs = 0;
     for (int x = 0; x < (1 << 16); x += 64) {
         int length = x % 11;
         for (int y = 0; y < length; ++y)

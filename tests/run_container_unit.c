@@ -171,11 +171,18 @@ DEFINE_TEST(select_test) {
     run_container_free(B);
 }
 
+static inline void _run_container_add_range(run_container_t* run,
+                                           uint32_t min, uint32_t max) {
+    int32_t nruns_greater = rle16_count_greater(run->runs, run->n_runs, max);
+    int32_t nruns_less = rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
+    run_container_add_range_nruns(run, min, max, nruns_less, nruns_greater);
+}
+
 DEFINE_TEST(remove_range_test) {
     run_container_t* run = run_container_create();
-    run_container_add_range(run, 100, 150);
-    run_container_add_range(run, 200, 250);
-    run_container_add_range(run, 300, 350);
+    _run_container_add_range(run, 100, 150);
+    _run_container_add_range(run, 200, 250);
+    _run_container_add_range(run, 300, 350);
 
     // act on left-most run
     run_container_remove_range(run, 100, 110);

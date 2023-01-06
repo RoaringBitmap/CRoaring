@@ -182,7 +182,7 @@ static inline bitset_container_t *container_to_bitset(
  * Get the container name from the typecode
  * (unused at time of writing)
  */
-static inline const char *get_container_name(uint8_t typecode) {
+/*static inline const char *get_container_name(uint8_t typecode) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
             return container_names[0];
@@ -197,7 +197,7 @@ static inline const char *get_container_name(uint8_t typecode) {
             __builtin_unreachable();
             return "unknown";
     }
-}
+}*/
 
 static inline const char *get_full_container_name(
     const container_t *c, uint8_t typecode

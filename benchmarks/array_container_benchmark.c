@@ -137,8 +137,8 @@ int main() {
     printf("intersection cardinality = %d \n", answer);
     BEST_TIME(intersection_test(B1, B2, BO), answer, repeat, answer);
     printf("==intersection and union test 2 \n");
-    array_container_clear(B1);
-    array_container_clear(B2);
+    B1->cardinality = 0;
+    B2->cardinality = 0;
     for (int x = 0; x < 1 << 16; x += 16) {
         array_container_add(B1, (uint16_t)x);
     }

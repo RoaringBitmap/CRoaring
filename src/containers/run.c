@@ -18,7 +18,6 @@ extern inline bool run_container_contains(const run_container_t *run,
 extern inline int run_container_index_equalorlarger(const run_container_t *arr, uint16_t x);
 extern inline bool run_container_is_full(const run_container_t *run);
 extern inline bool run_container_nonzero_cardinality(const run_container_t *rc);
-extern inline void run_container_clear(run_container_t *run);
 extern inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
 extern inline run_container_t *run_container_create_range(uint32_t start,
                                                    uint32_t stop);

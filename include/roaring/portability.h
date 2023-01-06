@@ -39,7 +39,11 @@
 #endif // __clang__
 #endif // _MSC_VER
 
-#if !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
+#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE < 200809L)
+#undef _POSIX_C_SOURCE
+#endif
+
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif // !(defined(_POSIX_C_SOURCE)) || (_POSIX_C_SOURCE < 200809L)
 #if !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
@@ -226,6 +230,10 @@ inline int __builtin_clzll(unsigned long long input_num) {
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
+#ifdef USENEON
+// we can always compute the popcount fast.
+#elif (defined(_M_ARM) || defined(_M_ARM64)) && (defined(_WIN64) && defined(CROARING_REGULAR_VISUAL_STUDIO) && CROARING_REGULAR_VISUAL_STUDIO)
+// we will need this function:
 static inline int hammingbackup(uint64_t x) {
   uint64_t c1 = UINT64_C(0x5555555555555555);
   uint64_t c2 = UINT64_C(0x3333333333333333);
@@ -235,10 +243,14 @@ static inline int hammingbackup(uint64_t x) {
   x *= UINT64_C(0x0101010101010101);
   return x >> 56;
 }
+#endif
+
 
 static inline int hamming(uint64_t x) {
 #if defined(_WIN64) && defined(CROARING_REGULAR_VISUAL_STUDIO) && CROARING_REGULAR_VISUAL_STUDIO
-#ifdef _M_ARM64
+#ifdef USENEON
+   return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
+#elif defined(_M_ARM64)
   return hammingbackup(x);
   // (int) _CountOneBits64(x); is unavailable
 #else  // _M_ARM64

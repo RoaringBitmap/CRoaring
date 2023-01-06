@@ -86,10 +86,6 @@ void array_container_copy(const array_container_t *src, array_container_t *dst);
 void array_container_add_from_range(array_container_t *arr, uint32_t min,
                                     uint32_t max, uint16_t step);
 
-/* Set the cardinality to zero (does not release memory). */
-static inline void array_container_clear(array_container_t *array) {
-    array->cardinality = 0;
-}
 
 static inline bool array_container_empty(const array_container_t *array) {
     return array->cardinality == 0;
@@ -448,14 +444,15 @@ static inline void array_container_add_range_nvals(array_container_t *array,
 }
 
 /**
- * Adds all values in range [min,max].
+ * Adds all values in range [min,max]. This function is currently unused
+ * and left as a documentation.
  */
-static inline void array_container_add_range(array_container_t *array,
+/*static inline void array_container_add_range(array_container_t *array,
                                              uint32_t min, uint32_t max) {
     int32_t nvals_greater = count_greater(array->array, array->cardinality, max);
     int32_t nvals_less = count_less(array->array, array->cardinality - nvals_greater, min);
     array_container_add_range_nvals(array, min, max, nvals_less, nvals_greater);
-}
+}*/
 
 /*
  * Removes all elements array[pos] .. array[pos+count-1]

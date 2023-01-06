@@ -79,7 +79,7 @@ DEFINE_TEST(set_get_test) {
                      (1 << 16) / 3 + 1);
 
     for (size_t x = 0; x < 1 << 16; x += 3) {
-        bitset_container_unset(B, x);
+        bitset_container_remove(B, x);
     }
 
     assert_int_equal(bitset_container_cardinality(B), 0);
@@ -154,7 +154,7 @@ DEFINE_TEST(xor_test) {
     }
 
     for (size_t x = 0; x < (1 << 16); x += 62 * 3) {
-        bitset_container_unset(BI, x);
+        bitset_container_remove(BI, x);
     }
 
     bitset_container_xor(B1, B2, TMP);
@@ -185,7 +185,7 @@ DEFINE_TEST(andnot_test) {
     // important: 62 is not divisible by 3
     for (size_t x = 0; x < (1 << 16); x += 62) {
         bitset_container_set(B2, x);
-        bitset_container_unset(BI, x);
+        bitset_container_remove(BI, x);
     }
 
     const int expected = bitset_container_compute_cardinality(BI);
