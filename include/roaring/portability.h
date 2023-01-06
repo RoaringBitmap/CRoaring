@@ -232,7 +232,7 @@ inline int __builtin_clzll(unsigned long long input_num) {
 
 #ifdef USENEON
 // we can always compute the popcount fast.
-#elif (defined(_M_ARM) || defined(_M_ARM64)) && (defined(_WIN64) && defined(CROARING_REGULAR_VISUAL_STUDIO) && CROARING_REGULAR_VISUAL_STUDIO)
+#elif (defined(_M_ARM) || defined(_M_ARM64)) && ((defined(_WIN64) || defined(_WIN32)) && defined(CROARING_REGULAR_VISUAL_STUDIO) && CROARING_REGULAR_VISUAL_STUDIO)
 // we will need this function:
 static inline int hammingbackup(uint64_t x) {
   uint64_t c1 = UINT64_C(0x5555555555555555);
