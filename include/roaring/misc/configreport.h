@@ -177,14 +177,6 @@ static inline void tellmeall() {
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
-    uint32_t config =  croaring_detect_supported_architectures();
-    if((config & CROARING_NEON) == CROARING_NEON) {
-        printf(" NEON detected\t");
-    }
-    if((config & CROARING_ALTIVEC) == CROARING_ALTIVEC) {
-        printf("Altivec detected\n");
-    }
-
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
         printf("number of bytes: int = %lu long = %lu \n",
                (long unsigned int)sizeof(size_t),
