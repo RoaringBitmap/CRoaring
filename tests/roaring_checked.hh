@@ -42,7 +42,7 @@
 #include <string>
 
 #include <set>  // sorted set, typically a red-black tree implementation
-#include <assert.h>
+#include "test.h"
 
 #define ROARING_CPP_NAMESPACE unchecked  // can't be overridden if global
 #include "roaring.hh"  // contains Roaring unchecked class
@@ -112,7 +112,7 @@ class Roaring {
     bool addChecked(uint32_t x) {
         bool ans = plain.addChecked(x);
         bool was_in_set = check.insert(x).second;  // insert -> pair<iter,bool>
-        assert(ans == was_in_set);
+        assert_true(ans == was_in_set);
         (void)was_in_set;  // unused besides assert
         return ans;
     }
@@ -145,7 +145,7 @@ class Roaring {
     bool removeChecked(uint32_t x) {
         bool ans = plain.removeChecked(x);
         size_t num_removed = check.erase(x);
-        assert(ans == (num_removed == 1));
+        assert_true(ans == (num_removed == 1));
         (void)num_removed;  // unused besides assert
         return ans;
     }
@@ -165,19 +165,19 @@ class Roaring {
 
     uint32_t maximum() const {
         uint32_t ans = plain.maximum();
-        assert(check.empty() ? ans == 0 : ans == *check.rbegin());
+        assert_true(check.empty() ? ans == 0 : ans == *check.rbegin());
         return ans;
     }
 
     uint32_t minimum() const {
         uint32_t ans = plain.minimum();
-        assert(check.empty() ? ans == UINT32_MAX : ans == *check.begin());
+        assert_true(check.empty() ? ans == UINT32_MAX : ans == *check.begin());
         return ans;
     }
 
     bool contains(uint32_t x) const {
         bool ans = plain.contains(x);
-        assert(ans == (check.find(x) != check.end()));
+        assert_true(ans == (check.find(x) != check.end()));
         return ans;
     }
 
@@ -186,14 +186,14 @@ class Roaring {
 
         auto it = check.find(x);
         if (x >= y)
-            assert(ans == true);  // roaring says true for this
+            assert_true(ans == true);  // roaring says true for this
         else if (it == check.end())
-            assert(ans == false);  // start of range not in set
+            assert_true(ans == false);  // start of range not in set
         else {
             uint64_t last = x;  // iterate up to y so long as values sequential
             while (++it != check.end() && last + 1 == *it && *it < y)
                 last = *it;
-            assert(ans == (last == y - 1));
+            assert_true(ans == (last == y - 1));
         }
 
         return ans;
@@ -217,7 +217,7 @@ class Roaring {
     }
 
     ~Roaring() {
-        assert(does_std_set_match_roaring());  // always check on destructor
+        assert_true(does_std_set_match_roaring());  // always check on destructor
     }
 
     Roaring &operator=(const Roaring &r) {
@@ -295,19 +295,19 @@ class Roaring {
 
     uint64_t cardinality() const {
         uint64_t ans = plain.cardinality();
-        assert(ans == check.size());
+        assert_true(ans == check.size());
         return ans;
     }
 
     bool isEmpty() const {
         bool ans = plain.isEmpty();
-        assert(ans == check.empty());
+        assert_true(ans == check.empty());
         return ans;
     }
 
     bool isSubset(const Roaring &r) const {  // is `this` subset of `r`?
         bool ans = plain.isSubset(r.plain);
-        assert(ans == std::includes(
+        assert_true(ans == std::includes(
             r.check.begin(), r.check.end(),  // containing range
             check.begin(), check.end()  // range to test for containment
         ));
@@ -316,7 +316,7 @@ class Roaring {
 
     bool isStrictSubset(const Roaring &r) const {  // is `this` subset of `r`?
         bool ans = plain.isStrictSubset(r.plain);
-        assert(ans == (std::includes(
+        assert_true(ans == (std::includes(
             r.check.begin(), r.check.end(),  // containing range
             check.begin(), check.end()  // range to test for containment
         ) && r.check.size() > check.size()));
@@ -335,7 +335,7 @@ class Roaring {
 
     bool operator==(const Roaring &r) const {
         bool ans = (plain == r.plain);
-        assert(ans == (check == r.check));
+        assert_true(ans == (check == r.check));
         return ans;
     }
 
@@ -370,7 +370,7 @@ class Roaring {
 
     void iterate(roaring::api::roaring_iterator iterator, void *ptr) const {
         plain.iterate(iterator, ptr);
-        assert(does_std_set_match_roaring());  // checks equivalent iteration
+        assert_true(does_std_set_match_roaring());  // checks equivalent iteration
     }
 
     bool select(uint32_t rnk, uint32_t *element) const {
@@ -380,7 +380,7 @@ class Roaring {
         auto it_end = check.end();
         for (uint32_t i = 0; it != it_end && i < rnk; ++i)
             ++it;
-        assert(ans == (it != it_end) && (ans ? *it == *element : true));
+        assert_true(ans == (it != it_end) && (ans ? *it == *element : true));
 
         return ans;
     }
@@ -393,9 +393,9 @@ class Roaring {
         auto r_it = r.check.begin();
         auto r_it_end = r.check.end();
         if (it == it_end || r_it == r_it_end) {
-            assert(ans == 0);  // if either is empty then no intersection
+            assert_true(ans == 0);  // if either is empty then no intersection
         } else if (*it > *r.check.rbegin() || *r_it > *check.rbegin()) {
-            assert(ans == 0);  // obvious disjoint
+            assert_true(ans == 0);  // obvious disjoint
         } else {  // may overlap
             uint64_t count = 0;
             while (it != it_end && r_it != r_it_end) {
@@ -403,7 +403,7 @@ class Roaring {
                 else if (*it < *r_it) { ++it; }
                 else { ++r_it; }
             }
-            assert(ans == count);
+            assert_true(ans == count);
         }
 
         return ans;
@@ -417,15 +417,15 @@ class Roaring {
         auto r_it = r.check.begin();
         auto r_it_end = r.check.end();
         if (it == it_end || r_it == r_it_end) {
-            assert(ans == false);  // if either are empty, no intersection
+            assert_true(ans == false);  // if either are empty, no intersection
         } else if (*it > *r.check.rbegin() || *r_it > *check.rbegin()) {
-            assert(ans == false);  // obvious disjoint
+            assert_true(ans == false);  // obvious disjoint
         } else while (it != it_end && r_it != r_it_end) {  // may overlap
-            if (*it == *r_it) { assert(ans == true); goto done; }  // overlap
+            if (*it == *r_it) { assert_true(ans == true); goto done; }  // overlap
             else if (*it < *r_it) { ++it; }
             else { ++r_it; }
         }
-        assert(ans == false);
+        assert_true(ans == false);
 
       done:  // (could use lambda vs goto, but debug step in lambdas is poor)
          return ans;
@@ -444,10 +444,10 @@ class Roaring {
         auto it_end = check.end();
         auto r_it = r.check.begin();
         auto r_it_end = r.check.end();
-        if (it == it_end) { assert(ans == r.check.size()); }  // this empty
-        else if (r_it == r_it_end) { assert(ans == check.size()); }  // r empty
+        if (it == it_end) { assert_true(ans == r.check.size()); }  // this empty
+        else if (r_it == r_it_end) { assert_true(ans == check.size()); }  // r empty
         else if (*it > *r.check.rbegin() || *r_it > *check.rbegin()) {
-            assert(ans == check.size() + r.check.size());  // obvious disjoint
+            assert_true(ans == check.size() + r.check.size());  // obvious disjoint
         } else {
             uint64_t count = 0;
             while (it != it_end || r_it != r_it_end) {
@@ -458,7 +458,7 @@ class Roaring {
                 else if (*it < *r_it) { ++it; }
                 else { ++r_it; }
             }
-            assert(ans == count);
+            assert_true(ans == count);
         }
 
         return ans;
@@ -471,10 +471,10 @@ class Roaring {
         auto it_end = check.end();
         auto r_it = r.check.begin();
         auto r_it_end = r.check.end();
-        if (it == it_end) { assert(ans == 0); }  // this empty
-        else if (r_it == r_it_end) { assert(ans == check.size()); }  // r empty
+        if (it == it_end) { assert_true(ans == 0); }  // this empty
+        else if (r_it == r_it_end) { assert_true(ans == check.size()); }  // r empty
         else if (*it > *r.check.rbegin() || *r_it > *check.rbegin()) {
-            assert(ans == check.size());  // disjoint so nothing removed
+            assert_true(ans == check.size());  // disjoint so nothing removed
         } else {  // may overlap
             uint64_t count = check.size();  // start with cardinality of this
             while (it != it_end && r_it != r_it_end) {
@@ -482,7 +482,7 @@ class Roaring {
                 else if (*it < *r_it) { ++it; }
                 else { ++r_it; }
             }
-            assert(ans == count);
+            assert_true(ans == count);
         }
 
         return ans;
@@ -495,10 +495,10 @@ class Roaring {
         auto it_end = check.end();
         auto r_it = r.check.begin();
         auto r_it_end = r.check.end();
-        if (it == it_end) { assert(ans == r.check.size()); }  // this empty
-        else if (r_it == r_it_end) { assert(ans == check.size()); }  // r empty
+        if (it == it_end) { assert_true(ans == r.check.size()); }  // this empty
+        else if (r_it == r_it_end) { assert_true(ans == check.size()); }  // r empty
         else if (*it > *r.check.rbegin() || *r_it > *check.rbegin()) {
-            assert(ans == check.size() + r.check.size());  // obvious disjoint
+            assert_true(ans == check.size() + r.check.size());  // obvious disjoint
         } else {  // may overlap
             uint64_t count = 0;
             while (it != it_end || r_it != r_it_end) {
@@ -508,7 +508,7 @@ class Roaring {
                 else if (*it < *r_it) { ++count; ++it; }
                 else { ++count; ++r_it; }
             }
-            assert(ans == count);
+            assert_true(ans == count);
         }
 
         return ans;
@@ -522,7 +522,7 @@ class Roaring {
         auto it_end = check.end();
         for (; it != it_end && *it <= x; ++it)
             ++count;
-        assert(ans == count);
+        assert_true(ans == count);
 
         return ans;
     }
@@ -549,7 +549,7 @@ class Roaring {
         Roaring ans(plain & o.plain);
 
         Roaring inplace(*this);
-        assert(ans == (inplace &= o));  // validate against in-place version
+        assert_true(ans == (inplace &= o));  // validate against in-place version
 
         return ans;
     }
@@ -558,7 +558,7 @@ class Roaring {
         Roaring ans(plain - o.plain);
 
         Roaring inplace(*this);
-        assert(ans == (inplace -= o));  // validate against in-place version
+        assert_true(ans == (inplace -= o));  // validate against in-place version
 
         return ans;
     }
@@ -567,7 +567,7 @@ class Roaring {
         Roaring ans(plain | o.plain);
 
         Roaring inplace(*this);
-        assert(ans == (inplace |= o));  // validate against in-place version
+        assert_true(ans == (inplace |= o));  // validate against in-place version
 
         return ans;
     }
@@ -576,7 +576,7 @@ class Roaring {
         Roaring ans(plain ^ o.plain);
 
         Roaring inplace(*this);
-        assert(ans == (inplace ^= o));  // validate against in-place version
+        assert_true(ans == (inplace ^= o));  // validate against in-place version
 
         return ans;
     }
@@ -605,12 +605,12 @@ class Roaring {
         delete[] plain_inputs;
 
         if (n == 0)
-            assert(ans.cardinality() == 0);
+            assert_true(ans.cardinality() == 0);
         else {
             Roaring temp = *inputs[0];
             for (size_t i = 1; i < n; ++i)
                 temp |= *inputs[i];
-            assert(temp == ans);
+            assert_true(temp == ans);
         }
 
         return ans;

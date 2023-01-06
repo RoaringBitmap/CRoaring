@@ -35,7 +35,9 @@
 #include <string>
 
 #include <set>  // sorted set, typically a red-black tree implementation
-#include <assert.h>
+
+#include "test.h"
+
 
 #define ROARING_CPP_NAMESPACE unchecked  // can't be overridden if global
 #include "roaring64map.hh"  // contains Roaring64Map unchecked class
@@ -104,14 +106,14 @@ class Roaring64Map {
     bool addChecked(uint32_t x) {
         bool ans = plain.addChecked(x);
         bool was_in_set = check.insert(x).second;  // insert -> pair<iter,bool>
-        assert(ans == was_in_set);
+        assert_true(ans == was_in_set);
         (void)was_in_set;  // unused besides assert
         return ans;
     }
     bool addChecked(uint64_t x) {
         bool ans = plain.addChecked(x);
         bool was_in_set = check.insert(x).second;  // insert -> pair<iter,bool>
-        assert(ans == was_in_set);
+        assert_true(ans == was_in_set);
         (void)was_in_set;  // unused besides assert
         return ans;
     }
@@ -161,14 +163,14 @@ class Roaring64Map {
     bool removeChecked(uint32_t x) {
         bool ans = plain.removeChecked(x);
         size_t num_removed = check.erase(x);
-        assert(ans == (num_removed == 1));
+        assert_true(ans == (num_removed == 1));
         (void)num_removed;  // unused besides assert
         return ans;
     }
     bool removeChecked(uint64_t x) {
         bool ans = plain.removeChecked(x);
         size_t num_removed = check.erase(x);
-        assert(ans == (num_removed == 1));
+        assert_true(ans == (num_removed == 1));
         (void)num_removed;  // unused besides assert
         return ans;
     }
@@ -211,13 +213,13 @@ class Roaring64Map {
 
     uint64_t maximum() const {
         uint64_t ans = plain.maximum();
-        assert(check.empty() ? ans == 0 : ans == *check.rbegin());
+        assert_true(check.empty() ? ans == 0 : ans == *check.rbegin());
         return ans;
     }
 
     uint64_t minimum() const {
         uint64_t ans = plain.minimum();
-        assert(check.empty()
+        assert_true(check.empty()
             ? ans == (std::numeric_limits<uint64_t>::max)()
             : ans == *check.begin());
         return ans;
@@ -225,12 +227,12 @@ class Roaring64Map {
 
     bool contains(uint32_t x) const {
         bool ans = plain.contains(x);
-        assert(ans == (check.find(x) != check.end()));
+        assert_true(ans == (check.find(x) != check.end()));
         return ans;
     }
     bool contains(uint64_t x) const {
         bool ans = plain.contains(x);
-        assert(ans == (check.find(x) != check.end()));
+        assert_true(ans == (check.find(x) != check.end()));
         return ans;
     }
 
@@ -253,7 +255,7 @@ class Roaring64Map {
     }
 
     ~Roaring64Map() {
-        assert(does_std_set_match_roaring());  // always check on destructor
+        assert_true(does_std_set_match_roaring());  // always check on destructor
     }
 
     Roaring64Map &operator=(const Roaring64Map &r) {
@@ -331,19 +333,19 @@ class Roaring64Map {
 
     uint64_t cardinality() const {
         uint64_t ans = plain.cardinality();
-        assert(ans == check.size());
+        assert_true(ans == check.size());
         return ans;
     }
 
     bool isEmpty() const {
         bool ans = plain.isEmpty();
-        assert(ans == check.empty());
+        assert_true(ans == check.empty());
         return ans;
     }
 
     bool isSubset(const Roaring64Map &r) const {  // is `this` subset of `r`?
         bool ans = plain.isSubset(r.plain);
-        assert(ans == std::includes(
+        assert_true(ans == std::includes(
             r.check.begin(), r.check.end(),  // containing range
             check.begin(), check.end()  // range to test for containment
         ));
@@ -352,7 +354,7 @@ class Roaring64Map {
 
     bool isStrictSubset(const Roaring64Map &r) const {  // is `this` subset of `r`?
         bool ans = plain.isStrictSubset(r.plain);
-        assert(ans == (std::includes(
+        assert_true(ans == (std::includes(
             r.check.begin(), r.check.end(),  // containing range
             check.begin(), check.end()  // range to test for containment
         ) && r.check.size() > check.size()));
@@ -366,7 +368,7 @@ class Roaring64Map {
 
     bool operator==(const Roaring64Map &r) const {
         bool ans = (plain == r.plain);
-        assert(ans == (check == r.check));
+        assert_true(ans == (check == r.check));
         return ans;
     }
 
@@ -399,7 +401,7 @@ class Roaring64Map {
 
     void iterate(roaring::api::roaring_iterator64 iterator, void *ptr) const {
         plain.iterate(iterator, ptr);
-        assert(does_std_set_match_roaring());  // checks equivalent iteration
+        assert_true(does_std_set_match_roaring());  // checks equivalent iteration
     }
 
     bool select(uint64_t rnk, uint64_t *element) const {
@@ -409,7 +411,7 @@ class Roaring64Map {
         auto it_end = check.end();
         for (uint64_t i = 0; it != it_end && i < rnk; ++i)
             ++it;
-        assert(ans == (it != it_end) && (ans ? *it == *element : true));
+        assert_true(ans == (it != it_end) && (ans ? *it == *element : true));
 
         return ans;
     }
@@ -422,7 +424,7 @@ class Roaring64Map {
         auto it_end = check.end();
         for (; it != it_end && *it <= x; ++it)
             ++count;
-        assert(ans == count);
+        assert_true(ans == count);
 
         return ans;
     }
@@ -449,7 +451,7 @@ class Roaring64Map {
         Roaring64Map ans(plain & o.plain);
 
         Roaring64Map inplace(*this);
-        assert(ans == (inplace &= o));  // validate against in-place version
+        assert_true(ans == (inplace &= o));  // validate against in-place version
 
         return ans;
     }
@@ -458,7 +460,7 @@ class Roaring64Map {
         Roaring64Map ans(plain - o.plain);
 
         Roaring64Map inplace(*this);
-        assert(ans == (inplace -= o));  // validate against in-place version
+        assert_true(ans == (inplace -= o));  // validate against in-place version
 
         return ans;
     }
@@ -467,7 +469,7 @@ class Roaring64Map {
         Roaring64Map ans(plain | o.plain);
 
         Roaring64Map inplace(*this);
-        assert(ans == (inplace |= o));  // validate against in-place version
+        assert_true(ans == (inplace |= o));  // validate against in-place version
 
         return ans;
     }
@@ -476,7 +478,7 @@ class Roaring64Map {
         Roaring64Map ans(plain ^ o.plain);
 
         Roaring64Map inplace(*this);
-        assert(ans == (inplace ^= o));  // validate against in-place version
+        assert_true(ans == (inplace ^= o));  // validate against in-place version
 
         return ans;
     }
@@ -505,12 +507,12 @@ class Roaring64Map {
         delete[] plain_inputs;
 
         if (n == 0)
-            assert(ans.cardinality() == 0);
+            assert_true(ans.cardinality() == 0);
         else {
             Roaring64Map temp = *inputs[0];
             for (size_t i = 1; i < n; ++i)
                 temp |= *inputs[i];
-            assert(temp == ans);
+            assert_true(temp == ans);
         }
 
         return ans;

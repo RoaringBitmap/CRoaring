@@ -1588,7 +1588,7 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
     int result_size_should_be;
     bool result_should_be[1 << 16];
 
-    assert(h < k);  // bad test call otherwise..not failure of code under test
+    assert_true(h < k);  // bad test call otherwise..not failure of code under test
 
     int runlen = h;
     for (int x = 0; x < (1 << 16) - start_offset; x++) {
@@ -1669,7 +1669,7 @@ static int run_negation_range_tests_simpler(int k, int h, int start_offset,
     int result_size_should_be;
     bool result_should_be[1 << 16];
 
-    assert(h < k);
+    assert_true(h < k);
 
     int runlen = h;
     for (int x = 0; x < (1 << 16) - start_offset; x++) {

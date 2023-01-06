@@ -41,7 +41,7 @@ static int setup_container_add_offset_test(void **state_) {
     switch (test.type) {
     case BITSET_CONTAINER_TYPE:
         bc = bitset_container_create();
-        assert(bc != NULL);
+        assert_true(bc != NULL);
         for (size_t i = 0; i < test.n_values; i++) {
             bitset_container_add(bc, test.values[i]);
         }
@@ -49,7 +49,7 @@ static int setup_container_add_offset_test(void **state_) {
         break;
     case ARRAY_CONTAINER_TYPE:
         ac = array_container_create();
-        assert(ac != NULL);
+        assert_true(ac != NULL);
         for (size_t i = 0; i < test.n_values; i++) {
             array_container_add(ac, test.values[i]);
         }
@@ -57,14 +57,14 @@ static int setup_container_add_offset_test(void **state_) {
         break;
     case RUN_CONTAINER_TYPE:
         rc = run_container_create();
-        assert(rc != NULL);
+        assert_true(rc != NULL);
         for (size_t i = 0; i < test.n_values; i++) {
             run_container_add(rc, test.values[i]);
         }
         state->in = rc;
         break;
     default:
-        assert(false); // To catch buggy tests.
+        assert_true(false); // To catch buggy tests.
     }
 
     return 0;
@@ -104,7 +104,7 @@ static void container_add_offset_test(void **state_) {
     uint8_t type = test.type;
     int card_lo = 0, card_hi = 0;
 
-    assert(test.n_values > 0);
+    assert_true(test.n_values > 0);
 
     container_add_offset(state->in, type, &state->lo, &state->hi, offset);
     container_add_offset(state->in, type, NULL, &state->hi_only, offset);
@@ -158,7 +158,7 @@ static int setup_roaring_add_offset_test(void **state_) {
     roaring_add_offset_test_case_t test = state->test_case;
 
     state->in = roaring_bitmap_of_ptr(test.n_values, test.values);
-    assert(state->in != NULL);
+    assert_true(state->in != NULL);
 
     return 0;
 }
@@ -314,7 +314,7 @@ int main() {
     dense_bitmap[i++] = 400000;
     dense_bitmap[i++] = 1400000;
 
-    assert(i == ARRAY_SIZE(dense_bitmap));
+    assert_true(i == ARRAY_SIZE(dense_bitmap));
 
     // NB: only add positive offsets, the test function takes care of also
     // running a negative test for that offset.
@@ -338,7 +338,7 @@ int main() {
         roaring_add_offset_test_state_t state = ROARING_ADD_OFFSET_TEST_CASE(dense_bitmap, offset);
         roaring_state[i++] = state;
     }
-    assert(i <= ARRAY_SIZE(roaring_state));
+    assert_true(i <= ARRAY_SIZE(roaring_state));
 
     i = j = 0;
     struct CMUnitTest tests[ARRAY_SIZE(container_state)+ARRAY_SIZE(roaring_state)];
