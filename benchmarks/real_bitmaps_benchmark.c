@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
            " cycles\n",
            count, total_count, cycles_final - cycles_start);
 
-    int portable_cycle_count = 0, portable_frozen_cycle_count = 0,
+    uint64_t portable_cycle_count = 0, portable_frozen_cycle_count = 0,
       frozen_cycle_count = 0;
     for(int i = 0; i < (int)count; i++) {
         int size = roaring_bitmap_portable_size_in_bytes(bitmaps[i]);
