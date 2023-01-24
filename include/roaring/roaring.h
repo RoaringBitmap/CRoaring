@@ -527,9 +527,10 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf,
  * Bitmap must be freed as usual, by calling roaring_bitmap_free().
  * Underlying buffer must not be freed or modified while it backs any bitmaps.
  *
- * This function is unsafe in the sense that if there is no valid serialized
- * bitmap at the pointer, then many bytes could be read, possibly causing a
- * buffer overflow.
+ * The function is unsafe in the following ways:
+ * 1) It may execute unaligned memory accesses.
+ * 2) A buffer overflow may occure if buf does not point to a valid serialized
+ *    bitmap.
  *
  * This is meant to be compatible with the Java and Go versions:
  * https://github.com/RoaringBitmap/RoaringFormatSpec
