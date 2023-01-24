@@ -24,4 +24,10 @@ jobs:
       - name: Run basic tests
         run: |
           cd build
-          ctest -C Release --output-on-failure 
+          ctest -C Release --output-on-failure
+      - name: Build Debug
+        run: cmake --build build --config Debug
+      - name: Run basic tests in Debug
+        run: |
+          cd build
+          ctest -C Debug --output-on-failure
