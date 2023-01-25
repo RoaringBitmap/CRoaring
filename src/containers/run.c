@@ -625,6 +625,7 @@ void run_container_andnot(const run_container_t *src_1,
     }
 }
 
+ALLOW_UNALIGNED
 int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
     int outpos = 0;
@@ -830,6 +831,7 @@ int run_container_rank(const run_container_t *container, uint16_t x) {
 #ifdef CROARING_IS_X64
 
 CROARING_TARGET_AVX2
+ALLOW_UNALIGNED
 /* Get the cardinality of `run'. Requires an actual computation. */
 static inline int _avx2_run_container_cardinality(const run_container_t *run) {
     const int32_t n_runs = run->n_runs;

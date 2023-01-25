@@ -232,6 +232,7 @@ static inline bool bitset_container_contains_range(const bitset_container_t *bit
 }
 
 /* Get the number of bits set */
+ALLOW_UNALIGNED
 static inline int bitset_container_cardinality(
     const bitset_container_t *bitset) {
     return bitset->cardinality;

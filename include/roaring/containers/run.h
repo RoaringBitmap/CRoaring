@@ -481,6 +481,7 @@ static inline int32_t run_container_size_in_bytes(
 /**
  * Return true if the two containers have the same content.
  */
+ALLOW_UNALIGNED
 static inline bool run_container_equals(const run_container_t *container1,
                           const run_container_t *container2) {
     if (container1->n_runs != container2->n_runs) {

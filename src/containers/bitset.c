@@ -686,6 +686,7 @@ BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
 // clang-format On
 
 
+ALLOW_UNALIGNED
 int bitset_container_to_uint32_array(
     uint32_t *out,
     const bitset_container_t *bc,
@@ -816,6 +817,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
 
 #ifdef CROARING_IS_X64
 CROARING_TARGET_AVX2
+ALLOW_UNALIGNED
 static inline bool _avx2_bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
     const __m256i *ptr1 = (const __m256i*)container1->words;
     const __m256i *ptr2 = (const __m256i*)container2->words;
@@ -832,6 +834,7 @@ static inline bool _avx2_bitset_container_equals(const bitset_container_t *conta
 CROARING_UNTARGET_REGION
 #endif // CROARING_IS_X64
 
+ALLOW_UNALIGNED
 bool bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
   if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
     if(container1->cardinality != container2->cardinality) {
