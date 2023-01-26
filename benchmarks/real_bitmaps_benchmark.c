@@ -174,6 +174,46 @@ int main(int argc, char **argv) {
            " cycles\n",
            count, total_count, cycles_final - cycles_start);
 
+    uint64_t portable_cycle_count = 0, portable_frozen_cycle_count = 0,
+      frozen_cycle_count = 0;
+    for(int i = 0; i < (int)count; i++) {
+        int size = roaring_bitmap_portable_size_in_bytes(bitmaps[i]);
+        char *buf = malloc(size);
+        roaring_bitmap_portable_serialize(bitmaps[i], buf);
+
+        int frozen_size = roaring_bitmap_frozen_size_in_bytes(bitmaps[i]);
+        char *frozen_buf = roaring_aligned_malloc(32, frozen_size);
+        roaring_bitmap_frozen_serialize(bitmaps[i], frozen_buf);
+
+        RDTSC_START(cycles_start);
+        roaring_bitmap_t *r1 = roaring_bitmap_portable_deserialize(buf);
+        RDTSC_FINAL(cycles_final);
+        portable_cycle_count += cycles_final - cycles_start;
+
+        RDTSC_START(cycles_start);
+        roaring_bitmap_t *r2 = roaring_bitmap_portable_deserialize_frozen(buf);
+        RDTSC_FINAL(cycles_final);
+        portable_frozen_cycle_count += cycles_final - cycles_start;
+
+        RDTSC_START(cycles_start);
+        roaring_bitmap_t *r3 = roaring_bitmap_frozen_view(frozen_buf, frozen_size);
+        RDTSC_FINAL(cycles_final);
+        frozen_cycle_count += cycles_final - cycles_start;
+
+        roaring_bitmap_free(r1);
+        roaring_bitmap_free(r2);
+        roaring_bitmap_free(r3);
+        free(buf);
+        roaring_aligned_free(frozen_buf);
+    }
+
+    printf("Deserializing %zu bitmaps took %" PRIu64 " cycles for portable format\n",
+           count, portable_cycle_count);
+    printf("Deserializing %zu bitmaps took %" PRIu64 " cycles for portable frozen format\n",
+           count, portable_frozen_cycle_count);
+    printf("Deserializing %zu bitmaps took %" PRIu64 " cycles for frozen format\n",
+           count, frozen_cycle_count);
+
     for (int i = 0; i < (int)count; ++i) {
         free(numbers[i]);
         numbers[i] = NULL;  // paranoid

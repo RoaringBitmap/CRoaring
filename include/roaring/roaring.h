@@ -520,6 +520,24 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf,
                                                            size_t maxbytes);
 
 /**
+ * Read bitmap from a serialized buffer.
+ * In case of failure, NULL is returned.
+ *
+ * Bitmap returned by this function can be used in all readonly contexts.
+ * Bitmap must be freed as usual, by calling roaring_bitmap_free().
+ * Underlying buffer must not be freed or modified while it backs any bitmaps.
+ *
+ * The function is unsafe in the following ways:
+ * 1) It may execute unaligned memory accesses.
+ * 2) A buffer overflow may occure if buf does not point to a valid serialized
+ *    bitmap.
+ *
+ * This is meant to be compatible with the Java and Go versions:
+ * https://github.com/RoaringBitmap/RoaringFormatSpec
+ */
+roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf);
+
+/**
  * Check how many bytes would be read (up to maxbytes) at this pointer if there
  * is a bitmap, returns zero if there is no valid bitmap.
  *

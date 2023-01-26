@@ -338,6 +338,12 @@ static inline int hamming(uint64_t x) {
 #define CROARING_UNTARGET_REGION
 #endif
 
+// Allow unaligned memory access
+#if defined(__GNUC__) || defined(__clang__)
+#define ALLOW_UNALIGNED __attribute__((no_sanitize("alignment")))
+#else
+#define ALLOW_UNALIGNED
+#endif
 
 // We need portability.h to be included first,
 // but we also always want isadetection.h to be

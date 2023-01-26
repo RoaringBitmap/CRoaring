@@ -376,6 +376,7 @@ void array_container_intersection_inplace(array_container_t *src_1,
     }
 }
 
+ALLOW_UNALIGNED
 int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base) {
     int outpos = 0;

@@ -3194,6 +3194,161 @@ roaring_bitmap_frozen_view(const char *buf, size_t length) {
     return rb;
 }
 
+ALLOW_UNALIGNED
+roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
+    char *start_of_buf = (char *) buf;
+    uint32_t cookie;
+    int32_t num_containers;
+    uint16_t *descriptive_headers;
+    uint32_t *offset_headers = NULL;
+    const char *run_flag_bitset = NULL;
+    bool hasrun = false;
+
+    // deserialize cookie
+    memcpy(&cookie, buf, sizeof(uint32_t));
+    buf += sizeof(uint32_t);
+    if (cookie == SERIAL_COOKIE_NO_RUNCONTAINER) {
+        memcpy(&num_containers, buf, sizeof(int32_t));
+        buf += sizeof(int32_t);
+        descriptive_headers = (uint16_t *) buf;
+        buf += num_containers * 2 * sizeof(uint16_t);
+        offset_headers = (uint32_t *) buf;
+        buf += num_containers * sizeof(uint32_t);
+    } else if ((cookie & 0xFFFF) == SERIAL_COOKIE) {
+        num_containers = (cookie >> 16) + 1;
+        hasrun = true;
+        int32_t run_flag_bitset_size = (num_containers + 7) / 8;
+        run_flag_bitset = buf;
+        buf += run_flag_bitset_size;
+        descriptive_headers = (uint16_t *) buf;
+        buf += num_containers * 2 * sizeof(uint16_t);
+        if(num_containers >= NO_OFFSET_THRESHOLD) {
+            offset_headers = (uint32_t *) buf;
+            buf += num_containers * sizeof(uint32_t);
+        }
+    } else {
+        return NULL;
+    }
+
+    // calculate total size for allocation
+    int32_t num_bitset_containers = 0;
+    int32_t num_run_containers = 0;
+    int32_t num_array_containers = 0;
+
+    for (int32_t i = 0; i < num_containers; i++) {
+        uint16_t tmp;
+        memcpy(&tmp, descriptive_headers + 2*i+1, sizeof(tmp));
+        uint32_t cardinality = tmp + 1;
+        bool isbitmap = (cardinality > DEFAULT_MAX_SIZE);
+        bool isrun = false;
+        if(hasrun) {
+          if((run_flag_bitset[i / 8] & (1 << (i % 8))) != 0) {
+            isbitmap = false;
+            isrun = true;
+          }
+        }
+
+        if (isbitmap) {
+            num_bitset_containers++;
+        } else if (isrun) {
+            num_run_containers++;
+        } else {
+            num_array_containers++;
+        }
+    }
+
+    size_t alloc_size = 0;
+    alloc_size += sizeof(roaring_bitmap_t);
+    alloc_size += num_containers * sizeof(container_t*);
+    alloc_size += num_bitset_containers * sizeof(bitset_container_t);
+    alloc_size += num_run_containers * sizeof(run_container_t);
+    alloc_size += num_array_containers * sizeof(array_container_t);
+    alloc_size += num_containers * sizeof(uint16_t); // keys
+    alloc_size += num_containers * sizeof(uint8_t); // typecodes
+
+    // allocate bitmap and construct containers
+    char *arena = (char *)roaring_malloc(alloc_size);
+    if (arena == NULL) {
+        return NULL;
+    }
+
+    roaring_bitmap_t *rb = (roaring_bitmap_t *)
+            arena_alloc(&arena, sizeof(roaring_bitmap_t));
+    rb->high_low_container.flags = ROARING_FLAG_FROZEN;
+    rb->high_low_container.allocation_size = num_containers;
+    rb->high_low_container.size = num_containers;
+    rb->high_low_container.containers =
+        (container_t **)arena_alloc(&arena,
+                                    sizeof(container_t*) * num_containers);
+
+    uint16_t *keys = arena_alloc(&arena, num_containers * sizeof(uint16_t));
+    uint8_t *typecodes = arena_alloc(&arena, num_containers * sizeof(uint8_t));
+
+    rb->high_low_container.keys = keys;
+    rb->high_low_container.typecodes = typecodes;
+
+    for (int32_t i = 0; i < num_containers; i++) {
+        uint16_t tmp;
+        memcpy(&tmp, descriptive_headers + 2*i+1, sizeof(tmp));
+        int32_t cardinality = tmp + 1;
+        bool isbitmap = (cardinality > DEFAULT_MAX_SIZE);
+        bool isrun = false;
+        if(hasrun) {
+          if((run_flag_bitset[i / 8] & (1 << (i % 8))) != 0) {
+            isbitmap = false;
+            isrun = true;
+          }
+        }
+
+        keys[i] = descriptive_headers[2*i];
+
+        if (isbitmap) {
+            typecodes[i] = BITSET_CONTAINER_TYPE;
+            bitset_container_t *c = arena_alloc(&arena, sizeof(bitset_container_t));
+            c->cardinality = cardinality;
+            if(offset_headers != NULL) {
+                c->words = (uint64_t *) (start_of_buf + offset_headers[i]);
+            } else {
+                c->words = (uint64_t *) buf;
+                buf += BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+            }
+            rb->high_low_container.containers[i] = c;
+        } else if (isrun) {
+            typecodes[i] = RUN_CONTAINER_TYPE;
+            run_container_t *c = arena_alloc(&arena, sizeof(run_container_t));
+            c->capacity = cardinality;
+            uint16_t n_runs;
+            if(offset_headers != NULL) {
+                memcpy(&n_runs, start_of_buf + offset_headers[i], sizeof(uint16_t));
+                c->n_runs = n_runs;
+                c->runs = (rle16_t *) (start_of_buf + offset_headers[i] + sizeof(uint16_t));
+            } else {
+                memcpy(&n_runs, buf, sizeof(uint16_t));
+                c->n_runs = n_runs;
+                buf += sizeof(uint16_t);
+                c->runs = (rle16_t *) buf;
+                buf += c->n_runs * sizeof(rle16_t);
+            }
+            rb->high_low_container.containers[i] = c;
+        } else {
+            typecodes[i] = ARRAY_CONTAINER_TYPE;
+            array_container_t *c = arena_alloc(&arena, sizeof(array_container_t));
+            c->cardinality = cardinality;
+            c->capacity = cardinality;
+            if(offset_headers != NULL) {
+                c->array = (uint16_t *) (start_of_buf + offset_headers[i]);
+            } else {
+                c->array = (uint16_t *) buf;
+                buf += cardinality * sizeof(uint16_t);
+            }
+            rb->high_low_container.containers[i] = c;
+        }
+    }
+
+    return rb;
+}
+
+
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring {
 #endif
