@@ -1870,7 +1870,7 @@ DEFINE_TEST(test_cpp_remove_run_compression) {
 bool test64Deserialize(const std::string& filename) {
     std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
     std::vector<char> buf1(std::istreambuf_iterator<char>(in), {});
-    printf("Reading %lu bytes\n", buf1.size());
+    printf("Reading %lu bytes\n", (unsigned long)buf1.size());
     Roaring64Map roaring;
 #if ROARING_EXCEPTIONS
     try {
