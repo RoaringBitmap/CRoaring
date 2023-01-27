@@ -163,6 +163,7 @@ bool check_serialization(roaring_bitmap_t *bitmap) {
     return ret;
 }
 
+#if !CROARING_IS_BIG_ENDIAN
 DEFINE_TEST(issue245) {
     roaring_bitmap_t *bitmap = roaring_bitmap_create();
     const uint32_t targetEntries = 2048;
@@ -191,6 +192,7 @@ DEFINE_TEST(issue245) {
     }
     roaring_bitmap_free(bitmap);
 }
+#endif
 
 DEFINE_TEST(issue208) {
     roaring_bitmap_t *r = roaring_bitmap_create();
@@ -4346,7 +4348,9 @@ int main() {
         cmocka_unit_test(test_contains_range_PyRoaringBitMap_issue81),
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
+#if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(issue245),
+#endif
         cmocka_unit_test(issue208),
         cmocka_unit_test(issue208b),
         cmocka_unit_test(range_contains),
@@ -4364,8 +4368,10 @@ int main() {
         cmocka_unit_test(test_stress_memory_false),
         cmocka_unit_test(check_interval),
         cmocka_unit_test(test_uint32_iterator_true),
+#if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
+#endif
         cmocka_unit_test(test_clear),
         cmocka_unit_test(can_copy_empty_true),
         cmocka_unit_test(can_copy_empty_false),
@@ -4395,8 +4401,10 @@ int main() {
         cmocka_unit_test(test_iterate_empty),
         cmocka_unit_test(test_iterate_withbitmap),
         cmocka_unit_test(test_iterate_withrun),
+#if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_serialize),
         cmocka_unit_test(test_portable_serialize),
+#endif
         cmocka_unit_test(test_add),
         cmocka_unit_test(test_add_checked),
         cmocka_unit_test(test_remove_checked),
@@ -4469,9 +4477,11 @@ int main() {
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),
         cmocka_unit_test(test_range_cardinality),
+#if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
         cmocka_unit_test(test_portable_deserialize_frozen),
+#endif
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

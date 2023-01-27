@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
         portable_frozen_cycle_count += cycles_final - cycles_start;
 
         RDTSC_START(cycles_start);
-        roaring_bitmap_t *r3 = roaring_bitmap_frozen_view(frozen_buf, frozen_size);
+        const roaring_bitmap_t *r3 = roaring_bitmap_frozen_view(frozen_buf, frozen_size);
         RDTSC_FINAL(cycles_final);
         frozen_cycle_count += cycles_final - cycles_start;
 

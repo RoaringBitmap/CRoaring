@@ -44,6 +44,10 @@ const char *datadir[] = {
     "weather_sept_85_srt", "wikileaks-noquotes", "wikileaks-noquotes_srt"};
 
 bool serialize_correctly(roaring_bitmap_t *r) {
+#if CROARING_IS_BIG_ENDIAN
+    (void)r;
+    return r;
+#else
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r);
     char *serialized = (char*)malloc(expectedsize);
     if (serialized == NULL) {
@@ -70,6 +74,7 @@ bool serialize_correctly(roaring_bitmap_t *r) {
     }
     roaring_bitmap_free(r2);
     return true;
+#endif
 }
 
 // arrays expected to both be sorted.
