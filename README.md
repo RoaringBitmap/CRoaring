@@ -54,6 +54,11 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds if they do not wish to use CMake).
 - Under x64 systems, the library provides runtime dispatch so that optimized functions are called based on the detected CPU features. It works with GCC, clang (version 9 and up) and Visual Studio (2017 and up). Other systems (e.g., ARM) do not need runtime dispatch.
 
+Hardly anyone has access to an actual big-endian system. Nevertheless,
+We support big-endian systems such as IBM s390x through emulators---except for
+IO serialization which is only supported on little-endian systems (see [issue 423](https://github.com/RoaringBitmap/CRoaring/issues/423)).
+
+
 # Using as a CMake dependency
 
 If you like CMake, you can just a few lines in you `CMakeLists.txt` file to grab a `CRoaring` release. [See our demonstration for further details](https://github.com/RoaringBitmap/croaring_cmake_demo_single_file).

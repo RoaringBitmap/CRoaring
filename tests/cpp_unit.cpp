@@ -673,9 +673,11 @@ DEFINE_TEST(test_example_cpp_true) { test_example_cpp(true); }
 
 DEFINE_TEST(test_example_cpp_false) { test_example_cpp(false); }
 
+#if !CROARING_IS_BIG_ENDIAN
 DEFINE_TEST(test_example_cpp_64_true) { test_example_cpp_64(true); }
 
 DEFINE_TEST(test_example_cpp_64_false) { test_example_cpp_64(false); }
+#endif
 
 DEFINE_TEST(test_run_compression_cpp_64_true) {
     test_run_compression_cpp_64(true);
@@ -1868,6 +1870,10 @@ DEFINE_TEST(test_cpp_remove_run_compression) {
 
 // Returns true on success, false on exception.
 bool test64Deserialize(const std::string& filename) {
+#if CROARING_IS_BIG_ENDIAN
+    (void)filename;
+    printf("Big-endian IO unsupported.\n");
+#else // CROARING_IS_BIG_ENDIAN
     std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
     std::vector<char> buf1(std::istreambuf_iterator<char>(in), {});
     printf("Reading %lu bytes\n", (unsigned long)buf1.size());
@@ -1878,15 +1884,16 @@ bool test64Deserialize(const std::string& filename) {
     } catch (...) {
         return false;
     }
-#else
+#else // ROARING_EXCEPTIONS
     roaring = Roaring64Map::readSafe(buf1.data(), buf1.size());
-#endif
+#endif // ROARING_EXCEPTIONS
     std::vector<char> buf2(roaring.getSizeInBytes());
     assert_true(buf1.size() == buf2.size());
     assert_true(roaring.write(buf2.data()) == buf2.size());
     for (size_t i = 0; i < buf1.size(); ++i) {
         assert_true(buf1[i] == buf2[i]);
     }
+#endif // CROARING_IS_BIG_ENDIAN
     return true;
 }
 
@@ -1940,12 +1947,14 @@ int main() {
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
+#if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_example_true),
         cmocka_unit_test(test_example_false),
         cmocka_unit_test(test_example_cpp_true),
         cmocka_unit_test(test_example_cpp_false),
         cmocka_unit_test(test_example_cpp_64_true),
         cmocka_unit_test(test_example_cpp_64_false),
+#endif
         cmocka_unit_test(test_cpp_add_remove_checked),
         cmocka_unit_test(test_cpp_add_remove_checked_64),
         cmocka_unit_test(test_cpp_add_range),
@@ -1980,6 +1989,7 @@ int main() {
         cmocka_unit_test(test_cpp_flip_64),
         cmocka_unit_test(test_cpp_flip_closed_64),
         cmocka_unit_test(test_combinatoric_flip_many_64),
+#if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_cpp_deserialize_64_empty),
         cmocka_unit_test(test_cpp_deserialize_64_32bit_vals),
         cmocka_unit_test(test_cpp_deserialize_64_spread_vals),
@@ -1990,6 +2000,7 @@ int main() {
         cmocka_unit_test(test_cpp_deserialize_64_invalid_size),
         cmocka_unit_test(test_cpp_deserialize_64_key_too_small),
 #endif
+#endif // !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(issue316),
         cmocka_unit_test(test_issue304),
         cmocka_unit_test(issue_336),

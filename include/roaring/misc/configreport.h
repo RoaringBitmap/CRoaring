@@ -11,7 +11,6 @@
 #include <stdio.h>
 
 #include <roaring/portability.h>
-
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace misc {
 #endif
@@ -118,8 +117,10 @@ static inline const char *guessprocessor() {
 }
 
 static inline void tellmeall() {
+#if CROARING_IS_BIG_ENDIAN
+    printf("big-endian system detected\n"));
+#endif
     printf("x64 processor:  %s\t", guessprocessor());
-
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
@@ -170,6 +171,9 @@ static inline void tellmeall() {
 #else
 
 static inline void tellmeall() {
+#if CROARING_IS_BIG_ENDIAN
+    printf("big-endian system detected\n");
+#endif
     printf("Non-X64  processor\n");
 #ifdef __arm__
     printf("ARM processor detected\n");

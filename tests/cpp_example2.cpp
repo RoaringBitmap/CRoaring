@@ -66,6 +66,9 @@ int main() {
     // we can compute intersection two-by-two
     Roaring i1_2 = r1 & r2;
 
+#if CROARING_IS_BIG_ENDIAN
+    printf("We omit serialization tests because you have a big endian system.\n");
+#else
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = r1.getSizeInBytes();
     char *serializedbytes = new char[expectedsize];
@@ -89,7 +92,7 @@ int main() {
         ++counter;
     }
     // counter == t.cardinality()
-
+#endif
     // we can move iterators to skip values
     const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
     Roaring rogue(5, manyvalues);
