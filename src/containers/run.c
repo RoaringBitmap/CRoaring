@@ -675,7 +675,8 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
 }
 
 int32_t run_container_write(const run_container_t *container, char *buf) {
-    memcpy(buf, &container->n_runs, sizeof(uint16_t));
+    uint16_t cast_16 = container->n_runs;
+    memcpy(buf, &cast_16, sizeof(uint16_t));
     memcpy(buf + sizeof(uint16_t), container->runs,
            container->n_runs * sizeof(rle16_t));
     return run_container_size_in_bytes(container);
@@ -684,7 +685,9 @@ int32_t run_container_write(const run_container_t *container, char *buf) {
 int32_t run_container_read(int32_t cardinality, run_container_t *container,
                            const char *buf) {
     (void)cardinality;
-    memcpy(&container->n_runs, buf, sizeof(uint16_t));
+    uint16_t cast_16;
+    memcpy(&cast_16, buf, sizeof(uint16_t));
+    container->n_runs = cast_16;
     if (container->n_runs > container->capacity)
         run_container_grow(container, container->n_runs, false);
     if(container->n_runs > 0) {
