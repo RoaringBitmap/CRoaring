@@ -29,11 +29,6 @@ int main() {
     uint32_t expectedsizerun = roaring_bitmap_portable_size_in_bytes(r1);
     printf("size before run optimize %d bytes, and after %d bytes\n",
            expectedsizebasic, expectedsizerun);
-//#if CROARING_IS_BIG_ENDIAN
-//    printf("we omit serialization tests because you have a big endian system.\n");
-//    roaring_bitmap_free(r1);
-//    return EXIT_SUCCESS;
-//#else
     // create a new bitmap containing the values {1,2,3,5,6}
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
     roaring_bitmap_printf(r2);  // print it
@@ -144,5 +139,4 @@ int main() {
     roaring_bitmap_free(r3);
     printf("Success.\n");
     return EXIT_SUCCESS;
-//#endif
 }
