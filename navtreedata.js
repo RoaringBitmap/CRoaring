@@ -25,39 +25,37 @@
 var NAVTREE =
 [
   [ "CRoaring", "index.html", [
-    [ "CRoaring <a href=\"https://github.com/RoaringBitmap/CRoaring/actions/workflows/ubuntu-noexcept-ci.yml\"><img src=\"https://github.com/RoaringBitmap/CRoaring/actions/workflows/ubuntu-noexcept-ci.yml/badge.svg\" alt=\"Ubuntu-CI\"/></a>", "index.html", [
-      [ "Introduction", "index.html#autotoc_md1", null ],
-      [ "Objective", "index.html#autotoc_md2", null ],
-      [ "Requirements", "index.html#autotoc_md3", null ],
-      [ "Using as a CMake dependency", "index.html#autotoc_md4", null ],
-      [ "Amalgamation/Unity Build", "index.html#autotoc_md5", null ],
-      [ "API", "index.html#autotoc_md6", null ],
-      [ "Dealing with large volumes", "index.html#autotoc_md7", null ],
-      [ "Custom memory allocators", "index.html#autotoc_md8", null ],
-      [ "Example (C)", "index.html#autotoc_md9", null ],
-      [ "Example (C++)", "index.html#autotoc_md10", null ],
-      [ "Building with cmake (Linux and macOS, Visual Studio users should see below)", "index.html#autotoc_md11", null ],
-      [ "Building (Visual Studio under Windows)", "index.html#autotoc_md12", [
-        [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md13", null ],
-        [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md14", null ]
-      ] ],
-      [ "AVX2-related throttling", "index.html#autotoc_md15", null ],
-      [ "Thread safety", "index.html#autotoc_md16", null ],
-      [ "How to best aggregate bitmaps?", "index.html#autotoc_md17", null ],
-      [ "Wrappers", "index.html#autotoc_md18", [
-        [ "Python", "index.html#autotoc_md19", null ],
-        [ "JavaScript", "index.html#autotoc_md20", null ],
-        [ "Swift", "index.html#autotoc_md21", null ],
-        [ "C", "index.html#autotoc_md22", null ],
-        [ "Go (golang)", "index.html#autotoc_md23", null ],
-        [ "Rust", "index.html#autotoc_md24", null ],
-        [ "D", "index.html#autotoc_md25", null ],
-        [ "Redis", "index.html#autotoc_md26", null ],
-        [ "Zig", "index.html#autotoc_md27", null ]
-      ] ],
-      [ "Mailing list/discussion group", "index.html#autotoc_md28", null ],
-      [ "References about Roaring", "index.html#autotoc_md29", null ]
+    [ "Introduction", "index.html#autotoc_md1", null ],
+    [ "Objective", "index.html#autotoc_md2", null ],
+    [ "Requirements", "index.html#autotoc_md3", null ],
+    [ "Using as a CMake dependency", "index.html#autotoc_md4", null ],
+    [ "Amalgamation/Unity Build", "index.html#autotoc_md5", null ],
+    [ "API", "index.html#autotoc_md6", null ],
+    [ "Dealing with large volumes", "index.html#autotoc_md7", null ],
+    [ "Custom memory allocators", "index.html#autotoc_md8", null ],
+    [ "Example (C)", "index.html#autotoc_md9", null ],
+    [ "Example (C++)", "index.html#autotoc_md10", null ],
+    [ "Building with cmake (Linux and macOS, Visual Studio users should see below)", "index.html#autotoc_md11", null ],
+    [ "Building (Visual Studio under Windows)", "index.html#autotoc_md12", [
+      [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md13", null ],
+      [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md14", null ]
     ] ],
+    [ "AVX2-related throttling", "index.html#autotoc_md15", null ],
+    [ "Thread safety", "index.html#autotoc_md16", null ],
+    [ "How to best aggregate bitmaps?", "index.html#autotoc_md17", null ],
+    [ "Wrappers", "index.html#autotoc_md18", [
+      [ "Python", "index.html#autotoc_md19", null ],
+      [ "JavaScript", "index.html#autotoc_md20", null ],
+      [ "Swift", "index.html#autotoc_md21", null ],
+      [ "C", "index.html#autotoc_md22", null ],
+      [ "Go (golang)", "index.html#autotoc_md23", null ],
+      [ "Rust", "index.html#autotoc_md24", null ],
+      [ "D", "index.html#autotoc_md25", null ],
+      [ "Redis", "index.html#autotoc_md26", null ],
+      [ "Zig", "index.html#autotoc_md27", null ]
+    ] ],
+    [ "Mailing list/discussion group", "index.html#autotoc_md28", null ],
+    [ "References about Roaring", "index.html#autotoc_md29", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ]
     ] ],
@@ -86,7 +84,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"index.html#autotoc_md7"
+"index.html#autotoc_md8"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
