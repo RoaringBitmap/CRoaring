@@ -542,7 +542,7 @@ size_t ra_portable_size_in_bytes(const roaring_array_t *ra) {
     return count;
 }
 
-// This function is endian-sensitive: big-endian systems will not be able to reading from big-endian systems, etc.
+// This function is endian-sensitive.
 size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
     char *initbuf = buf;
     uint32_t startOffset = 0;
@@ -695,7 +695,7 @@ size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes) {
 // The function returns false if a properly serialized bitmap cannot be found.
 // if it returns true, readbytes is populated by how many bytes were read, we have that *readbytes <= maxbytes.
 //
-// This function is endian-sensitive: big-endian systems will not be able to reading from big-endian systems, etc.
+// This function is endian-sensitive.
 bool ra_portable_deserialize(roaring_array_t *answer, const char *buf, const size_t maxbytes, size_t * readbytes) {
     *readbytes = sizeof(int32_t);// for cookie
     if(*readbytes > maxbytes) {
