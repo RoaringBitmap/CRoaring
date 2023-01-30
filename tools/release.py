@@ -135,6 +135,11 @@ for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
 
 print("modified "+cmakefile+", a backup was made")
 
+doxygenfile = maindir + os.sep + "doxygen.txt"
+
+for line in fileinput.input(doxygenfile, inplace=1, backup='.bak'):
+    line = re.sub('PROJECT_NUMBER         = "\d+\.\d+\.\d+','PROJECT_NUMBER         = "'+newversionstring, line.rstrip())
+    print(line)
 
 print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
 print("to issue release, enter \n git commit -a \n git push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
