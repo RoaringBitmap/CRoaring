@@ -1,4 +1,6 @@
-# CRoaring [![Ubuntu-CI](https://github.com/RoaringBitmap/CRoaring/actions/workflows/ubuntu-noexcept-ci.yml/badge.svg)](https://github.com/RoaringBitmap/CRoaring/actions/workflows/ubuntu-noexcept-ci.yml)
+# CRoaring 
+
+[![Ubuntu-CI](https://github.com/RoaringBitmap/CRoaring/actions/workflows/ubuntu-noexcept-ci.yml/badge.svg)](https://github.com/RoaringBitmap/CRoaring/actions/workflows/ubuntu-noexcept-ci.yml)
 
 [![Doxygen Documentation](https://img.shields.io/badge/docs-doxygen-green.svg)](http://roaringbitmap.github.io/CRoaring/)
 
