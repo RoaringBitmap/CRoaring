@@ -44,17 +44,19 @@ var NAVTREE =
       [ "AVX2-related throttling", "index.html#autotoc_md15", null ],
       [ "Thread safety", "index.html#autotoc_md16", null ],
       [ "How to best aggregate bitmaps?", "index.html#autotoc_md17", null ],
-      [ "Python Wrapper", "index.html#autotoc_md18", null ],
-      [ "JavaScript Wrapper", "index.html#autotoc_md19", null ],
-      [ "Swift Wrapper", "index.html#autotoc_md20", null ],
-      [ "C# Wrapper", "index.html#autotoc_md21", null ],
-      [ "Go (golang) Wrapper", "index.html#autotoc_md22", null ],
-      [ "Rust Wrapper", "index.html#autotoc_md23", null ],
-      [ "D Wrapper", "index.html#autotoc_md24", null ],
-      [ "Redis Module", "index.html#autotoc_md25", null ],
-      [ "Zig Wrapper", "index.html#autotoc_md26", null ],
-      [ "Mailing list/discussion group", "index.html#autotoc_md27", null ],
-      [ "References about Roaring", "index.html#autotoc_md28", null ]
+      [ "Wrappers", "index.html#autotoc_md18", [
+        [ "Python", "index.html#autotoc_md19", null ],
+        [ "JavaScript", "index.html#autotoc_md20", null ],
+        [ "Swift", "index.html#autotoc_md21", null ],
+        [ "C", "index.html#autotoc_md22", null ],
+        [ "Go (golang)", "index.html#autotoc_md23", null ],
+        [ "Rust", "index.html#autotoc_md24", null ],
+        [ "D", "index.html#autotoc_md25", null ],
+        [ "Redis", "index.html#autotoc_md26", null ],
+        [ "Zig", "index.html#autotoc_md27", null ]
+      ] ],
+      [ "Mailing list/discussion group", "index.html#autotoc_md28", null ],
+      [ "References about Roaring", "index.html#autotoc_md29", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ]
@@ -84,7 +86,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"index.html#autotoc_md8"
+"index.html#autotoc_md7"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
