@@ -609,8 +609,9 @@ later `roaring_bitmap_or_inplace` will be very fast.
 
 You should benchmark these alternatives on your own data to decide what is best.
 
-# Python Wrapper
+# Wrappers
 
+## Python
 Tom Cornebize wrote a Python wrapper available at https://github.com/Ezibenroc/PyRoaringBitMap
 Installing it is as easy as typing...
 
@@ -618,7 +619,7 @@ Installing it is as easy as typing...
 pip install pyroaring
 ```
 
-# JavaScript Wrapper
+## JavaScript
 
 Salvatore Previti  wrote a Node/JavaScript wrapper available at https://github.com/SalvatorePreviti/roaring-node
 Installing it is as easy as typing...
@@ -627,33 +628,33 @@ Installing it is as easy as typing...
 npm install roaring
 ```
 
-# Swift Wrapper
+## Swift
 
 Jérémie Piotte wrote a [Swift wrapper](https://github.com/RoaringBitmap/SwiftRoaring).
 
 
-# C# Wrapper
+## C#
 
 Brandon Smith wrote a C# wrapper available at https://github.com/RogueException/CRoaring.Net (works for Windows and Linux under x64 processors)
 
 
-# Go (golang) Wrapper
+## Go (golang)
 
 There is a Go (golang) wrapper available at https://github.com/RoaringBitmap/gocroaring
 
-# Rust Wrapper
+## Rust
 
 Saulius Grigaliunas wrote a Rust wrapper available at https://github.com/saulius/croaring-rs
 
-# D Wrapper
+## D
 
 Yuce Tekol wrote a D wrapper available at https://github.com/yuce/droaring
 
-# Redis Module
+## Redis
 
 Antonio Guilherme Ferreira Viggiano wrote a Redis Module available at https://github.com/aviggiano/redis-roaring
 
-# Zig Wrapper
+## Zig
 
 Justin Whear wrote a Zig wrapper available at https://github.com/jwhear/roaring-zig
 
