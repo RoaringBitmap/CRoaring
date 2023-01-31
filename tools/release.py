@@ -135,7 +135,7 @@ for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
 
 print("modified "+cmakefile+", a backup was made")
 
-doxygenfile = maindir + os.sep + "doxygen.txt"
+doxygenfile = maindir + os.sep + "doxygen"
 
 for line in fileinput.input(doxygenfile, inplace=1, backup='.bak'):
     line = re.sub('PROJECT_NUMBER         = "\d+\.\d+\.\d+','PROJECT_NUMBER         = "'+newversionstring, line.rstrip())
