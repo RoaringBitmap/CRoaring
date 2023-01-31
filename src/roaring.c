@@ -3281,8 +3281,8 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
         (container_t **)arena_alloc(&arena,
                                     sizeof(container_t*) * num_containers);
 
-    uint16_t *keys = arena_alloc(&arena, num_containers * sizeof(uint16_t));
-    uint8_t *typecodes = arena_alloc(&arena, num_containers * sizeof(uint8_t));
+    uint16_t *keys = (uint16_t *)arena_alloc(&arena, num_containers * sizeof(uint16_t));
+    uint8_t *typecodes = (uint8_t *)arena_alloc(&arena, num_containers * sizeof(uint8_t));
 
     rb->high_low_container.keys = keys;
     rb->high_low_container.typecodes = typecodes;
@@ -3304,7 +3304,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
 
         if (isbitmap) {
             typecodes[i] = BITSET_CONTAINER_TYPE;
-            bitset_container_t *c = arena_alloc(&arena, sizeof(bitset_container_t));
+            bitset_container_t *c = (bitset_container_t *)arena_alloc(&arena, sizeof(bitset_container_t));
             c->cardinality = cardinality;
             if(offset_headers != NULL) {
                 c->words = (uint64_t *) (start_of_buf + offset_headers[i]);
@@ -3315,7 +3315,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
             rb->high_low_container.containers[i] = c;
         } else if (isrun) {
             typecodes[i] = RUN_CONTAINER_TYPE;
-            run_container_t *c = arena_alloc(&arena, sizeof(run_container_t));
+            run_container_t *c = (run_container_t *)arena_alloc(&arena, sizeof(run_container_t));
             c->capacity = cardinality;
             uint16_t n_runs;
             if(offset_headers != NULL) {
@@ -3332,7 +3332,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
             rb->high_low_container.containers[i] = c;
         } else {
             typecodes[i] = ARRAY_CONTAINER_TYPE;
-            array_container_t *c = arena_alloc(&arena, sizeof(array_container_t));
+            array_container_t *c = (array_container_t *)arena_alloc(&arena, sizeof(array_container_t));
             c->cardinality = cardinality;
             c->capacity = cardinality;
             if(offset_headers != NULL) {
