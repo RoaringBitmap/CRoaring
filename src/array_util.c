@@ -385,7 +385,7 @@ int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a,
                 v_b, vectorlength, v_a, vectorlength,
                 _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
             const int r = _mm_extract_epi32(res_v, 0);
-            __m128i sm16 = _mm_load_si128((const __m128i *)shuffle_mask16 + r);
+            __m128i sm16 = _mm_loadu_si128((const __m128i *)shuffle_mask16 + r);
             __m128i p = _mm_shuffle_epi8(v_a, sm16);
             _mm_storeu_si128((__m128i *)&C[count], p);  // can overflow
             count += _mm_popcnt_u32(r);
@@ -409,7 +409,7 @@ int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a,
                     _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
                 const int r = _mm_extract_epi32(res_v, 0);
                 __m128i sm16 =
-                    _mm_load_si128((const __m128i *)shuffle_mask16 + r);
+                    _mm_loadu_si128((const __m128i *)shuffle_mask16 + r);
                 __m128i p = _mm_shuffle_epi8(v_a, sm16);
                 _mm_storeu_si128((__m128i *)&C[count], p);  // can overflow
                 count += _mm_popcnt_u32(r);
@@ -586,7 +586,7 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
                 const int bitmask_belongs_to_difference =
                     _mm_extract_epi32(runningmask_a_found_in_b, 0) ^ 0xFF;
                 /*** next few lines are probably expensive *****/
-                __m128i sm16 = _mm_load_si128((const __m128i *)shuffle_mask16 +
+                __m128i sm16 = _mm_loadu_si128((const __m128i *)shuffle_mask16 +
                                               bitmask_belongs_to_difference);
                 __m128i p = _mm_shuffle_epi8(v_a, sm16);
                 _mm_storeu_si128((__m128i *)&C[count], p);  // can overflow
@@ -621,7 +621,7 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
                 _mm_or_si128(runningmask_a_found_in_b, a_found_in_b);
             const int bitmask_belongs_to_difference =
                 _mm_extract_epi32(runningmask_a_found_in_b, 0) ^ 0xFF;
-            __m128i sm16 = _mm_load_si128((const __m128i *)shuffle_mask16 +
+            __m128i sm16 = _mm_loadu_si128((const __m128i *)shuffle_mask16 +
                                           bitmask_belongs_to_difference);
             __m128i p = _mm_shuffle_epi8(v_a, sm16);
             _mm_storeu_si128((__m128i *)&C[count], p);  // can overflow

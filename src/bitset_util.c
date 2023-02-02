@@ -573,9 +573,9 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
                 uint8_t byteB = (uint8_t)(w >> 8);
                 w >>= 16;
                 __m256i vecA =
-                    _mm256_load_si256((const __m256i *)vecDecodeTable[byteA]);
+                    _mm256_loadu_si256((const __m256i *)vecDecodeTable[byteA]);
                 __m256i vecB =
-                    _mm256_load_si256((const __m256i *)vecDecodeTable[byteB]);
+                    _mm256_loadu_si256((const __m256i *)vecDecodeTable[byteB]);
                 uint8_t advanceA = lengthTable[byteA];
                 uint8_t advanceB = lengthTable[byteB];
                 vecA = _mm256_add_epi32(baseVec, vecA);
@@ -678,9 +678,9 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
                 uint8_t byteA = (uint8_t)w;
                 uint8_t byteB = (uint8_t)(w >> 8);
                 w >>= 16;
-                __m128i vecA = _mm_load_si128(
+                __m128i vecA = _mm_loadu_si128(
                     (const __m128i *)vecDecodeTable_uint16[byteA]);
-                __m128i vecB = _mm_load_si128(
+                __m128i vecB = _mm_loadu_si128(
                     (const __m128i *)vecDecodeTable_uint16[byteB]);
                 uint8_t advanceA = lengthTable[byteA];
                 uint8_t advanceB = lengthTable[byteB];

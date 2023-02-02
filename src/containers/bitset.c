@@ -822,8 +822,8 @@ static inline bool _avx2_bitset_container_equals(const bitset_container_t *conta
     const __m256i *ptr1 = (const __m256i*)container1->words;
     const __m256i *ptr2 = (const __m256i*)container2->words;
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)/32; i++) {
-      __m256i r1 = _mm256_load_si256(ptr1+i);
-      __m256i r2 = _mm256_load_si256(ptr2+i);
+      __m256i r1 = _mm256_loadu_si256(ptr1+i);
+      __m256i r2 = _mm256_loadu_si256(ptr2+i);
       int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(r1, r2));
       if ((uint32_t)mask != UINT32_MAX) {
           return false;
