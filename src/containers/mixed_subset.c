@@ -32,7 +32,7 @@ bool run_container_is_subset_array(const run_container_t* container1,
                                  container2->cardinality, start);
         stop_pos = advanceUntil(container2->array, stop_pos,
                                 container2->cardinality, stop);
-        if (start_pos == container2->cardinality) {
+        if (stop_pos == container2->cardinality) {
             return false;
         } else if (stop_pos - start_pos != stop - start ||
                    container2->array[start_pos] != start ||
