@@ -2430,7 +2430,7 @@ static inline container_t *container_remove_range(
 
             if (result_cardinality == 0) {
                 return NULL;
-            } else if (result_cardinality < DEFAULT_MAX_SIZE) {
+            } else if (result_cardinality <= DEFAULT_MAX_SIZE) {
                 *result_type = ARRAY_CONTAINER_TYPE;
                 bitset_reset_range(bitset->words, min, max+1);
                 bitset->cardinality = result_cardinality;
