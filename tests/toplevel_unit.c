@@ -73,6 +73,21 @@ DEFINE_TEST(issue431) {
   roaring_bitmap_free(b1);
 }
 
+DEFINE_TEST(issue433) {
+  roaring_bitmap_t *b1 = roaring_bitmap_create();
+  roaring_bitmap_add(b1, 262143);
+  roaring_bitmap_add_range_closed(b1, 258047, 262143);
+  roaring_bitmap_remove_range_closed(b1, 262143, 262143);
+  size_t len = roaring_bitmap_portable_size_in_bytes(b1);
+  char *data = roaring_malloc(len);
+  roaring_bitmap_portable_serialize(b1, data);
+  roaring_bitmap_t *b2 = roaring_bitmap_portable_deserialize_safe(data, len);
+  assert_true(roaring_bitmap_equals(b1, b2));
+  roaring_bitmap_free(b2);
+  roaring_bitmap_free(b1);
+  roaring_free(data);
+}
+
 DEFINE_TEST(range_contains) {
     uint32_t end = 2073952257;
     uint32_t start = end-2;
@@ -4370,6 +4385,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue433),
         cmocka_unit_test(issue429),
         cmocka_unit_test(issue431),
         cmocka_unit_test(test_contains_range_PyRoaringBitMap_issue81),
