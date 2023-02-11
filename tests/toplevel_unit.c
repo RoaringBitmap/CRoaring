@@ -88,6 +88,26 @@ DEFINE_TEST(issue433) {
   roaring_free(data);
 }
 
+
+
+DEFINE_TEST(issue436) {
+  roaring_bitmap_t *b1 = roaring_bitmap_create();
+  roaring_bitmap_add_range_closed(b1, 19711, 262068);
+  for (int i = 0; i < 0x10000; i += 2) {
+    roaring_bitmap_add(b1, i);
+  }
+  roaring_bitmap_printf_describe(b1);
+  roaring_bitmap_remove_range_closed(b1, 6143, 65505);
+  size_t len = roaring_bitmap_portable_size_in_bytes(b1);
+  char *data = roaring_malloc(len);
+  roaring_bitmap_portable_serialize(b1, data);
+  roaring_bitmap_t *b2 = roaring_bitmap_portable_deserialize_safe(data, len);
+  assert_true(roaring_bitmap_equals(b1, b2));
+  roaring_bitmap_free(b2);
+  roaring_bitmap_free(b1);
+  roaring_free(data);
+}
+
 DEFINE_TEST(range_contains) {
     uint32_t end = 2073952257;
     uint32_t start = end-2;
@@ -4385,6 +4405,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue436),
         cmocka_unit_test(issue433),
         cmocka_unit_test(issue429),
         cmocka_unit_test(issue431),
