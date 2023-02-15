@@ -9,8 +9,8 @@
 #ifndef INCLUDE_ROARING_64_MAP_HH_
 #define INCLUDE_ROARING_64_MAP_HH_
 
-#include <inttypes.h>
 #include <algorithm>
+#include <cinttypes> // PRIu64 macro
 #include <cstdarg>  // for va_list handling in bitmapOf()
 #include <cstdio>  // for std::printf() in the printf() method
 #include <cstring>  // for std::memcpy()
