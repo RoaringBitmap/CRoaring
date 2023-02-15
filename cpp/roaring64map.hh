@@ -9,6 +9,7 @@
 #ifndef INCLUDE_ROARING_64_MAP_HH_
 #define INCLUDE_ROARING_64_MAP_HH_
 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <algorithm>
 #include <cstdarg>  // for va_list handling in bitmapOf()
