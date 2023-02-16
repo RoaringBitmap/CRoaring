@@ -108,6 +108,16 @@ DEFINE_TEST(issue436) {
   roaring_free(data);
 }
 
+DEFINE_TEST(issue440) {
+  roaring_bitmap_t *b1 = roaring_bitmap_create();
+  roaring_bitmap_add_range_closed(b1, 0x20000, 0x2FFFF);
+  roaring_bitmap_add_range_closed(b1, 0, 0xFFFF);
+  uint32_t largest_item = 0x11000;
+  assert_false(roaring_bitmap_contains_range(b1, 0, largest_item + 1));
+  assert_false(roaring_bitmap_contains(b1, largest_item));
+  roaring_bitmap_free(b1);
+}
+
 DEFINE_TEST(range_contains) {
     uint32_t end = 2073952257;
     uint32_t start = end-2;
@@ -4405,6 +4415,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue440),
         cmocka_unit_test(issue436),
         cmocka_unit_test(issue433),
         cmocka_unit_test(issue429),
