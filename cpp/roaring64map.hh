@@ -1193,6 +1193,26 @@ public:
     }
 
     /**
+     * Return the number of bytes of memory used by this bitmap
+     */
+    size_t getMemorySizeInBytes() const {
+        // Figuring out how much memory is used by a std::map is guesswork.
+        // A common red/black tree implementation has 3 pointers plus 2 ints
+        // per element, plus the size of the pair.  The size of the Roaring
+        // struct is included in roarings.getMemorySizeInBytes() so remove it.
+        constexpr size_t perEntry = 3 * sizeof(void*) + 2 * sizeof(int) + sizeof(std::pair<uint32_t, Roaring>) - sizeof(Roaring);
+
+        return std::accumulate(
+            roarings.cbegin(), roarings.cend(),
+            sizeof(*this),
+            [=](size_t previous,
+                const std::pair<const uint32_t, Roaring> &map_entry) {
+                // add bytes used by each Roaring std::map entry
+                return previous + perEntry + map_entry.second.getMemorySizeInBytes();
+            });
+    }
+
+    /**
      * Return the number of bytes required to serialize this bitmap (meant to
      * be compatible with Java and Go versions)
      *

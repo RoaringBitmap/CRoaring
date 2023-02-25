@@ -203,6 +203,11 @@ void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans);
 bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset, size_t limit, uint32_t *ans);
 
 /**
+ * Return the number of bytes of memory used by the bitmap.
+ */
+size_t ra_memory_size_in_bytes(const roaring_array_t *ra);
+
+/**
  * write a bitmap to a buffer. This is meant to be compatible with
  * the
  * Java and Go versions. Return the size in bytes of the serialized

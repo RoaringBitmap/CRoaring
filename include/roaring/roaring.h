@@ -471,6 +471,11 @@ bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 size_t roaring_bitmap_shrink_to_fit(roaring_bitmap_t *r);
 
 /**
+ * Return the number of bytes of memory used by the bitmap.
+ */
+size_t roaring_bitmap_memory_size_in_bytes(const roaring_bitmap_t *r);
+
+/**
  * Write the bitmap to an output pointer, this output buffer should refer to
  * at least `roaring_bitmap_size_in_bytes(r)` allocated bytes.
  *

@@ -520,6 +520,18 @@ bool ra_has_run_container(const roaring_array_t *ra) {
     return false;
 }
 
+size_t ra_memory_size_in_bytes(const roaring_array_t *ra) {
+    size_t count = sizeof(*ra) + (
+        ra->allocation_size * (sizeof(void*) + sizeof(uint16_t) + sizeof(uint8_t)));
+
+    for (int32_t k = 0; k < ra->size; ++k) {
+        count += container_memory_size_in_bytes(ra->containers[k],
+                                                ra->typecodes[k]);
+    }
+
+    return count;
+}
+
 uint32_t ra_portable_header_size(const roaring_array_t *ra) {
     if (ra_has_run_container(ra)) {
         if (ra->size <

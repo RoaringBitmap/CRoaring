@@ -567,7 +567,6 @@ public:
     /**
      * Read a bitmap from a serialized version, reading no more than maxbytes
      * bytes.  This is meant to be compatible with the Java and Go versions.
-     *
      */
     static Roaring readSafe(const char *buf, size_t maxbytes) {
         roaring_bitmap_t * r =
@@ -576,6 +575,13 @@ public:
             ROARING_TERMINATE("failed alloc while reading");
         }
         return Roaring(r);
+    }
+
+    /**
+     * Bytes of memory used by this bitmap.
+     */
+    size_t getMemorySizeInBytes() const {
+        return api::roaring_bitmap_memory_size_in_bytes(&roaring);
     }
 
     /**

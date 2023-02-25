@@ -402,6 +402,27 @@ static inline int32_t container_write(
 }
 
 /**
+ * Get the size in bytes of memory used by the container, requires a
+ * typecode
+ */
+static inline size_t container_memory_size_in_bytes(
+    const container_t *c, uint8_t typecode
+){
+    c = container_unwrap_shared(c, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE:
+            return bitset_container_memory_size_in_bytes(const_CAST_bitset(c));
+        case ARRAY_CONTAINER_TYPE:
+            return array_container_memory_size_in_bytes(const_CAST_array(c));
+        case RUN_CONTAINER_TYPE:
+            return run_container_memory_size_in_bytes(const_CAST_run(c));
+    }
+    assert(false);
+    __builtin_unreachable();
+    return 0;  // unreached
+}
+
+/**
  * Get the container size in bytes under portable serialization (see
  * container_write), requires a
  * typecode
