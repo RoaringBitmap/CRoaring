@@ -52,6 +52,13 @@ bool roaring_iterator_sumall64(uint64_t value, void *param) {
     return true;  // we always process all values
 }
 
+
+DEFINE_TEST(fuzz_001) {
+    roaring::Roaring b;
+    b.addRange(173, 0);
+    assert_true(b.cardinality() == 0);
+}
+
 DEFINE_TEST(serial_test) {
     uint32_t values[] = {5, 2, 3, 4, 1};
     Roaring r1(sizeof(values) / sizeof(uint32_t), values);
@@ -1944,6 +1951,7 @@ DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(fuzz_001),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
