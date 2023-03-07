@@ -567,7 +567,18 @@ public:
     /**
      * Read a bitmap from a serialized version, reading no more than maxbytes
      * bytes.  This is meant to be compatible with the Java and Go versions.
-     *
+     * The function itself is safe in the sense that it will not cause buffer overflows.
+     * However, for correct operations, it is assumed that the bitmap read was once
+     * serialized from a valid bitmap. If you provided an incorrect input (garbage), then the
+     * bitmap read may not be in a valid state and following operations may not lead
+     * to sensible results. It is your responsability to ensure that the input bytes
+     * follow the format specification if you want a usable bitmap:
+     * https://github.com/RoaringBitmap/RoaringFormatSpec
+     * In particular, the serialized array containers need to be in sorted order, and the
+     * run containers should be in sorted non-overlapping order. This is is guaranteed to
+     * happen when serializing an existing bitmap, but not for random inputs.
+     * Note that this function assumes that your bitmap was serialized in *portable* mode
+     * (which is the default with the 'write' method).
      */
     static Roaring readSafe(const char *buf, size_t maxbytes) {
         roaring_bitmap_t * r =

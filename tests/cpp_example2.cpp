@@ -73,7 +73,10 @@ int main() {
     uint32_t expectedsize = r1.getSizeInBytes();
     char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
-    Roaring t = Roaring::read(serializedbytes);
+    // readSafe will not overflow, but the resulting bitmap
+    // is only valid and usable if the input follows the
+    // Roaring specification: https://github.com/RoaringBitmap/RoaringFormatSpec/
+    Roaring t = Roaring::readSafe(serializedbytes);
     assert_true(r1 == t);
     delete[] serializedbytes;
 
@@ -98,5 +101,6 @@ int main() {
     Roaring rogue(5, manyvalues);
     Roaring::const_iterator j = rogue.begin();
     j.equalorlarger(4);  // *j == 4
+
     return EXIT_SUCCESS;
 }

@@ -525,6 +525,15 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
  * This is meant to be compatible with the Java and Go versions:
  * https://github.com/RoaringBitmap/RoaringFormatSpec
  *
+ * The function itself is safe in the sense that it will not cause buffer overflows.
+ * However, for correct operations, it is assumed that the bitmap read was once
+ * serialized from a valid bitmap (i.e., it follows the format specification).
+ * If you provided an incorrect input (garbage), then the bitmap read may not be in
+ * a valid state and following operations may not lead to sensible results.
+ * In particular, the serialized array containers need to be in sorted order, and the
+ * run containers should be in sorted non-overlapping order. This is is guaranteed to
+ * happen when serializing an existing bitmap, but not for random inputs.
+ *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x),
  * the data format is going to be big-endian and not compatible with little-endian systems.
  */

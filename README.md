@@ -287,6 +287,11 @@ int main() {
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     char *serializedbytes = malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
+    // For additional safety, you may replace roaring_bitmap_portable_deserialize by
+    // roaring_bitmap_portable_deserialize_safe.
+    // Note: it is expected that the input follows the specification
+    // https://github.com/RoaringBitmap/RoaringFormatSpec
+    // otherwise the result may be unusable.
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
     assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
     roaring_bitmap_free(t);
@@ -298,6 +303,9 @@ int main() {
            expectedsize);  // sizeofbitmap would be zero if no bitmap were found
     // we can also read the bitmap "safely" by specifying a byte size limit:
     t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
+    // It is still necessary for the content of seriallizedbytes to follow
+    // the standard: https://github.com/RoaringBitmap/RoaringFormatSpec
+    // This is guaranted when calling 'roaring_bitmap_portable_deserialize'.
     assert(roaring_bitmap_equals(r1, t));  // what we recover is equal
     roaring_bitmap_free(t);
 
@@ -422,7 +430,10 @@ int main() {
     uint32_t expectedsize = r1.getSizeInBytes();
     char *serializedbytes = new char[expectedsize];
     r1.write(serializedbytes);
-    Roaring t = Roaring::read(serializedbytes);
+    // readSafe will not overflow, but the resulting bitmap
+    // is only valid and usable if the input follows the
+    // Roaring specification: https://github.com/RoaringBitmap/RoaringFormatSpec/
+    Roaring t = Roaring::readSafe(serializedbytes);
     assert(r1 == t);
     delete[] serializedbytes;
 
