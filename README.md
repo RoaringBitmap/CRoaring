@@ -433,7 +433,7 @@ int main() {
     // readSafe will not overflow, but the resulting bitmap
     // is only valid and usable if the input follows the
     // Roaring specification: https://github.com/RoaringBitmap/RoaringFormatSpec/
-    Roaring t = Roaring::readSafe(serializedbytes);
+    Roaring t = Roaring::readSafe(serializedbytes, expectedsize);
     assert(r1 == t);
     delete[] serializedbytes;
 
