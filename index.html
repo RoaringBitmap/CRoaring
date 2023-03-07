@@ -444,7 +444,7 @@ Example (C++)</h1>
 <div class="line">    // readSafe will not overflow, but the resulting bitmap</div>
 <div class="line">    // is only valid and usable if the input follows the</div>
 <div class="line">    // Roaring specification: https://github.com/RoaringBitmap/RoaringFormatSpec/</div>
-<div class="line">    Roaring t = Roaring::readSafe(serializedbytes);</div>
+<div class="line">    Roaring t = Roaring::readSafe(serializedbytes, expectedsize);</div>
 <div class="line">    assert(r1 == t);</div>
 <div class="line">    delete[] serializedbytes;</div>
 <div class="line"> </div>
