@@ -118,6 +118,26 @@ DEFINE_TEST(issue440) {
   roaring_bitmap_free(b1);
 }
 
+DEFINE_TEST(convert_all_bitset) {
+  roaring_bitmap_t *r1 = roaring_bitmap_create();
+  for (uint32_t i = 100; i < 1000; i++) {
+    roaring_bitmap_add(r1, i);
+  }
+  roaring_bitmap_t *r2 = roaring_bitmap_copy(r1);
+  roaring_bitmap_convert_to_all_bitset(r1);
+
+  roaring_array_t *ra = &r1->high_low_container;
+
+  for (int i = 0; i < ra->size; ++i) {
+    const uint8_t old_type = ra->typecodes[i];
+    assert_true(BITSET_CONTAINER_TYPE == old_type);
+  }
+
+  assert_true(roaring_bitmap_equals(r1, r2));
+  roaring_bitmap_free(r1);
+  roaring_bitmap_free(r2);
+}
+
 DEFINE_TEST(range_contains) {
     uint32_t end = 2073952257;
     uint32_t start = end-2;
@@ -4428,6 +4448,7 @@ int main() {
 #endif
         cmocka_unit_test(issue208),
         cmocka_unit_test(issue208b),
+        cmocka_unit_test(convert_all_bitset),
         cmocka_unit_test(range_contains),
         cmocka_unit_test(contains_bulk),
         cmocka_unit_test(inplaceorwide),

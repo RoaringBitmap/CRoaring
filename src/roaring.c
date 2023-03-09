@@ -424,6 +424,22 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
     }
 }
 
+void roaring_bitmap_convert_to_all_bitset(roaring_bitmap_t *r) {
+    roaring_array_t *ra = &r->high_low_container;
+
+    for (int i = 0; i < ra->size; ++i) {
+        const uint8_t old_type = ra->typecodes[i];
+        container_t *old_c = ra->containers[i];
+        container_t *new_c = container_to_bitset(old_c, old_type);
+        if (old_c == new_c) {
+          continue;
+        }
+        container_free(old_c, old_type);
+        ra->containers[i] = new_c;
+        ra->typecodes[i] = BITSET_CONTAINER_TYPE;
+    }
+}
+
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
     roaring_bitmap_t *ans =
         (roaring_bitmap_t *)roaring_malloc(sizeof(roaring_bitmap_t));

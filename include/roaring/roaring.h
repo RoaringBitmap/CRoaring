@@ -800,6 +800,13 @@ uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *r);
 void roaring_bitmap_statistics(const roaring_bitmap_t *r,
                                roaring_statistics_t *stat);
 
+/**
+ * (For expert users who seek high performance.)
+ *
+ * Convert every container to bitset, for huge contians actions.
+ */
+void roaring_bitmap_convert_to_all_bitset(roaring_bitmap_t *r);
+
 /*********************
 * What follows is code use to iterate through values in a roaring bitmap
 
