@@ -71,6 +71,7 @@ enum croaring_instruction_set {
   CROARING_BMI1 = 0x20,
   CROARING_BMI2 = 0x40,
   CROARING_ALTIVEC = 0x80,
+  CROARING_AVX512 =0x100,
   CROARING_UNINITIALIZED = 0x8000
 };
 
@@ -131,6 +132,7 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   static uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
   static uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
   static uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
+  static uint32_t cpuid_avx512f_bit = 1 << 16;  ///< @private bit 16 of EBX for EAX=0x7
   static uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
   static uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
   // ECX for EAX=0x7
@@ -146,6 +148,10 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
 
   if (ebx & cpuid_bmi2_bit) {
     host_isa |= CROARING_BMI2;
+  }
+  
+  if (ebx & cpuid_avx512f_bit) {
+    host_isa |= CROARING_AVX512;
   }
 
   // EBX for EAX=0x1
@@ -207,13 +213,29 @@ static inline uint32_t croaring_detect_supported_architectures() {
 static inline bool croaring_avx2() {
   return false;
 }
+static inline bool croaring_avx512() {
+  return false;
+}
+#elif defined(__AVX512F__)
+static inline bool croaring_avx2() {
+  return true;
+}
+static inline bool croaring_avx512() {
+  return true;
+}
 #elif defined(__AVX2__)
 static inline bool croaring_avx2() {
   return true;
 }
+static inline bool croaring_avx512() {
+  return false;
+}
 #else
 static inline bool croaring_avx2() {
   return  (croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
+}
+static inline bool croaring_avx512() {
+  return  (croaring_detect_supported_architectures() & CROARING_AVX512) == CROARING_AVX512;
 }
 #endif
 

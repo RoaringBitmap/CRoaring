@@ -328,12 +328,22 @@ static inline int hamming(uint64_t x) {
 #endif
 
 #define CROARING_TARGET_AVX2 CROARING_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+#define CROARING_TARGET_AVX512 CROARING_TARGET_REGION("bmi2,avx512f,avx512bw,avx512dq")
 
 #ifdef __AVX2__
 // No need for runtime dispatching.
 // It is unnecessary and harmful to old clang to tag regions.
 #undef CROARING_TARGET_AVX2
 #define CROARING_TARGET_AVX2
+#undef CROARING_UNTARGET_REGION
+#define CROARING_UNTARGET_REGION
+#endif
+
+#ifdef __AVX512F__
+// No need for runtime dispatching.
+// It is unnecessary and harmful to old clang to tag regions.
+#undef CROARING_TARGET_AVX512
+#define CROARING_TARGET_AVX512
 #undef CROARING_UNTARGET_REGION
 #define CROARING_UNTARGET_REGION
 #endif
