@@ -554,84 +554,110 @@ static uint16_t vecDecodeTable_uint16[256][8] = {
 
 #ifdef CROARING_IS_X64
 CROARING_TARGET_AVX512
-size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint32_t *out,
-                                   size_t outcapacity, uint32_t base) {    
+const uint8_t vbmi2_table[64] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63};
+size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint32_t *vout,
+                                   size_t outcapacity, uint32_t base) {
+    uint32_t *out = (uint32_t *)vout;
     uint32_t *initout = out;
     uint32_t *safeout = out + outcapacity;
-    
-    uint64_t msk_1 = 0xffffffff00000000ULL;
-    uint64_t msk_2 = 0xffff0000ffff0000ULL;
-    uint64_t msk_3 = 0xff00ff00ff00ff00ULL;
-    uint64_t msk_4 = 0xf0f0f0f0f0f0f0f0ULL;
-    uint64_t msk_5 = 0xccccccccccccccccULL;
-    uint64_t msk_6 = 0xaaaaaaaaaaaaaaaaULL;
-    __m512i v1_bit = _mm512_set1_epi8(1);
-    __m512i v2_bit = _mm512_set1_epi8(2);
-    __m512i v4_bit = _mm512_set1_epi8(4);
-    __m512i v8_bit = _mm512_set1_epi8(8);
-    __m512i v16_bit = _mm512_set1_epi8(16);
-    __m512i v32_bit = _mm512_set1_epi8(32);
-    
-    __m512i v64 = _mm512_set1_epi32(64);
-    __m512i v_base = _mm512_set1_epi32(base);
-    
-    
+    __m512i base_v = _mm512_set1_epi32(base);    
+    __m512i index_table = _mm512_loadu_si512(vbmi2_table);
     size_t i = 0;
-    for (; (i < length) && (out + 64 <= safeout); ++i) {
-        uint64_t v = words[i];
-	uint64_t v1 = _pext_u64(msk_1, v);
-	uint64_t v2 = _pext_u64(msk_2, v);
-	uint64_t v3 = _pext_u64(msk_3, v);
-	uint64_t v4 = _pext_u64(msk_4, v);
-	uint64_t v5 = _pext_u64(msk_5, v);
-	uint64_t v6 = _pext_u64(msk_6, v);
-	uint8_t advance = __builtin_popcountll(v);
-	__m512i vec;
-	
-        vec = _mm512_maskz_add_epi8(v1, v32_bit, _mm512_set1_epi8(0));
-	vec = _mm512_mask_add_epi8(vec, v2, v16_bit, vec);
-	vec = _mm512_mask_add_epi8(vec, v3, v8_bit, vec);
-	vec = _mm512_mask_add_epi8(vec, v4, v4_bit, vec);
-	vec = _mm512_mask_add_epi8(vec, v5, v2_bit, vec);
-	vec = _mm512_mask_add_epi8(vec, v6, v1_bit, vec);
 
-	//__m512i base = _mm512_set1_epi32(i*64);
-	__m512i r1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,0));
-	__m512i r2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,1));
-	__m512i r3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,2));
-	__m512i r4 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,3));
-
-	r1 = _mm512_add_epi32(r1, v_base);
-	r2 = _mm512_add_epi32(r2, v_base);
-	r3 = _mm512_add_epi32(r3, v_base);
-	r4 = _mm512_add_epi32(r4, v_base);
-	_mm512_storeu_si512((__m512i *)out, r1);
-	_mm512_storeu_si512((__m512i *)(out + 16), r2);
-	_mm512_storeu_si512((__m512i *)(out + 32), r3);
-	_mm512_storeu_si512((__m512i *)(out + 48), r4);
-	out += advance;
+    for (; (i < length) && ((out + 64) < safeout); i += 1)
+    {
+        uint64_t v = words[i];		
+        __m512i vec = _mm512_maskz_compress_epi8(v, index_table);	
+        	    
+        uint8_t advance = __builtin_popcountll(v);
         
-        v_base = _mm512_add_epi32(v_base, v64);
+        __m512i vbase = _mm512_add_epi32(base_v, _mm512_set1_epi32(i * 64));
+        __m512i r1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,0));
+        __m512i r2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,1));
+        __m512i r3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,2));
+        __m512i r4 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,3));
+        
+        r1 = _mm512_add_epi32(r1, vbase);
+        r2 = _mm512_add_epi32(r2, vbase);
+        r3 = _mm512_add_epi32(r3, vbase);
+        r4 = _mm512_add_epi32(r4, vbase);
+        _mm512_storeu_si512((__m512i *)out, r1);
+        _mm512_storeu_si512((__m512i *)(out + 16), r2);
+        _mm512_storeu_si512((__m512i *)(out + 32), r3);
+        _mm512_storeu_si512((__m512i *)(out + 48), r4);
 
+        out += advance;
+        
     }
 
     base += i * 64;
     
     for (; (i < length) && (out < safeout); ++i) {
-        uint64_t w = words[i];
-        while ((w != 0) && (out < safeout)) {
-            uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
-            int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
-            uint32_t val = r + base;
-            memcpy(out, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            out++;
-            w ^= t;
-        }
-        base += 64;
-    }
+         uint64_t w = words[i];
+         while ((w != 0) && (out < safeout)) {
+             uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
+             int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
+             uint32_t val = r + base;
+             memcpy(out, &val,
+                    sizeof(uint32_t));  // should be compiled as a MOV on x64
+             out++;
+             w ^= t;
+         }
+         base += 64;
+     }
+
+
     return out - initout;
 
+}
+
+size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array, size_t length,
+                                     uint16_t *vout, size_t capacity, uint16_t base) {
+    uint16_t *out = (uint16_t *)vout;
+    uint16_t *initout = out;
+    uint16_t *safeout = vout + capacity;
+
+    __m512i base_v = _mm512_set1_epi16(base);
+    __m512i index_table = _mm512_loadu_si512(vbmi2_table);
+    size_t i = 0;
+
+    for (; (i < length) && ((out + 64) < safeout); i++)
+    {
+        uint64_t v = array[i];
+        __m512i vec = _mm512_maskz_compress_epi8(v, index_table);
+
+        uint8_t advance = __builtin_popcountll(v);
+
+        __m512i vbase = _mm512_add_epi16(base_v, _mm512_set1_epi16(i * 64));
+        __m512i r1 = _mm512_cvtepi8_epi16(_mm512_extracti32x8_epi32(vec,0));
+        __m512i r2 = _mm512_cvtepi8_epi16(_mm512_extracti32x8_epi32(vec,1));
+
+        r1 = _mm512_add_epi16(r1, vbase);
+        r2 = _mm512_add_epi16(r2, vbase);
+
+	_mm512_storeu_si512((__m512i *)out, r1);
+        _mm512_storeu_si512((__m512i *)(out + 32), r2);
+        out += advance;
+
+    }
+
+    base += i * 64;
+
+    for (; (i < length) && (out < safeout); ++i) {
+         uint64_t w = array[i];
+         while ((w != 0) && (out < safeout)) {
+             uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
+             int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
+             uint32_t val = r + base;
+             memcpy(out, &val,
+                    sizeof(uint16_t));
+             out++;
+             w ^= t;
+         }
+         base += 64;
+     }
+
+    return out - initout;
 }
 CROARING_UNTARGET_REGION
 

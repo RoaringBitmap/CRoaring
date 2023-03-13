@@ -53,8 +53,7 @@ bitset_container_t *bitset_container_create(void) {
     if (!bitset) {
         return NULL;
     }
-    if ( croaring_avx512() )
-    {
+    if ( croaring_avx512() ) {
         bitset->words = (uint64_t *)roaring_aligned_malloc(
             64, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
     }
@@ -124,9 +123,15 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     if (!bitset) {
         return NULL;
     }
-    // sizeof(__m256i) == 32
-    bitset->words = (uint64_t *)roaring_aligned_malloc(
-        32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    if ( croaring_avx512() ) {
+        bitset->words = (uint64_t *)roaring_aligned_malloc(
+            64, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    }
+    else {
+        // sizeof(__m256i) == 32
+        bitset->words = (uint64_t *)roaring_aligned_malloc(
+            32, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
+    }
     if (!bitset->words) {
         roaring_free(bitset);
         return NULL;
@@ -243,7 +248,7 @@ static inline int _scalar_bitset_container_compute_cardinality(const bitset_cont
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     if( croaring_avx512() ) {
-      return (int) avx512_harley_seal_popcount512(
+      return (int) avx512_vpopcount(
         (const __m512i *)bitset->words,
         BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));
     }
@@ -369,25 +374,25 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
                                 neon_intrinsic, after)                                 \
   /* next, a version that updates cardinality*/                                        \
   static inline int _avx512_bitset_container_##opname(const bitset_container_t *src_1, \
-                                      const bitset_container_t *src_2,         \
-                                      bitset_container_t *dst) {               \
-    const __m512i * __restrict__ words_1 = (const __m512i *) src_1->words; \
-    const __m512i * __restrict__ words_2 = (const __m512i *) src_2->words; \
-    __m512i *out = (__m512i *) dst->words;                              \
+                                      const bitset_container_t *src_2,                 \
+                                      bitset_container_t *dst) {                       \
+    const __m512i * __restrict__ words_1 = (const __m512i *) src_1->words;             \
+    const __m512i * __restrict__ words_2 = (const __m512i *) src_2->words;             \
+    __m512i *out = (__m512i *) dst->words;                                             \
     dst->cardinality = (int32_t)avx512_harley_seal_popcount512andstore_##opname(words_2, \
-    		words_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG)); \
-    return dst->cardinality;                                            \
+    		words_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));        \
+    return dst->cardinality;                                                             \
   }                                                                            
 
-#define AVX512_BITSET_CONTAINER_FN3(before, opname, opsymbol, avx_intrinsic,               \
-                                neon_intrinsic, after)                                \
-  /* next, a version that just computes the cardinality*/                      \
-  static inline int _avx512_bitset_container_##opname##_justcard(                              \
-      const bitset_container_t *src_1, const bitset_container_t *src_2) {      \
-    const __m512i * __restrict__ data1 = (const __m512i *) src_1->words; \
-    const __m512i * __restrict__ data2 = (const __m512i *) src_2->words; \
-    return (int)avx512_harley_seal_popcount512_##opname(data2,                \
-    		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));\
+#define AVX512_BITSET_CONTAINER_FN3(before, opname, opsymbol, avx_intrinsic,            \
+                                neon_intrinsic, after)                                  \
+  /* next, a version that just computes the cardinality*/                               \
+  static inline int _avx512_bitset_container_##opname##_justcard(                       \
+      const bitset_container_t *src_1, const bitset_container_t *src_2) {               \
+    const __m512i * __restrict__ data1 = (const __m512i *) src_1->words;                \
+    const __m512i * __restrict__ data2 = (const __m512i *) src_2->words;                \
+    return (int)avx512_harley_seal_popcount512_##opname(data2,                          \
+    		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));             \
   }
 
 
@@ -706,8 +711,7 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
   }                                                                            \
   int bitset_container_##opname##_justcard(const bitset_container_t *src_1,    \
                                            const bitset_container_t *src_2) {  \
-    if ((croaring_detect_supported_architectures() & CROARING_AVX512) ==       \
-        CROARING_AVX512) {                                                     \
+    if ( croaring_avx512() ) {                                                 \
       return _avx512_bitset_container_##opname##_justcard(src_1, src_2);       \
     }                                                                          \
     else if ((croaring_detect_supported_architectures() & CROARING_AVX2) ==    \

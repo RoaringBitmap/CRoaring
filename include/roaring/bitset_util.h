@@ -189,6 +189,10 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
                                          uint16_t *out, size_t outcapacity,
                                          uint16_t base);
 
+size_t bitset_extract_setbits_avx512_uint16(const uint64_t *words, size_t length,
+                                         uint16_t *out, size_t outcapacity, 
+                                         uint16_t base);
+
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out",  values start at "base"
@@ -572,41 +576,13 @@ CROARING_TARGET_AVX2
 AVXPOPCNTFNC(andnot, _mm256_andnot_si256)
 CROARING_UNTARGET_REGION
 
+
+#define VPOPCNT_AND_ADD(ptr, i, accu)   \
+    const __m512i v##i = _mm512_loadu_si512((const __m512i*)ptr + i);  \
+    const __m512i p##i = _mm512_popcnt_epi64(v##i);    \
+    accu = _mm512_add_epi64(accu, p##i);  
+ 
 CROARING_TARGET_AVX512
-static inline __m512i popcount512(const __m512i v)
-{
-  const __m512i m1 = _mm512_set1_epi8(0x55);
-  const __m512i m2 = _mm512_set1_epi8(0x33);
-  const __m512i m4 = _mm512_set1_epi8(0x0F);
-
-  const __m512i t1 = _mm512_sub_epi8(v,       (_mm512_srli_epi16(v,  1) & m1));
-  const __m512i t2 = _mm512_add_epi8(t1 & m2, (_mm512_srli_epi16(t1, 2) & m2));
-  const __m512i t3 = _mm512_add_epi8(t2, _mm512_srli_epi16(t2, 4)) & m4;
-  return _mm512_sad_epu8(t3, _mm512_setzero_si512());
-}
-
-static inline void CSA512(__m512i *h, __m512i *l, __m512i a, __m512i b, __m512i c)
-{
-    /*
-        c b a | l h
-        ------+----
-        0 0 0 | 0 0
-        0 0 1 | 1 0
-        0 1 0 | 1 0
-        0 1 1 | 0 1
-        1 0 0 | 1 0
-        1 0 1 | 0 1
-        1 1 0 | 0 1
-        1 1 1 | 1 1
-
-        l - digit
-        h - carry
-    */
-
-  *l = _mm512_ternarylogic_epi32(c, b, a, 0x96);
-  *h = _mm512_ternarylogic_epi32(c, b, a, 0xe8);
-}
-
 static inline uint64_t sum_epu64_256(const __m256i v) {
 
     return (uint64_t)(_mm256_extract_epi64(v, 0))
@@ -624,51 +600,26 @@ static inline uint64_t simd_sum_epu64(const __m512i v) {
     return sum_epu64_256(lo) + sum_epu64_256(hi);
 }
 
-static inline uint64_t avx512_harley_seal_popcount512(const __m512i* data, const uint64_t size)
+static inline uint64_t avx512_vpopcount(const __m512i* data, const uint64_t size)
 {
-  __m512i total     = _mm512_setzero_si512();
-  __m512i ones      = _mm512_setzero_si512();
-  __m512i twos      = _mm512_setzero_si512();
-  __m512i fours     = _mm512_setzero_si512();
-  __m512i eights    = _mm512_setzero_si512();
-  __m512i sixteens  = _mm512_setzero_si512();
-  __m512i twosA, twosB, foursA, foursB, eightsA, eightsB;
+    const uint64_t limit = size - size % 4;
+    __m512i total = _mm512_setzero_si512();
+    uint64_t i = 0;
 
-  const uint64_t limit = size - size % 16;
-  uint64_t i = 0;
-
-  for(; i < limit; i += 16)
-  {
-    CSA512(&twosA, &ones, ones,  _mm512_loadu_si512(data + i), _mm512_loadu_si512(data + i + 1));
-    CSA512(&twosB, &ones, ones,  _mm512_loadu_si512(data + i + 2), _mm512_loadu_si512(data + i + 3));
-    CSA512(&foursA, &twos, twos, twosA, twosB);
-    CSA512(&twosA, &ones, ones, _mm512_loadu_si512(data + i + 4), _mm512_loadu_si512(data + i + 5));
-    CSA512(&twosB, &ones, ones, _mm512_loadu_si512(data + i + 6), _mm512_loadu_si512(data + i + 7));
-    CSA512(&foursB, &twos, twos, twosA, twosB);
-    CSA512(&eightsA, &fours, fours, foursA, foursB);
-    CSA512(&twosA, &ones, ones, _mm512_loadu_si512(data + i + 8), _mm512_loadu_si512(data + i + 9));
-    CSA512(&twosB, &ones, ones, _mm512_loadu_si512(data + i +10), _mm512_loadu_si512(data + i + 11));
-    CSA512(&foursA, &twos, twos, twosA, twosB);
-    CSA512(&twosA, &ones, ones, _mm512_loadu_si512(data + i + 12), _mm512_loadu_si512(data + i + 13));
-    CSA512(&twosB, &ones, ones, _mm512_loadu_si512(data + i + 14), _mm512_loadu_si512(data + i + 15));
-    CSA512(&foursB, &twos, twos, twosA, twosB);
-    CSA512(&eightsB, &fours, fours, foursA, foursB);
-    CSA512(&sixteens, &eights, eights, eightsA, eightsB);
-
-    total = _mm512_add_epi64(total, popcount512(sixteens));
-  }
-
-  total = _mm512_slli_epi64(total, 4);     // * 16
-  total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(eights), 3)); // += 8 * ...
-  total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(fours),  2)); // += 4 * ...
-  total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(twos),   1)); // += 2 * ...
-  total = _mm512_add_epi64(total, popcount512(ones));
-
-  for(; i < size; i++)
-    total = _mm512_add_epi64(total, popcount512(_mm512_loadu_si512(data + i)));
-
-
-  return simd_sum_epu64(total);
+    for (; i < limit; i += 4)
+    {    
+        VPOPCNT_AND_ADD(data + i, 0, total);
+        VPOPCNT_AND_ADD(data + i, 1, total);
+        VPOPCNT_AND_ADD(data + i, 2, total);
+        VPOPCNT_AND_ADD(data + i, 3, total);
+    }
+    
+    for (; i < size; i++)
+    {
+        total = _mm512_add_epi64(total, _mm512_popcnt_epi64(_mm512_loadu_si512(data + i)));
+    }
+        
+    return simd_sum_epu64(total);
 }
 CROARING_UNTARGET_REGION
 
@@ -676,74 +627,26 @@ CROARING_UNTARGET_REGION
     static inline uint64_t avx512_harley_seal_popcount512_##opname(            \
         const __m512i *data1, const __m512i *data2, const uint64_t size) {     \
         __m512i total = _mm512_setzero_si512();                                \
-        __m512i ones = _mm512_setzero_si512();                                 \
-        __m512i twos = _mm512_setzero_si512();                                 \
-        __m512i fours = _mm512_setzero_si512();                                \
-        __m512i eights = _mm512_setzero_si512();                               \
-        __m512i sixteens = _mm512_setzero_si512();                             \
-        __m512i twosA, twosB, foursA, foursB, eightsA, eightsB;                \
-        __m512i A1, A2;                                                        \
-        const uint64_t limit = size - size % 16;                               \
+        const uint64_t limit = size - size % 4;                                \
         uint64_t i = 0;                                                        \
-        for (; i < limit; i += 16) {                                           \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),                  \
-                               _mm512_loadu_si512(data2 + i));                 \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),              \
-                               _mm512_loadu_si512(data2 + i + 1));             \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),              \
-                               _mm512_loadu_si512(data2 + i + 2));             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),              \
-                               _mm512_loadu_si512(data2 + i + 3));             \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursA, &twos, twos, twosA, twosB);                        \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 4),              \
-                               _mm512_loadu_si512(data2 + i + 4));             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 5),              \
-                               _mm512_loadu_si512(data2 + i + 5));             \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 6),              \
-                               _mm512_loadu_si512(data2 + i + 6));             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 7),              \
-                               _mm512_loadu_si512(data2 + i + 7));             \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursB, &twos, twos, twosA, twosB);                        \
-            CSA512(&eightsA, &fours, fours, foursA, foursB);                   \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 8),              \
-                               _mm512_loadu_si512(data2 + i + 8));             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 9),              \
-                               _mm512_loadu_si512(data2 + i + 9));             \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 10),             \
-                               _mm512_loadu_si512(data2 + i + 10));            \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 11),             \
-                               _mm512_loadu_si512(data2 + i + 11));            \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursA, &twos, twos, twosA, twosB);                        \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 12),             \
-                               _mm512_loadu_si512(data2 + i + 12));            \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 13),             \
-                               _mm512_loadu_si512(data2 + i + 13));            \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 14),             \
-                               _mm512_loadu_si512(data2 + i + 14));            \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 15),             \
-                               _mm512_loadu_si512(data2 + i + 15));            \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursB, &twos, twos, twosA, twosB);                        \
-            CSA512(&eightsB, &fours, fours, foursA, foursB);                   \
-            CSA512(&sixteens, &eights, eights, eightsA, eightsB);              \
-            total = _mm512_add_epi64(total, popcount512(sixteens));            \
-        }                                                                      \
-        total = _mm512_slli_epi64(total, 4);                                   \
-        total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(eights), 3)); \
-        total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(fours),  2));  \
-        total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(twos),   1));  \
-        total = _mm512_add_epi64(total, popcount512(ones));                    \
-        for(; i < size; i++) {                                                 \
-              A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),                \
+	    for (; i < limit; i += 4) {                                        \
+            __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
+                                       _mm512_loadu_si512(data2 + i));         \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));          \
+            __m512i a2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),      \
+                                       _mm512_loadu_si512(data2 + i + 1));     \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a2));          \
+             __m512i a3 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),     \
+                                       _mm512_loadu_si512(data2 + i + 2));     \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a3));          \
+             __m512i a4 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),     \
+                                       _mm512_loadu_si512(data2 + i + 3));     \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a4));          \
+       }                                                                       \
+       for(; i < size; i++) {                                                  \
+              __m512i a = avx_intrinsic(_mm512_loadu_si512(data1 + i),         \
                        _mm512_loadu_si512(data2 + i));                         \
-              total = _mm512_add_epi64(total, popcount512(A1));                \
+              total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a));         \
         }                                                                      \
         return simd_sum_epu64(total);                                          \
     }                                                                          \
@@ -751,91 +654,31 @@ CROARING_UNTARGET_REGION
         const __m512i *__restrict__ data1, const __m512i *__restrict__ data2,  \
         __m512i *__restrict__ out, const uint64_t size) {                      \
         __m512i total = _mm512_setzero_si512();                                \
-        __m512i ones = _mm512_setzero_si512();                                 \
-        __m512i twos = _mm512_setzero_si512();                                 \
-        __m512i fours = _mm512_setzero_si512();                                \
-        __m512i eights = _mm512_setzero_si512();                               \
-        __m512i sixteens = _mm512_setzero_si512();                             \
-        __m512i twosA, twosB, foursA, foursB, eightsA, eightsB;                \
-        __m512i A1, A2;                                                        \
-        const uint64_t limit = size - size % 16;                               \
+        const uint64_t limit = size - size % 4;                                \
         uint64_t i = 0;                                                        \
-        for (; i < limit; i += 16) {                                           \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),                  \
-                               _mm512_loadu_si512(data2 + i));                 \
-            _mm512_storeu_si512(out + i, A1);                                  \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),              \
-                               _mm512_loadu_si512(data2 + i + 1));             \
-            _mm512_storeu_si512(out + i + 1, A2);                              \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),              \
-                               _mm512_loadu_si512(data2 + i + 2));             \
-            _mm512_storeu_si512(out + i + 2, A1);                              \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),              \
-                               _mm512_loadu_si512(data2 + i + 3));             \
-            _mm512_storeu_si512(out + i + 3, A2);                              \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursA, &twos, twos, twosA, twosB);                        \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 4),              \
-                               _mm512_loadu_si512(data2 + i + 4));             \
-            _mm512_storeu_si512(out + i + 4, A1);                              \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 5),              \
-                               _mm512_loadu_si512(data2 + i + 5));             \
-            _mm512_storeu_si512(out + i + 5, A2);                              \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 6),              \
-                               _mm512_loadu_si512(data2 + i + 6));             \
-            _mm512_storeu_si512(out + i + 6, A1);                              \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 7),              \
-                               _mm512_loadu_si512(data2 + i + 7));             \
-            _mm512_storeu_si512(out + i + 7, A2);                              \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursB, &twos, twos, twosA, twosB);                        \
-            CSA512(&eightsA, &fours, fours, foursA, foursB);                   \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 8),              \
-                               _mm512_loadu_si512(data2 + i + 8));             \
-            _mm512_storeu_si512(out + i + 8, A1);                              \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 9),              \
-                               _mm512_loadu_si512(data2 + i + 9));             \
-            _mm512_storeu_si512(out + i + 9, A2);                              \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 10),             \
-                               _mm512_loadu_si512(data2 + i + 10));            \
-            _mm512_storeu_si512(out + i + 10, A1);                             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 11),             \
-                               _mm512_loadu_si512(data2 + i + 11));            \
-            _mm512_storeu_si512(out + i + 11, A2);                             \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursA, &twos, twos, twosA, twosB);                        \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 12),             \
-                               _mm512_loadu_si512(data2 + i + 12));            \
-            _mm512_storeu_si512(out + i + 12, A1);                             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 13),             \
-                               _mm512_loadu_si512(data2 + i + 13));            \
-            _mm512_storeu_si512(out + i + 13, A2);                             \
-            CSA512(&twosA, &ones, ones, A1, A2);                               \
-            A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 14),             \
-                               _mm512_loadu_si512(data2 + i + 14));            \
-            _mm512_storeu_si512(out + i + 14, A1);                             \
-            A2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 15),             \
-                               _mm512_loadu_si512(data2 + i + 15));            \
-            _mm512_storeu_si512(out + i + 15, A2);                             \
-            CSA512(&twosB, &ones, ones, A1, A2);                               \
-            CSA512(&foursB, &twos, twos, twosA, twosB);                        \
-            CSA512(&eightsB, &fours, fours, foursA, foursB);                   \
-            CSA512(&sixteens, &eights, eights, eightsA, eightsB);              \
-            total = _mm512_add_epi64(total, popcount512(sixteens));            \
-        }                                                                      \
-        total = _mm512_slli_epi64(total, 4);                                   \
-        total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(eights), 3)); \
-        total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(fours),  2));  \
-        total = _mm512_add_epi64(total, _mm512_slli_epi64(popcount512(twos),   1));  \
-        total = _mm512_add_epi64(total, popcount512(ones));                    \
-        for(; i < size; i++) {                                                 \
-              A1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),                \
+	    for (; i < limit; i += 4) {                                        \
+            __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
+                                       _mm512_loadu_si512(data2 + i));         \
+            _mm512_storeu_si512(out + i, a1);                                  \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));          \
+            __m512i a2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),      \
+                                       _mm512_loadu_si512(data2 + i + 1));     \
+            _mm512_storeu_si512(out + i + 1, a2);                              \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a2));          \
+             __m512i a3 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),     \
+                                       _mm512_loadu_si512(data2 + i + 2));     \
+            _mm512_storeu_si512(out + i + 2, a3);                              \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a3));          \
+            __m512i a4 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),      \
+                                       _mm512_loadu_si512(data2 + i + 3));     \
+            _mm512_storeu_si512(out + i + 3, a4);                              \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a4));          \
+       }                                                                       \
+       for(; i < size; i++) {                                                  \
+              __m512i a = avx_intrinsic(_mm512_loadu_si512(data1 + i),         \
                        _mm512_loadu_si512(data2 + i));                         \
-               _mm512_storeu_si512(out + i, A1);                               \
-               total = _mm512_add_epi64(total, popcount512(A1));               \
+            _mm512_storeu_si512(out + i, a);                                   \
+ 	       total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a));        \
         }                                                                      \
         return simd_sum_epu64(total);                                          \
     }                                                                          \

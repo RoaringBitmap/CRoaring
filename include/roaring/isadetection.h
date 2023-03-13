@@ -71,7 +71,12 @@ enum croaring_instruction_set {
   CROARING_BMI1 = 0x20,
   CROARING_BMI2 = 0x40,
   CROARING_ALTIVEC = 0x80,
-  CROARING_AVX512 =0x100,
+  CROARING_AVX512F = 0x100,
+  CROARING_AVX512DQ = 0x200,
+  CROARING_AVX512BW = 0x400,
+  CROARING_AVX512VBMI2 = 0x800,
+  CROARING_AVX512BITALG = 0x1000,
+  CROARING_AVX512VPOPCNTDQ = 0x2000,
   CROARING_UNINITIALIZED = 0x8000
 };
 
@@ -133,6 +138,11 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   static uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
   static uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
   static uint32_t cpuid_avx512f_bit = 1 << 16;  ///< @private bit 16 of EBX for EAX=0x7
+  static uint32_t cpuid_avx512dq_bit = 1 << 17; ///< @private bit 17 of EBX for EAX=0x7
+  static uint32_t cpuid_avx512bw_bit = 1 << 30; ///< @private bit 30 of EBX for EAX=0x7
+  static uint32_t cpuid_avx512vbmi2_bit = 1 << 6; ///< @private bit 6 of ECX for EAX=0x7
+  static uint32_t cpuid_avx512bitalg_bit = 1 << 12; ///< @private bit 12 of ECX for EAX=0x7
+  static uint32_t cpuid_avx512vpopcntdq_bit = 1 << 14; ///< @private bit 14 of ECX for EAX=0x7
   static uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
   static uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
   // ECX for EAX=0x7
@@ -151,9 +161,29 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   }
   
   if (ebx & cpuid_avx512f_bit) {
-    host_isa |= CROARING_AVX512;
+    host_isa |= CROARING_AVX512F;
   }
-
+  
+  if (ebx & cpuid_avx512bw_bit) {
+    host_isa |= CROARING_AVX512BW;
+  }
+  
+  if (ebx & cpuid_avx512dq_bit) {
+    host_isa |= CROARING_AVX512DQ;
+  }
+  
+  if (ecx & cpuid_avx512vbmi2_bit) {
+    host_isa |= CROARING_AVX512VBMI2;
+  }
+  
+  if (ecx & cpuid_avx512bitalg_bit) {
+    host_isa |= CROARING_AVX512BITALG;
+  }
+  
+  if (ecx & cpuid_avx512vpopcntdq_bit) {
+    host_isa |= CROARING_AVX512VPOPCNTDQ;
+  }
+  
   // EBX for EAX=0x1
   eax = 0x1;
   cpuid(&eax, &ebx, &ecx, &edx);
@@ -216,7 +246,7 @@ static inline bool croaring_avx2() {
 static inline bool croaring_avx512() {
   return false;
 }
-#elif defined(__AVX512F__)
+#elif defined(__AVX512F__) && defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VBMI2__) && defined(__AVX512BITALG__) && defined(__AVX512VPOPCNTDQ__)
 static inline bool croaring_avx2() {
   return true;
 }
@@ -235,7 +265,16 @@ static inline bool croaring_avx2() {
   return  (croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
 }
 static inline bool croaring_avx512() {
-  return  (croaring_detect_supported_architectures() & CROARING_AVX512) == CROARING_AVX512;
+  static bool avx512_support = false;
+  if( avx512_support )
+  {
+      return true;
+  }
+  else
+  {
+      avx512_support = ( (croaring_detect_supported_architectures() & (CROARING_AVX512F | CROARING_AVX512DQ | CROARING_AVX512BW | CROARING_AVX512VBMI2 | CROARING_AVX512BITALG | CROARING_AVX512VPOPCNTDQ)) 
+	  == (CROARING_AVX512F | CROARING_AVX512DQ | CROARING_AVX512BW | CROARING_AVX512VBMI2 | CROARING_AVX512BITALG | CROARING_AVX512VPOPCNTDQ));
+  }
 }
 #endif
 
