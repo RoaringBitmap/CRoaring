@@ -129,13 +129,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   // Safe read from serialized
   std::vector<char> read_buffer = fdp.ConsumeBytes<char>(100);
-  {
+  try {
     roaring::Roaring read_safely =
         roaring::Roaring::readSafe(read_buffer.data(), read_buffer.size());
     // The above is guaranteed to be safe. However, read_safely is maybe
     // in an improper state and it cannot be used safely (including for
     // reserialization).
-  }
+  } catch(...) {}
 
   // The bitmap b can be serialized and re-read.
   std::size_t expected_size_in_bytes = b.getSizeInBytes();
