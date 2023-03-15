@@ -349,6 +349,39 @@ int main() {
 }
 ```
 
+In some instances, you may want to convert a Roaring bitmap into a conventional (uncompressed) bitset.
+Indeed, bitsets have advantages such as higher query performances in some cases. The following code
+illustrates how you may do so:
+
+```C
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
+     roaring_bitmap_add(r1, i);
+    }
+    for (uint32_t i = 100000; i < 500000; i+= 100) {
+     roaring_bitmap_add(r1, i);
+    }
+    roaring_bitmap_add_range(r1, 500000, 600000);
+    bitset_t * bitset = bitset_create();
+    bool success = roaring_bitmap_to_bitset(r1, bitset);
+    assert(success); // could fail due to memory allocation.
+    assert(bitset_count(bitset) == roaring_bitmap_get_cardinality(r1));
+    // You can then query the bitset:
+    for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
+        assert(bitset_get(bitset,i));
+    }
+    for (uint32_t i = 100000; i < 500000; i+= 100) {
+        assert(bitset_get(bitset,i));
+    }
+    // you must free the memory:
+    bitset_free(bitset);
+    roaring_bitmap_free(r1);
+```
+
+You should be aware that a convention bitset (`bitset_t *`) may use much more
+memory than a Roaring bitmap in some cases. You should run benchmarks to determine
+whether the conversion to a bitset has performance benefits in your case.
+
 # Example (C++)
 
 

@@ -3347,6 +3347,49 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
     return rb;
 }
 
+bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t * bitset) {
+    uint32_t max_value = roaring_bitmap_maximum(r);
+    size_t new_array_size = (size_t)(((uint64_t)max_value + 63)/64);
+    bool resize_ok = bitset_resize(bitset, new_array_size, true);
+    if(!resize_ok) { return false; }
+    const roaring_array_t *ra = &r->high_low_container;
+    for (int i = 0; i < ra->size; ++i) {
+        uint64_t* words = (ra->keys[i]<<10) + bitset->array;
+        uint8_t type = ra->typecodes[i];
+        const container_t *c = ra->containers[i];
+        if(type == SHARED_CONTAINER_TYPE) {
+            c = container_unwrap_shared(c, &type);
+        }
+        switch (type) {
+          case BITSET_CONTAINER_TYPE:
+          {
+            size_t max_word_index = new_array_size - (ra->keys[i]<<10);
+            if(max_word_index > 1024) { max_word_index = 1024; }
+            const bitset_container_t *src = const_CAST_bitset(c);
+            for(size_t word_index = 0; word_index < max_word_index; word_index++) { words[word_index] = src->words[word_index];}
+          }
+          break;
+          case ARRAY_CONTAINER_TYPE:
+          {
+            const array_container_t *src = const_CAST_array(c);
+            bitset_set_list(words, src->array, src->cardinality);
+          }
+          break;
+          case RUN_CONTAINER_TYPE:
+          {
+            const run_container_t *src = const_CAST_run(c);
+            for (int32_t rlepos = 0; rlepos < src->n_runs; ++rlepos) {
+                rle16_t rle = src->runs[rlepos];
+                bitset_set_lenrange(words, rle.value, rle.length);
+            }
+          }
+          break;
+          default:
+          __builtin_unreachable();
+        }
+    }
+    return true;
+}
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring {

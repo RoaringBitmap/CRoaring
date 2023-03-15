@@ -17,6 +17,7 @@ MESSAGE( STATUS "ROARING_LIB_TYPE: " ${ROARING_LIB_TYPE})
 set(ROARING_SRC
     array_util.c
     bitset_util.c
+    bitset.c
     containers/array.c
     containers/bitset.c
     containers/containers.c
