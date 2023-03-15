@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <roaring/bitset/bitset.h>
+#include <roaring/portability.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,23 +146,23 @@ size_t bitset_count(const bitset_t *bitset) {
     size_t k = 0;
     // assumes that long long is 8 bytes
     for (; k + 7 < bitset->arraysize; k += 8) {
-        card += __builtin_popcountll(bitset->array[k]);
-        card += __builtin_popcountll(bitset->array[k + 1]);
-        card += __builtin_popcountll(bitset->array[k + 2]);
-        card += __builtin_popcountll(bitset->array[k + 3]);
-        card += __builtin_popcountll(bitset->array[k + 4]);
-        card += __builtin_popcountll(bitset->array[k + 5]);
-        card += __builtin_popcountll(bitset->array[k + 6]);
-        card += __builtin_popcountll(bitset->array[k + 7]);
+        card += hamming(bitset->array[k]);
+        card += hamming(bitset->array[k + 1]);
+        card += hamming(bitset->array[k + 2]);
+        card += hamming(bitset->array[k + 3]);
+        card += hamming(bitset->array[k + 4]);
+        card += hamming(bitset->array[k + 5]);
+        card += hamming(bitset->array[k + 6]);
+        card += hamming(bitset->array[k + 7]);
     }
     for (; k + 3 < bitset->arraysize; k += 4) {
-        card += __builtin_popcountll(bitset->array[k]);
-        card += __builtin_popcountll(bitset->array[k + 1]);
-        card += __builtin_popcountll(bitset->array[k + 2]);
-        card += __builtin_popcountll(bitset->array[k + 3]);
+        card += hamming(bitset->array[k]);
+        card += hamming(bitset->array[k + 1]);
+        card += hamming(bitset->array[k + 2]);
+        card += hamming(bitset->array[k + 3]);
     }
     for (; k < bitset->arraysize; k++) {
-        card += __builtin_popcountll(bitset->array[k]);
+        card += hamming(bitset->array[k]);
     }
     return card;
 }
@@ -263,35 +264,35 @@ size_t bitset_union_count(const bitset_t *CBITSET_RESTRICT b1,
         b1->arraysize < b2->arraysize ? b1->arraysize : b2->arraysize;
     size_t k = 0;
     for (; k + 3 < minlength; k += 4) {
-        answer += __builtin_popcountll(b1->array[k] | b2->array[k]);
-        answer += __builtin_popcountll(b1->array[k + 1] | b2->array[k + 1]);
-        answer += __builtin_popcountll(b1->array[k + 2] | b2->array[k + 2]);
-        answer += __builtin_popcountll(b1->array[k + 3] | b2->array[k + 3]);
+        answer += hamming(b1->array[k] | b2->array[k]);
+        answer += hamming(b1->array[k + 1] | b2->array[k + 1]);
+        answer += hamming(b1->array[k + 2] | b2->array[k + 2]);
+        answer += hamming(b1->array[k + 3] | b2->array[k + 3]);
     }
     for (; k < minlength; ++k) {
-        answer += __builtin_popcountll(b1->array[k] | b2->array[k]);
+        answer += hamming(b1->array[k] | b2->array[k]);
     }
     if (b2->arraysize > b1->arraysize) {
-        // k = b1->arraysize;
+        // k is equal to b1->arraysize
         for (; k + 3 < b2->arraysize; k += 4) {
-            answer += __builtin_popcountll(b2->array[k]);
-            answer += __builtin_popcountll(b2->array[k + 1]);
-            answer += __builtin_popcountll(b2->array[k + 2]);
-            answer += __builtin_popcountll(b2->array[k + 3]);
+            answer += hamming(b2->array[k]);
+            answer += hamming(b2->array[k + 1]);
+            answer += hamming(b2->array[k + 2]);
+            answer += hamming(b2->array[k + 3]);
         }
         for (; k < b2->arraysize; ++k) {
-            answer += __builtin_popcountll(b2->array[k]);
+            answer += hamming(b2->array[k]);
         }
     } else {
-        // k = b2->arraysize;
+        // k is equal to b2->arraysize
         for (; k + 3 < b1->arraysize; k += 4) {
-            answer += __builtin_popcountll(b1->array[k]);
-            answer += __builtin_popcountll(b1->array[k + 1]);
-            answer += __builtin_popcountll(b1->array[k + 2]);
-            answer += __builtin_popcountll(b1->array[k + 3]);
+            answer += hamming(b1->array[k]);
+            answer += hamming(b1->array[k + 1]);
+            answer += hamming(b1->array[k + 2]);
+            answer += hamming(b1->array[k + 3]);
         }
         for (; k < b1->arraysize; ++k) {
-            answer += __builtin_popcountll(b1->array[k]);
+            answer += hamming(b1->array[k]);
         }
     }
     return answer;
@@ -316,7 +317,7 @@ size_t bitset_intersection_count(const bitset_t *CBITSET_RESTRICT b1,
     size_t minlength =
         b1->arraysize < b2->arraysize ? b1->arraysize : b2->arraysize;
     for (size_t k = 0; k < minlength; ++k) {
-        answer += __builtin_popcountll(b1->array[k] & b2->array[k]);
+        answer += hamming(b1->array[k] & b2->array[k]);
     }
     return answer;
 }
@@ -338,10 +339,10 @@ size_t bitset_difference_count(const bitset_t *CBITSET_RESTRICT b1,
     size_t k = 0;
     size_t answer = 0;
     for (; k < minlength; ++k) {
-        answer += __builtin_popcountll(b1->array[k] & ~(b2->array[k]));
+        answer += hamming(b1->array[k] & ~(b2->array[k]));
     }
     for (; k < b1->arraysize; ++k) {
-        answer += __builtin_popcountll(b1->array[k]);
+        answer += hamming(b1->array[k]);
     }
     return answer;
 }
@@ -370,15 +371,15 @@ size_t bitset_symmetric_difference_count(const bitset_t *CBITSET_RESTRICT b1,
     size_t k = 0;
     size_t answer = 0;
     for (; k < minlength; ++k) {
-        answer += __builtin_popcountll(b1->array[k] ^ b2->array[k]);
+        answer += hamming(b1->array[k] ^ b2->array[k]);
     }
     if (b2->arraysize > b1->arraysize) {
         for (; k < b2->arraysize; ++k) {
-            answer += __builtin_popcountll(b2->array[k]);
+            answer += hamming(b2->array[k]);
         }
     } else {
         for (; k < b1->arraysize; ++k) {
-            answer += __builtin_popcountll(b1->array[k]);
+            answer += hamming(b1->array[k]);
         }
     }
     return answer;

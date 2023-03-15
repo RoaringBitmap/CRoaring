@@ -4411,7 +4411,7 @@ DEFINE_TEST(test_portable_deserialize_frozen) {
     free(serialized);
 }
 
-DEFINE_TEST(convert_all_bitset) {
+DEFINE_TEST(convert_to_bitset) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
      roaring_bitmap_add(r1, i);
@@ -4440,7 +4440,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(convert_all_bitset),
+        cmocka_unit_test(convert_to_bitset),
         cmocka_unit_test(issue440),
         cmocka_unit_test(issue436),
         cmocka_unit_test(issue433),

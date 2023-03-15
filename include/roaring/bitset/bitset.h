@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <roaring/portability.h>
 
 struct bitset_s {
     uint64_t *CBITSET_RESTRICT array;
