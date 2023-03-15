@@ -266,15 +266,13 @@ static inline bool croaring_avx2() {
 }
 static inline bool croaring_avx512() {
   static bool avx512_support = false;
-  if( avx512_support )
-  {
-      return true;
-  }
-  else
+
+  if( !avx512_support )
   {
       avx512_support = ( (croaring_detect_supported_architectures() & (CROARING_AVX512F | CROARING_AVX512DQ | CROARING_AVX512BW | CROARING_AVX512VBMI2 | CROARING_AVX512BITALG | CROARING_AVX512VPOPCNTDQ)) 
 	  == (CROARING_AVX512F | CROARING_AVX512DQ | CROARING_AVX512BW | CROARING_AVX512VBMI2 | CROARING_AVX512BITALG | CROARING_AVX512VPOPCNTDQ));
   }
+  return avx512_support;
 }
 #endif
 

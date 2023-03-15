@@ -339,7 +339,7 @@ static inline int hamming(uint64_t x) {
 #define CROARING_UNTARGET_REGION
 #endif
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__) && defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VBMI2__) && defined(__AVX512BITALG__) && defined(__AVX512VPOPCNTDQ__)
 // No need for runtime dispatching.
 // It is unnecessary and harmful to old clang to tag regions.
 #undef CROARING_TARGET_AVX512
