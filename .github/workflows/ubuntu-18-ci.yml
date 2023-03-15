@@ -4,6 +4,8 @@ name: Ubuntu-18-CI
   - push
   - pull_request
 
+permissions:
+  contents: read
 
 jobs:
   ci:
