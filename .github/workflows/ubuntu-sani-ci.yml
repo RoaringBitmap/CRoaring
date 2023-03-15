@@ -4,6 +4,8 @@ name: Ubuntu-Sanitized-CI
   - push
   - pull_request
 
+permissions:
+  contents: read
 
 jobs:
   ci:
