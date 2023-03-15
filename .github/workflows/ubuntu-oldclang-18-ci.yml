@@ -4,6 +4,8 @@ name: Ubuntu-CI (old llvm)
   - push
   - pull_request
 
+permissions:
+  contents: read
 
 jobs:
   ci:
