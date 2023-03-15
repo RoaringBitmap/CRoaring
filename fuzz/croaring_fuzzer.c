@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include "roaring/roaring.h"
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size){
 int LLVMFuzzerTestOneInput(const char *data, size_t size) {
     // We test that deserialization never fails.
     roaring_bitmap_t* bitmap = roaring_bitmap_portable_deserialize_safe(data, size);
