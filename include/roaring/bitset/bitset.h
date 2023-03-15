@@ -1,6 +1,15 @@
 #ifndef CBITSET_BITSET_H
 #define CBITSET_BITSET_H
-#include <roaring/bitset/portability.h>
+
+// For compatibility with MSVC with the use of `restrict`
+#if (__STDC_VERSION__ >= 199901L) || \
+    (defined(__GNUC__) && defined(__STDC_VERSION__))
+#define CBITSET_RESTRICT restrict
+#else
+#define CBITSET_RESTRICT
+#endif  // (__STDC_VERSION__ >= 199901L) || (defined(__GNUC__) &&
+        // defined(__STDC_VERSION__ ))
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
