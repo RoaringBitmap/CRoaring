@@ -2,6 +2,8 @@ name: Alpine Linux
 'on':
   - push
   - pull_request
+permissions:
+  contents: read
 jobs:
   ubuntu-build:
     runs-on: ubuntu-latest
