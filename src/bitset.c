@@ -122,16 +122,18 @@ void bitset_free(bitset_t *bitset) {
 /* Resize the bitset so that it can support newarraysize * 64 bits. Return true
  * in case of success, false for failure. */
 bool bitset_resize(bitset_t *bitset, size_t newarraysize, bool padwithzeroes) {
+    if(newarraysize > SIZE_MAX/64) { return false; }
     size_t smallest =
         newarraysize < bitset->arraysize ? newarraysize : bitset->arraysize;
     if (bitset->capacity < newarraysize) {
         uint64_t *newarray;
-        bitset->capacity = newarraysize * 2;
-        if ((newarray = (uint64_t *)realloc(
-                 bitset->array, sizeof(uint64_t) * bitset->capacity)) == NULL) {
-            free(bitset->array);
-            return false;
+        size_t newcapacity = bitset->capacity;
+        if(newcapacity == 0) { newcapacity = 1; }
+        while(newcapacity < newarraysize) { newcapacity *= 2; }
+        if ((newarray = (uint64_t *) realloc(bitset->array, sizeof(uint64_t) * newcapacity)) == NULL) {
+        return false;
         }
+        bitset->capacity = newcapacity;
         bitset->array = newarray;
     }
     if (padwithzeroes && (newarraysize > smallest))
@@ -144,7 +146,6 @@ bool bitset_resize(bitset_t *bitset, size_t newarraysize, bool padwithzeroes) {
 size_t bitset_count(const bitset_t *bitset) {
     size_t card = 0;
     size_t k = 0;
-    // assumes that long long is 8 bytes
     for (; k + 7 < bitset->arraysize; k += 8) {
         card += hamming(bitset->array[k]);
         card += hamming(bitset->array[k + 1]);
@@ -399,7 +400,6 @@ bool bitset_trim(bitset_t *bitset) {
     uint64_t *newarray;
     if ((newarray = (uint64_t *)realloc(
              bitset->array, sizeof(uint64_t) * bitset->capacity)) == NULL) {
-        free(bitset->array);
         return false;
     }
     bitset->array = newarray;

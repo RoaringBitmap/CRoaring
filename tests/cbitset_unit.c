@@ -10,7 +10,7 @@ void test_iterate() {
     for (int k = 0; k < 1000; ++k) bitset_set(b, 3 * k);
     assert_true(bitset_count(b) == 1000);
     size_t k = 0;
-    for (size_t i = 0; nextSetBit(b, &i); i++) {
+    for (size_t i = 0; bitset_next_set_bit(b, &i); i++) {
         assert_true(i == k);
         k += 3;
     }

@@ -349,6 +349,44 @@ int main() {
 }
 ```
 
+# Conventional bitsets (C)
+
+We support convention bitsets (uncompressed) as part of the library.
+
+Simple example:
+
+```C
+bitset_t * b = bitset_create();
+bitset_set(b,10);
+bitset_get(b,10);// returns true
+bitset_free(b); // frees memory
+```
+
+More advanced example:
+
+```C
+    bitset_t *b = bitset_create();
+    for (int k = 0; k < 1000; ++k) {
+        bitset_set(b, 3 * k);
+    }
+    // We have bitset_count(b) == 1000.
+    // We have bitset_get(b, 3) is true
+    // You can iterate through the values:
+    size_t k = 0;
+    for (size_t i = 0; bitset_next_set_bit(b, &i); i++) {
+        // You will have i == k
+        k += 3;
+    }
+    // We support a wide range of operations on two bitsets such as
+    // bitset_inplace_symmetric_difference(b1,b2);
+    // bitset_inplace_symmetric_difference(b1,b2);
+    // bitset_inplace_difference(b1,b2);// should make no difference
+    // bitset_inplace_union(b1,b2);
+    // bitset_inplace_intersection(b1,b2);
+    // bitsets_disjoint
+    // bitsets_intersect
+```
+
 In some instances, you may want to convert a Roaring bitmap into a conventional (uncompressed) bitset.
 Indeed, bitsets have advantages such as higher query performances in some cases. The following code
 illustrates how you may do so:
