@@ -808,7 +808,7 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
  * the bitmap is left in an unexpected state.
  * You should not attempt to modify the resulting bitmap, or serialize it.
  * The bitmap should only be used for contains operations.
- * You you must call 'roaring_bitmap_repair_after_lazy' before other operations.
+ * You must call 'roaring_bitmap_repair_after_lazy' before other operations.
  */
 void roaring_bitmap_convert_to_all_bitset(roaring_bitmap_t *r);
 
