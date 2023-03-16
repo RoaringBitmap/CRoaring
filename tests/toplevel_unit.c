@@ -129,8 +129,7 @@ DEFINE_TEST(convert_all_bitset) {
   roaring_array_t *ra = &r1->high_low_container;
 
   for (int i = 0; i < ra->size; ++i) {
-    const uint8_t old_type = ra->typecodes[i];
-    assert_true(BITSET_CONTAINER_TYPE == old_type);
+    assert_true(BITSET_CONTAINER_TYPE == ra->typecodes[i]);
   }
 
   assert_true(roaring_bitmap_equals(r1, r2));
