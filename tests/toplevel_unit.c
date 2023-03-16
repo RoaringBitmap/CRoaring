@@ -131,10 +131,23 @@ DEFINE_TEST(convert_all_bitset) {
   for (int i = 0; i < ra->size; ++i) {
     assert_true(BITSET_CONTAINER_TYPE == ra->typecodes[i]);
   }
-
+  
+  int64_t car1 = roaring_bitmap_get_cardinality(r1);
+  int64_t car2 = roaring_bitmap_get_cardinality(r2);
+  
+  assert_true(car1 == car2);
+  uint32_t* ans1 = malloc(car1 * sizeof(uint32_t));
+  roaring_bitmap_to_uint32_array(r1, ans1);
+  uint32_t* ans2 = malloc(car2 * sizeof(uint32_t));
+  roaring_bitmap_to_uint32_array(r2, ans2);
+  for (int i = 0; i < car1; ++i) {
+    assert_true(ans1[i] == ans2[i]);
+  }
   assert_true(roaring_bitmap_equals(r1, r2));
   roaring_bitmap_free(r1);
   roaring_bitmap_free(r2);
+  free(ans1);
+  free(ans2);
 }
 
 DEFINE_TEST(range_contains) {
