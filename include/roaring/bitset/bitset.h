@@ -17,6 +17,10 @@
 #include <string.h>
 #include <roaring/portability.h>
 
+#ifdef __cplusplus
+extern "C" { namespace roaring { namespace api {
+#endif
+
 struct bitset_s {
     uint64_t *CBITSET_RESTRICT array;
     /* For simplicity and performance, we prefer to have a size and a capacity that is a multiple of 64 bits.
@@ -288,5 +292,9 @@ static inline void bitset_print(const bitset_t *b) {
     }
     printf("}");
 }
+
+#ifdef __cplusplus
+} } } // extern "C" { namespace roaring { namespace api {
+#endif
 
 #endif
