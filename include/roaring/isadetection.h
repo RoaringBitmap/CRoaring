@@ -52,6 +52,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 #include <stdlib.h>
 
+
+#ifdef __has_include
+// We want to make sure that the AVX-512 functions are only built on compilers
+// fully supporting AVX-512.
+#if __has_include(<avx512vbmi2intrin.h>)
+#define CROARING_COMPILER_SUPPORTS_AVX512 1
+#endif
+#endif
+
 // We need portability.h to be included first, see
 // https://github.com/RoaringBitmap/CRoaring/issues/394
 #include <roaring/portability.h>
@@ -235,6 +244,7 @@ static inline bool croaring_avx2() {
   return true;
 }
 static inline bool croaring_avx512() {
+#if CROARING_COMPILER_SUPPORTS_AVX512
   // Even though we have set __AVX2__ at compile-time, it is still possible for the hardware
   // to support AVX-512. By setting __AVX2__, all we are saying is that croaring_avx2() must be true!
   static bool avx512_support = false;
@@ -245,12 +255,16 @@ static inline bool croaring_avx512() {
 	                        == CROARING_AVX512_REQUIRED);
   }
   return avx512_support;
+#else
+  return false;
+#endif
 }
 #else
 static inline bool croaring_avx2() {
   return  (croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
 }
 static inline bool croaring_avx512() {
+#if CROARING_COMPILER_SUPPORTS_AVX512
   static bool avx512_support = false;
 
   if( !avx512_support )
@@ -259,6 +273,9 @@ static inline bool croaring_avx512() {
 	                        == CROARING_AVX512_REQUIRED);
   }
   return avx512_support;
+#else
+  return false;
+#endif
 }
 #endif
 

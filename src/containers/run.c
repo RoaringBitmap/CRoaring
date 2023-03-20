@@ -831,7 +831,7 @@ int run_container_rank(const run_container_t *container, uint16_t x) {
     return sum;
 }
 
-#ifdef CROARING_IS_X64
+#if defined(CROARING_IS_X64) && CROARING_COMPILER_SUPPORTS_AVX512
 
 CROARING_TARGET_AVX512
 ALLOW_UNALIGNED

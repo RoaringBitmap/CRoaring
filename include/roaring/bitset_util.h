@@ -581,7 +581,8 @@ CROARING_UNTARGET_REGION
     const __m512i v##i = _mm512_loadu_si512((const __m512i*)ptr + i);  \
     const __m512i p##i = _mm512_popcnt_epi64(v##i);    \
     accu = _mm512_add_epi64(accu, p##i);  
- 
+
+#if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 static inline uint64_t sum_epu64_256(const __m256i v) {
 
@@ -622,6 +623,7 @@ static inline uint64_t avx512_vpopcount(const __m512i* data, const uint64_t size
     return simd_sum_epu64(total);
 }
 CROARING_UNTARGET_REGION
+#endif
 
 #define AVXPOPCNTFNC512(opname, avx_intrinsic)                                 \
     static inline uint64_t avx512_harley_seal_popcount512_##opname(            \
@@ -683,6 +685,7 @@ CROARING_UNTARGET_REGION
         return simd_sum_epu64(total);                                          \
     }                                                                          \
 
+#if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 AVXPOPCNTFNC512(or, _mm512_or_si512)
 AVXPOPCNTFNC512(union, _mm512_or_si512)
@@ -691,6 +694,7 @@ AVXPOPCNTFNC512(intersection, _mm512_and_si512)
 AVXPOPCNTFNC512(xor, _mm512_xor_si512)
 AVXPOPCNTFNC512(andnot, _mm512_andnot_si512)
 CROARING_UNTARGET_REGION
+#endif
 /***
  * END Harley-Seal popcount functions.
  */

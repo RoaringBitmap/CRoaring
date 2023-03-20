@@ -257,12 +257,14 @@ static inline int _scalar_bitset_container_compute_cardinality(const bitset_cont
 }
 /* Get the number of bits set (force computation) */
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+#if CROARING_COMPILER_SUPPORTS_AVX512
     if( croaring_avx512() ) {
       return (int) avx512_vpopcount(
         (const __m512i *)bitset->words,
         BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));
-    }
-    else if( croaring_avx2() ) {
+    } else
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+    if( croaring_avx2() ) {
       return (int) avx2_harley_seal_popcount256(
         (const __m256i *)bitset->words,
         BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX2_REG));
@@ -407,6 +409,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 
 // we duplicate the function because other containers use the "or" term, makes API more consistent
+#if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, or,    |, _mm512_or_si512, vorrq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
@@ -474,6 +477,7 @@ CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
 AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, andnot, &~, _mm512_or_si512, vbicq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
 
 #ifndef WORDS_IN_AVX2_REG
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
@@ -693,6 +697,7 @@ SCALAR_BITSET_CONTAINER_FN(intersection, &, _mm256_and_si256, vandq_u64)
 SCALAR_BITSET_CONTAINER_FN(xor,    ^,  _mm256_xor_si256,    veorq_u64)
 SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
 
+#if CROARING_COMPILER_SUPPORTS_AVX512
 
 #define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)   \
   int bitset_container_##opname(const bitset_container_t *src_1,               \
@@ -732,7 +737,38 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
     }                                                                          \
   }
 
+#else // CROARING_COMPILER_SUPPORTS_AVX512
 
+
+#define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)   \
+  int bitset_container_##opname(const bitset_container_t *src_1,               \
+                                const bitset_container_t *src_2,               \
+                                bitset_container_t *dst) {                     \
+    if ( croaring_avx2() ) {                                                   \
+      return _avx2_bitset_container_##opname(src_1, src_2, dst);               \
+    } else {                                                                   \
+      return _scalar_bitset_container_##opname(src_1, src_2, dst);             \
+    }                                                                          \
+  }                                                                            \
+  int bitset_container_##opname##_nocard(const bitset_container_t *src_1,      \
+                                         const bitset_container_t *src_2,      \
+                                         bitset_container_t *dst) {            \
+    if ( croaring_avx2() ) {                                                   \
+      return _avx2_bitset_container_##opname##_nocard(src_1, src_2, dst);      \
+    } else {                                                                   \
+      return _scalar_bitset_container_##opname##_nocard(src_1, src_2, dst);    \
+    }                                                                          \
+  }                                                                            \
+  int bitset_container_##opname##_justcard(const bitset_container_t *src_1,    \
+                                           const bitset_container_t *src_2) {  \
+    if ( croaring_avx2() ) {                                                   \
+      return _avx2_bitset_container_##opname##_justcard(src_1, src_2);         \
+    } else {                                                                   \
+      return _scalar_bitset_container_##opname##_justcard(src_1, src_2);       \
+    }                                                                          \
+  }
+
+#endif //  CROARING_COMPILER_SUPPORTS_AVX512
 
 #elif defined(USENEON)
 
@@ -1016,7 +1052,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
   return true;
 }
 
-#ifdef CROARING_IS_X64
+#if defined(CROARING_IS_X64) && CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 ALLOW_UNALIGNED
 static inline bool _avx512_bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
