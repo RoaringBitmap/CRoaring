@@ -544,7 +544,7 @@ To build with at least Visual Studio 2017 directly in the IDE:
 - For testing, in the Standard toolbar, drop the ``Select Startup Item...`` menu and choose one of the tests. Run the test by pressing the button to the left of the dropdown.
 
 
-We have optimizations specific to AVX2 in the code, and they are turned dynamically based on the detected hardware at runtime.
+We have optimizations specific to AVX2 and AVX-512 in the code, and they are turned dynamically based on the detected hardware at runtime.
 
 
 ## Usage (Using `conan`)
@@ -587,9 +587,11 @@ These commands will also print out instructions on how to use the library from M
 
 If you find the version of `roaring` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submiting an issue or by creating a PR.
 
-# AVX2-related throttling
+# SIMD-related throttling
 
-Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.
+Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors. 
+
+Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.
 
 # Thread safety
 
