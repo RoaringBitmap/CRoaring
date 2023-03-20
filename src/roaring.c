@@ -1592,7 +1592,7 @@ static bool loadlastvalue(roaring_uint32_iterator_t* newit) {
             while ((word = bitset_container->words[wordindex]) == 0)
                 --wordindex;
 
-            int num_leading_zeros = roaring_trailing_zeroes(word);
+            int num_leading_zeros = roaring_leading_zeroes(word);
             newit->in_container_index = (wordindex * 64) + (63 - num_leading_zeros);
             newit->current_value = newit->highbits | newit->in_container_index;
             break;
