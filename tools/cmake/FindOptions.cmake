@@ -36,6 +36,14 @@ else()
 endif()
 endif()
 
+if(FORCE_AVX512) # some compilers like clang do not automagically define __AVX512__ even when the hardware supports it
+if(NOT MSVC)
+   set (OPT_FLAGS "${OPT_FLAGS} -mbmi2 -mavx512f -mavx512bw -mavx512dq -mavx512vbmi2 -mavx512bitalg -mavx512vpopcntdq")
+else()
+   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX512")
+endif()
+endif()
+
 if(NOT MSVC)
 set(STD_FLAGS "-std=c11 -fPIC")
 set(CXXSTD_FLAGS "-std=c++11 -fPIC")
