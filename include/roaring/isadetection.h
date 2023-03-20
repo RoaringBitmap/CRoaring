@@ -61,9 +61,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif
 
-// Visual Studio 2022 and better supports AVX-512 fully.
-#ifndef CROARING_COMPILER_SUPPORTS_AVX512
-#if defined(_MSC_VER) && _MSC_VER >= 1930
+// Visual Studio 2019 and up support AVX-512
+#ifdef _MSC_VER
+#if _MSC_VER >= 1920
 #define CROARING_COMPILER_SUPPORTS_AVX512 1
 #endif
 #endif
