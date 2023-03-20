@@ -611,6 +611,7 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint3
 
 }
 
+// Reference: https://lemire.me/blog/2022/05/10/faster-bitset-decoding-using-intel-avx-512/
 size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array, size_t length,
                                      uint16_t *vout, size_t capacity, uint16_t base) {
     uint16_t *out = (uint16_t *)vout;
@@ -635,7 +636,7 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array, size_t length
         r1 = _mm512_add_epi16(r1, vbase);
         r2 = _mm512_add_epi16(r2, vbase);
 
-	_mm512_storeu_si512((__m512i *)out, r1);
+	    _mm512_storeu_si512((__m512i *)out, r1);
         _mm512_storeu_si512((__m512i *)(out + 32), r2);
         out += advance;
 

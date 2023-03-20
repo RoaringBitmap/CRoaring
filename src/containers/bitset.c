@@ -57,12 +57,12 @@ bitset_container_t *bitset_container_create(void) {
     size_t align_size = 32;
 #ifdef CROARING_IS_X64     
     if ( croaring_avx512() ) {
-	// sizeof(__m512i) == 64
-	align_size = 64;
+	    // sizeof(__m512i) == 64
+	    align_size = 64;
     }
     else {
-        // sizeof(__m256i) == 32
-	align_size = 32; 
+      // sizeof(__m256i) == 32
+	    align_size = 32;
     }
 #endif
     bitset->words = (uint64_t *)roaring_aligned_malloc(
@@ -132,12 +132,12 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     size_t align_size = 32;
 #ifdef CROARING_IS_X64     
     if ( croaring_avx512() ) {
-	// sizeof(__m512i) == 64
-	align_size = 64;
+	    // sizeof(__m512i) == 64
+	    align_size = 64;
     }
     else {
-        // sizeof(__m256i) == 32
-	align_size = 32; 
+      // sizeof(__m256i) == 32
+	    align_size = 32;
     }
 #endif
     bitset->words = (uint64_t *)roaring_aligned_malloc(
