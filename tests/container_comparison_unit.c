@@ -44,7 +44,7 @@ static inline void delegated_add(container_t *container, uint8_t typecode,
             break;
         default:
             assert(false);
-            __builtin_unreachable();
+            roaring_unreachable;
     }
 }
 
@@ -62,7 +62,7 @@ static inline container_t *container_create(uint8_t typecode) {
             break;
         default:
             assert(false);
-            __builtin_unreachable();
+            roaring_unreachable;
     }
     assert_non_null(result);
     return result;

@@ -298,7 +298,7 @@ container_t *convert_run_optimize(
         return answer;
     } else {
         assert(false);
-        __builtin_unreachable();
+        roaring_unreachable;
         return NULL;
     }
 }

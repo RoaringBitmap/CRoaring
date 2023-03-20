@@ -198,16 +198,17 @@ inline int roaring_leading_zeroes(unsigned long long input_num) {
 }
 
 /* Use #define so this is effective even under /Ob0 (no inline) */
-#define __builtin_unreachable() __assume(0)
+#define roaring_unreachable __assume(0)
 #endif // __clang__
 
 #endif // CROARING_REGULAR_VISUAL_STUDIO
 
 #ifndef CROARING_INTRINSICS
 #define CROARING_INTRINSICS 1
-
-inline int roaring_trailing_zeroes(unsigned long long input_num) { return __builtin_ctzll(input_num); }
-inline int roaring_leading_zeroes(unsigned long long input_num) { return __builtin_clzll(input_num); }
+#define roaring_unreachable __builtin_unreachable()
+static inline int roaring_trailing_zeroes(unsigned long long input_num) { return __builtin_ctzll(input_num); }
+static inline int roaring_trailing_zeroes(unsigned long long input_num) { return __builtin_ctzll(input_num); }
+static  inline int roaring_leading_zeroes(unsigned long long input_num) { return __builtin_clzll(input_num); }
 
 #endif
 
