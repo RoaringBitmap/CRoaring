@@ -49,10 +49,13 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
         array_container_create_given_capacity(bits->cardinality);
     result->cardinality = bits->cardinality;
 #if CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
     if( croaring_avx512() ) {
         bitset_extract_setbits_avx512_uint16(bits->words, BITSET_CONTAINER_SIZE_IN_WORDS,
                                   result->array, bits->cardinality , 0);
-    } else {
+    } else
+#endif
+    {
         //  sse version ends up being slower here
         // (bitset_extract_setbits_sse_uint16)
         // because of the sparsity of the data
@@ -65,7 +68,7 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
                                   result->array, 0);
 #endif
 
-	
+
     return result;
 }
 

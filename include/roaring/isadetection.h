@@ -61,6 +61,13 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif
 
+// Visual Studio 2022 and better supports AVX-512 fully.
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#if defined(_MSC_VER) && _MSC_VER >= 1930
+#define CROARING_COMPILER_SUPPORTS_AVX512 1
+#endif
+#endif
+
 // We need portability.h to be included first, see
 // https://github.com/RoaringBitmap/CRoaring/issues/394
 #include <roaring/portability.h>

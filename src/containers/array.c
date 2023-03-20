@@ -381,7 +381,7 @@ void array_container_intersection_inplace(array_container_t *src_1,
 #else
         src_1->cardinality = intersect_uint16(
                         src_1->array, card_1, src_2->array, card_2, src_1->array);
-#endif       
+#endif
     }
 }
 

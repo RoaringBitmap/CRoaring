@@ -55,7 +55,7 @@ bitset_container_t *bitset_container_create(void) {
     }
 
     size_t align_size = 32;
-#ifdef CROARING_IS_X64     
+#ifdef CROARING_IS_X64
     if ( croaring_avx512() ) {
 	    // sizeof(__m512i) == 64
 	    align_size = 64;
@@ -130,7 +130,7 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     }
 
     size_t align_size = 32;
-#ifdef CROARING_IS_X64     
+#ifdef CROARING_IS_X64
     if ( croaring_avx512() ) {
 	    // sizeof(__m512i) == 64
 	    align_size = 64;
@@ -391,10 +391,10 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const __m512i * __restrict__ words_1 = (const __m512i *) src_1->words;             \
     const __m512i * __restrict__ words_2 = (const __m512i *) src_2->words;             \
     __m512i *out = (__m512i *) dst->words;                                             \
-    dst->cardinality = (int32_t)avx512_harley_seal_popcount512andstore_##opname(words_2, \
-    		words_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));        \
-    return dst->cardinality;                                                             \
-  }                                                                            
+    dst->cardinality = (int32_t)avx512_harley_seal_popcount512andstore_##opname(words_2,\
+				words_1, out,BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));           \
+    return dst->cardinality;                                                            \
+  }
 
 #define AVX512_BITSET_CONTAINER_FN3(before, opname, opsymbol, avx_intrinsic,            \
                                 neon_intrinsic, after)                                  \
@@ -404,7 +404,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const __m512i * __restrict__ data1 = (const __m512i *) src_1->words;                \
     const __m512i * __restrict__ data2 = (const __m512i *) src_2->words;                \
     return (int)avx512_harley_seal_popcount512_##opname(data2,                          \
-    		data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));             \
+				data1, BITSET_CONTAINER_SIZE_IN_WORDS / (WORDS_IN_AVX512_REG));                 \
   }
 
 
@@ -927,10 +927,13 @@ int bitset_container_to_uint32_array(
     uint32_t base
 ){
 #ifdef CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
    if(( croaring_avx512() ) &&  (bc->cardinality >= 8192))  // heuristic
 		return (int) bitset_extract_setbits_avx512(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, bc->cardinality, base);
-   else if(( croaring_avx2() ) &&  (bc->cardinality >= 8192))  // heuristic
+   else
+#endif
+   if(( croaring_avx2() ) &&  (bc->cardinality >= 8192))  // heuristic
 		return (int) bitset_extract_setbits_avx2(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, bc->cardinality, base);
 	else
@@ -1052,7 +1055,8 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
   return true;
 }
 
-#if defined(CROARING_IS_X64) && CROARING_COMPILER_SUPPORTS_AVX512
+#ifdef CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 ALLOW_UNALIGNED
 static inline bool _avx512_bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
@@ -1069,7 +1073,7 @@ static inline bool _avx512_bitset_container_equals(const bitset_container_t *con
 	return true;
 }
 CROARING_UNTARGET_REGION
-
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX2
 ALLOW_UNALIGNED
 static inline bool _avx2_bitset_container_equals(const bitset_container_t *container1, const bitset_container_t *container2) {
@@ -1099,10 +1103,13 @@ bool bitset_container_equals(const bitset_container_t *container1, const bitset_
     }
   }
 #ifdef CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
   if( croaring_avx512() ) {
     return _avx512_bitset_container_equals(container1, container2);
   }
-  else if( croaring_avx2() ) {
+  else
+#endif
+  if( croaring_avx2() ) {
     return _avx2_bitset_container_equals(container1, container2);
   }
 #endif

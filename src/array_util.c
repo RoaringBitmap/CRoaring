@@ -1983,7 +1983,8 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
     }
 #endif
 }
-#if defined(CROARING_IS_X64) && CROARING_COMPILER_SUPPORTS_AVX512
+#ifdef CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 static inline bool _avx512_memequals(const void *s1, const void *s2, size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
@@ -2041,6 +2042,7 @@ static inline bool _avx512_memequals(const void *s1, const void *s2, size_t n) {
     return true;
 }
 CROARING_UNTARGET_REGION
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
 
 CROARING_TARGET_AVX2
 static inline bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
