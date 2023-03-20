@@ -72,26 +72,9 @@ static inline size_t bitset_size_in_words(const bitset_t *bitset) {
 
 /* For advanced users: Grow the bitset so that it can support newarraysize * 64 bits with padding.
  * Return true in case of success, false for failure. */
-static inline bool bitset_grow(bitset_t *bitset, size_t newarraysize) {
-    if(newarraysize > SIZE_MAX/64) { return false; }
-    if (bitset->capacity < newarraysize) {
-        uint64_t *newarray;
-        size_t newcapacity = bitset->capacity;
-        if(newcapacity == 0) { newcapacity = 1; }
-        while(newcapacity < newarraysize) { newcapacity *= 2; }
-        if ((newarray = (uint64_t *) realloc(bitset->array, sizeof(uint64_t) * newcapacity)) == NULL) {
-        return false;
-        }
-        bitset->capacity = newcapacity;
-        bitset->array = newarray;
-    }
-    memset(bitset->array + bitset->arraysize, 0,
-           sizeof(uint64_t) * (newarraysize - bitset->arraysize));
-    bitset->arraysize = newarraysize;
-    return true;  // success!
-}
+bool bitset_grow(bitset_t *bitset, size_t newarraysize);
 
-/* attempts to recover unused memory, return false in case of reallocation
+/* attempts to recover unused memory, return false in case of roaring_reallocation
  * failure */
 bool bitset_trim(bitset_t *bitset);
 
@@ -144,10 +127,10 @@ static inline bool bitset_get(const bitset_t *bitset, size_t i) {
 /* Count number of bits set.  */
 size_t bitset_count(const bitset_t *bitset);
 
-/* Find the index of the first bit set.  */
+/* Find the index of the first bit set. Or zero if the bitset is empty.  */
 size_t bitset_minimum(const bitset_t *bitset);
 
-/* Find the index of the last bit set.  */
+/* Find the index of the last bit set. Or zero if the bitset is empty.  */
 size_t bitset_maximum(const bitset_t *bitset);
 
 /* compute the union in-place (to b1), returns true if successful, to generate a
@@ -169,13 +152,13 @@ size_t bitset_intersection_count(const bitset_t *CBITSET_RESTRICT b1,
                                  const bitset_t *CBITSET_RESTRICT b2);
 
 /* returns true if the bitsets contain no common elements */
-bool bitsets_disjoint(const bitset_t *b1, const bitset_t *b2);
+bool bitsets_disjoint(const bitset_t *CBITSET_RESTRICT b1, const bitset_t *CBITSET_RESTRICT b2);
 
 /* returns true if the bitsets contain any common elements */
-bool bitsets_intersect(const bitset_t *b1, const bitset_t *b2);
+bool bitsets_intersect(const bitset_t *CBITSET_RESTRICT b1, const bitset_t *CBITSET_RESTRICT b2);
 
 /* returns true if b1 contains all of the set bits of b2 */
-bool bitset_contains_all(const bitset_t *b1, const bitset_t *b2);
+bool bitset_contains_all(const bitset_t *CBITSET_RESTRICT b1, const bitset_t *CBITSET_RESTRICT b2);
 
 /* compute the difference in-place (to b1), to generate a new bitset first call
  * bitset_copy */
@@ -209,14 +192,14 @@ static inline bool bitset_next_set_bit(const bitset_t *bitset, size_t *i) {
     uint64_t w = bitset->array[x];
     w >>= (*i & 63);
     if (w != 0) {
-        *i += __builtin_ctzll(w);
+        *i += roaring_trailing_zeroes(w);
         return true;
     }
     x++;
     while (x < bitset->arraysize) {
         w = bitset->array[x];
         if (w != 0) {
-            *i = x * 64 + __builtin_ctzll(w);
+            *i = x * 64 + roaring_trailing_zeroes(w);
             return true;
         }
         x++;
@@ -247,7 +230,7 @@ static inline size_t bitset_next_set_bits(const bitset_t *bitset, size_t *buffer
     while (howmany < capacity) {
         while (w != 0) {
             uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            int r = roaring_trailing_zeroes(w);
             buffer[howmany++] = r + base;
             if (howmany == capacity) goto end;
             w ^= t;
@@ -276,7 +259,7 @@ static inline bool bitset_for_each(const bitset_t *b, bitset_iterator iterator,
         uint64_t w = b->array[i];
         while (w != 0) {
             uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            int r = roaring_trailing_zeroes(w);
             if (!iterator(r + base, ptr)) return false;
             w ^= t;
         }

@@ -3354,7 +3354,7 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t * bitset) {
     if(!resize_ok) { return false; }
     const roaring_array_t *ra = &r->high_low_container;
     for (int i = 0; i < ra->size; ++i) {
-        uint64_t* words = (ra->keys[i]<<10) + bitset->array;
+        uint64_t* words = bitset->array + (ra->keys[i]<<10);
         uint8_t type = ra->typecodes[i];
         const container_t *c = ra->containers[i];
         if(type == SHARED_CONTAINER_TYPE) {
@@ -3366,7 +3366,7 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t * bitset) {
             size_t max_word_index = new_array_size - (ra->keys[i]<<10);
             if(max_word_index > 1024) { max_word_index = 1024; }
             const bitset_container_t *src = const_CAST_bitset(c);
-            for(size_t word_index = 0; word_index < max_word_index; word_index++) { words[word_index] = src->words[word_index];}
+            memcpy(words, src->words, max_word_index * sizeof(uint64_t));
           }
           break;
           case ARRAY_CONTAINER_TYPE:

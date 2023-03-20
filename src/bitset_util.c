@@ -7,7 +7,7 @@
 #include <roaring/bitset_util.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" { namespace roaring { namespace api {
 #endif
 
 #ifdef CROARING_IS_X64
@@ -594,7 +594,7 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
         uint64_t w = words[i];
         while ((w != 0) && (out < safeout)) {
             uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
-            int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
+            int r = roaring_trailing_zeroes(w); // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
@@ -615,7 +615,7 @@ size_t bitset_extract_setbits(const uint64_t *words, size_t length,
         uint64_t w = words[i];
         while (w != 0) {
             uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
-            int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
+            int r = roaring_trailing_zeroes(w); // on x64, should compile to TZCNT
             uint32_t val = r + base;
             memcpy(out + outpos, &val,
                    sizeof(uint32_t));  // should be compiled as a MOV on x64
@@ -636,7 +636,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ 
         uint64_t w = words1[i] & words2[i];
         while (w != 0) {
             uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            int r = roaring_trailing_zeroes(w);
             out[outpos++] = r + base;
             w ^= t;
         }
@@ -700,7 +700,7 @@ size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
         uint64_t w = words[i];
         while ((w != 0) && (out < safeout)) {
             uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            int r = roaring_trailing_zeroes(w);
             *out = r + base;
             out++;
             w ^= t;
@@ -728,7 +728,7 @@ size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
         uint64_t w = words[i];
         while (w != 0) {
             uint64_t t = w & (~w + 1);
-            int r = __builtin_ctzll(w);
+            int r = roaring_trailing_zeroes(w);
             out[outpos++] = r + base;
             w ^= t;
         }
@@ -1006,5 +1006,5 @@ void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length) {
 }
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace internal {
+} } }  // extern "C" { namespace roaring { namespace api {
 #endif

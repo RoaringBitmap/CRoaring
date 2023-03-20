@@ -223,10 +223,10 @@ static inline int _scalar_bitset_container_compute_cardinality(const bitset_cont
   const uint64_t *words = bitset->words;
   int32_t sum = 0;
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
-          sum += hamming(words[i]);
-          sum += hamming(words[i + 1]);
-          sum += hamming(words[i + 2]);
-          sum += hamming(words[i + 3]);
+          sum += roaring_hamming(words[i]);
+          sum += roaring_hamming(words[i + 1]);
+          sum += roaring_hamming(words[i + 2]);
+          sum += roaring_hamming(words[i + 3]);
   }
   return sum;
 }
@@ -242,7 +242,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     }
 }
 
-#elif defined(USENEON)
+#elif defined(CROARING_USENEON)
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     uint16x8_t n0 = vdupq_n_u16(0);
     uint16x8_t n1 = vdupq_n_u16(0);
@@ -273,10 +273,10 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     const uint64_t *words = bitset->words;
     int32_t sum = 0;
     for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 4) {
-        sum += hamming(words[i]);
-        sum += hamming(words[i + 1]);
-        sum += hamming(words[i + 2]);
-        sum += hamming(words[i + 3]);
+        sum += roaring_hamming(words[i]);
+        sum += roaring_hamming(words[i + 1]);
+        sum += roaring_hamming(words[i + 2]);
+        sum += roaring_hamming(words[i + 3]);
     }
     return sum;
 }
@@ -461,8 +461,8 @@ CROARING_UNTARGET_REGION
                      word_2 = (words_1[i + 1]) opsymbol(words_2[i + 1]);       \
       out[i] = word_1;                                                         \
       out[i + 1] = word_2;                                                     \
-      sum += hamming(word_1);                                                  \
-      sum += hamming(word_2);                                                  \
+      sum += roaring_hamming(word_1);                                                  \
+      sum += roaring_hamming(word_2);                                                  \
     }                                                                          \
     dst->cardinality = sum;                                                    \
     return dst->cardinality;                                                   \
@@ -487,8 +487,8 @@ CROARING_UNTARGET_REGION
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {           \
       const uint64_t word_1 = (words_1[i])opsymbol(words_2[i]),                \
                      word_2 = (words_1[i + 1]) opsymbol(words_2[i + 1]);       \
-      sum += hamming(word_1);                                                  \
-      sum += hamming(word_2);                                                  \
+      sum += roaring_hamming(word_1);                                                  \
+      sum += roaring_hamming(word_2);                                                  \
     }                                                                          \
     return sum;                                                                \
   }
@@ -536,7 +536,7 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
 
 
 
-#elif defined(USENEON)
+#elif defined(CROARING_USENEON)
 
 #define BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)  \
 int bitset_container_##opname(const bitset_container_t *src_1,                \
@@ -639,8 +639,8 @@ int bitset_container_##opname(const bitset_container_t *src_1,            \
                        word_2 = (words_1[i + 1])opsymbol(words_2[i + 1]); \
         out[i] = word_1;                                                  \
         out[i + 1] = word_2;                                              \
-        sum += hamming(word_1);                                    \
-        sum += hamming(word_2);                                    \
+        sum += roaring_hamming(word_1);                                    \
+        sum += roaring_hamming(word_2);                                    \
     }                                                                     \
     dst->cardinality = sum;                                               \
     return dst->cardinality;                                              \
@@ -665,8 +665,8 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {      \
         const uint64_t word_1 = (words_1[i])opsymbol(words_2[i]),         \
                        word_2 = (words_1[i + 1])opsymbol(words_2[i + 1]); \
-        sum += hamming(word_1);                                    \
-        sum += hamming(word_2);                                    \
+        sum += roaring_hamming(word_1);                                    \
+        sum += roaring_hamming(word_2);                                    \
     }                                                                     \
     return sum;                                                           \
 }
@@ -716,7 +716,7 @@ void bitset_container_printf(const bitset_container_t * v) {
 		uint64_t w = v->words[i];
 		while (w != 0) {
 			uint64_t t = w & (~w + 1);
-			int r = __builtin_ctzll(w);
+			int r = roaring_trailing_zeroes(w);
 			if(iamfirst) {// predicted to be false
 				printf("%u",base + r);
 				iamfirst = false;
@@ -740,7 +740,7 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 		uint64_t w = v->words[i];
 		while (w != 0) {
 			uint64_t t = w & (~w + 1);
-			int r = __builtin_ctzll(w);
+			int r = roaring_trailing_zeroes(w);
 			if(iamfirst) {// predicted to be false
 				printf("%u", r + base);
 				iamfirst = false;
@@ -762,11 +762,11 @@ int bitset_container_number_of_runs(bitset_container_t *bc) {
   for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS-1; ++i) {
     uint64_t word = next_word;
     next_word = bc->words[i+1];
-    num_runs += hamming((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
+    num_runs += roaring_hamming((~word) & (word << 1)) + ( (word >> 63) & ~next_word);
   }
 
   uint64_t word = next_word;
-  num_runs += hamming((~word) & (word << 1));
+  num_runs += roaring_hamming((~word) & (word << 1));
   if((word & 0x8000000000000000ULL) != 0)
     num_runs++;
   return num_runs;
@@ -792,7 +792,7 @@ bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
     uint64_t w = cont->words[i];
     while (w != 0) {
       uint64_t t = w & (~w + 1);
-      int r = __builtin_ctzll(w);
+      int r = roaring_trailing_zeroes(w);
       if(!iterator(r + base, ptr)) return false;
       w ^= t;
     }
@@ -806,7 +806,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
     uint64_t w = cont->words[i];
     while (w != 0) {
       uint64_t t = w & (~w + 1);
-      int r = __builtin_ctzll(w);
+      int r = roaring_trailing_zeroes(w);
       if(!iterator(high_bits | (uint64_t)(r + base), ptr)) return false;
       w ^= t;
     }
@@ -878,13 +878,13 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
     const uint64_t *words = container->words;
     int32_t size;
     for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 1) {
-        size = hamming(words[i]);
+        size = roaring_hamming(words[i]);
         if(rank <= *start_rank + size) {
             uint64_t w = container->words[i];
             uint16_t base = i*64;
             while (w != 0) {
                 uint64_t t = w & (~w + 1);
-                int r = __builtin_ctzll(w);
+                int r = roaring_trailing_zeroes(w);
                 if(*start_rank == rank) {
                     *element = r+base;
                     return true;
@@ -906,7 +906,7 @@ uint16_t bitset_container_minimum(const bitset_container_t *container) {
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = container->words[i];
     if (w != 0) {
-      int r = __builtin_ctzll(w);
+      int r = roaring_trailing_zeroes(w);
       return r + i * 64;
     }
   }
@@ -918,7 +918,7 @@ uint16_t bitset_container_maximum(const bitset_container_t *container) {
   for (int32_t i = BITSET_CONTAINER_SIZE_IN_WORDS - 1; i > 0; --i ) {
     uint64_t w = container->words[i];
     if (w != 0) {
-      int r = __builtin_clzll(w);
+      int r = roaring_leading_zeroes(w);
       return i * 64 + 63  - r;
     }
   }
@@ -931,12 +931,12 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
   int sum = 0;
   int i = 0;
   for (int end = x / 64; i < end; i++){
-    sum += hamming(container->words[i]);
+    sum += roaring_hamming(container->words[i]);
   }
   uint64_t lastword = container->words[i];
   uint64_t lastpos = UINT64_C(1) << (x % 64);
   uint64_t mask = lastpos + lastpos - 1; // smear right
-  sum += hamming(lastword & mask);
+  sum += roaring_hamming(lastword & mask);
   return sum;
 }
 
@@ -952,7 +952,7 @@ int bitset_container_index_equalorlarger(const bitset_container_t *container, ui
     if(k == BITSET_CONTAINER_SIZE_IN_WORDS) return -1;
     word = container->words[k];
   }
-  return k * 64 + __builtin_ctzll(word);
+  return k * 64 + roaring_trailing_zeroes(word);
 }
 
 #ifdef __cplusplus
