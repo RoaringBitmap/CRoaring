@@ -121,6 +121,7 @@ void bitset_shift_right(bitset_t *bitset, size_t s) {
 
 /* Free memory. */
 void bitset_free(bitset_t *bitset) {
+    if(bitset == NULL) { return; }
     roaring_free(bitset->array);
     roaring_free(bitset);
 }

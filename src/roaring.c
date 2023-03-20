@@ -454,6 +454,7 @@ bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
 }
 
 void roaring_bitmap_free(const roaring_bitmap_t *r) {
+    if(r == NULL) { return; }
     if (!is_frozen(r)) {
       ra_clear((roaring_array_t*)&r->high_low_container);
     }
