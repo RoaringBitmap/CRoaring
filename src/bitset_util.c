@@ -569,7 +569,7 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint3
         uint64_t v = words[i];		
         __m512i vec = _mm512_maskz_compress_epi8(v, index_table);	
         	    
-        uint8_t advance = __builtin_popcountll(v);
+        uint8_t advance = hamming(v);
         
         __m512i vbase = _mm512_add_epi32(base_v, _mm512_set1_epi32(i * 64));
         __m512i r1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,0));
@@ -627,7 +627,7 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array, size_t length
         uint64_t v = array[i];
         __m512i vec = _mm512_maskz_compress_epi8(v, index_table);
 
-        uint8_t advance = __builtin_popcountll(v);
+        uint8_t advance = hamming(v);
 
         __m512i vbase = _mm512_add_epi16(base_v, _mm512_set1_epi16(i * 64));
         __m512i r1 = _mm512_cvtepi8_epi16(_mm512_extracti32x8_epi32(vec,0));
