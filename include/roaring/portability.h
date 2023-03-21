@@ -126,6 +126,15 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #include <avxintrin.h>
 #include <avx2intrin.h>
 #include <wmmintrin.h>
+// Important: we need the AVX-512 headers:
+#include <avx512fintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
+#include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
+#include <avx512vpopcntdqintrin.h>
 // unfortunately, we may not get _blsr_u64, but, thankfully, clang
 // has it as a macro.
 #ifndef _blsr_u64
