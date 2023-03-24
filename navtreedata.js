@@ -40,7 +40,7 @@ var NAVTREE =
       [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md13", null ],
       [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md14", null ]
     ] ],
-    [ "AVX2-related throttling", "index.html#autotoc_md15", null ],
+    [ "SIMD-related throttling", "index.html#autotoc_md15", null ],
     [ "Thread safety", "index.html#autotoc_md16", null ],
     [ "How to best aggregate bitmaps?", "index.html#autotoc_md17", null ],
     [ "Wrappers", "index.html#autotoc_md18", [

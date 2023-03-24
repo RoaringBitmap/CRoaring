@@ -519,7 +519,7 @@ Building (Visual Studio under Windows)</h1>
 <li>Right click on <code>CMakeLists.txt</code> in the parent directory within <code>Solution Explorer</code> and select <code>Build</code> to build the project.</li>
 <li>For testing, in the Standard toolbar, drop the <code>Select Startup Item...</code> menu and choose one of the tests. Run the test by pressing the button to the left of the dropdown.</li>
 </ul>
-<p>We have optimizations specific to AVX2 in the code, and they are turned dynamically based on the detected hardware at runtime.</p>
+<p>We have optimizations specific to AVX2 and AVX-512 in the code, and they are turned dynamically based on the detected hardware at runtime.</p>
 <h2><a class="anchor" id="autotoc_md13"></a>
 Usage (Using &lt;tt&gt;conan&lt;/tt&gt;)</h2>
 <p>You can install the library using the conan package manager:</p>
@@ -539,8 +539,9 @@ Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 <p>These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.</p>
 <p>If you find the version of <code>roaring</code> shipped with <code>vcpkg</code> is out-of-date, feel free to report it to <code>vcpkg</code> community either by submiting an issue or by creating a PR.</p>
 <h1><a class="anchor" id="autotoc_md15"></a>
-AVX2-related throttling</h1>
+SIMD-related throttling</h1>
 <p>Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.</p>
+<p>Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.</p>
 <h1><a class="anchor" id="autotoc_md16"></a>
 Thread safety</h1>
 <p>Like, for example, STL containers or Java's default data structures, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. It is safe however to query bitmaps (without modifying them) from several distinct threads, as long as you do not use the copy-on-write attribute. For example, you can safely copy a bitmap and use both copies in concurrently. One should probably avoid the use of the copy-on-write attribute in a threaded environment.</p>
