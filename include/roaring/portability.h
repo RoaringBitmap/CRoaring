@@ -126,6 +126,15 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #include <avxintrin.h>
 #include <avx2intrin.h>
 #include <wmmintrin.h>
+// Important: we need the AVX-512 headers:
+#include <avx512fintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
+#include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
+#include <avx512vpopcntdqintrin.h>
 // unfortunately, we may not get _blsr_u64, but, thankfully, clang
 // has it as a macro.
 #ifndef _blsr_u64
@@ -328,12 +337,22 @@ static inline int hamming(uint64_t x) {
 #endif
 
 #define CROARING_TARGET_AVX2 CROARING_TARGET_REGION("avx2,bmi,pclmul,lzcnt")
+#define CROARING_TARGET_AVX512 CROARING_TARGET_REGION("bmi2,avx512f,avx512dq,avx512bw,avx512vbmi2,avx512bitalg,avx512vpopcntdq")
 
 #ifdef __AVX2__
 // No need for runtime dispatching.
 // It is unnecessary and harmful to old clang to tag regions.
 #undef CROARING_TARGET_AVX2
 #define CROARING_TARGET_AVX2
+#undef CROARING_UNTARGET_REGION
+#define CROARING_UNTARGET_REGION
+#endif
+
+#if defined(__AVX512F__) && defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VBMI2__) && defined(__AVX512BITALG__) && defined(__AVX512VPOPCNTDQ__)
+// No need for runtime dispatching.
+// It is unnecessary and harmful to old clang to tag regions.
+#undef CROARING_TARGET_AVX512
+#define CROARING_TARGET_AVX512
 #undef CROARING_UNTARGET_REGION
 #define CROARING_UNTARGET_REGION
 #endif
