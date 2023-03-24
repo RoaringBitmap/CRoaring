@@ -597,7 +597,7 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint3
          uint64_t w = words[i];
          while ((w != 0) && (out < safeout)) {
              uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
-             int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
+             int r = roaring_trailing_zeroes(w); // on x64, should compile to TZCNT
              uint32_t val = r + base;
              memcpy(out, &val,
                     sizeof(uint32_t));  // should be compiled as a MOV on x64
@@ -649,7 +649,7 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array, size_t length
          uint64_t w = array[i];
          while ((w != 0) && (out < safeout)) {
              uint64_t t = w & (~w + 1); // on x64, should compile to BLSI (careful: the Intel compiler seems to fail)
-             int r = __builtin_ctzll(w); // on x64, should compile to TZCNT
+             int r = roaring_trailing_zeroes(w); // on x64, should compile to TZCNT
              uint32_t val = r + base;
              memcpy(out, &val,
                     sizeof(uint16_t));
