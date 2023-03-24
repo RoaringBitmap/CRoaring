@@ -4,6 +4,8 @@ name: Ubuntu-Debug-Sanitized-CI
   - push
   - pull_request
 
+permissions:
+  contents: read
 
 jobs:
   ci:

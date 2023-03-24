@@ -1984,6 +1984,66 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
 #endif
 }
 #ifdef CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
+CROARING_TARGET_AVX512
+static inline bool _avx512_memequals(const void *s1, const void *s2, size_t n) {
+    const uint8_t *ptr1 = (const uint8_t *)s1;
+    const uint8_t *ptr2 = (const uint8_t *)s2;
+    const uint8_t *end1 = ptr1 + n;
+    const uint8_t *end8 = ptr1 + ((n >> 3) << 3);
+    const uint8_t *end32 = ptr1 + ((n >> 5) << 5);
+    const uint8_t *end64 = ptr1 + ((n >> 6) << 6);
+    
+    while (ptr1 < end64){
+        __m512i r1 = _mm512_loadu_si512((const __m512i*)ptr1);
+        __m512i r2 = _mm512_loadu_si512((const __m512i*)ptr2);
+
+        uint64_t mask = _mm512_cmpeq_epi8_mask(r1, r2);
+        
+        if (mask != UINT64_MAX) {
+           return false;
+        }
+
+        ptr1 += 64;
+        ptr2 += 64;
+
+    }
+
+    while (ptr1 < end32) {
+        __m256i r1 = _mm256_loadu_si256((const __m256i*)ptr1);
+        __m256i r2 = _mm256_loadu_si256((const __m256i*)ptr2);
+        int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(r1, r2));
+        if ((uint32_t)mask != UINT32_MAX) {
+            return false;
+        }
+        ptr1 += 32;
+        ptr2 += 32;
+    }
+
+    while (ptr1 < end8) {
+	uint64_t v1, v2;
+        memcpy(&v1,ptr1,sizeof(uint64_t));
+        memcpy(&v2,ptr2,sizeof(uint64_t));
+        if (v1 != v2) {
+            return false;
+        }
+        ptr1 += 8;
+        ptr2 += 8;
+    }
+
+    while (ptr1 < end1) {
+        if (*ptr1 != *ptr2) {
+            return false;
+        }
+        ptr1++;
+        ptr2++;
+    }
+
+    return true;
+}
+CROARING_UNTARGET_REGION
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+
 CROARING_TARGET_AVX2
 static inline bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
@@ -2032,6 +2092,11 @@ bool memequals(const void *s1, const void *s2, size_t n) {
         return true;
     }
 #ifdef CROARING_IS_X64
+#if CROARING_COMPILER_SUPPORTS_AVX512
+    if( croaring_avx512() ) {
+      return _avx512_memequals(s1, s2, n);
+    } else
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
     if( croaring_avx2() ) {
       return _avx2_memequals(s1, s2, n);
     } else {
