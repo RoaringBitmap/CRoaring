@@ -333,7 +333,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
   static inline int _avx512_bitset_container_##opname##_nocard(                \
       const bitset_container_t *src_1, const bitset_container_t *src_2,        \
       bitset_container_t *dst) {                                               \
-        const uint8_t * __restrict__ words_1 = (const uint8_t *)src_1->words;  \
+    const uint8_t * __restrict__ words_1 = (const uint8_t *)src_1->words;      \
     const uint8_t * __restrict__ words_2 = (const uint8_t *)src_2->words;      \
     /* not using the blocking optimization for some reason*/                   \
     uint8_t *out = (uint8_t*)dst->words;                                       \
@@ -419,17 +419,17 @@ CROARING_UNTARGET_REGION
 
 // we duplicate the function because other containers use the "intersection" term, makes API more consistent
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, and,          &, _mm512_or_si512, vandq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, and,          &, _mm512_and_si512, vandq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, intersection, &, _mm512_or_si512, vandq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, intersection, &, _mm512_and_si512, vandq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, xor,    ^,  _mm512_or_si512,    veorq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, xor,    ^,  _mm512_xor_si512,    veorq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, andnot, &~, _mm512_or_si512, vbicq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN1(CROARING_TARGET_AVX512, andnot, &~, _mm512_andnot_si512, vbicq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 
 // we duplicate the function because other containers use the "or" term, makes API more consistent
@@ -442,17 +442,17 @@ CROARING_UNTARGET_REGION
 
 // we duplicate the function because other containers use the "intersection" term, makes API more consistent
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, and,          &, _mm512_or_si512, vandq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, and,          &, _mm512_and_si512, vandq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, intersection, &, _mm512_or_si512, vandq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, intersection, &, _mm512_and_si512, vandq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, xor,    ^,  _mm512_or_si512,    veorq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, xor,    ^,  _mm512_xor_si512,    veorq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, andnot, &~, _mm512_or_si512, vbicq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN2(CROARING_TARGET_AVX512, andnot, &~, _mm512_andnot_si512, vbicq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 
 // we duplicate the function because other containers use the "or" term, makes API more consistent
@@ -465,17 +465,17 @@ CROARING_UNTARGET_REGION
 
 // we duplicate the function because other containers use the "intersection" term, makes API more consistent
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, and,          &, _mm512_or_si512, vandq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, and,          &, _mm512_and_si512, vandq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, intersection, &, _mm512_or_si512, vandq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, intersection, &, _mm512_and_si512, vandq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, xor,    ^,  _mm512_or_si512,    veorq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, xor,    ^,  _mm512_xor_si512,    veorq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 CROARING_TARGET_AVX512
-AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, andnot, &~, _mm512_or_si512, vbicq_u64, CROARING_UNTARGET_REGION)
+AVX512_BITSET_CONTAINER_FN3(CROARING_TARGET_AVX512, andnot, &~, _mm512_andnot_si512, vbicq_u64, CROARING_UNTARGET_REGION)
 CROARING_UNTARGET_REGION
 #endif // CROARING_COMPILER_SUPPORTS_AVX512
 

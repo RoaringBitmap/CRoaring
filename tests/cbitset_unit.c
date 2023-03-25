@@ -5,10 +5,19 @@
 
 #include "test.h"
 
+int compute_cardinality(bitset_t *b) {
+    size_t k = 0;
+    for (size_t i = 0; bitset_next_set_bit(b, &i); i++) {
+        k += 1;
+    }
+    return k;
+}
+
 void test_iterate() {
     bitset_t *b = bitset_create();
     for (int k = 0; k < 1000; ++k) bitset_set(b, 3 * k);
     assert_true(bitset_count(b) == 1000);
+    assert_true(compute_cardinality(b) == 1000);
     size_t k = 0;
     for (size_t i = 0; bitset_next_set_bit(b, &i); i++) {
         assert_true(i == k);
@@ -30,6 +39,7 @@ bool increment(size_t value, void *param) {
 void test_iterate2() {
     bitset_t *b = bitset_create();
     for (int k = 0; k < 1000; ++k) bitset_set(b, 3 * k);
+    assert_true(compute_cardinality(b) == 1000);
     assert_true(bitset_count(b) == 1000);
     size_t k = 0;
     bitset_for_each(b, increment, &k);
@@ -40,6 +50,7 @@ void test_iterate2() {
 void test_construct() {
     bitset_t *b = bitset_create();
     for (int k = 0; k < 1000; ++k) bitset_set(b, 3 * k);
+    assert_true(compute_cardinality(b) == 1000);
     assert_true(bitset_count(b) == 1000);
     for (int k = 0; k < 3 * 1000; ++k)
         assert_true(bitset_get(b, k) == (k / 3 * 3 == k));
@@ -66,8 +77,10 @@ void test_shift_left() {
             bitset_set(b, power * k);
         }
         size_t mycount = bitset_count(b);
+        assert_true(compute_cardinality(b) == mycount);
         bitset_shift_left(b, sh);
         assert_true(bitset_count(b) == mycount);
+        assert_true(compute_cardinality(b) == mycount);
         for (size_t k = s1; k < s2; ++k) {
             assert_true(bitset_get(b, power * k + sh));
         }

@@ -17,6 +17,17 @@
 
 #include "test.h"
 
+DEFINE_TEST(hamming_test) {
+  assert_true(roaring_hamming(0xffffffffffffffffULL) == 64);
+  for(int k = 0; k < 64; k++) {
+    assert_true(roaring_hamming(1ULL<<k) == 1);
+  }
+  for(int k = 0; k < 64; k++) {
+    for(int l = 0; l < 64; l++) {
+       assert_true(roaring_hamming((1ULL<<k)|(1ULL<<l)) == 2-(k==l));
+    }
+  }
+}
 
 DEFINE_TEST(test_bitset_lenrange_cardinality) {
   uint64_t words[] = {~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
@@ -93,34 +104,81 @@ DEFINE_TEST(and_or_test) {
     bitset_container_t* B2 = bitset_container_create();
     bitset_container_t* BI = bitset_container_create();
     bitset_container_t* BO = bitset_container_create();
+    assert_true(bitset_container_compute_cardinality(B1) == 0);
+    assert_true(bitset_container_compute_cardinality(B2) == 0);
+    assert_true(bitset_container_compute_cardinality(BI) == 0);
+    assert_true(bitset_container_compute_cardinality(BO) == 0);
 
     assert_non_null(B1);
     assert_non_null(B2);
     assert_non_null(BI);
     assert_non_null(BO);
 
-    for (size_t x = 0; x < (1 << 16); x += 3) {
+    size_t max_value = 60000;
+
+    size_t b1_count = 0;
+    size_t bi_count = 0;
+    for (size_t x = 0; x < max_value; x += 3) {
         bitset_container_set(B1, x);
         bitset_container_set(BI, x);
+        b1_count++;
+        bi_count++;
+    }
+    for (size_t x = 0; x < max_value; x += 3) {
+        assert_true(bitset_container_get(B1, x));
+        assert_true(bitset_container_get(BI, x));
     }
 
+    assert_true(bitset_container_compute_cardinality(B1) == b1_count);
+    assert_true(bitset_container_compute_cardinality(BI) == bi_count);
+
+    size_t b2_count = 0;
     // important: 62 is not divisible by 3
-    for (size_t x = 0; x < (1 << 16); x += 62) {
+    for (size_t x = 0; x < max_value; x += 62) {
+        bi_count += !bitset_container_get(BI, x);
+
         bitset_container_set(B2, x);
         bitset_container_set(BI, x);
+        b2_count++;
     }
 
-    for (size_t x = 0; x < (1 << 16); x += 62 * 3) {
+    assert_true(bitset_container_compute_cardinality(B2) == b2_count);
+    assert_true(bitset_container_compute_cardinality(BI) == bi_count);
+    size_t bo_count = 0;
+    for (size_t x = 0; x < max_value; x += 62 * 3) {
         bitset_container_set(BO, x);
+        bo_count++;
     }
 
+    assert_true(bitset_container_compute_cardinality(BO) == bo_count);
+    assert_true(bitset_container_compute_cardinality(BI) == bi_count);
     const int card_union = bitset_container_compute_cardinality(BI);
     const int card_inter = bitset_container_compute_cardinality(BO);
+    assert_true(bitset_container_compute_cardinality(BI) == card_union);
+    assert_true(bi_count == card_union);
+    assert_true(bitset_container_compute_cardinality(BO) == bo_count);
+    assert_true(bitset_container_compute_cardinality(BO) == bitset_container_compute_cardinality(BO));
+    assert_true(card_inter == bo_count);
+    bitset_container_printf(B1);  // does it crash?
+    bitset_container_printf(B2);  // does it crash?
+    bitset_container_printf(BI);  // does it crash?
 
-    bitset_container_and_nocard(B1, B2, BI);
+    bitset_container_andnot_nocard(B1, B2, BI);
+
+    bitset_container_printf(B1);  // does it crash?
+    bitset_container_printf(B2);  // does it crash?
+    bitset_container_printf(BI);  // does it crash?
+    size_t interc = 0;
+    for (size_t x = 0; x < max_value; x ++) {
+        bool in1 = bitset_container_get(B1, x);
+        bool in2 = bitset_container_get(B2, x);
+        bool ini = bitset_container_get(BI, x);
+        assert_true(ini == (in1 & !in2));
+        interc += ini;
+    }
+    assert_true(bitset_container_compute_cardinality(BI) == interc);
     assert_int_not_equal(bitset_container_compute_cardinality(BI), card_union);
     assert_int_not_equal(bitset_container_and(B1, B2, BI), card_union);
-
     bitset_container_or_nocard(B1, B2, BO);
     assert_int_not_equal(bitset_container_compute_cardinality(BO), card_inter);
     assert_int_not_equal(bitset_container_or(B1, B2, BO), card_inter);
@@ -255,6 +313,7 @@ DEFINE_TEST(select_test) {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(hamming_test),
         cmocka_unit_test(test_bitset_lenrange_cardinality),
         cmocka_unit_test(printf_test), cmocka_unit_test(set_get_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
