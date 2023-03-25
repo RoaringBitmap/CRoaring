@@ -8,7 +8,7 @@ permissions:
 jobs:
   ci:
     name: windows-vs16
-    runs-on: windows-latest
+    runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
