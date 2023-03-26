@@ -40,16 +40,16 @@ static inline int bitset_lenrange_cardinality(const uint64_t *words,
     uint32_t firstword = start / 64;
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
-        return hamming(words[firstword] &
+        return roaring_hamming(words[firstword] &
                        ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
                            << (start % 64));
     }
-    int answer = hamming(words[firstword] & ((~UINT64_C(0)) << (start % 64)));
+    int answer = roaring_hamming(words[firstword] & ((~UINT64_C(0)) << (start % 64)));
     for (uint32_t i = firstword + 1; i < endword; i++) {
-        answer += hamming(words[i]);
+        answer += roaring_hamming(words[i]);
     }
     answer +=
-        hamming(words[endword] &
+        roaring_hamming(words[endword] &
                 (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64));
     return answer;
 }

@@ -4411,10 +4411,36 @@ DEFINE_TEST(test_portable_deserialize_frozen) {
     free(serialized);
 }
 
+DEFINE_TEST(convert_to_bitset) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
+     roaring_bitmap_add(r1, i);
+    }
+    for (uint32_t i = 100000; i < 500000; i+= 100) {
+     roaring_bitmap_add(r1, i);
+    }
+    roaring_bitmap_add_range(r1, 500000, 600000);
+    bitset_t * bitset = bitset_create();
+    bool success = roaring_bitmap_to_bitset(r1, bitset);
+    assert_true(success); // could fail due to memory allocation.
+    assert_true(bitset_count(bitset) == roaring_bitmap_get_cardinality(r1));
+    // You can then query the bitset:
+    for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
+        assert_true(bitset_get(bitset,i));
+    }
+    for (uint32_t i = 100000; i < 500000; i+= 100) {
+        assert_true(bitset_get(bitset,i));
+    }
+    // you must free the memory:
+    bitset_free(bitset);
+    roaring_bitmap_free(r1);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(convert_to_bitset),
         cmocka_unit_test(issue440),
         cmocka_unit_test(issue436),
         cmocka_unit_test(issue433),

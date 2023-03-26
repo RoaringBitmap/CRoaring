@@ -290,7 +290,7 @@ container_t *convert_run_optimize(
                 return answer;
             }
 
-            int local_run_start = __builtin_ctzll(cur_word);
+            int local_run_start = roaring_trailing_zeroes(cur_word);
             int run_start = local_run_start + 64 * long_ctr;
             uint64_t cur_word_with_1s = cur_word | (cur_word - 1);
 
@@ -306,7 +306,7 @@ container_t *convert_run_optimize(
                 *typecode_after = RUN_CONTAINER_TYPE;
                 return answer;
             }
-            int local_run_end = __builtin_ctzll(~cur_word_with_1s);
+            int local_run_end = roaring_trailing_zeroes(~cur_word_with_1s);
             run_end = local_run_end + long_ctr * 64;
             add_run(answer, run_start, run_end - 1);
             cur_word = cur_word_with_1s & (cur_word_with_1s + 1);
@@ -314,7 +314,7 @@ container_t *convert_run_optimize(
         return answer;
     } else {
         assert(false);
-        __builtin_unreachable();
+        roaring_unreachable;
         return NULL;
     }
 }

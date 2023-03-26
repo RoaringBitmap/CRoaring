@@ -12,6 +12,7 @@
 #include <roaring/memory.h>
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
+#include <roaring/bitset/bitset.h>
 
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace api {
@@ -435,6 +436,23 @@ void roaring_bitmap_clear(roaring_bitmap_t *r);
  */
 void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
 
+/**
+ * Store the bitmap to a bitset. This can be useful for people
+ * who need the performance and simplicity of a standard bitset.
+ * We assume that the input bitset is originally empty (does not
+ * have any set bit).
+ *
+ *   bitset_t * out = bitset_create();
+ *   // if the bitset has content in it, call "bitset_clear(out)"
+ *   bool success = roaring_bitmap_to_bitset(mybitmap, out); 
+ *   // on failure, success will be false.
+ *   // You can then query the bitset:
+ *   bool is_present = bitset_get(out,  10011 );
+ *   // you must free the memory:
+ *   bitset_free(out);
+ *
+ */
+bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t * bitset);
 
 /**
  * Convert the bitmap to a sorted array from `offset` by `limit`, output in `ans`.
