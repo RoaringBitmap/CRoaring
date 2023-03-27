@@ -206,7 +206,7 @@ bool array_array_container_inplace_union(
           return false;  // not a bitset
         } else {
           memmove(src_1->array + src_2->cardinality, src_1->array, src_1->cardinality * sizeof(uint16_t));
-          src_1->cardinality = (int32_t)union_uint16(src_1->array + src_2->cardinality, src_1->cardinality,
+          src_1->cardinality = (int32_t)fast_union_uint16(src_1->array + src_2->cardinality, src_1->cardinality,
                                   src_2->array, src_2->cardinality, src_1->array);
           return false; // not a bitset
         }
@@ -302,7 +302,7 @@ bool array_array_container_lazy_inplace_union(
           return false;  // not a bitset
         } else {
           memmove(src_1->array + src_2->cardinality, src_1->array, src_1->cardinality * sizeof(uint16_t));
-          src_1->cardinality = (int32_t)union_uint16(src_1->array + src_2->cardinality, src_1->cardinality,
+          src_1->cardinality = (int32_t)fast_union_uint16(src_1->array + src_2->cardinality, src_1->cardinality,
                                   src_2->array, src_2->cardinality, src_1->array);
           return false; // not a bitset
         }
