@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include <roaring/containers/array.h>
+#include <roaring/containers/mixed_union.h>
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
@@ -130,6 +131,39 @@ DEFINE_TEST(and_or_test) {
     array_container_free(BI);
     array_container_free(BO);
     array_container_free(TMP);
+}
+
+uint64_t splitmix64(uint64_t z) {
+  z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
+  z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
+  return z ^ (z >> 31);
+}
+
+DEFINE_TEST(inplace_union_test) {
+    DESCRIBE_TEST;
+    container_t *dst = NULL;
+    for(size_t i = 0; i<1000; i++) {
+      array_container_t* B1 = array_container_create();
+      array_container_t* B2 = array_container_create();;
+
+      assert_non_null(B1);
+      assert_non_null(B2);
+      for(uint32_t j = 0; j < 128; j++) {
+        if((splitmix64(j+128*i)&1) == 0) {
+          array_container_add(B1, j);
+        } else {
+          array_container_add(B2, j);
+        }
+      }
+
+      assert_false(array_array_container_inplace_union(B1, B2, dst));
+      for(uint32_t j = 0; j < 128; j++) {
+        assert_true(array_container_contains(B1, j));
+      }
+      assert_true(B1->cardinality == 128);
+      array_container_free(B1);
+      array_container_free(B2);
+    }
 }
 
 DEFINE_TEST(to_uint32_array_test) {

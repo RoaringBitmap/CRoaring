@@ -38,7 +38,7 @@ bool array_bitset_container_intersect(const array_container_t *src_1,
 
 /*
  * Compute the intersection between src_1 and src_2 and write the result
- * to *dst. If the return function is true, the result is a bitset_container_t
+ * to *dst. If the return function is true, the result is a bitset_container_t,
  * otherwise is a array_container_t. We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
@@ -54,7 +54,7 @@ void array_run_container_intersection(const array_container_t *src_1,
                                       array_container_t *dst);
 
 /* Compute the intersection between src_1 and src_2 and write the result to
- * *dst. If the result is true then the result is a bitset_container_t
+ * *dst. If the result is true then the result is a bitset_container_t,
  * otherwise is a array_container_t.
  * If *dst == src_2, then an in-place intersection is attempted
  **/
