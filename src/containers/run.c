@@ -131,7 +131,7 @@ void run_container_offset(const run_container_t *c,
         lo_cap = c->n_runs;
         hi_cap = 0;
     } else {
-        split = c->runs[pivot].value <= top;
+        split = c->runs[pivot].value < top;
         lo_cap = pivot + (split ? 1 : 0);
         hi_cap = c->n_runs - pivot;
     }
