@@ -46,6 +46,17 @@ bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
     return true;  // continue till the end
 }
+DEFINE_TEST(issue457) {
+  roaring_bitmap_t *r1 = roaring_bitmap_from_range(65539, 65541, 1);
+  roaring_bitmap_printf_describe(r1);
+  assert_true(roaring_bitmap_get_cardinality(r1) == 2);
+  roaring_bitmap_t *r2 = roaring_bitmap_add_offset(r1, -3);
+  roaring_bitmap_printf_describe(r2);
+  assert_true(roaring_bitmap_get_cardinality(r2) == 2);
+  roaring_bitmap_printf(r2);
+  roaring_bitmap_free(r1);
+  roaring_bitmap_free(r2);
+}
 
 DEFINE_TEST(issue429) {
   // This is a memory leak test, so we don't need to check the results.
@@ -4440,6 +4451,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue457),
         cmocka_unit_test(convert_to_bitset),
         cmocka_unit_test(issue440),
         cmocka_unit_test(issue436),
