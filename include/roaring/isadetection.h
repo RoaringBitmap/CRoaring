@@ -11,16 +11,20 @@
 // fully supporting AVX-512.
 #if __has_include(<avx512vbmi2intrin.h>)
 #define CROARING_COMPILER_SUPPORTS_AVX512 1
-#endif
-#endif
+#endif // #if __has_include(<avx512vbmi2intrin.h>)
+#endif // #ifdef __has_include
 
 // Visual Studio 2019 and up support AVX-512
 #ifdef _MSC_VER
 #if _MSC_VER >= 1920
 #define CROARING_COMPILER_SUPPORTS_AVX512 1
-#endif
-#endif
-#endif
+#endif // #if _MSC_VER >= 1920
+#endif // #ifdef _MSC_VER
+
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#define CROARING_COMPILER_SUPPORTS_AVX512 0
+#endif // #ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#endif // #ifndef CROARING_COMPILER_SUPPORTS_AVX512
 
 
 #ifdef __cplusplus
