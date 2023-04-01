@@ -40,8 +40,3 @@ endif()
 
 
 configure_file(${CMAKE_SOURCE_DIR}/tools/cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})
-
-set(BUILD_STATIC_LIB ON)
-import_dependency(vendor/cmocka https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz)
-add_subdirectory(vendor/cmocka)
-

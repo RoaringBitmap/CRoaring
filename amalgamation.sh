@@ -82,7 +82,6 @@ ALL_PRIVATE_C=$( ( \
         && ( type git >/dev/null 2>&1 ) \
         && ( git ls-files $SCRIPTPATH/src/*.c $SCRIPTPATH/src/**/*c ) \
     ) || ( find $SCRIPTPATH/src -name '*.c' ) )
-
 # Verify up-front that all the files exist
 #
 for i in ${ALL_PUBLIC_H} ${ALL_PUBLIC_HH} ${ALL_PRIVATE_H} ${ALL_PRIVATE_C}; do

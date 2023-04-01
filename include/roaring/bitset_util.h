@@ -6,6 +6,12 @@
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
 
+#if CROARING_IS_X64
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+#endif
+
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace internal {
 #endif
@@ -631,7 +637,7 @@ CROARING_UNTARGET_AVX512
         __m512i total = _mm512_setzero_si512();                                \
         const uint64_t limit = size - size % 4;                                \
         uint64_t i = 0;                                                        \
-	    for (; i < limit; i += 4) {                                        \
+	    for (; i < limit; i += 4) {                                            \
             __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
                                        _mm512_loadu_si512(data2 + i));         \
             total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));          \

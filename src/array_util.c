@@ -9,7 +9,14 @@
 #include <roaring/portability.h>
 #include <roaring/utilasm.h>
 
+#if CROARING_IS_X64
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+#endif
+
 #ifdef __cplusplus
+using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace internal {
 #endif
 
@@ -1953,7 +1960,7 @@ size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
 size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
 #ifdef CROARING_IS_X64
-    if( croaring_avx2() ) {
+    if( croaring_hardware_support() & ROARING_SUPPORTS_AVX2 ) {
         // compute union with smallest array first
       if (size_1 < size_2) {
         return union_vector16(set_1, (uint32_t)size_1,
@@ -2092,12 +2099,13 @@ bool memequals(const void *s1, const void *s2, size_t n) {
         return true;
     }
 #ifdef CROARING_IS_X64
+    int support = croaring_hardware_support();
 #if CROARING_COMPILER_SUPPORTS_AVX512
-    if( croaring_avx512() ) {
+    if( support & ROARING_SUPPORTS_AVX512 ) {
       return _avx512_memequals(s1, s2, n);
     } else
 #endif // CROARING_COMPILER_SUPPORTS_AVX512
-    if( croaring_avx2() ) {
+    if( support & ROARING_SUPPORTS_AVX2 ) {
       return _avx2_memequals(s1, s2, n);
     } else {
       return memcmp(s1, s2, n) == 0;

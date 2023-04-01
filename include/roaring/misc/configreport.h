@@ -1,7 +1,7 @@
 /*
  * configreport.h
  * If this gets compiled into a different execution unit than the CRoaring library,
- * the functions croaring_avx512() and croaring_avx2() *may* trigger an additional
+ * the functions croaring_hardware_support() & ROARING_SUPPORTS_AVX512 and croaring_hardware_support() & ROARING_SUPPORTS_AVX2 *may* trigger an additional
  * call to dynamic_croaring_detect_supported_architectures().
  */
 #ifndef INCLUDE_MISC_CONFIGREPORT_H_
@@ -172,40 +172,11 @@ static inline void tellmeall() {
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
-    uint32_t config =  croaring_detect_supported_architectures();
-    if((config & CROARING_NEON) == CROARING_NEON) {
-        printf(" NEON detected\t");
-    }
+
  #ifdef __AVX2__
     printf(" Building for AVX2\t");
  #endif
-    if(croaring_avx512()) {
-        printf( "AVX-512\t");
-    }
-    if(croaring_avx2()) {
-        printf( "AVX2\t");
-    }
-    if((config & CROARING_AVX2) == CROARING_AVX2) {
-        printf( "AVX2 detected\t");
-       if(!croaring_avx2()) {
-         printf( "AVX2 not used\t");
-       }
-    }
-    if((config & CROARING_AVX512_REQUIRED) == CROARING_AVX512_REQUIRED) {
-        printf( "AVX-512 detected\t");
-       if(!croaring_avx2()) {
-         printf( "AVX-512 not used\t");
-       }
-    }
-    if((config & CROARING_SSE42) == CROARING_SSE42) {
-        printf(" SSE4.2 detected\t");
-    }
-    if((config & CROARING_BMI1) == CROARING_BMI1) {
-        printf(" BMI1 detected\t");
-    }
-    if((config & CROARING_BMI2) == CROARING_BMI2) {
-        printf(" BMI2 detected\t");
-    }
+
     printf("\n");
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
         printf("number of bytes: int = %lu long = %lu \n",

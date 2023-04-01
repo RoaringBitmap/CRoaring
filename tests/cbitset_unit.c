@@ -76,10 +76,10 @@ void test_shift_left() {
         for (size_t k = s1; k < s2; ++k) {
             bitset_set(b, power * k);
         }
-        size_t mycount = bitset_count(b);
+        int mycount = bitset_count(b);
         assert_true(compute_cardinality(b) == mycount);
         bitset_shift_left(b, sh);
-        assert_true(bitset_count(b) == mycount);
+        assert_true(bitset_count(b) == (size_t)mycount);
         assert_true(compute_cardinality(b) == mycount);
         for (size_t k = s1; k < s2; ++k) {
             assert_true(bitset_get(b, power * k + sh));

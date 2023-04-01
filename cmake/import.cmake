@@ -1,5 +1,7 @@
-set(dep_root "${PROJECT_SOURCE_DIR}/dependencies/.cache")
-
+set(dep_root "${PROJEC_SOURCE_DIR}/dependencies/.cache")
+if(DEFINED ENV{roaring_DEPENDENCY_CACHE_DIR})
+  set(dep_root "$ENV{roaring_DEPENDENCY_CACHE_DIR}")
+endif()
 
 function(import_dependency NAME GITHUB_REPO COMMIT)
   message(STATUS "Importing ${NAME} (${GITHUB_REPO}@${COMMIT})")
