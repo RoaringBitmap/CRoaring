@@ -2,11 +2,17 @@
 #define CROARING_MICROBENCHMARKS_BENCH_H
 // clang-format off
 #include <cstdlib>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
+
+#if (!defined(_WIN32) && !defined(_WIN64) && !(__MINGW32__) && !(__MINGW64__))
+#include <dirent.h>
+#else
+#include "toni_ronnko_dirent.h"
+#endif
+
 
 
 #include <benchmark/benchmark.h>

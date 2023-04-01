@@ -16,6 +16,7 @@
 #endif
 
 #ifdef __cplusplus
+using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace internal {
 #endif
 
