@@ -52,7 +52,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 #include <stdlib.h>
 
-
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
 #ifdef __has_include
 // We want to make sure that the AVX-512 functions are only built on compilers
 // fully supporting AVX-512.
@@ -65,6 +65,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifdef _MSC_VER
 #if _MSC_VER >= 1920
 #define CROARING_COMPILER_SUPPORTS_AVX512 1
+#endif
 #endif
 #endif
 
@@ -96,15 +97,15 @@ enum croaring_instruction_set {
   CROARING_UNINITIALIZED = 0x8000
 };
 
+#if CROARING_COMPILER_SUPPORTS_AVX512
 static unsigned int CROARING_AVX512_REQUIRED = (CROARING_AVX512F | CROARING_AVX512DQ | CROARING_AVX512BW | CROARING_AVX512VBMI2 | CROARING_AVX512BITALG | CROARING_AVX512VPOPCNTDQ);
-
+#endif
 
 #if defined(__x86_64__) || defined(_M_AMD64) // x64
 
 
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
-
 #if CROARING_REGULAR_VISUAL_STUDIO
   int cpu_info[4];
   __cpuid(cpu_info, *eax);
@@ -131,6 +132,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
  * as one compilation unit.
  */
 static inline uint32_t dynamic_croaring_detect_supported_architectures() {
+printf("dynamic_croaring_detect_supported_architectures\n");
   uint32_t eax, ebx, ecx, edx;
   uint32_t host_isa = 0x0;
   // Can be found on Intel ISA Reference for CPUID

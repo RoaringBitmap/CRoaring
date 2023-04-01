@@ -32,6 +32,7 @@ option(ROARING_DISABLE_X64 "Forcefully disable x64 optimizations even if hardwar
 option(ROARING_DISABLE_AVX "Forcefully disable AVX even if hardware supports it " OFF)
 option(ROARING_DISABLE_NEON "Forcefully disable NEON even if hardware supports it" OFF)
 option(ROARING_DISABLE_NATIVE "Forcefully disable -march optimizations (obsolete)" OFF)
+option(ROARING_DISABLE_AVX512 "Forcefully disable AVX512 even if compiler supports it" OFF)
 
 option(ROARING_BUILD_STATIC "Build a static library" ON)
 if(BUILD_SHARED_LIBS)
@@ -62,7 +63,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/roaring.pc" DESTINATION ${CMAKE_INSTA
 
 add_library(roaring-headers INTERFACE)
 target_include_directories(roaring-headers INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${ROARING_LIB_NAME}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/roaring>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
 add_library(roaring-headers-cpp INTERFACE)
 target_include_directories(roaring-headers-cpp INTERFACE
@@ -73,11 +74,11 @@ target_include_directories(roaring-headers-cpp INTERFACE
 ### Some users want the C++ header files to be installed as well.
 ### C++ header files get installed to /usr/local/include/roaring typically
 SET(CPP_ROARING_HEADERS cpp/roaring64map.hh  cpp/roaring.hh) # needs to be updated if we add more files
-install(FILES ${CPP_ROARING_HEADERS} DESTINATION include/${ROARING_LIB_NAME})
-install(DIRECTORY include/${ROARING_LIB_NAME} DESTINATION include)
+install(FILES ${CPP_ROARING_HEADERS} DESTINATION include/roaring)
+install(DIRECTORY include/roaring DESTINATION include)
 
 install(TARGETS roaring-headers roaring-headers-cpp
-   EXPORT ${ROARING_LIB_NAME}-config
+   EXPORT roaring-config
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

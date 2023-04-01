@@ -191,12 +191,14 @@ static inline void tellmeall() {
          printf( "AVX2 not used\t");
        }
     }
+#if CROARING_COMPILER_SUPPORTS_AVX512
     if((config & CROARING_AVX512_REQUIRED) == CROARING_AVX512_REQUIRED) {
         printf( "AVX-512 detected\t");
        if(!croaring_avx2()) {
          printf( "AVX-512 not used\t");
        }
     }
+#endif
     if((config & CROARING_SSE42) == CROARING_SSE42) {
         printf(" SSE4.2 detected\t");
     }
