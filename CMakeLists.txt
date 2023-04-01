@@ -31,7 +31,6 @@ endif()
 option(ROARING_DISABLE_X64 "Forcefully disable x64 optimizations even if hardware supports it (this disables AVX)" OFF)
 option(ROARING_DISABLE_AVX "Forcefully disable AVX even if hardware supports it " OFF)
 option(ROARING_DISABLE_NEON "Forcefully disable NEON even if hardware supports it" OFF)
-option(ROARING_DISABLE_NATIVE "Forcefully disable -march optimizations (obsolete)" OFF)
 option(ROARING_DISABLE_AVX512 "Forcefully disable AVX512 even if compiler supports it" OFF)
 
 option(ROARING_BUILD_STATIC "Build a static library" ON)
