@@ -2,8 +2,8 @@ if (CMAKE_VERSION VERSION_GREATER 3.0.0)
   cmake_policy(VERSION 3.0.0)
 endif ()
 include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
-
-import_dependency(cmocka clibs/cmocka ec387ac76d0ce9eece7cb8f523fca79f0e417ac8)
+set(BUILD_STATIC_LIB ON)
+import_dependency(cmocka clibs/cmocka  f5e2cd7)
 add_dependency(cmocka)
 
 function(add_c_test TEST_NAME)
@@ -13,7 +13,7 @@ function(add_c_test TEST_NAME)
 
   add_executable(${TEST_NAME} ${TEST_NAME}.c)
 
-  target_link_libraries(${TEST_NAME} roaring cmocka::cmocka)
+  target_link_libraries(${TEST_NAME} roaring cmocka-static)
 
   add_test(${TEST_NAME} ${TEST_NAME})
 endfunction(add_c_test)
@@ -29,7 +29,7 @@ if (CMAKE_VERSION VERSION_GREATER 2.8.10)
     endif()
     target_include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cpp)
 
-    target_link_libraries(${TEST_NAME} roaring cmocka::cmocka)
+    target_link_libraries(${TEST_NAME} roaring cmocka-static)
 
     add_test(${TEST_NAME} ${TEST_NAME})
   endfunction(add_cpp_test)
