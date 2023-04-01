@@ -98,6 +98,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
 
 add_subdirectory(src)
 if(ENABLE_ROARING_TESTS)
+  add_subdirectory(microbenchmarks)
   add_subdirectory(benchmarks)
   add_subdirectory(tests)
 endif()

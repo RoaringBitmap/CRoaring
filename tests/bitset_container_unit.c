@@ -116,8 +116,8 @@ DEFINE_TEST(and_or_test) {
 
     size_t max_value = 60000;
 
-    size_t b1_count = 0;
-    size_t bi_count = 0;
+    int b1_count = 0;
+    int bi_count = 0;
     for (size_t x = 0; x < max_value; x += 3) {
         bitset_container_set(B1, x);
         bitset_container_set(BI, x);
@@ -132,7 +132,7 @@ DEFINE_TEST(and_or_test) {
     assert_true(bitset_container_compute_cardinality(B1) == b1_count);
     assert_true(bitset_container_compute_cardinality(BI) == bi_count);
 
-    size_t b2_count = 0;
+    int b2_count = 0;
     // important: 62 is not divisible by 3
     for (size_t x = 0; x < max_value; x += 62) {
         bi_count += !bitset_container_get(BI, x);
@@ -144,7 +144,7 @@ DEFINE_TEST(and_or_test) {
 
     assert_true(bitset_container_compute_cardinality(B2) == b2_count);
     assert_true(bitset_container_compute_cardinality(BI) == bi_count);
-    size_t bo_count = 0;
+    int bo_count = 0;
     for (size_t x = 0; x < max_value; x += 62 * 3) {
         bitset_container_set(BO, x);
         bo_count++;
@@ -168,7 +168,7 @@ DEFINE_TEST(and_or_test) {
     bitset_container_printf(B1);  // does it crash?
     bitset_container_printf(B2);  // does it crash?
     bitset_container_printf(BI);  // does it crash?
-    size_t interc = 0;
+    int interc = 0;
     for (size_t x = 0; x < max_value; x ++) {
         bool in1 = bitset_container_get(B1, x);
         bool in2 = bitset_container_get(B2, x);

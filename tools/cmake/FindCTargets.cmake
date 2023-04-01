@@ -1,6 +1,10 @@
 if (CMAKE_VERSION VERSION_GREATER 3.0.0)
   cmake_policy(VERSION 3.0.0)
 endif ()
+include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
+
+import_dependency(cmocka clibs/cmocka ec387ac76d0ce9eece7cb8f523fca79f0e417ac8)
+add_dependency(cmocka)
 
 function(add_c_test TEST_NAME)
   if(ROARING_BUILD_C_TESTS_AS_CPP)  # under C++, container_t* != void*
@@ -9,8 +13,7 @@ function(add_c_test TEST_NAME)
 
   add_executable(${TEST_NAME} ${TEST_NAME}.c)
 
-  include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/vendor/cmocka)
-  target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka-static)
+  target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka::cmocka)
 
   add_test(${TEST_NAME} ${TEST_NAME})
 endfunction(add_c_test)
@@ -26,8 +29,7 @@ if (CMAKE_VERSION VERSION_GREATER 2.8.10)
     endif()
     target_include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cpp)
 
-    include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/vendor/cmocka)
-    target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka-static)
+    target_link_libraries(${TEST_NAME} ${ROARING_LIB_NAME} cmocka::cmocka)
 
     add_test(${TEST_NAME} ${TEST_NAME})
   endfunction(add_cpp_test)
