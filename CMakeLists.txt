@@ -98,8 +98,10 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
 
 add_subdirectory(src)
 if(ENABLE_ROARING_TESTS)
-  add_subdirectory(microbenchmarks)
-  add_subdirectory(benchmarks)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8) # we only include the benchmarks on 64-bit systems.
+    add_subdirectory(microbenchmarks)
+    add_subdirectory(benchmarks)
+  endif()
   add_subdirectory(tests)
 endif()
 # Being terse is good, but knowing how the build is configured is important
