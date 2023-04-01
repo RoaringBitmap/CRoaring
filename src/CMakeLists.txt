@@ -15,6 +15,7 @@ endif()
 
 MESSAGE( STATUS "ROARING_LIB_TYPE: " ${ROARING_LIB_TYPE})
 set(ROARING_SRC
+    isadetection.c
     array_util.c
     bitset_util.c
     bitset.c

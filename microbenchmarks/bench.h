@@ -15,6 +15,12 @@
 #include "performancecounters/event_counter.h"
 // clang-format on
 
+#if CROARING_IS_X64
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+#endif
+
 event_collector collector;
 size_t N = 1000;
 size_t bitmap_examples_bytes = 0;

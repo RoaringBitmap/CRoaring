@@ -1,17 +1,5 @@
 #include "bench.h"
 
-struct compute_cardinality {
-    static uint64_t run() {
-        uint64_t marker = 0;
-        for (size_t i = 0; i < count; ++i) {
-            marker += roaring_bitmap_get_cardinality(bitmaps[i]);
-        }
-        return marker;
-    }
-};
-
-auto ComputeCardinality = BasicBench<compute_cardinality>;
-BENCHMARK(ComputeCardinality);
 
 struct successive_intersection {
     static uint64_t run() {
@@ -27,6 +15,44 @@ struct successive_intersection {
 };
 auto SuccessiveIntersection = BasicBench<successive_intersection>;
 BENCHMARK(SuccessiveIntersection);
+
+
+struct successive_intersection_cardinality {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i + 1 < count; ++i) {
+            marker += roaring_bitmap_and_cardinality(bitmaps[i], bitmaps[i + 1]);
+        }
+        return marker;
+    }
+};
+auto SuccessiveIntersectionCardinality = BasicBench<successive_intersection_cardinality>;
+BENCHMARK(SuccessiveIntersectionCardinality);
+
+
+struct successive_union_cardinality {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i + 1 < count; ++i) {
+            marker += roaring_bitmap_or_cardinality(bitmaps[i], bitmaps[i + 1]);
+        }
+        return marker;
+    }
+};
+auto SuccessiveUnionCardinality = BasicBench<successive_union_cardinality>;
+BENCHMARK(SuccessiveUnionCardinality);
+
+struct successive_difference_cardinality {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i + 1 < count; ++i) {
+            marker += roaring_bitmap_andnot_cardinality(bitmaps[i], bitmaps[i + 1]);
+        }
+        return marker;
+    }
+};
+auto SuccessiveDifferenceCardinality = BasicBench<successive_difference_cardinality>;
+BENCHMARK(SuccessiveDifferenceCardinality);
 
 struct successive_union {
     static uint64_t run() {
@@ -114,6 +140,20 @@ struct iterate_all {
 auto IterateAll = BasicBench<iterate_all>;
 BENCHMARK(IterateAll);
 
+
+struct compute_cardinality {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < count; ++i) {
+            marker += roaring_bitmap_get_cardinality(bitmaps[i]);
+        }
+        return marker;
+    }
+};
+
+auto ComputeCardinality = BasicBench<compute_cardinality>;
+BENCHMARK(ComputeCardinality)->MinTime(2);
+
 int main(int argc, char **argv) {
     const char *dir_name;
     if ((argc == 1) || (argc > 1 && argv[1][0] == '-')) {
@@ -136,6 +176,16 @@ int main(int argc, char **argv) {
                                     "Unsupported system.");
     }
 #endif
+
+#if CROARING_IS_X64
+    benchmark::AddCustomContext("x64", "detected");
+    int support = roaring::internal::croaring_hardware_support();
+#if CROARING_COMPILER_SUPPORTS_AVX512
+    benchmark::AddCustomContext("AVX-512", "supported by compiler");
+    benchmark::AddCustomContext("AVX-512 hardware", ( support & roaring::internal::ROARING_SUPPORTS_AVX512 ) ? "yes" : "no");
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+    benchmark::AddCustomContext("AVX-2 hardware", ( support & roaring::internal::ROARING_SUPPORTS_AVX2 ) ? "yes" : "no");
+#endif // CROARING_IS_X64
     benchmark::AddCustomContext("data source", dir_name);
 
     benchmark::AddCustomContext("number of bitmaps", std::to_string(count));

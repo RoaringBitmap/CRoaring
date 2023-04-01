@@ -6,6 +6,12 @@
 
 #include <roaring/bitset_util.h>
 
+#if CROARING_IS_X64
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+#endif
+
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace api {
 #endif
@@ -1006,7 +1012,7 @@ static inline void _scalar_bitset_set_list(uint64_t *words, const uint16_t *list
 
 uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
                            uint64_t length) {
-    if( croaring_avx2() ) {
+    if( croaring_hardware_support() & ROARING_SUPPORTS_AVX2 ) {
         return _asm_bitset_clear_list(words, card, list, length);
     } else {
         return _scalar_bitset_clear_list(words, card, list, length);
@@ -1015,7 +1021,7 @@ uint64_t bitset_clear_list(uint64_t *words, uint64_t card, const uint16_t *list,
 
 uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
                                   const uint16_t *list, uint64_t length) {
-    if( croaring_avx2() ) {
+    if( croaring_hardware_support() & ROARING_SUPPORTS_AVX2 ) {
         return _asm_bitset_set_list_withcard(words, card, list, length);
     } else {
         return _scalar_bitset_set_list_withcard(words, card, list, length);
@@ -1023,7 +1029,7 @@ uint64_t bitset_set_list_withcard(uint64_t *words, uint64_t card,
 }
 
 void bitset_set_list(uint64_t *words, const uint16_t *list, uint64_t length) {
-    if( croaring_avx2() ) {
+    if( croaring_hardware_support() & ROARING_SUPPORTS_AVX2 ) {
         _asm_bitset_set_list(words, list, length);
     } else {
         _scalar_bitset_set_list(words, list, length);
