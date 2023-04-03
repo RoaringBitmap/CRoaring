@@ -186,6 +186,7 @@ We have microbenchmarks constructed with the Google Benchmarks.
 Under Linux or macOS, you may run them as follows:
 
 ```
+cmake -B build
 cmake --build build
 ./build/microbenchmarks/bench
 ```
@@ -201,7 +202,8 @@ You may disable some functionality for the purpose of benchmarking. For example,
 benchmark the code without AVX-512 even if both your processor and compiler supports it:
 
 ```
-cmake --buildnoavx512 -D ROARING_DISABLE_AVX512=OFF
+cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=OFF
+cmake --build buildnoavx512
 ./buildnoavx512/microbenchmarks/bench
 ```
 
