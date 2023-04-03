@@ -45,6 +45,19 @@ if(ROARING_DISABLE_AVX512)
   target_compile_definitions(roaring PUBLIC CROARING_COMPILER_SUPPORTS_AVX512=0)
 endif(ROARING_DISABLE_AVX512)
 
+if(ROARING_DISABLE_AVX)
+  target_compile_definitions(roaring PUBLIC ROARING_DISABLE_AVX=1)
+endif(ROARING_DISABLE_AVX)
+
+if(ROARING_DISABLE_X64)
+  target_compile_definitions(roaring PUBLIC ROARING_DISABLE_X64=1)
+endif(ROARING_DISABLE_X64)
+
+if(ROARING_DISABLE_NEON)
+  target_compile_definitions(roaring PUBLIC DISABLENEON=1)
+endif(ROARING_DISABLE_NEON)
+
+
 target_include_directories(roaring
   PUBLIC
    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>

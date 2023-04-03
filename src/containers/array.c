@@ -9,6 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if CROARING_IS_X64
+#ifndef CROARING_COMPILER_SUPPORTS_AVX512
+#error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
+#endif
+
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace internal {
 #endif
@@ -388,9 +394,22 @@ void array_container_intersection_inplace(array_container_t *src_1,
 ALLOW_UNALIGNED
 int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base) {
+
+#ifdef CROARING_IS_X64
+    int support = croaring_hardware_support();
+#if CROARING_COMPILER_SUPPORTS_AVX512
+    if (support & ROARING_SUPPORTS_AVX512) {
+        return avx512_array_container_to_uint32_array(vout, cont->array, cont->cardinality, base);
+    }
+#endif
+    if (support & ROARING_SUPPORTS_AVX2) {
+        return array_container_to_uint32_array_vector16(vout, cont->array, cont->cardinality, base);
+    }
+#endif // CROARING_IS_X64
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
-    for (int i = 0; i < cont->cardinality; ++i) {
+    size_t i = 0;
+    for ( ; i < (size_t)cont->cardinality; ++i) {
         const uint32_t val = base + cont->array[i];
         memcpy(out + outpos, &val,
                sizeof(uint32_t));  // should be compiled as a MOV on x64

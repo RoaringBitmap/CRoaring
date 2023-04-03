@@ -152,7 +152,7 @@ struct compute_cardinality {
 };
 
 auto ComputeCardinality = BasicBench<compute_cardinality>;
-BENCHMARK(ComputeCardinality)->MinTime(2);
+BENCHMARK(ComputeCardinality);
 
 int main(int argc, char **argv) {
     const char *dir_name;

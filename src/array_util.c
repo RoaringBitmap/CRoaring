@@ -452,6 +452,52 @@ int32_t intersect_vector16(const uint16_t *__restrict__ A, size_t s_a,
     return (int32_t)count;
 }
 
+ALLOW_UNALIGNED
+int array_container_to_uint32_array_vector16(void *vout, const uint16_t* array, size_t cardinality,
+                                    uint32_t base) {
+    int outpos = 0;
+    uint32_t *out = (uint32_t *)vout;
+    size_t i = 0;
+    for ( ;i + sizeof(__m128i)/sizeof(uint16_t) <= cardinality; i += sizeof(__m128i)/sizeof(uint16_t)) {
+        __m128i vinput = _mm_loadu_si128((const __m128i*) (array + i));
+        __m256i voutput = _mm256_add_epi32(_mm256_cvtepu16_epi32(vinput), _mm256_set1_epi32(base));
+        _mm256_storeu_si256((__m256i*)(out + outpos), voutput);
+        outpos += sizeof(__m256i)/sizeof(uint32_t);
+    }
+    for ( ; i < cardinality; ++i) {
+        const uint32_t val = base + array[i];
+        memcpy(out + outpos, &val,
+               sizeof(uint32_t));  // should be compiled as a MOV on x64
+        outpos++;
+    }
+    return outpos;
+}
+#if CROARING_COMPILER_SUPPORTS_AVX512
+CROARING_TARGET_AVX512
+
+ALLOW_UNALIGNED
+int avx512_array_container_to_uint32_array(void *vout, const uint16_t* array, size_t cardinality,
+                                    uint32_t base) {
+    int outpos = 0;
+    uint32_t *out = (uint32_t *)vout;
+    size_t i = 0;
+    for ( ;i + sizeof(__m256i)/sizeof(uint16_t) <= cardinality; i += sizeof(__m256i)/sizeof(uint16_t)) {
+        __m256i vinput = _mm256_loadu_si256((const __m256i*) (array + i));
+        __m512i voutput = _mm512_add_epi32(_mm512_cvtepu16_epi32(vinput), _mm512_set1_epi32(base));
+        _mm512_storeu_si512((__m512i*)(out + outpos), voutput);
+        outpos += sizeof(__m512i)/sizeof(uint32_t);
+    }
+    for ( ; i < cardinality; ++i) {
+        const uint32_t val = base + array[i];
+        memcpy(out + outpos, &val,
+               sizeof(uint32_t));  // should be compiled as a MOV on x64
+        outpos++;
+    }
+    return outpos;
+}
+CROARING_UNTARGET_AVX512
+#endif
+
 int32_t intersect_vector16_inplace(uint16_t *__restrict__ A, size_t s_a,
                            const uint16_t *__restrict__ B, size_t s_b) {
     size_t count = 0;

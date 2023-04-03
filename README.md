@@ -198,13 +198,22 @@ We have several data sets and you may pick others:
 ./build/microbenchmarks/bench benchmarks/realdata/wikileaks-noquotes 
 ```
 
-You may disable some functionality for the purpose of benchmarking. For example, you could
-benchmark the code without AVX-512 even if both your processor and compiler supports it:
+You may disable some functionality for the purpose of benchmarking. For example, assuming you
+have an x64 processor, you could benchmark the code without AVX-512 even if both your processor 
+and compiler supports it:
 
 ```
 cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON
 cmake --build buildnoavx512
 ./buildnoavx512/microbenchmarks/bench
+```
+
+You can benchmark without AVX or AVX-512 as well:
+
+```
+cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON
+cmake --build buildnoavx
+./buildnoavx/microbenchmarks/bench
 ```
 
 # Custom memory allocators
