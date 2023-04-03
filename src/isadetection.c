@@ -242,7 +242,7 @@ int croaring_hardware_support() {
     avx512_support =  ( (croaring_detect_supported_architectures() & CROARING_AVX512_REQUIRED)
 	                        == CROARING_AVX512_REQUIRED);
 #endif
-    support = ROARING_SUPPORTS_AVX2 | (croaring_has_avx512() ? ROARING_SUPPORTS_AVX512 : 0);
+    support = ROARING_SUPPORTS_AVX2 | (avx512_support ? ROARING_SUPPORTS_AVX512 : 0);
   }
   return support;
 }
