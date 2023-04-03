@@ -61,7 +61,7 @@ bitset_container_t *bitset_container_create(void) {
     }
 
     size_t align_size = 32;
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
     int support = croaring_hardware_support();
     if ( support & ROARING_SUPPORTS_AVX512 ) {
 	    // sizeof(__m512i) == 64
@@ -137,7 +137,7 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     }
 
     size_t align_size = 32;
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
     if ( croaring_hardware_support() & ROARING_SUPPORTS_AVX512 ) {
 	    // sizeof(__m512i) == 64
 	    align_size = 64;
@@ -243,7 +243,7 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 }
 
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 #ifndef WORDS_IN_AVX2_REG
 #define WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
 #endif
@@ -323,7 +323,7 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 #endif // CROARING_IS_X64
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 
 #define BITSET_CONTAINER_FN_REPEAT 8
 #ifndef WORDS_IN_AVX512_REG
@@ -932,7 +932,7 @@ int bitset_container_to_uint32_array(
     const bitset_container_t *bc,
     uint32_t base
 ){
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
    int support = croaring_hardware_support();
 #if CROARING_COMPILER_SUPPORTS_AVX512
    if(( support & ROARING_SUPPORTS_AVX512 ) &&  (bc->cardinality >= 8192))  // heuristic
@@ -1062,7 +1062,7 @@ bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, r
   return true;
 }
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 ALLOW_UNALIGNED
@@ -1109,7 +1109,7 @@ bool bitset_container_equals(const bitset_container_t *container1, const bitset_
       return true;
     }
   }
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
   int support = croaring_hardware_support();
 #if CROARING_COMPILER_SUPPORTS_AVX512
   if( support & ROARING_SUPPORTS_AVX512 ) {

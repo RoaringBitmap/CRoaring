@@ -262,7 +262,7 @@ uint64_t bitset_flip_list_withcard(uint64_t *words, uint64_t card,
 
 void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length);
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 /***
  * BEGIN Harley-Seal popcount functions.
  */

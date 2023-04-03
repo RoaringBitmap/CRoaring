@@ -23,7 +23,7 @@ void array_cache_flush(array_container_t* B) { (void)B; }
 // tries to put the array in cache
 void array_cache_prefetch(array_container_t* B) {
 #if !CROARING_REGULAR_VISUAL_STUDIO
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else

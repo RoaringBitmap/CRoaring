@@ -16,7 +16,7 @@
 extern "C" { namespace roaring { namespace misc {
 #endif
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 // useful for basic info (0)
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                                 unsigned int *ecx, unsigned int *edx) {

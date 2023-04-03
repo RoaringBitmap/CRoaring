@@ -29,7 +29,7 @@ void bitset_cache_flush(bitset_container_t* B) { (void)B; }
 // tries to put array of words in cache
 void bitset_cache_prefetch(bitset_container_t* B) {
 #if !CROARING_REGULAR_VISUAL_STUDIO
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
 #else

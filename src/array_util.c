@@ -23,7 +23,7 @@ extern "C" { namespace roaring { namespace internal {
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                                    uint16_t ikey);
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 // used by intersect_vector16
 ALIGNED(0x1000)
 static const uint8_t shuffle_mask16[] = {
@@ -1227,7 +1227,7 @@ int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
     return pos_out;
 }
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 
 /***
  * start of the SIMD 16-bit union code
@@ -1980,7 +1980,7 @@ size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
 
 size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
     if( croaring_hardware_support() & ROARING_SUPPORTS_AVX2 ) {
         // compute union with smallest array first
       if (size_1 < size_2) {
@@ -2011,7 +2011,7 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *s
     }
 #endif
 }
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 static inline bool _avx512_memequals(const void *s1, const void *s2, size_t n) {
@@ -2119,7 +2119,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
     if (n == 0) {
         return true;
     }
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
     int support = croaring_hardware_support();
 #if CROARING_COMPILER_SUPPORTS_AVX512
     if( support & ROARING_SUPPORTS_AVX512 ) {
@@ -2137,7 +2137,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
 }
 
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 ALLOW_UNALIGNED
@@ -2162,7 +2162,7 @@ int avx512_array_container_to_uint32_array(void *vout, const uint16_t* array, si
 }
 CROARING_UNTARGET_AVX512
 #endif // #if CROARING_COMPILER_SUPPORTS_AVX512
-#endif // #ifdef CROARING_IS_X64
+#endif // #if CROARING_IS_X64
 
 
 #ifdef __cplusplus

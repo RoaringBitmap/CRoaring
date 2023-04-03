@@ -17,7 +17,7 @@ using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace api {
 #endif
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
     2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -32,7 +32,7 @@ static uint8_t lengthTable[256] = {
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 #endif
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 ALIGNED(32)
 static uint32_t vecDecodeTable[256][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
@@ -293,9 +293,9 @@ static uint32_t vecDecodeTable[256][8] = {
     {1, 2, 3, 4, 5, 6, 7, 8}  /* 0xFF (11111111) */
 };
 
-#endif  // #ifdef CROARING_IS_X64
+#endif  // #if CROARING_IS_X64
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 // same as vecDecodeTable but in 16 bits
 ALIGNED(32)
 static uint16_t vecDecodeTable_uint16[256][8] = {
@@ -559,7 +559,7 @@ static uint16_t vecDecodeTable_uint16[256][8] = {
 
 #endif
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
 const uint8_t vbmi2_table[64] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63};
@@ -763,7 +763,7 @@ size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ 
     return outpos;
 }
 
-#ifdef CROARING_IS_X64
+#if CROARING_IS_X64
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out" as 16-bit integers, values start at "base" (can
