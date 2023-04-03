@@ -209,10 +209,14 @@ Running microbenchmarks</h1>
 <div class="line">./build/microbenchmarks/bench</div>
 </div><!-- fragment --><p>By default, the benchmark tools picks one data set (e.g., <code>CRoaring/benchmarks/realdata/census1881</code>). We have several data sets and you may pick others:</p>
 <div class="fragment"><div class="line">./build/microbenchmarks/bench benchmarks/realdata/wikileaks-noquotes </div>
-</div><!-- fragment --><p>You may disable some functionality for the purpose of benchmarking. For example, you could benchmark the code without AVX-512 even if both your processor and compiler supports it:</p>
+</div><!-- fragment --><p>You may disable some functionality for the purpose of benchmarking. For example, assuming you have an x64 processor, you could benchmark the code without AVX-512 even if both your processor and compiler supports it:</p>
 <div class="fragment"><div class="line">cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON</div>
 <div class="line">cmake --build buildnoavx512</div>
 <div class="line">./buildnoavx512/microbenchmarks/bench</div>
+</div><!-- fragment --><p>You can benchmark without AVX or AVX-512 as well:</p>
+<div class="fragment"><div class="line">cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON</div>
+<div class="line">cmake --build buildnoavx</div>
+<div class="line">./buildnoavx/microbenchmarks/bench</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md9"></a>
 Custom memory allocators</h1>
 <p>For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example: </p><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;roaring.h&gt;</span></div>
