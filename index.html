@@ -210,7 +210,7 @@ Running microbenchmarks</h1>
 </div><!-- fragment --><p>By default, the benchmark tools picks one data set (e.g., <code>CRoaring/benchmarks/realdata/census1881</code>). We have several data sets and you may pick others:</p>
 <div class="fragment"><div class="line">./build/microbenchmarks/bench benchmarks/realdata/wikileaks-noquotes </div>
 </div><!-- fragment --><p>You may disable some functionality for the purpose of benchmarking. For example, you could benchmark the code without AVX-512 even if both your processor and compiler supports it:</p>
-<div class="fragment"><div class="line">cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=OFF</div>
+<div class="fragment"><div class="line">cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON</div>
 <div class="line">cmake --build buildnoavx512</div>
 <div class="line">./buildnoavx512/microbenchmarks/bench</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md9"></a>
