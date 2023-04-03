@@ -202,7 +202,7 @@ You may disable some functionality for the purpose of benchmarking. For example,
 benchmark the code without AVX-512 even if both your processor and compiler supports it:
 
 ```
-cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=OFF
+cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON
 cmake --build buildnoavx512
 ./buildnoavx512/microbenchmarks/bench
 ```
