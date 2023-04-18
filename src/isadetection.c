@@ -262,7 +262,7 @@ int croaring_hardware_support() {
 }
 #endif
 
+#endif // defined(__x86_64__) || defined(_M_AMD64) // x64
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
 #endif
-#endif // defined(__x86_64__) || defined(_M_AMD64) // x64
