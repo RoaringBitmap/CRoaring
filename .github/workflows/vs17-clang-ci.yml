@@ -17,7 +17,7 @@ jobs:
           - {gen: Visual Studio 17 2022, arch: x64}
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
       - name: Configure
         run: |
           mkdir build

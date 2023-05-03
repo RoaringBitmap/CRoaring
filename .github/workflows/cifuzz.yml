@@ -8,18 +8,18 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@d318097b285bc695f785b98d40c2d058c0f438b5 # master
       with:
         oss-fuzz-project-name: 'croaring'
         dry-run: false
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@d318097b285bc695f785b98d40c2d058c0f438b5 # master
       with:
         oss-fuzz-project-name: 'croaring'
         fuzz-seconds: 300
         dry-run: false
     - name: Upload Crash
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       if: failure() && steps.build.outcome == 'success'
       with:
         name: artifacts
