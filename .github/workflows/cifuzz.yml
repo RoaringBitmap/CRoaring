@@ -8,12 +8,12 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@d318097b285bc695f785b98d40c2d058c0f438b5 # master
       with:
         oss-fuzz-project-name: 'croaring'
         dry-run: false
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@d318097b285bc695f785b98d40c2d058c0f438b5 # master
       with:
         oss-fuzz-project-name: 'croaring'
         fuzz-seconds: 300
