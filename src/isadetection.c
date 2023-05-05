@@ -215,7 +215,7 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
     host_isa |= CROARING_PCLMULQDQ;
   }
 
-  if ((ecx & cpuid_bit::osxsave) != cpuid_bit::osxsave) {
+  if ((ecx & cpuid_osxsave) != cpuid_osxsave) {
     return host_isa;
   }
 
