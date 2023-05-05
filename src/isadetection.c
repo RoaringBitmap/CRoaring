@@ -48,6 +48,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 #include <stdlib.h>
 
+#if defined(__APPLE__) && defined(__x86_64__)
+ #include <sys/sysctl.h>
+ #include <utsname.h>
+ #include <cstdio>
+ #include <cerrno>
+ #endif
 
 // We need portability.h to be included first, see
 // https://github.com/RoaringBitmap/CRoaring/issues/394
@@ -97,7 +103,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 #if CROARING_REGULAR_VISUAL_STUDIO
   int cpu_info[4];
-  __cpuid(cpu_info, *eax);
+  __cpuidex(cpu_info, *eax, *ecx);
   *eax = cpu_info[0];
   *ebx = cpu_info[1];
   *ecx = cpu_info[2];
@@ -114,6 +120,61 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
   *edx = d;
 #endif
 }
+
+
+ static inline uint64_t xgetbv() {
+ #if defined(_MSC_VER)
+   return _xgetbv(0);
+ #else
+   uint32_t xcr0_lo, xcr0_hi;
+   asm volatile("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
+   return xcr0_lo | ((uint64_t)xcr0_hi << 32);
+ #endif
+ }
+
+ #ifdef __APPLE__
+ /*
+  * Due to the massive register file, macOS doesn't save the AVX512 registers until you use them.
+  * This also means that it is not advertised in XCR0. The recommended method is to use sysctl to
+  * check, and then just use an AVX512 instruction. The kernel will trap the undefined instruction
+  * and enable AVX512.
+  *
+  * However, there is another problem on versions before macOS 12.2 (Darwin 21.3.0) where the k0-k7
+  * mask registers will not be saved on a signal if the upper halves of all ZMMs are 0.
+  *
+  * See: https://github.com/golang/go/issues/49233.
+  */
+ static bool mac_supports_avx512()
+ {
+   // Don't unexpectedly clobber errno
+   int old_errno = errno;
+
+   uint64_t has_avx512 = 0;
+   size_t size = sizeof(uint64_t);
+   // Check if the kernel and CPU support AVX512
+   if (sysctlbyname("hw.optional.avx512f", &has_avx512, &size, nullptr, 0) < 0) {
+     has_avx512 = 0;
+   }
+   // if it doesn't or the syscall fails, has_avx512 will remain 0
+   if (has_avx512) {
+     // Now check if the kernel version is affected by the kmask bug
+     int major, minor;
+     // Get kernel version as a string with uname, as a string "major.minor.patch"
+     struct utsname uname_buf = {0};
+     (void) uname(&uname_buf);
+     // Parse the version string, ignoring the patch version.
+     if (sscanf(uname_buf.release, "%d.%d", &major, &minor) != 2) {
+       has_avx512 = 0;
+     } else {
+       // Safe versions are Darwin 21.3.0 (macOS 12.2) and above.
+        has_avx512 = (major > 21) || (major == 21 && minor >= 3);
+     }
+   }
+   // restore errno
+   errno = old_errno;
+   return has_avx512 != 0;
+ }
+ #endif
 
 /**
  * This is a relatively expensive function but it will get called at most
@@ -133,8 +194,38 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   static uint32_t cpuid_avx512vbmi2_bit = 1 << 6; ///< @private bit 6 of ECX for EAX=0x7
   static uint32_t cpuid_avx512bitalg_bit = 1 << 12; ///< @private bit 12 of ECX for EAX=0x7
   static uint32_t cpuid_avx512vpopcntdq_bit = 1 << 14; ///< @private bit 14 of ECX for EAX=0x7
+  static uint64_t cpuid_avx256_saved = uint64_t(1) << 2; ///< @private bit 2 = AVX
+  static uint64_t cpuid_avx512_saved = uint64_t(7) << 5; ///< @private bits 5,6,7 = opmask, ZMM_hi256, hi16_ZMM
   static uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
+  static uint32_t cpuid_osxsave = (uint32_t(1) << 26) | (uint32_t(1) << 27); ///< @private bits 26+27 of ECX for EAX=0x1
   static uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
+
+
+  // EBX for EAX=0x1
+  eax = 0x1;
+  cpuid(&eax, &ebx, &ecx, &edx);
+
+  if (ecx & cpuid_sse42_bit) {
+    host_isa |= CROARING_SSE42;
+  } else {
+    return host_isa; // everything after is redundant
+  }
+
+  if (ecx & cpuid_pclmulqdq_bit) {
+    host_isa |= CROARING_PCLMULQDQ;
+  }
+
+  if ((ecx & cpuid_bit::osxsave) != cpuid_bit::osxsave) {
+    return host_isa;
+  }
+
+  // xgetbv for checking if the OS saves registers
+  uint64_t xcr0 = xgetbv();
+
+  if ((xcr0 & xcr0_bit::avx256_saved) == 0) {
+    return host_isa;
+  }
+
   // ECX for EAX=0x7
   eax = 0x7;
   ecx = 0x0;
@@ -149,7 +240,17 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   if (ebx & cpuid_bmi2_bit) {
     host_isa |= CROARING_BMI2;
   }
-  
+
+  if (!(
+     (xcr0 & xcr0_bit::avx512_saved) == xcr0_bit::avx512_saved
+ #ifdef __APPLE__
+       // avx512 is not immediately advertised on macOS
+       || mac_supports_avx512()
+ #endif
+   )) {
+     return host_isa;
+  }
+
   if (ebx & cpuid_avx512f_bit) {
     host_isa |= CROARING_AVX512F;
   }
@@ -172,18 +273,6 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   
   if (ecx & cpuid_avx512vpopcntdq_bit) {
     host_isa |= CROARING_AVX512VPOPCNTDQ;
-  }
-  
-  // EBX for EAX=0x1
-  eax = 0x1;
-  cpuid(&eax, &ebx, &ecx, &edx);
-
-  if (ecx & cpuid_sse42_bit) {
-    host_isa |= CROARING_SSE42;
-  }
-
-  if (ecx & cpuid_pclmulqdq_bit) {
-    host_isa |= CROARING_PCLMULQDQ;
   }
 
   return host_isa;
