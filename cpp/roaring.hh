@@ -500,6 +500,17 @@ public:
     }
 
     /**
+     * Returns the 1 index of x in the bitmap.
+     * If the bitmap dosen't contain x , this function will return -1.
+     * The difference with rank function is that this function will return -1
+     * when x isn't in the bitmap, but the rank funciton will return a
+     * non-negative number.
+     */
+    int64_t get_idx(uint32_t x) const noexcept {
+        return api::roaring_bitmap_get_idx(&roaring, x);
+    }
+
+    /**
      * Write a bitmap to a char buffer. This is meant to be compatible with
      * the Java and Go versions. Returns how many bytes were written which
      * should be getSizeInBytes().

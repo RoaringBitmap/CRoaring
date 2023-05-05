@@ -410,6 +410,17 @@ inline int array_container_rank(const array_container_t *arr, uint16_t x) {
     }
 }
 
+/* Returns the 1 idx of x , if not exsist return -1 */
+inline int array_container_get_idx(const array_container_t *arr, uint16_t x) {
+    const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
+    const bool is_present = idx >= 0;
+    if (is_present) {
+        return idx + 1;
+    } else {
+        return -1;
+    }
+}
+
 /* Returns the index of the first value equal or smaller than x, or -1 */
 inline int array_container_index_equalorlarger(const array_container_t *arr, uint16_t x) {
     const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
