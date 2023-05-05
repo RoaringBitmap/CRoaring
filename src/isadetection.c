@@ -222,7 +222,7 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   // xgetbv for checking if the OS saves registers
   uint64_t xcr0 = xgetbv();
 
-  if ((xcr0 & xcr0_bit::avx256_saved) == 0) {
+  if ((xcr0 & cpuid_avx256_saved) == 0) {
     return host_isa;
   }
 
@@ -242,7 +242,7 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   }
 
   if (!(
-     (xcr0 & xcr0_bit::avx512_saved) == xcr0_bit::avx512_saved
+     (xcr0 & cpuid_avx512_saved) == cpuid_avx512_saved
  #ifdef __APPLE__
        // avx512 is not immediately advertised on macOS
        || mac_supports_avx512()
