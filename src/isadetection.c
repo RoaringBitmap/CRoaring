@@ -50,9 +50,9 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #if defined(__APPLE__) && defined(__x86_64__)
  #include <sys/sysctl.h>
- #include <utsname.h>
- #include <cstdio>
- #include <cerrno>
+ #include <sys/utsname.h>
+ #include <stdio.h>
+ #include <errno.h>
  #endif
 
 // We need portability.h to be included first, see
