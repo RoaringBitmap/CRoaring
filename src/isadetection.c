@@ -127,7 +127,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
    return _xgetbv(0);
  #else
    uint32_t xcr0_lo, xcr0_hi;
-   asm volatile("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
+   __asm__("xgetbv\n\t" : "=a" (xcr0_lo), "=d" (xcr0_hi) : "c" (0));
    return xcr0_lo | ((uint64_t)xcr0_hi << 32);
  #endif
  }
@@ -194,15 +194,16 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
   static uint32_t cpuid_avx512vbmi2_bit = 1 << 6; ///< @private bit 6 of ECX for EAX=0x7
   static uint32_t cpuid_avx512bitalg_bit = 1 << 12; ///< @private bit 12 of ECX for EAX=0x7
   static uint32_t cpuid_avx512vpopcntdq_bit = 1 << 14; ///< @private bit 14 of ECX for EAX=0x7
-  static uint64_t cpuid_avx256_saved = uint64_t(1) << 2; ///< @private bit 2 = AVX
-  static uint64_t cpuid_avx512_saved = uint64_t(7) << 5; ///< @private bits 5,6,7 = opmask, ZMM_hi256, hi16_ZMM
+  static uint64_t cpuid_avx256_saved = 1 << 2; ///< @private bit 2 = AVX
+  static uint64_t cpuid_avx512_saved = 7 << 5; ///< @private bits 5,6,7 = opmask, ZMM_hi256, hi16_ZMM
   static uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
-  static uint32_t cpuid_osxsave = (uint32_t(1) << 26) | (uint32_t(1) << 27); ///< @private bits 26+27 of ECX for EAX=0x1
+  static uint32_t cpuid_osxsave = (1 << 26) | (1 << 27); ///< @private bits 26+27 of ECX for EAX=0x1
   static uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
 
 
   // EBX for EAX=0x1
   eax = 0x1;
+  ecx = 0x0;
   cpuid(&eax, &ebx, &ecx, &edx);
 
   if (ecx & cpuid_sse42_bit) {
