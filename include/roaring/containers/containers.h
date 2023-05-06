@@ -2329,17 +2329,17 @@ static inline int container_rank(
     return false;
 }
 
-// return the 1 idx of x, if not exsist return -1
-static inline int container_get_idx(const container_t *c, uint8_t type,
+// return the index of x, if not exsist return -1
+static inline int container_get_index(const container_t *c, uint8_t type,
                                     uint16_t x) {
     c = container_unwrap_shared(c, &type);
     switch (type) {
         case BITSET_CONTAINER_TYPE:
-            return bitset_container_get_idx(const_CAST_bitset(c), x);
+            return bitset_container_get_index(const_CAST_bitset(c), x);
         case ARRAY_CONTAINER_TYPE:
-            return array_container_get_idx(const_CAST_array(c), x);
+            return array_container_get_index(const_CAST_array(c), x);
         case RUN_CONTAINER_TYPE:
-            return run_container_get_idx(const_CAST_run(c), x);
+            return run_container_get_index(const_CAST_run(c), x);
         default:
             assert(false);
             roaring_unreachable;

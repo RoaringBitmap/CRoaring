@@ -837,7 +837,7 @@ int run_container_rank(const run_container_t *container, uint16_t x) {
     return sum;
 }
 
-int run_container_get_idx(const run_container_t *container, uint16_t x) {
+int run_container_get_index(const run_container_t *container, uint16_t x) {
     if (run_container_contains(container, x)) {
         int sum = 0;
         uint32_t x32 = x;

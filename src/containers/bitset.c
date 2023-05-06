@@ -1212,8 +1212,8 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
   return sum;
 }
 
-/* Returns the 1 idx of x , if not exsist return -1 */
-int bitset_container_get_idx(const bitset_container_t *container, uint16_t x) {
+/* Returns the index of x , if not exsist return -1 */
+int bitset_container_get_index(const bitset_container_t *container, uint16_t x) {
   if (bitset_container_get(container, x)) {
     // credit: aqrit
     int sum = 0;

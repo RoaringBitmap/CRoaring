@@ -3512,7 +3512,7 @@ static uint64_t rank(uint32_t *arr, size_t length, uint32_t x) {
     return sum;
 }
 
-static int64_t get_idx(uint32_t *arr, size_t length, uint32_t x) {
+static int64_t get_index(uint32_t *arr, size_t length, uint32_t x) {
     bool is_present = false;
     for (size_t i = 0; i < length; ++i) {
         if (arr[i] == x) {
@@ -3586,7 +3586,7 @@ DEFINE_TEST(test_rank) {
     }
 }
 
-DEFINE_TEST(test_get_idx) {
+DEFINE_TEST(test_get_index) {
     for (uint32_t mymin = 123; mymin < 1000000; mymin *= 2) {
         // just arrays
         roaring_bitmap_t *r = roaring_bitmap_create();
@@ -3598,8 +3598,8 @@ DEFINE_TEST(test_get_idx) {
         uint32_t *ans = (uint32_t *)malloc(card * sizeof(uint32_t));
         roaring_bitmap_to_uint32_array(r, ans);
         for (uint32_t z = 0; z < 1000 + mymin + 10; z += 10) {
-            int64_t trueidx = get_idx(ans, card, z);
-            int64_t computedidx = roaring_bitmap_get_idx(r, z);
+            int64_t trueidx = get_index(ans, card, z);
+            int64_t computedidx = roaring_bitmap_get_index(r, z);
             if (trueidx != computedidx)
                 printf("%d != %d \n", (int)trueidx, (int)computedidx);
             assert_true(trueidx == computedidx);
@@ -3614,8 +3614,8 @@ DEFINE_TEST(test_get_idx) {
         ans = (uint32_t *)malloc(card * sizeof(uint32_t));
         roaring_bitmap_to_uint32_array(r, ans);
         for (uint32_t z = 0; z < 64000 + mymin + 10; z += 10) {
-            int64_t trueidx = get_idx(ans, card, z);
-            int64_t computedidx = roaring_bitmap_get_idx(r, z);
+            int64_t trueidx = get_index(ans, card, z);
+            int64_t computedidx = roaring_bitmap_get_index(r, z);
             if (trueidx != computedidx)
                 printf("%d != %d \n", (int)trueidx, (int)computedidx);
             assert_true(trueidx == computedidx);
@@ -3631,8 +3631,8 @@ DEFINE_TEST(test_get_idx) {
         ans = (uint32_t *)malloc(card * sizeof(uint32_t));
         roaring_bitmap_to_uint32_array(r, ans);
         for (uint32_t z = 0; z < 64000 + mymin + 10; z += 10) {
-            int64_t trueidx = get_idx(ans, card, z);
-            int64_t computedidx = roaring_bitmap_get_idx(r, z);
+            int64_t trueidx = get_index(ans, card, z);
+            int64_t computedidx = roaring_bitmap_get_index(r, z);
             if (trueidx != computedidx)
                 printf("%d != %d \n", (int)trueidx, (int)computedidx);
             assert_true(trueidx == computedidx);
@@ -4565,7 +4565,7 @@ int main() {
         cmocka_unit_test(test_intersect_small_run_bitset),
         cmocka_unit_test(is_really_empty),
         cmocka_unit_test(test_rank),
-        cmocka_unit_test(test_get_idx),
+        cmocka_unit_test(test_get_index),
         cmocka_unit_test(test_maximum_minimum),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_addremove),

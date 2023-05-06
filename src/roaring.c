@@ -2678,9 +2678,9 @@ uint64_t roaring_bitmap_rank(const roaring_bitmap_t *bm, uint32_t x) {
 }
 
 /**
- * roaring_bitmap_get_idx returns the 1 idx of x, if not exsist return -1.
+ * roaring_bitmap_get_index returns the index of x, if not exsist return -1.
  */
-int64_t roaring_bitmap_get_idx(const roaring_bitmap_t *bm, uint32_t x) {
+int64_t roaring_bitmap_get_index(const roaring_bitmap_t *bm, uint32_t x) {
     int64_t index = 0;
     const uint16_t xhigh = x >> 16;
     int32_t high_idx = ra_get_index(&bm->high_low_container, xhigh);
@@ -2693,7 +2693,7 @@ int64_t roaring_bitmap_get_idx(const roaring_bitmap_t *bm, uint32_t x) {
                 container_get_cardinality(bm->high_low_container.containers[i],
                                           bm->high_low_container.typecodes[i]);
         } else if (xhigh == key) {
-            int32_t low_idx = container_get_idx(
+            int32_t low_idx = container_get_index(
                 bm->high_low_container.containers[high_idx],
                 bm->high_low_container.typecodes[high_idx], x & 0xFFFF);
             if (low_idx < 0) return -1;
