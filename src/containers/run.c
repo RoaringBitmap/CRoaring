@@ -847,12 +847,12 @@ int run_container_get_index(const run_container_t *container, uint16_t x) {
             uint32_t endpoint = length + startpoint;
             if (x <= endpoint) {
                 if (x < startpoint) break;
-                return sum + (x32 - startpoint) + 1;
+                return sum + (x32 - startpoint);
             } else {
                 sum += length + 1;
             }
         }
-        return sum;
+        return sum - 1;
     } else {
         return -1;
     }

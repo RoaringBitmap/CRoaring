@@ -1225,7 +1225,7 @@ int bitset_container_get_index(const bitset_container_t *container, uint16_t x) 
     uint64_t lastpos = UINT64_C(1) << (x % 64);
     uint64_t mask = lastpos + lastpos - 1; // smear right
     sum += roaring_hamming(lastword & mask);
-    return sum;
+    return sum - 1;
   } else {
     return -1;
   }

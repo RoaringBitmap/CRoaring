@@ -3514,19 +3514,15 @@ static uint64_t rank(uint32_t *arr, size_t length, uint32_t x) {
 
 static int64_t get_index(uint32_t *arr, size_t length, uint32_t x) {
     bool is_present = false;
-    for (size_t i = 0; i < length; ++i) {
+    size_t i = 0;
+    for (; i < length; ++i) {
         if (arr[i] == x) {
             is_present = true;
+            break;
         }
     }
     if (!is_present) return -1;
-
-    uint64_t sum = 0;
-    for (size_t i = 0; i < length; ++i) {
-        if (arr[i] > x) break;
-        sum++;
-    }
-    return sum;
+    return i;
 }
 
 DEFINE_TEST(test_rank) {

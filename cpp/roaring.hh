@@ -500,7 +500,7 @@ public:
     }
 
     /**
-     * Returns the index of x in the set.
+     * Returns the index of x in the set, index start from 0.
      * If the set dosen't contain x , this function will return -1.
      * The difference with rank function is that this function will return -1
      * when x isn't in the set, but the rank funciton will return a

@@ -415,7 +415,7 @@ inline int array_container_get_index(const array_container_t *arr, uint16_t x) {
     const int32_t idx = binarySearch(arr->array, arr->cardinality, x);
     const bool is_present = idx >= 0;
     if (is_present) {
-        return idx + 1;
+        return idx;
     } else {
         return -1;
     }
