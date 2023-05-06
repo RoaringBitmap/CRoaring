@@ -152,7 +152,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
    uint64_t has_avx512 = 0;
    size_t size = sizeof(uint64_t);
    // Check if the kernel and CPU support AVX512
-   if (sysctlbyname("hw.optional.avx512f", &has_avx512, &size, nullptr, 0) < 0) {
+   if (sysctlbyname("hw.optional.avx512f", &has_avx512, &size, NULL, 0) < 0) {
      has_avx512 = 0;
    }
    // if it doesn't or the syscall fails, has_avx512 will remain 0
