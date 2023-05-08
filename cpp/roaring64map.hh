@@ -36,6 +36,7 @@ class Roaring64MapSetBitBiDirectionalIterator;
 
 class Roaring64Map {
     typedef api::roaring_bitmap_t roaring_bitmap_t;
+    typedef __int128_t int128_t;
 
 public:
     /**
@@ -1090,6 +1091,23 @@ public:
             result += roaring_iter->second.cardinality();
         }
         return result;
+    }
+
+    /**
+     * Returns the number of integers that are smaller or equal to x.
+     */
+    int128_t getIndex(uint64_t x) const {
+        uint64_t index = 0;
+        auto roaring_destination = roarings.find(highBytes(x));
+        if (roaring_destination != roarings.cend()) {
+            for (auto roaring_iter = roarings.cbegin();
+                 roaring_iter != roaring_destination; ++roaring_iter) {
+                index += roaring_iter->second.cardinality();
+            }
+            index += roaring_destination->second.getIndex(lowBytes(x));
+            return index;
+        }
+        return -1;
     }
 
     /**

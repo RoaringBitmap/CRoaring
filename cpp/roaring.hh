@@ -501,12 +501,12 @@ public:
 
     /**
      * Returns the index of x in the set, index start from 0.
-     * If the set dosen't contain x , this function will return -1.
+     * If the set doesn't contain x , this function will return -1.
      * The difference with rank function is that this function will return -1
-     * when x isn't in the set, but the rank funciton will return a
+     * when x isn't in the set, but the rank function will return a
      * non-negative number.
      */
-    int64_t get_index(uint32_t x) const noexcept {
+    int64_t getIndex(uint32_t x) const noexcept {
         return api::roaring_bitmap_get_index(&roaring, x);
     }
 
