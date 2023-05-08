@@ -1,0 +1,27 @@
+name: Ubuntu-Sanitized-CI
+
+'on':
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ubuntu-gcc
+    runs-on: ubuntu-latest
+
+    env:
+      CC: gcc
+      CXX: g++
+
+    steps: 
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake  -DROARING_SANITIZE_THREADS=ON ..
+          cmake --build . 
+          ctest . --output-on-failure
