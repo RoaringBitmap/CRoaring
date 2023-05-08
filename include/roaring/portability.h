@@ -41,6 +41,12 @@
 #ifndef CROARING_VISUAL_STUDIO
 #define CROARING_VISUAL_STUDIO 0
 #endif
+#ifndef CROARING_CLANG_VISUAL_STUDIO
+#define CROARING_CLANG_VISUAL_STUDIO 0
+#endif
+#ifndef CROARING_REGULAR_VISUAL_STUDIO
+#define CROARING_REGULAR_VISUAL_STUDIO 0
+#endif
 
 #if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE < 200809L)
 #undef _POSIX_C_SOURCE
@@ -403,11 +409,10 @@ static inline int roaring_hamming(uint64_t x) {
 #define CROARING_CPP_ATOMIC 1
 #define CROARING_C_ATOMIC 0
 #include <atomic>
-#elif CROARING_VISUAL_STUDIO
-// in C under Visual Studio, we use the C++ atomics?
+#elif defined(__STDC_NO_ATOMICS__) || CROARING_REGULAR_VISUAL_STUDIO
+// https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
 #define CROARING_ATOMIC 0
 #define CROARING_CPP_ATOMIC 0
-#include <atomic>
 #else // C
 #define CROARING_C_ATOMIC 1
 #define CROARING_CPP_ATOMIC 0
