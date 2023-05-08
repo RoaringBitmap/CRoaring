@@ -137,7 +137,13 @@ container_t *get_copy_of_container(
         shared_container_t *shared_container;
         if (*typecode == SHARED_CONTAINER_TYPE) {
             shared_container = CAST_shared(c);
+#if CROARING_C_ATOMIC
+            atomic_fetch_add(&(shared_container->counter), 1);
+#elif CROARING_CPP_ATOMIC
+            std::atomic_fetch_add(&(shared_container->counter), 1);
+#else
             shared_container->counter += 1;
+#endif
             return shared_container;
         }
         assert(*typecode != SHARED_CONTAINER_TYPE);
@@ -149,8 +155,13 @@ container_t *get_copy_of_container(
 
         shared_container->container = c;
         shared_container->typecode = *typecode;
-
+#if CROARING_C_ATOMIC
+        atomic_store(&(shared_container->counter), 2);
+#elif CROARING_CPP_ATOMIC
+        std::atomic_store(&(shared_container->counter), 2);
+#else
         shared_container->counter = 2;
+#endif
         *typecode = SHARED_CONTAINER_TYPE;
 
         return shared_container;
@@ -188,12 +199,18 @@ container_t *container_clone(const container_t *c, uint8_t typecode) {
 container_t *shared_container_extract_copy(
     shared_container_t *sc, uint8_t *typecode
 ){
-    assert(sc->counter > 0);
     assert(sc->typecode != SHARED_CONTAINER_TYPE);
-    sc->counter--;
     *typecode = sc->typecode;
     container_t *answer;
+#if CROARING_C_ATOMIC
+    if(atomic_fetch_sub(&(sc->counter), 1) == 1) {
+#elif CROARING_CPP_ATOMIC
+    if(std::atomic_fetch_sub(&(sc->counter), 1) == 1) {
+#else
+    assert(sc->counter > 0);
+    sc->counter--;
     if (sc->counter == 0) {
+#endif
         answer = sc->container;
         sc->container = NULL;  // paranoid
         roaring_free(sc);
@@ -205,9 +222,15 @@ container_t *shared_container_extract_copy(
 }
 
 void shared_container_free(shared_container_t *container) {
+#if CROARING_C_ATOMIC
+    if(atomic_fetch_sub(&(container->counter), 1) == 1) {
+#elif CROARING_CPP_ATOMIC
+    if(std::atomic_fetch_sub(&(container->counter), 1) == 1) {
+#else
     assert(container->counter > 0);
     container->counter--;
     if (container->counter == 0) {
+#endif
         assert(container->typecode != SHARED_CONTAINER_TYPE);
         container_free(container->container, container->typecode);
         container->container = NULL;  // paranoid

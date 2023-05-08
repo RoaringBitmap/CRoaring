@@ -38,6 +38,9 @@
 #define CROARING_REGULAR_VISUAL_STUDIO 1
 #endif // __clang__
 #endif // _MSC_VER
+#ifndef CROARING_VISUAL_STUDIO
+#define CROARING_VISUAL_STUDIO 0
+#endif
 
 #if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE < 200809L)
 #undef _POSIX_C_SOURCE
@@ -393,6 +396,22 @@ static inline int roaring_hamming(uint64_t x) {
  #else // __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
  #define CROARING_IS_BIG_ENDIAN 1
  #endif // __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#endif
+
+
+#if defined(__cplusplus)
+#define CROARING_CPP_ATOMIC 1
+#define CROARING_C_ATOMIC 0
+#include <atomic>
+#elif CROARING_VISUAL_STUDIO
+// in C under Visual Studio, we use the C++ atomics?
+#define CROARING_ATOMIC 0
+#define CROARING_CPP_ATOMIC 0
+#include <atomic>
+#else // C
+#define CROARING_C_ATOMIC 1
+#define CROARING_CPP_ATOMIC 0
+#include <stdatomic.h>
 #endif
 
 // We need portability.h to be included first,
