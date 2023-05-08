@@ -801,9 +801,9 @@ uint64_t roaring_bitmap_rank(const roaring_bitmap_t *r, uint32_t x);
 
 /**
  * Returns the index of x in the given roaring bitmap.
- * If the roaring bitmap dosen't contain x , this function will return -1.
+ * If the roaring bitmap doesn't contain x , this function will return -1.
  * The difference with rank function is that this function will return -1 when x
- * is not the element of roaring bitmap, but the rank funciton will return a
+ * is not the element of roaring bitmap, but the rank function will return a
  * non-negative number.
  */
 int64_t roaring_bitmap_get_index(const roaring_bitmap_t *r, uint32_t x);
