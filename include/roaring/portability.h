@@ -405,10 +405,20 @@ static inline int roaring_hamming(uint64_t x) {
 #endif
 
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#ifdef __has_include
+#if __has_include(<atomic>)
+// It is now safe:
 #define CROARING_CPP_ATOMIC 1
 #define CROARING_C_ATOMIC 0
 #include <atomic>
+#endif //__has_include(<endian.h>)
+#else
+// We lack __has_include to check:
+#define CROARING_CPP_ATOMIC 1
+#define CROARING_C_ATOMIC 0
+#include <atomic>
+#endif //__has_include
 #elif defined(__STDC_NO_ATOMICS__) || CROARING_REGULAR_VISUAL_STUDIO
 // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
 #define CROARING_ATOMIC 0
