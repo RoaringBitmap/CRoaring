@@ -6,14 +6,12 @@
 
 // We are mostly running this test to check for data races suing thread sanitizer.
 void run(roaring_bitmap_t **rarray) {
-    int answer = 0;
     for(size_t i = 0; i < 100; i++) {
       roaring_bitmap_t *r1 = roaring_bitmap_copy(rarray[0]);
       roaring_bitmap_t *r2 = roaring_bitmap_copy(rarray[1]);
       roaring_bitmap_t *r3 = roaring_bitmap_copy(rarray[2]);
       roaring_bitmap_and_inplace(r1, r2);
       roaring_bitmap_andnot_inplace(r1, r3);
-      answer += (int)roaring_bitmap_get_cardinality(r1);
       roaring_bitmap_free(r1);
     }
 }
