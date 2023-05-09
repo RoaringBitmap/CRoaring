@@ -1094,17 +1094,23 @@ public:
     }
 
     /**
-     * Returns the number of integers that are smaller or equal to x.
+     * Returns the index of x in the set, index start from 0.
+     * If the set doesn't contain x , this function will return -1.
+     * The difference with rank function is that this function will return -1
+     * when x isn't in the set, but the rank function will return a
+     * non-negative number.
      */
     int128_t getIndex(uint64_t x) const {
-        uint64_t index = 0;
+        int128_t index = 0;
         auto roaring_destination = roarings.find(highBytes(x));
         if (roaring_destination != roarings.cend()) {
             for (auto roaring_iter = roarings.cbegin();
                  roaring_iter != roaring_destination; ++roaring_iter) {
                 index += roaring_iter->second.cardinality();
             }
-            index += roaring_destination->second.getIndex(lowBytes(x));
+            auto low_idx = roaring_destination->second.getIndex(lowBytes(x));
+            if (low_idx < 0) return -1;
+            index += low_idx;
             return index;
         }
         return -1;
