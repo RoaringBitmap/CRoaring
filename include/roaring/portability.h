@@ -70,11 +70,6 @@
 extern "C" {  // portability definitions are in global scope, not a namespace
 #endif
 
-#if CROARING_REGULAR_VISUAL_STUDIO && !defined(_WIN64) && !defined(CROARING_ACK_32BIT)
-#pragma message( \
-    "You appear to be attempting a 32-bit build under Visual Studio. We recommend a 64-bit build instead.")
-#endif
-
 #if defined(__SIZEOF_LONG_LONG__) && __SIZEOF_LONG_LONG__ != 8
 #error This code assumes  64-bit long longs (by use of the GCC intrinsics). Your system is not currently supported.
 #endif
@@ -404,28 +399,38 @@ static inline int roaring_hamming(uint64_t x) {
  #endif // __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #endif
 
-
 #if defined(__cplusplus) && __cplusplus >= 201103L
 #ifdef __has_include
 #if __has_include(<atomic>)
 // It is now safe:
 #define CROARING_CPP_ATOMIC 1
 #define CROARING_C_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #include <atomic>
 #endif //__has_include(<endian.h>)
 #else
 // We lack __has_include to check:
 #define CROARING_CPP_ATOMIC 1
 #define CROARING_C_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #include <atomic>
 #endif //__has_include
-#elif defined(__STDC_NO_ATOMICS__) || CROARING_REGULAR_VISUAL_STUDIO
+#elif CROARING_REGULAR_VISUAL_STUDIO
 // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
 #define CROARING_ATOMIC 0
 #define CROARING_CPP_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 1
+# include <intrin.h>
+# pragma intrinsic (_InterlockedIncrement)
+# pragma intrinsic (_InterlockedDecrement)
+#elif defined(__STDC_NO_ATOMICS__)
+#define CROARING_ATOMIC 0
+#define CROARING_CPP_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #else // C
 #define CROARING_C_ATOMIC 1
 #define CROARING_CPP_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #include <stdatomic.h>
 #endif
 

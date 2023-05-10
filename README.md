@@ -704,8 +704,8 @@ container with reference counting (we keep track of the number of shallow copies
 containers over several threads, this might be unsafe due to the need to update the counter concurrently.
 Thus for shared containers, we use reference counting with an atomic counter. If the library is compiled
 as a C library (the default), we use C11 atomics. Unfortunately, Visual Studio does not support C11
-atomics at this times (though this is subject to change). Hence it is unsafe to copy shared containers
-over multiple threads under Visual Studio. But it is safe in other C11-compliant compilers.
+atomics at this times (though this is subject to change). To compensate, we
+use Windows-specific code in such instances (`_InterlockedDecrement` `_InterlockedIncrement`).
 
 
 # How to best aggregate bitmaps?
