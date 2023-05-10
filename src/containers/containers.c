@@ -141,6 +141,8 @@ container_t *get_copy_of_container(
             atomic_fetch_add(&(shared_container->counter), 1);
 #elif CROARING_CPP_ATOMIC
             std::atomic_fetch_add(&(shared_container->counter), 1);
+#elif CROARING_CPP_WINDOWS_ATOMIC
+            _InterlockedIncrement(&(shared_container->counter));
 #else
             shared_container->counter += 1;
 #endif
@@ -155,6 +157,10 @@ container_t *get_copy_of_container(
 
         shared_container->container = c;
         shared_container->typecode = *typecode;
+        // At this point, we are creating new shared container
+        // so there should be no other references, and setting
+        // the counter to 2 is safe as long as the value
+        // is set before the return statement.
 #if CROARING_C_ATOMIC
         atomic_store(&(shared_container->counter), 2);
 #elif CROARING_CPP_ATOMIC
@@ -206,6 +212,8 @@ container_t *shared_container_extract_copy(
     if(atomic_fetch_sub(&(sc->counter), 1) == 1) {
 #elif CROARING_CPP_ATOMIC
     if(std::atomic_fetch_sub(&(sc->counter), 1) == 1) {
+#elif CROARING_CPP_WINDOWS_ATOMIC
+    if(_InterlockedDecrement(&(shared_container->counter)) == 0) {
 #else
     assert(sc->counter > 0);
     sc->counter--;
@@ -226,6 +234,8 @@ void shared_container_free(shared_container_t *container) {
     if(atomic_fetch_sub(&(container->counter), 1) == 1) {
 #elif CROARING_CPP_ATOMIC
     if(std::atomic_fetch_sub(&(container->counter), 1) == 1) {
+#elif CROARING_CPP_WINDOWS_ATOMIC
+    if(_InterlockedDecrement(&(shared_container->counter)) == 0) {
 #else
     assert(container->counter > 0);
     container->counter--;

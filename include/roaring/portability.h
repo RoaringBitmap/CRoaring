@@ -411,21 +411,32 @@ static inline int roaring_hamming(uint64_t x) {
 // It is now safe:
 #define CROARING_CPP_ATOMIC 1
 #define CROARING_C_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #include <atomic>
 #endif //__has_include(<endian.h>)
 #else
 // We lack __has_include to check:
 #define CROARING_CPP_ATOMIC 1
 #define CROARING_C_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #include <atomic>
 #endif //__has_include
-#elif defined(__STDC_NO_ATOMICS__) || CROARING_REGULAR_VISUAL_STUDIO
+#elif defined(__STDC_NO_ATOMICS__) && CROARING_REGULAR_VISUAL_STUDIO
 // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
 #define CROARING_ATOMIC 0
 #define CROARING_CPP_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 1
+# include <intrin.h>
+# pragma intrinsic (_InterlockedIncrement)
+# pragma intrinsic (_InterlockedDecrement)
+#elif defined(__STDC_NO_ATOMICS__)
+#define CROARING_ATOMIC 0
+#define CROARING_CPP_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #else // C
 #define CROARING_C_ATOMIC 1
 #define CROARING_CPP_ATOMIC 0
+#define CROARING_CPP_WINDOWS_ATOMIC 0
 #include <stdatomic.h>
 #endif
 
