@@ -213,7 +213,7 @@ container_t *shared_container_extract_copy(
 #elif CROARING_CPP_ATOMIC
     if(std::atomic_fetch_sub(&(sc->counter), 1) == 1) {
 #elif CROARING_CPP_WINDOWS_ATOMIC
-    if(_InterlockedDecrement(&(shared_container->counter)) == 0) {
+    if(_InterlockedDecrement(&(sc->counter)) == 0) {
 #else
     assert(sc->counter > 0);
     sc->counter--;
@@ -235,7 +235,7 @@ void shared_container_free(shared_container_t *container) {
 #elif CROARING_CPP_ATOMIC
     if(std::atomic_fetch_sub(&(container->counter), 1) == 1) {
 #elif CROARING_CPP_WINDOWS_ATOMIC
-    if(_InterlockedDecrement(&(shared_container->counter)) == 0) {
+    if(_InterlockedDecrement(&(container->counter)) == 0) {
 #else
     assert(container->counter > 0);
     container->counter--;
