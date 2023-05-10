@@ -13,6 +13,8 @@ void run(roaring_bitmap_t **rarray) {
       roaring_bitmap_and_inplace(r1, r2);
       roaring_bitmap_andnot_inplace(r1, r3);
       roaring_bitmap_free(r1);
+      roaring_bitmap_free(r2);
+      roaring_bitmap_free(r3);
     }
 }
 
