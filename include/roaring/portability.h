@@ -431,7 +431,6 @@ static inline int roaring_hamming(uint64_t x) {
 #define CROARING_C_ATOMIC 1
 #define CROARING_CPP_ATOMIC 0
 #define CROARING_CPP_WINDOWS_ATOMIC 0
-here we go
 #include <stdatomic.h>
 #endif
 
