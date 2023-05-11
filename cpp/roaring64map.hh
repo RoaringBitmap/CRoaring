@@ -36,7 +36,6 @@ class Roaring64MapSetBitBiDirectionalIterator;
 
 class Roaring64Map {
     typedef api::roaring_bitmap_t roaring_bitmap_t;
-    typedef __int128_t int128_t;
 
 public:
     /**
@@ -1100,8 +1099,8 @@ public:
      * when x isn't in the set, but the rank function will return a
      * non-negative number.
      */
-    int128_t getIndex(uint64_t x) const {
-        int128_t index = 0;
+    int64_t getIndex(uint64_t x) const {
+        int64_t index = 0;
         auto roaring_destination = roarings.find(highBytes(x));
         if (roaring_destination != roarings.cend()) {
             for (auto roaring_iter = roarings.cbegin();
