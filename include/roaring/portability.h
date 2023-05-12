@@ -483,7 +483,9 @@ static inline uint32_t croaring_refcount_get(croaring_refcount_t *val) {
 #pragma intrinsic(_InterlockedIncrement)
 #pragma intrinsic(_InterlockedDecrement)
 
-typedef volatile uint32_t croaring_refcount_t;
+// _InterlockedIncrement and _InterlockedDecrement take a (signed) long, and
+// overflow is defined to wrap, so we can pretend it is a uint32_t for our case
+typedef volatile long croaring_refcount_t;
 
 static inline void croaring_refcount_inc(croaring_refcount_t *val) {
     _InterlockedIncrement(val);
