@@ -213,7 +213,7 @@ static uint32_t croaring_detect_supported_architectures() {
 #else
 // If we do not have atomics, we do the best we can.
 static inline uint32_t croaring_detect_supported_architectures() {
-    static uint32 buffer = CROARING_UNINITIALIZED;
+    static uint32_t buffer = CROARING_UNINITIALIZED;
     if (buffer == CROARING_UNINITIALIZED) {
       buffer = dynamic_croaring_detect_supported_architectures();
     }
