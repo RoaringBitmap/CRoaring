@@ -348,20 +348,9 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *r) {
                get_full_container_name(ra->containers[i], ra->typecodes[i]),
                container_get_cardinality(ra->containers[i], ra->typecodes[i]));
         if (ra->typecodes[i] == SHARED_CONTAINER_TYPE) {
-#if CROARING_C_ATOMIC
-            printf(
-                "(shared count = %" PRIu32 " )",
-                    atomic_load(&(CAST_shared(ra->containers[i])->counter)));
-#elif CROARING_CPP_ATOMIC
-            printf(
-                "(shared count = %" PRIu32 " )",
-                    std::atomic_load(&(CAST_shared(ra->containers[i])->counter)));
-#else
-            printf(
-                "(shared count = %" PRIu32 " )",
-                    CAST_shared(ra->containers[i])->counter);
-#endif
-
+            printf("(shared count = %" PRIu32 " )",
+                   croaring_refcount_get(
+                       &(CAST_shared(ra->containers[i])->counter)));
         }
 
         if (i + 1 < ra->size) {

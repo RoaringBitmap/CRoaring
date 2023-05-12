@@ -137,15 +137,7 @@ container_t *get_copy_of_container(
         shared_container_t *shared_container;
         if (*typecode == SHARED_CONTAINER_TYPE) {
             shared_container = CAST_shared(c);
-#if CROARING_C_ATOMIC
-            atomic_fetch_add(&(shared_container->counter), 1);
-#elif CROARING_CPP_ATOMIC
-            std::atomic_fetch_add(&(shared_container->counter), 1);
-#elif CROARING_CPP_WINDOWS_ATOMIC
-            _InterlockedIncrement(&(shared_container->counter));
-#else
-            shared_container->counter += 1;
-#endif
+            croaring_refcount_inc(&shared_container->counter);
             return shared_container;
         }
         assert(*typecode != SHARED_CONTAINER_TYPE);
@@ -159,15 +151,9 @@ container_t *get_copy_of_container(
         shared_container->typecode = *typecode;
         // At this point, we are creating new shared container
         // so there should be no other references, and setting
-        // the counter to 2 is safe as long as the value
-        // is set before the return statement.
-#if CROARING_C_ATOMIC
-        atomic_store(&(shared_container->counter), 2);
-#elif CROARING_CPP_ATOMIC
-        std::atomic_store(&(shared_container->counter), 2);
-#else
+        // the counter to 2 - even non-atomically - is safe as
+        // long as the value is set before the return statement.
         shared_container->counter = 2;
-#endif
         *typecode = SHARED_CONTAINER_TYPE;
 
         return shared_container;
@@ -208,17 +194,7 @@ container_t *shared_container_extract_copy(
     assert(sc->typecode != SHARED_CONTAINER_TYPE);
     *typecode = sc->typecode;
     container_t *answer;
-#if CROARING_C_ATOMIC
-    if(atomic_fetch_sub(&(sc->counter), 1) == 1) {
-#elif CROARING_CPP_ATOMIC
-    if(std::atomic_fetch_sub(&(sc->counter), 1) == 1) {
-#elif CROARING_CPP_WINDOWS_ATOMIC
-    if(_InterlockedDecrement(&(sc->counter)) == 0) {
-#else
-    assert(sc->counter > 0);
-    sc->counter--;
-    if (sc->counter == 0) {
-#endif
+    if (croaring_refcount_dec(&sc->counter)) {
         answer = sc->container;
         sc->container = NULL;  // paranoid
         roaring_free(sc);
@@ -230,17 +206,7 @@ container_t *shared_container_extract_copy(
 }
 
 void shared_container_free(shared_container_t *container) {
-#if CROARING_C_ATOMIC
-    if(atomic_fetch_sub(&(container->counter), 1) == 1) {
-#elif CROARING_CPP_ATOMIC
-    if(std::atomic_fetch_sub(&(container->counter), 1) == 1) {
-#elif CROARING_CPP_WINDOWS_ATOMIC
-    if(_InterlockedDecrement(&(container->counter)) == 0) {
-#else
-    assert(container->counter > 0);
-    container->counter--;
-    if (container->counter == 0) {
-#endif
+    if (croaring_refcount_dec(&container->counter)) {
         assert(container->typecode != SHARED_CONTAINER_TYPE);
         container_free(container->container, container->typecode);
         container->container = NULL;  // paranoid

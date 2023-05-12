@@ -55,25 +55,11 @@ extern "C" { namespace roaring { namespace internal {
  * A shared container is a wrapper around a container
  * with reference counting.
  */
-#if CROARING_C_ATOMIC
 STRUCT_CONTAINER(shared_container_s) {
     container_t *container;
     uint8_t typecode;
-    _Atomic(uint32_t) counter;  // to be managed atomically
+    croaring_refcount_t counter;  // to be managed atomically
 };
-#elif CROARING_CPP_ATOMIC
-STRUCT_CONTAINER(shared_container_s) {
-    container_t *container;
-    uint8_t typecode;
-    std::atomic<uint32_t> counter;  // to be managed atomically
-};
-#else
-STRUCT_CONTAINER(shared_container_s) {
-    container_t *container;
-    uint8_t typecode;
-    uint32_t counter;  // to be managed atomically
-};
-#endif
 
 typedef struct shared_container_s shared_container_t;
 
