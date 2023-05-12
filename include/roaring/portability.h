@@ -417,9 +417,9 @@ static inline int roaring_hamming(uint64_t x) {
        // We lack __has_include to check:
        #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
     #endif //__has_include
-  #elif !defined(__STDC_NO_ATOMICS__)
+  #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
     #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C
-  #else // (c, no atomics)
+  #elif !defined(__cplusplus) // (c, no atomics)
     #if CROARING_REGULAR_VISUAL_STUDIO
       // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
       #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C_WINDOWS
@@ -437,20 +437,20 @@ static inline int roaring_hamming(uint64_t x) {
 typedef _Atomic(uint32_t) croaring_refcount_t;
 
 static inline void croaring_refcount_inc(croaring_refcount_t *val) {
-  // Increasing the reference counter can always be done with
-  // memory_order_relaxed: New references to an object can only be formed from
-  // an existing reference, and passing an existing reference from one thread to
-  // another must already provide any required synchronization.
-  atomic_fetch_add_explicit(val, 1, memory_order_relaxed);
+    // Increasing the reference counter can always be done with
+    // memory_order_relaxed: New references to an object can only be formed from
+    // an existing reference, and passing an existing reference from one thread to
+    // another must already provide any required synchronization.
+    atomic_fetch_add_explicit(val, 1, memory_order_relaxed);
 }
 
 static inline bool croaring_refcount_dec(croaring_refcount_t *val) {
-  // It is important to enforce any possible access to the object in one thread
-  // (through an existing reference) to happen before deleting the object in a
-  // different thread. This is achieved by a "release" operation after dropping
-  // a reference (any access to the object through this reference must obviously
-  // happened before), and an "acquire" operation before deleting the object.
-  bool is_zero = atomic_fetch_sub_explicit(val, 1, memory_order_release) == 1;
+    // It is important to enforce any possible access to the object in one thread
+    // (through an existing reference) to happen before deleting the object in a
+    // different thread. This is achieved by a "release" operation after dropping
+    // a reference (any access to the object through this reference must obviously
+    // happened before), and an "acquire" operation before deleting the object.
+    bool is_zero = atomic_fetch_sub_explicit(val, 1, memory_order_release) == 1;
     if (is_zero) {
         atomic_thread_fence(memory_order_acquire);
     }
