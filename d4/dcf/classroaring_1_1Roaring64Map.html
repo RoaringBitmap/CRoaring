@@ -216,6 +216,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af9985d390524d188a37ecc755de8643e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ea3bbf3f8f1b379e58e26e4d81ed4ed"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a0ea3bbf3f8f1b379e58e26e4d81ed4ed">rank</a> (uint64_t x) const</td></tr>
 <tr class="separator:a0ea3bbf3f8f1b379e58e26e4d81ed4ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affc3bb231ef8476580188049f08a3e9c"><td class="memItemLeft" align="right" valign="top">int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#affc3bb231ef8476580188049f08a3e9c">getIndex</a> (uint64_t x) const</td></tr>
+<tr class="separator:affc3bb231ef8476580188049f08a3e9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a567f77f809bf327187d926de2201c8ea"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a567f77f809bf327187d926de2201c8ea">write</a> (char *buf, bool portable=true) const</td></tr>
 <tr class="separator:a567f77f809bf327187d926de2201c8ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad6e5c423a34de4a3711a2ad4cf1bf502"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#ad6e5c423a34de4a3711a2ad4cf1bf502">getSizeInBytes</a> (bool portable=true) const</td></tr>
@@ -283,7 +285,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01513">1513</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01536">1536</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -299,7 +301,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01512">1512</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01535">1535</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -944,7 +946,7 @@ Friends</h2></td></tr>
 <p>Returns an iterator that can be used to access the position of the set bits. The running time complexity of a full scan is proportional to the number of set bits: be aware that if you have long strings of 1s, this can be very inefficient.</p>
 <p>It can be much faster to use the toArray method if you want to retrieve the set bits. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01835">1835</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01858">1858</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a9b4407ef62045a09bf3e4a87560dca00">Roaring64MapSetBitForwardIterator</a>.</p>
 
@@ -1155,7 +1157,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>A bogus iterator that can be used together with <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a82cb74f663e241e4e866e4ba738ad29e">begin()</a> for constructions such as: for (auto i = b.begin(); * i!=b.end(); ++i) {} </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01839">1839</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01862">1862</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a9b4407ef62045a09bf3e4a87560dca00">Roaring64MapSetBitForwardIterator</a>.</p>
 
@@ -1198,7 +1200,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the logical or (union) between "n" bitmaps (referenced by a pointer). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01389">1389</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01412">1412</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a75cb282058feaf656985a69cdd855cc5">clear()</a>, and <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a9b15198bec4e3feaa07c2631ec477ee5">end()</a>.</p>
 
@@ -1349,7 +1351,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01215">1215</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01238">1238</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340">roaring::Roaring::frozenView()</a>, and <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a8fb0ab5d74212c781ba42e37412ac396">read()</a>.</p>
 
@@ -1379,7 +1381,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Whether or not copy and write is active. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01383">1383</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01406">1406</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -1406,7 +1408,36 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01288">1288</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01311">1311</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+
+</div>
+</div>
+<a id="affc3bb231ef8476580188049f08a3e9c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affc3bb231ef8476580188049f08a3e9c">&#9670;&nbsp;</a></span>getIndex()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int64_t roaring::Roaring64Map::getIndex </td>
+          <td>(</td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the index of x in the set, index start from 0. If the set doesn't contain x , this function will return -1. The difference with rank function is that this function will return -1 when x isn't in the set, but the rank function will return a non-negative number. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01102">1102</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -1436,7 +1467,7 @@ Friends</h2></td></tr>
 <p>Return the number of bytes required to serialize this bitmap (meant to be compatible with Java and Go versions)</p>
 <p>Setting the portable flag to false enable a custom format that can save space compared to the portable format (e.g., for very sparse bitmaps). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01202">1202</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01225">1225</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -1682,7 +1713,7 @@ Friends</h2></td></tr>
 <p>Computes the intersection between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged.</p>
 <p>Performance hint: if you are computing the intersection between several bitmaps, two-by-two, it is best to start with the smallest bitmap. Consider also using the operator &amp;= to avoid needlessly creating many temporary bitmaps. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01316">1316</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01339">1339</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831">Roaring64Map()</a>.</p>
 
@@ -1743,7 +1774,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the difference between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01324">1324</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01347">1347</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831">Roaring64Map()</a>.</p>
 
@@ -1917,7 +1948,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the symmetric union between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01340">1340</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01363">1363</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831">Roaring64Map()</a>.</p>
 
@@ -1977,7 +2008,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the union between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01332">1332</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01355">1355</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831">Roaring64Map()</a>.</p>
 
@@ -2037,7 +2068,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Print the contents of the bitmap to stdout. Note: this method adds a final newline, but <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a39e6d92e37d318f09bad9f6d208ac5f5">toString()</a> does not. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01360">1360</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01383">1383</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -2109,7 +2140,7 @@ Friends</h2></td></tr>
 <p>Setting the portable flag to false enable a custom format that can save space compared to the portable format (e.g., for very sparse bitmaps).</p>
 <p>This function is unsafe in the sense that if you provide bad data, many bytes could be read, possibly causing a buffer overflow. See also readSafe. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01136">1136</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01159">1159</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">roaring::Roaring::getSizeInBytes()</a>, and <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a49f4dc67b6f3522a4f33051b1fc5d427">roaring::Roaring::read()</a>.</p>
 
@@ -2153,7 +2184,7 @@ Friends</h2></td></tr>
 <p>Read a bitmap from a serialized version, reading no more than maxbytes bytes. This is meant to be compatible with the Java and Go versions.</p>
 <p>Setting the portable flag to false enable a custom format that can save space compared to the portable format (e.g., for very sparse bitmaps). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01165">1165</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01188">1188</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">roaring::Roaring::getSizeInBytes()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a129a1d354fd32d20fc9e2732e288ebb5">roaring::Roaring::readSafe()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
@@ -2518,7 +2549,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Whether or not we apply copy and write. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01347">1347</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01370">1370</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -2603,7 +2634,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 <p>Print the contents of the bitmap into a string. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01371">1371</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01394">1394</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -2672,7 +2703,7 @@ Friends</h2></td></tr>
 <p>Write a bitmap to a char buffer. This is meant to be compatible with the Java and Go versions. Returns how many bytes were written which should be <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#ad6e5c423a34de4a3711a2ad4cf1bf502">getSizeInBytes()</a>.</p>
 <p>Setting the portable flag to false enables a custom format that can save space compared to the portable format (e.g., for very sparse bitmaps). </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01104">1104</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01127">1127</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -2700,7 +2731,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01259">1259</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01282">1282</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -2725,7 +2756,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01511">1511</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01534">1534</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -2749,7 +2780,7 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01510">1510</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01533">1533</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a82cb74f663e241e4e866e4ba738ad29e">begin()</a>, and <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a9b15198bec4e3feaa07c2631ec477ee5">end()</a>.</p>
 

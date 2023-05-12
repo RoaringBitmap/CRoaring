@@ -28,6 +28,7 @@ var classroaring_1_1Roaring =
     [ "frozenView", "d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340", null ],
     [ "getCopyOnWrite", "d1/d51/classroaring_1_1Roaring.html#aa3a45100e354d3d4d348c0cb08b9353b", null ],
     [ "getFrozenSizeInBytes", "d1/d51/classroaring_1_1Roaring.html#a0b3ab3f5da48d69f43a85b21c8f6196b", null ],
+    [ "getIndex", "d1/d51/classroaring_1_1Roaring.html#aee90d40c2b4ac2069c3d4440d7dd5be5", null ],
     [ "getSizeInBytes", "d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637", null ],
     [ "intersect", "d1/d51/classroaring_1_1Roaring.html#a725ff11673c9696277c0a31689a3dd12", null ],
     [ "isEmpty", "d1/d51/classroaring_1_1Roaring.html#ac3f8cb65dabb943bab59aa8e2441faad", null ],

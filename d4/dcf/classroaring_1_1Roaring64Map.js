@@ -35,6 +35,7 @@ var classroaring_1_1Roaring64Map =
     [ "frozenView", "d4/dcf/classroaring_1_1Roaring64Map.html#a8e841864dcba989a6d469cbc26d6a23a", null ],
     [ "getCopyOnWrite", "d4/dcf/classroaring_1_1Roaring64Map.html#a7b6b5483e3c8afb96ea5aaba064632cd", null ],
     [ "getFrozenSizeInBytes", "d4/dcf/classroaring_1_1Roaring64Map.html#a0f857b498b247022ff184581acaf1595", null ],
+    [ "getIndex", "d4/dcf/classroaring_1_1Roaring64Map.html#affc3bb231ef8476580188049f08a3e9c", null ],
     [ "getSizeInBytes", "d4/dcf/classroaring_1_1Roaring64Map.html#ad6e5c423a34de4a3711a2ad4cf1bf502", null ],
     [ "isEmpty", "d4/dcf/classroaring_1_1Roaring64Map.html#a883e029163c4dee0e548626164ce8c16", null ],
     [ "isFull", "d4/dcf/classroaring_1_1Roaring64Map.html#ad5cc01aeff7cfd81d7ce2f08b7b9b281", null ],
