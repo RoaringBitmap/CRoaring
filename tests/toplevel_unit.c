@@ -3512,6 +3512,15 @@ static uint64_t rank(uint32_t *arr, size_t length, uint32_t x) {
     return sum;
 }
 
+static int64_t get_index(uint32_t *arr, size_t length, uint32_t x) {
+    for (size_t i = 0; i < length; ++i) {
+        if (arr[i] == x) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 DEFINE_TEST(test_rank) {
     for (uint32_t mymin = 123; mymin < 1000000; mymin *= 2) {
         // just arrays
@@ -3562,6 +3571,63 @@ DEFINE_TEST(test_rank) {
             if (truerank != computedrank)
                 printf("%d != %d \n", (int)truerank, (int)computedrank);
             assert_true(truerank == computedrank);
+        }
+        free(ans);
+
+        roaring_bitmap_free(r);
+    }
+}
+
+DEFINE_TEST(test_get_index) {
+    for (uint32_t mymin = 123; mymin < 1000000; mymin *= 2) {
+        // just arrays
+        roaring_bitmap_t *r = roaring_bitmap_create();
+        uint32_t x = mymin;
+        for (; x < 1000 + mymin; x += 100) {
+            roaring_bitmap_add(r, x);
+        }
+        uint64_t card = roaring_bitmap_get_cardinality(r);
+        uint32_t *ans = (uint32_t *)malloc(card * sizeof(uint32_t));
+        roaring_bitmap_to_uint32_array(r, ans);
+        for (uint32_t z = 0; z < 1000 + mymin + 10; z += 10) {
+            int64_t trueidx = get_index(ans, card, z);
+            int64_t computedidx = roaring_bitmap_get_index(r, z);
+            if (trueidx != computedidx)
+                printf("%d != %d \n", (int)trueidx, (int)computedidx);
+            assert_true(trueidx == computedidx);
+        }
+        free(ans);
+        // now bitmap
+        x = mymin;
+        for (; x < 64000 + mymin; x += 2) {
+            roaring_bitmap_add(r, x);
+        }
+        card = roaring_bitmap_get_cardinality(r);
+        ans = (uint32_t *)malloc(card * sizeof(uint32_t));
+        roaring_bitmap_to_uint32_array(r, ans);
+        for (uint32_t z = 0; z < 64000 + mymin + 10; z += 10) {
+            int64_t trueidx = get_index(ans, card, z);
+            int64_t computedidx = roaring_bitmap_get_index(r, z);
+            if (trueidx != computedidx)
+                printf("%d != %d \n", (int)trueidx, (int)computedidx);
+            assert_true(trueidx == computedidx);
+        }
+        free(ans);
+        // now run
+        x = mymin;
+        for (; x < 64000 + mymin; x++) {
+            roaring_bitmap_add(r, x);
+        }
+        roaring_bitmap_run_optimize(r);
+        card = roaring_bitmap_get_cardinality(r);
+        ans = (uint32_t *)malloc(card * sizeof(uint32_t));
+        roaring_bitmap_to_uint32_array(r, ans);
+        for (uint32_t z = 0; z < 64000 + mymin + 10; z += 10) {
+            int64_t trueidx = get_index(ans, card, z);
+            int64_t computedidx = roaring_bitmap_get_index(r, z);
+            if (trueidx != computedidx)
+                printf("%d != %d \n", (int)trueidx, (int)computedidx);
+            assert_true(trueidx == computedidx);
         }
         free(ans);
 
@@ -4491,6 +4557,7 @@ int main() {
         cmocka_unit_test(test_intersect_small_run_bitset),
         cmocka_unit_test(is_really_empty),
         cmocka_unit_test(test_rank),
+        cmocka_unit_test(test_get_index),
         cmocka_unit_test(test_maximum_minimum),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_addremove),
