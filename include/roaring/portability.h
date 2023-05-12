@@ -419,11 +419,9 @@ static inline int roaring_hamming(uint64_t x) {
     #endif //__has_include
   #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
     #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C
-  #elif !defined(__cplusplus) // (c, no atomics)
-    #if CROARING_REGULAR_VISUAL_STUDIO
-      // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
-      #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C_WINDOWS
-    #endif
+  #elif CROARING_REGULAR_VISUAL_STUDIO
+    // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
+    #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C_WINDOWS
   #endif
 #endif // !defined(CROARING_ATOMIC_IMPL)
 
