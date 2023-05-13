@@ -414,8 +414,8 @@ static inline int roaring_hamming(uint64_t x) {
         #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
       #endif //__has_include(<atomic>)
     #else
-       // We lack __has_include to check:
-       #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
+      // We lack __has_include to check:
+      #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
     #endif //__has_include
   #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
     #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C
