@@ -227,24 +227,14 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures() {
 
 #if defined(__x86_64__) || defined(_M_AMD64) // x64
 
-#if defined(__cplusplus)
+#if CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_CPP
 static inline uint32_t croaring_detect_supported_architectures() {
     // thread-safe as per the C++11 standard.
     static uint32_t buffer = dynamic_croaring_detect_supported_architectures();
     return buffer;
 }
-#elif CROARING_VISUAL_STUDIO
-// Visual Studio does not support C11 atomics.
-static inline uint32_t croaring_detect_supported_architectures() {
-    static int buffer = CROARING_UNINITIALIZED;
-    if (buffer == CROARING_UNINITIALIZED) {
-      buffer = dynamic_croaring_detect_supported_architectures();
-    }
-    return buffer;
-}
-#else // CROARING_VISUAL_STUDIO
-#include <stdatomic.h>
-uint32_t croaring_detect_supported_architectures() {
+#elif CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_C
+static uint32_t croaring_detect_supported_architectures() {
     // we use an atomic for thread safety
     static _Atomic uint32_t buffer = CROARING_UNINITIALIZED;
     if (buffer == CROARING_UNINITIALIZED) {
@@ -253,7 +243,16 @@ uint32_t croaring_detect_supported_architectures() {
     }
     return buffer;
 }
-#endif // CROARING_REGULAR_VISUAL_STUDIO
+#else
+// If we do not have atomics, we do the best we can.
+static inline uint32_t croaring_detect_supported_architectures() {
+    static uint32_t buffer = CROARING_UNINITIALIZED;
+    if (buffer == CROARING_UNINITIALIZED) {
+      buffer = dynamic_croaring_detect_supported_architectures();
+    }
+    return buffer;
+}
+#endif // CROARING_C_ATOMIC
 
 #ifdef ROARING_DISABLE_AVX
 

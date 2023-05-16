@@ -44,6 +44,8 @@ option(ROARING_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(ROARING_BUILD_C_AS_CPP "Build library C files using C++ compilation" OFF)
 option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" OFF)
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
+option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
+
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
