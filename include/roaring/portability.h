@@ -503,6 +503,7 @@ static inline uint32_t croaring_refcount_get(croaring_refcount_t *val) {
     return *val;
 }
 #elif CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_NONE
+#include <assert.h>
 typedef uint32_t croaring_refcount_t;
 
 static inline void croaring_refcount_inc(croaring_refcount_t *val) {
