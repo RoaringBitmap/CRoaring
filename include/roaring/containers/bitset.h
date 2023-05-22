@@ -340,6 +340,12 @@ int bitset_container_intersection_justcard(const bitset_container_t *src_1,
 
 /* Computes the intersection of bitsets `src_1' and `src_2' into `dst', but does
  * not update the cardinality. Provided to optimize chained operations. */
+int bitset_container_intersection_nocard(const bitset_container_t *src_1,
+					 const bitset_container_t *src_2,
+					 bitset_container_t *dst);
+
+/* Computes the intersection of bitsets `src_1' and `src_2' into `dst', but does
+ * not update the cardinality. Provided to optimize chained operations. */
 int bitset_container_and_nocard(const bitset_container_t *src_1,
                                 const bitset_container_t *src_2,
                                 bitset_container_t *dst);
