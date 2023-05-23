@@ -426,7 +426,9 @@ static inline int roaring_hamming(uint64_t x) {
 #endif // !defined(CROARING_ATOMIC_IMPL)
 
 #if !defined(CROARING_ATOMIC_IMPL)
-  #pragma message ( "No atomic implementation found, copy on write bitmaps will not be threadsafe" )
+  #ifndef CROARING_SILENT_BUILD
+    #pragma message ( "No atomic implementation found, copy on write bitmaps will not be threadsafe" )
+  #endif // CROARING_SILENT_BUILD
   #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_NONE
 #endif
 
