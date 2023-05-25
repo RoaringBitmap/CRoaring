@@ -5,6 +5,10 @@
 ########################################################################
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
+case $SCRIPTPATH in
+    (*\ *) echo "Path ($SCRIPTPATH) cannot contain whitespace"; exit 1 ;;
+esac
+
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")  # capture to label files with their generation time
 
 function newline {
@@ -76,12 +80,13 @@ $SCRIPTPATH/include/roaring/roaring_array.h
 # has the definitions available from all the header files.  Since the order of
 # the top level declarations doesn't matter after that point, the file list is
 # generated automatically from git-tracked C files in the /src/ directory.
+# Sort them so every run uses the same order.
 #
-ALL_PRIVATE_C=$( ( \
+ALL_PRIVATE_C=$( ( ( \
     [ -d $SCRIPTPATH/.git ] \
         && ( type git >/dev/null 2>&1 ) \
-        && ( git ls-files $SCRIPTPATH/src/*.c $SCRIPTPATH/src/**/*c ) \
-    ) || ( find $SCRIPTPATH/src -name '*.c' ) )
+        && ( git -C $SCRIPTPATH ls-files 'src/*.c' ) \
+    ) || ( find $SCRIPTPATH/src -name '*.c' ) ) | sort )
 # Verify up-front that all the files exist
 #
 for i in ${ALL_PUBLIC_H} ${ALL_PUBLIC_HH} ${ALL_PRIVATE_H} ${ALL_PRIVATE_C}; do
