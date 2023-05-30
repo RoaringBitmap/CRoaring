@@ -107,7 +107,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 
 
 
-#ifdef CROARING_CLANG_VISUAL_STUDIO
+#if CROARING_CLANG_VISUAL_STUDIO
 
 /**
  * You are not supposed, normally, to include these
