@@ -1466,20 +1466,38 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf) {
         memcpy(&card, bufaschar + 1, sizeof(uint32_t));
         const uint32_t *elems =
             (const uint32_t *)(bufaschar + 1 + sizeof(uint32_t));
-        roaring_bitmap_t *bitmap = roaring_bitmap_create();
-        if (bitmap == NULL) {
-            return NULL;
-        }
-        roaring_bulk_context_t context = {0};
-        for (uint32_t i = 0; i < card; i++) {
-            // elems may not be aligned, read with memcpy
-            uint32_t elem;
-            memcpy(&elem, elems + i, sizeof(elem));
-            roaring_bitmap_add_bulk(bitmap, &context, elem);
-        }
-        return bitmap;
+        return roaring_bitmap_of_ptr(card, elems);
     } else if (bufaschar[0] == CROARING_SERIALIZATION_CONTAINER) {
         return roaring_bitmap_portable_deserialize(bufaschar + 1);
+    } else
+        return (NULL);
+}
+
+roaring_bitmap_t* roaring_bitmap_deserialize_safe(const void *buf, size_t maxbytes) {
+    if (maxbytes < 1) {
+        return NULL;
+    }
+
+    const char *bufaschar = (const char *)buf;
+    if (bufaschar[0] == CROARING_SERIALIZATION_ARRAY_UINT32) {
+        if (maxbytes < 5) {
+            return NULL;
+        }
+
+        /* This looks like a compressed set of uint32_t elements */
+        uint32_t card;
+        memcpy(&card, bufaschar + 1, sizeof(uint32_t));
+
+        // Check the buffer is big enough to contain card uint32_t elements
+        if (maxbytes < 1 + sizeof(uint32_t) + card * sizeof(uint32_t)) {
+            return NULL;
+        }
+
+        const uint32_t *elems =
+            (const uint32_t *)(bufaschar + 1 + sizeof(uint32_t));
+        return roaring_bitmap_of_ptr(card, elems);
+    } else if (bufaschar[0] == CROARING_SERIALIZATION_CONTAINER) {
+        return roaring_bitmap_portable_deserialize_safe(bufaschar + 1, maxbytes - 1);
     } else
         return (NULL);
 }
