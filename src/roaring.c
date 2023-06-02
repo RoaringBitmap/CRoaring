@@ -1480,7 +1480,7 @@ roaring_bitmap_t* roaring_bitmap_deserialize_safe(const void *buf, size_t maxbyt
 
     const char *bufaschar = (const char *)buf;
     if (bufaschar[0] == CROARING_SERIALIZATION_ARRAY_UINT32) {
-        if (maxbytes < 5) {
+        if (maxbytes < 1 + sizeof(uint32_t)) {
             return NULL;
         }
 
