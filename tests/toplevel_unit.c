@@ -1407,6 +1407,23 @@ DEFINE_TEST(test_serialize) {
     r2 = roaring_bitmap_deserialize(serialized);
     assert_true(roaring_bitmap_equals(r1, r2));
 
+    // Check that roaring_bitmap_deserialize_safe fails on invalid length
+
+    assert_null(roaring_bitmap_deserialize_safe(serialized, 0));
+    assert_null(roaring_bitmap_deserialize_safe(serialized, serialize_len - 1));
+
+    // Check that roaring_bitmap_deserialize_safe succeed with valid length
+
+    roaring_bitmap_t *t_safe = roaring_bitmap_deserialize_safe(serialized, serialize_len);
+    assert_true(roaring_bitmap_equals(r1, t_safe));
+    roaring_bitmap_free(t_safe);
+
+    // Check that roaring_bitmap_deserialize_safe succeed with larger length
+
+    t_safe = roaring_bitmap_deserialize_safe(serialized, serialize_len + 10);
+    assert_true(roaring_bitmap_equals(r1, t_safe));
+    roaring_bitmap_free(t_safe);
+
     free(serialized);
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
@@ -1460,6 +1477,7 @@ DEFINE_TEST(test_serialize) {
 
     assert_true(array_equals(arr1, card1, arr2, card2));
     assert_true(roaring_bitmap_equals(r1, r2));
+
     free(arr1);
     free(arr2);
     free(serialized);
@@ -1473,6 +1491,14 @@ DEFINE_TEST(test_serialize) {
     uint32_t size = roaring_bitmap_serialize(old_bm, buff);
     assert_int_equal(size, roaring_bitmap_size_in_bytes(old_bm));
     roaring_bitmap_t *new_bm = roaring_bitmap_deserialize(buff);
+
+    // Check that roaring_bitmap_deserialize_safe fails on invalid length
+    assert_null(roaring_bitmap_deserialize_safe(buff, size - 1));
+    // Check that roaring_bitmap_deserialize_safe succeed with valid length
+    t_safe = roaring_bitmap_deserialize_safe(buff, size);
+    assert_true(roaring_bitmap_equals(new_bm, t_safe));
+    roaring_bitmap_free(t_safe);
+
     free(buff);
     assert_true((unsigned int)roaring_bitmap_get_cardinality(old_bm) ==
                 (unsigned int)roaring_bitmap_get_cardinality(new_bm));
