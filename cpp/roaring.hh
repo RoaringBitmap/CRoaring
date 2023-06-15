@@ -186,9 +186,13 @@ public:
     /**
      * Add value val, using context from a previous insert for speed
      * optimization.
+     *
+     * `context` will be used to store information between calls to make bulk
+     * operations faster. `context` should be default-initialized before the
+     * first call to this function.
      */
-    void addBulk(BulkContextWrapper *wrapper, uint32_t x) noexcept {
-        api::roaring_bitmap_add_bulk(&roaring, &wrapper->context_, x);
+    void addBulk(BulkContextWrapper &context, uint32_t x) noexcept {
+        api::roaring_bitmap_add_bulk(&roaring, &context.context_, x);
     }
 
     /**

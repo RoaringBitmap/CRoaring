@@ -763,7 +763,7 @@ DEFINE_TEST(test_cpp_add_bulk) {
     Roaring r2;
     roaring::BulkContextWrapper bulk_container_wrapper;
     for (const auto value : values) {
-        r1.addBulk(&bulk_container_wrapper, value);
+        r1.addBulk(bulk_container_wrapper, value);
         r2.add(value);
         assert_true(r1 == r2);
     }
