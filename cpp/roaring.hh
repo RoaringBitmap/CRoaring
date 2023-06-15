@@ -42,6 +42,23 @@ namespace roaring {
 
 class RoaringSetBitForwardIterator;
 
+/**
+ * A bit of context usable with `*Bulk()` functions.
+ *
+ * A context may only be used with a single bitmap, and any modification to a bitmap
+ * (other than modifications performed with `Bulk()` functions with the context
+ * passed) will invalidate any contexts associated with that bitmap.
+ */
+class BulkContextWrapper {
+   public:
+    friend class Roaring;
+    using roaring_bitmap_bulk_context_t = api::roaring_bulk_context_t;
+    BulkContextWrapper() : context_{nullptr, 0, 0, 0} {}
+
+   private:
+    roaring_bitmap_bulk_context_t context_;
+};
+
 class Roaring {
     typedef api::roaring_bitmap_t roaring_bitmap_t;  // class-local name alias
 
@@ -164,6 +181,14 @@ public:
      */
     void addMany(size_t n_args, const uint32_t *vals) noexcept {
         api::roaring_bitmap_add_many(&roaring, n_args, vals);
+    }
+
+    /**
+     * Add value val, using context from a previous insert for speed
+     * optimization.
+     */
+    void addBulk(BulkContextWrapper *wrapper, uint32_t x) noexcept {
+        api::roaring_bitmap_add_bulk(&roaring, &wrapper->context_, x);
     }
 
     /**

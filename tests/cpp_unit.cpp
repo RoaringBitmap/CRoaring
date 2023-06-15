@@ -757,6 +757,18 @@ DEFINE_TEST(test_cpp_add_range) {
     }
 }
 
+DEFINE_TEST(test_cpp_add_bulk) {
+    std::vector<uint32_t> values = {9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 9999};
+    Roaring r1;
+    Roaring r2;
+    roaring::BulkContextWrapper bulk_container_wrapper;
+    for (const auto value : values) {
+        r1.addBulk(&bulk_container_wrapper, value);
+        r2.add(value);
+        assert_true(r1 == r2);
+    }
+}
+
 DEFINE_TEST(test_cpp_remove_range) {
     {
         // min < r1.minimum, max > r1.maximum
@@ -1974,6 +1986,7 @@ int main() {
         cmocka_unit_test(test_cpp_add_many),
         cmocka_unit_test(test_cpp_add_many_64),
         cmocka_unit_test(test_cpp_add_range_closed_combinatoric_64),
+        cmocka_unit_test(test_cpp_add_bulk),
         cmocka_unit_test(test_cpp_remove_range_closed_64),
         cmocka_unit_test(test_cpp_remove_range_64),
         cmocka_unit_test(test_run_compression_cpp_64_true),
