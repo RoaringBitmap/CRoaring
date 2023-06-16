@@ -196,6 +196,18 @@ public:
     }
 
     /**
+     * Check if item x is present, using context from a previous insert or search
+     * for speed optimization.
+     *
+     * `context` will be used to store information between calls to make bulk
+     * operations faster. `context` should be default-initialized before the
+     * first call to this function.
+     */
+    bool containsBulk(BulkContextWrapper& context, uint32_t x) const noexcept {
+        return api::roaring_bitmap_contains_bulk(&roaring, &context.context_, x);
+    }
+
+    /**
      * Remove value x
      */
     void remove(uint32_t x) noexcept { api::roaring_bitmap_remove(&roaring, x); }
