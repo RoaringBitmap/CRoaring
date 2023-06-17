@@ -761,9 +761,9 @@ DEFINE_TEST(test_cpp_add_bulk) {
     std::vector<uint32_t> values = {9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 9999};
     Roaring r1;
     Roaring r2;
-    roaring::BulkContextWrapper bulk_container_wrapper;
+    roaring::BulkContext bulk_context;
     for (const auto value : values) {
-        r1.addBulk(bulk_container_wrapper, value);
+        r1.addBulk(bulk_context, value);
         r2.add(value);
         assert_true(r1 == r2);
     }
@@ -774,12 +774,12 @@ DEFINE_TEST(test_cpp_contains_bulk) {
     std::vector<uint32_t> values_not_exists = {10, 12, 2000, 0xFFFFFFF, 0xFFFFFFF9, 2048};
     Roaring r;
     r.addMany(values_exists.size(), values_exists.data());
-    roaring::BulkContextWrapper bulk_container_wrapper;
+    roaring::BulkContext bulk_context;
     for (const auto value: values_exists) {
-        assert_true(r.containsBulk(bulk_container_wrapper, value));
+        assert_true(r.containsBulk(bulk_context, value));
     }
     for (const auto value: values_not_exists) {
-        assert_false(r.containsBulk(bulk_container_wrapper, value));
+        assert_false(r.containsBulk(bulk_context, value));
     }
 }
 
