@@ -383,8 +383,8 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_end);
 
 /**
- * Check if an items is present, using context from a previous insert for speed
- * optimization.
+ * Check if an items is present, using context from a previous insert or search
+ * for speed optimization.
  *
  * `context` will be used to store information between calls to make bulk
  * operations faster. `*context` should be zero-initialized before the first
