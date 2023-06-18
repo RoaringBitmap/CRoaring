@@ -1,5 +1,6 @@
 var roaring_8hh =
 [
+    [ "BulkContext", "d6/d7d/classroaring_1_1BulkContext.html", "d6/d7d/classroaring_1_1BulkContext" ],
     [ "Roaring", "d1/d51/classroaring_1_1Roaring.html", "d1/d51/classroaring_1_1Roaring" ],
     [ "RoaringSetBitForwardIterator", "da/d37/classroaring_1_1RoaringSetBitForwardIterator.html", "da/d37/classroaring_1_1RoaringSetBitForwardIterator" ],
     [ "ROARING_API_NOT_IN_GLOBAL_NAMESPACE", "db/d6e/roaring_8hh.html#aa885eec7267b6eb2b4a12bd2f8689203", null ],

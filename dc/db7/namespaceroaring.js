@@ -1,5 +1,6 @@
 var namespaceroaring =
 [
+    [ "BulkContext", "d6/d7d/classroaring_1_1BulkContext.html", "d6/d7d/classroaring_1_1BulkContext" ],
     [ "Roaring", "d1/d51/classroaring_1_1Roaring.html", "d1/d51/classroaring_1_1Roaring" ],
     [ "RoaringSetBitForwardIterator", "da/d37/classroaring_1_1RoaringSetBitForwardIterator.html", "da/d37/classroaring_1_1RoaringSetBitForwardIterator" ],
     [ "Roaring64Map", "d4/dcf/classroaring_1_1Roaring64Map.html", "d4/dcf/classroaring_1_1Roaring64Map" ],

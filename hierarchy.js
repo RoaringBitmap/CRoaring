@@ -1,5 +1,6 @@
 var hierarchy =
 [
+    [ "roaring::BulkContext", "d6/d7d/classroaring_1_1BulkContext.html", null ],
     [ "roaring::Roaring", "d1/d51/classroaring_1_1Roaring.html", null ],
     [ "roaring::Roaring64Map", "d4/dcf/classroaring_1_1Roaring64Map.html", null ],
     [ "roaring::Roaring64MapSetBitForwardIterator", "df/d71/classroaring_1_1Roaring64MapSetBitForwardIterator.html", [
