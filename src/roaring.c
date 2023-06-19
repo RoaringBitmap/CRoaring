@@ -448,7 +448,7 @@ bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **re
         *reason = "negative allocation size";
         return false;
     }
-    if (ra->size < ra->allocation_size) {
+    if (ra->size > ra->allocation_size) {
         *reason = "more containers than allocated space";
         return false;
     }
