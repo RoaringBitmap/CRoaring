@@ -692,11 +692,13 @@ void test_example(bool copy_on_write) {
     // create a new empty bitmap
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_set_copy_on_write(r1, copy_on_write);
+    assert_bitmap_validate(r1);
     assert_non_null(r1);
 
     // then we can add values
     for (uint32_t i = 100; i < 1000; i++) {
         roaring_bitmap_add(r1, i);
+        assert_bitmap_validate(r1);
     }
 
     // check whether a value is contained
@@ -710,6 +712,7 @@ void test_example(bool copy_on_write) {
     // run_optimize
     uint32_t size = roaring_bitmap_portable_size_in_bytes(r1);
     roaring_bitmap_run_optimize(r1);
+    assert_bitmap_validate(r1);
     uint32_t compact_size = roaring_bitmap_portable_size_in_bytes(r1);
 
     printf("size before run optimize %d bytes, and after %d bytes\n", size,
@@ -717,6 +720,7 @@ void test_example(bool copy_on_write) {
 
     // create a new bitmap with varargs
     roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
+    assert_bitmap_validate(r2);
     assert_non_null(r2);
 
     roaring_bitmap_printf(r2);
@@ -725,6 +729,7 @@ void test_example(bool copy_on_write) {
     const uint32_t values[] = {2, 3, 4};
     roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, values);
     roaring_bitmap_set_copy_on_write(r3, copy_on_write);
+    assert_bitmap_validate(r3);
 
     // we can also go in reverse and go from arrays to bitmaps
     uint64_t card1 = roaring_bitmap_get_cardinality(r1);
@@ -742,6 +747,7 @@ void test_example(bool copy_on_write) {
 
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
+    assert_bitmap_validate(r1f);
     free(arr1);
     assert_non_null(r1f);
 
@@ -752,12 +758,14 @@ void test_example(bool copy_on_write) {
     // we can copy and compare bitmaps
     roaring_bitmap_t *z = roaring_bitmap_copy(r3);
     roaring_bitmap_set_copy_on_write(z, copy_on_write);
+    assert_bitmap_validate(z);
     assert_true(roaring_bitmap_equals(r3, z));
 
     roaring_bitmap_free(z);
 
     // we can compute union two-by-two
     roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);
+    assert_bitmap_validate(r1_2_3);
     assert_true(roaring_bitmap_get_cardinality(r1_2_3) ==
                 roaring_bitmap_or_cardinality(r1, r2));
 
@@ -767,9 +775,11 @@ void test_example(bool copy_on_write) {
     // we can compute a big union
     const roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};
     roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);
+    assert_bitmap_validate(bigunion);
     assert_true(roaring_bitmap_equals(r1_2_3, bigunion));
     roaring_bitmap_t *bigunionheap =
         roaring_bitmap_or_many_heap(3, allmybitmaps);
+    assert_bitmap_validate(bigunionheap);
     assert_true(roaring_bitmap_equals(r1_2_3, bigunionheap));
     roaring_bitmap_free(r1_2_3);
     roaring_bitmap_free(bigunion);
@@ -778,11 +788,13 @@ void test_example(bool copy_on_write) {
     // we can compute xor two-by-two
     roaring_bitmap_t *rx1_2_3 = roaring_bitmap_xor(r1, r2);
     roaring_bitmap_set_copy_on_write(rx1_2_3, copy_on_write);
+    assert_bitmap_validate(rx1_2_3);
     roaring_bitmap_xor_inplace(rx1_2_3, r3);
 
     // we can compute a big xor
     const roaring_bitmap_t *allmybitmaps_x[] = {r1, r2, r3};
     roaring_bitmap_t *bigxor = roaring_bitmap_xor_many(3, allmybitmaps_x);
+    assert_bitmap_validate(bigxor);
     assert_true(roaring_bitmap_equals(rx1_2_3, bigxor));
 
     roaring_bitmap_free(rx1_2_3);
@@ -790,6 +802,7 @@ void test_example(bool copy_on_write) {
 
     // we can compute intersection two-by-two
     roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);
+    assert_bitmap_validate(i1_2);
     assert_true(roaring_bitmap_get_cardinality(i1_2) ==
                 roaring_bitmap_and_cardinality(r1, r2));
 
@@ -801,6 +814,7 @@ void test_example(bool copy_on_write) {
     size_t actualsize = roaring_bitmap_portable_serialize(r1, serializedbytes);
     assert_int_equal(actualsize, expectedsize);
     roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
+    assert_bitmap_validate(t);
     assert_true(roaring_bitmap_equals(r1, t));
     roaring_bitmap_free(t);
      // we can also check whether there is a bitmap at a memory location without reading it
@@ -808,6 +822,7 @@ void test_example(bool copy_on_write) {
     assert_true(sizeofbitmap == expectedsize);  // sizeofbitmap would be zero if no bitmap were found
     // we can also read the bitmap "safely" by specifying a byte size limit:
     t = roaring_bitmap_portable_deserialize_safe(serializedbytes,expectedsize);
+    assert_bitmap_validate(t);
     assert_true(roaring_bitmap_equals(r1, t));  // what we recover is equal
     roaring_bitmap_free(t);
     free(serializedbytes);
@@ -872,6 +887,7 @@ void test_uint32_iterator(bool run) {
         roaring_bitmap_add(r1, i);
     }
     if(run) roaring_bitmap_run_optimize(r1);
+    assert_bitmap_validate(r1);
     roaring_uint32_iterator_t *iter = roaring_create_iterator(r1);
     for (uint32_t i = 0; i < 66000; i += 3) {
         assert_true(iter->has_value);
@@ -1020,6 +1036,7 @@ DEFINE_TEST(test_addremove) {
     for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_remove(bm, value);
     }
+    assert_bitmap_validate(bm);
     assert_true(roaring_bitmap_is_empty(bm));
     roaring_bitmap_free(bm);
 }
@@ -1033,6 +1050,7 @@ DEFINE_TEST(test_addremove_bulk) {
     for (uint32_t value = 33057; value < 147849; value += 8) {
         assert_true(roaring_bitmap_remove_checked(bm, value));
     }
+    assert_bitmap_validate(bm);
     assert_true(roaring_bitmap_is_empty(bm));
     roaring_bitmap_free(bm);
 }
@@ -1046,6 +1064,7 @@ DEFINE_TEST(test_addremoverun) {
     for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_remove(bm, value);
     }
+    assert_bitmap_validate(bm);
     assert_true(roaring_bitmap_is_empty(bm));
     roaring_bitmap_free(bm);
 }
@@ -1081,6 +1100,8 @@ bool check_bitmap_from_range(uint32_t min, uint64_t max, uint32_t step) {
     for (uint32_t value = min; value < max; value += step) {
         roaring_bitmap_add(expected, value);
     }
+    assert_bitmap_validate(result);
+    assert_bitmap_validate(expected);
     bool is_equal = roaring_bitmap_equals(expected, result);
     if (!is_equal) {
         fprintf(stderr, "[ERROR] check_bitmap_from_range(%u, %u, %u)\n",
@@ -1096,6 +1117,8 @@ DEFINE_TEST(test_silly_range) {
     check_bitmap_from_range(0, 2, 1);
     roaring_bitmap_t *bm1 = roaring_bitmap_from_range(0, 1, 1);
     roaring_bitmap_t *bm2 = roaring_bitmap_from_range(0, 2, 1);
+    assert_bitmap_validate(bm1);
+    assert_bitmap_validate(bm2);
     assert_false(roaring_bitmap_equals(bm1, bm2));
     roaring_bitmap_free(bm1);
     roaring_bitmap_free(bm2);
@@ -1103,6 +1126,7 @@ DEFINE_TEST(test_silly_range) {
 
 DEFINE_TEST(test_adversarial_range) {
     roaring_bitmap_t *bm1 = roaring_bitmap_from_range(0, UINT64_C(0x100000000), 1);
+    assert_bitmap_validate(bm1);
     assert_true(roaring_bitmap_get_cardinality(bm1) == UINT64_C(0x100000000));
     roaring_bitmap_free(bm1);
 }
@@ -1152,6 +1176,7 @@ DEFINE_TEST(test_bitmap_from_range) {
 DEFINE_TEST(test_printf) {
     roaring_bitmap_t *r1 =
         roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+    assert_bitmap_validate(r1);
     assert_non_null(r1);
     roaring_bitmap_printf(r1);
     roaring_bitmap_free(r1);
@@ -1178,6 +1203,7 @@ DEFINE_TEST(test_printf_withrun) {
     for (int i = 100, top_val = 200; i < top_val; i++)
         roaring_bitmap_add(r1, i);
     roaring_bitmap_run_optimize(r1);
+    assert_bitmap_validate(r1);
     roaring_bitmap_printf(r1);  // does it crash?
     roaring_bitmap_free(r1);
     printf("\n");
