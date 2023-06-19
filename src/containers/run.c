@@ -705,10 +705,11 @@ bool run_container_validate(const run_container_t *run, const char **reason) {
         return false;
     }
 
-    uint16_t last_end = 0;
+    // Use uint32_t to avoid overflow issues on ranges that contain UINT16_MAX.
+    uint32_t last_end = 0;
     for (int i = 0; i < run->n_runs; ++i) {
-        uint16_t start = run->runs[i].value;
-        uint16_t end = start + run->runs[i].length + 1;
+        uint32_t start = run->runs[i].value;
+        uint32_t end = start + run->runs[i].length + 1;
         if (end <= start) {
             *reason = "run start + length overflow";
             return false;
