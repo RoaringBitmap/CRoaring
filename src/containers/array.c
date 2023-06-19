@@ -473,7 +473,7 @@ bool array_container_validate(const array_container_t *v, const char **reason) {
         return false;
     }
     uint16_t prev = v->array[0];
-    for (int i = 0; i < v->cardinality; ++i) {
+    for (int i = 1; i < v->cardinality; ++i) {
         if (v->array[i] <= prev) {
             *reason = "array elements not strictly increasing";
             return false;
