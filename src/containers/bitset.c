@@ -1012,8 +1012,8 @@ bool bitset_container_validate(const bitset_container_t *v, const char **reason)
         *reason = "cardinality is incorrect";
         return false;
     }
-    // Attempt to forcibly the first and last words, hopefully causing
-    // a segfault or a address sanitizer error if words is not allocated.
+    // Attempt to forcibly load the first and last words, hopefully causing
+    // a segfault or an address sanitizer error if words is not allocated.
     volatile uint64_t *words = v->words;
     (void) words[0];
     (void) words[BITSET_CONTAINER_SIZE_IN_WORDS - 1];
