@@ -180,7 +180,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 
 /* wrappers for Visual Studio built-ins that look like gcc built-ins __builtin_ctzll */
 /* result might be undefined when input_num is zero */
-static inline int roaring_trailing_zeroes(unsigned long long input_num) {
+inline int roaring_trailing_zeroes(unsigned long long input_num) {
     unsigned long index;
 #ifdef _WIN64  // highly recommended!!!
     _BitScanForward64(&index, input_num);
