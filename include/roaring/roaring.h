@@ -840,6 +840,16 @@ uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *r);
 void roaring_bitmap_statistics(const roaring_bitmap_t *r,
                                roaring_statistics_t *stat);
 
+/**
+ * Perform internal consistency checks. Returns true if the bitmap is consistent.
+ *
+ * Note that some operations intentionally leave bitmaps in an inconsistent state temporarily,
+ * for example, `roaring_bitmap_lazy_*` functions, until `roaring_bitmap_repair_after_lazy` is called.
+ *
+ * If reason is non-null, it will be set to a string describing the first inconsistency found if any.
+ */
+bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **reason);
+
 /*********************
 * What follows is code use to iterate through values in a roaring bitmap
 
