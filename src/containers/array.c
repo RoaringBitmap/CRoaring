@@ -144,7 +144,7 @@ static inline int32_t grow_capacity(int32_t capacity) {
     return (capacity <= 0) ? ARRAY_DEFAULT_INIT_SIZE
                            : capacity < 64 ? capacity * 2
                                            : capacity < 1024 ? capacity * 3 / 2
-                                                             : capacity * 5 / 4;
+                                                             : (capacity & 0xfffff000) + 4096;
 }
 
 static inline int32_t clamp(int32_t val, int32_t min, int32_t max) {
