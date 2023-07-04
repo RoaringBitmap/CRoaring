@@ -12,13 +12,13 @@
 extern "C" { namespace roaring { namespace internal {
 #endif
 
-extern inline void bitset_print(const bitset_t *b);
-extern inline bool bitset_for_each(const bitset_t *b, bitset_iterator iterator,
+extern void bitset_print(const bitset_t *b);
+extern bool bitset_for_each(const bitset_t *b, bitset_iterator iterator,
                                    void *ptr);
-extern inline size_t bitset_next_set_bits(const bitset_t *bitset, size_t *buffer,
+extern size_t bitset_next_set_bits(const bitset_t *bitset, size_t *buffer,
                                  size_t capacity, size_t *startfrom);
-extern inline void bitset_set_to_value(bitset_t *bitset, size_t i, bool flag);
-extern inline bool bitset_next_set_bit(const bitset_t *bitset, size_t *i);
+extern void bitset_set_to_value(bitset_t *bitset, size_t i, bool flag);
+extern bool bitset_next_set_bit(const bitset_t *bitset, size_t *i);
 extern inline void bitset_set(bitset_t *bitset, size_t i);
 extern inline bool bitset_get(const bitset_t *bitset, size_t i);
 extern inline size_t bitset_size_in_words(const bitset_t *bitset);
@@ -450,7 +450,73 @@ bool bitset_trim(bitset_t *bitset) {
     return true;
 }
 
+/* iterate over the set bits
+ like so :
+   size_t buffer[256];
+   size_t howmany = 0;
+  for(size_t startfrom = 0; (howmany = bitset_next_set_bits(b,buffer,256, &startfrom)) >
+ 0 ; startfrom++) {
+    //.....
+  }
+  */
+size_t bitset_next_set_bits(const bitset_t *bitset, size_t *buffer,
+                            size_t capacity, size_t *startfrom) {
+    if (capacity == 0) return 0;  // sanity check
+    size_t x = *startfrom / 64;
+    if (x >= bitset->arraysize) {
+        return 0;  // nothing more to iterate over
+    }
+    uint64_t w = bitset->array[x];
+    w >>= (*startfrom & 63);
+    size_t howmany = 0;
+    size_t base = x << 6;
+    while (howmany < capacity) {
+        while (w != 0) {
+            uint64_t t = w & (~w + 1);
+            int r = roaring_trailing_zeroes(w);
+            buffer[howmany++] = r + base;
+            if (howmany == capacity) goto end;
+            w ^= t;
+        }
+        x += 1;
+        if (x == bitset->arraysize) {
+            break;
+        }
+        base += 64;
+        w = bitset->array[x];
+    }
+end:
+    if (howmany > 0) {
+        *startfrom = buffer[howmany - 1];
+    }
+    return howmany;
+}
 
+// return true if uninterrupted
+bool bitset_for_each(const bitset_t *b, bitset_iterator iterator,
+                     void *ptr) {
+    size_t base = 0;
+    for (size_t i = 0; i < b->arraysize; ++i) {
+        uint64_t w = b->array[i];
+        while (w != 0) {
+            uint64_t t = w & (~w + 1);
+            int r = roaring_trailing_zeroes(w);
+            if (!iterator(r + base, ptr)) return false;
+            w ^= t;
+        }
+        base += 64;
+    }
+    return true;
+}
+
+void bitset_print(const bitset_t *b) {
+    printf("{");
+    for (size_t i = 0; bitset_next_set_bit(b, &i); i++) {
+        printf("%zu, ", i);
+    }
+    printf("}");
+}
+ 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
 #endif
