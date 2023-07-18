@@ -59,6 +59,10 @@
 #define _XOPEN_SOURCE 700
 #endif // !(defined(_XOPEN_SOURCE)) || (_XOPEN_SOURCE < 700)
 
+#ifdef __illumos__
+#define __EXTENSIONS__
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>  // will provide posix_memalign with _POSIX_C_SOURCE as defined above
