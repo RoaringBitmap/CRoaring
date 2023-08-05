@@ -532,6 +532,13 @@ DEFINE_TEST(test_stats) {
     roaring_bitmap_free(r1);
 }
 
+DEFINE_TEST(with_huge_capacity) {
+    roaring_bitmap_t *r = roaring_bitmap_create_with_capacity(UINT32_MAX);
+    assert_non_null(r);
+    assert_int_equal(r->high_low_container.allocation_size, (1 << 16));
+    roaring_bitmap_free(r);
+}
+
 // this should expose memory leaks
 // (https://github.com/RoaringBitmap/CRoaring/pull/70)
 void leaks_with_empty(bool copy_on_write) {
@@ -4623,6 +4630,7 @@ int main() {
         cmocka_unit_test(test_silly_range),
         cmocka_unit_test(test_uint32_iterator_true),
         cmocka_unit_test(test_uint32_iterator_false),
+        cmocka_unit_test(with_huge_capacity),
         cmocka_unit_test(leaks_with_empty_true),
         cmocka_unit_test(leaks_with_empty_false),
         cmocka_unit_test(test_bitmap_from_range),
