@@ -110,6 +110,9 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r);
  *
  * It might be preferable and simpler to call roaring_bitmap_copy except
  * that roaring_bitmap_overwrite can save on memory allocations.
+ *
+ * Returns true if successful, or false if there was an error. On failure,
+ * the dest bitmap is left in a valid, empty state (even if it was not empty before).
  */
 bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
                               const roaring_bitmap_t *src);
