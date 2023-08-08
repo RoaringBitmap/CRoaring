@@ -716,8 +716,8 @@ different strategies.
 You can use `roaring_bitmap_or_many(bitmapcount, bitmaps)` or `roaring_bitmap_or_many_heap(bitmapcount, bitmaps)` or you may
 even roll your own aggregation:
 
-```
-roaring_bitmap_t *answer  = roaring_bitmap_copy(bitmaps[0]);
+```C
+roaring_bitmap_t *answer = roaring_bitmap_copy(bitmaps[0]);
 for (size_t i = 1; i < bitmapcount; i++) {
   roaring_bitmap_or_inplace(answer, bitmaps[i]);
 }
