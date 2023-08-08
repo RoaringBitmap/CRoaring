@@ -616,8 +616,8 @@ Thread safety</h1>
 How to best aggregate bitmaps?</h1>
 <p>Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many different strategies.</p>
 <p>You can use <code>roaring_bitmap_or_many(bitmapcount, bitmaps)</code> or <code>roaring_bitmap_or_many_heap(bitmapcount, bitmaps)</code> or you may even roll your own aggregation:</p>
-<div class="fragment"><div class="line">roaring_bitmap_t *answer  = roaring_bitmap_copy(bitmaps[0]);</div>
-<div class="line">for (size_t i = 1; i &lt; bitmapcount; i++) {</div>
+<div class="fragment"><div class="line">roaring_bitmap_t *answer = roaring_bitmap_copy(bitmaps[0]);</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 1; i &lt; bitmapcount; i++) {</div>
 <div class="line">  roaring_bitmap_or_inplace(answer, bitmaps[i]);</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>All of them will work but they have different performance characteristics. The <code>roaring_bitmap_or_many_heap</code> should probably only be used if, after benchmarking, you find that it is faster by a good margin: it uses more memory.</p>
