@@ -5,7 +5,6 @@ project(RoaringBitmap
 )
 include(GNUInstallDirs)
 
-set(CMAKE_MACOSX_RPATH OFF)
 if (NOT CMAKE_BUILD_TYPE)
                 message(STATUS "No build type selected, default to Release")
                 set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
