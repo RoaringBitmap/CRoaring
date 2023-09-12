@@ -3,8 +3,10 @@ if (CMAKE_VERSION VERSION_GREATER 3.0.0)
 endif ()
 include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
 set(BUILD_STATIC_LIB ON)
-import_dependency(cmocka clibs/cmocka  f5e2cd7)
-add_dependency(cmocka)
+if (ENABLE_ROARING_TESTS)
+  import_dependency(cmocka clibs/cmocka  f5e2cd7)
+  add_dependency(cmocka)
+endif()
 
 function(add_c_test TEST_NAME)
   if(ROARING_BUILD_C_TESTS_AS_CPP)  # under C++, container_t* != void*
