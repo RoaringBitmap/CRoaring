@@ -6,8 +6,8 @@ include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
 set_off(BENCHMARK_ENABLE_TESTING)
 set_off(BENCHMARK_ENABLE_INSTALL)
 set_off(BENCHMARK_ENABLE_WERROR)
-
-import_dependency(google_benchmarks google/benchmark f91b6b4)
+set(BENCHMARK_ENABLE_WERROR OFF)
+import_dependency(google_benchmarks google/benchmark 3441176)
 add_dependency(google_benchmarks)
 
 add_executable(bench bench.cpp)

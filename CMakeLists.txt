@@ -101,10 +101,15 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
 add_subdirectory(src)
 if(ENABLE_ROARING_TESTS)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # we only include the benchmarks on 64-bit systems.
-    add_subdirectory(microbenchmarks)
     add_subdirectory(benchmarks)
   endif()
   add_subdirectory(tests)
+endif()
+option(ENABLE_ROARING_MICROBENCHMARKS "Enable microbenchmarks" OFF)
+if(ENABLE_ROARING_MICROBENCHMARKS)
+    add_subdirectory(microbenchmarks)
+else()
+     MESSAGE( STATUS "You may enable microbenchmarks by setting ENABLE_ROARING_MICROBENCHMARKS to ON " )
 endif()
 # Being terse is good, but knowing how the build is configured is important
 # and should not be hard to figure out.
