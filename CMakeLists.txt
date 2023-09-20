@@ -5,7 +5,6 @@ project(RoaringBitmap
 )
 include(GNUInstallDirs)
 
-set(CMAKE_MACOSX_RPATH OFF)
 if (NOT CMAKE_BUILD_TYPE)
                 message(STATUS "No build type selected, default to Release")
                 set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -17,10 +16,10 @@ if(CMAKE_C_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_C_COMPILER_VERSION VERSIO
 endif()
 set(ROARING_LIB_NAME roaring)
 set(PROJECT_VERSION_MAJOR 1)
-set(PROJECT_VERSION_MINOR 2)
+set(PROJECT_VERSION_MINOR 3)
 set(PROJECT_VERSION_PATCH 0)
-set(ROARING_LIB_VERSION "1.2.0" CACHE STRING "Roaring library version")
-set(ROARING_LIB_SOVERSION "11" CACHE STRING "Roaring library soversion")
+set(ROARING_LIB_VERSION "1.3.0" CACHE STRING "Roaring library version")
+set(ROARING_LIB_SOVERSION "12" CACHE STRING "Roaring library soversion")
 
 option(ROARING_EXCEPTIONS "Enable exception-throwing interface" ON)
 if(NOT ROARING_EXCEPTIONS)

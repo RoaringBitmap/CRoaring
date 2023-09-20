@@ -22,6 +22,15 @@ jobs:
           ctest . --output-on-failure
           cmake --install . 
           cd ../tests/installation/find && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .
+      - name: Build and Test (shared)
+        run: |
+          cmake -DBUILD_SHARED_LIBS=ON -B buildshared -DCMAKE_INSTALL_PREFIX:PATH=destinationshared
+          cmake --build buildshared
+          cmake --install buildshared
+          cd tests/installation/find
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../destinationshared -B buildshared
+          cmake --build buildshared
+          ./buildshared/repro
       - name: Build and Test Debug
         run: |
           mkdir builddebug

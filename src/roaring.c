@@ -25,6 +25,8 @@ extern inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r);
 extern inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r);
 extern inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r, bool cow);
 extern inline roaring_bitmap_t *roaring_bitmap_create(void);
+extern inline void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min, uint64_t max);
+extern inline void roaring_bitmap_remove_range(roaring_bitmap_t *r, uint64_t min, uint64_t max);
 
 static inline bool is_cow(const roaring_bitmap_t *r) {
     return r->high_low_container.flags & ROARING_FLAG_COW;
@@ -323,9 +325,6 @@ void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min, uint3
     }
 }
 
-extern inline void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min, uint64_t max);
-extern inline void roaring_bitmap_remove_range(roaring_bitmap_t *r, uint64_t min, uint64_t max);
-
 void roaring_bitmap_printf(const roaring_bitmap_t *r) {
     const roaring_array_t *ra = &r->high_low_container;
 
@@ -424,6 +423,76 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
                 roaring_unreachable;
         }
     }
+}
+
+/*
+ * Checks that:
+ * - Array containers are sorted and contain no duplicates
+ * - Range containers are sorted and contain no overlapping ranges
+ * - Roaring containers are sorted by key and there are no duplicate keys
+ * - The correct container type is use for each container (e.g. bitmaps aren't used for small containers)
+ */
+bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **reason) {
+    const char *reason_local;
+    if (reason == NULL) {
+        // Always allow assigning through *reason
+        reason = &reason_local;
+    }
+    *reason = NULL;
+    const roaring_array_t *ra = &r->high_low_container;
+    if (ra->size < 0) {
+        *reason = "negative size";
+        return false;
+    }
+    if (ra->allocation_size < 0) {
+        *reason = "negative allocation size";
+        return false;
+    }
+    if (ra->size > ra->allocation_size) {
+        *reason = "more containers than allocated space";
+        return false;
+    }
+    if (ra->flags & ~(ROARING_FLAG_COW | ROARING_FLAG_FROZEN)) {
+        *reason = "invalid flags";
+        return false;
+    }
+    if (ra->size == 0) {
+        return true;
+    }
+
+    if (ra->keys == NULL) {
+        *reason = "keys is NULL";
+        return false;
+    }
+    if (ra->typecodes == NULL) {
+        *reason = "typecodes is NULL";
+        return false;
+    }
+    if (ra->containers == NULL) {
+        *reason = "containers is NULL";
+        return false;
+    }
+
+    uint32_t prev_key = ra->keys[0];
+    for (int32_t i = 1; i < ra->size; ++i) {
+        if (ra->keys[i] <= prev_key) {
+            *reason = "keys not strictly increasing";
+            return false;
+        }
+        prev_key = ra->keys[i];
+    }
+
+    for (int32_t i = 0; i < ra->size; ++i) {
+        if (!container_internal_validate(ra->containers[i], ra->typecodes[i], reason)) {
+            // reason should already be set
+            if (*reason == NULL) {
+                *reason = "container failed to validate but no reason given";
+            }
+            return false;
+        }
+    }
+
+    return true;
 }
 
 roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {

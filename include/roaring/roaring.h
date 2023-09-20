@@ -35,7 +35,7 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
  * Returns NULL if the allocation fails.
  * Client is responsible for calling `roaring_bitmap_free()`.
  */
-static inline roaring_bitmap_t *roaring_bitmap_create(void)
+inline roaring_bitmap_t *roaring_bitmap_create(void)
   { return roaring_bitmap_create_with_capacity(0); }
 
 /**
@@ -50,7 +50,7 @@ bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap);
  * The bitmap will be in a "clear" state, with no auxiliary allocations.
  * Since this performs no allocations, the function will not fail.
  */
-static inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r)
+inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r)
   { roaring_bitmap_init_with_capacity(r, 0); }
 
 /**
@@ -74,11 +74,10 @@ roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
  * do so for all of your bitmaps, since interactions between bitmaps with and
  * without COW is unsafe.
  */
-static inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r) {
+inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r) {
     return r->high_low_container.flags & ROARING_FLAG_COW;
 }
-static inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r,
-                                                    bool cow) {
+inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r, bool cow) {
     if (cow) {
         r->high_low_container.flags |= ROARING_FLAG_COW;
     } else {
@@ -111,6 +110,9 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r);
  *
  * It might be preferable and simpler to call roaring_bitmap_copy except
  * that roaring_bitmap_overwrite can save on memory allocations.
+ *
+ * Returns true if successful, or false if there was an error. On failure,
+ * the dest bitmap is left in a valid, empty state (even if it was not empty before).
  */
 bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
                               const roaring_bitmap_t *src);
@@ -332,8 +334,8 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r,
 /**
  * Add all values in range [min, max)
  */
-static inline void roaring_bitmap_add_range(roaring_bitmap_t *r,
-                                            uint64_t min, uint64_t max) {
+inline void roaring_bitmap_add_range(roaring_bitmap_t *r,
+                                     uint64_t min, uint64_t max) {
     if(max <= min) return;
     roaring_bitmap_add_range_closed(r, (uint32_t)min, (uint32_t)(max - 1));
 }
@@ -352,8 +354,8 @@ void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r,
 /**
  * Remove all values in range [min, max)
  */
-static inline void roaring_bitmap_remove_range(roaring_bitmap_t *r,
-                                               uint64_t min, uint64_t max) {
+inline void roaring_bitmap_remove_range(roaring_bitmap_t *r,
+                                        uint64_t min, uint64_t max) {
     if(max <= min) return;
     roaring_bitmap_remove_range_closed(r, (uint32_t)min, (uint32_t)(max - 1));
 }
@@ -384,8 +386,8 @@ bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_end);
 
 /**
- * Check if an items is present, using context from a previous insert for speed
- * optimization.
+ * Check if an items is present, using context from a previous insert or search
+ * for speed optimization.
  *
  * `context` will be used to store information between calls to make bulk
  * operations faster. `*context` should be zero-initialized before the first
@@ -840,6 +842,16 @@ uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *r);
  */
 void roaring_bitmap_statistics(const roaring_bitmap_t *r,
                                roaring_statistics_t *stat);
+
+/**
+ * Perform internal consistency checks. Returns true if the bitmap is consistent.
+ *
+ * Note that some operations intentionally leave bitmaps in an inconsistent state temporarily,
+ * for example, `roaring_bitmap_lazy_*` functions, until `roaring_bitmap_repair_after_lazy` is called.
+ *
+ * If reason is non-null, it will be set to a string describing the first inconsistency found if any.
+ */
+bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **reason);
 
 /*********************
 * What follows is code use to iterate through values in a roaring bitmap

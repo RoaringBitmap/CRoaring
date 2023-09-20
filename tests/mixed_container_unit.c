@@ -1482,7 +1482,6 @@ DEFINE_TEST(array_negation_range_test3) {
  * sparse */
 static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
                                        bool is_bitset, bool inplace) {
-    int ctr = 0;
     bitset_container_t* BI = bitset_container_create();
     container_t* BO;
     bool result_is_bitset;
@@ -1490,7 +1489,6 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
 
     for (int x = 0; x < (1 << 16); x++) {
         if (x % sparsity) bitset_container_add(BI, (uint16_t)x);
-        ++ctr;
     }
 
     for (int x = 0; x < (1 << 16); x++) {
