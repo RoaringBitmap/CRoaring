@@ -4572,10 +4572,26 @@ DEFINE_TEST(convert_to_bitset) {
     roaring_bitmap_free(r1);
 }
 
+// simple execution test
+DEFINE_TEST(simple_roaring_bitmap_or_many) {
+    roaring_bitmap_t ** roaring_bitmaps;
+    roaring_bitmaps = (roaring_bitmap_t**) malloc(2 * sizeof(roaring_bitmap_t*));
+    roaring_bitmaps[0] = roaring_bitmap_create();
+    roaring_bitmaps[1] = roaring_bitmap_create();
+    for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(roaring_bitmaps[0], i);
+    for (uint32_t i = 1000; i < 2000; i++) roaring_bitmap_add(roaring_bitmaps[1], i);
+    roaring_bitmap_t *bigunion = roaring_bitmap_or_many(2, (const roaring_bitmap_t**)roaring_bitmaps);
+    roaring_bitmap_free(roaring_bitmaps[0]);
+    roaring_bitmap_free(roaring_bitmaps[1]);
+    roaring_bitmap_free(bigunion);
+    free(roaring_bitmaps);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(simple_roaring_bitmap_or_many),
         cmocka_unit_test(issue457),
         cmocka_unit_test(convert_to_bitset),
         cmocka_unit_test(issue440),
