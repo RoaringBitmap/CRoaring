@@ -15,15 +15,35 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdint.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "roaring/roaring.h"
 
 int LLVMFuzzerTestOneInput(const char *data, size_t size) {
     // We test that deserialization never fails.
-    roaring_bitmap_t* bitmap = roaring_bitmap_portable_deserialize_safe(data, size);
-    if(bitmap) {
+    roaring_bitmap_t *bitmap =
+        roaring_bitmap_portable_deserialize_safe(data, size);
+    if (bitmap) {
         // The bitmap may not be usable if it does not follow the specification.
+        // We can validate the bitmap we recovered to make sure it is proper.
+        const char *reason_failure = NULL;
+        if (roaring_bitmap_internal_validate(t, &reason_failure)) {
+            // the bitmap is ok!
+            uint32_t cardinality = roaring_bitmap_get_cardinality(t);
+
+            for (uint32_t i = 100; i < 1000; i++) {
+                if (!roaring_bitmap_contains(t, i)) {
+                    cardinality++;
+                    roaring_bitmap_add(r1, i);
+                }
+            }
+            uint32_t new_cardinality = roaring_bitmap_get_cardinality(t);
+            if (cardinality != new_cardinality) {
+                printf("bug\n");
+                exit(1);
+            }
+        }
         roaring_bitmap_free(bitmap);
     }
     return 0;
