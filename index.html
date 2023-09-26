@@ -318,12 +318,15 @@ Example (C)</h1>
 <div class="line">    uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);</div>
 <div class="line">    <span class="keywordtype">char</span> *serializedbytes = malloc(expectedsize);</div>
 <div class="line">    roaring_bitmap_portable_serialize(r1, serializedbytes);</div>
-<div class="line">    <span class="comment">// For additional safety, you may replace roaring_bitmap_portable_deserialize by</span></div>
-<div class="line">    <span class="comment">// roaring_bitmap_portable_deserialize_safe.</span></div>
 <div class="line">    <span class="comment">// Note: it is expected that the input follows the specification</span></div>
 <div class="line">    <span class="comment">// https://github.com/RoaringBitmap/RoaringFormatSpec</span></div>
 <div class="line">    <span class="comment">// otherwise the result may be unusable.</span></div>
-<div class="line">    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);</div>
+<div class="line">    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);</div>
+<div class="line">    <span class="keywordflow">if</span>(t == NULL) { <span class="keywordflow">return</span> EXIT_FAILURE; }</div>
+<div class="line">    <span class="keyword">const</span> <span class="keywordtype">char</span> *reason = NULL;</div>
+<div class="line">    <span class="keywordflow">if</span> (!roaring_bitmap_internal_validate(t, &amp;reason)) {</div>
+<div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line">    }</div>
 <div class="line">    assert(roaring_bitmap_equals(r1, t));  <span class="comment">// what we recover is equal</span></div>
 <div class="line">    roaring_bitmap_free(t);</div>
 <div class="line">    <span class="comment">// we can also check whether there is a bitmap at a memory location without</span></div>
@@ -334,6 +337,18 @@ Example (C)</h1>
 <div class="line">           expectedsize);  <span class="comment">// sizeofbitmap would be zero if no bitmap were found</span></div>
 <div class="line">    <span class="comment">// we can also read the bitmap &quot;safely&quot; by specifying a byte size limit:</span></div>
 <div class="line">    t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);</div>
+<div class="line">    <span class="keywordflow">if</span>(t == NULL) {</div>
+<div class="line">        printf(<span class="stringliteral">&quot;Problem during deserialization.\n&quot;</span>);</div>
+<div class="line">        <span class="comment">// We could clear any memory and close any file here.</span></div>
+<div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="comment">// We can validate the bitmap we recovered to make sure it is proper.</span></div>
+<div class="line">    <span class="keyword">const</span> <span class="keywordtype">char</span> *reason_failure = NULL;</div>
+<div class="line">    <span class="keywordflow">if</span> (!roaring_bitmap_internal_validate(t, &amp;reason_failure)) {</div>
+<div class="line">        printf(<span class="stringliteral">&quot;safely deserialized invalid bitmap: %s\n&quot;</span>, reason_failure);</div>
+<div class="line">        <span class="comment">// We could clear any memory and close any file here.</span></div>
+<div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
+<div class="line">    }</div>
 <div class="line">    <span class="comment">// It is still necessary for the content of seriallizedbytes to follow</span></div>
 <div class="line">    <span class="comment">// the standard: https://github.com/RoaringBitmap/RoaringFormatSpec</span></div>
 <div class="line">    <span class="comment">// This is guaranted when calling &#39;roaring_bitmap_portable_deserialize&#39;.</span></div>
