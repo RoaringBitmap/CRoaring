@@ -4627,8 +4627,9 @@ bool deserialization_test(const char *data, size_t size) {
 
 DEFINE_TEST(robust_deserialization) {
     assert_true(deserialization_test(NULL, 0));
-    const char* test1 = "\x3b\x30\x00\x00\x01\x00\x00\xfa\x2e\x01\x00\x00\x02\xff\xff";
-    assert_true(deserialization_test(test1, 15));
+    // contains a run container that overflows the 16-bit boundary.
+    const char test1[] = "\x3b\x30\x00\x00\x01\x00\x00\xfa\x2e\x01\x00\x00\x02\xff\xff";
+    assert_true(deserialization_test(test1, sizeof(test1)));
 }
 
 int main() {
