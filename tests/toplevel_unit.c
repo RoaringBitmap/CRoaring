@@ -4595,10 +4595,48 @@ DEFINE_TEST(convert_to_bitset) {
     roaring_bitmap_free(r1);
 }
 
+
+bool deserialization_test(const char *data, size_t size) {
+    // We test that deserialization never fails.
+    roaring_bitmap_t *bitmap =
+        roaring_bitmap_portable_deserialize_safe(data, size);
+    if (bitmap) {
+        // The bitmap may not be usable if it does not follow the specification.
+        // We can validate the bitmap we recovered to make sure it is proper.
+        const char *reason_failure = NULL;
+        if (roaring_bitmap_internal_validate(bitmap, &reason_failure)) {
+            // the bitmap is ok!
+            uint32_t cardinality = roaring_bitmap_get_cardinality(bitmap);
+
+            for (uint32_t i = 100; i < 1000; i++) {
+                if (!roaring_bitmap_contains(bitmap, i)) {
+                    cardinality++;
+                    roaring_bitmap_add(bitmap, i);
+                }
+            }
+
+            uint32_t new_cardinality = roaring_bitmap_get_cardinality(bitmap);
+            if (cardinality != new_cardinality) {
+                return false;
+            }
+        }
+        roaring_bitmap_free(bitmap);
+    }
+    return true;
+}
+
+DEFINE_TEST(robust_deserialization) {
+    assert_true(deserialization_test(NULL, 0));
+    // contains a run container that overflows the 16-bit boundary.
+    const char test1[] = "\x3b\x30\x00\x00\x01\x00\x00\xfa\x2e\x01\x00\x00\x02\xff\xff";
+    assert_true(deserialization_test(test1, sizeof(test1)));
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(robust_deserialization),
         cmocka_unit_test(issue457),
         cmocka_unit_test(convert_to_bitset),
         cmocka_unit_test(issue440),
