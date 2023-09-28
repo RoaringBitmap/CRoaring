@@ -4595,6 +4595,18 @@ DEFINE_TEST(convert_to_bitset) {
     roaring_bitmap_free(r1);
 }
 
+// simple execution test
+DEFINE_TEST(simple_roaring_bitmap_or_many) {
+    roaring_bitmap_t * roaring_bitmaps[2];
+    roaring_bitmaps[0] = roaring_bitmap_create();
+    roaring_bitmaps[1] = roaring_bitmap_create();
+    for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(roaring_bitmaps[0], i);
+    for (uint32_t i = 1000; i < 2000; i++) roaring_bitmap_add(roaring_bitmaps[1], i);
+    roaring_bitmap_t *bigunion = roaring_bitmap_or_many(2, (const roaring_bitmap_t**)roaring_bitmaps);
+    roaring_bitmap_free(roaring_bitmaps[0]);
+    roaring_bitmap_free(roaring_bitmaps[1]);
+    roaring_bitmap_free(bigunion);
+}
 
 bool deserialization_test(const char *data, size_t size) {
     // We test that deserialization never fails.
@@ -4630,12 +4642,14 @@ DEFINE_TEST(robust_deserialization) {
     // contains a run container that overflows the 16-bit boundary.
     const char test1[] = "\x3b\x30\x00\x00\x01\x00\x00\xfa\x2e\x01\x00\x00\x02\xff\xff";
     assert_true(deserialization_test(test1, sizeof(test1)));
+>>>>>>> master
 }
 
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(simple_roaring_bitmap_or_many),
         cmocka_unit_test(robust_deserialization),
         cmocka_unit_test(issue457),
         cmocka_unit_test(convert_to_bitset),
