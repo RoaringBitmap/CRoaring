@@ -86,7 +86,12 @@ int main() {
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     char *serializedbytes = (char*)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
-    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize(serializedbytes);
+    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
+    if(t == NULL) { return EXIT_FAILURE; }
+    const char *reason = NULL;
+    if (!roaring_bitmap_internal_validate(t, &reason)) {
+        return EXIT_FAILURE;
+    }
     assert_true(roaring_bitmap_equals(r1, t));  // what we recover is equal
     roaring_bitmap_free(t);
     // we can also check whether there is a bitmap at a memory location without
@@ -98,6 +103,18 @@ int main() {
            expectedsize);  // sizeofbitmap would be zero if no bitmap were found
     // we can also read the bitmap "safely" by specifying a byte size limit:
     t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
+    if(t == NULL) {
+        printf("Problem during deserialization.\n");
+        // We could clear any memory and close any file here.
+        return EXIT_FAILURE;
+    }
+    // We can validate the bitmap we recovered to make sure it is proper.
+    const char *reason_failure = NULL;
+    if (!roaring_bitmap_internal_validate(t, &reason_failure)) {
+        printf("safely deserialized invalid bitmap: %s\n", reason_failure);
+        // We could clear any memory and close any file here.
+        return EXIT_FAILURE;
+    }
     assert_true(roaring_bitmap_equals(r1, t));  // what we recover is equal
     roaring_bitmap_free(t);
 

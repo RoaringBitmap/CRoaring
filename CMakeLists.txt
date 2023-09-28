@@ -15,11 +15,11 @@ if(CMAKE_C_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_C_COMPILER_VERSION VERSIO
     message(FATAL_ERROR "${PROJECT_NAME} requires at least apple-clang version 11 to support runtime dispatching.")
 endif()
 set(ROARING_LIB_NAME roaring)
-set(PROJECT_VERSION_MAJOR 1)
-set(PROJECT_VERSION_MINOR 3)
-set(PROJECT_VERSION_PATCH 0)
-set(ROARING_LIB_VERSION "1.3.0" CACHE STRING "Roaring library version")
-set(ROARING_LIB_SOVERSION "12" CACHE STRING "Roaring library soversion")
+set(PROJECT_VERSION_MAJOR 2)
+set(PROJECT_VERSION_MINOR 0)
+set(PROJECT_VERSION_PATCH 2)
+set(ROARING_LIB_VERSION "2.0.2" CACHE STRING "Roaring library version")
+set(ROARING_LIB_SOVERSION "13" CACHE STRING "Roaring library soversion")
 
 option(ROARING_EXCEPTIONS "Enable exception-throwing interface" ON)
 if(NOT ROARING_EXCEPTIONS)
@@ -100,10 +100,15 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/tests/config.h.in"
 add_subdirectory(src)
 if(ENABLE_ROARING_TESTS)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8) # we only include the benchmarks on 64-bit systems.
-    add_subdirectory(microbenchmarks)
     add_subdirectory(benchmarks)
   endif()
   add_subdirectory(tests)
+endif()
+option(ENABLE_ROARING_MICROBENCHMARKS "Enable microbenchmarks" OFF)
+if(ENABLE_ROARING_MICROBENCHMARKS)
+    add_subdirectory(microbenchmarks)
+else()
+     MESSAGE( STATUS "You may enable microbenchmarks by setting ENABLE_ROARING_MICROBENCHMARKS to ON " )
 endif()
 # Being terse is good, but knowing how the build is configured is important
 # and should not be hard to figure out.
