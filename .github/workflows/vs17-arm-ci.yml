@@ -17,7 +17,7 @@ jobs:
           - {arch: ARM64}
     steps:
       - name: checkout
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Use cmake
         run: |
           cmake -A ${{ matrix.arch }} -DCMAKE_CROSSCOMPILING=1 -B build  &&
