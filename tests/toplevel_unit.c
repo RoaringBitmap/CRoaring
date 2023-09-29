@@ -4642,7 +4642,6 @@ DEFINE_TEST(robust_deserialization) {
     // contains a run container that overflows the 16-bit boundary.
     const char test1[] = "\x3b\x30\x00\x00\x01\x00\x00\xfa\x2e\x01\x00\x00\x02\xff\xff";
     assert_true(deserialization_test(test1, sizeof(test1)));
->>>>>>> master
 }
 
 int main() {
