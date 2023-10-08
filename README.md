@@ -132,15 +132,15 @@ Linux or macOS users might follow the following instructions if they have a rece
     c++ -std=c++11 -o demopp demo.cpp
     ```
  3. `./demo`
-   ```
+    ```
     cardinality = 900
     1000 
-   ```
+    ```
  4. `./demopp`
-   ```
+    ```
     cardinality = 900
     cardinality = 900
-   ```
+    ```
 
 
 # Using as a CMake dependency
