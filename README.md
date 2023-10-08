@@ -82,9 +82,9 @@ Linux or macOS users might follow the following instructions if they have a rece
 
  1. Pull the library in a directory
     ```
-    wget https://github.com/RoaringBitmap/CRoaring/releases/download/v2.0.2/roaring.c
-    wget https://github.com/RoaringBitmap/CRoaring/releases/download/v2.0.2/roaring.h
-    wget https://github.com/RoaringBitmap/CRoaring/releases/download/v2.0.2/roaring.hh
+    wget https://github.com/RoaringBitmap/CRoaring/releases/download/v2.0.3/roaring.c
+    wget https://github.com/RoaringBitmap/CRoaring/releases/download/v2.0.3/roaring.h
+    wget https://github.com/RoaringBitmap/CRoaring/releases/download/v2.0.3/roaring.hh
     ```
  2. Create a new file named `demo.c` with this content:
     ```C
