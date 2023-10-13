@@ -132,7 +132,7 @@ Quick Start</h1>
 </li>
 </ol>
 <ol type="1">
-<li><p class="startli"><code>Create a new file named</code>demo.cpp&lt;tt&gt;with this content: ``C++ #include &lt;iostream&gt; #include "roaring.hh" #include "roaring.c" int main() { <a class="el" href="d1/d51/classroaring_1_1Roaring.html">roaring::Roaring</a> r1; for (uint32_t i = 100; i &lt; 1000; i++) { r1.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r1.cardinality() &lt;&lt; std::endl;</p>
+<li><p class="startli"><code>Create a new file named</code>demo.cpp&lt;tt&gt;with this content: ``C++ #include &lt;iostream&gt; #include "roaring.hh" // the amalgamated <a class="el" href="db/d6e/roaring_8hh.html">roaring.hh</a> includes <a class="el" href="db/d2c/roaring64map_8hh.html">roaring64map.hh</a> #include "roaring.c" int main() { <a class="el" href="d1/d51/classroaring_1_1Roaring.html">roaring::Roaring</a> r1; for (uint32_t i = 100; i &lt; 1000; i++) { r1.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r1.cardinality() &lt;&lt; std::endl;</p>
 <p class="startli"><a class="el" href="d4/dcf/classroaring_1_1Roaring64Map.html">roaring::Roaring64Map</a> r2; for (uint64_t i = 18000000000000000100ull; i &lt; 18000000000000001000ull; i++) { r2.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r2.cardinality() &lt;&lt; std::endl; return 0; } ```</p>
 </li>
 </ol>
