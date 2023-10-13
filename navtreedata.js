@@ -30,7 +30,7 @@ var NAVTREE =
     [ "Requirements", "index.html#autotoc_md3", null ],
     [ "Quick Start", "index.html#autotoc_md4", null ],
     [ "Using Roaring as a CPM dependency", "index.html#autotoc_md5", null ],
-    [ "Using as a CMake dependency", "index.html#autotoc_md6", null ],
+    [ "Using as a CMake dependency with FetchContent", "index.html#autotoc_md6", null ],
     [ "Amalgamating", "index.html#autotoc_md7", null ],
     [ "API", "index.html#autotoc_md8", null ],
     [ "Dealing with large volumes", "index.html#autotoc_md9", null ],
