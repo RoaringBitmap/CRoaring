@@ -109,7 +109,7 @@ Linux or macOS users might follow the following instructions if they have a rece
  2. Create a new file named `demo.cpp` with this content:
     ```C++
     #include <iostream>
-    #include "roaring.hh"
+    #include "roaring.hh" // the amalgamated roaring.hh includes roaring64map.hh
     #include "roaring.c"
     int main() {
         roaring::Roaring r1;
