@@ -45,7 +45,7 @@ option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" O
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
 
-option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
+option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ${BUILD_TESTING})
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
@@ -83,7 +83,6 @@ install(TARGETS roaring-headers roaring-headers-cpp
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    INCLUDES DESTINATION ${CMAKE_INSTALL_INCDIR})
-enable_testing()
 include(CTest)
 
 ##################################
@@ -110,20 +109,14 @@ if(ENABLE_ROARING_MICROBENCHMARKS)
 else()
      MESSAGE( STATUS "You may enable microbenchmarks by setting ENABLE_ROARING_MICROBENCHMARKS to ON " )
 endif()
-# Being terse is good, but knowing how the build is configured is important
-# and should not be hard to figure out.
-MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
-MESSAGE( STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE} ) # this tends to be "sticky" so you can remain unknowingly in debug mode
-MESSAGE( STATUS "ROARING_DISABLE_NEON: " ${ROARING_DISABLE_NEON} )
-MESSAGE( STATUS "ROARING_BUILD_STATIC: " ${ROARING_BUILD_STATIC} )
-MESSAGE( STATUS "ROARING_LINK_STATIC: " ${ROARING_LINK_STATIC} )
-MESSAGE( STATUS "ROARING_BUILD_LTO: " ${ROARING_BUILD_LTO} )
-MESSAGE( STATUS "ROARING_SANITIZE: " ${ROARING_SANITIZE} )
-MESSAGE( STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER} ) # important to know which compiler is used
-MESSAGE( STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS} ) # important to know the flags
-MESSAGE( STATUS "CMAKE_C_FLAGS_DEBUG: " ${CMAKE_C_FLAGS_DEBUG} )
-MESSAGE( STATUS "CMAKE_C_FLAGS_RELEASE: " ${CMAKE_C_FLAGS_RELEASE} )
-MESSAGE( STATUS "ROARING_EXCEPTIONS: " ${ROARING_EXCEPTIONS} )
+add_library(roaring::roaring ALIAS roaring)
+
+set_target_properties(
+  roaring PROPERTIES
+  VERSION "${ROARING_LIB_VERSION}"
+  SOVERSION "${ROARING_LIB_SOVERSION}"
+  WINDOWS_EXPORT_ALL_SYMBOLS YES
+)
 
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")
 set(CPACK_PACKAGE_CONTACT "lemire@gmail.com")
@@ -137,13 +130,3 @@ set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_RPM_PACKAGE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 include(CPack)
-
-add_library(roaringbitmap::roaring ALIAS roaring)
-add_library(roaringbitmap::roaring-headers-cpp ALIAS roaring-headers-cpp)
-
-set_target_properties(
-  roaring PROPERTIES
-  VERSION "${ROARING_LIB_VERSION}"
-  SOVERSION "${ROARING_LIB_SOVERSION}"
-  WINDOWS_EXPORT_ALL_SYMBOLS YES
-)
