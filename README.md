@@ -174,7 +174,7 @@ target_link_libraries(hello roaring::roaring)
 ```
 
 
-# Using as a CMake dependency
+# Using as a CMake dependency with FetchContent
 
 If you like CMake, you can just a few lines in you `CMakeLists.txt` file to grab a `CRoaring` release. [See our demonstration for further details](https://github.com/RoaringBitmap/croaring_cmake_demo_single_file).
 
