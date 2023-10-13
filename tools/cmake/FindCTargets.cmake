@@ -29,7 +29,8 @@ if (CMAKE_VERSION VERSION_GREATER 2.8.10)
     else()
       target_compile_definitions(${TEST_NAME} PUBLIC ROARING_EXCEPTIONS=0)
     endif()
-    target_include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/cpp)
+    get_directory_property(parent_dir PARENT_DIRECTORY)
+    target_include_directories(${TEST_NAME} PRIVATE "${parent_dir}/cpp")
 
     target_link_libraries(${TEST_NAME} roaring cmocka-static)
 

@@ -56,5 +56,5 @@ if(MSVC)
         "$<TARGET_FILE_DIR:toplevel_unit>")                 # <--this is out-file path
 endif()
 
-
-configure_file(${CMAKE_SOURCE_DIR}/tools/cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR})
+get_directory_property(parent_dir PARENT_DIRECTORY)
+configure_file("${parent_dir}/tools/cmake/CTestCustom.cmake" "${CMAKE_BINARY_DIR}")

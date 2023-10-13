@@ -137,3 +137,13 @@ set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_RPM_PACKAGE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 include(CPack)
+
+add_library(roaringbitmap::roaring ALIAS roaring)
+add_library(roaringbitmap::roaring-headers-cpp ALIAS roaring-headers-cpp)
+
+set_target_properties(
+  roaring PROPERTIES
+  VERSION "${ROARING_LIB_VERSION}"
+  SOVERSION "${ROARING_LIB_SOVERSION}"
+  WINDOWS_EXPORT_ALL_SYMBOLS YES
+)
