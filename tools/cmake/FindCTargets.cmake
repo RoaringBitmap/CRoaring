@@ -4,8 +4,11 @@ endif ()
 include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
 set(BUILD_STATIC_LIB ON)
 if (ENABLE_ROARING_TESTS)
-  import_dependency(cmocka clibs/cmocka  f5e2cd7)
-  add_dependency(cmocka)
+  CPMAddPackage(
+       NAME cmocka
+       GITHUB_REPOSITORY clibs/cmocka
+       GIT_TAG f5e2cd7
+    )
 endif()
 
 function(add_c_test TEST_NAME)
