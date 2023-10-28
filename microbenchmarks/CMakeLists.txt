@@ -7,8 +7,15 @@ set_off(BENCHMARK_ENABLE_TESTING)
 set_off(BENCHMARK_ENABLE_INSTALL)
 set_off(BENCHMARK_ENABLE_WERROR)
 set(BENCHMARK_ENABLE_WERROR OFF)
-import_dependency(google_benchmarks google/benchmark 3441176)
-add_dependency(google_benchmarks)
+ CPMAddPackage(
+     NAME benchmark
+     GITHUB_REPOSITORY google/benchmark
+     GIT_TAG 3441176
+     OPTIONS "BENCHMARK_ENABLE_TESTING OFF"
+             "BENCHMARK_ENABLE_INSTALL OFF"
+             "BENCHMARK_ENABLE_WERROR OFF"
+
+   )
 
 add_executable(bench bench.cpp)
 target_link_libraries(bench PRIVATE roaring)
