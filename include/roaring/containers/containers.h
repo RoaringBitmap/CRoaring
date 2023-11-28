@@ -2331,6 +2331,28 @@ static inline int container_rank(
     return false;
 }
 
+// bulk version of container_rank(); return number of consumed elements
+static inline uint32_t container_rank_many(
+    const container_t *c, uint8_t type,
+    uint64_t start_rank, const uint32_t* begin, const uint32_t* end, uint64_t* ans
+){
+    c = container_unwrap_shared(c, &type);
+    switch (type) {
+        case BITSET_CONTAINER_TYPE:
+            return bitset_container_rank_many(const_CAST_bitset(c), start_rank, begin, end, ans);
+        case ARRAY_CONTAINER_TYPE:
+            return array_container_rank_many(const_CAST_array(c), start_rank, begin, end, ans);
+        case RUN_CONTAINER_TYPE:
+            return run_container_rank_many(const_CAST_run(c), start_rank, begin, end, ans);
+        default:
+            assert(false);
+            roaring_unreachable;
+    }
+    assert(false);
+    roaring_unreachable;
+    return 0;
+}
+
 // return the index of x, if not exsist return -1
 static inline int container_get_index(const container_t *c, uint8_t type,
                                     uint16_t x) {

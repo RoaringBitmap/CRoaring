@@ -2796,6 +2796,32 @@ uint64_t roaring_bitmap_rank(const roaring_bitmap_t *bm, uint32_t x) {
     }
     return size;
 }
+void roaring_bitmap_rank_many(const roaring_bitmap_t *bm, const uint32_t* begin, const uint32_t* end, uint64_t* ans) {
+    uint64_t size = 0;
+
+    int i = 0;
+    const uint32_t* iter = begin;
+    while(i < bm->high_low_container.size && iter != end) {
+        uint32_t x = *iter;
+        uint32_t xhigh = x >> 16;
+        uint32_t key = bm->high_low_container.keys[i];
+        if (xhigh > key) {
+            size +=
+                container_get_cardinality(bm->high_low_container.containers[i],
+                                        bm->high_low_container.typecodes[i]);
+            i++;
+        } else if (xhigh == key) {
+            uint32_t consumed = container_rank_many(bm->high_low_container.containers[i],
+                                        bm->high_low_container.typecodes[i],
+                                        size, iter, end, ans);
+            iter += consumed;
+            ans += consumed;
+        } else {
+            *(ans++) = size;
+            iter++;
+        }
+    }
+}
 
 /**
  * roaring_bitmap_get_index returns the index of x, if not exsist return -1.

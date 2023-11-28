@@ -1,4 +1,5 @@
 #include "bench.h"
+#include <vector>
 
 
 struct successive_intersection {
@@ -153,6 +154,35 @@ struct compute_cardinality {
 
 auto ComputeCardinality = BasicBench<compute_cardinality>;
 BENCHMARK(ComputeCardinality);
+
+struct rank_many_slow {
+    static uint64_t run() {
+        std::vector<uint64_t> ranks(5);
+        for (size_t i = 0; i < count; ++i) {
+           ranks[0] = roaring_bitmap_rank(bitmaps[i], maxvalue/5);
+           ranks[1] = roaring_bitmap_rank(bitmaps[i], 2*maxvalue/5);
+           ranks[2] = roaring_bitmap_rank(bitmaps[i], 3*maxvalue/5);
+           ranks[3] = roaring_bitmap_rank(bitmaps[i], 4*maxvalue/5);
+           ranks[4] = roaring_bitmap_rank(bitmaps[i], maxvalue);
+        }
+        return ranks[0];
+    }
+};
+auto RankManySlow = BasicBench<rank_many_slow>;
+BENCHMARK(RankManySlow);
+
+struct rank_many {
+    static uint64_t run() {
+        std::vector<uint64_t> ranks(5);
+        std::vector<uint32_t> input{maxvalue/5, 2*maxvalue/5, 3*maxvalue/5, 4*maxvalue/5, maxvalue};
+        for (size_t i = 0; i < count; ++i) {
+           roaring_bitmap_rank_many(bitmaps[i],input.data(), input.data()+input.size(), ranks.data());
+         }
+        return ranks[0];
+    }
+};
+auto RankMany = BasicBench<rank_many>;
+BENCHMARK(RankMany);
 
 int main(int argc, char **argv) {
     const char *dir_name;
