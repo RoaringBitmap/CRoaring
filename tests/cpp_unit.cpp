@@ -978,6 +978,17 @@ DEFINE_TEST(test_cpp_add_many) {
     assert_true(r1 == r2);
 }
 
+DEFINE_TEST(test_cpp_rank_many) {
+    std::vector<uint32_t> values = {123, 9999, 9999, 0xFFFFFFF7, 0xFFFFFFFF};
+    Roaring r1;
+    r1.addMany(values.size(), values.data());
+
+    std::vector<uint64_t> ranks(values.size());
+    r1.rank_many(values.data(), values.data()+values.size(), ranks.data());
+    std::vector<uint64_t> expect_ranks{1,2,2,3,4};
+    assert_true(ranks == expect_ranks);
+}
+
 DEFINE_TEST(test_cpp_add_many_64) {
     {
         // 32-bit integers
@@ -2002,6 +2013,7 @@ int main() {
         cmocka_unit_test(test_cpp_add_range_closed_combinatoric_64),
         cmocka_unit_test(test_cpp_add_bulk),
         cmocka_unit_test(test_cpp_contains_bulk),
+        cmocka_unit_test(test_cpp_rank_many),
         cmocka_unit_test(test_cpp_remove_range_closed_64),
         cmocka_unit_test(test_cpp_remove_range_64),
         cmocka_unit_test(test_run_compression_cpp_64_true),
