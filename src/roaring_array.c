@@ -238,7 +238,7 @@ void ra_append_copies_until(roaring_array_t *ra, const roaring_array_t *sa,
                             uint16_t stopping_key, bool copy_on_write) {
     for (int32_t i = 0; i < sa->size; ++i) {
         if (sa->keys[i] >= stopping_key) break;
-        ra_append_copy(ra, sa, i, copy_on_write);
+        ra_append_copy(ra, sa, (uint16_t)i, copy_on_write);
     }
 }
 

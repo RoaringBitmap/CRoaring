@@ -370,8 +370,8 @@ void array_container_offset(const array_container_t *c,
 static inline bool array_container_contains_range(const array_container_t *arr,
                                                     uint32_t range_start, uint32_t range_end) {
     const int32_t range_count = range_end - range_start;
-    const uint16_t rs_included = range_start;
-    const uint16_t re_included = range_end - 1;
+    const uint16_t rs_included = (uint16_t)range_start;
+    const uint16_t re_included = (uint16_t)(range_end - 1);
 
     // Empty range is always included
     if (range_count <= 0) {
@@ -453,7 +453,7 @@ static inline void array_container_add_range_nvals(array_container_t *array,
             &(array->array[array->cardinality - nvals_greater]),
             nvals_greater * sizeof(uint16_t));
     for (uint32_t i = 0; i <= max - min; i++) {
-        array->array[nvals_less + i] = min + i;
+        array->array[nvals_less + i] = (uint16_t)(min + i);
     }
     array->cardinality = union_cardinality;
 }

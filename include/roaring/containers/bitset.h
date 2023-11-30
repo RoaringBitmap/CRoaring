@@ -208,7 +208,7 @@ static inline bool bitset_container_get_range(const bitset_container_t *bitset,
         return false;
     }
 
-    for (uint16_t i = start + 1; (i < BITSET_CONTAINER_SIZE_IN_WORDS) && (i < end); ++i){
+    for (uint32_t i = start + 1; (i < BITSET_CONTAINER_SIZE_IN_WORDS) && (i < end); ++i){
 
         if (bitset->words[i] != UINT64_C(0xFFFFFFFFFFFFFFFF)) return false;
     }
