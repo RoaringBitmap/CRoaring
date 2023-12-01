@@ -3606,6 +3606,17 @@ DEFINE_TEST(test_rank) {
             if (truerank != computedrank)
                 printf("%d != %d \n", (int)truerank, (int)computedrank);
             assert_true(truerank == computedrank);
+
+            uint32_t input[] = {z, z+1, z+10, z+100, z+1000};
+            uint64_t output[5];
+            roaring_bitmap_rank_many(r, input, input+5, output);
+            for(uint32_t i = 0; i < 5; i++) {
+                truerank = rank(ans, card, input[i]);
+                computedrank = output[i];
+                if (truerank != computedrank)
+                    printf("%d != %d \n", (int)truerank, (int)computedrank);
+                assert_true(truerank == computedrank);
+            }
         }
         free(ans);
         // now bitmap
@@ -3622,6 +3633,17 @@ DEFINE_TEST(test_rank) {
             if (truerank != computedrank)
                 printf("%d != %d \n", (int)truerank, (int)computedrank);
             assert_true(truerank == computedrank);
+
+            uint32_t input[] = {z, z+1, z+10, z+100, z+1000};
+            uint64_t output[5];
+            roaring_bitmap_rank_many(r, input, input+5, output);
+            for(uint32_t i = 0; i < 5; i++) {
+                truerank = rank(ans, card, input[i]);
+                computedrank = output[i];
+                if (truerank != computedrank)
+                    printf("%d != %d \n", (int)truerank, (int)computedrank);
+                assert_true(truerank == computedrank);
+            }
         }
         free(ans);
         // now run
@@ -3639,6 +3661,17 @@ DEFINE_TEST(test_rank) {
             if (truerank != computedrank)
                 printf("%d != %d \n", (int)truerank, (int)computedrank);
             assert_true(truerank == computedrank);
+
+            uint32_t input[] = {z, z+1, z+10, z+100, z+1000};
+            uint64_t output[5];
+            roaring_bitmap_rank_many(r, input, input+5, output);
+            for(uint32_t i = 0; i < 5; i++) {
+                truerank = rank(ans, card, input[i]);
+                computedrank = output[i];
+                if (truerank != computedrank)
+                    printf("%d != %d \n", (int)truerank, (int)computedrank);
+                assert_true(truerank == computedrank);
+            }
         }
         free(ans);
 
