@@ -56,6 +56,7 @@ var classroaring_1_1Roaring =
     [ "printf", "d1/d51/classroaring_1_1Roaring.html#ad956e9ff3afc9ad367340457a20fb54c", null ],
     [ "rangeUint32Array", "d1/d51/classroaring_1_1Roaring.html#aa607be31da466bb849abb143c4bc0b30", null ],
     [ "rank", "d1/d51/classroaring_1_1Roaring.html#a1e6c5beddebe4a2f4b1af1ca83463e7b", null ],
+    [ "rank_many", "d1/d51/classroaring_1_1Roaring.html#ab5aa7152777b037e536d8eb2507b3956", null ],
     [ "read", "d1/d51/classroaring_1_1Roaring.html#a49f4dc67b6f3522a4f33051b1fc5d427", null ],
     [ "readSafe", "d1/d51/classroaring_1_1Roaring.html#a129a1d354fd32d20fc9e2732e288ebb5", null ],
     [ "remove", "d1/d51/classroaring_1_1Roaring.html#ac204b038588bb7002a93909a66c72f5b", null ],
