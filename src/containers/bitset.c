@@ -1233,16 +1233,16 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
 }
 
 uint32_t bitset_container_rank_many(const bitset_container_t *container, uint64_t start_rank, const uint32_t* begin, const uint32_t* end, uint64_t* ans){
-  const uint16_t high = (*begin) >> 16;
+  const uint16_t high = (uint16_t)((*begin) >> 16);
   int i = 0;
   int sum = 0;
   const uint32_t* iter = begin;
   for(; iter != end; iter++) {
       uint32_t x = *iter;
-      uint16_t xhigh = x >> 16;
+      uint16_t xhigh = (uint16_t)(x >> 16);
       if(xhigh != high) return iter - begin; // stop at next container
 
-      uint16_t xlow = x & 0xFFFF;
+      uint16_t xlow = (uint16_t)x;
       for(int count = xlow / 64; i < count; i++){
         sum += roaring_hamming(container->words[i]);
       }
