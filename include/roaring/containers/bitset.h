@@ -495,8 +495,9 @@ uint16_t bitset_container_maximum(const bitset_container_t *container);
 /* Returns the number of values equal or smaller than x */
 int bitset_container_rank(const bitset_container_t *container, uint16_t x);
 
-// bulk version of bitset_container_rank(); return number of consumed elements
-uint32_t bitset_container_rank_many(const bitset_container_t *container, uint64_t start_rank, const uint32_t* begin, const uint32_t* end, uint64_t* ans);
+/* bulk version of bitset_container_rank(); return number of consumed elements */
+uint32_t bitset_container_rank_many(const bitset_container_t *container, uint64_t start_rank,
+                                    const uint32_t* begin, const uint32_t* end, uint64_t* ans);
 
 /* Returns the index of x , if not exsist return -1 */
 int bitset_container_get_index(const bitset_container_t *container, uint16_t x);

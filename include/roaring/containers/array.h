@@ -412,8 +412,9 @@ inline int array_container_rank(const array_container_t *arr, uint16_t x) {
     }
 }
 
-// bulk version of array_container_rank(); return number of consumed elements
-inline uint32_t array_container_rank_many(const array_container_t *arr, uint64_t start_rank, const uint32_t* begin, const uint32_t* end, uint64_t* ans){
+/*  bulk version of array_container_rank(); return number of consumed elements */
+inline uint32_t array_container_rank_many(const array_container_t *arr, uint64_t start_rank,
+                                          const uint32_t* begin, const uint32_t* end, uint64_t* ans) {
     const uint16_t high = (uint16_t)((*begin) >> 16);
     uint32_t pos = 0;
     const uint32_t* iter = begin;

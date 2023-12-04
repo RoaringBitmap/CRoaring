@@ -561,8 +561,9 @@ inline uint16_t run_container_maximum(const run_container_t *run) {
 /* Returns the number of values equal or smaller than x */
 int run_container_rank(const run_container_t *arr, uint16_t x);
 
-// bulk version of run_container_rank(); return number of consumed elements
-uint32_t run_container_rank_many(const run_container_t *arr, uint64_t start_rank, const uint32_t* begin, const uint32_t* end, uint64_t* ans);
+/* bulk version of run_container_rank(); return number of consumed elements */
+uint32_t run_container_rank_many(const run_container_t *arr, uint64_t start_rank,
+                                 const uint32_t* begin, const uint32_t* end, uint64_t* ans);
 
 /* Returns the index of x, if not exsist return -1 */
 int run_container_get_index(const run_container_t *arr, uint16_t x);
