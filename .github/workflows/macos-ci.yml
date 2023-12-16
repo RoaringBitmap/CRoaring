@@ -17,14 +17,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_INSTALL_PREFIX:PATH=destination ..
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
           cmake --build . 
           ctest . --output-on-failure
           cmake --install . 
           cd ../tests/installation/find && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .
       - name: Build and Test (shared)
         run: |
-          cmake -DBUILD_SHARED_LIBS=ON -B buildshared -DCMAKE_INSTALL_PREFIX:PATH=destinationshared
+          cmake -DBUILD_SHARED_LIBS=ON  -DCMAKE_INSTALL_PREFIX:PATH=destinationshared -DENABLE_ROARING_TESTS=ON -B buildshared
           cmake --build buildshared
           cmake --install buildshared
           cd tests/installation/find
@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir builddebug
           cd builddebug
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=destination ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
           cmake --build . 
           ctest . --output-on-failure
           cmake --install . 
