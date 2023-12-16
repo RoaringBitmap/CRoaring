@@ -21,7 +21,7 @@ jobs:
       - name: Configure
         run: |
           mkdir build
-          cd build && cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -T ClangCL ..
+          cd build && cmake -DENABLE_ROARING_TESTS=ON -G "${{matrix.gen}}" -A ${{matrix.arch}} -T ClangCL ..
       - name: Build
         run: cmake --build build --config Release --parallel
       - name: Run basic tests

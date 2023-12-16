@@ -22,6 +22,6 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake  -DROARING_SANITIZE_THREADS=ON ..
+          cmake  -DROARING_SANITIZE_THREADS=ON -DENABLE_ROARING_TESTS=ON ..
           cmake --build . 
           ctest . --output-on-failure

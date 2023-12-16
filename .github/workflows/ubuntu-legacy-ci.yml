@@ -1,4 +1,4 @@
-name: Ubuntu-CI
+name: Ubuntu-Legacy-CI
 
 'on':
   - push
@@ -18,8 +18,8 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DROARING_DISABLE_AVX=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..
-          cmake --build . 
+          cmake -DROARING_DISABLE_AVX=ON -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
+          cmake --build .
           ctest . --output-on-failure
           cmake --install . 
           cd ../tests/installation/find && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .

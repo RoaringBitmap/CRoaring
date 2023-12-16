@@ -24,6 +24,6 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake  ..
-          cmake --build . 
+          cmake -DENABLE_ROARING_TESTS=ON ..
+          cmake --build .
           ctest . --output-on-failure

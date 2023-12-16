@@ -45,14 +45,17 @@ option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" O
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
 
-option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ${BUILD_TESTING})
+option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
+if(NOT ENABLE_ROARING_TESTS)
+  message(STATUS "Tests are disabled, you can enabled them by setting ENABLE_ROARING_TESTS to ON")
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
+include(cmake/CPM.cmake)
 find_package(CTargets)
 find_package(Options)
 find_package(LTO)
-include(cmake/CPM.cmake)
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/roaring.pc.in"
                "${CMAKE_CURRENT_BINARY_DIR}/roaring.pc" @ONLY)
