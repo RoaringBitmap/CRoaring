@@ -4,11 +4,15 @@ endif ()
 include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
 set(BUILD_STATIC_LIB ON)
 if (ENABLE_ROARING_TESTS)
-  CPMAddPackage(
-       NAME cmocka
-       GITHUB_REPOSITORY clibs/cmocka
-       GIT_TAG f5e2cd7
+  if(ROARING_USE_CPM)
+    CPMAddPackage(
+      NAME cmocka
+      GITHUB_REPOSITORY clibs/cmocka
+      GIT_TAG f5e2cd7
     )
+  else()
+    find_package(cmocka REQUIRED)
+  endif()
 endif()
 
 function(add_c_test TEST_NAME)
@@ -18,7 +22,11 @@ function(add_c_test TEST_NAME)
 
   add_executable(${TEST_NAME} ${TEST_NAME}.c)
 
-  target_link_libraries(${TEST_NAME} roaring cmocka-static)
+  if(ROARING_USE_CPM)
+    target_link_libraries(${TEST_NAME} roaring cmocka-static)
+  else()
+    target_link_libraries(${TEST_NAME} roaring cmocka)
+  endif()
 
   add_test(${TEST_NAME} ${TEST_NAME})
 endfunction(add_c_test)
@@ -35,7 +43,11 @@ if (CMAKE_VERSION VERSION_GREATER 2.8.10)
     get_directory_property(parent_dir PARENT_DIRECTORY)
     target_include_directories(${TEST_NAME} PRIVATE "${parent_dir}/cpp")
 
-    target_link_libraries(${TEST_NAME} roaring cmocka-static)
+    if(ROARING_USE_CPM)
+      target_link_libraries(${TEST_NAME} roaring cmocka-static)
+    else()
+      target_link_libraries(${TEST_NAME} roaring cmocka)
+    endif()
 
     add_test(${TEST_NAME} ${TEST_NAME})
   endfunction(add_cpp_test)
