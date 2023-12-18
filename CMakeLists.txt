@@ -52,7 +52,11 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
-include(cmake/CPM.cmake)
+option(ROARING_USE_CPM "Use CPM to fetch dependencies" ON)
+
+if(ROARING_USE_CPM)
+  include(cmake/CPM.cmake)
+endif()
 find_package(CTargets)
 find_package(Options)
 find_package(LTO)
