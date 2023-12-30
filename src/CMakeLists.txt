@@ -18,6 +18,7 @@ set(ROARING_SRC
     isadetection.c
     array_util.c
     bitset_util.c
+    art/art.c
     bitset.c
     containers/array.c
     containers/bitset.c
