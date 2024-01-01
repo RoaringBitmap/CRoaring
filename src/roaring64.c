@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <byteswap.h>  // TODO: this is only defined on GNU/Linux
 #include <roaring/containers/containers.h>
 #include <roaring/roaring64.h>
 #include <stdarg.h>
@@ -23,23 +22,41 @@ namespace api64 {
 // TODO: Serialization.
 // TODO: Error on failed allocation.
 
+// Returns the uint64 represented in big endian format, so that the underlying
+// bytes can be used in keys in the ART.
+static inline uint64_t htobe(uint64_t x) {
+#if CROARING_IS_BIG_ENDIAN
+    return x;
+#else
+    // Gets compiled to bswap or equivalent on most compilers.
+    return ((x & 0x00000000000000FFULL) << 56) |
+           ((x & 0x000000000000FF00ULL) << 40) |
+           ((x & 0x0000000000FF0000ULL) << 24) |
+           ((x & 0x00000000FF000000ULL) << 8) |
+           ((x & 0x000000FF00000000ULL) >> 8) |
+           ((x & 0x0000FF0000000000ULL) >> 24) |
+           ((x & 0x00FF000000000000ULL) >> 40) |
+           ((x & 0xFF00000000000000ULL) >> 56);
+#endif  // CROARING_IS_BIG_ENDIAN
+}
+
+// Returns the uint64 represented in host format.
+static inline uint64_t betoh(uint64_t x) { return htobe(x); }
+
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
-// Expects high48_out to be of length 6.
+// Expects high48_out to be of length ART_KEY_BYTES.
 static inline uint16_t split_key(uint64_t key, uint8_t high48_out[]) {
-    // Reverse byte order of the high 6 bytes. Not portable to big-endian
-    // systems!
-    uint64_t tmp = __bswap_64(key);
+    uint64_t tmp = htobe(key);
     memcpy(high48_out, (uint8_t *)(&tmp), ART_KEY_BYTES);
     return (uint16_t)key;
 }
 
 // Recombines the high 48 bit and low 16 bit components into a uint64 key.
-// Expects high48_out to be of length 6.
+// Expects high48_out to be of length ART_KEY_BYTES.
 static inline uint64_t combine_key(const uint8_t high48[], uint16_t low16) {
     uint64_t result = 0;
     memcpy((uint8_t *)(&result), high48, ART_KEY_BYTES);
-    // Not portable to big-endian systems!
-    return __bswap_64(result) | low16;
+    return betoh(result) | low16;
 }
 
 static inline uint64_t minimum(uint64_t a, uint64_t b) {
