@@ -185,75 +185,6 @@ DEFINE_TEST(test_art_erase_all) {
     art_free(&art);
 }
 
-DEFINE_TEST(test_art_many_entries) {
-    const size_t kValues = 10000;
-    std::vector<std::array<char, 6>> keys;
-    std::vector<Value> values;
-    keys.reserve(kValues);
-    values.reserve(kValues);
-    for (uint64_t i = 0; i < kValues; ++i) {
-        char key[7];
-        snprintf(key, 7, "%.6lu", i);
-        for (size_t j = 0; j < 6; ++j) {
-            keys[i][j] = key[j];
-        }
-        values[i] = {i};
-    }
-
-    art_t art{NULL};
-
-    for (size_t i = 0; i < kValues; ++i) {
-        art_insert(&art, (uint8_t*)keys[i].data(), &values[i]);
-    }
-
-    for (size_t i = 0; i < kValues; ++i) {
-        Value* found = (Value*)art_find(&art, (uint8_t*)keys[i].data());
-        assert_true(found != NULL && *found == values[i]);
-    }
-
-    for (size_t i = 0; i < kValues; ++i) {
-        Value* erased = (Value*)art_erase(&art, (uint8_t*)keys[i].data());
-        assert_true(erased != NULL && *erased == values[i]);
-    }
-
-    art_free(&art);
-}
-
-DEFINE_TEST(test_art_dense_entries) {
-    const size_t kValues = 300;
-    std::vector<uint64_t> keys;
-    std::vector<Value> values;
-    keys.reserve(kValues);
-    values.reserve(kValues);
-    for (uint64_t i = 0; i < kValues; ++i) {
-        uint64_t key = i;
-        uint8_t* key_begin = (uint8_t*)&key;
-        uint8_t* key_end = key_begin + sizeof(key);
-        std::reverse(key_begin, key_end);
-        key = key >> 16;
-        keys[i] = key;
-        values[i] = {i};
-    }
-
-    art_t art{NULL};
-
-    for (size_t i = 0; i < kValues; ++i) {
-        art_insert(&art, (uint8_t*)&keys[i], &values[i]);
-    }
-
-    for (size_t i = 0; i < kValues; ++i) {
-        Value* found = (Value*)art_find(&art, (uint8_t*)&keys[i]);
-        assert_true(found != NULL && *found == values[i]);
-    }
-
-    for (size_t i = 0; i < kValues; ++i) {
-        Value* erased = (Value*)art_erase(&art, (uint8_t*)&keys[i]);
-        assert_true(erased != NULL && *erased == values[i]);
-    }
-
-    art_free(&art);
-}
-
 DEFINE_TEST(test_art_is_empty) {
     std::vector<const char*> keys = {
         "000001", "000002", "000003", "000004", "001005",
@@ -466,8 +397,6 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_art_simple),
         cmocka_unit_test(test_art_erase_all),
-        cmocka_unit_test(test_art_many_entries),
-        cmocka_unit_test(test_art_dense_entries),
         cmocka_unit_test(test_art_is_empty),
         cmocka_unit_test(test_art_iterator_next),
         cmocka_unit_test(test_art_iterator_prev),

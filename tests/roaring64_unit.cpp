@@ -93,7 +93,7 @@ DEFINE_TEST(test_of_ptr) {
 }
 
 DEFINE_TEST(test_of) {
-    roaring64_bitmap_t* r = roaring64_bitmap_of(3, 1, 20000, 500000);
+    roaring64_bitmap_t* r = roaring64_bitmap_of(3, 1ULL, 20000ULL, 500000ULL);
     assert_true(roaring64_bitmap_contains(r, 1));
     assert_true(roaring64_bitmap_contains(r, 20000));
     assert_true(roaring64_bitmap_contains(r, 500000));
