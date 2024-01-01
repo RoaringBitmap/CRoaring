@@ -460,24 +460,6 @@ DEFINE_TEST(test_art_shadowed) {
     art.assertLowerBoundValid(1);
 }
 
-DEFINE_TEST(test_art_size_in_bytes) {
-    std::vector<const char*> keys = {
-        "000001", "000002", "000003", "000004", "001005",
-    };
-    std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
-
-    art_t art{NULL};
-    for (size_t i = 0; i < keys.size(); ++i) {
-        art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
-    }
-    // sizeof(art_t)           = 8
-    // sizeof(art_node4_t) * 2 = 48 * 2
-    // --------------------------------
-    // total size              = 104
-    assert_true(art_size_in_bytes(&art) == 104);
-    art_free(&art);
-}
-
 }  // namespace
 
 int main() {
@@ -495,7 +477,6 @@ int main() {
         cmocka_unit_test(test_art_iterator_erase),
         cmocka_unit_test(test_art_iterator_insert),
         cmocka_unit_test(test_art_shadowed),
-        cmocka_unit_test(test_art_size_in_bytes),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

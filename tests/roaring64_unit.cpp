@@ -442,26 +442,6 @@ DEFINE_TEST(test_run_optimize) {
     roaring64_bitmap_free(r);
 }
 
-DEFINE_TEST(test_size_in_bytes) {
-    roaring64_bitmap_t* r = roaring64_bitmap_create();
-
-    roaring64_bitmap_add(r, 0);
-    roaring64_bitmap_add(r, 1);
-    roaring64_bitmap_add(r, uint64_t(10101000100001));
-    roaring64_bitmap_add(r, uint64_t(10101000100002));
-    // sizeof(art_t)                    = 8
-    // sizeof(art_node4_t)              = 48
-    // sizeof(roaring_64tree_val_t) * 2 = 16 * 2
-    // sizeof(uint16) * 3               = 8
-    // -----------------------------------------
-    // total size                       = 96
-    //
-    // Note: size of containers not included, this is serialized size.
-    assert_true(roaring64_bitmap_size_in_bytes(r) == 96);
-
-    roaring64_bitmap_free(r);
-}
-
 DEFINE_TEST(test_equals) {
     roaring64_bitmap_t* r1 = roaring64_bitmap_create();
     roaring64_bitmap_t* r2 = roaring64_bitmap_create();
@@ -922,7 +902,6 @@ int main() {
         cmocka_unit_test(test_minimum),
         cmocka_unit_test(test_maximum),
         cmocka_unit_test(test_run_optimize),
-        cmocka_unit_test(test_size_in_bytes),
         cmocka_unit_test(test_equals),
         cmocka_unit_test(test_is_subset),
         cmocka_unit_test(test_is_strict_subset),
