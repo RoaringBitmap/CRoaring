@@ -38,10 +38,6 @@ namespace internal {
 
 typedef uint8_t art_typecode_t;
 
-// Base node struct.
-typedef struct art_node_s {
-} art_node_t;
-
 // Should be kept in sync with art_val_t.
 typedef struct art_leaf_s {
     art_key_chunk_t key[ART_KEY_BYTES];
@@ -51,7 +47,6 @@ typedef struct art_leaf_s {
 //
 // We use a fixed-length array as a pointer would be larger than the array.
 typedef struct art_inner_node_s {
-    art_node_t base;
     art_typecode_t typecode;
     uint8_t prefix_size;
     uint8_t prefix[ART_KEY_BYTES - 1];
@@ -855,7 +850,7 @@ static art_indexed_child_t art_node_next_child(const art_node_t *node,
             return art_node256_next_child((art_node256_t *)node, index);
         default:
             assert(false);
-            return (art_indexed_child_t){};
+            return (art_indexed_child_t){0};
     }
 }
 
@@ -879,7 +874,7 @@ static art_indexed_child_t art_node_prev_child(const art_node_t *node,
             return art_node256_prev_child((art_node256_t *)node, index);
         default:
             assert(false);
-            return (art_indexed_child_t){};
+            return (art_indexed_child_t){0};
     }
 }
 
@@ -903,7 +898,7 @@ static art_indexed_child_t art_node_child_at(const art_node_t *node,
             return art_node256_child_at((art_node256_t *)node, index);
         default:
             assert(false);
-            return (art_indexed_child_t){};
+            return (art_indexed_child_t){0};
     }
 }
 
@@ -927,7 +922,7 @@ static art_indexed_child_t art_node_lower_bound(const art_node_t *node,
             return art_node256_lower_bound((art_node256_t *)node, key_chunk);
         default:
             assert(false);
-            return (art_indexed_child_t){};
+            return (art_indexed_child_t){0};
     }
 }
 

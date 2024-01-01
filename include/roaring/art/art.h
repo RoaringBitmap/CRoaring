@@ -33,7 +33,7 @@ namespace internal {
 #endif
 
 typedef uint8_t art_key_chunk_t;
-typedef struct art_node_s art_node_t;
+typedef void art_node_t;
 
 /**
  * Wrapper to allow an empty tree.
