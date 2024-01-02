@@ -1988,8 +1988,8 @@ DEFINE_TEST(test_cpp_deserialize_add_offset) {
     for(uint32_t i = 0; i< cardinality;++i){
         assert_int_equal(numbers0[i] + offset, numbers1[i]);
     }
-    assert_true(numbers1 == numbers2); // Failure
-    assert_true(r1 == r2); // Failure
+    assert_true(numbers1 == numbers2);
+    assert_true(r1 == r2);
 
 }
 

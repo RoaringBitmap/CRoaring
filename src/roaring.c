@@ -2412,7 +2412,35 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
             offset_append_with_merge(ans_ra, (int)k, lo, t);
         }
         if (hi != NULL) {
-            ra_append(ans_ra, (uint16_t)(k+1), hi, t);
+           int hi_card = container_get_cardinality(hi, t);
+           // do required type conversions.
+           if( hi_card <= DEFAULT_MAX_SIZE) {
+                c = container_unwrap_shared(hi, &t);
+                switch (t) {
+                    case BITSET_CONTAINER_TYPE:{
+                        array_container_t* array_hi = array_container_from_bitset(const_CAST_bitset(c));
+                        container_free(hi, t);
+                        hi = array_hi;
+                        t = ARRAY_CONTAINER_TYPE;
+                        break;
+                    }
+                    case ARRAY_CONTAINER_TYPE:
+                        break;
+                    case RUN_CONTAINER_TYPE:{
+                        array_container_t* array_hi = array_container_from_run(const_CAST_run(c));
+                        container_free(hi, t);
+                        hi = array_hi;
+                        t = ARRAY_CONTAINER_TYPE;
+                        break;
+                    }
+                    default:{
+                        assert(false);
+                        roaring_unreachable;
+                    }
+                }
+           }
+
+           ra_append(ans_ra, (uint16_t)(k+1), hi, t);
         }
     }
 
