@@ -1,22 +1,11 @@
 #ifndef ROARING64_H
 #define ROARING64_H
 
-#include <roaring/art/art.h>
 #include <roaring/memory.h>
 #include <roaring/roaring_types.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-// TODO: This is messy and can likely be improved.
-#if defined(__cplusplus)
-#define ROARING_ART_T ::roaring::internal::art_t
-#define ROARING_ART_VAL_T ::roaring::internal::art_val_t
-#else
-#define ROARING_ART_T art_t
-#define ROARING_ART_VAL_T art_val_t
-#define ROARING_CONTAINER_T void
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,17 +13,8 @@ namespace roaring {
 namespace api {
 #endif
 
-typedef struct roaring64_bitmap_s {
-    ROARING_ART_T art;
-    uint8_t flags;
-} roaring64_bitmap_t;
-
-// TODO: Ideally we don't put this in the header.
-typedef struct leaf_s {
-    ROARING_ART_VAL_T _pad;
-    uint8_t typecode;
-    ROARING_CONTAINER_T *container;
-} leaf_t;
+typedef struct roaring64_bitmap_s roaring64_bitmap_t;
+typedef struct roaring64_leaf_s roaring64_leaf_t;
 
 /**
  * A bit of context usable with `roaring64_bitmap_*_bulk()` functions.
@@ -50,7 +30,7 @@ typedef struct leaf_s {
 typedef struct roaring64_bulk_context_s {
     uint8_t high_bytes[ART_KEY_BYTES];
     uint16_t low_bytes;
-    leaf_t *leaf;
+    roaring64_leaf_t *leaf;
 } roaring64_bulk_context_t;
 
 /**

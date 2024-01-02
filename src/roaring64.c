@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <roaring/art/art.h>
 #include <roaring/containers/containers.h>
 #include <roaring/roaring64.h>
 #include <stdarg.h>
@@ -41,10 +42,9 @@ using namespace ::roaring::internal;
 
 extern "C" {
 namespace roaring {
-namespace api64 {
+namespace api {
 #endif
 
-// TODO: Figure out how to keep art_t from being exposed in roaring64.h
 // TODO: Iteration.
 //  * Need to create a container iterator which can be used across 32 and 64 bit
 //    bitmaps.
@@ -52,6 +52,22 @@ namespace api64 {
 // TODO: Copy on write.
 // TODO: Serialization.
 // TODO: Error on failed allocation.
+
+typedef struct roaring64_bitmap_s {
+    art_t art;
+    uint8_t flags;
+} roaring64_bitmap_t;
+
+// Leaf type of the ART used to keep the high 48 bits of each entry.
+typedef struct roaring64_leaf_s {
+    art_val_t _pad;
+    uint8_t typecode;
+    container_t *container;
+} roaring64_leaf_t;
+
+// Alias to make it easier to work with, since it's an internal-only type
+// anyway.
+typedef struct roaring64_leaf_s leaf_t;
 
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
 // Expects high48_out to be of length ART_KEY_BYTES.
