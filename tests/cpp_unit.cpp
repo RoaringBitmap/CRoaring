@@ -1958,6 +1958,41 @@ DEFINE_TEST(test_cpp_deserialize_64_high_vals) {
   assert_true(test64Deserialize("64maphighvals.bin"));
 }
 
+DEFINE_TEST(test_cpp_deserialize_add_offset) {
+    std::string filename = "addoffsetinput.bin";
+    std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
+    std::vector<char> buf1(std::istreambuf_iterator<char>(in), {});
+    printf("Reading %lu bytes\n", (unsigned long)buf1.size());
+    Roaring r0 = Roaring::readSafe(buf1.data(), buf1.size());
+
+    const uint32_t offset = 4107040;
+    const uint64_t cardinality = r0.cardinality();
+
+    Roaring r1(roaring_bitmap_add_offset(&r0.roaring, offset));
+
+    std::vector<char> buf2(r1.getSizeInBytes());
+    r1.write(buf2.data());
+    Roaring r2 = Roaring::readSafe(buf2.data(),buf2.size());
+
+    assert_int_equal(r0.cardinality(), r1.cardinality());
+    assert_int_equal(r0.cardinality(), r2.cardinality());
+
+    std::vector<uint32_t> numbers0(cardinality);
+    std::vector<uint32_t> numbers1(cardinality);
+    std::vector<uint32_t> numbers2(cardinality);
+
+    r0.toUint32Array(numbers0.data());
+    r1.toUint32Array(numbers1.data());
+    r2.toUint32Array(numbers2.data());
+
+    for(uint32_t i = 0; i< cardinality;++i){
+        assert_int_equal(numbers0[i] + offset, numbers1[i]);
+    }
+    assert_true(numbers1 == numbers2);
+    assert_true(r1 == r2);
+
+}
+
 #if ROARING_EXCEPTIONS
 DEFINE_TEST(test_cpp_deserialize_64_empty_input) {
   assert_false(test64Deserialize("64mapemptyinput.bin"));
@@ -2042,6 +2077,7 @@ int main() {
         cmocka_unit_test(test_cpp_deserialize_64_32bit_vals),
         cmocka_unit_test(test_cpp_deserialize_64_spread_vals),
         cmocka_unit_test(test_cpp_deserialize_64_high_vals),
+        cmocka_unit_test(test_cpp_deserialize_add_offset),
 #if ROARING_EXCEPTIONS
         cmocka_unit_test(test_cpp_deserialize_64_empty_input),
         cmocka_unit_test(test_cpp_deserialize_64_size_too_small),

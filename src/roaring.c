@@ -2412,10 +2412,14 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
             offset_append_with_merge(ans_ra, (int)k, lo, t);
         }
         if (hi != NULL) {
-            ra_append(ans_ra, (uint16_t)(k+1), hi, t);
+           ra_append(ans_ra, (uint16_t)(k+1), hi, t);
         }
+        // the `lo` and `hi` container type always keep same as container `c`.
+        // in the case of `container_add_offset` on bitset container, `lo` and `hi` may has small cardinality,
+        // they must be repaired to array container.
     }
 
+    roaring_bitmap_repair_after_lazy(answer); // do required type conversions.
     return answer;
 }
 
