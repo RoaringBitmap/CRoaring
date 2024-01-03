@@ -210,8 +210,7 @@ DEFINE_TEST(test_art_iterator_next) {
         art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
     }
 
-    art_iterator_t iterator = art_create_iterator();
-    art_init_iterator(&art, &iterator, true);
+    art_iterator_t iterator = art_init_iterator(&art, true);
     size_t i = 0;
     do {
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
@@ -231,8 +230,7 @@ DEFINE_TEST(test_art_iterator_prev) {
         art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
     }
 
-    art_iterator_t iterator = art_create_iterator();
-    art_init_iterator(&art, &iterator, false);
+    art_iterator_t iterator = art_init_iterator(&art, false);
     size_t i = keys.size() - 1;
     do {
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
@@ -251,8 +249,7 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
         art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
     }
 
-    art_iterator_t iterator = art_create_iterator();
-    art_init_iterator(&art, &iterator, true);
+    art_iterator_t iterator = art_init_iterator(&art, true);
     assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)keys[2]));
     assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
     const char* key = "000005";
@@ -344,8 +341,7 @@ DEFINE_TEST(test_art_iterator_erase) {
     for (size_t i = 0; i < keys.size(); ++i) {
         art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
     }
-    art_iterator_t iterator = art_create_iterator();
-    art_init_iterator(&art, &iterator, true);
+    art_iterator_t iterator = art_init_iterator(&art, true);
     size_t i = 0;
     do {
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
@@ -365,8 +361,7 @@ DEFINE_TEST(test_art_iterator_insert) {
     std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
     art_t art{NULL};
     art_insert(&art, (art_key_chunk_t*)keys[0], &values[0]);
-    art_iterator_t iterator = art_create_iterator();
-    art_init_iterator(&art, &iterator, true);
+    art_iterator_t iterator = art_init_iterator(&art, true);
     for (size_t i = 1; i < keys.size(); ++i) {
         art_iterator_insert(&art, &iterator, (art_key_chunk_t*)keys[i],
                             &values[i]);

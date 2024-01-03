@@ -120,8 +120,7 @@ roaring64_bitmap_t *roaring64_bitmap_create(void) {
 }
 
 void roaring64_bitmap_free(roaring64_bitmap_t *r) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
         container_free(leaf->container, leaf->typecode);
@@ -135,8 +134,7 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
 
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
         uint8_t result_typecode = leaf->typecode;
@@ -381,8 +379,7 @@ bool roaring64_bitmap_contains_bulk(const roaring64_bitmap_t *r,
 
 bool roaring64_bitmap_select(const roaring64_bitmap_t *r, uint64_t rank,
                              uint64_t *element) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     uint64_t start_rank = 0;
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -409,8 +406,7 @@ uint64_t roaring64_bitmap_rank(const roaring64_bitmap_t *r, uint64_t val) {
     uint8_t high48[ART_KEY_BYTES];
     uint16_t low16 = split_key(val, high48);
 
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     uint64_t rank = 0;
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -433,8 +429,7 @@ bool roaring64_bitmap_get_index(const roaring64_bitmap_t *r, uint64_t val,
     uint8_t high48[ART_KEY_BYTES];
     uint16_t low16 = split_key(val, high48);
 
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     uint64_t index = 0;
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -619,8 +614,7 @@ void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
 }
 
 uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     uint64_t cardinality = 0;
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -677,8 +671,7 @@ bool roaring64_bitmap_is_empty(const roaring64_bitmap_t *r) {
 }
 
 uint64_t roaring64_bitmap_minimum(const roaring64_bitmap_t *r) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     if (it.value == NULL) {
         return UINT64_MAX;
     }
@@ -688,8 +681,7 @@ uint64_t roaring64_bitmap_minimum(const roaring64_bitmap_t *r) {
 }
 
 uint64_t roaring64_bitmap_maximum(const roaring64_bitmap_t *r) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/false);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/false);
     if (it.value == NULL) {
         return 0;
     }
@@ -699,8 +691,7 @@ uint64_t roaring64_bitmap_maximum(const roaring64_bitmap_t *r) {
 }
 
 bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     bool has_run_container = false;
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -718,8 +709,7 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
 
 size_t roaring64_bitmap_size_in_bytes(const roaring64_bitmap_t *r) {
     size_t size = art_size_in_bytes(&r->art);
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
         size += sizeof(leaf_t);
@@ -731,10 +721,8 @@ size_t roaring64_bitmap_size_in_bytes(const roaring64_bitmap_t *r) {
 
 bool roaring64_bitmap_equals(const roaring64_bitmap_t *r1,
                              const roaring64_bitmap_t *r2) {
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL && it2.value != NULL) {
         if (compare_high48(it1.key, it2.key) != 0) {
@@ -754,10 +742,8 @@ bool roaring64_bitmap_equals(const roaring64_bitmap_t *r1,
 
 bool roaring64_bitmap_is_subset(const roaring64_bitmap_t *r1,
                                 const roaring64_bitmap_t *r2) {
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL) {
         bool it2_present = it2.value != NULL;
@@ -796,10 +782,8 @@ roaring64_bitmap_t *roaring64_bitmap_and(const roaring64_bitmap_t *r1,
                                          const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
 
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL && it2.value != NULL) {
         // Cases:
@@ -840,10 +824,8 @@ uint64_t roaring64_bitmap_and_cardinality(const roaring64_bitmap_t *r1,
                                           const roaring64_bitmap_t *r2) {
     uint64_t result = 0;
 
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL && it2.value != NULL) {
         // Cases:
@@ -877,10 +859,8 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
     if (r1 == r2) {
         return;
     }
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL) {
         // Cases:
@@ -950,10 +930,8 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
 bool roaring64_bitmap_intersect(const roaring64_bitmap_t *r1,
                                 const roaring64_bitmap_t *r2) {
     bool intersect = false;
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL && it2.value != NULL) {
         // Cases:
@@ -992,10 +970,8 @@ roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
                                         const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
 
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL || it2.value != NULL) {
         bool it1_present = it1.value != NULL;
@@ -1052,10 +1028,8 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
     if (r1 == r2) {
         return;
     }
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL || it2.value != NULL) {
         bool it1_present = it1.value != NULL;
@@ -1112,10 +1086,8 @@ roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
                                          const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
 
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL || it2.value != NULL) {
         bool it1_present = it1.value != NULL;
@@ -1177,10 +1149,8 @@ uint64_t roaring64_bitmap_xor_cardinality(const roaring64_bitmap_t *r1,
 void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                                   const roaring64_bitmap_t *r2) {
     assert(r1 != r2);
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL || it2.value != NULL) {
         bool it1_present = it1.value != NULL;
@@ -1256,10 +1226,8 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
                                             const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
 
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL) {
         // Cases:
@@ -1315,10 +1283,8 @@ uint64_t roaring64_bitmap_andnot_cardinality(const roaring64_bitmap_t *r1,
 
 void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                                      const roaring64_bitmap_t *r2) {
-    art_iterator_t it1 = art_create_iterator();
-    art_init_iterator(&r1->art, &it1, /*first=*/true);
-    art_iterator_t it2 = art_create_iterator();
-    art_init_iterator(&r2->art, &it2, /*first=*/true);
+    art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
+    art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
 
     while (it1.value != NULL) {
         // Cases:
@@ -1378,8 +1344,7 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
 
 bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
                               roaring_iterator64 iterator, void *ptr) {
-    art_iterator_t it = art_create_iterator();
-    art_init_iterator(&r->art, &it, /*first=*/true);
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         uint64_t high48 = combine_key(it.key, 0);
         uint64_t high32 = high48 & 0xFFFFFFFF00000000;

@@ -33,7 +33,7 @@ namespace internal {
 #endif
 
 typedef uint8_t art_key_chunk_t;
-typedef void art_node_t;
+typedef struct art_node_s art_node_t;
 
 /**
  * Wrapper to allow an empty tree.
@@ -50,7 +50,7 @@ typedef struct art_s {
  * contains the key corresponding to the value.
  */
 typedef struct art_val_s {
-    art_key_chunk_t _pad[ART_KEY_BYTES];
+    art_key_chunk_t key[ART_KEY_BYTES];
 } art_val_t;
 
 /**
@@ -121,15 +121,11 @@ typedef struct art_iterator_s {
 } art_iterator_t;
 
 /**
- * Creates an iterator. Must be initialized through `art_init_iterator` first.
+ * Creates an iterator initialzed to the first or last entry in the ART,
+ * depending on `first`. The iterator is not valid if there are no entries in
+ * the ART.
  */
-art_iterator_t art_create_iterator();
-
-/**
- * Moves the iterator to the first or last entry in the ART, depending on
- * `first`.
- */
-void art_init_iterator(const art_t *art, art_iterator_t *iterator, bool first);
+art_iterator_t art_init_iterator(const art_t *art, bool first);
 
 /**
  * Returns an initialized iterator positioned at a key equal to or greater than

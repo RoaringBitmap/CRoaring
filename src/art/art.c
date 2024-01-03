@@ -26,9 +26,9 @@
 // The only places that use SET_LEAF are locations where a field is directly
 // assigned to a leaf pointer. After using SET_LEAF, the leaf should be treated
 // as a node of unknown type.
-#define IS_LEAF(p) (((uintptr_t)p & 1))
-#define SET_LEAF(p) ((art_node_t *)((uintptr_t)p | 1))
-#define CAST_LEAF(p) ((art_leaf_t *)((void *)((uintptr_t)p & ~1)))
+#define IS_LEAF(p) (((uintptr_t)(p)&1))
+#define SET_LEAF(p) ((art_node_t *)((uintptr_t)(p) | 1))
+#define CAST_LEAF(p) ((art_leaf_t *)((void *)((uintptr_t)(p) & ~1)))
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,10 +38,9 @@ namespace internal {
 
 typedef uint8_t art_typecode_t;
 
-// Should be kept in sync with art_val_t.
-typedef struct art_leaf_s {
-    art_key_chunk_t key[ART_KEY_BYTES];
-} art_leaf_t;
+// Aliasing with a "leaf" naming so that its purpose is clearer in the context
+// of the trie internals.
+typedef art_val_t art_leaf_t;
 
 // Inner node, with prefix.
 //
@@ -90,7 +89,6 @@ typedef struct art_node256_s {
 // Helper struct to refer to a child within a node at a specific index.
 typedef struct art_indexed_child_s {
     art_node_t *child;
-    art_key_chunk_t key_chunk;
     uint8_t index;
 } art_indexed_child_t;
 
@@ -138,8 +136,7 @@ static art_node_t *art_node256_insert(art_node256_t *node, art_node_t *child,
 static art_node4_t *art_node4_create(const art_key_chunk_t prefix[],
                                      uint8_t prefix_size) {
     art_node4_t *node = roaring_malloc(sizeof(art_node4_t));
-    art_init_inner_node((art_inner_node_t *)node, ART_NODE4_TYPE, prefix,
-                        prefix_size);
+    art_init_inner_node(&node->base, ART_NODE4_TYPE, prefix, prefix_size);
     node->count = 0;
     return node;
 }
@@ -216,8 +213,7 @@ static inline art_node_t *art_node4_erase(art_node4_t *node,
                     inner_node->prefix, inner_node->prefix_size);
             memcpy(inner_node->prefix, node->base.prefix,
                    node->base.prefix_size);
-            *(inner_node->prefix + node->base.prefix_size) =
-                remaining_child_key;
+            inner_node->prefix[node->base.prefix_size] = remaining_child_key;
             inner_node->prefix_size += node->base.prefix_size + 1;
         }
         roaring_free(node);
@@ -253,7 +249,6 @@ static inline art_indexed_child_t art_node4_next_child(const art_node4_t *node,
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -270,7 +265,6 @@ static inline art_indexed_child_t art_node4_prev_child(const art_node4_t *node,
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -283,7 +277,6 @@ static inline art_indexed_child_t art_node4_child_at(const art_node4_t *node,
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -294,7 +287,6 @@ static inline art_indexed_child_t art_node4_lower_bound(
     for (size_t i = 0; i < node->count; ++i) {
         if (node->keys[i] >= key_chunk) {
             indexed_child.index = i;
-            indexed_child.key_chunk = node->keys[i];
             indexed_child.child = node->children[i];
             return indexed_child;
         }
@@ -306,8 +298,7 @@ static inline art_indexed_child_t art_node4_lower_bound(
 static art_node16_t *art_node16_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     art_node16_t *node = roaring_malloc(sizeof(art_node16_t));
-    art_init_inner_node((art_inner_node_t *)node, ART_NODE16_TYPE, prefix,
-                        prefix_size);
+    art_init_inner_node(&node->base, ART_NODE16_TYPE, prefix, prefix_size);
     node->count = 0;
     return node;
 }
@@ -407,7 +398,6 @@ static inline art_indexed_child_t art_node16_next_child(
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -424,7 +414,6 @@ static inline art_indexed_child_t art_node16_prev_child(
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -437,7 +426,6 @@ static inline art_indexed_child_t art_node16_child_at(const art_node16_t *node,
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -448,7 +436,6 @@ static inline art_indexed_child_t art_node16_lower_bound(
     for (size_t i = 0; i < node->count; ++i) {
         if (node->keys[i] >= key_chunk) {
             indexed_child.index = i;
-            indexed_child.key_chunk = node->keys[i];
             indexed_child.child = node->children[i];
             return indexed_child;
         }
@@ -460,8 +447,7 @@ static inline art_indexed_child_t art_node16_lower_bound(
 static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     art_node48_t *node = roaring_malloc(sizeof(art_node48_t));
-    art_init_inner_node((art_inner_node_t *)node, ART_NODE48_TYPE, prefix,
-                        prefix_size);
+    art_init_inner_node(&node->base, ART_NODE48_TYPE, prefix, prefix_size);
     node->count = 0;
     for (size_t i = 0; i < 256; ++i) {
         node->keys[i] = ART_NODE48_EMPTY_VAL;
@@ -549,7 +535,6 @@ static inline art_indexed_child_t art_node48_next_child(
     for (size_t i = index; i < 256; ++i) {
         if (node->keys[i] != ART_NODE48_EMPTY_VAL) {
             indexed_child.child = node->children[node->keys[i]];
-            indexed_child.key_chunk = node->keys[i];
             indexed_child.index = i;
             return indexed_child;
         }
@@ -568,7 +553,6 @@ static inline art_indexed_child_t art_node48_prev_child(
     for (int i = index; i > 0; --i) {
         if (node->keys[i] != ART_NODE48_EMPTY_VAL) {
             indexed_child.child = node->children[node->keys[i]];
-            indexed_child.key_chunk = node->keys[i];
             indexed_child.index = i;
             return indexed_child;
         }
@@ -585,7 +569,6 @@ static inline art_indexed_child_t art_node48_child_at(const art_node48_t *node,
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = node->keys[index];
     indexed_child.child = node->children[node->keys[index]];
     return indexed_child;
 }
@@ -596,7 +579,6 @@ static inline art_indexed_child_t art_node48_lower_bound(
     for (size_t i = key_chunk; i < 256; ++i) {
         if (node->keys[i] != ART_NODE48_EMPTY_VAL) {
             indexed_child.index = i;
-            indexed_child.key_chunk = node->keys[i];
             indexed_child.child = node->children[node->keys[i]];
             return indexed_child;
         }
@@ -608,8 +590,7 @@ static inline art_indexed_child_t art_node48_lower_bound(
 static art_node256_t *art_node256_create(const art_key_chunk_t prefix[],
                                          uint8_t prefix_size) {
     art_node256_t *node = roaring_malloc(sizeof(art_node256_t));
-    art_init_inner_node((art_inner_node_t *)node, ART_NODE256_TYPE, prefix,
-                        prefix_size);
+    art_init_inner_node(&node->base, ART_NODE256_TYPE, prefix, prefix_size);
     node->count = 0;
     for (size_t i = 0; i < 256; ++i) {
         node->children[i] = NULL;
@@ -670,7 +651,6 @@ static inline art_indexed_child_t art_node256_next_child(
     for (size_t i = index; i < 256; ++i) {
         if (node->children[i] != NULL) {
             indexed_child.child = node->children[i];
-            indexed_child.key_chunk = i;
             indexed_child.index = i;
             return indexed_child;
         }
@@ -689,7 +669,6 @@ static inline art_indexed_child_t art_node256_prev_child(
     for (int i = index; i > 0; --i) {
         if (node->children[i] != NULL) {
             indexed_child.child = node->children[i];
-            indexed_child.key_chunk = i;
             indexed_child.index = i;
             return indexed_child;
         }
@@ -706,7 +685,6 @@ static inline art_indexed_child_t art_node256_child_at(
         return indexed_child;
     }
     indexed_child.index = index;
-    indexed_child.key_chunk = index;
     indexed_child.child = node->children[index];
     return indexed_child;
 }
@@ -717,7 +695,6 @@ static inline art_indexed_child_t art_node256_lower_bound(
     for (size_t i = key_chunk; i < 256; ++i) {
         if (node->children[i] != NULL) {
             indexed_child.index = i;
-            indexed_child.key_chunk = i;
             indexed_child.child = node->children[i];
             return indexed_child;
         }
@@ -933,21 +910,16 @@ static art_indexed_child_t art_node_lower_bound(const art_node_t *node,
 // * Key range 1 == key range 2: 0
 // * Key range 1 >  key range 2: a positive value
 static inline int art_compare_prefix(const art_key_chunk_t key1[],
-                                     uint8_t key1_from, uint8_t key1_to,
+                                     uint8_t key1_from,
                                      const art_key_chunk_t key2[],
-                                     uint8_t key2_from, uint8_t key2_to) {
-    uint8_t min_len = key1_to - key1_from;
-    uint8_t key2_len = key2_to - key2_from;
-    if (key2_len < min_len) {
-        min_len = key2_len;
-    }
-    return memcmp(key1 + key1_from, key2 + key2_from, min_len);
+                                     uint8_t key2_from, uint8_t length) {
+    return memcmp(key1 + key1_from, key2 + key2_from, length);
 }
 
 // Compares two keys in full, see art_compare_prefix.
 int art_compare_keys(const art_key_chunk_t key1[],
                      const art_key_chunk_t key2[]) {
-    return art_compare_prefix(key1, 0, ART_KEY_BYTES, key2, 0, ART_KEY_BYTES);
+    return art_compare_prefix(key1, 0, key2, 0, ART_KEY_BYTES);
 }
 
 // Returns the length of the common prefix between two key ranges.
@@ -983,12 +955,10 @@ static art_node_t *art_insert_at(art_node_t *node, const art_key_chunk_t key[],
         art_node_t *new_node =
             (art_node_t *)art_node4_create(key + depth, common_prefix);
 
-        new_node =
-            art_node_insert_leaf((art_inner_node_t *)new_node,
-                                 *(leaf->key + depth + common_prefix), leaf);
-        new_node =
-            art_node_insert_leaf((art_inner_node_t *)new_node,
-                                 *(key + depth + common_prefix), new_leaf);
+        new_node = art_node_insert_leaf((art_inner_node_t *)new_node,
+                                        leaf->key[depth + common_prefix], leaf);
+        new_node = art_node_insert_leaf((art_inner_node_t *)new_node,
+                                        key[depth + common_prefix], new_leaf);
 
         // The new inner node is now the rootmost node.
         return new_node;
@@ -1006,8 +976,7 @@ static art_node_t *art_insert_at(art_node_t *node, const art_key_chunk_t key[],
 
         // Make the existing internal node a child of the new internal node.
         node4 = (art_node4_t *)art_node4_insert(
-            node4, node,
-            *(art_key_chunk_t *)(inner_node->prefix + common_prefix));
+            node4, node, inner_node->prefix[common_prefix]);
 
         // Correct the prefix of the moved internal node, trimming off the chunk
         // inserted into the new internal node.
@@ -1019,13 +988,12 @@ static art_node_t *art_insert_at(art_node_t *node, const art_key_chunk_t key[],
         }
 
         // Insert the value in the new internal node.
-        return art_node_insert_leaf(
-            (art_inner_node_t *)node4,
-            *(art_key_chunk_t *)(key + common_prefix + depth), new_leaf);
+        return art_node_insert_leaf(&node4->base, key[common_prefix + depth],
+                                    new_leaf);
     }
     // Prefix matches entirely or node has no prefix. Look for an existing
     // child.
-    art_key_chunk_t key_chunk = *(key + depth + common_prefix);
+    art_key_chunk_t key_chunk = key[depth + common_prefix];
     art_node_t *child = art_find_child(inner_node, key_chunk);
     if (child != NULL) {
         art_node_t *new_child =
@@ -1076,7 +1044,7 @@ static art_erase_result_t art_erase_at(art_node_t *node,
         // Prefix mismatch.
         return result;
     }
-    art_key_chunk_t key_chunk = *(key + depth + common_prefix);
+    art_key_chunk_t key_chunk = key[depth + common_prefix];
     art_node_t *child = art_find_child(inner_node, key_chunk);
     if (child == NULL) {
         // No child with key chunk.
@@ -1114,9 +1082,8 @@ static art_val_t *art_find_at(const art_node_t *node,
         if (common_prefix != inner_node->prefix_size) {
             return NULL;
         }
-        art_node_t *child = art_find_child(
-            inner_node,
-            *(art_key_chunk_t *)(key + depth + inner_node->prefix_size));
+        art_node_t *child =
+            art_find_child(inner_node, key[depth + inner_node->prefix_size]);
         if (child == NULL) {
             return NULL;
         }
@@ -1221,7 +1188,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
     printf("%*s", depth, "");
     printf("prefix: ");
     for (uint8_t i = 0; i < inner_node->prefix_size; ++i) {
-        printf("%x", (char)*(inner_node->prefix + i));
+        printf("%x", (char)inner_node->prefix[i]);
     }
     printf("\n");
 
@@ -1444,12 +1411,12 @@ bool art_iterator_move(art_iterator_t *iterator, bool forward) {
 // the depth of the iterator.
 static bool art_node_iterator_lower_bound(const art_node_t *node,
                                           art_iterator_t *iterator,
-                                          const art_key_chunk_t *key) {
+                                          const art_key_chunk_t key[]) {
     while (!art_is_leaf(node)) {
         art_inner_node_t *inner_node = (art_inner_node_t *)node;
-        int prefix_comparison = art_compare_prefix(
-            inner_node->prefix, 0, inner_node->prefix_size, key,
-            iterator->depth, iterator->depth + inner_node->prefix_size);
+        int prefix_comparison =
+            art_compare_prefix(inner_node->prefix, 0, key, iterator->depth,
+                               inner_node->prefix_size);
         if (prefix_comparison < 0) {
             // Prefix so far has been equal, but we've found a smaller key.
             // Since we take the lower bound within each node, we can return the
@@ -1461,7 +1428,7 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
         }
         // Prefix is equal, move to lower bound child.
         art_key_chunk_t key_chunk =
-            *(key + iterator->depth + inner_node->prefix_size);
+            key[iterator->depth + inner_node->prefix_size];
         art_indexed_child_t indexed_child =
             art_node_lower_bound(node, key_chunk);
         if (indexed_child.child == NULL) {
@@ -1479,27 +1446,19 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
     art_leaf_t *leaf = CAST_LEAF(node);
     // Technically we don't have to re-compare the prefix if we arrived here
     // through the while loop, but it simplifies the code.
-    if (art_compare_prefix(leaf->key, 0, ART_KEY_BYTES, key, 0,
-                           ART_KEY_BYTES) >= 0) {
+    if (art_compare_keys(leaf->key, key) >= 0) {
         return art_iterator_valid_loc(iterator, leaf);
     }
     return art_iterator_invalid_loc(iterator);
 }
 
-art_iterator_t art_create_iterator() {
-    art_iterator_t iterator;
-    iterator.depth = 0;
-    iterator.frame = 0;
-    memset(iterator.key, 0, ART_KEY_BYTES);
-    iterator.value = NULL;
-    return iterator;
-}
-
-void art_init_iterator(const art_t *art, art_iterator_t *iterator, bool first) {
+art_iterator_t art_init_iterator(const art_t *art, bool first) {
+    art_iterator_t iterator = {0};
     if (art->root == NULL) {
-        return;
+        return iterator;
     }
-    art_node_init_iterator(art->root, iterator, first);
+    art_node_init_iterator(art->root, &iterator, first);
+    return iterator;
 }
 
 bool art_iterator_next(art_iterator_t *iterator) {
@@ -1512,8 +1471,7 @@ bool art_iterator_prev(art_iterator_t *iterator) {
 
 bool art_iterator_lower_bound(art_iterator_t *iterator,
                               const art_key_chunk_t *key) {
-    int compare_result = art_compare_prefix(iterator->key, 0, ART_KEY_BYTES,
-                                            key, 0, ART_KEY_BYTES);
+    int compare_result = art_compare_keys(iterator->key, key);
     // Move up until we have an equal or greater prefix, after which we can do a
     // normal lower bound search.
     while (compare_result < 0 && iterator->frame > 0) {
@@ -1524,8 +1482,8 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
         }
         // Since we're only moving up, we can keep comparing against the
         // iterator key.
-        compare_result = art_compare_prefix(iterator->key, 0, iterator->depth,
-                                            key, 0, iterator->depth);
+        compare_result =
+            art_compare_prefix(iterator->key, 0, key, 0, iterator->depth);
     }
     if (compare_result > 0) {
         return art_node_init_iterator(art_iterator_node(iterator), iterator,
@@ -1536,7 +1494,7 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
 }
 
 art_iterator_t art_lower_bound(const art_t *art, const art_key_chunk_t *key) {
-    art_iterator_t iterator = art_create_iterator();
+    art_iterator_t iterator = {0};
     if (art->root != NULL) {
         art_node_iterator_lower_bound(art->root, &iterator, key);
     }
@@ -1544,11 +1502,10 @@ art_iterator_t art_lower_bound(const art_t *art, const art_key_chunk_t *key) {
 }
 
 art_iterator_t art_upper_bound(const art_t *art, const art_key_chunk_t *key) {
-    art_iterator_t iterator = art_create_iterator();
+    art_iterator_t iterator = {0};
     if (art->root != NULL) {
         if (art_node_iterator_lower_bound(art->root, &iterator, key) &&
-            art_compare_prefix(iterator.key, 0, ART_KEY_BYTES, key, 0,
-                               ART_KEY_BYTES) == 0) {
+            art_compare_keys(iterator.key, key) == 0) {
             art_iterator_next(&iterator);
         }
     }
