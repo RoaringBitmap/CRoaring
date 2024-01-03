@@ -4677,10 +4677,53 @@ DEFINE_TEST(robust_deserialization) {
     assert_true(deserialization_test(test1, sizeof(test1)));
 }
 
+DEFINE_TEST(issue538) {
+
+  roaring_bitmap_t *dense = roaring_bitmap_create();
+  int * values = (int *)malloc(4500 * sizeof(int));
+
+  // Make a bitmap with enough entries to need a bitset container
+  for (int k = 0; k < 4500; ++k) {
+        roaring_bitmap_add(dense, 2 * k);
+        values[k] = 2 * k;
+  }
+
+  // Shift it to partly overlap with the next container.
+  roaring_bitmap_t *dense_shift = roaring_bitmap_add_offset(dense, 64000);
+
+  // Serialise and deserialise
+  int buffer_size = roaring_bitmap_portable_size_in_bytes(dense_shift);
+
+  char *arr = (char *)malloc(buffer_size * sizeof(char));
+
+  roaring_bitmap_portable_serialize(dense_shift, arr);
+
+  roaring_bitmap_t *deserialized = roaring_bitmap_portable_deserialize(arr);
+
+  // Iterate through the deserialised bitmap - This should be the same set as before
+  // just shifted...
+  roaring_uint32_iterator_t *iterator = roaring_create_iterator(deserialized);
+  int i = 0;
+  while (iterator->has_value) {
+    assert_true((int) iterator->current_value == values[i++] + 64000);
+    roaring_advance_uint32_iterator(iterator);
+  }
+
+  roaring_free_uint32_iterator(iterator);
+
+  assert_true(roaring_bitmap_get_cardinality(dense_shift) == roaring_bitmap_get_cardinality(deserialized));
+  free(arr);
+  free(values);
+  roaring_bitmap_free(dense);
+  roaring_bitmap_free(dense_shift);
+  roaring_bitmap_free(deserialized);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue538),
         cmocka_unit_test(simple_roaring_bitmap_or_many),
         cmocka_unit_test(robust_deserialization),
         cmocka_unit_test(issue457),
