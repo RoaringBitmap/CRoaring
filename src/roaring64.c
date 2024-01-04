@@ -24,14 +24,13 @@
 
 #else  // CROARING_IS_BIG_ENDIAN
 // Gets compiled to bswap or equivalent on most compilers.
-#define htobe64(x)                         \
-    (((x & 0x00000000000000FFULL) << 56) | \
-     ((x & 0x000000000000FF00ULL) << 40) | \
-     ((x & 0x0000000000FF0000ULL) << 24) | \ 
-     ((x & 0x00000000FF000000ULL) << 8) |  \
-     ((x & 0x000000FF00000000ULL) >> 8) |  \
-     ((x & 0x0000FF0000000000ULL) >> 24) | \
-     ((x & 0x00FF000000000000ULL) >> 40) | \
+#define htobe64(x)                                                             \
+    (((x & 0x00000000000000FFULL) << 56) |                                     \
+     ((x & 0x000000000000FF00ULL) << 40) |                                     \
+     ((x & 0x0000000000FF0000ULL) << 24) |                                     \
+     ((x & 0x00000000FF000000ULL) << 8) | ((x & 0x000000FF00000000ULL) >> 8) | \
+     ((x & 0x0000FF0000000000ULL) >> 24) |                                     \
+     ((x & 0x00FF000000000000ULL) >> 40) |                                     \
      ((x & 0xFF00000000000000ULL) >> 56))
 #endif  // CROARING_IS_BIG_ENDIAN
 
@@ -278,7 +277,6 @@ void roaring64_bitmap_add_bulk(roaring64_bitmap_t *r,
         // differ.
         context->leaf =
             containerptr_roaring64_bitmap_add(r, high48, low16, NULL);
-        context->low_bytes = low16;
         memcpy(context->high_bytes, high48, ART_KEY_BYTES);
     }
 }
@@ -537,7 +535,6 @@ void roaring64_bitmap_remove_bulk(roaring64_bitmap_t *r,
         leaf_t *leaf = (leaf_t *)art_find(art, high48);
         context->leaf =
             containerptr_roaring64_bitmap_remove(r, high48, low16, leaf);
-        context->low_bytes = low16;
         memcpy(context->high_bytes, high48, ART_KEY_BYTES);
     }
 }
@@ -627,6 +624,9 @@ uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r) {
 
 uint64_t roaring64_bitmap_range_cardinality(const roaring64_bitmap_t *r,
                                             uint64_t min, uint64_t max) {
+    if (min >= max) {
+        return 0;
+    }
     max--;  // A closed range is easier to work with.
 
     uint64_t cardinality = 0;

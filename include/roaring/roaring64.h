@@ -29,7 +29,6 @@ typedef struct roaring64_leaf_s roaring64_leaf_t;
  */
 typedef struct roaring64_bulk_context_s {
     uint8_t high_bytes[6];
-    uint16_t low_bytes;
     roaring64_leaf_t *leaf;
 } roaring64_bulk_context_t;
 

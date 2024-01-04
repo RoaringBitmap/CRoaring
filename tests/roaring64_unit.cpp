@@ -384,6 +384,7 @@ DEFINE_TEST(test_range_cardinality) {
     roaring64_bitmap_add(r, 100002);
     roaring64_bitmap_add(r, 200000);
 
+    assert_true(roaring64_bitmap_range_cardinality(r, 0, 0) == 0);
     assert_true(roaring64_bitmap_range_cardinality(r, 0, 100000) == 1);
     assert_true(roaring64_bitmap_range_cardinality(r, 1, 100001) == 1);
     assert_true(roaring64_bitmap_range_cardinality(r, 0, 200001) == 5);
