@@ -2362,7 +2362,8 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
     in_offset = (uint16_t)(offset - container_offset * (1 << 16));
 
     answer = roaring_bitmap_create();
-    roaring_bitmap_set_copy_on_write(answer, is_cow(bm));
+    bool cow = is_cow(bm);
+    roaring_bitmap_set_copy_on_write(answer, cow);
 
     ans_ra = &answer->high_low_container;
 
@@ -2376,11 +2377,9 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
             if (key < 0 || key >= (1 << 16)) {
                 continue;
             }
-
-            ra_append_copy(ans_ra, bm_ra, (uint16_t)i, false);
+            ra_append_copy(ans_ra, bm_ra, (uint16_t)i, cow);
             ans_ra->keys[j++] = (uint16_t)key;
         }
-
         return answer;
     }
 
@@ -2403,7 +2402,6 @@ roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
         if (lo_ptr == NULL && hi_ptr == NULL) {
             continue;
         }
-
         c = ra_get_container_at_index(bm_ra, (uint16_t)i, &t);
         c = container_unwrap_shared(c, &t);
 
