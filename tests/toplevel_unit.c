@@ -4719,10 +4719,30 @@ DEFINE_TEST(issue538) {
   roaring_bitmap_free(deserialized);
 }
 
+DEFINE_TEST(issue538b) {
+  int shift = -65536;
+  roaring_bitmap_t *toshift = roaring_bitmap_from_range(131074, 131876, 1);
+  roaring_bitmap_set_copy_on_write(toshift, 1);
+  roaring_bitmap_t *toshift_copy = roaring_bitmap_copy(toshift);
+
+  roaring_bitmap_t *shifted = roaring_bitmap_add_offset(toshift, shift);
+  roaring_bitmap_equals(toshift, toshift_copy);
+
+  roaring_bitmap_t *expected = roaring_bitmap_from_range(131074 + shift, 131876 + shift, 1);
+  roaring_bitmap_set_copy_on_write(expected, 1);
+  assert_true(roaring_bitmap_get_cardinality(toshift) == roaring_bitmap_get_cardinality(expected));
+  assert_true(roaring_bitmap_equals(shifted, expected));
+
+  roaring_bitmap_free(toshift);
+  roaring_bitmap_free(shifted);
+  roaring_bitmap_free(expected);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue538b),
         cmocka_unit_test(issue538),
         cmocka_unit_test(simple_roaring_bitmap_or_many),
         cmocka_unit_test(robust_deserialization),

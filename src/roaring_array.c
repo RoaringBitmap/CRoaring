@@ -218,7 +218,7 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
     extend_array(ra, 1);
     const int32_t pos = ra->size;
 
-    // old contents is junk not needing freeing
+    // old contents is junk that does not need freeing
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
     if (copy_on_write) {
