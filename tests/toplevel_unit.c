@@ -4732,7 +4732,7 @@ DEFINE_TEST(issue538b) {
   roaring_bitmap_set_copy_on_write(expected, 1);
   assert_true(roaring_bitmap_get_cardinality(toshift) == roaring_bitmap_get_cardinality(expected));
   assert_true(roaring_bitmap_equals(shifted, expected));
-
+  roaring_bitmap_free(toshift_copy);
   roaring_bitmap_free(toshift);
   roaring_bitmap_free(shifted);
   roaring_bitmap_free(expected);
