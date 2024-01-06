@@ -2522,6 +2522,53 @@ static inline container_t *container_remove_range(
 }
 
 #ifdef __cplusplus
+using api::roaring_container_iterator_t;
+#endif
+
+/**
+ * Initializes the iterator at the first entry in the container.
+ */
+roaring_container_iterator_t container_init_iterator(const container_t *c,
+                                                     uint8_t typecode);
+
+/**
+ * Initializes the iterator at the last entry in the container.
+ */
+roaring_container_iterator_t container_init_iterator_last(const container_t *c,
+                                                          uint8_t typecode);
+
+/**
+ * Moves the iterator to the next entry. Returns true if `has_value` is true.
+ */
+bool container_iterator_next(const container_t *c, uint8_t typecode,
+                             roaring_container_iterator_t *it);
+
+/**
+ * Moves the iterator to the previous entry. Returns true if `has_value` is
+ * true.
+ */
+bool container_iterator_prev(const container_t *c, uint8_t typecode,
+                             roaring_container_iterator_t *it);
+
+/**
+ * Moves the iterator to the smallest entry that is greater than or equal to
+ * `val`. Returns true if `has_value` is true.
+ */
+bool container_iterator_lower_bound(const container_t *c, uint8_t typecode,
+                                    roaring_container_iterator_t *it,
+                                    uint16_t val);
+
+/**
+ * Reads up to `count` entrys from the container, and writes them into `buf`
+ * as `high16 | entry`. Returns the number of elements read.
+ */
+uint32_t container_iterator_read_into_uint32(const container_t *c,
+                                             uint8_t typecode,
+                                             roaring_container_iterator_t *it,
+                                             uint32_t high16, uint32_t *buf,
+                                             uint32_t count);
+
+#ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
 #endif
 

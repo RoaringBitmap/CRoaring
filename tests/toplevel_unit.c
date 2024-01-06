@@ -3968,6 +3968,14 @@ void test_read_uint32_iterator(uint8_t type) {
         convert_all_containers(r, type);
     }
 
+    roaring_uint32_iterator_t *iter = roaring_create_iterator(r);
+    uint32_t buffer[1];
+    uint32_t got = roaring_read_uint32_iterator(iter, buffer, 0);
+    assert_true(got == 0);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == 0);
+    roaring_free_uint32_iterator(iter);
+
     read_compare(r, ref_values, ref_count, 1);
     read_compare(r, ref_values, ref_count, 2);
     read_compare(r, ref_values, ref_count, 7);
@@ -4110,6 +4118,18 @@ void test_iterator_reuse_retry_count(int retry_count) {
 DEFINE_TEST(test_iterator_reuse) { test_iterator_reuse_retry_count(0); }
 
 DEFINE_TEST(test_iterator_reuse_many) { test_iterator_reuse_retry_count(10); }
+
+DEFINE_TEST(read_uint32_iterator_zero_count) {
+    roaring_bitmap_t *r = roaring_bitmap_from_range(0, 10000, 1);
+    roaring_uint32_iterator_t *iterator = roaring_create_iterator(r);
+    uint32_t buf[1];
+    uint32_t read = roaring_read_uint32_iterator(iterator, buf, 0);
+    assert_true(read == 0);
+    assert_true(iterator->has_value);
+    assert_true(iterator->current_value == 0);
+    roaring_free_uint32_iterator(iterator);
+    roaring_bitmap_free(r);
+}
 
 DEFINE_TEST(test_add_range) {
     // autoconversion: BITSET -> BITSET -> RUN
@@ -4883,6 +4903,7 @@ int main() {
         cmocka_unit_test(test_previous_iterator_native),
         cmocka_unit_test(test_iterator_reuse),
         cmocka_unit_test(test_iterator_reuse_many),
+        cmocka_unit_test(read_uint32_iterator_zero_count),
         cmocka_unit_test(test_add_range),
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),
