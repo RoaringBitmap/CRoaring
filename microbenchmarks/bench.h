@@ -13,10 +13,10 @@
 #include "toni_ronnko_dirent.h"
 #endif
 
-
-
 #include <benchmark/benchmark.h>
 #include <roaring/roaring.h>
+#include <roaring/roaring64.h>
+#include <roaring64map.hh>
 
 #include "performancecounters/event_counter.h"
 // clang-format on
@@ -24,15 +24,19 @@
 #if CROARING_IS_X64
 #ifndef CROARING_COMPILER_SUPPORTS_AVX512
 #error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
-#endif // CROARING_COMPILER_SUPPORTS_AVX512
+#endif  // CROARING_COMPILER_SUPPORTS_AVX512
 #endif
+
+using roaring::Roaring64Map;
 
 event_collector collector;
 size_t N = 1000;
 size_t bitmap_examples_bytes = 0;
 size_t count = 0;
 roaring_bitmap_t **bitmaps = NULL;
-uint32_t * array_buffer;
+roaring64_bitmap_t **bitmaps64 = NULL;
+Roaring64Map **bitmaps64cpp = NULL;
+uint32_t *array_buffer;
 uint32_t maxvalue = 0;
 uint32_t maxcard = 0;
 
@@ -174,7 +178,9 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
                 maxvalue = numbers[i][howmany[i] - 1];
             }
         }
-        if(maxcard < howmany[i]) { maxcard = howmany[i]; }
+        if (maxcard < howmany[i]) {
+            maxcard = howmany[i];
+        }
     }
     if (numbers == NULL) return NULL;
     roaring_bitmap_t **answer =
@@ -187,7 +193,61 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         bitmap_examples_bytes += roaring_bitmap_size_in_bytes(answer[i]);
         roaring_bitmap_set_copy_on_write(answer[i], copy_on_write);
     }
-    array_buffer = (uint32_t*) malloc(maxcard * sizeof(uint32_t));
+    array_buffer = (uint32_t *)malloc(maxcard * sizeof(uint32_t));
+    return answer;
+}
+
+static roaring64_bitmap_t **create_all_64bitmaps(size_t *howmany,
+                                                 uint32_t **numbers,
+                                                 size_t tcount,
+                                                 bool runoptimize) {
+    for (size_t i = 0; i < count; i++) {
+        if (howmany[i] > 0) {
+            if (maxvalue < numbers[i][howmany[i] - 1]) {
+                maxvalue = numbers[i][howmany[i] - 1];
+            }
+        }
+        if (maxcard < howmany[i]) {
+            maxcard = howmany[i];
+        }
+    }
+    if (numbers == NULL) return NULL;
+    roaring64_bitmap_t **answer =
+        (roaring64_bitmap_t **)malloc(sizeof(roaring64_bitmap_t *) * tcount);
+    for (size_t i = 0; i < tcount; i++) {
+        answer[i] = roaring64_bitmap_create();
+        for (size_t j = 0; j < howmany[i]; ++j) {
+            roaring64_bitmap_add(answer[i], numbers[i][j]);
+        }
+        if (runoptimize) roaring64_bitmap_run_optimize(answer[i]);
+    }
+    return answer;
+}
+
+static Roaring64Map **create_all_64bitmaps_cpp(size_t *howmany,
+                                               uint32_t **numbers,
+                                               size_t tcount,
+                                               bool runoptimize) {
+    for (size_t i = 0; i < count; i++) {
+        if (howmany[i] > 0) {
+            if (maxvalue < numbers[i][howmany[i] - 1]) {
+                maxvalue = numbers[i][howmany[i] - 1];
+            }
+        }
+        if (maxcard < howmany[i]) {
+            maxcard = howmany[i];
+        }
+    }
+    if (numbers == NULL) return NULL;
+    Roaring64Map **answer =
+        (Roaring64Map **)malloc(sizeof(Roaring64Map *) * tcount);
+    for (size_t i = 0; i < tcount; i++) {
+        answer[i] = new Roaring64Map();
+        for (size_t j = 0; j < howmany[i]; ++j) {
+            answer[i]->add(numbers[i][j]);
+        }
+        if (runoptimize) answer[i]->runOptimize();
+    }
     return answer;
 }
 
@@ -210,13 +270,12 @@ static void BasicBench(benchmark::State &state) {
         }
         state.counters["cycles"] = aggregate.best.cycles();
 
-        state.counters["instructions"] =  aggregate.best.instructions();
+        state.counters["instructions"] = aggregate.best.instructions();
         state.counters["GHz"] =
             aggregate.best.cycles() / aggregate.best.elapsed_ns();
     }
     (void)marker;
 }
-
 
 int load(const char *dirname) {
     const char *extension = ".txt";
@@ -235,6 +294,9 @@ int load(const char *dirname) {
     }
     bitmaps =
         create_all_bitmaps(howmany, numbers, count, runoptimize, copy_on_write);
+    bitmaps64 = create_all_64bitmaps(howmany, numbers, count, runoptimize);
+    bitmaps64cpp =
+        create_all_64bitmaps_cpp(howmany, numbers, count, runoptimize);
 
     for (size_t i = 0; i < count; ++i) {
         free(numbers[i]);

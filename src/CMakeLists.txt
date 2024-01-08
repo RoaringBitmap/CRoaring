@@ -18,6 +18,7 @@ set(ROARING_SRC
     isadetection.c
     array_util.c
     bitset_util.c
+    art/art.c
     bitset.c
     containers/array.c
     containers/bitset.c
@@ -33,6 +34,7 @@ set(ROARING_SRC
     containers/run.c
     memory.c
     roaring.c
+    roaring64.c
     roaring_priority_queue.c
     roaring_array.c)
 
