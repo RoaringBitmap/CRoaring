@@ -37,29 +37,30 @@ var NAVTREE =
     [ "Running microbenchmarks", "index.html#autotoc_md10", null ],
     [ "Custom memory allocators", "index.html#autotoc_md11", null ],
     [ "Example (C)", "index.html#autotoc_md12", null ],
-    [ "Conventional bitsets (C)", "index.html#autotoc_md13", null ],
-    [ "Example (C++)", "index.html#autotoc_md14", null ],
-    [ "Building with cmake (Linux and macOS, Visual Studio users should see below)", "index.html#autotoc_md15", null ],
-    [ "Building (Visual Studio under Windows)", "index.html#autotoc_md16", [
-      [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md17", null ],
-      [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md18", null ]
+    [ "Compressed 64-bit Roaring bitmaps (C)", "index.html#autotoc_md13", null ],
+    [ "Conventional bitsets (C)", "index.html#autotoc_md14", null ],
+    [ "Example (C++)", "index.html#autotoc_md15", null ],
+    [ "Building with cmake (Linux and macOS, Visual Studio users should see below)", "index.html#autotoc_md16", null ],
+    [ "Building (Visual Studio under Windows)", "index.html#autotoc_md17", [
+      [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md18", null ],
+      [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md19", null ]
     ] ],
-    [ "SIMD-related throttling", "index.html#autotoc_md19", null ],
-    [ "Thread safety", "index.html#autotoc_md20", null ],
-    [ "How to best aggregate bitmaps?", "index.html#autotoc_md21", null ],
-    [ "Wrappers", "index.html#autotoc_md22", [
-      [ "Python", "index.html#autotoc_md23", null ],
-      [ "JavaScript", "index.html#autotoc_md24", null ],
-      [ "Swift", "index.html#autotoc_md25", null ],
-      [ "C", "index.html#autotoc_md26", null ],
-      [ "Go (golang)", "index.html#autotoc_md27", null ],
-      [ "Rust", "index.html#autotoc_md28", null ],
-      [ "D", "index.html#autotoc_md29", null ],
-      [ "Redis", "index.html#autotoc_md30", null ],
-      [ "Zig", "index.html#autotoc_md31", null ]
+    [ "SIMD-related throttling", "index.html#autotoc_md20", null ],
+    [ "Thread safety", "index.html#autotoc_md21", null ],
+    [ "How to best aggregate bitmaps?", "index.html#autotoc_md22", null ],
+    [ "Wrappers", "index.html#autotoc_md23", [
+      [ "Python", "index.html#autotoc_md24", null ],
+      [ "JavaScript", "index.html#autotoc_md25", null ],
+      [ "Swift", "index.html#autotoc_md26", null ],
+      [ "C", "index.html#autotoc_md27", null ],
+      [ "Go (golang)", "index.html#autotoc_md28", null ],
+      [ "Rust", "index.html#autotoc_md29", null ],
+      [ "D", "index.html#autotoc_md30", null ],
+      [ "Redis", "index.html#autotoc_md31", null ],
+      [ "Zig", "index.html#autotoc_md32", null ]
     ] ],
-    [ "Mailing list/discussion group", "index.html#autotoc_md32", null ],
-    [ "References about Roaring", "index.html#autotoc_md33", null ],
+    [ "Mailing list/discussion group", "index.html#autotoc_md33", null ],
+    [ "References about Roaring", "index.html#autotoc_md34", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ]
     ] ],
