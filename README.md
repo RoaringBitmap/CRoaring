@@ -464,6 +464,19 @@ int main() {
 }
 ```
 
+# Compressed 64-bit Roaring bitmaps (C)
+
+
+We also support efficient 64-bit compressed bitmaps in C:
+
+```c++
+  roaring64_bitmap_t *r2 = roaring64_bitmap_create();
+  for (uint64_t i = 100; i < 1000; i++) roaring64_bitmap_add(r2, i);
+  printf("cardinality (64-bit) = %d\n", (int) roaring64_bitmap_get_cardinality(r2));
+  roaring64_bitmap_free(r2);
+```
+
+
 # Conventional bitsets (C)
 
 We support convention bitsets (uncompressed) as part of the library.
