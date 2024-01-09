@@ -875,6 +875,222 @@ DEFINE_TEST(test_iterate) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_create_iterator) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator(r);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_add(r, 0);
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator(r);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 0);
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_add(r, (1ULL << 40) + 1234);
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator(r);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 0);
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_remove(r, 0);
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator(r);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), ((1ULL << 40) + 1234));
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_create_iterator_last) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator_last(r);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_add(r, 0);
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator_last(r);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 0);
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_add(r, (1ULL << 40) + 1234);
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator_last(r);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), ((1ULL << 40) + 1234));
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_remove(r, 0);
+    {
+        roaring64_iterator_t* it = roaring64_create_iterator_last(r);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), ((1ULL << 40) + 1234));
+        roaring64_free_iterator(it);
+    }
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_copy_iterator) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1ULL << 35);
+    roaring64_bitmap_add(r, (1ULL << 35) + 1);
+    roaring64_bitmap_add(r, (1ULL << 35) + 2);
+    roaring64_bitmap_add(r, (1ULL << 36));
+
+    roaring64_iterator_t* it1 = roaring64_create_iterator(r);
+    assert_true(roaring64_advance_iterator(it1));
+    assert_true(roaring64_advance_iterator(it1));
+    assert_true(roaring64_advance_iterator(it1));
+    assert_true(roaring64_previous_iterator(it1));
+    assert_true(roaring64_iterator_has_value(it1));
+    assert_int_equal(roaring64_iterator_value(it1), ((1ULL << 35) + 1));
+
+    roaring64_iterator_t* it2 = roaring64_copy_iterator(it1);
+    assert_true(roaring64_iterator_has_value(it2));
+    assert_int_equal(roaring64_iterator_value(it2), ((1ULL << 35) + 1));
+    assert_true(roaring64_advance_iterator(it2));
+    assert_true(roaring64_iterator_has_value(it2));
+    assert_int_equal(roaring64_iterator_value(it2), ((1ULL << 35) + 2));
+
+    roaring64_free_iterator(it1);
+    roaring64_free_iterator(it2);
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_advance_iterator) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    std::vector<uint64_t> values;
+    values.reserve(1000);
+    roaring64_bulk_context_t context{};
+    for (uint64_t i = 0; i < 1000; ++i) {
+        uint64_t v = i * 10000;
+        values.push_back(v);
+        roaring64_bitmap_add_bulk(r, &context, v);
+    }
+    size_t i = 0;
+    roaring64_iterator_t* it = roaring64_create_iterator(r);
+    do {
+        assert_int_equal(roaring64_iterator_value(it), values[i]);
+        i++;
+    } while (roaring64_advance_iterator(it));
+    assert_int_equal(i, values.size());
+    roaring64_free_iterator(it);
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_previous_iterator) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    std::vector<uint64_t> values;
+    values.reserve(1000);
+    roaring64_bulk_context_t context{};
+    for (uint64_t i = 0; i < 1000; ++i) {
+        uint64_t v = i * 10000;
+        values.push_back(v);
+        roaring64_bitmap_add_bulk(r, &context, v);
+    }
+    size_t i = values.size();
+    roaring64_iterator_t* it = roaring64_create_iterator_last(r);
+    do {
+        i--;
+        assert_int_equal(roaring64_iterator_value(it), values[i]);
+    } while (roaring64_previous_iterator(it));
+    assert_int_equal(i, 0);
+    roaring64_free_iterator(it);
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_move_iterator_equalorlarger) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1ULL << 35);
+    roaring64_bitmap_add(r, (1ULL << 35) + 1);
+    roaring64_bitmap_add(r, (1ULL << 35) + 2);
+    roaring64_bitmap_add(r, (1ULL << 36));
+
+    roaring64_iterator_t* it = roaring64_create_iterator(r);
+    assert_true(roaring64_move_iterator_equalorlarger(it, 0));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), 0);
+
+    assert_true(roaring64_move_iterator_equalorlarger(it, 0));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), 0);
+
+    assert_true(roaring64_move_iterator_equalorlarger(it, 1));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), (1ULL << 35));
+
+    assert_true(roaring64_move_iterator_equalorlarger(it, (1ULL << 35) + 2));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), ((1ULL << 35) + 2));
+
+    assert_true(roaring64_move_iterator_equalorlarger(it, (1ULL << 35) + 3));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), (1ULL << 36));
+
+    assert_false(roaring64_move_iterator_equalorlarger(it, (1ULL << 36) + 1));
+    assert_false(roaring64_iterator_has_value(it));
+
+    roaring64_free_iterator(it);
+    roaring64_bitmap_free(r);
+}
+
+// Reads all elements from the iterator, `step` values at a time, and compares
+// the elements with `values`.
+void readCompare(const std::vector<uint64_t>& values,
+                 const roaring64_bitmap_t* r, uint64_t step) {
+    roaring64_iterator_t* it = roaring64_create_iterator(r);
+    std::vector<uint64_t> buffer(values.size(), 0);
+    uint64_t read = 0;
+    while (read < values.size()) {
+        assert_true(roaring64_iterator_has_value(it));
+        uint64_t step_read = roaring64_read_iterator(it, buffer.data(), step);
+        assert_int_equal(step_read, std::min(step, values.size() - read));
+        for (size_t i = 0; i < step_read; ++i) {
+            assert_int_equal(values[read + i], buffer[i]);
+        }
+        read += step_read;
+    }
+    assert_false(roaring64_iterator_has_value(it));
+    roaring64_free_iterator(it);
+}
+
+DEFINE_TEST(test_read_iterator) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    std::vector<uint64_t> values;
+    values.reserve(1000);
+    roaring64_bulk_context_t context{};
+    for (uint64_t i = 0; i < 1000; ++i) {
+        uint64_t v = i * 10000;
+        values.push_back(v);
+        roaring64_bitmap_add_bulk(r, &context, v);
+    }
+
+    // Check that a zero count results in zero elements read.
+    roaring64_iterator_t* it = roaring64_create_iterator(r);
+    uint64_t buf[1];
+    assert_int_equal(roaring64_read_iterator(it, buf, 0), 0);
+    roaring64_free_iterator(it);
+
+    readCompare(values, r, 1);
+    readCompare(values, r, 2);
+    readCompare(values, r, values.size() - 1);
+    readCompare(values, r, values.size());
+    readCompare(values, r, values.size() + 1);
+
+    roaring64_bitmap_free(r);
+}
+
 }  // namespace
 
 int main() {
@@ -920,6 +1136,13 @@ int main() {
         cmocka_unit_test(test_andnot_cardinality),
         cmocka_unit_test(test_andnot_inplace),
         cmocka_unit_test(test_iterate),
+        cmocka_unit_test(test_create_iterator),
+        cmocka_unit_test(test_create_iterator_last),
+        cmocka_unit_test(test_copy_iterator),
+        cmocka_unit_test(test_advance_iterator),
+        cmocka_unit_test(test_previous_iterator),
+        cmocka_unit_test(test_move_iterator_equalorlarger),
+        cmocka_unit_test(test_read_iterator),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
