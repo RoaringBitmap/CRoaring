@@ -253,6 +253,8 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:a129a1d354fd32d20fc9e2732e288ebb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a778becc5ac4102e417dc6e3cf8e85340"><td class="memItemLeft" align="right" valign="top">static const <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html">Roaring</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340">frozenView</a> (const char *buf, size_t length)</td></tr>
 <tr class="separator:a778becc5ac4102e417dc6e3cf8e85340"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa395a60f8fbe0987bd2f714171762c6b"><td class="memItemLeft" align="right" valign="top">static const <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html">Roaring</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#aa395a60f8fbe0987bd2f714171762c6b">portableDeserializeFrozen</a> (const char *buf)</td></tr>
+<tr class="separator:aa395a60f8fbe0987bd2f714171762c6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08aafea61f2ea2176d59a73cbb348d96"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html">Roaring</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a08aafea61f2ea2176d59a73cbb348d96">fastunion</a> (size_t n, const <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html">Roaring</a> **inputs)</td></tr>
 <tr class="separator:a08aafea61f2ea2176d59a73cbb348d96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -277,7 +279,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00839">839</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00854">854</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -803,7 +805,7 @@ Public Attributes</h2></td></tr>
 <p>Returns an iterator that can be used to access the position of the set bits. The running time complexity of a full scan is proportional to the number of set bits: be aware that if you have long strings of 1s, this can be very inefficient.</p>
 <p>It can be much faster to use the toArray method if you want to retrieve the set bits. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00954">954</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00969">969</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -1039,7 +1041,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>A bogus iterator that can be used together with <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a14750521f90f0bc8c48d4f8ea1d51845">begin()</a> for constructions such as for (auto i = b.begin(); * i!=b.end(); ++i) {} </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00958">958</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00973">973</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -1078,7 +1080,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the logical or (union) between "n" bitmaps (referenced by a pointer). This function may throw std::runtime_error. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00821">821</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00836">836</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
@@ -1229,7 +1231,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Whether or not copy and write is active. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00812">812</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00827">827</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -1257,7 +1259,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>For advanced users. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00711">711</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00726">726</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -1318,7 +1320,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00678">678</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a8fb0ab5d74212c781ba42e37412ac396">roaring::Roaring64Map::read()</a>, and <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a7d794469dbb843482fd3ac9ed7aba609">roaring::Roaring64Map::readSafe()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#acf8aecabd7e1542c63b76861cb103691">roaring::Roaring64Map::portableDeserializeFrozen()</a>, <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a8fb0ab5d74212c781ba42e37412ac396">roaring::Roaring64Map::read()</a>, and <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a7d794469dbb843482fd3ac9ed7aba609">roaring::Roaring64Map::readSafe()</a>.</p>
 
 </div>
 </div>
@@ -1589,7 +1591,7 @@ Public Attributes</h2></td></tr>
 <p>Computes the intersection between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged.</p>
 <p>Performance hint: if you are computing the intersection between several bitmaps, two-by-two, it is best to start with the smallest bitmap. Consider also using the operator &amp;= to avoid needlessly creating many temporary bitmaps. This function may throw std::runtime_error. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00725">725</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00740">740</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
@@ -1650,7 +1652,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the difference between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged. This function may throw std::runtime_error. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00738">738</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00753">753</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
@@ -1830,7 +1832,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the symmetric union between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged. This function may throw std::runtime_error. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00764">764</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00779">779</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
@@ -1890,7 +1892,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the union between two bitmaps and returns new bitmap. The current bitmap and the provided bitmap are unchanged. This function may throw std::runtime_error. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00751">751</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00766">766</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
@@ -1955,6 +1957,39 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="aa395a60f8fbe0987bd2f714171762c6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa395a60f8fbe0987bd2f714171762c6b">&#9670;&nbsp;</a></span>portableDeserializeFrozen()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static const <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html">Roaring</a> roaring::Roaring::portableDeserializeFrozen </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>buf</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>For advanced users; see roaring_bitmap_portable_deserialize_frozen. This function may throw std::runtime_error. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00705">705</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#acf8aecabd7e1542c63b76861cb103691">roaring::Roaring64Map::portableDeserializeFrozen()</a>.</p>
+
+</div>
+</div>
 <a id="ad956e9ff3afc9ad367340457a20fb54c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad956e9ff3afc9ad367340457a20fb54c">&#9670;&nbsp;</a></span>printf()</h2>
 
@@ -1979,7 +2014,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Print the content of the bitmap </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00782">782</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00797">797</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -2449,7 +2484,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Whether or not we apply copy and write. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00775">775</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00790">790</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -2534,7 +2569,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>Print the content of the bitmap into a string </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00787">787</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00802">802</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -2659,7 +2694,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 <p>For advanced users. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00704">704</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00719">719</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
 </div>
 </div>
@@ -2705,9 +2740,9 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00858">858</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00873">873</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340">frozenView()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a9e21593f6d227dc6b31dbffc6f4f6f1d">operator&amp;()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a012c91164e662be8bcf2a5f46bdbfe87">operator-()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a9c5310aaf3de75b9d80c8a0780157350">operator=()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ad119231c3ae35decc73e1cc9168f6157">operator^()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a4f781a37ba74f8c09c51135ce01be6b1">operator|()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#af57e7a9a3e55dfe7af210f7f9f73c7e1">Roaring()</a>, and <a class="el" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a1ef72775d6409f1e9b1aaf90904e7be5">roaring::RoaringSetBitForwardIterator::RoaringSetBitForwardIterator()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340">frozenView()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a9e21593f6d227dc6b31dbffc6f4f6f1d">operator&amp;()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a012c91164e662be8bcf2a5f46bdbfe87">operator-()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a9c5310aaf3de75b9d80c8a0780157350">operator=()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ad119231c3ae35decc73e1cc9168f6157">operator^()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a4f781a37ba74f8c09c51135ce01be6b1">operator|()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#aa395a60f8fbe0987bd2f714171762c6b">portableDeserializeFrozen()</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#af57e7a9a3e55dfe7af210f7f9f73c7e1">Roaring()</a>, and <a class="el" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a1ef72775d6409f1e9b1aaf90904e7be5">roaring::RoaringSetBitForwardIterator::RoaringSetBitForwardIterator()</a>.</p>
 
 </div>
 </div>

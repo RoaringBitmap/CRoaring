@@ -53,6 +53,7 @@ var classroaring_1_1Roaring =
     [ "operator|", "d1/d51/classroaring_1_1Roaring.html#a4f781a37ba74f8c09c51135ce01be6b1", null ],
     [ "operator|=", "d1/d51/classroaring_1_1Roaring.html#acfca335aa4211580be30b9ab2caacff8", null ],
     [ "or_cardinality", "d1/d51/classroaring_1_1Roaring.html#a36e0af9c1767b6d4f9a7a1ff624ab690", null ],
+    [ "portableDeserializeFrozen", "d1/d51/classroaring_1_1Roaring.html#aa395a60f8fbe0987bd2f714171762c6b", null ],
     [ "printf", "d1/d51/classroaring_1_1Roaring.html#ad956e9ff3afc9ad367340457a20fb54c", null ],
     [ "rangeUint32Array", "d1/d51/classroaring_1_1Roaring.html#aa607be31da466bb849abb143c4bc0b30", null ],
     [ "rank", "d1/d51/classroaring_1_1Roaring.html#a1e6c5beddebe4a2f4b1af1ca83463e7b", null ],
