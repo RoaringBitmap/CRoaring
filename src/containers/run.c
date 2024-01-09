@@ -111,6 +111,7 @@ run_container_t *run_container_create(void) {
     return run_container_create_given_capacity(RUN_DEFAULT_INIT_SIZE);
 }
 
+ALLOW_UNALIGNED
 run_container_t *run_container_clone(const run_container_t *src) {
     run_container_t *run = run_container_create_given_capacity(src->capacity);
     if (run == NULL) return NULL;

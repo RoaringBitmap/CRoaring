@@ -78,6 +78,7 @@ array_container_t * array_container_create_range(uint32_t min, uint32_t max) {
 }
 
 /* Duplicate container */
+ALLOW_UNALIGNED
 array_container_t *array_container_clone(const array_container_t *src) {
     array_container_t *newcontainer =
         array_container_create_given_capacity(src->capacity);
