@@ -1482,6 +1482,142 @@ DEFINE_TEST(test_cpp_frozen_64) {
     roaring_aligned_free(buf);
 }
 
+DEFINE_TEST(test_cpp_frozen_portable) {
+    const uint64_t s = 65536;
+
+    Roaring r1;
+    r1.add(0);
+    r1.add(uint32_max);
+    r1.add(1000);
+    r1.add(2000);
+    r1.add(100000);
+    r1.add(200000);
+    r1.addRange(s * 10 + 100, s * 13 - 100);
+    for (uint64_t i = 0; i < s * 3; i += 2) {
+        r1.add(s * 20 + i);
+    }
+    r1.runOptimize();
+
+    // allocate a buffer and serialize to it
+    size_t num_bytes = r1.getSizeInBytes(true);
+    char *buf = (char *)malloc(num_bytes);
+    r1.write(buf, true);
+
+    // ensure the frozen bitmap is the same as the original
+    const Roaring r2 = Roaring::portableDeserializeFrozen(buf);
+    assert_true(r1 == r2);
+
+    {
+        Roaring r;
+        r.addRange(0, 100000);
+        r.flip(90000, 91000);
+        r.runOptimize();
+
+        // allocate a buffer and serialize to it
+        size_t num_bytes1 = r.getSizeInBytes(true);
+        char *buf1 = (char *)malloc(num_bytes1);
+        r.write(buf1, true);
+
+        // ensure the frozen bitmap is the same as the original
+        const Roaring rr = Roaring::portableDeserializeFrozen(buf1);
+        assert_true(r == rr);
+        free(buf1);
+    }
+
+    // copy constructor
+    {
+        Roaring tmp(r2);
+        assert_true(tmp == r1);
+    }
+
+    // copy operator
+    {
+        Roaring tmp;
+        tmp = r2;
+        assert_true(tmp == r1);
+    }
+
+    // move constructor
+    {
+        Roaring a = Roaring::portableDeserializeFrozen(buf);
+        Roaring b(std::move(a));
+        assert_true(b == r1);
+    }
+
+    // move assignment operator
+    {
+        Roaring a = Roaring::portableDeserializeFrozen(buf);
+        Roaring b;
+        b = std::move(a);
+        assert_true(b == r1);
+    }
+
+    free(buf);
+}
+
+DEFINE_TEST(test_cpp_frozen_64_portable) {
+    const uint64_t s = 65536;
+
+    Roaring64Map r1;
+    r1.add((uint64_t)0);
+    r1.add((uint64_t)uint32_max);
+    r1.add((uint64_t)1000);
+    r1.add((uint64_t)2000);
+    r1.add((uint64_t)100000);
+    r1.add((uint64_t)200000);
+    r1.add((uint64_t)5);
+    r1.add((uint64_t)1ull);
+    r1.add((uint64_t)2ull);
+    r1.add((uint64_t)234294967296ull);
+    r1.add((uint64_t)195839473298ull);
+    r1.add((uint64_t)14000000000000000100ull);
+    for (uint64_t i = s * 10 + 100; i < s * 13 - 100; i++) {
+        r1.add(i);
+    }
+    // r1.addRange(s * 10 + 100, s * 13 - 100);
+    for (uint64_t i = 0; i < s * 3; i += 2) {
+        r1.add(s * 20 + i);
+    }
+    r1.runOptimize();
+
+    size_t num_bytes = r1.getSizeInBytes(true);
+    char *buf = (char *)malloc(num_bytes);
+    r1.write(buf, true);
+
+    const Roaring64Map r2 = Roaring64Map::portableDeserializeFrozen(buf);
+    assert_true(r1 == r2);
+
+    // copy constructor
+    {
+        Roaring64Map tmp(r2);
+        assert_true(tmp == r1);
+    }
+
+    // copy operator
+    {
+        Roaring64Map tmp;
+        tmp = r2;
+        assert_true(tmp == r1);
+    }
+
+    // move constructor
+    {
+        Roaring64Map a = Roaring64Map::portableDeserializeFrozen(buf);
+        Roaring64Map b(std::move(a));
+        assert_true(b == r1);
+    }
+
+    // move assignment operator
+    {
+        Roaring64Map a = Roaring64Map::portableDeserializeFrozen(buf);
+        Roaring64Map b;
+        b = std::move(a);
+        assert_true(b == r1);
+    }
+
+    free(buf);
+}
+
 DEFINE_TEST(test_cpp_flip) {
     {
         // flipping an empty map works as expected
@@ -2067,6 +2203,8 @@ int main() {
         cmocka_unit_test(test_cpp_bidirectional_iterator_64),
         cmocka_unit_test(test_cpp_frozen),
         cmocka_unit_test(test_cpp_frozen_64),
+        cmocka_unit_test(test_cpp_frozen_portable),
+        cmocka_unit_test(test_cpp_frozen_64_portable),
         cmocka_unit_test(test_cpp_flip),
         cmocka_unit_test(test_cpp_flip_closed),
         cmocka_unit_test(test_cpp_flip_64),

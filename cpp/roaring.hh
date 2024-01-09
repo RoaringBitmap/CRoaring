@@ -699,6 +699,21 @@ public:
     }
 
     /**
+     * For advanced users; see roaring_bitmap_portable_deserialize_frozen.
+     * This function may throw std::runtime_error.
+     */
+    static const Roaring portableDeserializeFrozen(const char* buf) {
+        const roaring_bitmap_t *s =
+            api::roaring_bitmap_portable_deserialize_frozen(buf);
+        if (s == NULL) {
+            ROARING_TERMINATE("failed to read portable frozen bitmap");
+        }
+        Roaring r;
+        r.roaring = *s;
+        return r;
+    }
+
+    /**
      * For advanced users.
      */
     void writeFrozen(char *buf) const noexcept {
