@@ -1266,6 +1266,26 @@ public:
         return result;
     }
 
+    static const Roaring64Map portableDeserializeFrozen(const char* buf) {
+        Roaring64Map result;
+        // get map size
+        uint64_t map_size;
+        std::memcpy(&map_size, buf, sizeof(uint64_t));
+        buf += sizeof(uint64_t);
+        for (uint64_t lcv = 0; lcv < map_size; lcv++) {
+            // get map key
+            uint32_t key;
+            std::memcpy(&key, buf, sizeof(uint32_t));
+            buf += sizeof(uint32_t);
+            // read map value Roaring
+            Roaring read_var = Roaring::portableDeserializeFrozen(buf);
+            // forward buffer past the last Roaring bitmap
+            buf += read_var.getSizeInBytes(true);
+            result.emplaceOrInsert(key, std::move(read_var));
+        }
+        return result;
+    }
+
     // As with serialized 64-bit bitmaps, 64-bit frozen bitmaps are serialized
     // by concatenating one or more Roaring::write output buffers with the
     // preceeding map key. Unlike standard bitmap serialization, frozen bitmaps
