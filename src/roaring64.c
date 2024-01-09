@@ -89,14 +89,14 @@ static inline uint64_t minimum(uint64_t a, uint64_t b) {
 }
 
 static inline leaf_t *create_leaf(container_t *container, uint8_t typecode) {
-    leaf_t *leaf = roaring_malloc(sizeof(leaf_t));
+    leaf_t *leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
     leaf->container = container;
     leaf->typecode = typecode;
     return leaf;
 }
 
 static inline leaf_t *copy_leaf_container(const leaf_t *leaf) {
-    leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+    leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
     result_leaf->typecode = leaf->typecode;
     // get_copy_of_container modifies the typecode passed in.
     result_leaf->container = get_copy_of_container(
@@ -112,7 +112,8 @@ static inline int compare_high48(art_key_chunk_t key1[],
 }
 
 roaring64_bitmap_t *roaring64_bitmap_create(void) {
-    roaring64_bitmap_t *r = roaring_malloc(sizeof(roaring64_bitmap_t));
+    roaring64_bitmap_t *r =
+        (roaring64_bitmap_t *)roaring_malloc(sizeof(roaring64_bitmap_t));
     r->art.root = NULL;
     r->flags = 0;
     return r;
@@ -793,7 +794,7 @@ roaring64_bitmap_t *roaring64_bitmap_and(const roaring64_bitmap_t *r1,
         int compare_result = compare_high48(it1.key, it2.key);
         if (compare_result == 0) {
             // Case 2: iterators at the same high key position.
-            leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+            leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
             leaf_t *leaf1 = (leaf_t *)it1.value;
             leaf_t *leaf2 = (leaf_t *)it2.value;
             result_leaf->container = container_and(
@@ -991,7 +992,7 @@ roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
                 // Case 3b: iterators at the same high key position.
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
-                leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+                leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
                 result_leaf->container = container_or(
                     leaf1->container, leaf1->typecode, leaf2->container,
                     leaf2->typecode, &result_leaf->typecode);
@@ -1107,7 +1108,7 @@ roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
                 // Case 3b: iterators at the same high key position.
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
-                leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+                leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
                 result_leaf->container = container_xor(
                     leaf1->container, leaf1->typecode, leaf2->container,
                     leaf2->typecode, &result_leaf->typecode);
@@ -1242,7 +1243,7 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
             compare_result = compare_high48(it1.key, it2.key);
             if (compare_result == 0) {
                 // Case 2b: iterators at the same high key position.
-                leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+                leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
                 result_leaf->container = container_andnot(

@@ -135,7 +135,7 @@ static art_node_t *art_node256_insert(art_node256_t *node, art_node_t *child,
 
 static art_node4_t *art_node4_create(const art_key_chunk_t prefix[],
                                      uint8_t prefix_size) {
-    art_node4_t *node = roaring_malloc(sizeof(art_node4_t));
+    art_node4_t *node = (art_node4_t *)roaring_malloc(sizeof(art_node4_t));
     art_init_inner_node(&node->base, ART_NODE4_TYPE, prefix, prefix_size);
     node->count = 0;
     return node;
@@ -297,7 +297,7 @@ static inline art_indexed_child_t art_node4_lower_bound(
 
 static art_node16_t *art_node16_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
-    art_node16_t *node = roaring_malloc(sizeof(art_node16_t));
+    art_node16_t *node = (art_node16_t *)roaring_malloc(sizeof(art_node16_t));
     art_init_inner_node(&node->base, ART_NODE16_TYPE, prefix, prefix_size);
     node->count = 0;
     return node;
@@ -446,7 +446,7 @@ static inline art_indexed_child_t art_node16_lower_bound(
 
 static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
-    art_node48_t *node = roaring_malloc(sizeof(art_node48_t));
+    art_node48_t *node = (art_node48_t *)roaring_malloc(sizeof(art_node48_t));
     art_init_inner_node(&node->base, ART_NODE48_TYPE, prefix, prefix_size);
     node->count = 0;
     for (size_t i = 0; i < 256; ++i) {
@@ -589,7 +589,8 @@ static inline art_indexed_child_t art_node48_lower_bound(
 
 static art_node256_t *art_node256_create(const art_key_chunk_t prefix[],
                                          uint8_t prefix_size) {
-    art_node256_t *node = roaring_malloc(sizeof(art_node256_t));
+    art_node256_t *node =
+        (art_node256_t *)roaring_malloc(sizeof(art_node256_t));
     art_init_inner_node(&node->base, ART_NODE256_TYPE, prefix, prefix_size);
     node->count = 0;
     for (size_t i = 0; i < 256; ++i) {
