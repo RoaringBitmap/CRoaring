@@ -39,6 +39,7 @@ $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/bitset/bitset.h
 $SCRIPTPATH/include/roaring/roaring.h
 $SCRIPTPATH/include/roaring/memory.h
+$SCRIPTPATH/include/roaring/roaring64.h
 "
 
 # .hh header files for the C++ API wrapper => Order does not matter at present
@@ -72,6 +73,7 @@ $SCRIPTPATH/include/roaring/containers/mixed_union.h
 $SCRIPTPATH/include/roaring/containers/mixed_xor.h
 $SCRIPTPATH/include/roaring/containers/containers.h
 $SCRIPTPATH/include/roaring/roaring_array.h
+$SCRIPTPATH/include/roaring/art/art.h
 "
 
 # .c implementation files
@@ -177,6 +179,11 @@ int main() {
   for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(r1, i);
   printf("cardinality = %d\n", (int) roaring_bitmap_get_cardinality(r1));
   roaring_bitmap_free(r1);
+
+  roaring64_bitmap_t *r2 = roaring64_bitmap_create();
+  for (uint64_t i = 100; i < 1000; i++) roaring64_bitmap_add(r2, i);
+  printf("cardinality (64-bit) = %d\n", (int) roaring64_bitmap_get_cardinality(r2));
+  roaring64_bitmap_free(r2);
 
   bitset_t *b = bitset_create();
   for (int k = 0; k < 1000; ++k) {
