@@ -2,39 +2,10 @@
 #include <roaring/art/art.h>
 #include <roaring/containers/containers.h>
 #include <roaring/roaring64.h>
+#include <roaring/portability.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-
-#if CROARING_IS_BIG_ENDIAN
-#define htobe64(x) (x)
-
-#elif defined(_WIN32) || defined(_WIN64)  // CROARING_IS_BIG_ENDIAN
-#include <stdlib.h>
-#define htobe64(x) _byteswap_uint64(x)
-
-#elif defined(__APPLE__)  // CROARING_IS_BIG_ENDIAN
-#include <libkern/OSByteOrder.h>
-#define htobe64(x) OSSwapInt64(x)
-
-#elif defined(__has_include) && \
-    __has_include(<byteswap.h>)  // CROARING_IS_BIG_ENDIAN
-#include <byteswap.h>
-#define htobe64(x) __bswap_64(x)
-
-#else  // CROARING_IS_BIG_ENDIAN
-// Gets compiled to bswap or equivalent on most compilers.
-#define htobe64(x)                                                             \
-    (((x & 0x00000000000000FFULL) << 56) |                                     \
-     ((x & 0x000000000000FF00ULL) << 40) |                                     \
-     ((x & 0x0000000000FF0000ULL) << 24) |                                     \
-     ((x & 0x00000000FF000000ULL) << 8) | ((x & 0x000000FF00000000ULL) >> 8) | \
-     ((x & 0x0000FF0000000000ULL) >> 24) |                                     \
-     ((x & 0x00FF000000000000ULL) >> 40) |                                     \
-     ((x & 0xFF00000000000000ULL) >> 56))
-#endif  // CROARING_IS_BIG_ENDIAN
-
-#define betoh64(x) htobe64(x)
 
 #ifdef __cplusplus
 using namespace ::roaring::internal;
@@ -71,7 +42,7 @@ typedef struct roaring64_leaf_s leaf_t;
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
 // Expects high48_out to be of length ART_KEY_BYTES.
 static inline uint16_t split_key(uint64_t key, uint8_t high48_out[]) {
-    uint64_t tmp = htobe64(key);
+    uint64_t tmp = croaring_htobe64(key);
     memcpy(high48_out, (uint8_t *)(&tmp), ART_KEY_BYTES);
     return (uint16_t)key;
 }
@@ -81,7 +52,7 @@ static inline uint16_t split_key(uint64_t key, uint8_t high48_out[]) {
 static inline uint64_t combine_key(const uint8_t high48[], uint16_t low16) {
     uint64_t result = 0;
     memcpy((uint8_t *)(&result), high48, ART_KEY_BYTES);
-    return betoh64(result) | low16;
+    return croaring_be64toh(result) | low16;
 }
 
 static inline uint64_t minimum(uint64_t a, uint64_t b) {
@@ -89,14 +60,14 @@ static inline uint64_t minimum(uint64_t a, uint64_t b) {
 }
 
 static inline leaf_t *create_leaf(container_t *container, uint8_t typecode) {
-    leaf_t *leaf = roaring_malloc(sizeof(leaf_t));
+    leaf_t *leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
     leaf->container = container;
     leaf->typecode = typecode;
     return leaf;
 }
 
 static inline leaf_t *copy_leaf_container(const leaf_t *leaf) {
-    leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+    leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
     result_leaf->typecode = leaf->typecode;
     // get_copy_of_container modifies the typecode passed in.
     result_leaf->container = get_copy_of_container(
@@ -112,7 +83,8 @@ static inline int compare_high48(art_key_chunk_t key1[],
 }
 
 roaring64_bitmap_t *roaring64_bitmap_create(void) {
-    roaring64_bitmap_t *r = roaring_malloc(sizeof(roaring64_bitmap_t));
+    roaring64_bitmap_t *r =
+        (roaring64_bitmap_t *)roaring_malloc(sizeof(roaring64_bitmap_t));
     r->art.root = NULL;
     r->flags = 0;
     return r;
@@ -793,7 +765,7 @@ roaring64_bitmap_t *roaring64_bitmap_and(const roaring64_bitmap_t *r1,
         int compare_result = compare_high48(it1.key, it2.key);
         if (compare_result == 0) {
             // Case 2: iterators at the same high key position.
-            leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+            leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
             leaf_t *leaf1 = (leaf_t *)it1.value;
             leaf_t *leaf2 = (leaf_t *)it2.value;
             result_leaf->container = container_and(
@@ -991,7 +963,7 @@ roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
                 // Case 3b: iterators at the same high key position.
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
-                leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+                leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
                 result_leaf->container = container_or(
                     leaf1->container, leaf1->typecode, leaf2->container,
                     leaf2->typecode, &result_leaf->typecode);
@@ -1107,7 +1079,7 @@ roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
                 // Case 3b: iterators at the same high key position.
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
-                leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+                leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
                 result_leaf->container = container_xor(
                     leaf1->container, leaf1->typecode, leaf2->container,
                     leaf2->typecode, &result_leaf->typecode);
@@ -1242,7 +1214,7 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
             compare_result = compare_high48(it1.key, it2.key);
             if (compare_result == 0) {
                 // Case 2b: iterators at the same high key position.
-                leaf_t *result_leaf = roaring_malloc(sizeof(leaf_t));
+                leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
                 result_leaf->container = container_andnot(

@@ -405,6 +405,37 @@ static inline int roaring_hamming(uint64_t x) {
  #endif // __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #endif
 
+// Host <-> big endian conversion.
+#if CROARING_IS_BIG_ENDIAN
+#define croaring_htobe64(x) (x)
+
+#elif defined(_WIN32) || defined(_WIN64)  // CROARING_IS_BIG_ENDIAN
+#include <stdlib.h>
+#define croaring_htobe64(x) _byteswap_uint64(x)
+
+#elif defined(__APPLE__)  // CROARING_IS_BIG_ENDIAN
+#include <libkern/OSByteOrder.h>
+#define croaring_htobe64(x) OSSwapInt64(x)
+
+#elif defined(__has_include) && \
+    __has_include(<byteswap.h>)  // CROARING_IS_BIG_ENDIAN
+#include <byteswap.h>
+#define croaring_htobe64(x) __bswap_64(x)
+
+#else  // CROARING_IS_BIG_ENDIAN
+// Gets compiled to bswap or equivalent on most compilers.
+#define croaring_htobe64(x)                                                    \
+    (((x & 0x00000000000000FFULL) << 56) |                                     \
+     ((x & 0x000000000000FF00ULL) << 40) |                                     \
+     ((x & 0x0000000000FF0000ULL) << 24) |                                     \
+     ((x & 0x00000000FF000000ULL) << 8) | ((x & 0x000000FF00000000ULL) >> 8) | \
+     ((x & 0x0000FF0000000000ULL) >> 24) |                                     \
+     ((x & 0x00FF000000000000ULL) >> 40) |                                     \
+     ((x & 0xFF00000000000000ULL) >> 56))
+#endif  // CROARING_IS_BIG_ENDIAN
+#define croaring_be64toh(x) croaring_htobe64(x)
+// End of host <-> big endian conversion.
+
 // Defines for the possible CROARING atomic implementations
 #define CROARING_ATOMIC_IMPL_NONE          1
 #define CROARING_ATOMIC_IMPL_CPP           2
