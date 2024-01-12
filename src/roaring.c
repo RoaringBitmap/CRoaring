@@ -1668,9 +1668,10 @@ static bool iter_new_container_partial_init(roaring_uint32_iterator_t *newit) {
  */
 static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
+        uint16_t value = 0;
         newit->container_it =
-            container_init_iterator(newit->container, newit->typecode);
-        newit->current_value = newit->highbits | newit->container_it.value;
+            container_init_iterator(newit->container, newit->typecode, &value);
+        newit->current_value = newit->highbits | value;
     }
     return newit->has_value;
 }
@@ -1681,9 +1682,10 @@ static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
  */
 static bool loadlastvalue(roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
+        uint16_t value = 0;
         newit->container_it =
-            container_init_iterator_last(newit->container, newit->typecode);
-        newit->current_value = newit->highbits | newit->container_it.value;
+            container_init_iterator_last(newit->container, newit->typecode, &value);
+        newit->current_value = newit->highbits | value;
     }
     return newit->has_value;
 }
@@ -1697,12 +1699,13 @@ static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit,
                                         uint32_t val) {
     bool partial_init = iter_new_container_partial_init(newit);
     assert(partial_init);
+    uint16_t value = 0;
     newit->container_it =
-        container_init_iterator(newit->container, newit->typecode);
+        container_init_iterator(newit->container, newit->typecode, &value);
     bool found = container_iterator_lower_bound(
-        newit->container, newit->typecode, &newit->container_it, val & 0xFFFF);
+        newit->container, newit->typecode, &newit->container_it, &value, val & 0xFFFF);
     assert(found);
-    newit->current_value = newit->highbits | newit->container_it.value;
+    newit->current_value = newit->highbits | value;
     return true;
 }
 
@@ -1770,9 +1773,10 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
         it->container_index = 0;
         return (it->has_value = loadfirstvalue(it));
     }
+    uint16_t low16 = (uint16_t)it->current_value;
     if (container_iterator_next(it->container, it->typecode,
-                                &it->container_it)) {
-        it->current_value = it->highbits | it->container_it.value;
+                                &it->container_it, &low16)) {
+        it->current_value = it->highbits | low16;
         return (it->has_value = true);
     }
     it->container_index++;
@@ -1787,9 +1791,10 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
         it->container_index = it->parent->high_low_container.size - 1;
         return (it->has_value = loadlastvalue(it));
     }
+    uint16_t low16 = (uint16_t)it->current_value;
     if (container_iterator_prev(it->container, it->typecode,
-                                &it->container_it)) {
-        it->current_value = it->highbits | it->container_it.value;
+                                &it->container_it, &low16)) {
+        it->current_value = it->highbits | low16;
         return (it->has_value = true);
     }
     it->container_index--;
@@ -1800,14 +1805,16 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count) {
     uint32_t ret = 0;
     while (it->has_value && ret < count) {
-        uint32_t consumed = container_iterator_read_into_uint32(
+        uint32_t consumed;
+        uint16_t low16 = (uint16_t)it->current_value;
+        bool has_value = container_iterator_read_into_uint32(
             it->container, it->typecode, &it->container_it, it->highbits, buf,
-            count - ret);
+            count - ret, &consumed, &low16);
         ret += consumed;
         buf += consumed;
-        if (it->container_it.has_value) {
+        if (has_value) {
             it->has_value = true;
-            it->current_value = it->highbits | it->container_it.value;
+            it->current_value = it->highbits | low16;
             assert(ret == count);
             return ret;
         }

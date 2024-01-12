@@ -2529,44 +2529,50 @@ using api::roaring_container_iterator_t;
  * Initializes the iterator at the first entry in the container.
  */
 roaring_container_iterator_t container_init_iterator(const container_t *c,
-                                                     uint8_t typecode);
+                                                     uint8_t typecode,
+                                                     uint16_t *value);
 
 /**
  * Initializes the iterator at the last entry in the container.
  */
 roaring_container_iterator_t container_init_iterator_last(const container_t *c,
-                                                          uint8_t typecode);
+                                                          uint8_t typecode,
+                                                          uint16_t *value);
 
 /**
- * Moves the iterator to the next entry. Returns true if `has_value` is true.
+ * Moves the iterator to the next entry. Returns true and sets `value` if a
+ * value is present.
  */
 bool container_iterator_next(const container_t *c, uint8_t typecode,
-                             roaring_container_iterator_t *it);
+                             roaring_container_iterator_t *it, uint16_t *value);
 
 /**
- * Moves the iterator to the previous entry. Returns true if `has_value` is
- * true.
+ * Moves the iterator to the previous entry. Returns true and sets `value` if a
+ * value is present.
  */
 bool container_iterator_prev(const container_t *c, uint8_t typecode,
-                             roaring_container_iterator_t *it);
+                             roaring_container_iterator_t *it, uint16_t *value);
 
 /**
  * Moves the iterator to the smallest entry that is greater than or equal to
- * `val`. Returns true if `has_value` is true.
+ * `val`. Returns true and sets `value_out` if a value is present. `value_out`
+ * should be initialized to a value.
  */
 bool container_iterator_lower_bound(const container_t *c, uint8_t typecode,
                                     roaring_container_iterator_t *it,
-                                    uint16_t val);
+                                    uint16_t *value_out, uint16_t val);
 
 /**
- * Reads up to `count` entrys from the container, and writes them into `buf`
- * as `high16 | entry`. Returns the number of elements read.
+ * Reads up to `count` entries from the container, and writes them into `buf`
+ * as `high16 | entry`. Returns true and sets `value_out` if a value is present
+ * after reading the entries. Sets `consumed` to the number of values read.
+ * `count` should be greater than zero.
  */
-uint32_t container_iterator_read_into_uint32(const container_t *c,
-                                             uint8_t typecode,
-                                             roaring_container_iterator_t *it,
-                                             uint32_t high16, uint32_t *buf,
-                                             uint32_t count);
+bool container_iterator_read_into_uint32(const container_t *c, uint8_t typecode,
+                                         roaring_container_iterator_t *it,
+                                         uint32_t high16, uint32_t *buf,
+                                         uint32_t count, uint32_t *consumed,
+                                         uint16_t *value_out);
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {

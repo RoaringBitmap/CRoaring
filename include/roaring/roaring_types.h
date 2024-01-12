@@ -99,18 +99,11 @@ typedef struct roaring_statistics_s {
 
 /**
  * Roaring-internal type used to iterate within a roaring container.
- *
- * Only `value` and `has_value` should be accessed outside of containers, the
- * rest of the type should be treated as opaque. `value` is only valid if
- * `has_value` is true.
  */
 typedef struct roaring_container_iterator_s {
     // For bitset and array containers this is the index of the bit / entry.
     // For run containers this points at the run.
     int32_t index;
-
-    uint16_t value;
-    bool has_value;
 } roaring_container_iterator_t;
 
 #ifdef __cplusplus
