@@ -201,19 +201,26 @@ DEFINE_TEST(test_art_is_empty) {
 }
 
 DEFINE_TEST(test_art_iterator_next) {
-    std::vector<const char*> keys = {
-        "000001", "000002", "000003", "000004", "001005",
-    };
-    std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
+    std::vector<std::array<uint8_t, 6>> keys;
+    std::vector<Value> values;
+    std::vector<size_t> sizes = {4, 16, 48, 256};
+    for (size_t i = 0; i < sizes.size(); i++) {
+        uint8_t size = static_cast<uint8_t>(sizes[i]);
+        for (size_t j = 0; j < size; j++) {
+            keys.push_back(
+                {0, 0, 0, static_cast<uint8_t>(i), static_cast<uint8_t>(j)});
+            values.push_back({static_cast<uint64_t>(i) * j});
+        }
+    }
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
-        art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+        art_insert(&art, (art_key_chunk_t*)keys[i].data(), &values[i]);
     }
 
     art_iterator_t iterator = art_init_iterator(&art, true);
     size_t i = 0;
     do {
-        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i].data());
         assert_true(iterator.value == &values[i]);
         ++i;
     } while (art_iterator_next(&iterator));
@@ -221,19 +228,26 @@ DEFINE_TEST(test_art_iterator_next) {
 }
 
 DEFINE_TEST(test_art_iterator_prev) {
-    std::vector<const char*> keys = {
-        "000001", "000002", "000003", "000004", "001005",
-    };
-    std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
+    std::vector<std::array<uint8_t, 6>> keys;
+    std::vector<Value> values;
+    std::vector<size_t> sizes = {4, 16, 48, 256};
+    for (size_t i = 0; i < sizes.size(); i++) {
+        uint8_t size = static_cast<uint8_t>(sizes[i]);
+        for (size_t j = 0; j < size; j++) {
+            keys.push_back(
+                {0, 0, 0, static_cast<uint8_t>(i), static_cast<uint8_t>(j)});
+            values.push_back({static_cast<uint64_t>(i) * j});
+        }
+    }
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
-        art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+        art_insert(&art, (art_key_chunk_t*)keys[i].data(), &values[i]);
     }
 
-    art_iterator_t iterator = art_init_iterator(&art, false);
+    art_iterator_t iterator = art_init_iterator(&art, /*first=*/false);
     size_t i = keys.size() - 1;
     do {
-        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i].data());
         --i;
     } while (art_iterator_prev(&iterator));
     art_free(&art);
