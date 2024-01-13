@@ -1093,7 +1093,7 @@ static art_val_t *art_find_at(const art_node_t *node,
         depth += inner_node->prefix_size + 1;
     }
     art_leaf_t *leaf = CAST_LEAF(node);
-    if (depth >= ART_KEY_BYTES - 1) {
+    if (depth >= ART_KEY_BYTES) {
         return (art_val_t *)leaf;
     }
     uint8_t common_prefix =
