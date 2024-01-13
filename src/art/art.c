@@ -550,7 +550,7 @@ static inline art_indexed_child_t art_node48_prev_child(
     }
     index--;
     art_indexed_child_t indexed_child;
-    for (int i = index; i > 0; --i) {
+    for (int i = index; i >= 0; --i) {
         if (node->keys[i] != ART_NODE48_EMPTY_VAL) {
             indexed_child.child = node->children[node->keys[i]];
             indexed_child.index = i;
@@ -667,7 +667,7 @@ static inline art_indexed_child_t art_node256_prev_child(
     }
     index--;
     art_indexed_child_t indexed_child;
-    for (int i = index; i > 0; --i) {
+    for (int i = index; i >= 0; --i) {
         if (node->children[i] != NULL) {
             indexed_child.child = node->children[i];
             indexed_child.index = i;
