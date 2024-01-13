@@ -97,6 +97,15 @@ typedef struct roaring_statistics_s {
     // and n_values_arrays, n_values_rle, n_values_bitmap
 } roaring_statistics_t;
 
+/**
+ * Roaring-internal type used to iterate within a roaring container.
+ */
+typedef struct roaring_container_iterator_s {
+    // For bitset and array containers this is the index of the bit / entry.
+    // For run containers this points at the run.
+    int32_t index;
+} roaring_container_iterator_t;
+
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace api {
 #endif

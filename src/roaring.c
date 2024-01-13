@@ -200,10 +200,6 @@ roaring_bitmap_t *roaring_bitmap_of(size_t n_args, ...) {
     return answer;
 }
 
-static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
-    return (a < b) ? a : b;
-}
-
 static inline uint64_t minimum_uint64(uint64_t a, uint64_t b) {
     return (a < b) ? a : b;
 }
@@ -1636,145 +1632,80 @@ bool roaring_iterate64(const roaring_bitmap_t *r, roaring_iterator64 iterator,
 * begin roaring_uint32_iterator_t
 *****/
 
-// Partially initializes the roaring iterator when it begins looking at
-// a new container.
+/**
+ * Partially initializes the iterator. Leaves it in either state:
+ * 1. Invalid due to `has_value = false`, or
+ * 2. At a container, with the high bits set, `has_value = true`.
+ */
 static bool iter_new_container_partial_init(roaring_uint32_iterator_t *newit) {
-    newit->in_container_index = 0;
-    newit->run_index = 0;
     newit->current_value = 0;
     if (newit->container_index >= newit->parent->high_low_container.size ||
         newit->container_index < 0) {
         newit->current_value = UINT32_MAX;
         return (newit->has_value = false);
     }
-    // assume not empty
     newit->has_value = true;
     // we precompute container, typecode and highbits so that successive
     // iterators do not have to grab them from odd memory locations
     // and have to worry about the (easily predicted) container_unwrap_shared
     // call.
     newit->container =
-            newit->parent->high_low_container.containers[newit->container_index];
+        newit->parent->high_low_container.containers[newit->container_index];
     newit->typecode =
-            newit->parent->high_low_container.typecodes[newit->container_index];
+        newit->parent->high_low_container.typecodes[newit->container_index];
     newit->highbits =
-            ((uint32_t)
-                    newit->parent->high_low_container.keys[newit->container_index])
-                    << 16;
+        ((uint32_t)
+             newit->parent->high_low_container.keys[newit->container_index])
+        << 16;
     newit->container =
-            container_unwrap_shared(newit->container, &(newit->typecode));
+        container_unwrap_shared(newit->container, &(newit->typecode));
+    return true;
+}
+
+/**
+ * Positions the iterator at the first value of the current container that the
+ * iterator points at, if available.
+ */
+static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
+    if (iter_new_container_partial_init(newit)) {
+        uint16_t value = 0;
+        newit->container_it =
+            container_init_iterator(newit->container, newit->typecode, &value);
+        newit->current_value = newit->highbits | value;
+    }
     return newit->has_value;
 }
 
-static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
-    if (!iter_new_container_partial_init(newit))
-        return newit->has_value;
-
-    switch (newit->typecode) {
-        case BITSET_CONTAINER_TYPE: {
-            const bitset_container_t *bc = const_CAST_bitset(newit->container);
-
-            uint32_t wordindex = 0;
-            uint64_t word;
-            while ((word = bc->words[wordindex]) == 0) {
-                wordindex++;  // advance
-            }
-            // here "word" is non-zero
-            newit->in_container_index = wordindex * 64 + roaring_trailing_zeroes(word);
-            newit->current_value = newit->highbits | newit->in_container_index;
-            break; }
-
-        case ARRAY_CONTAINER_TYPE: {
-            const array_container_t *ac = const_CAST_array(newit->container);
-            newit->current_value = newit->highbits | ac->array[0];
-            break; }
-
-        case RUN_CONTAINER_TYPE: {
-            const run_container_t *rc = const_CAST_run(newit->container);
-            newit->current_value = newit->highbits | rc->runs[0].value;
-            break; }
-
-        default:
-            // if this ever happens, bug!
-            assert(false);
-    }  // switch (typecode)
-    return true;
+/**
+ * Positions the iterator at the last value of the current container that the
+ * iterator points at, if available.
+ */
+static bool loadlastvalue(roaring_uint32_iterator_t *newit) {
+    if (iter_new_container_partial_init(newit)) {
+        uint16_t value = 0;
+        newit->container_it =
+            container_init_iterator_last(newit->container, newit->typecode, &value);
+        newit->current_value = newit->highbits | value;
+    }
+    return newit->has_value;
 }
 
-static bool loadlastvalue(roaring_uint32_iterator_t* newit) {
-    if (!iter_new_container_partial_init(newit))
-        return newit->has_value;
-
-    switch(newit->typecode) {
-        case BITSET_CONTAINER_TYPE: {
-            uint32_t wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
-            uint64_t word;
-            const bitset_container_t* bitset_container = (const bitset_container_t*)newit->container;
-            while ((word = bitset_container->words[wordindex]) == 0)
-                --wordindex;
-
-            int num_leading_zeros = roaring_leading_zeroes(word);
-            newit->in_container_index = (wordindex * 64) + (63 - num_leading_zeros);
-            newit->current_value = newit->highbits | newit->in_container_index;
-            break;
-        }
-        case ARRAY_CONTAINER_TYPE: {
-            const array_container_t* array_container = (const array_container_t*)newit->container;
-            newit->in_container_index = array_container->cardinality - 1;
-            newit->current_value = newit->highbits | array_container->array[newit->in_container_index];
-            break;
-        }
-        case RUN_CONTAINER_TYPE: {
-            const run_container_t* run_container = (const run_container_t*)newit->container;
-            newit->run_index = run_container->n_runs - 1;
-            const rle16_t* last_run = &run_container->runs[newit->run_index];
-            newit->current_value = newit->highbits | (last_run->value + last_run->length);
-            break;
-        }
-        default:
-            // if this ever happens, bug!
-            assert(false);
-    }
-    return true;
-}
-
-// prerequesite: the value should be in range of the container
-static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit, uint32_t val) {
-    // Don't have to check return value because of prerequisite
-    iter_new_container_partial_init(newit);
-    uint16_t lb = val & 0xFFFF;
-
-    switch (newit->typecode) {
-        case BITSET_CONTAINER_TYPE: {
-            const bitset_container_t *bc = const_CAST_bitset(newit->container);
-            newit->in_container_index =
-                        bitset_container_index_equalorlarger(bc, lb);
-            newit->current_value = newit->highbits | newit->in_container_index;
-            break; }
-
-        case ARRAY_CONTAINER_TYPE: {
-            const array_container_t *ac = const_CAST_array(newit->container);
-            newit->in_container_index =
-                        array_container_index_equalorlarger(ac, lb);
-            newit->current_value =
-                        newit->highbits | ac->array[newit->in_container_index];
-            break; }
-
-        case RUN_CONTAINER_TYPE: {
-            const run_container_t *rc = const_CAST_run(newit->container);
-            newit->run_index = run_container_index_equalorlarger(rc, lb);
-            if (rc->runs[newit->run_index].value <= lb) {
-                newit->current_value = val;
-            } else {
-                newit->current_value =
-                        newit->highbits | rc->runs[newit->run_index].value;
-            }
-            break; }
-
-        default:
-            roaring_unreachable;
-    }
-
+/**
+ * Positions the iterator at the smallest value that is larger than or equal to
+ * `val` within the current container that the iterator points at. Assumes such
+ * a value exists within the current container.
+ */
+static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit,
+                                        uint32_t val) {
+    bool partial_init = iter_new_container_partial_init(newit);
+    assert(partial_init);
+    uint16_t value = 0;
+    newit->container_it =
+        container_init_iterator(newit->container, newit->typecode, &value);
+    bool found = container_iterator_lower_bound(
+        newit->container, newit->typecode, &newit->container_it, &value, val & 0xFFFF);
+    assert(found);
+    newit->current_value = newit->highbits | value;
     return true;
 }
 
@@ -1808,27 +1739,31 @@ roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
     return newit;
 }
 
-bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it, uint32_t val) {
+bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it,
+                                                uint32_t val) {
     uint16_t hb = val >> 16;
-    const int i = ra_get_index(& it->parent->high_low_container, hb);
+    const int i = ra_get_index(&it->parent->high_low_container, hb);
     if (i >= 0) {
-      uint32_t lowvalue = container_maximum(it->parent->high_low_container.containers[i], it->parent->high_low_container.typecodes[i]);
-      uint16_t lb = val & 0xFFFF;
-      if(lowvalue < lb ) {
-        it->container_index = i+1; // will have to load first value of next container
-      } else {// the value is necessarily within the range of the container
-        it->container_index = i;
-        it->has_value = loadfirstvalue_largeorequal(it, val);
-        return it->has_value;
-      }
+        uint32_t lowvalue =
+            container_maximum(it->parent->high_low_container.containers[i],
+                              it->parent->high_low_container.typecodes[i]);
+        uint16_t lb = val & 0xFFFF;
+        if (lowvalue < lb) {
+            // will have to load first value of next container
+            it->container_index = i + 1;
+        } else {
+            // the value is necessarily within the range of the container
+            it->container_index = i;
+            it->has_value = loadfirstvalue_largeorequal(it, val);
+            return it->has_value;
+        }
     } else {
-      // there is no matching, so we are going for the next container
-      it->container_index = -i-1;
+        // there is no matching, so we are going for the next container
+        it->container_index = -i - 1;
     }
     it->has_value = loadfirstvalue(it);
     return it->has_value;
 }
-
 
 bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     if (it->container_index >= it->parent->high_low_container.size) {
@@ -1838,65 +1773,12 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
         it->container_index = 0;
         return (it->has_value = loadfirstvalue(it));
     }
-
-    switch (it->typecode) {
-        case BITSET_CONTAINER_TYPE: {
-            const bitset_container_t *bc = const_CAST_bitset(it->container);
-            it->in_container_index++;
-
-            uint32_t wordindex = it->in_container_index / 64;
-            if (wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) break;
-
-            uint64_t word = bc->words[wordindex] &
-                   (UINT64_MAX << (it->in_container_index % 64));
-            // next part could be optimized/simplified
-            while ((word == 0) &&
-                   (wordindex + 1 < BITSET_CONTAINER_SIZE_IN_WORDS)) {
-                wordindex++;
-                word = bc->words[wordindex];
-            }
-            if (word != 0) {
-                it->in_container_index = wordindex * 64 + roaring_trailing_zeroes(word);
-                it->current_value = it->highbits | it->in_container_index;
-                return (it->has_value = true);
-            }
-            break; }
-
-        case ARRAY_CONTAINER_TYPE: {
-            const array_container_t *ac = const_CAST_array(it->container);
-            it->in_container_index++;
-            if (it->in_container_index < ac->cardinality) {
-                it->current_value =
-                        it->highbits | ac->array[it->in_container_index];
-                return (it->has_value = true);
-            }
-            break; }
-
-        case RUN_CONTAINER_TYPE: {
-            if(it->current_value == UINT32_MAX) {  // avoid overflow to zero
-                return (it->has_value = false);
-            }
-
-            const run_container_t* rc = const_CAST_run(it->container);
-            uint32_t limit = (it->highbits | (rc->runs[it->run_index].value +
-                                              rc->runs[it->run_index].length));
-            if (++it->current_value <= limit) {
-                return (it->has_value = true);
-            }
-
-            if (++it->run_index < rc->n_runs) {  // Assume the run has a value
-                it->current_value =
-                        it->highbits | rc->runs[it->run_index].value;
-                return (it->has_value = true);
-            }
-            break;
-        }
-
-        default:
-            roaring_unreachable;
+    uint16_t low16 = (uint16_t)it->current_value;
+    if (container_iterator_next(it->container, it->typecode,
+                                &it->container_it, &low16)) {
+        it->current_value = it->highbits | low16;
+        return (it->has_value = true);
     }
-
-    // moving to next container
     it->container_index++;
     return (it->has_value = loadfirstvalue(it));
 }
@@ -1909,147 +1791,42 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
         it->container_index = it->parent->high_low_container.size - 1;
         return (it->has_value = loadlastvalue(it));
     }
-
-    switch (it->typecode) {
-        case BITSET_CONTAINER_TYPE: {
-            if (--it->in_container_index < 0)
-                break;
-
-            const bitset_container_t* bitset_container = (const bitset_container_t*)it->container;
-            int32_t wordindex = it->in_container_index / 64;
-            uint64_t word = bitset_container->words[wordindex] & (UINT64_MAX >> (63 - (it->in_container_index % 64)));
-
-            while (word == 0 && --wordindex >= 0) {
-                word = bitset_container->words[wordindex];
-            }
-            if (word == 0)
-                break;
-
-            int num_leading_zeros = roaring_leading_zeroes(word);
-            it->in_container_index = (wordindex * 64) + (63 - num_leading_zeros);
-            it->current_value = it->highbits | it->in_container_index;
-            return (it->has_value = true);
-        }
-        case ARRAY_CONTAINER_TYPE: {
-            if (--it->in_container_index < 0)
-                break;
-
-            const array_container_t* array_container = (const array_container_t*)it->container;
-            it->current_value = it->highbits | array_container->array[it->in_container_index];
-            return (it->has_value = true);
-        }
-        case RUN_CONTAINER_TYPE: {
-            if(it->current_value == 0)
-                return (it->has_value = false);
-
-            const run_container_t* run_container = (const run_container_t*)it->container;
-            if (--it->current_value >= (it->highbits | run_container->runs[it->run_index].value)) {
-                return (it->has_value = true);
-            }
-
-            if (--it->run_index < 0)
-                break;
-
-            it->current_value = it->highbits | (run_container->runs[it->run_index].value +
-                                                run_container->runs[it->run_index].length);
-            return (it->has_value = true);
-        }
-        default:
-            // if this ever happens, bug!
-            assert(false);
-    }  // switch (typecode)
-
-    // moving to previous container
+    uint16_t low16 = (uint16_t)it->current_value;
+    if (container_iterator_prev(it->container, it->typecode,
+                                &it->container_it, &low16)) {
+        it->current_value = it->highbits | low16;
+        return (it->has_value = true);
+    }
     it->container_index--;
     return (it->has_value = loadlastvalue(it));
 }
 
-uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it, uint32_t* buf, uint32_t count) {
-  uint32_t ret = 0;
-  uint32_t num_values;
-  uint32_t wordindex;  // used for bitsets
-  uint64_t word;       // used for bitsets
-  const array_container_t* acont; //TODO remove
-  const run_container_t* rcont; //TODO remove
-  const bitset_container_t* bcont; //TODO remove
-
-  while (it->has_value && ret < count) {
-    switch (it->typecode) {
-      case BITSET_CONTAINER_TYPE:
-        bcont = const_CAST_bitset(it->container);
-        wordindex = it->in_container_index / 64;
-        word = bcont->words[wordindex] & (UINT64_MAX << (it->in_container_index % 64));
-        do {
-          while (word != 0 && ret < count) {
-            buf[0] = it->highbits | (wordindex * 64 + roaring_trailing_zeroes(word));
-            word = word & (word - 1);
-            buf++;
-            ret++;
-          }
-          while (word == 0 && wordindex+1 < BITSET_CONTAINER_SIZE_IN_WORDS) {
-            wordindex++;
-            word = bcont->words[wordindex];
-          }
-        } while (word != 0 && ret < count);
-        it->has_value = (word != 0);
-        if (it->has_value) {
-          it->in_container_index = wordindex * 64 + roaring_trailing_zeroes(word);
-          it->current_value = it->highbits | it->in_container_index;
+uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
+                                      uint32_t *buf, uint32_t count) {
+    uint32_t ret = 0;
+    while (it->has_value && ret < count) {
+        uint32_t consumed;
+        uint16_t low16 = (uint16_t)it->current_value;
+        bool has_value = container_iterator_read_into_uint32(
+            it->container, it->typecode, &it->container_it, it->highbits, buf,
+            count - ret, &consumed, &low16);
+        ret += consumed;
+        buf += consumed;
+        if (has_value) {
+            it->has_value = true;
+            it->current_value = it->highbits | low16;
+            assert(ret == count);
+            return ret;
         }
-        break;
-      case ARRAY_CONTAINER_TYPE:
-        acont = const_CAST_array(it->container);
-        num_values = minimum_uint32(acont->cardinality - it->in_container_index, count - ret);
-        for (uint32_t i = 0; i < num_values; i++) {
-          buf[i] = it->highbits | acont->array[it->in_container_index + i];
-        }
-        buf += num_values;
-        ret += num_values;
-        it->in_container_index += num_values;
-        it->has_value = (it->in_container_index < acont->cardinality);
-        if (it->has_value) {
-          it->current_value = it->highbits | acont->array[it->in_container_index];
-        }
-        break;
-      case RUN_CONTAINER_TYPE:
-        rcont = const_CAST_run(it->container);
-        //"in_run_index" name is misleading, read it as "max_value_in_current_run"
-        do {
-          uint32_t largest_run_value = it->highbits | (rcont->runs[it->run_index].value + rcont->runs[it->run_index].length);
-          num_values = minimum_uint32(largest_run_value - it->current_value + 1, count - ret);
-          for (uint32_t i = 0; i < num_values; i++) {
-            buf[i] = it->current_value + i;
-          }
-          it->current_value += num_values; // this can overflow to zero: UINT32_MAX+1=0
-          buf += num_values;
-          ret += num_values;
-
-          if (it->current_value > largest_run_value || it->current_value == 0) {
-            it->run_index++;
-            if (it->run_index < rcont->n_runs) {
-              it->current_value = it->highbits | rcont->runs[it->run_index].value;
-            } else {
-              it->has_value = false;
-            }
-          }
-        } while ((ret < count) && it->has_value);
-        break;
-      default:
-        assert(false);
+        it->container_index++;
+        it->has_value = loadfirstvalue(it);
     }
-    if (it->has_value) {
-      assert(ret == count);
-      return ret;
-    }
-    it->container_index++;
-    it->has_value = loadfirstvalue(it);
-  }
-  return ret;
+    return ret;
 }
 
-
-
-void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) { roaring_free(it); }
+void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) {
+    roaring_free(it);
+}
 
 /****
 * end of roaring_uint32_iterator_t
