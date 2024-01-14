@@ -383,6 +383,21 @@ DEFINE_TEST(test_remove_range_closed) {
         assert_true(roaring64_bitmap_contains_bulk(r, &context, 300000));
         roaring64_bitmap_free(r);
     }
+    {
+        // Range completely clears the bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        // array container
+        roaring64_bitmap_add(r, 1);
+        // range container
+        roaring64_bitmap_add_range_closed(r, 0x10000, 0x20000);
+        // bitmap container
+        for (int i = 0x20000; i < 0x25000; i += 2) {
+            roaring64_bitmap_add(r, i);
+        }
+        roaring64_bitmap_remove_range_closed(r, 0, 0x30000);
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_get_cardinality) {

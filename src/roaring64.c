@@ -538,13 +538,13 @@ static inline void remove_range_closed_at(art_t *art, uint8_t *high48,
         leaf->container, leaf->typecode, min, max, &typecode2);
     if (container2 != leaf->container) {
         container_free(leaf->container, leaf->typecode);
-        leaf->container = container2;
-        leaf->typecode = typecode2;
-    }
-    if (!container_nonzero_cardinality(container2, typecode2)) {
-        art_erase(art, high48);
-        container_free(container2, typecode2);
-        free_leaf(leaf);
+        if (container2 != NULL) {
+            leaf->container = container2;
+            leaf->typecode = typecode2;
+        } else {
+            art_erase(art, high48);
+            free_leaf(leaf);
+        }
     }
 }
 
