@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <roaring/art/art.h>
 #include <roaring/containers/containers.h>
-#include <roaring/roaring64.h>
 #include <roaring/portability.h>
+#include <roaring/roaring64.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
@@ -1281,13 +1281,18 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                     container2 = container_andnot(
                         leaf1->container, leaf1->typecode, leaf2->container,
                         leaf2->typecode, &typecode2);
+                    if (container2 != container1) {
+                        // We only free when doing container_andnot, not
+                        // container_iandnot, as iandnot frees the original
+                        // internally.
+                        container_free(container1, typecode1);
+                    }
                 } else {
                     container2 = container_iandnot(
                         leaf1->container, leaf1->typecode, leaf2->container,
                         leaf2->typecode, &typecode2);
                 }
                 if (container2 != container1) {
-                    container_free(container1, typecode1);
                     leaf1->container = container2;
                     leaf1->typecode = typecode2;
                 }
