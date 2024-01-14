@@ -256,7 +256,7 @@ DEFINE_TEST(test_select) {
     uint64_t element = 0;
     for (uint64_t i = 0; i < 100; ++i) {
         assert_true(roaring64_bitmap_select(r, i, &element));
-        assert_true(element == i * 1000);
+        assert_int_equal(element, i * 1000);
     }
     assert_false(roaring64_bitmap_select(r, 100, &element));
     roaring64_bitmap_free(r);
@@ -268,8 +268,8 @@ DEFINE_TEST(test_rank) {
         roaring64_bitmap_add(r, i * 1000);
     }
     for (uint64_t i = 0; i < 100; ++i) {
-        assert_true(roaring64_bitmap_rank(r, i * 1000) == i + 1);
-        assert_true(roaring64_bitmap_rank(r, i * 1000 + 1) == i + 1);
+        assert_int_equal(roaring64_bitmap_rank(r, i * 1000), i + 1);
+        assert_int_equal(roaring64_bitmap_rank(r, i * 1000 + 1), i + 1);
     }
     roaring64_bitmap_free(r);
 }
@@ -282,7 +282,7 @@ DEFINE_TEST(test_get_index) {
     for (uint64_t i = 0; i < 100; ++i) {
         uint64_t index = 0;
         assert_true(roaring64_bitmap_get_index(r, i * 1000, &index));
-        assert_true(index == i);
+        assert_int_equal(index, i);
         assert_false(roaring64_bitmap_get_index(r, i * 1000 + 1, &index));
     }
     roaring64_bitmap_free(r);
@@ -419,7 +419,7 @@ DEFINE_TEST(test_get_cardinality) {
     roaring64_bitmap_add(r, 100002);
     roaring64_bitmap_add(r, 200000);
 
-    assert_true(roaring64_bitmap_get_cardinality(r) == 5);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 5);
 
     roaring64_bitmap_free(r);
 }
@@ -433,10 +433,10 @@ DEFINE_TEST(test_range_cardinality) {
     roaring64_bitmap_add(r, 100002);
     roaring64_bitmap_add(r, 200000);
 
-    assert_true(roaring64_bitmap_range_cardinality(r, 0, 0) == 0);
-    assert_true(roaring64_bitmap_range_cardinality(r, 0, 100000) == 1);
-    assert_true(roaring64_bitmap_range_cardinality(r, 1, 100001) == 1);
-    assert_true(roaring64_bitmap_range_cardinality(r, 0, 200001) == 5);
+    assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 0), 0);
+    assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 100000), 1);
+    assert_int_equal(roaring64_bitmap_range_cardinality(r, 1, 100001), 1);
+    assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 200001), 5);
 
     roaring64_bitmap_free(r);
 }
@@ -452,13 +452,13 @@ DEFINE_TEST(test_is_empty) {
 DEFINE_TEST(test_minimum) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
-    assert_true(roaring64_bitmap_minimum(r) == UINT64_MAX);
+    assert_int_equal(roaring64_bitmap_minimum(r), UINT64_MAX);
 
     roaring64_bitmap_add(r, (1ULL << 34) + 1);
     roaring64_bitmap_add(r, (1ULL << 35) + 1);
     roaring64_bitmap_add(r, (1ULL << 35) + 2);
 
-    assert_true(roaring64_bitmap_minimum(r) == ((1ULL << 34) + 1));
+    assert_int_equal(roaring64_bitmap_minimum(r), ((1ULL << 34) + 1));
 
     roaring64_bitmap_free(r);
 }
@@ -466,14 +466,14 @@ DEFINE_TEST(test_minimum) {
 DEFINE_TEST(test_maximum) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
-    assert_true(roaring64_bitmap_maximum(r) == 0);
+    assert_int_equal(roaring64_bitmap_maximum(r), 0);
 
     roaring64_bitmap_add(r, 0);
     roaring64_bitmap_add(r, (1ULL << 34) + 1);
     roaring64_bitmap_add(r, (1ULL << 35) + 1);
     roaring64_bitmap_add(r, (1ULL << 35) + 2);
 
-    assert_true(roaring64_bitmap_maximum(r) == ((1ULL << 35) + 2));
+    assert_int_equal(roaring64_bitmap_maximum(r), ((1ULL << 35) + 2));
 
     roaring64_bitmap_free(r);
 }
@@ -619,7 +619,7 @@ DEFINE_TEST(test_and_cardinality) {
     roaring64_bitmap_add(r2, 200000);
     roaring64_bitmap_add(r2, 400000);
 
-    assert_true(roaring64_bitmap_and_cardinality(r1, r2) == 2);
+    assert_int_equal(roaring64_bitmap_and_cardinality(r1, r2), 2);
 
     roaring64_bitmap_free(r1);
     roaring64_bitmap_free(r2);
@@ -731,7 +731,7 @@ DEFINE_TEST(test_or_cardinality) {
     roaring64_bitmap_add(r2, 200000);
     roaring64_bitmap_add(r2, 400000);
 
-    assert_true(roaring64_bitmap_or_cardinality(r1, r2) == 5);
+    assert_int_equal(roaring64_bitmap_or_cardinality(r1, r2), 5);
 
     roaring64_bitmap_free(r1);
     roaring64_bitmap_free(r2);
@@ -801,7 +801,7 @@ DEFINE_TEST(test_xor_cardinality) {
     roaring64_bitmap_add(r2, 200000);
     roaring64_bitmap_add(r2, 400000);
 
-    assert_true(roaring64_bitmap_xor_cardinality(r1, r2) == 3);
+    assert_int_equal(roaring64_bitmap_xor_cardinality(r1, r2), 3);
 
     roaring64_bitmap_free(r1);
     roaring64_bitmap_free(r2);
@@ -871,7 +871,7 @@ DEFINE_TEST(test_andnot_cardinality) {
     roaring64_bitmap_add(r2, 200000);
     roaring64_bitmap_add(r2, 400000);
 
-    assert_true(roaring64_bitmap_andnot_cardinality(r1, r2) == 2);
+    assert_int_equal(roaring64_bitmap_andnot_cardinality(r1, r2), 2);
 
     roaring64_bitmap_free(r1);
     roaring64_bitmap_free(r2);
@@ -918,8 +918,8 @@ DEFINE_TEST(test_iterate) {
 
     uint64_t sum = 0;
     assert_true(roaring64_bitmap_iterate(r, roaring_iterator64_sumall, &sum));
-    assert_true(sum == ((1ULL << 35) + (1ULL << 35) + 1 + (1ULL << 35) + 2 +
-                        (1ULL << 36)));
+    assert_int_equal(sum, ((1ULL << 35) + (1ULL << 35) + 1 + (1ULL << 35) + 2 +
+                           (1ULL << 36)));
 
     roaring64_bitmap_free(r);
 }
