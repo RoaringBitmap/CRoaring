@@ -292,12 +292,6 @@ uint64_t roaring64_bitmap_maximum(const roaring64_bitmap_t *r);
 bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r);
 
 /**
- * Returns the in-memory size of the bitmap.
- * TODO: Return the serialized size.
- */
-size_t roaring64_bitmap_size_in_bytes(const roaring64_bitmap_t *r);
-
-/**
  * Return true if the two bitmaps contain the same elements.
  */
 bool roaring64_bitmap_equals(const roaring64_bitmap_t *r1,
@@ -454,6 +448,63 @@ void roaring64_bitmap_flip_inplace(roaring64_bitmap_t *r, uint64_t min,
  */
 void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
                                           uint64_t max);
+/**
+ * How many bytes are required to serialize this bitmap.
+ *
+ * This is meant to be compatible with other languages:
+ * https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations
+ */
+size_t roaring64_bitmap_portable_size_in_bytes(const roaring64_bitmap_t *r);
+
+/**
+ * Write a bitmap to a buffer. The output buffer should refer to at least
+ * `roaring64_bitmap_portable_size_in_bytes(r)` bytes of allocated memory.
+ *
+ * Returns how many bytes were written, which should match
+ * `roaring64_bitmap_portable_size_in_bytes(r)`.
+ *
+ * This is meant to be compatible with other languages:
+ * https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations
+ *
+ * This function is endian-sensitive. If you have a big-endian system (e.g., a
+ * mainframe IBM s390x), the data format is going to be big-endian and not
+ * compatible with little-endian systems.
+ */
+size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
+                                           char *buf);
+/**
+ * Check how many bytes would be read (up to maxbytes) at this pointer if there
+ * is a valid bitmap, returns zero if there is no valid bitmap.
+ *
+ * This is meant to be compatible with other languages
+ * https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations
+ */
+size_t roaring64_bitmap_portable_deserialize_size(const char *buf,
+                                                  size_t maxbytes);
+
+/**
+ * Read a bitmap from a serialized buffer safely (reading up to maxbytes).
+ * In case of failure, NULL is returned.
+ *
+ * This is meant to be compatible with other languages
+ * https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations
+ *
+ * The function itself is safe in the sense that it will not cause buffer
+ * overflows. However, for correct operations, it is assumed that the bitmap
+ * read was once serialized from a valid bitmap (i.e., it follows the format
+ * specification). If you provided an incorrect input (garbage), then the bitmap
+ * read may not be in a valid state and following operations may not lead to
+ * sensible results. In particular, the serialized array containers need to be
+ * in sorted order, and the run containers should be in sorted non-overlapping
+ * order. This is is guaranteed to happen when serializing an existing bitmap,
+ * but not for random inputs.
+ *
+ * This function is endian-sensitive. If you have a big-endian system (e.g., a
+ * mainframe IBM s390x), the data format is going to be big-endian and not
+ * compatible with little-endian systems.
+ */
+roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf,
+                                                               size_t maxbytes);
 
 /**
  * Iterate over the bitmap elements. The function `iterator` is called once for
