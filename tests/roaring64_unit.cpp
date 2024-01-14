@@ -148,16 +148,30 @@ DEFINE_TEST(test_add_bulk) {
 }
 
 DEFINE_TEST(test_add_many) {
-    roaring64_bitmap_t* r = roaring64_bitmap_create();
-    std::array<uint64_t, 1000> vals;
-    std::iota(vals.begin(), vals.end(), 0);
+    {
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        std::array<uint64_t, 1000> vals;
+        std::iota(vals.begin(), vals.end(), 0);
 
-    roaring64_bitmap_add_many(r, vals.size(), vals.data());
-    for (uint64_t i = 0; i < 1000; ++i) {
-        assert_true(roaring64_bitmap_contains(r, vals[i]));
+        roaring64_bitmap_add_many(r, vals.size(), vals.data());
+        for (uint64_t i = 0; i < 1000; ++i) {
+            assert_true(roaring64_bitmap_contains(r, vals[i]));
+        }
+
+        roaring64_bitmap_free(r);
     }
 
-    roaring64_bitmap_free(r);
+    {
+        // Add many_where value already exists
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        uint64_t value = 0;
+        roaring64_bitmap_add(r, value);
+        assert_true(roaring64_bitmap_contains(r, value));
+        roaring64_bitmap_add_many(r, 1, &value);
+        assert_true(roaring64_bitmap_contains(r, value));
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 1);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_add_range_closed) {
