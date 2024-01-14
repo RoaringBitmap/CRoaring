@@ -247,8 +247,9 @@ void roaring64_bitmap_add_bulk(roaring64_bitmap_t *r,
     } else {
         // We're not positioned anywhere yet or the high bits of the key
         // differ.
+        leaf_t *leaf = (leaf_t *)art_find(&r->art, high48);
         context->leaf =
-            containerptr_roaring64_bitmap_add(r, high48, low16, NULL);
+            containerptr_roaring64_bitmap_add(r, high48, low16, leaf);
         memcpy(context->high_bytes, high48, ART_KEY_BYTES);
     }
 }
