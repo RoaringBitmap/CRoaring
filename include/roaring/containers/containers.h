@@ -1728,10 +1728,10 @@ static inline container_t *container_lazy_xor(
  * If the returned pointer is identical to c1, then the container has been
  * modified.
  * If the returned pointer is different from c1, then a new container has been
- * created and the caller is responsible for freeing it.
- * The type of the first container may change. Returns the modified
- * (and possibly new) container
-*/
+ * created. The original container is freed by container_ixor.
+ * The type of the first container may change. Returns the modified (and
+ * possibly new) container.
+ */
 static inline container_t *container_ixor(
     container_t *c1, uint8_t type1,
     const container_t *c2, uint8_t type2,
@@ -1960,10 +1960,10 @@ static inline container_t *container_andnot(
  * If the returned pointer is identical to c1, then the container has been
  * modified.
  * If the returned pointer is different from c1, then a new container has been
- * created and the caller is responsible for freeing it.
- * The type of the first container may change. Returns the modified
- * (and possibly new) container
-*/
+ * created. The original container is freed by container_iandnot.
+ * The type of the first container may change. Returns the modified (and
+ * possibly new) container.
+ */
 static inline container_t *container_iandnot(
     container_t *c1, uint8_t type1,
     const container_t *c2, uint8_t type2,

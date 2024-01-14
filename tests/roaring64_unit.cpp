@@ -626,30 +626,43 @@ DEFINE_TEST(test_and_cardinality) {
 }
 
 DEFINE_TEST(test_and_inplace) {
-    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
-    roaring64_bitmap_t* r2 = roaring64_bitmap_create();
+    {
+        roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+        roaring64_bitmap_t* r2 = roaring64_bitmap_create();
 
-    roaring64_bitmap_add(r1, 50000);
-    roaring64_bitmap_add(r1, 100000);
-    roaring64_bitmap_add(r1, 100001);
-    roaring64_bitmap_add(r1, 200000);
-    roaring64_bitmap_add(r1, 300000);
+        roaring64_bitmap_add(r1, 50000);
+        roaring64_bitmap_add(r1, 100000);
+        roaring64_bitmap_add(r1, 100001);
+        roaring64_bitmap_add(r1, 200000);
+        roaring64_bitmap_add(r1, 300000);
 
-    roaring64_bitmap_add(r2, 100001);
-    roaring64_bitmap_add(r2, 200000);
-    roaring64_bitmap_add(r2, 400000);
+        roaring64_bitmap_add(r2, 100001);
+        roaring64_bitmap_add(r2, 200000);
+        roaring64_bitmap_add(r2, 400000);
 
-    roaring64_bitmap_and_inplace(r1, r2);
+        roaring64_bitmap_and_inplace(r1, r2);
 
-    assert_false(roaring64_bitmap_contains(r1, 50000));
-    assert_false(roaring64_bitmap_contains(r1, 100000));
-    assert_true(roaring64_bitmap_contains(r1, 100001));
-    assert_true(roaring64_bitmap_contains(r1, 200000));
-    assert_false(roaring64_bitmap_contains(r1, 300000));
-    assert_false(roaring64_bitmap_contains(r1, 400000));
+        assert_false(roaring64_bitmap_contains(r1, 50000));
+        assert_false(roaring64_bitmap_contains(r1, 100000));
+        assert_true(roaring64_bitmap_contains(r1, 100001));
+        assert_true(roaring64_bitmap_contains(r1, 200000));
+        assert_false(roaring64_bitmap_contains(r1, 300000));
+        assert_false(roaring64_bitmap_contains(r1, 400000));
 
-    roaring64_bitmap_free(r1);
-    roaring64_bitmap_free(r2);
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        // No intersection.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(0, 100, 1);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_from_range(100, 200, 1);
+
+        roaring64_bitmap_and_inplace(r1, r2);
+        assert_true(roaring64_bitmap_is_empty(r1));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
 }
 
 DEFINE_TEST(test_intersect) {
@@ -878,28 +891,41 @@ DEFINE_TEST(test_andnot_cardinality) {
 }
 
 DEFINE_TEST(test_andnot_inplace) {
-    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
-    roaring64_bitmap_t* r2 = roaring64_bitmap_create();
+    {
+        roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+        roaring64_bitmap_t* r2 = roaring64_bitmap_create();
 
-    roaring64_bitmap_add(r1, 100000);
-    roaring64_bitmap_add(r1, 100001);
-    roaring64_bitmap_add(r1, 200000);
-    roaring64_bitmap_add(r1, 300000);
+        roaring64_bitmap_add(r1, 100000);
+        roaring64_bitmap_add(r1, 100001);
+        roaring64_bitmap_add(r1, 200000);
+        roaring64_bitmap_add(r1, 300000);
 
-    roaring64_bitmap_add(r2, 100001);
-    roaring64_bitmap_add(r2, 200000);
-    roaring64_bitmap_add(r2, 400000);
+        roaring64_bitmap_add(r2, 100001);
+        roaring64_bitmap_add(r2, 200000);
+        roaring64_bitmap_add(r2, 400000);
 
-    roaring64_bitmap_andnot_inplace(r1, r2);
+        roaring64_bitmap_andnot_inplace(r1, r2);
 
-    assert_true(roaring64_bitmap_contains(r1, 100000));
-    assert_false(roaring64_bitmap_contains(r1, 100001));
-    assert_false(roaring64_bitmap_contains(r1, 200000));
-    assert_true(roaring64_bitmap_contains(r1, 300000));
-    assert_false(roaring64_bitmap_contains(r1, 400000));
+        assert_true(roaring64_bitmap_contains(r1, 100000));
+        assert_false(roaring64_bitmap_contains(r1, 100001));
+        assert_false(roaring64_bitmap_contains(r1, 200000));
+        assert_true(roaring64_bitmap_contains(r1, 300000));
+        assert_false(roaring64_bitmap_contains(r1, 400000));
 
-    roaring64_bitmap_free(r1);
-    roaring64_bitmap_free(r2);
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        // Two identical bitmaps.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(0, 100, 1);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_from_range(0, 100, 1);
+
+        roaring64_bitmap_andnot_inplace(r1, r2);
+        assert_true(roaring64_bitmap_is_empty(r1));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
 }
 
 bool roaring_iterator64_sumall(uint64_t value, void* param) {
