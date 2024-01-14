@@ -205,6 +205,7 @@ DEFINE_TEST(test_add_range_closed) {
         // Range spans more than two containers.
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, 100, 300000);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 300000 - 100 + 1);
         roaring64_bulk_context_t context{};
         assert_false(roaring64_bitmap_contains_bulk(r, &context, 99));
         for (uint64_t i = 100; i <= 300000; ++i) {
@@ -221,6 +222,15 @@ DEFINE_TEST(test_add_range_closed) {
         assert_int_equal(roaring64_bitmap_get_cardinality(r), 2);
         assert_true(roaring64_bitmap_contains(r, 0));
         assert_true(roaring64_bitmap_contains(r, 100));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Add a range that spans multiple ART levels (end >> 16 == 0x0101)
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        uint64_t end = 0x101ffff;
+        uint64_t start = 0;
+        roaring64_bitmap_add_range_closed(r, start, end);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), end - start + 1);
         roaring64_bitmap_free(r);
     }
 }
