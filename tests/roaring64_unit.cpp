@@ -199,6 +199,16 @@ DEFINE_TEST(test_add_range_closed) {
         assert_false(roaring64_bitmap_contains_bulk(r, &context, 300001));
         roaring64_bitmap_free(r);
     }
+    {
+        // Add range to existing container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add(r, 100);
+        roaring64_bitmap_add_range_closed(r, 0, 0);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 2);
+        assert_true(roaring64_bitmap_contains(r, 0));
+        assert_true(roaring64_bitmap_contains(r, 100));
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_contains_bulk) {

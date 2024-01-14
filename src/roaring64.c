@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <roaring/art/art.h>
 #include <roaring/containers/containers.h>
-#include <roaring/roaring64.h>
 #include <roaring/portability.h>
+#include <roaring/roaring64.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
@@ -272,7 +272,7 @@ static inline void add_range_closed_at(art_t *art, uint8_t *high48,
     if (leaf != NULL) {
         uint8_t typecode2;
         container_t *container2 = container_add_range(
-            leaf->container, leaf->typecode, min, max + 1, &typecode2);
+            leaf->container, leaf->typecode, min, max, &typecode2);
         if (container2 != leaf->container) {
             container_free(leaf->container, leaf->typecode);
             leaf->container = container2;
@@ -281,6 +281,8 @@ static inline void add_range_closed_at(art_t *art, uint8_t *high48,
         return;
     }
     uint8_t typecode;
+    // container_add_range is inclusive, but `container_range_of_ones` is
+    // exclusive.
     container_t *container = container_range_of_ones(min, max + 1, &typecode);
     leaf = create_leaf(container, typecode);
     art_insert(art, high48, (art_val_t *)leaf);
@@ -531,8 +533,6 @@ static inline void remove_range_closed_at(art_t *art, uint8_t *high48,
         return;
     }
     uint8_t typecode2;
-    // container_add_range is exclusive but container_remove_range is
-    // inclusive...
     container_t *container2 = container_remove_range(
         leaf->container, leaf->typecode, min, max, &typecode2);
     if (container2 != leaf->container) {
