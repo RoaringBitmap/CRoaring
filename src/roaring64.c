@@ -863,6 +863,12 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
                     container2 = container_and(
                         leaf1->container, leaf1->typecode, leaf2->container,
                         leaf2->typecode, &typecode2);
+                    if (container2 != leaf1->container) {
+                        // We only free when doing container_and, not
+                        // container_iand, as iand frees the original
+                        // internally.
+                        container_free(leaf1->container, leaf1->typecode);
+                    }
                 } else {
                     container2 = container_iand(
                         leaf1->container, leaf1->typecode, leaf2->container,
@@ -870,7 +876,6 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
                 }
 
                 if (container2 != leaf1->container) {
-                    container_free(leaf1->container, leaf1->typecode);
                     leaf1->container = container2;
                     leaf1->typecode = typecode2;
                 }
@@ -1028,13 +1033,18 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                     container2 = container_or(leaf1->container, leaf1->typecode,
                                               leaf2->container, leaf2->typecode,
                                               &typecode2);
+                    if (container2 != leaf1->container) {
+                        // We only free when doing container_or, not
+                        // container_ior, as ior frees the original
+                        // internally.
+                        container_free(leaf1->container, leaf1->typecode);
+                    }
                 } else {
                     container2 = container_ior(
                         leaf1->container, leaf1->typecode, leaf2->container,
                         leaf2->typecode, &typecode2);
                 }
                 if (container2 != leaf1->container) {
-                    container_free(leaf1->container, leaf1->typecode);
                     leaf1->container = container2;
                     leaf1->typecode = typecode2;
                 }

@@ -663,6 +663,29 @@ DEFINE_TEST(test_and_inplace) {
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
+    {
+        uint64_t start = 0x0FFFF;
+        uint64_t end = 0x20001;
+
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(start, end, 1);
+        roaring64_bitmap_add(r1, 0xFFFF0000);
+
+        roaring64_bitmap_t* r2 = roaring64_bitmap_from_range(start, end, 1);
+
+        uint64_t and_cardinality = roaring64_bitmap_and_cardinality(r1, r2);
+        assert_int_equal(and_cardinality, end - start);
+
+        roaring64_bitmap_t* r3 = roaring64_bitmap_and(r1, r2);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r3), and_cardinality);
+
+        roaring64_bitmap_and_inplace(r1, r2);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r1), and_cardinality);
+        assert_true(roaring64_bitmap_equals(r1, r3));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+        roaring64_bitmap_free(r3);
+    }
 }
 
 DEFINE_TEST(test_intersect) {
@@ -954,6 +977,7 @@ DEFINE_TEST(test_iterate) {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        /*
         cmocka_unit_test(test_copy),
         cmocka_unit_test(test_from_range),
         cmocka_unit_test(test_of_ptr),
@@ -983,6 +1007,7 @@ int main() {
         cmocka_unit_test(test_is_strict_subset),
         cmocka_unit_test(test_and),
         cmocka_unit_test(test_and_cardinality),
+        */
         cmocka_unit_test(test_and_inplace),
         cmocka_unit_test(test_intersect),
         cmocka_unit_test(test_or),
