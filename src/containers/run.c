@@ -695,7 +695,8 @@ bool run_container_validate(const run_container_t *run, const char **reason) {
     }
 
     if (run->n_runs == 0) {
-        return true;
+        *reason = "zero run count";
+        return false;
     }
     if (run->runs == NULL) {
         *reason = "NULL runs";

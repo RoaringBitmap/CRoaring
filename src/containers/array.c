@@ -465,7 +465,8 @@ bool array_container_validate(const array_container_t *v, const char **reason) {
         return false;
     }
     if (v->cardinality == 0) {
-        return true;
+        *reason = "zero cardinality";
+        return false;
     }
 
     if (v->array == NULL) {
