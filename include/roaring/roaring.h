@@ -860,6 +860,9 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
 
 /**
  * Perform internal consistency checks. Returns true if the bitmap is consistent.
+ * It may be useful to call this after deserializing bitmaps from untrusted sources.
+ * If roaring_bitmap_internal_validate returns true, then the bitmap should be consistent
+ * and can be trusted not to cause crashes or memory corruption.
  *
  * Note that some operations intentionally leave bitmaps in an inconsistent state temporarily,
  * for example, `roaring_bitmap_lazy_*` functions, until `roaring_bitmap_repair_after_lazy` is called.

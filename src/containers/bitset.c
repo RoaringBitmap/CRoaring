@@ -1015,7 +1015,7 @@ bool bitset_container_validate(const bitset_container_t *v, const char **reason)
         return false;
     }
     if (v->cardinality <= DEFAULT_MAX_SIZE) {
-        *reason = "cardinality is too small";
+        *reason = "cardinality is too small for a bitmap container";
         return false;
     }
     // Attempt to forcibly load the first and last words, hopefully causing
