@@ -4778,7 +4778,6 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(issue_15jan2024),
         cmocka_unit_test(issue538b),
         cmocka_unit_test(issue538),
         cmocka_unit_test(simple_roaring_bitmap_or_many),
@@ -4929,6 +4928,7 @@ int main() {
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
         cmocka_unit_test(test_portable_deserialize_frozen),
+        cmocka_unit_test(issue_15jan2024),
 #endif
     };
 
