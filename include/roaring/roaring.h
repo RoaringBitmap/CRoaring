@@ -568,6 +568,10 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
  * run containers should be in sorted non-overlapping order. This is is guaranteed to
  * happen when serializing an existing bitmap, but not for random inputs.
  *
+ * You may use roaring_bitmap_internal_validate to check the validity of the bitmap prior
+ * to using it. You may also use other strategies to check for corrupted inputs (e.g.,
+ * checksums).
+ *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x),
  * the data format is going to be big-endian and not compatible with little-endian systems.
  */

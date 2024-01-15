@@ -4758,10 +4758,27 @@ DEFINE_TEST(issue538b) {
   roaring_bitmap_free(expected);
 }
 
+DEFINE_TEST(issue_15jan2024) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_add(r1, 1);
+    // Serialized bitmap data
+    char diff_bitmap[] = {
+        0x3b, 0x30, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    roaring_bitmap_t *r2 = roaring_bitmap_portable_deserialize_safe(diff_bitmap, sizeof(diff_bitmap));
+    assert_true (r2 != NULL);
+    const char *reason = NULL;
+    assert_false(roaring_bitmap_internal_validate(r2, &reason));
+    printf("reason = %s\n", reason);
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue_15jan2024),
         cmocka_unit_test(issue538b),
         cmocka_unit_test(issue538),
         cmocka_unit_test(simple_roaring_bitmap_or_many),
