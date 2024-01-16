@@ -247,12 +247,12 @@ struct iterate_all64 {
         uint64_t marker = 0;
         for (size_t i = 0; i < count; ++i) {
             roaring64_bitmap_t *r = bitmaps64[i];
-            roaring64_iterator_t *it = roaring64_create_iterator(r);
+            roaring64_iterator_t *it = roaring64_iterator_create(r);
             while (roaring64_iterator_has_value(it)) {
                 marker++;
-                roaring64_advance_iterator(it);
+                roaring64_iterator_advance(it);
             }
-            roaring64_free_iterator(it);
+            roaring64_iterator_free(it);
         }
         return marker;
     }

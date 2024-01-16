@@ -1361,7 +1361,7 @@ static inline bool roaring64_iterator_init_at_leaf_last(
     return (it->has_value = true);
 }
 
-static inline roaring64_iterator_t *roaring64_create_iterator_at(
+static inline roaring64_iterator_t *roaring64_iterator_create_at(
     const roaring64_bitmap_t *r, bool first) {
     roaring64_iterator_t *it =
         (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
@@ -1378,23 +1378,23 @@ static inline roaring64_iterator_t *roaring64_create_iterator_at(
     return it;
 }
 
-roaring64_iterator_t *roaring64_create_iterator(const roaring64_bitmap_t *r) {
-    return roaring64_create_iterator_at(r, /*first=*/true);
+roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
+    return roaring64_iterator_create_at(r, /*first=*/true);
 }
 
-roaring64_iterator_t *roaring64_create_iterator_last(
+roaring64_iterator_t *roaring64_iterator_create_last(
     const roaring64_bitmap_t *r) {
-    return roaring64_create_iterator_at(r, /*first=*/false);
+    return roaring64_iterator_create_at(r, /*first=*/false);
 }
 
-roaring64_iterator_t *roaring64_copy_iterator(const roaring64_iterator_t *it) {
+roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it) {
     roaring64_iterator_t *new_it =
         (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
     memcpy(new_it, it, sizeof(*it));
     return new_it;
 }
 
-void roaring64_free_iterator(roaring64_iterator_t *it) { roaring_free(it); }
+void roaring64_iterator_free(roaring64_iterator_t *it) { roaring_free(it); }
 
 bool roaring64_iterator_has_value(const roaring64_iterator_t *it) {
     return it->has_value;
@@ -1404,7 +1404,7 @@ uint64_t roaring64_iterator_value(const roaring64_iterator_t *it) {
     return it->value;
 }
 
-bool roaring64_advance_iterator(roaring64_iterator_t *it) {
+bool roaring64_iterator_advance(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
         return (it->has_value = false);
     }
@@ -1421,7 +1421,7 @@ bool roaring64_advance_iterator(roaring64_iterator_t *it) {
     return roaring64_iterator_init_at_leaf_first(it);
 }
 
-bool roaring64_previous_iterator(roaring64_iterator_t *it) {
+bool roaring64_iterator_previous(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
         return (it->has_value = false);
     }
@@ -1438,7 +1438,7 @@ bool roaring64_previous_iterator(roaring64_iterator_t *it) {
     return roaring64_iterator_init_at_leaf_last(it);
 }
 
-bool roaring64_move_iterator_equalorlarger(roaring64_iterator_t *it,
+bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
                                            uint64_t val) {
     if (it->art_it.value == NULL) {
         return (it->has_value = false);
@@ -1477,7 +1477,7 @@ bool roaring64_move_iterator_equalorlarger(roaring64_iterator_t *it,
     return roaring64_iterator_init_at_leaf_first(it);
 }
 
-uint64_t roaring64_read_iterator(roaring64_iterator_t *it, uint64_t *buf,
+uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
                                  uint64_t count) {
     uint64_t consumed = 0;
     while (it->has_value && consumed < count) {
