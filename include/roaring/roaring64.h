@@ -403,6 +403,20 @@ roaring64_iterator_t *roaring64_iterator_create_last(
     const roaring64_bitmap_t *r);
 
 /**
+ * Re-initializes an existing iterator. Functionally the same as
+ * `roaring64_iterator_create` without a allocation.
+ */
+void roaring64_iterator_reinit(const roaring64_bitmap_t *r,
+                               roaring64_iterator_t *it);
+
+/**
+ * Re-initializes an existing iterator. Functionally the same as
+ * `roaring64_iterator_create_last` without a allocation.
+ */
+void roaring64_iterator_reinit_last(const roaring64_bitmap_t *r,
+                                    roaring64_iterator_t *it);
+
+/**
  * Creates a copy of the iterator. Caller is responsible for calling
  * `roaring64_iterator_free()` on the resulting iterator.
  */

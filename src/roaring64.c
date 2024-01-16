@@ -1361,10 +1361,8 @@ static inline bool roaring64_iterator_init_at_leaf_last(
     return (it->has_value = true);
 }
 
-static inline roaring64_iterator_t *roaring64_iterator_create_at(
-    const roaring64_bitmap_t *r, bool first) {
-    roaring64_iterator_t *it =
-        (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+static inline roaring64_iterator_t *roaring64_iterator_init_at(
+    const roaring64_bitmap_t *r, roaring64_iterator_t *it, bool first) {
     it->parent = r;
     it->art_it = art_init_iterator(&r->art, first);
     it->has_value = it->art_it.value != NULL;
@@ -1379,12 +1377,26 @@ static inline roaring64_iterator_t *roaring64_iterator_create_at(
 }
 
 roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
-    return roaring64_iterator_create_at(r, /*first=*/true);
+    roaring64_iterator_t *it =
+        (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    return roaring64_iterator_init_at(r, it, /*first=*/true);
 }
 
 roaring64_iterator_t *roaring64_iterator_create_last(
     const roaring64_bitmap_t *r) {
-    return roaring64_iterator_create_at(r, /*first=*/false);
+    roaring64_iterator_t *it =
+        (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    return roaring64_iterator_init_at(r, it, /*first=*/false);
+}
+
+void roaring64_iterator_reinit(const roaring64_bitmap_t *r,
+                               roaring64_iterator_t *it) {
+    roaring64_iterator_init_at(r, it, /*first=*/true);
+}
+
+void roaring64_iterator_reinit_last(const roaring64_bitmap_t *r,
+                                    roaring64_iterator_t *it) {
+    roaring64_iterator_init_at(r, it, /*first=*/false);
 }
 
 roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it) {

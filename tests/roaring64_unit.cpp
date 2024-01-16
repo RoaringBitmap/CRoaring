@@ -937,6 +937,56 @@ DEFINE_TEST(test_iterator_create_last) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_iterator_reinit) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1ULL << 35);
+    roaring64_bitmap_add(r, (1ULL << 35) + 1);
+    roaring64_bitmap_add(r, (1ULL << 35) + 2);
+    roaring64_bitmap_add(r, (1ULL << 36));
+
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    assert_true(roaring64_iterator_advance(it));
+    assert_true(roaring64_iterator_advance(it));
+    assert_true(roaring64_iterator_advance(it));
+    assert_true(roaring64_iterator_previous(it));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), ((1ULL << 35) + 1));
+
+    roaring64_iterator_reinit(r, it);
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), 0);
+
+    roaring64_iterator_free(it);
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_iterator_reinit_last) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1ULL << 35);
+    roaring64_bitmap_add(r, (1ULL << 35) + 1);
+    roaring64_bitmap_add(r, (1ULL << 35) + 2);
+    roaring64_bitmap_add(r, (1ULL << 36));
+
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    assert_true(roaring64_iterator_advance(it));
+    assert_true(roaring64_iterator_advance(it));
+    assert_true(roaring64_iterator_advance(it));
+    assert_true(roaring64_iterator_previous(it));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), ((1ULL << 35) + 1));
+
+    roaring64_iterator_reinit_last(r, it);
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), (1ULL << 36));
+
+    roaring64_iterator_free(it);
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_iterator_copy) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
@@ -1138,6 +1188,8 @@ int main() {
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterator_create),
         cmocka_unit_test(test_iterator_create_last),
+        cmocka_unit_test(test_iterator_reinit),
+        cmocka_unit_test(test_iterator_reinit_last),
         cmocka_unit_test(test_iterator_copy),
         cmocka_unit_test(test_iterator_advance),
         cmocka_unit_test(test_iterator_previous),
