@@ -1178,7 +1178,15 @@ static void art_node_print_type(const art_node_t *node) {
 }
 
 void art_node_printf(const art_node_t *node, uint8_t depth) {
-    printf("%*s", depth, "");
+    if (art_is_leaf(node)) {
+        printf("{ type: Leaf, key: ");
+        art_leaf_t *leaf = CAST_LEAF(node);
+        for (size_t i = 0; i < ART_KEY_BYTES; ++i) {
+            printf("%02x", (char)(leaf->key[i]));
+        }
+        printf(" }\n");
+        return;
+    }
     printf("{\n");
     depth++;
 
@@ -1187,19 +1195,6 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
     art_node_print_type(node);
     printf("\n");
 
-    if (art_is_leaf(node)) {
-        art_leaf_t *leaf = CAST_LEAF(node);
-        printf("%*s", depth, "");
-        printf("key: ");
-        for (size_t i = 0; i < ART_KEY_BYTES; ++i) {
-            printf("%x", leaf->key[i]);
-        }
-        printf("\n");
-        depth--;
-        printf("%*s", depth, "");
-        printf("}\n");
-        return;
-    }
     art_inner_node_t *inner_node = (art_inner_node_t *)node;
     printf("%*s", depth, "");
     printf("prefix_size: %d\n", inner_node->prefix_size);
@@ -1207,7 +1202,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
     printf("%*s", depth, "");
     printf("prefix: ");
     for (uint8_t i = 0; i < inner_node->prefix_size; ++i) {
-        printf("%x", (char)inner_node->prefix[i]);
+        printf("%02x", (char)inner_node->prefix[i]);
     }
     printf("\n");
 
@@ -1216,7 +1211,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
             art_node4_t *node4 = (art_node4_t *)node;
             for (uint8_t i = 0; i < node4->count; ++i) {
                 printf("%*s", depth, "");
-                printf("key: %x\n", node4->keys[i]);
+                printf("key: %02x ", node4->keys[i]);
                 art_node_printf(node4->children[i], depth);
             }
         } break;
@@ -1224,7 +1219,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
             art_node16_t *node16 = (art_node16_t *)node;
             for (uint8_t i = 0; i < node16->count; ++i) {
                 printf("%*s", depth, "");
-                printf("key: %x\n", node16->keys[i]);
+                printf("key: %02x ", node16->keys[i]);
                 art_node_printf(node16->children[i], depth);
             }
         } break;
@@ -1233,7 +1228,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
             for (int i = 0; i < 256; ++i) {
                 if (node48->keys[i] != ART_NODE48_EMPTY_VAL) {
                     printf("%*s", depth, "");
-                    printf("key: %x\n", node48->keys[i]);
+                    printf("key: %02x ", node48->keys[i]);
                     art_node_printf(node48->children[i], depth);
                 }
             }
@@ -1243,7 +1238,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
             for (int i = 0; i < 256; ++i) {
                 if (node256->children[i] != NULL) {
                     printf("%*s", depth, "");
-                    printf("key: %x\n", i);
+                    printf("key: %02x ", i);
                     art_node_printf(node256->children[i], depth);
                 }
             }
