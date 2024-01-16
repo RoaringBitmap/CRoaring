@@ -1637,7 +1637,7 @@ bool roaring_iterate64(const roaring_bitmap_t *r, roaring_iterator64 iterator,
  * 1. Invalid due to `has_value = false`, or
  * 2. At a container, with the high bits set, `has_value = true`.
  */
-static bool iter_new_container_partial_init(roaring_uint32_iterator_t *newit) {
+CROARING_WARN_UNUSED static bool iter_new_container_partial_init(roaring_uint32_iterator_t *newit) {
     newit->current_value = 0;
     if (newit->container_index >= newit->parent->high_low_container.size ||
         newit->container_index < 0) {
@@ -1666,7 +1666,7 @@ static bool iter_new_container_partial_init(roaring_uint32_iterator_t *newit) {
  * Positions the iterator at the first value of the current container that the
  * iterator points at, if available.
  */
-static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
+CROARING_WARN_UNUSED static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
         uint16_t value = 0;
         newit->container_it =
@@ -1680,7 +1680,7 @@ static bool loadfirstvalue(roaring_uint32_iterator_t *newit) {
  * Positions the iterator at the last value of the current container that the
  * iterator points at, if available.
  */
-static bool loadlastvalue(roaring_uint32_iterator_t *newit) {
+CROARING_WARN_UNUSED static bool loadlastvalue(roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
         uint16_t value = 0;
         newit->container_it =
@@ -1695,16 +1695,18 @@ static bool loadlastvalue(roaring_uint32_iterator_t *newit) {
  * `val` within the current container that the iterator points at. Assumes such
  * a value exists within the current container.
  */
-static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit,
+CROARING_WARN_UNUSED static bool loadfirstvalue_largeorequal(roaring_uint32_iterator_t *newit,
                                         uint32_t val) {
     bool partial_init = iter_new_container_partial_init(newit);
     assert(partial_init);
+    if(!partial_init) { return false; }
     uint16_t value = 0;
     newit->container_it =
         container_init_iterator(newit->container, newit->typecode, &value);
     bool found = container_iterator_lower_bound(
         newit->container, newit->typecode, &newit->container_it, &value, val & 0xFFFF);
     assert(found);
+    if(!found) { return false; }
     newit->current_value = newit->highbits | value;
     return true;
 }

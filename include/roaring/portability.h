@@ -239,9 +239,9 @@ inline int roaring_leading_zeroes(unsigned long long input_num) { return __built
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#define WARN_UNUSED __attribute__((warn_unused_result))
+#define CROARING_WARN_UNUSED __attribute__((warn_unused_result))
 #else
-#define WARN_UNUSED
+#define CROARING_WARN_UNUSED
 #endif
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
