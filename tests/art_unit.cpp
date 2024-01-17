@@ -254,22 +254,40 @@ DEFINE_TEST(test_art_iterator_prev) {
 }
 
 DEFINE_TEST(test_art_iterator_lower_bound) {
-    std::vector<const char*> keys = {
-        "000001", "000002", "000003", "000004", "001005",
-    };
-    std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
-    art_t art{NULL};
-    for (size_t i = 0; i < keys.size(); ++i) {
-        art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
-    }
+    {
+        std::vector<const char*> keys = {
+            "000001", "000002", "000003", "000004", "001005",
+        };
+        std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
+        art_t art{NULL};
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+        }
 
-    art_iterator_t iterator = art_init_iterator(&art, true);
-    assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)keys[2]));
-    assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
-    const char* key = "000005";
-    assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
-    assert_key_eq(iterator.key, (art_key_chunk_t*)keys[4]);
-    art_free(&art);
+        art_iterator_t iterator = art_init_iterator(&art, true);
+        assert_true(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)keys[2]));
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
+        const char* key = "000005";
+        assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[4]);
+        art_free(&art);
+    }
+    {
+        // Lower bound search within a node's children.
+        std::vector<const char*> keys = {"000001", "000003", "000004",
+                                         "001005"};
+        std::vector<Value> values = {{1}, {3}, {4}, {5}};
+        art_t art{NULL};
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+        }
+        art_iterator_t iterator = art_init_iterator(&art, true);
+        const char* key = "000002";
+        assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[1]);
+        art_free(&art);
+    }
 }
 
 DEFINE_TEST(test_art_lower_bound) {

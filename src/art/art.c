@@ -1458,8 +1458,9 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
             return art_iterator_move(iterator, true);
         }
         if (indexed_child.key_chunk > key_chunk) {
-            // Only larger children, return the first leaf from the node.
-            return art_node_init_iterator(node, iterator, true);
+            // Only larger children, return the first larger child.
+            art_iterator_down(iterator, inner_node, indexed_child.index);
+            return art_node_init_iterator(indexed_child.child, iterator, true);
         }
         // We found a child with an equal prefix.
         art_iterator_down(iterator, inner_node, indexed_child.index);
