@@ -242,6 +242,24 @@ struct iterate_all {
 auto IterateAll = BasicBench<iterate_all>;
 BENCHMARK(IterateAll);
 
+struct iterate_all64 {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < count; ++i) {
+            roaring64_bitmap_t *r = bitmaps64[i];
+            roaring64_iterator_t *it = roaring64_iterator_create(r);
+            while (roaring64_iterator_has_value(it)) {
+                marker++;
+                roaring64_iterator_advance(it);
+            }
+            roaring64_iterator_free(it);
+        }
+        return marker;
+    }
+};
+auto IterateAll64 = BasicBench<iterate_all64>;
+BENCHMARK(IterateAll64);
+
 struct compute_cardinality {
     static uint64_t run() {
         uint64_t marker = 0;

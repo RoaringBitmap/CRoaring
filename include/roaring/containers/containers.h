@@ -2574,6 +2574,18 @@ bool container_iterator_read_into_uint32(const container_t *c, uint8_t typecode,
                                          uint32_t count, uint32_t *consumed,
                                          uint16_t *value_out);
 
+/**
+ * Reads up to `count` entries from the container, and writes them into `buf`
+ * as `high48 | entry`. Returns true and sets `value_out` if a value is present
+ * after reading the entries. Sets `consumed` to the number of values read.
+ * `count` should be greater than zero.
+ */
+bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
+                                         roaring_container_iterator_t *it,
+                                         uint64_t high48, uint64_t *buf,
+                                         uint64_t count, uint32_t *consumed,
+                                         uint16_t *value_out);
+
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
 #endif

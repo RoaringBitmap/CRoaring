@@ -15,10 +15,7 @@ namespace roaring {
 namespace api {
 #endif
 
-// TODO: Iteration.
-//  * Need to create a container iterator which can be used across 32 and 64 bit
-//    bitmaps.
-//  * Iteration-based functions like roaring64_bitmap_intersect_with_range.
+// TODO: Iteration-based functions like roaring64_bitmap_intersect_with_range.
 // TODO: Copy on write.
 // TODO: Serialization.
 // TODO: Error on failed allocation.
@@ -38,6 +35,17 @@ typedef struct roaring64_leaf_s {
 // Alias to make it easier to work with, since it's an internal-only type
 // anyway.
 typedef struct roaring64_leaf_s leaf_t;
+
+// Iterator struct to hold iteration state.
+typedef struct roaring64_iterator_s {
+    const roaring64_bitmap_t *parent;
+    art_iterator_t art_it;
+    roaring_container_iterator_t container_it;
+    uint64_t high48;  // Key that art_it points to.
+
+    uint64_t value;
+    bool has_value;
+} roaring64_iterator_t;
 
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
 // Expects high48_out to be of length ART_KEY_BYTES.
@@ -1335,6 +1343,182 @@ bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
         art_iterator_next(&it);
     }
     return true;
+}
+
+static inline bool roaring64_iterator_init_at_leaf_first(
+    roaring64_iterator_t *it) {
+    it->high48 = combine_key(it->art_it.key, 0);
+    leaf_t *leaf = (leaf_t *)it->art_it.value;
+    uint16_t low16 = 0;
+    it->container_it =
+        container_init_iterator(leaf->container, leaf->typecode, &low16);
+    it->value = it->high48 | low16;
+    return (it->has_value = true);
+}
+
+static inline bool roaring64_iterator_init_at_leaf_last(
+    roaring64_iterator_t *it) {
+    it->high48 = combine_key(it->art_it.key, 0);
+    leaf_t *leaf = (leaf_t *)it->art_it.value;
+    uint16_t low16 = 0;
+    it->container_it =
+        container_init_iterator_last(leaf->container, leaf->typecode, &low16);
+    it->value = it->high48 | low16;
+    return (it->has_value = true);
+}
+
+static inline roaring64_iterator_t *roaring64_iterator_init_at(
+    const roaring64_bitmap_t *r, roaring64_iterator_t *it, bool first) {
+    it->parent = r;
+    it->art_it = art_init_iterator(&r->art, first);
+    it->has_value = it->art_it.value != NULL;
+    if (it->has_value) {
+        if (first) {
+            roaring64_iterator_init_at_leaf_first(it);
+        } else {
+            roaring64_iterator_init_at_leaf_last(it);
+        }
+    }
+    return it;
+}
+
+roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
+    roaring64_iterator_t *it =
+        (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    return roaring64_iterator_init_at(r, it, /*first=*/true);
+}
+
+roaring64_iterator_t *roaring64_iterator_create_last(
+    const roaring64_bitmap_t *r) {
+    roaring64_iterator_t *it =
+        (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    return roaring64_iterator_init_at(r, it, /*first=*/false);
+}
+
+void roaring64_iterator_reinit(const roaring64_bitmap_t *r,
+                               roaring64_iterator_t *it) {
+    roaring64_iterator_init_at(r, it, /*first=*/true);
+}
+
+void roaring64_iterator_reinit_last(const roaring64_bitmap_t *r,
+                                    roaring64_iterator_t *it) {
+    roaring64_iterator_init_at(r, it, /*first=*/false);
+}
+
+roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it) {
+    roaring64_iterator_t *new_it =
+        (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    memcpy(new_it, it, sizeof(*it));
+    return new_it;
+}
+
+void roaring64_iterator_free(roaring64_iterator_t *it) { roaring_free(it); }
+
+bool roaring64_iterator_has_value(const roaring64_iterator_t *it) {
+    return it->has_value;
+}
+
+uint64_t roaring64_iterator_value(const roaring64_iterator_t *it) {
+    return it->value;
+}
+
+bool roaring64_iterator_advance(roaring64_iterator_t *it) {
+    if (it->art_it.value == NULL) {
+        return (it->has_value = false);
+    }
+    leaf_t *leaf = (leaf_t *)it->art_it.value;
+    uint16_t low16 = (uint16_t)it->value;
+    if (container_iterator_next(leaf->container, leaf->typecode,
+                                &it->container_it, &low16)) {
+        it->value = it->high48 | low16;
+        return (it->has_value = true);
+    }
+    if (!art_iterator_next(&it->art_it)) {
+        return (it->has_value = false);
+    }
+    return roaring64_iterator_init_at_leaf_first(it);
+}
+
+bool roaring64_iterator_previous(roaring64_iterator_t *it) {
+    if (it->art_it.value == NULL) {
+        return (it->has_value = false);
+    }
+    leaf_t *leaf = (leaf_t *)it->art_it.value;
+    uint16_t low16 = (uint16_t)it->value;
+    if (container_iterator_prev(leaf->container, leaf->typecode,
+                                &it->container_it, &low16)) {
+        it->value = it->high48 | low16;
+        return (it->has_value = true);
+    }
+    if (!art_iterator_prev(&it->art_it)) {
+        return (it->has_value = false);
+    }
+    return roaring64_iterator_init_at_leaf_last(it);
+}
+
+bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
+                                           uint64_t val) {
+    if (it->art_it.value == NULL) {
+        return (it->has_value = false);
+    }
+
+    uint8_t val_high48[ART_KEY_BYTES];
+    uint16_t val_low16 = split_key(val, val_high48);
+    if (it->high48 < (val & 0xFFFFFFFFFFFF0000)) {
+        // The ART iterator is before the high48 bits of `val`, so we need to
+        // move to a leaf with a key equal or greater.
+        if (!art_iterator_lower_bound(&it->art_it, val_high48)) {
+            // Only smaller keys found.
+            return (it->has_value = false);
+        }
+    }
+
+    if (it->high48 == (val & 0xFFFFFFFFFFFF0000)) {
+        // We're at equal high bits, check if a suitable value can be found in
+        // this container.
+        leaf_t *leaf = (leaf_t *)it->art_it.value;
+        uint16_t low16 = (uint16_t)it->value;
+        if (container_iterator_lower_bound(leaf->container, leaf->typecode,
+                                           &it->container_it, &low16,
+                                           val_low16)) {
+            it->value = it->high48 | low16;
+            return (it->has_value = true);
+        }
+        // Only smaller entries in this container, move to the next.
+        if (!art_iterator_next(&it->art_it)) {
+            return (it->has_value = false);
+        }
+    }
+
+    // We're at a leaf with high bits greater than `val`, so the first entry in
+    // this container is our result.
+    return roaring64_iterator_init_at_leaf_first(it);
+}
+
+uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
+                                 uint64_t count) {
+    uint64_t consumed = 0;
+    while (it->has_value && consumed < count) {
+        uint32_t container_consumed;
+        leaf_t *leaf = (leaf_t *)it->art_it.value;
+        uint16_t low16 = (uint16_t)it->value;
+        bool has_value = container_iterator_read_into_uint64(
+            leaf->container, leaf->typecode, &it->container_it, it->high48, buf,
+            count - consumed, &container_consumed, &low16);
+        consumed += container_consumed;
+        buf += container_consumed;
+        if (has_value) {
+            it->has_value = true;
+            it->value = it->high48 | low16;
+            assert(consumed == count);
+            return consumed;
+        }
+        it->has_value = art_iterator_next(&it->art_it);
+        if (it->has_value) {
+            roaring64_iterator_init_at_leaf_first(it);
+        }
+    }
+    return consumed;
 }
 
 #ifdef __cplusplus

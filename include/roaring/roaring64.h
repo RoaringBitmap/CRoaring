@@ -15,6 +15,7 @@ namespace api {
 
 typedef struct roaring64_bitmap_s roaring64_bitmap_t;
 typedef struct roaring64_leaf_s roaring64_leaf_t;
+typedef struct roaring64_iterator_s roaring64_iterator_t;
 
 /**
  * A bit of context usable with `roaring64_bitmap_*_bulk()` functions.
@@ -379,6 +380,106 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
  */
 bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
                               roaring_iterator64 iterator, void *ptr);
+
+/**
+ * Create an iterator object that can be used to iterate through the values.
+ * Caller is responsible for calling `roaring64_iterator_free()`.
+ *
+ * The iterator is initialized. If there is a value, then this iterator points
+ * to the first value and `roaring64_iterator_has_value()` returns true. The
+ * value can be retrieved with `roaring64_iterator_value()`.
+ */
+roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r);
+
+/**
+ * Create an iterator object that can be used to iterate through the values.
+ * Caller is responsible for calling `roaring64_iterator_free()`.
+ *
+ * The iterator is initialized. If there is a value, then this iterator points
+ * to the last value and `roaring64_iterator_has_value()` returns true. The
+ * value can be retrieved with `roaring64_iterator_value()`.
+ */
+roaring64_iterator_t *roaring64_iterator_create_last(
+    const roaring64_bitmap_t *r);
+
+/**
+ * Re-initializes an existing iterator. Functionally the same as
+ * `roaring64_iterator_create` without a allocation.
+ */
+void roaring64_iterator_reinit(const roaring64_bitmap_t *r,
+                               roaring64_iterator_t *it);
+
+/**
+ * Re-initializes an existing iterator. Functionally the same as
+ * `roaring64_iterator_create_last` without a allocation.
+ */
+void roaring64_iterator_reinit_last(const roaring64_bitmap_t *r,
+                                    roaring64_iterator_t *it);
+
+/**
+ * Creates a copy of the iterator. Caller is responsible for calling
+ * `roaring64_iterator_free()` on the resulting iterator.
+ */
+roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it);
+
+/**
+ * Free the iterator.
+ */
+void roaring64_iterator_free(roaring64_iterator_t *it);
+
+/**
+ * Returns true if the iterator currently points to a value. If so, calling
+ * `roaring64_iterator_value()` returns the value.
+ */
+bool roaring64_iterator_has_value(const roaring64_iterator_t *it);
+
+/**
+ * Returns the value the iterator currently points to. Should only be called if
+ * `roaring64_iterator_has_value()` returns true.
+ */
+uint64_t roaring64_iterator_value(const roaring64_iterator_t *it);
+
+/**
+ * Advance the iterator. If there is a new value, then
+ * `roaring64_iterator_has_value()` returns true. Values are traversed in
+ * increasing order. For convenience, returns the result of
+ * `roaring64_iterator_has_value()`.
+ *
+ * Once this returns false, `roaring64_iterator_advance` should not be called on
+ * the iterator again. Calling `roaring64_iterator_previous` is allowed.
+ */
+bool roaring64_iterator_advance(roaring64_iterator_t *it);
+
+/**
+ * Decrement the iterator. If there is a new value, then
+ * `roaring64_iterator_has_value()` returns true. Values are traversed in
+ * decreasing order. For convenience, returns the result of
+ * `roaring64_iterator_has_value()`.
+ *
+ * Once this returns false, `roaring64_iterator_previous` should not be called
+ * on the iterator again. Calling `roaring64_iterator_advance` is allowed.
+ */
+bool roaring64_iterator_previous(roaring64_iterator_t *it);
+
+/**
+ * Move the iterator to the first value greater than or equal to `val`, if it
+ * exists at or after the current position of the iterator. If there is a new
+ * value, then `roaring64_iterator_has_value()` returns true. Values are
+ * traversed in increasing order. For convenience, returns the result of
+ * `roaring64_iterator_has_value()`.
+ */
+bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
+                                           uint64_t val);
+
+/**
+ * Reads up to `count` values from the iterator into the given `buf`. Returns
+ * the number of elements read. The number of elements read can be smaller than
+ * `count`, which means that there are no more elements in the bitmap.
+ *
+ * This function can be used together with other iterator functions.
+ */
+uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
+                                 uint64_t count);
 
 #ifdef __cplusplus
 }  // extern "C"
