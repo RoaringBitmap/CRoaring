@@ -1375,6 +1375,16 @@ static bool art_iterator_up(art_iterator_t *iterator) {
     return true;
 }
 
+// Moves the iterator one level, followed by a move to the next / previous leaf.
+// Sets the status of the iterator.
+static bool art_iterator_up_and_move(art_iterator_t *iterator, bool forward) {
+    if (!art_iterator_up(iterator)) {
+        // We're at the root.
+        return art_iterator_invalid_loc(iterator);
+    }
+    return art_iterator_move(iterator, forward);
+}
+
 // Initializes the iterator at the first / last leaf of the given node.
 // Returns true for convenience.
 static bool art_node_init_iterator(const art_node_t *node,
@@ -1413,12 +1423,7 @@ bool art_iterator_move(art_iterator_t *iterator, bool forward) {
         return art_node_init_iterator(neighbor_child, iterator, forward);
     }
     // No more children at this level, go up.
-    bool went_up = art_iterator_up(iterator);
-    if (!went_up) {
-        // We're at the root.
-        return art_iterator_invalid_loc(iterator);
-    }
-    return art_iterator_move(iterator, forward);
+    return art_iterator_up_and_move(iterator, forward);
 }
 
 // Assumes the iterator is positioned at a node with an equal prefix path up to
@@ -1435,11 +1440,7 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
             // Prefix so far has been equal, but we've found a smaller key.
             // Since we take the lower bound within each node, we can return the
             // next leaf.
-            bool went_up = art_iterator_up(iterator);
-            if (!went_up) {
-                return art_iterator_invalid_loc(iterator);
-            }
-            return art_iterator_move(iterator, true);
+            return art_iterator_up_and_move(iterator, true);
         } else if (prefix_comparison > 0) {
             // No key equal to the key we're looking for, return the first leaf.
             return art_node_init_iterator(node, iterator, true);
@@ -1451,11 +1452,7 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
             art_node_lower_bound(node, key_chunk);
         if (indexed_child.child == NULL) {
             // Only smaller keys among children.
-            bool went_up = art_iterator_up(iterator);
-            if (!went_up) {
-                return art_iterator_invalid_loc(iterator);
-            }
-            return art_iterator_move(iterator, true);
+            return art_iterator_up_and_move(iterator, true);
         }
         if (indexed_child.key_chunk > key_chunk) {
             // Only larger children, return the first larger child.
@@ -1467,12 +1464,13 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
         node = indexed_child.child;
     }
     art_leaf_t *leaf = CAST_LEAF(node);
-    // Technically we don't have to re-compare the prefix if we arrived here
-    // through the while loop, but it simplifies the code.
     if (art_compare_keys(leaf->key, key) >= 0) {
+        // Leaf has an equal or larger key.
         return art_iterator_valid_loc(iterator, leaf);
     }
-    return art_iterator_invalid_loc(iterator);
+    // Leaf has an equal prefix, but the full key is smaller. Move to the next
+    // leaf.
+    return art_iterator_up_and_move(iterator, true);
 }
 
 art_iterator_t art_init_iterator(const art_t *art, bool first) {
@@ -1495,18 +1493,21 @@ bool art_iterator_prev(art_iterator_t *iterator) {
 bool art_iterator_lower_bound(art_iterator_t *iterator,
                               const art_key_chunk_t *key) {
     int compare_result =
-        art_compare_prefix(iterator->key, 0, key, 0, iterator->depth);
+        art_compare_prefix(iterator->key, 0, key, 0, ART_KEY_BYTES);
     // Move up until we have an equal or greater prefix, after which we can do a
     // normal lower bound search.
-    while (compare_result < 0 && iterator->frame > 0) {
+    while (compare_result < 0) {
         if (!art_iterator_up(iterator)) {
             // Only smaller keys found.
             return art_iterator_invalid_loc(iterator);
         }
         // Since we're only moving up, we can keep comparing against the
         // iterator key.
+        art_inner_node_t *inner_node =
+            (art_inner_node_t *)art_iterator_node(iterator);
         compare_result =
-            art_compare_prefix(iterator->key, 0, key, 0, iterator->depth);
+            art_compare_prefix(iterator->key, 0, key, 0,
+                               iterator->depth + inner_node->prefix_size);
     }
     if (compare_result > 0) {
         return art_node_init_iterator(art_iterator_node(iterator), iterator,
