@@ -462,6 +462,9 @@ static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
     for (size_t i = 0; i < 256; ++i) {
         node->keys[i] = ART_NODE48_EMPTY_VAL;
     }
+    for (size_t i = 0; i < 48; ++i) {
+        node->children[i] = NULL;
+    }
     return node;
 }
 
@@ -488,6 +491,13 @@ static art_node_t *art_node48_insert(art_node48_t *node, art_node_t *child,
                                      uint8_t key) {
     if (node->count < 48) {
         uint8_t val_idx = node->count;
+        if (node->children[val_idx] != NULL) {
+            val_idx = 0;
+            // Find an empty child.
+            while (node->children[val_idx] != NULL) {
+                val_idx++;
+            }
+        }
         node->keys[key] = val_idx;
         node->children[val_idx] = child;
         node->count++;
@@ -1182,7 +1192,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
         printf("{ type: Leaf, key: ");
         art_leaf_t *leaf = CAST_LEAF(node);
         for (size_t i = 0; i < ART_KEY_BYTES; ++i) {
-            printf("%02x", (char)(leaf->key[i]));
+            printf("%02x", leaf->key[i]);
         }
         printf(" }\n");
         return;
@@ -1202,7 +1212,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
     printf("%*s", depth, "");
     printf("prefix: ");
     for (uint8_t i = 0; i < inner_node->prefix_size; ++i) {
-        printf("%02x", (char)inner_node->prefix[i]);
+        printf("%02x", inner_node->prefix[i]);
     }
     printf("\n");
 
@@ -1228,8 +1238,9 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
             for (int i = 0; i < 256; ++i) {
                 if (node48->keys[i] != ART_NODE48_EMPTY_VAL) {
                     printf("%*s", depth, "");
-                    printf("key: %02x ", node48->keys[i]);
-                    art_node_printf(node48->children[i], depth);
+                    printf("key: %02x ", i);
+                    printf("child: %02x ", node48->keys[i]);
+                    art_node_printf(node48->children[node48->keys[i]], depth);
                 }
             }
         } break;
