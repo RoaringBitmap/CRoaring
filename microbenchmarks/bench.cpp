@@ -230,10 +230,10 @@ struct iterate_all {
         for (size_t i = 0; i < count; ++i) {
             roaring_bitmap_t *r = bitmaps[i];
             roaring_uint32_iterator_t j;
-            roaring_init_iterator(r, &j);
+            roaring_iterator_init(r, &j);
             while (j.has_value) {
                 marker++;
-                roaring_advance_uint32_iterator(&j);
+                roaring_uint32_iterator_advance(&j);
             }
         }
         return marker;
