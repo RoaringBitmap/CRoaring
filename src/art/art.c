@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <roaring/portability.h>
 #include <roaring/art/art.h>
 #include <roaring/memory.h>
 #include <stdio.h>
@@ -29,6 +30,8 @@
 #define IS_LEAF(p) (((uintptr_t)(p)&1))
 #define SET_LEAF(p) ((art_node_t *)((uintptr_t)(p) | 1))
 #define CAST_LEAF(p) ((art_leaf_t *)((void *)((uintptr_t)(p) & ~1)))
+
+#define NODE48_AVAILABLE_CHILDREN_MASK ((UINT64_C(1) << 48) - 1)
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +77,9 @@ typedef struct art_node16_s {
 typedef struct art_node48_s {
     art_inner_node_t base;
     uint8_t count;
+    // Bitset where the ith bit is set if children[i] is available
+    // Because there are at most 48 children, only the bottom 48 bits are used.
+    uint64_t available_children;
     uint8_t keys[256];
     art_node_t *children[48];
 } art_node48_t;
@@ -459,6 +465,7 @@ static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
     art_node48_t *node = (art_node48_t *)roaring_malloc(sizeof(art_node48_t));
     art_init_inner_node(&node->base, ART_NODE48_TYPE, prefix, prefix_size);
     node->count = 0;
+    node->available_children = NODE48_AVAILABLE_CHILDREN_MASK;
     for (size_t i = 0; i < 256; ++i) {
         node->keys[i] = ART_NODE48_EMPTY_VAL;
     }
@@ -466,11 +473,12 @@ static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
 }
 
 static void art_free_node48(art_node48_t *node) {
-    for (size_t i = 0; i < 256; ++i) {
-        uint8_t val_idx = node->keys[i];
-        if (val_idx != ART_NODE48_EMPTY_VAL) {
-            art_free_node(node->children[val_idx]);
-        }
+    uint64_t used_children = (node->available_children) ^ NODE48_AVAILABLE_CHILDREN_MASK;
+    while (used_children != 0) {
+        // We checked above that used_children is not zero
+        uint8_t child_idx = roaring_trailing_zeroes(used_children);
+        art_free_node(node->children[child_idx]);
+        used_children &= ~(UINT64_C(1) << child_idx);
     }
     roaring_free(node);
 }
@@ -487,10 +495,12 @@ static inline art_node_t *art_node48_find_child(const art_node48_t *node,
 static art_node_t *art_node48_insert(art_node48_t *node, art_node_t *child,
                                      uint8_t key) {
     if (node->count < 48) {
-        uint8_t val_idx = node->count;
+        // node->available_children is only zero when the node is full (count == 48), we just checked count < 48
+        uint8_t val_idx = roaring_trailing_zeroes(node->available_children);
         node->keys[key] = val_idx;
         node->children[val_idx] = child;
         node->count++;
+        node->available_children &= ~(UINT64_C(1) << val_idx);
         return (art_node_t *)node;
     }
     art_node256_t *new_node =
@@ -511,8 +521,8 @@ static inline art_node_t *art_node48_erase(art_node48_t *node,
     if (val_idx == ART_NODE48_EMPTY_VAL) {
         return (art_node_t *)node;
     }
-    node->children[val_idx] = NULL;
     node->keys[key_chunk] = ART_NODE48_EMPTY_VAL;
+    node->available_children |= UINT64_C(1) << val_idx;
     node->count--;
     if (node->count > 16) {
         return (art_node_t *)node;
@@ -1182,7 +1192,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
         printf("{ type: Leaf, key: ");
         art_leaf_t *leaf = CAST_LEAF(node);
         for (size_t i = 0; i < ART_KEY_BYTES; ++i) {
-            printf("%02x", (char)(leaf->key[i]));
+            printf("%02x", leaf->key[i]);
         }
         printf(" }\n");
         return;
@@ -1202,7 +1212,7 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
     printf("%*s", depth, "");
     printf("prefix: ");
     for (uint8_t i = 0; i < inner_node->prefix_size; ++i) {
-        printf("%02x", (char)inner_node->prefix[i]);
+        printf("%02x", inner_node->prefix[i]);
     }
     printf("\n");
 
@@ -1228,8 +1238,9 @@ void art_node_printf(const art_node_t *node, uint8_t depth) {
             for (int i = 0; i < 256; ++i) {
                 if (node48->keys[i] != ART_NODE48_EMPTY_VAL) {
                     printf("%*s", depth, "");
-                    printf("key: %02x ", node48->keys[i]);
-                    art_node_printf(node48->children[i], depth);
+                    printf("key: %02x ", i);
+                    printf("child: %02x ", node48->keys[i]);
+                    art_node_printf(node48->children[node48->keys[i]], depth);
                 }
             }
         } break;
