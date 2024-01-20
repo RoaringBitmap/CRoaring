@@ -321,6 +321,7 @@ paket-files/
 __pycache__/
 *.pyc
 
+amalgamation_demo
 amalgamation_demo.c
 amalgamation_demo.cpp
 roaring.c
