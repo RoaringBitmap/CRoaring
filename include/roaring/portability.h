@@ -183,7 +183,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 // specifically.
 
 /* wrappers for Visual Studio built-ins that look like gcc built-ins __builtin_ctzll */
-/* result might be undefined when input_num is zero */
+/** result might be undefined when input_num is zero */
 inline int roaring_trailing_zeroes(unsigned long long input_num) {
     unsigned long index;
 #ifdef _WIN64  // highly recommended!!!
@@ -200,7 +200,7 @@ inline int roaring_trailing_zeroes(unsigned long long input_num) {
 }
 
 /* wrappers for Visual Studio built-ins that look like gcc built-ins __builtin_clzll */
-/* result might be undefined when input_num is zero */
+/** result might be undefined when input_num is zero */
 inline int roaring_leading_zeroes(unsigned long long input_num) {
     unsigned long index;
 #ifdef _WIN64  // highly recommended!!!
@@ -225,7 +225,9 @@ inline int roaring_leading_zeroes(unsigned long long input_num) {
 #ifndef CROARING_INTRINSICS
 #define CROARING_INTRINSICS 1
 #define roaring_unreachable __builtin_unreachable()
+/** result might be undefined when input_num is zero */
 inline int roaring_trailing_zeroes(unsigned long long input_num) { return __builtin_ctzll(input_num); }
+/** result might be undefined when input_num is zero */
 inline int roaring_leading_zeroes(unsigned long long input_num) { return __builtin_clzll(input_num); }
 #endif
 
