@@ -1,11 +1,10 @@
 #include <roaring/art/art.h>
 #include <stdio.h>
 
-#include <algorithm>
 #include <array>
+#include <cinttypes>
 #include <iomanip>
 #include <ios>
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
@@ -17,13 +16,13 @@ using namespace roaring::internal;
 
 namespace {
 
-void print_key(art_key_chunk_t* key) {
+void print_key(const art_key_chunk_t* key) {
     for (size_t i = 0; i < ART_KEY_BYTES; ++i) {
         printf("%x", *(key + i));
     }
 }
 
-void assert_key_eq(art_key_chunk_t* key1, art_key_chunk_t* key2) {
+void assert_key_eq(const art_key_chunk_t* key1, const art_key_chunk_t* key2) {
     for (size_t i = 0; i < ART_KEY_BYTES; ++i) {
         if (*(key1 + i) != *(key2 + i)) {
             print_key(key1);
@@ -39,8 +38,7 @@ void assert_key_eq(art_key_chunk_t* key1, art_key_chunk_t* key2) {
 class Key {
    public:
     Key(uint64_t key) {
-        // Reverse byte order of the low 6 bytes. Not portable to big-endian
-        // systems!
+        // Store the low 6 bytes of the key in big-endian order.
         key_[0] = key >> 40 & 0xFF;
         key_[1] = key >> 32 & 0xFF;
         key_[2] = key >> 24 & 0xFF;
@@ -49,7 +47,7 @@ class Key {
         key_[5] = key >> 0 & 0xFF;
     }
 
-    Key(uint8_t* key) {
+    Key(const uint8_t* key) {
         for (size_t i = 0; i < 6; ++i) {
             key_[i] = *(key + i);
         }
@@ -78,9 +76,9 @@ class Key {
 struct Value : art_val_t {
     Value() {}
     Value(uint64_t val_) : val(val_) {}
-    bool operator==(const Value& other) { return val == other.val; }
+    bool operator==(const Value& other) const { return val == other.val; }
 
-    uint64_t val;
+    uint64_t val = 0;
 };
 
 class ShadowedART {
@@ -121,7 +119,7 @@ class ShadowedART {
                 break;
             }
             if (found_val->val != value.val) {
-                printf("Key %s: ART value %lu != shadow value %lu\n",
+                printf("Key %s: ART value %" PRIu64 " != shadow value %" PRIu64 "\n",
                        key.string().c_str(), found_val->val, value.val);
                 assert_true(*found_val == value);
                 break;
@@ -440,6 +438,53 @@ DEFINE_TEST(test_art_shadowed) {
     art.assertLowerBoundValid(1);
 }
 
+DEFINE_TEST(test_art_shrink_grow_node48) {
+    art_t art{nullptr};
+    std::vector<Value> values(48);
+    // Make a full node48.
+    for (int i = 0; i < 48; i++) {
+        auto key = Key(i);
+        values[i].val = i;
+        art_insert(&art, key.data(), &values[i]);
+    }
+    // Remove the first several containers
+    for (int i = 0; i < 8; i++) {
+        auto key = Key(i);
+        Value *removed_val = (Value *)(art_erase(&art, key.data()));
+        assert_int_equal(removed_val->val, i);
+    }
+    {
+        art_iterator_t iterator = art_init_iterator(&art, true);
+        int i = 8;
+        do {
+            auto key = Key(i);
+            assert_key_eq(iterator.key, key.data());
+            assert_true(iterator.value == &values[i]);
+            ++i;
+        } while (art_iterator_next(&iterator));
+        assert_int_equal(i, 48);
+    }
+
+    // Fill the containers back up
+    for (int i = 0; i < 8; i++) {
+        auto key = Key(i);
+        values[i].val = i;
+        art_insert(&art, key.data(), &values[i]);
+    }
+    {
+        art_iterator_t iterator = art_init_iterator(&art, true);
+        int i = 0;
+        do {
+            auto key = Key(i);
+            assert_key_eq(iterator.key, key.data());
+            assert_true(iterator.value == &values[i]);
+            ++i;
+        } while (art_iterator_next(&iterator));
+        assert_int_equal(i, 48);
+    }
+    art_free(&art);
+}
+
 }  // namespace
 
 int main() {
@@ -455,6 +500,7 @@ int main() {
         cmocka_unit_test(test_art_iterator_erase),
         cmocka_unit_test(test_art_iterator_insert),
         cmocka_unit_test(test_art_shadowed),
+        cmocka_unit_test(test_art_shrink_grow_node48),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

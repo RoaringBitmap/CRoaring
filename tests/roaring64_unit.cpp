@@ -952,27 +952,6 @@ DEFINE_TEST(test_andnot_inplace) {
     }
 }
 
-DEFINE_TEST(test_shrink_grow_48_art_node) {
-    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
-
-    uint64_t lo = 0;
-    uint64_t mi = 8 * 0x10000;
-    uint64_t hi = 47 * 0x10000;
-
-    // ART root should be a full 48 item node
-    roaring64_bitmap_add_range_closed(r1, lo, hi);
-    // First several items removed
-    roaring64_bitmap_remove_range_closed(r1, lo, mi);
-    // Adding back the item with key 0
-    roaring64_bitmap_add(r1, 0);
-
-    uint64_t expected_card = (hi + 1) - (mi + 1) + 1;
-
-    assert_int_equal(roaring64_bitmap_get_cardinality(r1), expected_card);
-
-    roaring64_bitmap_free(r1);
-}
-
 bool roaring_iterator64_sumall(uint64_t value, void* param) {
     *(uint64_t*)param += value;
     return true;
@@ -1305,7 +1284,6 @@ int main() {
         cmocka_unit_test(test_andnot),
         cmocka_unit_test(test_andnot_cardinality),
         cmocka_unit_test(test_andnot_inplace),
-        cmocka_unit_test(test_shrink_grow_48_art_node),
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterator_create),
         cmocka_unit_test(test_iterator_create_last),
