@@ -447,7 +447,7 @@ int main() {
     i = roaring_iterator_create(r1);
     uint32_t buffer[256];
     while (1) {
-        uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
+        uint32_t ret = roaring_uint32_iterator_read(i, buffer, 256);
         for (uint32_t j = 0; j < ret; j++) {
             counter += buffer[j];
         }

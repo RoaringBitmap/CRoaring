@@ -865,7 +865,7 @@ void test_example(bool copy_on_write) {
     i = roaring_iterator_create(r1);
     uint32_t buffer[256];
     while (1) {
-        uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
+        uint32_t ret = roaring_uint32_iterator_read(i, buffer, 256);
         for (uint32_t j = 0; j < ret; j++) {
             counter += buffer[j];
         }
@@ -3935,7 +3935,7 @@ void read_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
             }
         }
 
-        uint32_t num_got = roaring_read_uint32_iterator(iter, buffer, num_ask);
+        uint32_t num_got = roaring_uint32_iterator_read(iter, buffer, num_ask);
         assert_true(num_got == minimum_uint32(num_ask, ref_count));
         for (uint32_t i = 0; i < num_got; i++) {
             assert_true(ref_values[i] == buffer[i]);
@@ -3947,7 +3947,7 @@ void read_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
     assert_true(iter->has_value == false);
     assert_true(iter->current_value == UINT32_MAX);
 
-    assert_true(roaring_read_uint32_iterator(iter, buffer, step) == 0);
+    assert_true(roaring_uint32_iterator_read(iter, buffer, step) == 0);
     assert_true(iter->has_value == false);
     assert_true(iter->current_value == UINT32_MAX);
 
@@ -3970,7 +3970,7 @@ void test_read_uint32_iterator(uint8_t type) {
 
     roaring_uint32_iterator_t *iter = roaring_iterator_create(r);
     uint32_t buffer[1];
-    uint32_t got = roaring_read_uint32_iterator(iter, buffer, 0);
+    uint32_t got = roaring_uint32_iterator_read(iter, buffer, 0);
     assert_true(got == 0);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 0);
@@ -4123,7 +4123,7 @@ DEFINE_TEST(read_uint32_iterator_zero_count) {
     roaring_bitmap_t *r = roaring_bitmap_from_range(0, 10000, 1);
     roaring_uint32_iterator_t *iterator = roaring_iterator_create(r);
     uint32_t buf[1];
-    uint32_t read = roaring_read_uint32_iterator(iterator, buf, 0);
+    uint32_t read = roaring_uint32_iterator_read(iterator, buf, 0);
     assert_true(read == 0);
     assert_true(iterator->has_value);
     assert_true(iterator->current_value == 0);
