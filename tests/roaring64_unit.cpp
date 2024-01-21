@@ -248,6 +248,55 @@ DEFINE_TEST(test_contains_bulk) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_contains_range) {
+    {
+        // Empty bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        assert_false(roaring64_bitmap_contains_range(r, 1, 10));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Empty range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, 1));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range within one container.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, 10));
+        assert_false(roaring64_bitmap_contains_range(r, 1, 11));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range across two containers.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, (1 << 16) + 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, (1 << 16) + 10));
+        assert_true(roaring64_bitmap_contains_range(r, 1, (1 << 16) - 1));
+        assert_false(roaring64_bitmap_contains_range(r, 1, (1 << 16) + 11));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range across three containers.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, (2 << 16) + 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, (2 << 16) + 10));
+        assert_false(roaring64_bitmap_contains_range(r, 1, (2 << 16) + 11));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Container missing from range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, (1 << 16) - 1);
+        roaring64_bitmap_add_range(r, (2 << 16), (3 << 16) - 1);
+        assert_false(roaring64_bitmap_contains_range(r, 1, (3 << 16) - 1));
+        roaring64_bitmap_free(r);
+    }
+}
+
 DEFINE_TEST(test_select) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
     for (uint64_t i = 0; i < 100; ++i) {
@@ -1253,6 +1302,7 @@ int main() {
         cmocka_unit_test(test_add_bulk),
         cmocka_unit_test(test_add_many),
         cmocka_unit_test(test_add_range_closed),
+        cmocka_unit_test(test_contains_range),
         cmocka_unit_test(test_contains_bulk),
         cmocka_unit_test(test_select),
         cmocka_unit_test(test_rank),

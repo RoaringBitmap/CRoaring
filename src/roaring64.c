@@ -346,6 +346,57 @@ bool roaring64_bitmap_contains(const roaring64_bitmap_t *r, uint64_t val) {
     return false;
 }
 
+bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
+                                     uint64_t max) {
+    if (min >= max) {
+        return true;
+    }
+
+    uint8_t min_high48[ART_KEY_BYTES];
+    uint16_t min_low16 = split_key(min, min_high48);
+    uint8_t max_high48[ART_KEY_BYTES];
+    uint16_t max_low16 = split_key(max, max_high48);
+    uint64_t max_high48_bits = max & 0xFFFFFFFFFFFF0000;
+
+    art_iterator_t it = art_lower_bound(&r->art, min_high48);
+    if (it.value == NULL) {
+        return false;
+    }
+    uint64_t prev_high48_bits = min & 0xFFFFFFFFFFFF0000;
+    while (it.value != NULL) {
+        uint64_t current_high48_bits = combine_key(it.key, 0);
+        if (current_high48_bits > max_high48_bits) {
+            return true;
+        }
+        if (current_high48_bits > prev_high48_bits + 0x10000) {
+            return false;
+        }
+
+        leaf_t *leaf = (leaf_t *)it.value;
+        uint32_t container_min = 0;
+        if (compare_high48(it.key, min_high48) == 0) {
+            container_min = min_low16;
+        }
+        uint32_t container_max = 0xFFFF + 1;  // Exclusive
+        if (compare_high48(it.key, max_high48) == 0) {
+            container_max = max_low16;
+        }
+
+        // For the first and last containers we use container_contains_range,
+        // for the intermediate containers we can use container_is_full.
+        if (container_min == 0 && container_max == 0xFFFF + 1 &&
+            !container_is_full(leaf->container, leaf->typecode)) {
+            return false;
+        } else if (!container_contains_range(leaf->container, container_min,
+                                             container_max, leaf->typecode)) {
+            return false;
+        }
+        prev_high48_bits = current_high48_bits;
+        art_iterator_next(&it);
+    }
+    return true;
+}
+
 bool roaring64_bitmap_contains_bulk(const roaring64_bitmap_t *r,
                                     roaring64_bulk_context_t *context,
                                     uint64_t val) {

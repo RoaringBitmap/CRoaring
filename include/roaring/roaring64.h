@@ -172,6 +172,12 @@ void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
 bool roaring64_bitmap_contains(const roaring64_bitmap_t *r, uint64_t val);
 
 /**
+ * Returns true if all values in the range [min, max) are present.
+ */
+bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
+                                     uint64_t max);
+
+/**
  * Check if an item is present using context from a previous insert or search
  * for faster search.
  *
