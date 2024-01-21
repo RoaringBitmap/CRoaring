@@ -297,6 +297,14 @@ static inline void add_range_closed_at(art_t *art, uint8_t *high48,
     art_insert(art, high48, (art_val_t *)leaf);
 }
 
+void roaring64_bitmap_add_range(roaring64_bitmap_t *r, uint64_t min,
+                                uint64_t max) {
+    if (min >= max) {
+        return;
+    }
+    roaring64_bitmap_add_range_closed(r, min, max - 1);
+}
+
 void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
                                        uint64_t max) {
     if (min > max) {
@@ -554,6 +562,14 @@ static inline void remove_range_closed_at(art_t *art, uint8_t *high48,
             free_leaf(leaf);
         }
     }
+}
+
+void roaring64_bitmap_remove_range(roaring64_bitmap_t *r, uint64_t min,
+                                   uint64_t max) {
+    if (min >= max) {
+        return;
+    }
+    roaring64_bitmap_remove_range_closed(r, min, max - 1);
 }
 
 void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,

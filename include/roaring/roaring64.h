@@ -103,6 +103,12 @@ void roaring64_bitmap_add_many(roaring64_bitmap_t *r, size_t n_args,
                                const uint64_t *vals);
 
 /**
+ * Add all values in range [min, max).
+ */
+void roaring64_bitmap_add_range(roaring64_bitmap_t *r, uint64_t min,
+                                uint64_t max);
+
+/**
  * Add all values in range [min, max].
  */
 void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
@@ -147,6 +153,12 @@ void roaring64_bitmap_remove_bulk(roaring64_bitmap_t *r,
  */
 void roaring64_bitmap_remove_many(roaring64_bitmap_t *r, size_t n_args,
                                   const uint64_t *vals);
+
+/**
+ * Remove all values in range [min, max).
+ */
+void roaring64_bitmap_remove_range(roaring64_bitmap_t *r, uint64_t min,
+                                   uint64_t max);
 
 /**
  * Remove all values in range [min, max].
