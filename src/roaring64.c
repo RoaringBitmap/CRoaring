@@ -15,7 +15,6 @@ namespace roaring {
 namespace api {
 #endif
 
-// TODO: Iteration-based functions like roaring64_bitmap_intersect_with_range.
 // TODO: Copy on write.
 // TODO: Serialization.
 // TODO: Error on failed allocation.
@@ -88,6 +87,43 @@ static inline void free_leaf(leaf_t *leaf) { roaring_free(leaf); }
 static inline int compare_high48(art_key_chunk_t key1[],
                                  art_key_chunk_t key2[]) {
     return art_compare_keys(key1, key2);
+}
+
+static inline bool roaring64_iterator_init_at_leaf_first(
+    roaring64_iterator_t *it) {
+    it->high48 = combine_key(it->art_it.key, 0);
+    leaf_t *leaf = (leaf_t *)it->art_it.value;
+    uint16_t low16 = 0;
+    it->container_it =
+        container_init_iterator(leaf->container, leaf->typecode, &low16);
+    it->value = it->high48 | low16;
+    return (it->has_value = true);
+}
+
+static inline bool roaring64_iterator_init_at_leaf_last(
+    roaring64_iterator_t *it) {
+    it->high48 = combine_key(it->art_it.key, 0);
+    leaf_t *leaf = (leaf_t *)it->art_it.value;
+    uint16_t low16 = 0;
+    it->container_it =
+        container_init_iterator_last(leaf->container, leaf->typecode, &low16);
+    it->value = it->high48 | low16;
+    return (it->has_value = true);
+}
+
+static inline roaring64_iterator_t *roaring64_iterator_init_at(
+    const roaring64_bitmap_t *r, roaring64_iterator_t *it, bool first) {
+    it->parent = r;
+    it->art_it = art_init_iterator(&r->art, first);
+    it->has_value = it->art_it.value != NULL;
+    if (it->has_value) {
+        if (first) {
+            roaring64_iterator_init_at_leaf_first(it);
+        } else {
+            roaring64_iterator_init_at_leaf_last(it);
+        }
+    }
+    return it;
 }
 
 roaring64_bitmap_t *roaring64_bitmap_create(void) {
@@ -939,6 +975,20 @@ bool roaring64_bitmap_intersect(const roaring64_bitmap_t *r1,
     return intersect;
 }
 
+bool roaring64_bitmap_intersect_with_range(const roaring64_bitmap_t *r,
+                                           uint64_t min, uint64_t max) {
+    if (min >= max) {
+        return false;
+    }
+    roaring64_iterator_t it;
+    roaring64_iterator_init_at(r, &it, /*first=*/true);
+    if (!roaring64_iterator_move_equalorlarger(&it, min)) {
+        return false;
+    }
+    return roaring64_iterator_has_value(&it) &&
+           roaring64_iterator_value(&it) < max;
+}
+
 double roaring64_bitmap_jaccard_index(const roaring64_bitmap_t *r1,
                                       const roaring64_bitmap_t *r2) {
     uint64_t c1 = roaring64_bitmap_get_cardinality(r1);
@@ -1345,43 +1395,6 @@ bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
     return true;
 }
 
-static inline bool roaring64_iterator_init_at_leaf_first(
-    roaring64_iterator_t *it) {
-    it->high48 = combine_key(it->art_it.key, 0);
-    leaf_t *leaf = (leaf_t *)it->art_it.value;
-    uint16_t low16 = 0;
-    it->container_it =
-        container_init_iterator(leaf->container, leaf->typecode, &low16);
-    it->value = it->high48 | low16;
-    return (it->has_value = true);
-}
-
-static inline bool roaring64_iterator_init_at_leaf_last(
-    roaring64_iterator_t *it) {
-    it->high48 = combine_key(it->art_it.key, 0);
-    leaf_t *leaf = (leaf_t *)it->art_it.value;
-    uint16_t low16 = 0;
-    it->container_it =
-        container_init_iterator_last(leaf->container, leaf->typecode, &low16);
-    it->value = it->high48 | low16;
-    return (it->has_value = true);
-}
-
-static inline roaring64_iterator_t *roaring64_iterator_init_at(
-    const roaring64_bitmap_t *r, roaring64_iterator_t *it, bool first) {
-    it->parent = r;
-    it->art_it = art_init_iterator(&r->art, first);
-    it->has_value = it->art_it.value != NULL;
-    if (it->has_value) {
-        if (first) {
-            roaring64_iterator_init_at_leaf_first(it);
-        } else {
-            roaring64_iterator_init_at_leaf_last(it);
-        }
-    }
-    return it;
-}
-
 roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
     roaring64_iterator_t *it =
         (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
@@ -1471,6 +1484,8 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
             // Only smaller keys found.
             return (it->has_value = false);
         }
+        it->high48 = combine_key(it->art_it.key, 0);
+        // Fall through to the next if statement.
     }
 
     if (it->high48 == (val & 0xFFFFFFFFFFFF0000)) {

@@ -298,6 +298,12 @@ bool roaring64_bitmap_intersect(const roaring64_bitmap_t *r1,
                                 const roaring64_bitmap_t *r2);
 
 /**
+ * Check whether a bitmap intersects the range [min, max).
+ */
+bool roaring64_bitmap_intersect_with_range(const roaring64_bitmap_t *r,
+                                           uint64_t min, uint64_t max);
+
+/**
  * Computes the Jaccard index between two bitmaps. (Also known as the Tanimoto
  * distance, or the Jaccard similarity coefficient)
  *
