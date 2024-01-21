@@ -1803,7 +1803,7 @@ bool roaring_uint32_iterator_previous(roaring_uint32_iterator_t *it) {
     return (it->has_value = loadlastvalue(it));
 }
 
-uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
+uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count) {
     uint32_t ret = 0;
     while (it->has_value && ret < count) {
