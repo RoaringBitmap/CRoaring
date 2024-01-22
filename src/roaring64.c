@@ -1708,7 +1708,7 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
     if (buf == NULL) {
         return 0;
     }
-    char *initial_buf = buf;
+    const char *initial_buf = buf;
 
     // Write as uint64 the distinct number of "buckets", where a bucket is
     // defined as the most significant 32 bits of an element.
@@ -1778,22 +1778,17 @@ size_t roaring64_bitmap_portable_deserialize_size(const char *buf,
     if (buf == NULL) {
         return 0;
     }
-    const char *maxbuf;
-    if (UINTPTR_MAX - maxbytes < (uintptr_t)buf) {
-        maxbuf = (const char *)UINTPTR_MAX;
-    } else {
-        maxbuf = buf + maxbytes;
-    }
-    const char *initial_buf = buf;
+    size_t read_bytes = 0;
 
     // Read as uint64 the distinct number of "buckets", where a bucket is
     // defined as the most significant 32 bits of an element.
     uint64_t buckets;
-    if (buf + sizeof(buckets) > maxbuf) {
+    if (read_bytes + sizeof(buckets) > maxbytes) {
         return 0;
     }
     memcpy(&buckets, buf, sizeof(buckets));
     buf += sizeof(buckets);
+    read_bytes += sizeof(buckets);
 
     // Buckets should be 32 bits with 4 bits of zero padding.
     if (buckets > UINT32_MAX) {
@@ -1804,21 +1799,23 @@ size_t roaring64_bitmap_portable_deserialize_size(const char *buf,
     for (uint64_t bucket = 0; bucket < buckets; ++bucket) {
         // Read as uint32 the most significant 32 bits of the bucket.
         uint32_t high32;
-        if (buf + sizeof(high32) > maxbuf) {
+        if (read_bytes + sizeof(high32) > maxbytes) {
             return 0;
         }
         buf += sizeof(high32);
+        read_bytes += sizeof(high32);
 
         // Read the 32-bit Roaring bitmaps representing the least significant
         // bits of a set of elements.
-        size_t bitmap32_size =
-            roaring_bitmap_portable_deserialize_size(buf, maxbuf - buf);
+        size_t bitmap32_size = roaring_bitmap_portable_deserialize_size(
+            buf, maxbytes - read_bytes);
         if (bitmap32_size == 0) {
             return 0;
         }
         buf += bitmap32_size;
+        read_bytes += bitmap32_size;
     }
-    return buf - initial_buf;
+    return read_bytes;
 }
 
 roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
@@ -1827,21 +1824,17 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
     if (buf == NULL) {
         return NULL;
     }
-    const char *maxbuf;
-    if (UINTPTR_MAX - maxbytes < (uintptr_t)buf) {
-        maxbuf = (const char *)UINTPTR_MAX;
-    } else {
-        maxbuf = buf + maxbytes;
-    }
+    size_t read_bytes = 0;
 
     // Read as uint64 the distinct number of "buckets", where a bucket is
     // defined as the most significant 32 bits of an element.
     uint64_t buckets;
-    if (buf + sizeof(buckets) > maxbuf) {
+    if (read_bytes + sizeof(buckets) > maxbytes) {
         return NULL;
     }
     memcpy(&buckets, buf, sizeof(buckets));
     buf += sizeof(buckets);
+    read_bytes += sizeof(buckets);
 
     // Buckets should be 32 bits with 4 bits of zero padding.
     if (buckets > UINT32_MAX) {
@@ -1853,26 +1846,31 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
     for (uint64_t bucket = 0; bucket < buckets; ++bucket) {
         // Read as uint32 the most significant 32 bits of the bucket.
         uint32_t high32;
-        if (buf + sizeof(high32) > maxbuf) {
+        if (read_bytes + sizeof(high32) > maxbytes) {
+            roaring64_bitmap_free(r);
             return NULL;
         }
         memcpy(&high32, buf, sizeof(high32));
         buf += sizeof(high32);
+        read_bytes += sizeof(high32);
 
         // Read the 32-bit Roaring bitmaps representing the least significant
         // bits of a set of elements.
-        size_t bitmap32_size =
-            roaring_bitmap_portable_deserialize_size(buf, maxbuf - buf);
+        size_t bitmap32_size = roaring_bitmap_portable_deserialize_size(
+            buf, maxbytes - read_bytes);
         if (bitmap32_size == 0) {
+            roaring64_bitmap_free(r);
             return NULL;
         }
 
-        roaring_bitmap_t *bitmap32 =
-            roaring_bitmap_portable_deserialize_safe(buf, maxbuf - buf);
+        roaring_bitmap_t *bitmap32 = roaring_bitmap_portable_deserialize_safe(
+            buf, maxbytes - read_bytes);
         if (bitmap32 == NULL) {
+            roaring64_bitmap_free(r);
             return NULL;
         }
         buf += bitmap32_size;
+        read_bytes += bitmap32_size;
 
         // Insert all containers of the 32-bit bitmap into the 64-bit bitmap.
         uint32_t r32_size = ra_get_size(&bitmap32->high_low_container);
