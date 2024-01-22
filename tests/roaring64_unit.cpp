@@ -729,6 +729,24 @@ DEFINE_TEST(test_intersect) {
     }
 }
 
+DEFINE_TEST(test_intersect_with_range) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    roaring64_bitmap_add(r, 50000);
+    roaring64_bitmap_add(r, 100000);
+    roaring64_bitmap_add(r, 100001);
+    roaring64_bitmap_add(r, 300000);
+
+    assert_false(roaring64_bitmap_intersect_with_range(r, 0, 50000));
+    assert_true(roaring64_bitmap_intersect_with_range(r, 0, 50001));
+    assert_true(roaring64_bitmap_intersect_with_range(r, 50000, 50001));
+    assert_false(roaring64_bitmap_intersect_with_range(r, 50001, 100000));
+    assert_true(roaring64_bitmap_intersect_with_range(r, 50001, 100001));
+    assert_false(roaring64_bitmap_intersect_with_range(r, 300001, UINT64_MAX));
+
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_or) {
     roaring64_bitmap_t* r1 = roaring64_bitmap_create();
     roaring64_bitmap_t* r2 = roaring64_bitmap_create();
@@ -1179,6 +1197,8 @@ DEFINE_TEST(test_iterator_move_equalorlarger) {
     assert_true(roaring64_iterator_has_value(it));
     assert_int_equal(roaring64_iterator_value(it), (1ULL << 35));
 
+    roaring64_iterator_reinit(r, it);
+
     assert_true(roaring64_iterator_move_equalorlarger(it, (1ULL << 35) + 2));
     assert_true(roaring64_iterator_has_value(it));
     assert_int_equal(roaring64_iterator_value(it), ((1ULL << 35) + 2));
@@ -1275,6 +1295,7 @@ int main() {
         cmocka_unit_test(test_and_cardinality),
         cmocka_unit_test(test_and_inplace),
         cmocka_unit_test(test_intersect),
+        cmocka_unit_test(test_intersect_with_range),
         cmocka_unit_test(test_or),
         cmocka_unit_test(test_or_cardinality),
         cmocka_unit_test(test_or_inplace),

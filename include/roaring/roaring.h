@@ -147,7 +147,7 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *r1,
                               const roaring_bitmap_t *r2);
 
 /**
- * Check whether a bitmap and a closed range intersect.
+ * Check whether a bitmap and an open range intersect.
  */
 bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm,
                                          uint64_t x, uint64_t y);
