@@ -912,7 +912,7 @@ void roaring_iterator_init(const roaring_bitmap_t *r,
                            roaring_uint32_iterator_t *newit);
 
 /** DEPRECATED, use `roaring_iterator_init`. */
-CROARING_DEPRECATED inline void roaring_init_iterator(
+CROARING_DEPRECATED static inline void roaring_init_iterator(
     const roaring_bitmap_t *r, roaring_uint32_iterator_t *newit) {
     roaring_iterator_init(r, newit);
 }
@@ -926,7 +926,7 @@ void roaring_iterator_init_last(const roaring_bitmap_t *r,
                                 roaring_uint32_iterator_t *newit);
 
 /** DEPRECATED, use `roaring_iterator_init_last`. */
-CROARING_DEPRECATED inline void roaring_init_iterator_last(
+CROARING_DEPRECATED static inline void roaring_init_iterator_last(
     const roaring_bitmap_t *r, roaring_uint32_iterator_t *newit) {
     roaring_iterator_init_last(r, newit);
 }
@@ -942,8 +942,8 @@ CROARING_DEPRECATED inline void roaring_init_iterator_last(
 roaring_uint32_iterator_t *roaring_iterator_create(const roaring_bitmap_t *r);
 
 /** DEPRECATED, use `roaring_iterator_create`. */
-CROARING_DEPRECATED inline roaring_uint32_iterator_t *roaring_create_iterator(
-    const roaring_bitmap_t *r) {
+CROARING_DEPRECATED static inline roaring_uint32_iterator_t *
+roaring_create_iterator(const roaring_bitmap_t *r) {
     return roaring_iterator_create(r);
 }
 
@@ -959,7 +959,7 @@ CROARING_DEPRECATED inline roaring_uint32_iterator_t *roaring_create_iterator(
 bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it);
 
 /** DEPRECATED, use `roaring_uint32_iterator_advance`. */
-CROARING_DEPRECATED inline bool roaring_advance_uint32_iterator(
+CROARING_DEPRECATED static inline bool roaring_advance_uint32_iterator(
     roaring_uint32_iterator_t *it) {
     return roaring_uint32_iterator_advance(it);
 }
@@ -976,7 +976,7 @@ CROARING_DEPRECATED inline bool roaring_advance_uint32_iterator(
 bool roaring_uint32_iterator_previous(roaring_uint32_iterator_t *it);
 
 /** DEPRECATED, use `roaring_uint32_iterator_previous`. */
-CROARING_DEPRECATED inline bool roaring_previous_uint32_iterator(
+CROARING_DEPRECATED static inline bool roaring_previous_uint32_iterator(
     roaring_uint32_iterator_t *it) {
     return roaring_uint32_iterator_previous(it);
 }
@@ -990,8 +990,9 @@ bool roaring_uint32_iterator_move_equalorlarger(roaring_uint32_iterator_t *it,
                                                 uint32_t val);
 
 /** DEPRECATED, use `roaring_uint32_iterator_move_equalorlarger`. */
-CROARING_DEPRECATED inline bool roaring_move_uint32_iterator_equalorlarger(
-    roaring_uint32_iterator_t *it, uint32_t val) {
+CROARING_DEPRECATED static inline bool
+roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it,
+                                           uint32_t val) {
     return roaring_uint32_iterator_move_equalorlarger(it, val);
 }
 
@@ -1003,7 +1004,7 @@ roaring_uint32_iterator_t *roaring_uint32_iterator_copy(
     const roaring_uint32_iterator_t *it);
 
 /** DEPRECATED, use `roaring_uint32_iterator_copy`. */
-CROARING_DEPRECATED inline roaring_uint32_iterator_t *
+CROARING_DEPRECATED static inline roaring_uint32_iterator_t *
 roaring_copy_uint32_iterator(const roaring_uint32_iterator_t *it) {
     return roaring_uint32_iterator_copy(it);
 }
@@ -1014,7 +1015,7 @@ roaring_copy_uint32_iterator(const roaring_uint32_iterator_t *it) {
 void roaring_uint32_iterator_free(roaring_uint32_iterator_t *it);
 
 /** DEPRECATED, use `roaring_uint32_iterator_free`. */
-CROARING_DEPRECATED inline void roaring_free_uint32_iterator(
+CROARING_DEPRECATED static inline void roaring_free_uint32_iterator(
     roaring_uint32_iterator_t *it) {
     roaring_uint32_iterator_free(it);
 }
@@ -1034,7 +1035,7 @@ uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count);
 
 /** DEPRECATED, use `roaring_uint32_iterator_read`. */
-CROARING_DEPRECATED inline uint32_t roaring_read_uint32_iterator(
+CROARING_DEPRECATED static inline uint32_t roaring_read_uint32_iterator(
     roaring_uint32_iterator_t *it, uint32_t *buf, uint32_t count) {
     return roaring_uint32_iterator_read(it, buf, count);
 }
