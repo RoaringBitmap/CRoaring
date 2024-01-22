@@ -1502,9 +1502,9 @@ roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r1,
         if (high48_bits == min_high48_bits) {
             min_container = min_low16;
         }
-        uint32_t max_container = ((uint32_t)0xFFFF) + 1;  // Exclusive range.
+        uint32_t max_container = 0xFFFF + 1;  // Exclusive range.
         if (high48_bits == max_high48_bits) {
-            max_container = (uint32_t)(max_low16) + 1;  // Exclusive.
+            max_container = max_low16 + 1;  // Exclusive.
         }
 
         leaf_t *leaf = roaring64_flip_leaf(r1, current_high48_key,
@@ -1557,9 +1557,9 @@ void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
         if (high48_bits == min_high48_bits) {
             min_container = min_low16;
         }
-        uint32_t max_container = ((uint32_t)0xFFFF) + 1;  // Exclusive range.
+        uint32_t max_container = 0xFFFF + 1;  // Exclusive range.
         if (high48_bits == max_high48_bits) {
-            max_container = (uint32_t)(max_low16) + 1;  // Exclusive.
+            max_container = max_low16 + 1;  // Exclusive.
         }
 
         roaring64_flip_leaf_inplace(r, current_high48_key, min_container,
