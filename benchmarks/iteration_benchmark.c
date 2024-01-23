@@ -5,22 +5,22 @@
 #include "numbersfromtextfiles.h"
 
 void iterate_using_advance(roaring_bitmap_t* bm) {
-    roaring_uint32_iterator_t *iter = roaring_create_iterator(bm);
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(bm);
     uint64_t sum = 0;
     while (iter->has_value) {
         sum += iter->current_value;
-        roaring_advance_uint32_iterator(iter);
+        roaring_uint32_iterator_advance(iter);
     }
-    roaring_free_uint32_iterator(iter);
+    roaring_uint32_iterator_free(iter);
     *(volatile uint64_t*)(&sum) = sum;
 }
 
 void iterate_using_read(roaring_bitmap_t* bm, uint32_t bufsize) {
     uint32_t* buffer = malloc(sizeof(uint32_t) * bufsize);
-    roaring_uint32_iterator_t *iter = roaring_create_iterator(bm);
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(bm);
     uint64_t sum = 0;
     while (1) {
-        uint32_t ret = roaring_read_uint32_iterator(iter, buffer, bufsize);
+        uint32_t ret = roaring_uint32_iterator_read(iter, buffer, bufsize);
         for (uint32_t i = 0; i < ret; i++) {
             sum += buffer[i];
         }
@@ -28,7 +28,7 @@ void iterate_using_read(roaring_bitmap_t* bm, uint32_t bufsize) {
             break;
         }
     }
-    roaring_free_uint32_iterator(iter);
+    roaring_uint32_iterator_free(iter);
     free(buffer);
     *(volatile uint64_t*)(&sum) = sum;
 }
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     uint64_t cycles_start, cycles_final;
     const int num_passes = 5;
 
-    printf("  roaring_advance_uint32_iterator():");
+    printf("  roaring_uint32_iterator_advance():");
     for (int p = 0; p < num_passes; p++) {
         RDTSC_START(cycles_start);
         iterate_using_advance(bm);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     const uint32_t bufsizes[] = {1,4,16,128,1024};
     for (size_t j = 0; j < sizeof(bufsizes)/sizeof(bufsizes[0]); j++) {
         uint32_t bufsize = bufsizes[j];
-        printf("  roaring_read_uint32_iterator(bufsize=%u):", bufsize);
+        printf("  roaring_uint32_iterator_read(bufsize=%u):", bufsize);
         for (int p = 0; p < num_passes; p++) {
             RDTSC_START(cycles_start);
 

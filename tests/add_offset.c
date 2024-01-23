@@ -196,20 +196,20 @@ static void assert_roaring_offset(const roaring_bitmap_t *in, const roaring_bitm
     assert_non_null(out);
     assert_ptr_not_equal(in, out);
 
-    roaring_init_iterator(in, &it);
+    roaring_iterator_init(in, &it);
     card = 0;
     while(it.has_value) {
         if (offset+it.current_value < 0) {
-            roaring_advance_uint32_iterator(&it);
+            roaring_uint32_iterator_advance(&it);
             continue;
         }
         if (offset+it.current_value >= UINT32_MAX) {
-            roaring_advance_uint32_iterator(&it);
+            roaring_uint32_iterator_advance(&it);
             continue;
         }
         card++;
         assert_true(roaring_bitmap_contains(out, offset+it.current_value));
-        roaring_advance_uint32_iterator(&it);
+        roaring_uint32_iterator_advance(&it);
     }
     assert_int_equal(card, roaring_bitmap_get_cardinality(out));
 }

@@ -918,28 +918,28 @@ public:
      * Move the iterator to the first value >= val.
      */
     void equalorlarger(uint32_t val) {
-        api::roaring_move_uint32_iterator_equalorlarger(&i,val);
+        api::roaring_uint32_iterator_move_equalorlarger(&i,val);
     }
 
     type_of_iterator &operator++() {  // ++i, must returned inc. value
-        api::roaring_advance_uint32_iterator(&i);
+        api::roaring_uint32_iterator_advance(&i);
         return *this;
     }
 
     type_of_iterator operator++(int) {  // i++, must return orig. value
         RoaringSetBitForwardIterator orig(*this);
-        api::roaring_advance_uint32_iterator(&i);
+        api::roaring_uint32_iterator_advance(&i);
         return orig;
     }
 
     type_of_iterator& operator--() { // prefix --
-        api::roaring_previous_uint32_iterator(&i);
+        api::roaring_uint32_iterator_previous(&i);
         return *this;
     }
 
     type_of_iterator operator--(int) { // postfix --
         RoaringSetBitForwardIterator orig(*this);
-        api::roaring_previous_uint32_iterator(&i);
+        api::roaring_uint32_iterator_previous(&i);
         return orig;
     }
 
@@ -959,7 +959,7 @@ public:
             i.has_value = false;
             i.current_value = UINT32_MAX;
         } else {
-            api::roaring_init_iterator(&parent.roaring, &i);
+            api::roaring_iterator_init(&parent.roaring, &i);
         }
     }
 

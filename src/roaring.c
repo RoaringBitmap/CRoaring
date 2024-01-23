@@ -1711,29 +1711,29 @@ CROARING_WARN_UNUSED static bool loadfirstvalue_largeorequal(roaring_uint32_iter
     return true;
 }
 
-void roaring_init_iterator(const roaring_bitmap_t *r,
+void roaring_iterator_init(const roaring_bitmap_t *r,
                            roaring_uint32_iterator_t *newit) {
     newit->parent = r;
     newit->container_index = 0;
     newit->has_value = loadfirstvalue(newit);
 }
 
-void roaring_init_iterator_last(const roaring_bitmap_t *r,
+void roaring_iterator_init_last(const roaring_bitmap_t *r,
                                 roaring_uint32_iterator_t *newit) {
     newit->parent = r;
     newit->container_index = newit->parent->high_low_container.size - 1;
     newit->has_value = loadlastvalue(newit);
 }
 
-roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *r) {
+roaring_uint32_iterator_t *roaring_iterator_create(const roaring_bitmap_t *r) {
     roaring_uint32_iterator_t *newit =
         (roaring_uint32_iterator_t *)roaring_malloc(sizeof(roaring_uint32_iterator_t));
     if (newit == NULL) return NULL;
-    roaring_init_iterator(r, newit);
+    roaring_iterator_init(r, newit);
     return newit;
 }
 
-roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
+roaring_uint32_iterator_t *roaring_uint32_iterator_copy(
     const roaring_uint32_iterator_t *it) {
     roaring_uint32_iterator_t *newit =
         (roaring_uint32_iterator_t *)roaring_malloc(sizeof(roaring_uint32_iterator_t));
@@ -1741,7 +1741,7 @@ roaring_uint32_iterator_t *roaring_copy_uint32_iterator(
     return newit;
 }
 
-bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it,
+bool roaring_uint32_iterator_move_equalorlarger(roaring_uint32_iterator_t *it,
                                                 uint32_t val) {
     uint16_t hb = val >> 16;
     const int i = ra_get_index(&it->parent->high_low_container, hb);
@@ -1767,7 +1767,7 @@ bool roaring_move_uint32_iterator_equalorlarger(roaring_uint32_iterator_t *it,
     return it->has_value;
 }
 
-bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
+bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it) {
     if (it->container_index >= it->parent->high_low_container.size) {
         return (it->has_value = false);
     }
@@ -1785,7 +1785,7 @@ bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it) {
     return (it->has_value = loadfirstvalue(it));
 }
 
-bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
+bool roaring_uint32_iterator_previous(roaring_uint32_iterator_t *it) {
     if (it->container_index < 0) {
         return (it->has_value = false);
     }
@@ -1803,7 +1803,7 @@ bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it) {
     return (it->has_value = loadlastvalue(it));
 }
 
-uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
+uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count) {
     uint32_t ret = 0;
     while (it->has_value && ret < count) {
@@ -1826,7 +1826,7 @@ uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
     return ret;
 }
 
-void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it) {
+void roaring_uint32_iterator_free(roaring_uint32_iterator_t *it) {
     roaring_free(it);
 }
 
@@ -2727,8 +2727,8 @@ bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm,
         return false;
     }
     roaring_uint32_iterator_t it;
-    roaring_init_iterator(bm, &it);
-    if (!roaring_move_uint32_iterator_equalorlarger(&it, (uint32_t)x)) {
+    roaring_iterator_init(bm, &it);
+    if (!roaring_uint32_iterator_move_equalorlarger(&it, (uint32_t)x)) {
         // No values above x.
         return false;
     }

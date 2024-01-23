@@ -126,22 +126,22 @@ int main() {
 
     // we can also create iterator structs
     counter = 0;
-    roaring_uint32_iterator_t *i = roaring_create_iterator(r1);
+    roaring_uint32_iterator_t *i = roaring_iterator_create(r1);
     while (i->has_value) {
         counter++;  // could use    i->current_value
-        roaring_advance_uint32_iterator(i);
+        roaring_uint32_iterator_advance(i);
     }
     // you can skip over values and move the iterator with
-    // roaring_move_uint32_iterator_equalorlarger(i,someintvalue)
+    // roaring_uint32_iterator_move_equalorlarger(i,someintvalue)
 
-    roaring_free_uint32_iterator(i);
+    roaring_uint32_iterator_free(i);
     // roaring_bitmap_get_cardinality(r1) == counter
 
     // for greater speed, you can iterate over the data in bulk
-    i = roaring_create_iterator(r1);
+    i = roaring_iterator_create(r1);
     uint32_t buffer[256];
     while (1) {
-        uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
+        uint32_t ret = roaring_uint32_iterator_read(i, buffer, 256);
         for (uint32_t j = 0; j < ret; j++) {
             counter += buffer[j];
         }
@@ -149,7 +149,7 @@ int main() {
             break;
         }
     }
-    roaring_free_uint32_iterator(i);
+    roaring_uint32_iterator_free(i);
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);

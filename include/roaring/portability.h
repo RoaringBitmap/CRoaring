@@ -557,6 +557,11 @@ static inline uint32_t croaring_refcount_get(const croaring_refcount_t *val) {
 #error "Unknown atomic implementation"
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#define CROARING_DEPRECATED __attribute__((deprecated))
+#else
+#define CROARING_DEPRECATED
+#endif  // defined(__GNUC__) || defined(__clang__)
 
 // We need portability.h to be included first,
 // but we also always want isadetection.h to be

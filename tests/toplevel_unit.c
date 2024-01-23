@@ -609,12 +609,12 @@ DEFINE_TEST(check_iterate_to_end) {
         roaring_bitmap_t *r1 = roaring_bitmap_create();
         roaring_bitmap_flip_inplace(r1, bignumber - s, bignumber);
         roaring_uint32_iterator_t iterator;
-        roaring_init_iterator(r1, &iterator);
+        roaring_iterator_init(r1, &iterator);
         uint64_t count = 0;
         while (iterator.has_value) {
             assert_true(iterator.current_value + (s - count) == bignumber);
             count++;
-            roaring_advance_uint32_iterator(&iterator);
+            roaring_uint32_iterator_advance(&iterator);
         }
         assert_true(count == s);
         assert_true(roaring_bitmap_get_cardinality(r1) == s);
@@ -628,12 +628,12 @@ DEFINE_TEST(check_iterate_to_beginning) {
         roaring_bitmap_t *r1 = roaring_bitmap_create();
         roaring_bitmap_flip_inplace(r1, bignumber - s, bignumber);
         roaring_uint32_iterator_t iterator;
-        roaring_init_iterator_last(r1, &iterator);
+        roaring_iterator_init_last(r1, &iterator);
         uint64_t count = 0;
         while (iterator.has_value) {
             count++;
             assert_true(iterator.current_value + count == bignumber);
-            roaring_previous_uint32_iterator(&iterator);
+            roaring_uint32_iterator_previous(&iterator);
         }
         assert_true(count == s);
         assert_true(roaring_bitmap_get_cardinality(r1) == s);
@@ -853,19 +853,19 @@ void test_example(bool copy_on_write) {
 
     // we can also create iterator structs
     counter = 0;
-    roaring_uint32_iterator_t *i = roaring_create_iterator(r1);
+    roaring_uint32_iterator_t *i = roaring_iterator_create(r1);
     while (i->has_value) {
         counter++;
-        roaring_advance_uint32_iterator(i);
+        roaring_uint32_iterator_advance(i);
     }
-    roaring_free_uint32_iterator(i);
+    roaring_uint32_iterator_free(i);
     assert_true(roaring_bitmap_get_cardinality(r1) == counter);
 
     // for greater speed, you can iterate over the data in bulk
-    i = roaring_create_iterator(r1);
+    i = roaring_iterator_create(r1);
     uint32_t buffer[256];
     while (1) {
-        uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);
+        uint32_t ret = roaring_uint32_iterator_read(i, buffer, 256);
         for (uint32_t j = 0; j < ret; j++) {
             counter += buffer[j];
         }
@@ -873,7 +873,7 @@ void test_example(bool copy_on_write) {
             break;
         }
     }
-    roaring_free_uint32_iterator(i);
+    roaring_uint32_iterator_free(i);
 
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
@@ -899,106 +899,106 @@ void test_uint32_iterator(bool run) {
     }
     if (run) roaring_bitmap_run_optimize(r1);
     assert_bitmap_validate(r1);
-    roaring_uint32_iterator_t *iter = roaring_create_iterator(r1);
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(r1);
     for (uint32_t i = 0; i < 66000; i += 3) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i);
+        roaring_uint32_iterator_move_equalorlarger(iter, i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_advance_uint32_iterator(iter);
+        roaring_uint32_iterator_advance(iter);
     }
     for (uint32_t i = 100000; i < 200000; i++) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i);
+        roaring_uint32_iterator_move_equalorlarger(iter, i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_advance_uint32_iterator(iter);
+        roaring_uint32_iterator_advance(iter);
     }
     for (uint32_t i = 300000; i < 500000; i += 100) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i);
+        roaring_uint32_iterator_move_equalorlarger(iter, i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_advance_uint32_iterator(iter);
+        roaring_uint32_iterator_advance(iter);
     }
     for (uint32_t i = 600000; i < 700000; i += 1) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i);
+        roaring_uint32_iterator_move_equalorlarger(iter, i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_advance_uint32_iterator(iter);
+        roaring_uint32_iterator_advance(iter);
     }
     for (uint32_t i = 800000; i < 900000; i += 7) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i);
+        roaring_uint32_iterator_move_equalorlarger(iter, i);
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_advance_uint32_iterator(iter);
+        roaring_uint32_iterator_advance(iter);
     }
     assert_false(iter->has_value);
-    roaring_move_uint32_iterator_equalorlarger(iter, 0);
+    roaring_uint32_iterator_move_equalorlarger(iter, 0);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 0);
-    roaring_move_uint32_iterator_equalorlarger(iter, 66000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 66000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 100000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 100000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 100000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 100000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 200000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 200000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 300000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 300000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 300000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 300000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 500000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 500000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 600000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 600000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 600000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 600000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 700000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 700000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 800000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 800000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 800000);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 800000);
-    roaring_move_uint32_iterator_equalorlarger(iter, 900000);
+    roaring_uint32_iterator_move_equalorlarger(iter, 900000);
     assert_false(iter->has_value);
-    roaring_move_uint32_iterator_equalorlarger(iter, 0);
+    roaring_uint32_iterator_move_equalorlarger(iter, 0);
     for (uint32_t i = 0; i < 66000; i += 3) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i + 1);
+        roaring_uint32_iterator_move_equalorlarger(iter, i + 1);
     }
     for (uint32_t i = 100000; i < 200000; i++) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i + 1);
+        roaring_uint32_iterator_move_equalorlarger(iter, i + 1);
     }
     for (uint32_t i = 300000; i < 500000; i += 100) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i + 1);
+        roaring_uint32_iterator_move_equalorlarger(iter, i + 1);
     }
     for (uint32_t i = 600000; i < 700000; i += 1) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i + 1);
+        roaring_uint32_iterator_move_equalorlarger(iter, i + 1);
     }
     for (uint32_t i = 800000; i < 900000; i += 7) {
         assert_true(iter->has_value);
         assert_true(iter->current_value == i);
-        roaring_move_uint32_iterator_equalorlarger(iter, i + 1);
+        roaring_uint32_iterator_move_equalorlarger(iter, i + 1);
     }
     assert_false(iter->has_value);
 
-    roaring_free_uint32_iterator(iter);
+    roaring_uint32_iterator_free(iter);
     roaring_bitmap_free(r1);
 }
 
@@ -3916,7 +3916,7 @@ void test_iterator_generate_data(uint32_t **values_out, uint32_t *count_out) {
  */
 void read_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
                   uint32_t ref_count, uint32_t step) {
-    roaring_uint32_iterator_t *iter = roaring_create_iterator(r);
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(r);
     uint32_t *buffer = (uint32_t *)malloc(sizeof(uint32_t) *
                                           (step == UINT32_MAX ? 65536 : step));
     while (ref_count > 0) {
@@ -3935,7 +3935,7 @@ void read_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
             }
         }
 
-        uint32_t num_got = roaring_read_uint32_iterator(iter, buffer, num_ask);
+        uint32_t num_got = roaring_uint32_iterator_read(iter, buffer, num_ask);
         assert_true(num_got == minimum_uint32(num_ask, ref_count));
         for (uint32_t i = 0; i < num_got; i++) {
             assert_true(ref_values[i] == buffer[i]);
@@ -3947,12 +3947,12 @@ void read_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
     assert_true(iter->has_value == false);
     assert_true(iter->current_value == UINT32_MAX);
 
-    assert_true(roaring_read_uint32_iterator(iter, buffer, step) == 0);
+    assert_true(roaring_uint32_iterator_read(iter, buffer, step) == 0);
     assert_true(iter->has_value == false);
     assert_true(iter->current_value == UINT32_MAX);
 
     free(buffer);
-    roaring_free_uint32_iterator(iter);
+    roaring_uint32_iterator_free(iter);
 }
 
 void test_read_uint32_iterator(uint8_t type) {
@@ -3968,13 +3968,13 @@ void test_read_uint32_iterator(uint8_t type) {
         convert_all_containers(r, type);
     }
 
-    roaring_uint32_iterator_t *iter = roaring_create_iterator(r);
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(r);
     uint32_t buffer[1];
-    uint32_t got = roaring_read_uint32_iterator(iter, buffer, 0);
+    uint32_t got = roaring_uint32_iterator_read(iter, buffer, 0);
     assert_true(got == 0);
     assert_true(iter->has_value);
     assert_true(iter->current_value == 0);
-    roaring_free_uint32_iterator(iter);
+    roaring_uint32_iterator_free(iter);
 
     read_compare(r, ref_values, ref_count, 1);
     read_compare(r, ref_values, ref_count, 2);
@@ -4014,7 +4014,7 @@ void test_previous_iterator(uint8_t type) {
     }
 
     roaring_uint32_iterator_t iterator;
-    roaring_init_iterator_last(r, &iterator);
+    roaring_iterator_init_last(r, &iterator);
     uint32_t count = 0;
 
     do {
@@ -4022,7 +4022,7 @@ void test_previous_iterator(uint8_t type) {
         ++count;
         assert_true((int64_t)ref_count - (int64_t)count >= 0);  // sanity check
         assert_true(ref_values[ref_count - count] == iterator.current_value);
-    } while (roaring_previous_uint32_iterator(&iterator));
+    } while (roaring_uint32_iterator_previous(&iterator));
 
     assert_true(ref_count == count);
 
@@ -4075,37 +4075,37 @@ void test_iterator_reuse_retry_count(int retry_count) {
 
     for (int i = 0; i < num_bitmaps; ++i) {
         roaring_uint32_iterator_t iterator;
-        roaring_init_iterator(bitmaps[i], &iterator);
+        roaring_iterator_init(bitmaps[i], &iterator);
         assert_true(iterator.has_value);
         uint32_t first_value = iterator.current_value;
 
         uint32_t count = 0;
         while (iterator.has_value) {
             count++;
-            roaring_advance_uint32_iterator(&iterator);
+            roaring_uint32_iterator_advance(&iterator);
         }
         assert_true(count == roaring_bitmap_get_cardinality(bitmaps[i]));
 
         // Test advancing the iterator more times than necessary
         for (int retry = 0; retry < retry_count; ++retry) {
-            roaring_advance_uint32_iterator(&iterator);
+            roaring_uint32_iterator_advance(&iterator);
         }
 
         // Using same iterator we want to go backwards through the list
-        roaring_previous_uint32_iterator(&iterator);
+        roaring_uint32_iterator_previous(&iterator);
         count = 0;
         while (iterator.has_value) {
             count++;
-            roaring_previous_uint32_iterator(&iterator);
+            roaring_uint32_iterator_previous(&iterator);
         }
         assert_true(count == roaring_bitmap_get_cardinality(bitmaps[i]));
 
         // Test decrement the iterator more times than necessary
         for (int retry = 0; retry < retry_count; ++retry) {
-            roaring_previous_uint32_iterator(&iterator);
+            roaring_uint32_iterator_previous(&iterator);
         }
 
-        roaring_advance_uint32_iterator(&iterator);
+        roaring_uint32_iterator_advance(&iterator);
         assert_true(iterator.has_value);
         assert_true(first_value == iterator.current_value);
     }
@@ -4121,13 +4121,13 @@ DEFINE_TEST(test_iterator_reuse_many) { test_iterator_reuse_retry_count(10); }
 
 DEFINE_TEST(read_uint32_iterator_zero_count) {
     roaring_bitmap_t *r = roaring_bitmap_from_range(0, 10000, 1);
-    roaring_uint32_iterator_t *iterator = roaring_create_iterator(r);
+    roaring_uint32_iterator_t *iterator = roaring_iterator_create(r);
     uint32_t buf[1];
-    uint32_t read = roaring_read_uint32_iterator(iterator, buf, 0);
+    uint32_t read = roaring_uint32_iterator_read(iterator, buf, 0);
     assert_true(read == 0);
     assert_true(iterator->has_value);
     assert_true(iterator->current_value == 0);
-    roaring_free_uint32_iterator(iterator);
+    roaring_uint32_iterator_free(iterator);
     roaring_bitmap_free(r);
 }
 
@@ -4722,14 +4722,14 @@ DEFINE_TEST(issue538) {
 
   // Iterate through the deserialised bitmap - This should be the same set as before
   // just shifted...
-  roaring_uint32_iterator_t *iterator = roaring_create_iterator(deserialized);
+  roaring_uint32_iterator_t *iterator = roaring_iterator_create(deserialized);
   int i = 0;
   while (iterator->has_value) {
     assert_true((int) iterator->current_value == values[i++] + 64000);
-    roaring_advance_uint32_iterator(iterator);
+    roaring_uint32_iterator_advance(iterator);
   }
 
-  roaring_free_uint32_iterator(iterator);
+  roaring_uint32_iterator_free(iterator);
 
   assert_true(roaring_bitmap_get_cardinality(dense_shift) == roaring_bitmap_get_cardinality(deserialized));
   free(arr);
