@@ -371,22 +371,22 @@ Example (C)</h1>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also create iterator structs</span></div>
 <div class="line">    counter = 0;</div>
-<div class="line">    roaring_uint32_iterator_t *i = roaring_create_iterator(r1);</div>
+<div class="line">    roaring_uint32_iterator_t *i = roaring_iterator_create(r1);</div>
 <div class="line">    <span class="keywordflow">while</span> (i-&gt;has_value) {</div>
 <div class="line">        counter++;  <span class="comment">// could use    i-&gt;current_value</span></div>
-<div class="line">        roaring_advance_uint32_iterator(i);</div>
+<div class="line">        roaring_uint32_iterator_advance(i);</div>
 <div class="line">    }</div>
 <div class="line">    <span class="comment">// you can skip over values and move the iterator with</span></div>
-<div class="line">    <span class="comment">// roaring_move_uint32_iterator_equalorlarger(i,someintvalue)</span></div>
+<div class="line">    <span class="comment">// roaring_uint32_iterator_move_equalorlarger(i,someintvalue)</span></div>
 <div class="line"> </div>
-<div class="line">    roaring_free_uint32_iterator(i);</div>
+<div class="line">    roaring_uint32_iterator_free(i);</div>
 <div class="line">    <span class="comment">// roaring_bitmap_get_cardinality(r1) == counter</span></div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// for greater speed, you can iterate over the data in bulk</span></div>
-<div class="line">    i = roaring_create_iterator(r1);</div>
+<div class="line">    i = roaring_iterator_create(r1);</div>
 <div class="line">    uint32_t buffer[256];</div>
 <div class="line">    <span class="keywordflow">while</span> (1) {</div>
-<div class="line">        uint32_t ret = roaring_read_uint32_iterator(i, buffer, 256);</div>
+<div class="line">        uint32_t ret = roaring_uint32_iterator_read(i, buffer, 256);</div>
 <div class="line">        <span class="keywordflow">for</span> (uint32_t j = 0; j &lt; ret; j++) {</div>
 <div class="line">            counter += buffer[j];</div>
 <div class="line">        }</div>
@@ -394,7 +394,7 @@ Example (C)</h1>
 <div class="line">            <span class="keywordflow">break</span>;</div>
 <div class="line">        }</div>
 <div class="line">    }</div>
-<div class="line">    roaring_free_uint32_iterator(i);</div>
+<div class="line">    roaring_uint32_iterator_free(i);</div>
 <div class="line"> </div>
 <div class="line">    roaring_bitmap_free(r1);</div>
 <div class="line">    roaring_bitmap_free(r2);</div>

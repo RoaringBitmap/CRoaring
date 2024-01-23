@@ -603,28 +603,28 @@ $(document).ready(function(){initNavTree('db/d6e/roaring_8hh_source.html','../..
 <div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;    }</div>
 <div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160; </div>
 <div class="line"><a name="l00920"></a><span class="lineno"><a class="line" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a97c7bac108fd9c06d290ab4823b12ad5">  920</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a97c7bac108fd9c06d290ab4823b12ad5">equalorlarger</a>(uint32_t val) {</div>
-<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;        api::roaring_move_uint32_iterator_equalorlarger(&amp;i,val);</div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;        api::roaring_uint32_iterator_move_equalorlarger(&amp;i,val);</div>
 <div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;    }</div>
 <div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160; </div>
 <div class="line"><a name="l00924"></a><span class="lineno"><a class="line" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#af69d848d67e8fa9b90efd30f4b71db50">  924</a></span>&#160;    <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html">type_of_iterator</a> &amp;<a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#af69d848d67e8fa9b90efd30f4b71db50">operator++</a>() {  <span class="comment">// ++i, must returned inc. value</span></div>
-<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        api::roaring_advance_uint32_iterator(&amp;i);</div>
+<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        api::roaring_uint32_iterator_advance(&amp;i);</div>
 <div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;    }</div>
 <div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160; </div>
 <div class="line"><a name="l00929"></a><span class="lineno"><a class="line" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#acb31aefcfd664fd886e897f2b6370da5">  929</a></span>&#160;    <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html">type_of_iterator</a> <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#acb31aefcfd664fd886e897f2b6370da5">operator++</a>(<span class="keywordtype">int</span>) {  <span class="comment">// i++, must return orig. value</span></div>
 <div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;        <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html">RoaringSetBitForwardIterator</a> orig(*<span class="keyword">this</span>);</div>
-<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;        api::roaring_advance_uint32_iterator(&amp;i);</div>
+<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;        api::roaring_uint32_iterator_advance(&amp;i);</div>
 <div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;        <span class="keywordflow">return</span> orig;</div>
 <div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;    }</div>
 <div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160; </div>
 <div class="line"><a name="l00935"></a><span class="lineno"><a class="line" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#af6bd7a97cc51c998b37c8ee026380750">  935</a></span>&#160;    <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html">type_of_iterator</a>&amp; <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#af6bd7a97cc51c998b37c8ee026380750">operator--</a>() { <span class="comment">// prefix --</span></div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;        api::roaring_previous_uint32_iterator(&amp;i);</div>
+<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;        api::roaring_uint32_iterator_previous(&amp;i);</div>
 <div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;    }</div>
 <div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160; </div>
 <div class="line"><a name="l00940"></a><span class="lineno"><a class="line" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a60321d71ee34c5c8cc577fc05678091f">  940</a></span>&#160;    <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html">type_of_iterator</a> <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a60321d71ee34c5c8cc577fc05678091f">operator--</a>(<span class="keywordtype">int</span>) { <span class="comment">// postfix --</span></div>
 <div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;        <a class="code" href="../../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html">RoaringSetBitForwardIterator</a> orig(*<span class="keyword">this</span>);</div>
-<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;        api::roaring_previous_uint32_iterator(&amp;i);</div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;        api::roaring_uint32_iterator_previous(&amp;i);</div>
 <div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;        <span class="keywordflow">return</span> orig;</div>
 <div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;    }</div>
 <div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160; </div>
@@ -644,7 +644,7 @@ $(document).ready(function(){initNavTree('db/d6e/roaring_8hh_source.html','../..
 <div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;            i.has_value = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;            i.current_value = UINT32_MAX;</div>
 <div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;            api::roaring_init_iterator(&amp;parent.<a class="code" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, &amp;i);</div>
+<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;            api::roaring_iterator_init(&amp;parent.<a class="code" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, &amp;i);</div>
 <div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;        }</div>
 <div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;    }</div>
 <div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160; </div>
