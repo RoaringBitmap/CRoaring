@@ -295,6 +295,13 @@ DEFINE_TEST(test_contains_range) {
         assert_false(roaring64_bitmap_contains_range(r, 1, (3 << 16) - 1));
         roaring64_bitmap_free(r);
     }
+    {
+        // Range larger than bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, 1 << 16);
+        assert_false(roaring64_bitmap_contains_range(r, 1, (1 << 16)));
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_select) {
