@@ -1650,15 +1650,14 @@ size_t roaring64_bitmap_portable_size_in_bytes(const roaring64_bitmap_t *r) {
     size += sizeof(high32_count);
 
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
-    bool first = true;
     uint32_t prev_high32;
     roaring_bitmap_t *bitmap32 = NULL;
 
     // Iterate through buckets ordered by increasing keys.
     while (it.value != NULL) {
         uint32_t current_high32 = (uint32_t)(combine_key(it.key, 0) >> 32);
-        if (first || prev_high32 != current_high32) {
-            if (!first) {
+        if (bitmap32 == NULL || prev_high32 != current_high32) {
+            if (bitmap32 != NULL) {
                 // Write as uint32 the most significant 32 bits of the bucket.
                 size += sizeof(prev_high32);
 
@@ -1671,15 +1670,14 @@ size_t roaring64_bitmap_portable_size_in_bytes(const roaring64_bitmap_t *r) {
             // Start a new 32-bit bitmap with the current high 32 bits.
             art_iterator_t it2 = it;
             uint32_t containers_with_high32 = 0;
-            while (it2.value != NULL &&
-                   (uint32_t)combine_key(it2.key, 0) == current_high32) {
+            while (it2.value != NULL && (uint32_t)(combine_key(it2.key, 0) >>
+                                                   32) == current_high32) {
                 containers_with_high32++;
                 art_iterator_next(&it2);
             }
             bitmap32 =
                 roaring_bitmap_create_with_capacity(containers_with_high32);
 
-            first = false;
             prev_high32 = current_high32;
         }
         leaf_t *leaf = (leaf_t *)it.value;
@@ -1717,7 +1715,6 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
     buf += sizeof(high32_count);
 
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
-    bool first = true;
     uint32_t prev_high32;
     roaring_bitmap_t *bitmap32 = NULL;
 
@@ -1725,8 +1722,8 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
     while (it.value != NULL) {
         uint64_t current_high48 = combine_key(it.key, 0);
         uint32_t current_high32 = (uint32_t)(current_high48 >> 32);
-        if (first || prev_high32 != current_high32) {
-            if (!first) {
+        if (bitmap32 == NULL || prev_high32 != current_high32) {
+            if (bitmap32 != NULL) {
                 // Write as uint32 the most significant 32 bits of the bucket.
                 memcpy(buf, &prev_high32, sizeof(prev_high32));
                 buf += sizeof(prev_high32);
@@ -1748,7 +1745,6 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
             bitmap32 =
                 roaring_bitmap_create_with_capacity(containers_with_high32);
 
-            first = false;
             prev_high32 = current_high32;
         }
         leaf_t *leaf = (leaf_t *)it.value;
