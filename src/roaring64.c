@@ -371,6 +371,7 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
             return true;
         }
         if (current_high48_bits > prev_high48_bits + 0x10000) {
+            // There is a gap in the iterator that falls in the range.
             return false;
         }
 
@@ -1410,11 +1411,14 @@ static leaf_t *roaring64_flip_leaf(const roaring64_bitmap_t *r,
     container_t *container2;
     uint8_t typecode2;
     if (leaf1 == NULL) {
+        // No container at this key, create a full container.
         container2 = container_range_of_ones(min, max, &typecode2);
     } else if (min == 0 && max > 0xFFFF) {
+        // Flip whole container.
         container2 =
             container_not(leaf1->container, leaf1->typecode, &typecode2);
     } else {
+        // Partially flip a container.
         container2 = container_not_range(leaf1->container, leaf1->typecode, min,
                                          max, &typecode2);
     }
@@ -1444,9 +1448,11 @@ static void roaring64_flip_leaf_inplace(roaring64_bitmap_t *r, uint8_t high48[],
     }
 
     if (min == 0 && max > 0xFFFF) {
+        // Flip whole container.
         container2 =
             container_inot(leaf->container, leaf->typecode, &typecode2);
     } else {
+        // Partially flip a container.
         container2 = container_inot_range(leaf->container, leaf->typecode, min,
                                           max, &typecode2);
     }
