@@ -1395,18 +1395,11 @@ bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
     return true;
 }
 
-static inline bool roaring64_bitmap_to_uint64_array_iterator(uint64_t value,
-                                                             void *param) {
-    uint64_t **array = (uint64_t **)param;
-    **(array) = value;
-    (*(array))++;
-    return true;
-}
-
 void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
                                       uint64_t *out) {
-    roaring64_bitmap_iterate(r, &roaring64_bitmap_to_uint64_array_iterator,
-                             (void *)(&out));
+    roaring64_iterator_t it = {0};
+    roaring64_iterator_init_at(r, &it, /*first=*/true);
+    roaring64_iterator_read(&it, out, UINT64_MAX);
 }
 
 roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
