@@ -2,6 +2,7 @@
 #define ROARING64_H
 
 #include <roaring/memory.h>
+#include <roaring/portability.h>
 #include <roaring/roaring_types.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -51,10 +52,44 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r);
 roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
                                             const uint64_t *vals);
 
+#ifdef __cplusplus
 /**
- * Creates a new bitmap of a pointer to N 64-bit integers.
+ * Creates a new bitmap which contains all values passed in as arguments.
+ *
+ * To create a bitmap from a variable number of arguments, use the
+ * `roaring64_bitmap_of_ptr` function instead.
  */
-roaring64_bitmap_t *roaring64_bitmap_of(size_t n_args, ...);
+// Use an immediately invoked closure, capturing by reference
+// (in case __VA_ARGS__ refers to context outside the closure)
+// Include a 0 at the beginning of the array to make the array length > 0
+// (zero sized arrays are not valid in standard c/c++)
+#define roaring64_bitmap_from(...)                                       \
+    [&]() {                                                              \
+        const uint64_t roaring64_bitmap_from_array[] = {0, __VA_ARGS__}; \
+        return roaring64_bitmap_of_ptr(                                  \
+            (sizeof(roaring64_bitmap_from_array) /                       \
+             sizeof(roaring64_bitmap_from_array[0])) -                   \
+                1,                                                       \
+            &roaring64_bitmap_from_array[1]);                            \
+    }()
+#else
+/**
+ * Creates a new bitmap which contains all values passed in as arguments.
+ *
+ * To create a bitmap from a variable number of arguments, use the
+ * `roaring64_bitmap_of_ptr` function instead.
+ */
+// While __VA_ARGS__ occurs twice in expansion, one of the times is in a sizeof
+// expression, which is an unevaluated context, so it's even safe in the case
+// where expressions passed have side effects (roaring64_bitmap_from(my_func(),
+// ++i))
+// Include a 0 at the beginning of the array to make the array length > 0
+// (zero sized arrays are not valid in standard c/c++)
+#define roaring64_bitmap_from(...)                                           \
+    roaring64_bitmap_of_ptr(                                                 \
+        (sizeof((const uint64_t[]){0, __VA_ARGS__}) / sizeof(uint64_t)) - 1, \
+        &((const uint64_t[]){0, __VA_ARGS__})[1])
+#endif
 
 /**
  * Create a new bitmap containing all the values in [min, max) that are at a
@@ -543,4 +578,3 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
 #endif
 
 #endif /* ROARING64_H */
-

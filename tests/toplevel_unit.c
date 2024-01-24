@@ -575,7 +575,7 @@ DEFINE_TEST(leaks_with_empty_false) { leaks_with_empty(false); }
 
 DEFINE_TEST(check_interval) {
     // create a new bitmap with varargs
-    roaring_bitmap_t *r = roaring_bitmap_of(4, 1, 2, 3, 1000);
+    roaring_bitmap_t *r = roaring_bitmap_from(1, 2, 3, 1000);
     assert_non_null(r);
 
     roaring_bitmap_printf(r);
@@ -728,7 +728,7 @@ void test_example(bool copy_on_write) {
            compact_size);
 
     // create a new bitmap with varargs
-    roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
+    roaring_bitmap_t *r2 = roaring_bitmap_from(1, 2, 3, 5, 6);
     assert_bitmap_validate(r2);
     assert_non_null(r2);
 
@@ -1186,7 +1186,7 @@ DEFINE_TEST(test_bitmap_from_range) {
 
 DEFINE_TEST(test_printf) {
     roaring_bitmap_t *r1 =
-        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+        roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     assert_bitmap_validate(r1);
     assert_non_null(r1);
     roaring_bitmap_printf(r1);
@@ -1230,7 +1230,7 @@ bool dummy_iterator(uint32_t value, void *param) {
 
 DEFINE_TEST(test_iterate) {
     roaring_bitmap_t *r1 =
-        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+        roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     assert_non_null(r1);
 
     uint32_t num = 0;
@@ -1302,7 +1302,7 @@ DEFINE_TEST(test_remove_withrun) {
 
 DEFINE_TEST(test_portable_serialize) {
     roaring_bitmap_t *r1 =
-        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+        roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     assert_non_null(r1);
 
     uint32_t serialize_len;
@@ -1335,8 +1335,8 @@ DEFINE_TEST(test_portable_serialize) {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
 
-    r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
-                           19866827);
+    r1 = roaring_bitmap_from(2946000, 2997491, 10478289, 10490227, 10502444,
+                             19866827);
     expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     serialized = (char *)malloc(expectedsize);
     serialize_len = roaring_bitmap_portable_serialize(r1, serialized);
@@ -1397,7 +1397,7 @@ DEFINE_TEST(test_portable_serialize) {
 
 DEFINE_TEST(test_serialize) {
     roaring_bitmap_t *r1 =
-        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+        roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     assert_non_null(r1);
 
     uint32_t serialize_len;
@@ -1466,8 +1466,8 @@ DEFINE_TEST(test_serialize) {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
 
-    r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
-                           19866827);
+    r1 = roaring_bitmap_from(2946000, 2997491, 10478289, 10490227, 10502444,
+                             19866827);
 
     serialized = (char *)malloc(roaring_bitmap_size_in_bytes(r1));
     serialize_len = roaring_bitmap_serialize(r1, serialized);
@@ -4531,7 +4531,7 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
 
 DEFINE_TEST(test_portable_deserialize_frozen) {
     roaring_bitmap_t *r1 =
-        roaring_bitmap_of(8, 1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
+        roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     assert_non_null(r1);
 
     uint32_t serialize_len;
@@ -4563,8 +4563,8 @@ DEFINE_TEST(test_portable_deserialize_frozen) {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
 
-    r1 = roaring_bitmap_of(6, 2946000, 2997491, 10478289, 10490227, 10502444,
-                           19866827);
+    r1 = roaring_bitmap_from(2946000, 2997491, 10478289, 10490227, 10502444,
+                             19866827);
     expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
     serialized = (char *)malloc(expectedsize);
     serialize_len = roaring_bitmap_portable_serialize(r1, serialized);

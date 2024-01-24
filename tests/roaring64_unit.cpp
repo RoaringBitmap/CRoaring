@@ -93,7 +93,7 @@ DEFINE_TEST(test_of_ptr) {
 }
 
 DEFINE_TEST(test_of) {
-    roaring64_bitmap_t* r = roaring64_bitmap_of(3, 1ULL, 20000ULL, 500000ULL);
+    roaring64_bitmap_t* r = roaring64_bitmap_from(1, 20000, 500000);
     assert_true(roaring64_bitmap_contains(r, 1));
     assert_true(roaring64_bitmap_contains(r, 20000));
     assert_true(roaring64_bitmap_contains(r, 500000));
@@ -1038,9 +1038,9 @@ DEFINE_TEST(test_flip) {
     }
     {
         // Only the specified range should be flipped.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 2, 5);
-        roaring64_bitmap_t* r3 = roaring64_bitmap_of(4, 1ULL, 2ULL, 4ULL, 6ULL);
+        roaring64_bitmap_t* r3 = roaring64_bitmap_from(1, 2, 4, 6);
         assert_true(roaring64_bitmap_equals(r2, r3));
 
         roaring64_bitmap_free(r1);
@@ -1049,7 +1049,7 @@ DEFINE_TEST(test_flip) {
     }
     {
         // An empty range does nothing.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 3, 3);
         assert_true(roaring64_bitmap_equals(r2, r1));
 
@@ -1058,8 +1058,8 @@ DEFINE_TEST(test_flip) {
     }
     {
         // A bitmap with values in all affected containers.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_of(
-            3, (2ULL << 16), (3ULL << 16) + 1, (4ULL << 16) + 3);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(
+            (2 << 16), (3 << 16) + 1, (4 << 16) + 3);
         roaring64_bitmap_t* r2 =
             roaring64_bitmap_flip(r1, (2 << 16), (4 << 16) + 4);
         roaring64_bitmap_t* r3 =
@@ -1084,9 +1084,9 @@ DEFINE_TEST(test_flip_inplace) {
     }
     {
         // Only the specified range should be flipped.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_flip_inplace(r1, 2, 5);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_of(4, 1ULL, 2ULL, 4ULL, 6ULL);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_from(1, 2, 4, 6);
         assert_true(roaring64_bitmap_equals(r1, r2));
 
         roaring64_bitmap_free(r1);
@@ -1094,9 +1094,9 @@ DEFINE_TEST(test_flip_inplace) {
     }
     {
         // An empty range does nothing.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_flip_inplace(r1, 3, 3);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_from(1, 3, 6);
         assert_true(roaring64_bitmap_equals(r1, r2));
 
         roaring64_bitmap_free(r1);
@@ -1104,8 +1104,8 @@ DEFINE_TEST(test_flip_inplace) {
     }
     {
         // A bitmap with values in all affected containers.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_of(
-            3, (2ULL << 16), (3ULL << 16) + 1, (4ULL << 16) + 3);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(
+            (2 << 16), (3 << 16) + 1, (4 << 16) + 3);
         roaring64_bitmap_flip_inplace(r1, (2 << 16), (4 << 16) + 4);
         roaring64_bitmap_t* r2 =
             roaring64_bitmap_from_range((2 << 16) + 1, (4 << 16) + 3, 1);
