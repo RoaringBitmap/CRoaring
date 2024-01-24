@@ -1271,17 +1271,38 @@ DEFINE_TEST(test_iterator_read) {
         roaring64_bitmap_add_bulk(r, &context, v);
     }
 
-    // Check that a zero count results in zero elements read.
-    roaring64_iterator_t* it = roaring64_iterator_create(r);
-    uint64_t buf[1];
-    assert_int_equal(roaring64_iterator_read(it, buf, 0), 0);
-    roaring64_iterator_free(it);
+    {
+        // Check that a zero count results in zero elements read.
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        uint64_t buf[1];
+        assert_int_equal(roaring64_iterator_read(it, buf, 0), 0);
+        roaring64_iterator_free(it);
+    }
 
     readCompare(values, r, 1);
     readCompare(values, r, 2);
     readCompare(values, r, values.size() - 1);
     readCompare(values, r, values.size());
     readCompare(values, r, values.size() + 1);
+
+    {
+        // A count of UINT64_MAX.
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        std::vector<uint64_t> buf(values.size(), 0);
+        assert_int_equal(roaring64_iterator_read(it, buf.data(), UINT64_MAX),
+                         1000);
+        assert_vector_equal(buf, values);
+        roaring64_iterator_free(it);
+    }
+    {
+        // A count that becomes zero if cast to uint32.
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        std::vector<uint64_t> buf(values.size(), 0);
+        assert_int_equal(
+            roaring64_iterator_read(it, buf.data(), 0xFFFFFFFF00000000), 1000);
+        assert_vector_equal(buf, values);
+        roaring64_iterator_free(it);
+    }
 
     roaring64_bitmap_free(r);
 }

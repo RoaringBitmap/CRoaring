@@ -1531,9 +1531,13 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
         uint32_t container_consumed;
         leaf_t *leaf = (leaf_t *)it->art_it.value;
         uint16_t low16 = (uint16_t)it->value;
+        uint32_t container_count = UINT32_MAX;
+        if (count - consumed < (uint64_t)UINT32_MAX) {
+            container_count = count - consumed;
+        }
         bool has_value = container_iterator_read_into_uint64(
             leaf->container, leaf->typecode, &it->container_it, it->high48, buf,
-            count - consumed, &container_consumed, &low16);
+            container_count, &container_consumed, &low16);
         consumed += container_consumed;
         buf += container_consumed;
         if (has_value) {

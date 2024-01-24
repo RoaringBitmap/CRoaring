@@ -2583,7 +2583,7 @@ bool container_iterator_read_into_uint32(const container_t *c, uint8_t typecode,
 bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          roaring_container_iterator_t *it,
                                          uint64_t high48, uint64_t *buf,
-                                         uint64_t count, uint32_t *consumed,
+                                         uint32_t count, uint32_t *consumed,
                                          uint16_t *value_out);
 
 #ifdef __cplusplus
