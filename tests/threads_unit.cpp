@@ -39,7 +39,7 @@ bool run_threads_unit_tests() {
     
     roaring_bitmap_set_copy_on_write(r1, true);
     roaring_bitmap_run_optimize(r1);
-    roaring_bitmap_t *r2 = roaring_bitmap_of(5, 10010,10020,10030,10040,10050);
+    roaring_bitmap_t *r2 = roaring_bitmap_from(10010,10020,10030,10040,10050);
     roaring_bitmap_set_copy_on_write(r2, true);
     roaring_bitmap_t *r3 = roaring_bitmap_copy(r1);
     roaring_bitmap_set_copy_on_write(r3, true);

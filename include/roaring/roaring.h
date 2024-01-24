@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>  // for `size_t`
 
+#include <roaring/portability.h>
 #include <roaring/memory.h>
 #include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
@@ -94,8 +95,51 @@ void roaring_bitmap_printf_describe(const roaring_bitmap_t *r);
 
 /**
  * Creates a new bitmap from a list of uint32_t integers
+ *
+ * This function is deprecated, use `roaring_bitmap_from` instead, which
+ * doesn't require the number of elements to be passed in.
+ *
+ * @see roaring_bitmap_from
  */
-roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
+CROARING_DEPRECATED roaring_bitmap_t *roaring_bitmap_of(size_t n, ...);
+
+#ifdef __cplusplus
+/**
+ * Creates a new bitmap which contains all values passed in as arguments.
+ *
+ * To create a bitmap from a variable number of arguments, use the
+ * `roaring_bitmap_of_ptr` function instead.
+ */
+// Use an immediately invoked closure, capturing by reference
+// (in case __VA_ARGS__ refers to context outside the closure)
+// Include a 0 at the beginning of the array to make the array length > 0
+// (zero sized arrays are not valid in standard c/c++)
+#define roaring_bitmap_from(...)                                              \
+    [&]() {                                                                   \
+        const uint32_t roaring_bitmap_from_array[] = {0, __VA_ARGS__};        \
+        return roaring_bitmap_of_ptr((sizeof(roaring_bitmap_from_array) /     \
+                                      sizeof(roaring_bitmap_from_array[0])) - \
+                                         1,                                   \
+                                     &roaring_bitmap_from_array[1]);          \
+    }()
+#else
+/**
+ * Creates a new bitmap which contains all values passed in as arguments.
+ *
+ * To create a bitmap from a variable number of arguments, use the
+ * `roaring_bitmap_of_ptr` function instead.
+ */
+// While __VA_ARGS__ occurs twice in expansion, one of the times is in a sizeof
+// expression, which is an unevaluated context, so it's even safe in the case
+// where expressions passed have side effects (roaring64_bitmap_from(my_func(),
+// ++i))
+// Include a 0 at the beginning of the array to make the array length > 0
+// (zero sized arrays are not valid in standard c/c++)
+#define roaring_bitmap_from(...)                                             \
+    roaring_bitmap_of_ptr(                                                   \
+        (sizeof((const uint32_t[]){0, __VA_ARGS__}) / sizeof(uint32_t)) - 1, \
+        &((const uint32_t[]){0, __VA_ARGS__})[1])
+#endif
 
 /**
  * Copies a bitmap (this does memory allocation).
@@ -446,7 +490,7 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
  *
  *   bitset_t * out = bitset_create();
  *   // if the bitset has content in it, call "bitset_clear(out)"
- *   bool success = roaring_bitmap_to_bitset(mybitmap, out); 
+ *   bool success = roaring_bitmap_to_bitset(mybitmap, out);
  *   // on failure, success will be false.
  *   // You can then query the bitset:
  *   bool is_present = bitset_get(out,  10011 );
@@ -524,7 +568,7 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf);
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x),
  * the data format is going to be big-endian and not compatible with little-endian systems.
- * 
+ *
  * The difference with `roaring_bitmap_deserialize()` is that this function checks that the input buffer
  * is a valid bitmap.  If the buffer is too small, NULL is returned.
  */

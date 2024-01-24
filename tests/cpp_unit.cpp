@@ -101,7 +101,7 @@ void test_example(bool copy_on_write) {
     printf("size before run optimize %zu bytes, and after %zu bytes\n", size,
            compact_size);
     // create a new bitmap with varargs
-    roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
+    roaring_bitmap_t *r2 = roaring_bitmap_from(1, 2, 3, 5, 6);
     assert_ptr_not_equal(r2, NULL);
     roaring_bitmap_printf(r2);
     printf("\n");

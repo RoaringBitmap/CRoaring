@@ -331,7 +331,7 @@ int main() {
            expectedsizebasic, expectedsizerun);
 
     // create a new bitmap containing the values {1,2,3,5,6}
-    roaring_bitmap_t *r2 = roaring_bitmap_of(5, 1, 2, 3, 5, 6);
+    roaring_bitmap_t *r2 = roaring_bitmap_from(1, 2, 3, 5, 6);
     roaring_bitmap_printf(r2);  // print it
 
     // we can also create a bitmap from a pointer to 32-bit integers
