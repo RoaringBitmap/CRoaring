@@ -333,6 +333,14 @@ static inline void add_range_closed_at(art_t *art, uint8_t *high48,
     art_insert(art, high48, (art_val_t *)leaf);
 }
 
+void roaring64_bitmap_add_range(roaring64_bitmap_t *r, uint64_t min,
+                                uint64_t max) {
+    if (min >= max) {
+        return;
+    }
+    roaring64_bitmap_add_range_closed(r, min, max - 1);
+}
+
 void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
                                        uint64_t max) {
     if (min > max) {
@@ -372,6 +380,61 @@ bool roaring64_bitmap_contains(const roaring64_bitmap_t *r, uint64_t val) {
         return container_contains(leaf->container, low16, leaf->typecode);
     }
     return false;
+}
+
+bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
+                                     uint64_t max) {
+    if (min >= max) {
+        return true;
+    }
+
+    uint8_t min_high48[ART_KEY_BYTES];
+    uint16_t min_low16 = split_key(min, min_high48);
+    uint8_t max_high48[ART_KEY_BYTES];
+    uint16_t max_low16 = split_key(max, max_high48);
+    uint64_t max_high48_bits = max & 0xFFFFFFFFFFFF0000;
+
+    art_iterator_t it = art_lower_bound(&r->art, min_high48);
+    if (it.value == NULL) {
+        return false;
+    }
+    uint64_t prev_high48_bits = min & 0xFFFFFFFFFFFF0000;
+    while (it.value != NULL) {
+        uint64_t current_high48_bits = combine_key(it.key, 0);
+        if (current_high48_bits > max_high48_bits) {
+            // We've passed the end of the range with all containers containing
+            // the range.
+            return true;
+        }
+        if (current_high48_bits > prev_high48_bits + 0x10000) {
+            // There is a gap in the iterator that falls in the range.
+            return false;
+        }
+
+        leaf_t *leaf = (leaf_t *)it.value;
+        uint32_t container_min = 0;
+        if (compare_high48(it.key, min_high48) == 0) {
+            container_min = min_low16;
+        }
+        uint32_t container_max = 0xFFFF + 1;  // Exclusive
+        if (compare_high48(it.key, max_high48) == 0) {
+            container_max = max_low16;
+        }
+
+        // For the first and last containers we use container_contains_range,
+        // for the intermediate containers we can use container_is_full.
+        if (container_min == 0 && container_max == 0xFFFF + 1) {
+            if (!container_is_full(leaf->container, leaf->typecode)) {
+                return false;
+            }
+        } else if (!container_contains_range(leaf->container, container_min,
+                                             container_max, leaf->typecode)) {
+            return false;
+        }
+        prev_high48_bits = current_high48_bits;
+        art_iterator_next(&it);
+    }
+    return prev_high48_bits == max_high48_bits;
 }
 
 bool roaring64_bitmap_contains_bulk(const roaring64_bitmap_t *r,
@@ -590,6 +653,14 @@ static inline void remove_range_closed_at(art_t *art, uint8_t *high48,
             free_leaf(leaf);
         }
     }
+}
+
+void roaring64_bitmap_remove_range(roaring64_bitmap_t *r, uint64_t min,
+                                   uint64_t max) {
+    if (min >= max) {
+        return;
+    }
+    roaring64_bitmap_remove_range_closed(r, min, max - 1);
 }
 
 void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
@@ -1378,12 +1449,189 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
     }
 }
 
+/**
+ * Flips the leaf at high48 in the range [min, max), returning a new leaf with a
+ * new container. If the high48 key is not found in the existing bitmap, a new
+ * container is created. Returns null if the negation results in an empty range.
+ */
+static leaf_t *roaring64_flip_leaf(const roaring64_bitmap_t *r,
+                                   uint8_t high48[], uint32_t min,
+                                   uint32_t max) {
+    leaf_t *leaf1 = (leaf_t *)art_find(&r->art, high48);
+    container_t *container2;
+    uint8_t typecode2;
+    if (leaf1 == NULL) {
+        // No container at this key, create a full container.
+        container2 = container_range_of_ones(min, max, &typecode2);
+    } else if (min == 0 && max > 0xFFFF) {
+        // Flip whole container.
+        container2 =
+            container_not(leaf1->container, leaf1->typecode, &typecode2);
+    } else {
+        // Partially flip a container.
+        container2 = container_not_range(leaf1->container, leaf1->typecode, min,
+                                         max, &typecode2);
+    }
+    if (container_nonzero_cardinality(container2, typecode2)) {
+        return create_leaf(container2, typecode2);
+    }
+    container_free(container2, typecode2);
+    return NULL;
+}
+
+/**
+ * Flips the leaf at high48 in the range [min, max). If the high48 key is not
+ * found in the bitmap, a new container is created. Deletes the leaf and
+ * associated container if the negation results in an empty range.
+ */
+static void roaring64_flip_leaf_inplace(roaring64_bitmap_t *r, uint8_t high48[],
+                                        uint32_t min, uint32_t max) {
+    leaf_t *leaf = (leaf_t *)art_find(&r->art, high48);
+    container_t *container2;
+    uint8_t typecode2;
+    if (leaf == NULL) {
+        // No container at this key, insert a full container.
+        container2 = container_range_of_ones(min, max, &typecode2);
+        art_insert(&r->art, high48,
+                   (art_val_t *)create_leaf(container2, typecode2));
+        return;
+    }
+
+    if (min == 0 && max > 0xFFFF) {
+        // Flip whole container.
+        container2 =
+            container_inot(leaf->container, leaf->typecode, &typecode2);
+    } else {
+        // Partially flip a container.
+        container2 = container_inot_range(leaf->container, leaf->typecode, min,
+                                          max, &typecode2);
+    }
+
+    leaf->container = container2;
+    leaf->typecode = typecode2;
+
+    if (!container_nonzero_cardinality(leaf->container, leaf->typecode)) {
+        art_erase(&r->art, high48);
+        container_free(leaf->container, leaf->typecode);
+        free_leaf(leaf);
+    }
+}
+
+roaring64_bitmap_t *roaring64_bitmap_flip(const roaring64_bitmap_t *r,
+                                          uint64_t min, uint64_t max) {
+    if (min >= max) {
+        return roaring64_bitmap_copy(r);
+    }
+    return roaring64_bitmap_flip_closed(r, min, max - 1);
+}
+
+roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r1,
+                                                 uint64_t min, uint64_t max) {
+    if (min > max) {
+        return roaring64_bitmap_copy(r1);
+    }
+    uint8_t min_high48_key[ART_KEY_BYTES];
+    uint16_t min_low16 = split_key(min, min_high48_key);
+    uint8_t max_high48_key[ART_KEY_BYTES];
+    uint16_t max_low16 = split_key(max, max_high48_key);
+    uint64_t min_high48_bits = (min & 0xFFFFFFFFFFFF0000ULL) >> 16;
+    uint64_t max_high48_bits = (max & 0xFFFFFFFFFFFF0000ULL) >> 16;
+
+    roaring64_bitmap_t *r2 = roaring64_bitmap_create();
+    art_iterator_t it = art_init_iterator(&r1->art, /*first=*/true);
+
+    // Copy the containers before min unchanged.
+    while (it.value != NULL && compare_high48(it.key, min_high48_key) < 0) {
+        leaf_t *leaf1 = (leaf_t *)it.value;
+        uint8_t typecode2 = leaf1->typecode;
+        container_t *container2 = get_copy_of_container(
+            leaf1->container, &typecode2, /*copy_on_write=*/false);
+        art_insert(&r2->art, it.key,
+                   (art_val_t *)create_leaf(container2, typecode2));
+        art_iterator_next(&it);
+    }
+
+    // Flip the range (including non-existent containers!) between min and max.
+    for (uint64_t high48_bits = min_high48_bits; high48_bits <= max_high48_bits;
+         high48_bits++) {
+        uint8_t current_high48_key[ART_KEY_BYTES];
+        split_key(high48_bits << 16, current_high48_key);
+
+        uint32_t min_container = 0;
+        if (high48_bits == min_high48_bits) {
+            min_container = min_low16;
+        }
+        uint32_t max_container = 0xFFFF + 1;  // Exclusive range.
+        if (high48_bits == max_high48_bits) {
+            max_container = max_low16 + 1;  // Exclusive.
+        }
+
+        leaf_t *leaf = roaring64_flip_leaf(r1, current_high48_key,
+                                           min_container, max_container);
+        if (leaf != NULL) {
+            art_insert(&r2->art, current_high48_key, (art_val_t *)leaf);
+        }
+    }
+
+    // Copy the containers after max unchanged.
+    it = art_upper_bound(&r1->art, max_high48_key);
+    while (it.value != NULL) {
+        leaf_t *leaf1 = (leaf_t *)it.value;
+        uint8_t typecode2 = leaf1->typecode;
+        container_t *container2 = get_copy_of_container(
+            leaf1->container, &typecode2, /*copy_on_write=*/false);
+        art_insert(&r2->art, it.key,
+                   (art_val_t *)create_leaf(container2, typecode2));
+        art_iterator_next(&it);
+    }
+
+    return r2;
+}
+
+void roaring64_bitmap_flip_inplace(roaring64_bitmap_t *r, uint64_t min,
+                                   uint64_t max) {
+    if (min >= max) {
+        return;
+    }
+    roaring64_bitmap_flip_closed_inplace(r, min, max - 1);
+}
+
+void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
+                                          uint64_t max) {
+    if (min > max) {
+        return;
+    }
+    uint16_t min_low16 = (uint16_t)min;
+    uint16_t max_low16 = (uint16_t)max;
+    uint64_t min_high48_bits = (min & 0xFFFFFFFFFFFF0000ULL) >> 16;
+    uint64_t max_high48_bits = (max & 0xFFFFFFFFFFFF0000ULL) >> 16;
+
+    // Flip the range (including non-existent containers!) between min and max.
+    for (uint64_t high48_bits = min_high48_bits; high48_bits <= max_high48_bits;
+         high48_bits++) {
+        uint8_t current_high48_key[ART_KEY_BYTES];
+        split_key(high48_bits << 16, current_high48_key);
+
+        uint32_t min_container = 0;
+        if (high48_bits == min_high48_bits) {
+            min_container = min_low16;
+        }
+        uint32_t max_container = 0xFFFF + 1;  // Exclusive range.
+        if (high48_bits == max_high48_bits) {
+            max_container = max_low16 + 1;  // Exclusive.
+        }
+
+        roaring64_flip_leaf_inplace(r, current_high48_key, min_container,
+                                    max_container);
+    }
+}
+
 bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
                               roaring_iterator64 iterator, void *ptr) {
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         uint64_t high48 = combine_key(it.key, 0);
-        uint64_t high32 = high48 & 0xFFFFFFFF00000000;
+        uint64_t high32 = high48 & 0xFFFFFFFF00000000ULL;
         uint32_t low32 = high48;
         leaf_t *leaf = (leaf_t *)it.value;
         if (!container_iterate64(leaf->container, leaf->typecode, low32,

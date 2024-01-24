@@ -103,6 +103,12 @@ void roaring64_bitmap_add_many(roaring64_bitmap_t *r, size_t n_args,
                                const uint64_t *vals);
 
 /**
+ * Add all values in range [min, max).
+ */
+void roaring64_bitmap_add_range(roaring64_bitmap_t *r, uint64_t min,
+                                uint64_t max);
+
+/**
  * Add all values in range [min, max].
  */
 void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
@@ -149,6 +155,12 @@ void roaring64_bitmap_remove_many(roaring64_bitmap_t *r, size_t n_args,
                                   const uint64_t *vals);
 
 /**
+ * Remove all values in range [min, max).
+ */
+void roaring64_bitmap_remove_range(roaring64_bitmap_t *r, uint64_t min,
+                                   uint64_t max);
+
+/**
  * Remove all values in range [min, max].
  */
 void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
@@ -158,6 +170,12 @@ void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
  * Returns true if the provided value is present.
  */
 bool roaring64_bitmap_contains(const roaring64_bitmap_t *r, uint64_t val);
+
+/**
+ * Returns true if all values in the range [min, max) are present.
+ */
+bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
+                                     uint64_t max);
 
 /**
  * Check if an item is present using context from a previous insert or search
@@ -370,6 +388,37 @@ uint64_t roaring64_bitmap_andnot_cardinality(const roaring64_bitmap_t *r1,
  */
 void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                                      const roaring64_bitmap_t *r2);
+
+/**
+ * Compute the negation of the bitmap in the interval [min, max).
+ * The number of negated values is `max - min`. Areas outside the range are
+ * passed through unchanged.
+ */
+roaring64_bitmap_t *roaring64_bitmap_flip(const roaring64_bitmap_t *r,
+                                          uint64_t min, uint64_t max);
+
+/**
+ * Compute the negation of the bitmap in the interval [min, max].
+ * The number of negated values is `max - min + 1`. Areas outside the range are
+ * passed through unchanged.
+ */
+roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r,
+                                                 uint64_t min, uint64_t max);
+
+/**
+ * In-place version of `roaring64_bitmap_flip`. Compute the negation of the
+ * bitmap in the interval [min, max). The number of negated values is `max -
+ * min`. Areas outside the range are passed through unchanged.
+ */
+void roaring64_bitmap_flip_inplace(roaring64_bitmap_t *r, uint64_t min,
+                                   uint64_t max);
+/**
+ * In-place version of `roaring64_bitmap_flip_closed`. Compute the negation of
+ * the bitmap in the interval [min, max]. The number of negated values is `max -
+ * min + 1`. Areas outside the range are passed through unchanged.
+ */
+void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
+                                          uint64_t max);
 
 /**
  * Iterate over the bitmap elements. The function `iterator` is called once for

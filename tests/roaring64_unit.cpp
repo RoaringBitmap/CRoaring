@@ -248,6 +248,62 @@ DEFINE_TEST(test_contains_bulk) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_contains_range) {
+    {
+        // Empty bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        assert_false(roaring64_bitmap_contains_range(r, 1, 10));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Empty range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, 1));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range within one container.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, 10));
+        assert_false(roaring64_bitmap_contains_range(r, 1, 11));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range across two containers.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, (1 << 16) + 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, (1 << 16) + 10));
+        assert_true(roaring64_bitmap_contains_range(r, 1, (1 << 16) - 1));
+        assert_false(roaring64_bitmap_contains_range(r, 1, (1 << 16) + 11));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range across three containers.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, (2 << 16) + 10);
+        assert_true(roaring64_bitmap_contains_range(r, 1, (2 << 16) + 10));
+        assert_false(roaring64_bitmap_contains_range(r, 1, (2 << 16) + 11));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Container missing from range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, (1 << 16) - 1);
+        roaring64_bitmap_add_range(r, (2 << 16), (3 << 16) - 1);
+        assert_false(roaring64_bitmap_contains_range(r, 1, (3 << 16) - 1));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range larger than bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 1, 1 << 16);
+        assert_false(roaring64_bitmap_contains_range(r, 1, (1 << 16)));
+        roaring64_bitmap_free(r);
+    }
+}
+
 DEFINE_TEST(test_select) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
     for (uint64_t i = 0; i < 100; ++i) {
@@ -970,6 +1026,97 @@ DEFINE_TEST(test_andnot_inplace) {
     }
 }
 
+DEFINE_TEST(test_flip) {
+    {
+        // Flipping an empty bitmap should result in a non-empty range.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+        roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 10, 100000);
+        assert_true(roaring64_bitmap_contains_range(r2, 10, 100000));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        // Only the specified range should be flipped.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 2, 5);
+        roaring64_bitmap_t* r3 = roaring64_bitmap_of(4, 1ULL, 2ULL, 4ULL, 6ULL);
+        assert_true(roaring64_bitmap_equals(r2, r3));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+        roaring64_bitmap_free(r3);
+    }
+    {
+        // An empty range does nothing.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 3, 3);
+        assert_true(roaring64_bitmap_equals(r2, r1));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        // A bitmap with values in all affected containers.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_of(
+            3, (2ULL << 16), (3ULL << 16) + 1, (4ULL << 16) + 3);
+        roaring64_bitmap_t* r2 =
+            roaring64_bitmap_flip(r1, (2 << 16), (4 << 16) + 4);
+        roaring64_bitmap_t* r3 =
+            roaring64_bitmap_from_range((2 << 16) + 1, (4 << 16) + 3, 1);
+        roaring64_bitmap_remove(r3, (3 << 16) + 1);
+        assert_true(roaring64_bitmap_equals(r2, r3));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+        roaring64_bitmap_free(r3);
+    }
+}
+
+DEFINE_TEST(test_flip_inplace) {
+    {
+        // Flipping an empty bitmap should result in a non-empty range.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+        roaring64_bitmap_flip_inplace(r1, 10, 100000);
+        assert_true(roaring64_bitmap_contains_range(r1, 10, 100000));
+
+        roaring64_bitmap_free(r1);
+    }
+    {
+        // Only the specified range should be flipped.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_flip_inplace(r1, 2, 5);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_of(4, 1ULL, 2ULL, 4ULL, 6ULL);
+        assert_true(roaring64_bitmap_equals(r1, r2));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        // An empty range does nothing.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        roaring64_bitmap_flip_inplace(r1, 3, 3);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_of(3, 1ULL, 3ULL, 6ULL);
+        assert_true(roaring64_bitmap_equals(r1, r2));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        // A bitmap with values in all affected containers.
+        roaring64_bitmap_t* r1 = roaring64_bitmap_of(
+            3, (2ULL << 16), (3ULL << 16) + 1, (4ULL << 16) + 3);
+        roaring64_bitmap_flip_inplace(r1, (2 << 16), (4 << 16) + 4);
+        roaring64_bitmap_t* r2 =
+            roaring64_bitmap_from_range((2 << 16) + 1, (4 << 16) + 3, 1);
+        roaring64_bitmap_remove(r2, (3 << 16) + 1);
+        assert_true(roaring64_bitmap_equals(r1, r2));
+
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+}
+
 bool roaring_iterator64_sumall(uint64_t value, void* param) {
     *(uint64_t*)param += value;
     return true;
@@ -1273,6 +1420,7 @@ int main() {
         cmocka_unit_test(test_add_bulk),
         cmocka_unit_test(test_add_many),
         cmocka_unit_test(test_add_range_closed),
+        cmocka_unit_test(test_contains_range),
         cmocka_unit_test(test_contains_bulk),
         cmocka_unit_test(test_select),
         cmocka_unit_test(test_rank),
@@ -1305,6 +1453,8 @@ int main() {
         cmocka_unit_test(test_andnot),
         cmocka_unit_test(test_andnot_cardinality),
         cmocka_unit_test(test_andnot_inplace),
+        cmocka_unit_test(test_flip),
+        cmocka_unit_test(test_flip_inplace),
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterator_create),
         cmocka_unit_test(test_iterator_create_last),
