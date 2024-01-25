@@ -3,6 +3,9 @@ project(RoaringBitmap
   DESCRIPTION "Roaring bitmaps in C (and C++)"
   LANGUAGES CXX C
 )
+set (CMAKE_C_STANDARD 11)
+set (CMAKE_CXX_STANDARD 11)
+
 include(GNUInstallDirs)
 
 if (NOT CMAKE_BUILD_TYPE)
@@ -128,6 +131,8 @@ if(ENABLE_ROARING_TESTS AND BASH)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh
   )
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c PROPERTIES LANGUAGE C CMAKE_C_STANDARD 11)
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp PROPERTIES LANGUAGE CXX CXX_STANDARD 11)
   add_custom_target(croaring-singleheader-files DEPENDS ${CROARING_SINGLEHEADER_FILES})
 
   add_library(croaring-singleheader-include-source INTERFACE)
@@ -140,9 +145,14 @@ if(ENABLE_ROARING_TESTS AND BASH)
 
   add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp>)
   target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source)
+  if(ROARING_EXCEPTIONS)
+    target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=1)
+  else()
+    target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=0)
+  endif()
   add_test(amalgamate_demo_cpp amalgamate_demo_cpp)
 
-  endif()
+endif()
 option(ENABLE_ROARING_MICROBENCHMARKS "Enable microbenchmarks" OFF)
 if(ENABLE_ROARING_MICROBENCHMARKS)
     add_subdirectory(microbenchmarks)

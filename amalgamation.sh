@@ -177,8 +177,8 @@ echo "Creating ${DEMOC}..."
 
 
 void or_many(void) {
-    roaring_bitmap_t *r1 = roaring_bitmap_of(2, 500, 1000);
-    roaring_bitmap_t *r2 = roaring_bitmap_of(2, 1000, 2000);
+    roaring_bitmap_t *r1 = roaring_bitmap_from(500, 1000);
+    roaring_bitmap_t *r2 = roaring_bitmap_from(1000, 2000);
 
     const roaring_bitmap_t *bitmap_arr[2] = {r1, r2};
     fprintf(stderr, "Going to or many\n");
