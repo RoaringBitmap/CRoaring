@@ -110,6 +110,38 @@ if(ENABLE_ROARING_TESTS)
   endif()
   add_subdirectory(tests)
 endif()
+find_program(BASH bash)
+
+if(ENABLE_ROARING_TESTS AND BASH)
+  set(CROARING_SINGLEHEADER_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/roaring.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/roaring.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/roaring.hh
+  )
+  set_source_files_properties(${CROARING_SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
+
+  add_custom_command(
+    OUTPUT ${CROARING_SINGLEHEADER_FILES}
+    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh 
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh
+  )
+  add_custom_target(croaring-singleheader-files DEPENDS ${CROARING_SINGLEHEADER_FILES})
+
+  add_library(croaring-singleheader-include-source INTERFACE)
+  target_include_directories(croaring-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+  add_dependencies(croaring-singleheader-include-source croaring-singleheader-files)
+
+  add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c>)
+  target_link_libraries(amalgamate_demo croaring-singleheader-include-source)
+  add_test(amalgamate_demo amalgamate_demo)
+
+  add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp>)
+  target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source)
+  add_test(amalgamate_demo_cpp amalgamate_demo_cpp)
+
+  endif()
 option(ENABLE_ROARING_MICROBENCHMARKS "Enable microbenchmarks" OFF)
 if(ENABLE_ROARING_MICROBENCHMARKS)
     add_subdirectory(microbenchmarks)
