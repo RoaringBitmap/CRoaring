@@ -125,6 +125,7 @@ if(ENABLE_ROARING_TESTS AND BASH)
   add_custom_command(
     OUTPUT ${CROARING_SINGLEHEADER_FILES}
     COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh 
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh
   )
   add_custom_target(croaring-singleheader-files DEPENDS ${CROARING_SINGLEHEADER_FILES})
