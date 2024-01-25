@@ -38,7 +38,7 @@ set(WARNING_FLAGS "-Wall")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 set(WARNING_FLAGS "${WARNING_FLAGS} -Wmissing-braces -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wcast-align -Wmissing-prototypes")
+set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wcast-align")
 endif()
 endif()
 

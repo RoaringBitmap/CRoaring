@@ -176,7 +176,7 @@ echo "Creating ${DEMOC}..."
 #include "roaring.c"
 
 
-void or_many(void) {
+static inline void or_many(void) {
     roaring_bitmap_t *r1 = roaring_bitmap_from(500, 1000);
     roaring_bitmap_t *r2 = roaring_bitmap_from(1000, 2000);
 
