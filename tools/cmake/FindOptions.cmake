@@ -34,13 +34,12 @@ endif()
 endif()
 
 if(NOT MSVC)
-set(STD_FLAGS "-std=c11 -fPIC")
-set(CXXSTD_FLAGS "-std=c++11 -fPIC")
-endif()
-
 set(WARNING_FLAGS "-Wall")
-if(NOT MSVC)
-set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+set(WARNING_FLAGS "${WARNING_FLAGS} -Wmissing-braces -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wcast-align")
+endif()
 endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${ROARING_SANITIZE_FLAGS} ")

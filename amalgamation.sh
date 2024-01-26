@@ -5,6 +5,8 @@
 ########################################################################
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
+DESTINATION=${1:-.}
+
 case $SCRIPTPATH in
     (*\ *) echo "Path ($SCRIPTPATH) cannot contain whitespace"; exit 1 ;;
 esac
@@ -141,7 +143,7 @@ echo "Creating ${AMAL_H}..."
     for h in ${ALL_PUBLIC_H}; do
         dofile $h
     done
-} > "${AMAL_H}"
+} > "${DESTINATION}/${AMAL_H}"
 
 
 echo "Creating ${AMAL_C}..."
@@ -163,7 +165,7 @@ echo "Creating ${AMAL_C}..."
     for h in ${ALL_PRIVATE_H} ${ALL_PRIVATE_C}; do
         dofile $h
     done
-} > "${AMAL_C}"
+} > "${DESTINATION}/${AMAL_C}"
 
 
 echo "Creating ${DEMOC}..."
@@ -174,6 +176,25 @@ echo "Creating ${DEMOC}..."
 #include <stdio.h>
 #include <stdlib.h>
 #include "roaring.c"
+
+
+static inline void or_many(void) {
+    roaring_bitmap_t *r1 = roaring_bitmap_from(500, 1000);
+    roaring_bitmap_t *r2 = roaring_bitmap_from(1000, 2000);
+
+    const roaring_bitmap_t *bitmap_arr[2] = {r1, r2};
+    fprintf(stderr, "Going to or many\n");
+    for (int i = 0; i < 10000; i++) {
+        roaring_bitmap_t *r = roaring_bitmap_or_many(2, bitmap_arr);
+        roaring_bitmap_free(r);
+    }
+
+    fprintf(stderr, "Got done\n");
+
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(r1);
+}
+
 int main() {
   roaring_bitmap_t *r1 = roaring_bitmap_create();
   for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(r1, i);
@@ -191,10 +212,11 @@ int main() {
   }
   printf("%zu \n", bitset_count(b));
   bitset_free(b);
+  or_many();
   return EXIT_SUCCESS;
 }
 '
-} > "${DEMOC}"
+} > "${DESTINATION}/${DEMOC}"
 
 
 echo "Creating ${AMAL_HH}..."
@@ -218,7 +240,7 @@ echo "Creating ${AMAL_HH}..."
     for hh in ${ALL_PUBLIC_HH}; do
         dofile $hh
     done
-} > "${AMAL_HH}"
+} > "${DESTINATION}/${AMAL_HH}"
 
 
 echo "Creating ${DEMOCPP}..."
@@ -229,7 +251,8 @@ echo "Creating ${DEMOCPP}..."
     cat <<< '
 #include <iostream>
 #include "roaring.hh"
-#include "roaring.c"
+//#include "roaring.c"
+
 int main() {
   roaring::Roaring r1;
   for (uint32_t i = 100; i < 1000; i++) {
@@ -245,14 +268,14 @@ int main() {
   return 0;
 }
 '
-} >  "${DEMOCPP}"
+} >  "${DESTINATION}/${DEMOCPP}"
 
 
 # Print out a directory listing of the output files and their sizes
 #
 newline
-echo "Files have been written to current directory: $PWD "
-ls -la ${AMAL_C} ${AMAL_H} ${AMAL_HH}  ${DEMOC} ${DEMOCPP}
+echo "Files have been written to ${DESTINATION} "
+ls -la ${DESTINATION}/${AMAL_C} ${DESTINATION}/${AMAL_H} ${DESTINATION}/${AMAL_HH}  ${DESTINATION}/${DEMOC} ${DESTINATION}/${DEMOCPP}
 newline
 
 CBIN=${DEMOC%%.*}
@@ -260,11 +283,12 @@ CPPBIN=${DEMOCPP%%.*}
 
 echo "The interface is found in the file 'include/roaring/roaring.h'."
 newline
+echo "Go to ${DESTINATION}/."
 echo "For C, try:"
 echo "cc -O3 -std=c11  -o ${CBIN} ${DEMOC}  && ./${CBIN} "
 newline
 echo "For C++, try:"
-echo "c++ -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} "
+echo "c++ -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP} ${AMAL_C}  && ./${CPPBIN} "
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'

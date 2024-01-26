@@ -8,9 +8,9 @@
 #include "benchmark.h"
 #include "random.h"
 
-int32_t array_container_get_nruns(const array_container_t *c) { (void) c; return -1; }
-int32_t bitset_container_get_nruns(const bitset_container_t *c) { (void) c; return -1; }
-int32_t run_container_get_nruns(const run_container_t *c) { return c->n_runs; }
+static inline int32_t array_container_get_nruns(const array_container_t *c) { (void) c; return -1; }
+static inline int32_t bitset_container_get_nruns(const bitset_container_t *c) { (void) c; return -1; }
+static inline int32_t run_container_get_nruns(const run_container_t *c) { return c->n_runs; }
 
 #define BENCHMARK_CONTAINER(cname1, cname2, fname, n) \
 { \

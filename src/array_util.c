@@ -15,6 +15,11 @@
 #endif // CROARING_COMPILER_SUPPORTS_AVX512
 #endif
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #ifdef __cplusplus
 using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace internal {
@@ -2167,4 +2172,7 @@ CROARING_UNTARGET_AVX512
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
 #endif

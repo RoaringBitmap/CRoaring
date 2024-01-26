@@ -8,7 +8,7 @@ enum { TESTSIZE = 2048 };
 
 #if defined(CROARING_IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
 // flushes the array from cache
-void run_cache_flush(run_container_t* B) {
+static inline void run_cache_flush(run_container_t* B) {
     const int32_t CACHELINESIZE =
         computecacheline();  // 64 bytes per cache line
     for (int32_t k = 0; k < B->n_runs * 2;
@@ -17,11 +17,11 @@ void run_cache_flush(run_container_t* B) {
     }
 }
 #else
-void run_cache_flush(run_container_t* B) { (void)B; }
+static inline void run_cache_flush(run_container_t* B) { (void)B; }
 #endif
 
 // tries to put array in cache
-void run_cache_prefetch(run_container_t* B) {
+static inline void run_cache_prefetch(run_container_t* B) {
 #if !CROARING_REGULAR_VISUAL_STUDIO
 #if CROARING_IS_X64
     const int32_t CACHELINESIZE =
@@ -36,7 +36,7 @@ void run_cache_prefetch(run_container_t* B) {
 #endif // !CROARING_REGULAR_VISUAL_STUDIO
 }
 
-int add_test(run_container_t* B) {
+static inline int add_test(run_container_t* B) {
     int x;
     for (x = 0; x < (1 << 16); x += 3) {
         run_container_add(B, (uint16_t)x);
@@ -44,7 +44,7 @@ int add_test(run_container_t* B) {
     return 0;
 }
 
-int remove_test(run_container_t* B) {
+static inline int remove_test(run_container_t* B) {
     int x;
     for (x = 0; x < (1 << 16); x += 3) {
         run_container_remove(B, (uint16_t)x);
@@ -52,7 +52,7 @@ int remove_test(run_container_t* B) {
     return 0;
 }
 
-int contains_test(run_container_t* B) {
+static inline int contains_test(run_container_t* B) {
     int card = 0;
     int x;
     for (x = 0; x < (1 << 16); x++) {
@@ -61,12 +61,12 @@ int contains_test(run_container_t* B) {
     return card;
 }
 
-int union_test(run_container_t* B1, run_container_t* B2, run_container_t* BO) {
+static inline int union_test(run_container_t* B1, run_container_t* B2, run_container_t* BO) {
     run_container_union(B1, B2, BO);
     return run_container_cardinality(BO);
 }
 
-int intersection_test(run_container_t* B1, run_container_t* B2,
+static inline int intersection_test(run_container_t* B1, run_container_t* B2,
                       run_container_t* BO) {
     run_container_intersection(B1, B2, BO);
     return run_container_cardinality(BO);

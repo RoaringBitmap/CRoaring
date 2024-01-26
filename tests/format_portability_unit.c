@@ -16,7 +16,7 @@
 #include "test.h"
 
 
-long filesize(char const* path) {
+static inline long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");
     assert_non_null(fp);
 
@@ -25,7 +25,7 @@ long filesize(char const* path) {
     return ftell(fp);
 }
 
-char* readfile(char const* path) {
+static inline char* readfile(char const* path) {
     FILE* fp = fopen(path, "rb");
     assert_non_null(fp);
 
@@ -42,7 +42,7 @@ char* readfile(char const* path) {
     return buf;
 }
 
-int compare(char* x, char* y, size_t size) {
+static inline int compare(char* x, char* y, size_t size) {
     for (size_t i = 0; i < size; ++i) {
         if (x[i] != y[i]) {
             return i + 1;
@@ -51,7 +51,7 @@ int compare(char* x, char* y, size_t size) {
     return 0;
 }
 
-void test_deserialize(char* filename) {
+static inline void test_deserialize(char* filename) {
     char* input_buffer = readfile(filename);
     assert_non_null(input_buffer);
 

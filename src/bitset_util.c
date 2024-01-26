@@ -11,7 +11,11 @@
 #error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
 #endif // CROARING_COMPILER_SUPPORTS_AVX512
 #endif
-
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #ifdef __cplusplus
 using namespace ::roaring::internal;
 extern "C" { namespace roaring { namespace api {
@@ -1125,4 +1129,7 @@ void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length) {
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace api {
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
