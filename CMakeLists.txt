@@ -115,50 +115,48 @@ if(ENABLE_ROARING_TESTS)
 endif()
 find_program(BASH bash)
 
-# we assume write access to the source directory
-option(ROARING_DISABLE_AMAL "Forcefully disable amalgamation tests" OFF)
-
-if(ENABLE_ROARING_TESTS AND BASH AND !ROARING_DISABLE_AMAL)
+if(ENABLE_ROARING_TESTS AND BASH)
+  message(STATUS "Amalgamation tests enabled")
   set(CROARING_SINGLEHEADER_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/roaring.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/roaring.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/roaring.hh
+    ${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.c
+    ${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/roaring.c
+    ${CMAKE_CURRENT_BINARY_DIR}/roaring.h
+    ${CMAKE_CURRENT_BINARY_DIR}/roaring.hh
   )
   set_source_files_properties(${CROARING_SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
   add_custom_command(
     OUTPUT ${CROARING_SINGLEHEADER_FILES}
-    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh 
+    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh ${CROARING_SINGLEHEADER_FILES}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh roaring
   )
-  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c PROPERTIES LANGUAGE C CMAKE_C_STANDARD 11)
-  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp PROPERTIES LANGUAGE CXX CXX_STANDARD 11)
+  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.c PROPERTIES LANGUAGE C CMAKE_C_STANDARD 11)
+  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.cpp PROPERTIES LANGUAGE CXX CXX_STANDARD 11)
   add_custom_target(croaring-singleheader-files DEPENDS ${CROARING_SINGLEHEADER_FILES})
 
   add_library(croaring-singleheader-include-source INTERFACE)
-  target_include_directories(croaring-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+  target_include_directories(croaring-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
   add_dependencies(croaring-singleheader-include-source croaring-singleheader-files)
 
-  add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c>)
+  add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.c>)
   target_link_libraries(amalgamate_demo croaring-singleheader-include-source)
   add_test(amalgamate_demo amalgamate_demo)
-  if(NOT MSVC)
-    add_library(croaring-singleheader-source-lib $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/roaring.c>)
-    target_include_directories(croaring-singleheader-source-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
-    add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp>)
-    target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source croaring-singleheader-source-lib)
-    if(ROARING_EXCEPTIONS)
-      target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=1)
-    else()
-      target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=0)
-    endif()
-    add_test(amalgamate_demo_cpp amalgamate_demo_cpp)
+  add_library(croaring-singleheader-source-lib $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/roaring.c>)
+  target_include_directories(croaring-singleheader-source-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+
+  add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.cpp>)
+  target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source croaring-singleheader-source-lib)
+  if(ROARING_EXCEPTIONS)
+    target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=1)
+  else()
+    target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=0)
   endif()
-
+  add_test(amalgamate_demo_cpp amalgamate_demo_cpp)
+else()
+  message(STATUS "Amalgamation tests disabled")
 endif()
 option(ENABLE_ROARING_MICROBENCHMARKS "Enable microbenchmarks" OFF)
 if(ENABLE_ROARING_MICROBENCHMARKS)

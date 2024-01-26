@@ -5,6 +5,8 @@
 ########################################################################
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
+DESTINATION=${1:-.}
+
 case $SCRIPTPATH in
     (*\ *) echo "Path ($SCRIPTPATH) cannot contain whitespace"; exit 1 ;;
 esac
@@ -141,7 +143,7 @@ echo "Creating ${AMAL_H}..."
     for h in ${ALL_PUBLIC_H}; do
         dofile $h
     done
-} > "${AMAL_H}"
+} > "${DESTINATION}/${AMAL_H}"
 
 
 echo "Creating ${AMAL_C}..."
@@ -163,7 +165,7 @@ echo "Creating ${AMAL_C}..."
     for h in ${ALL_PRIVATE_H} ${ALL_PRIVATE_C}; do
         dofile $h
     done
-} > "${AMAL_C}"
+} > "${DESTINATION}/${AMAL_C}"
 
 
 echo "Creating ${DEMOC}..."
@@ -214,7 +216,7 @@ int main() {
   return EXIT_SUCCESS;
 }
 '
-} > "${DEMOC}"
+} > "${DESTINATION}/${DEMOC}"
 
 
 echo "Creating ${AMAL_HH}..."
@@ -238,7 +240,7 @@ echo "Creating ${AMAL_HH}..."
     for hh in ${ALL_PUBLIC_HH}; do
         dofile $hh
     done
-} > "${AMAL_HH}"
+} > "${DESTINATION}/${AMAL_HH}"
 
 
 echo "Creating ${DEMOCPP}..."
@@ -266,14 +268,14 @@ int main() {
   return 0;
 }
 '
-} >  "${DEMOCPP}"
+} >  "${DESTINATION}/${DEMOCPP}"
 
 
 # Print out a directory listing of the output files and their sizes
 #
 newline
-echo "Files have been written to current directory: $PWD "
-ls -la ${AMAL_C} ${AMAL_H} ${AMAL_HH}  ${DEMOC} ${DEMOCPP}
+echo "Files have been written to ${DESTINATION} "
+ls -la ${DESTINATION}/${AMAL_C} ${DESTINATION}/${AMAL_H} ${DESTINATION}/${AMAL_HH}  ${DESTINATION}/${DEMOC} ${DESTINATION}/${DEMOCPP}
 newline
 
 CBIN=${DEMOC%%.*}
@@ -281,6 +283,7 @@ CPPBIN=${DEMOCPP%%.*}
 
 echo "The interface is found in the file 'include/roaring/roaring.h'."
 newline
+echo "Go to ${DESTINATION}/."
 echo "For C, try:"
 echo "cc -O3 -std=c11  -o ${CBIN} ${DEMOC}  && ./${CBIN} "
 newline
