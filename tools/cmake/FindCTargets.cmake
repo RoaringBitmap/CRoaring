@@ -1,6 +1,3 @@
-if (CMAKE_VERSION VERSION_GREATER 3.0.0)
-  cmake_policy(VERSION 3.0.0)
-endif ()
 include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
 set(BUILD_STATIC_LIB ON)
 if (ENABLE_ROARING_TESTS)
