@@ -26,7 +26,11 @@
 #error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
 #endif  // CROARING_COMPILER_SUPPORTS_AVX512
 #endif
-
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 using roaring::Roaring64Map;
 
 event_collector collector;
@@ -305,5 +309,7 @@ int load(const char *dirname) {
     if (bitmaps == NULL) return -1;
     return count;
 }
-
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
 #endif

@@ -249,7 +249,8 @@ echo "Creating ${DEMOCPP}..."
     cat <<< '
 #include <iostream>
 #include "roaring.hh"
-#include "roaring.c"
+//#include "roaring.c"
+
 int main() {
   roaring::Roaring r1;
   for (uint32_t i = 100; i < 1000; i++) {
@@ -284,7 +285,7 @@ echo "For C, try:"
 echo "cc -O3 -std=c11  -o ${CBIN} ${DEMOC}  && ./${CBIN} "
 newline
 echo "For C++, try:"
-echo "c++ -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} "
+echo "c++ -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP} ${AMAL_C}  && ./${CPPBIN} "
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'

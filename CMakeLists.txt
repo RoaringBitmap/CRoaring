@@ -115,7 +115,10 @@ if(ENABLE_ROARING_TESTS)
 endif()
 find_program(BASH bash)
 
-if(ENABLE_ROARING_TESTS AND BASH)
+# we assume write access to the source directory
+option(ROARING_DISABLE_AMAL "Forcefully disable amalgamation tests" OFF)
+
+if(ENABLE_ROARING_TESTS AND BASH AND !ROARING_DISABLE_AMAL)
   set(CROARING_SINGLEHEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c
     ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp
@@ -129,7 +132,7 @@ if(ENABLE_ROARING_TESTS AND BASH)
     OUTPUT ${CROARING_SINGLEHEADER_FILES}
     COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh 
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamation.sh ${CROARING_SINGLEHEADER_FILES}
   )
   set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.c PROPERTIES LANGUAGE C CMAKE_C_STANDARD 11)
   set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp PROPERTIES LANGUAGE CXX CXX_STANDARD 11)
@@ -143,8 +146,11 @@ if(ENABLE_ROARING_TESTS AND BASH)
   target_link_libraries(amalgamate_demo croaring-singleheader-include-source)
   add_test(amalgamate_demo amalgamate_demo)
   if(NOT MSVC)
+    add_library(croaring-singleheader-source-lib $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/roaring.c>)
+    target_include_directories(croaring-singleheader-source-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+
     add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amalgamation_demo.cpp>)
-    target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source)
+    target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source croaring-singleheader-source-lib)
     if(ROARING_EXCEPTIONS)
       target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=1)
     else()

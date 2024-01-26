@@ -10,7 +10,11 @@
 #error "CROARING_COMPILER_SUPPORTS_AVX512 needs to be defined."
 #endif // CROARING_COMPILER_SUPPORTS_AVX512
 #endif
-
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace internal {
 #endif
@@ -1064,4 +1068,7 @@ int run_container_cardinality(const run_container_t *run) {
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace internal {
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
