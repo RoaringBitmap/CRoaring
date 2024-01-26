@@ -2,7 +2,7 @@
 #include <roaring/roaring.h>
 #include <stdio.h>
 #include "benchmark.h"
-int quickfull() {
+static inline int quickfull() {
     printf("The naive approach works well when the bitmaps quickly become full\n");
     uint64_t cycles_start, cycles_final;
     size_t bitmapcount = 100;
@@ -47,7 +47,7 @@ int quickfull() {
     return 0;
 }
 
-int notsofull() {
+static inline int notsofull() {
     printf("The naive approach works less well when the bitmaps do not quickly become full\n");
     uint64_t cycles_start, cycles_final;
     size_t bitmapcount = 100;
