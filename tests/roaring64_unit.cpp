@@ -12,6 +12,17 @@ using namespace roaring::api;
 
 namespace {
 
+void assert_vector_equal(const std::vector<uint64_t>& lhs,
+                         const std::vector<uint64_t>& rhs) {
+    assert_int_equal(lhs.size(), rhs.size());
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        if (lhs[i] != rhs[i]) {
+            printf("Mismatch at %zu\n", i);
+            assert_int_equal(lhs[i], rhs[i]);
+        }
+    }
+}
+
 DEFINE_TEST(test_copy) {
     roaring64_bitmap_t* r1 = roaring64_bitmap_create();
 
@@ -1186,6 +1197,21 @@ DEFINE_TEST(test_iterate) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_to_uint64_array) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    std::vector<uint64_t> a1 = {0, 1ULL << 35, (1Ull << 35) + 1,
+                                (1Ull << 35) + 2, 1Ull << 36};
+    for (uint64_t val : a1) {
+        roaring64_bitmap_add(r, val);
+    }
+
+    std::vector<uint64_t> a2(a1.size(), 0);
+    roaring64_bitmap_to_uint64_array(r, a2.data());
+    assert_vector_equal(a2, a1);
+
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_iterator_create) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
     {
@@ -1439,17 +1465,38 @@ DEFINE_TEST(test_iterator_read) {
         roaring64_bitmap_add_bulk(r, &context, v);
     }
 
-    // Check that a zero count results in zero elements read.
-    roaring64_iterator_t* it = roaring64_iterator_create(r);
-    uint64_t buf[1];
-    assert_int_equal(roaring64_iterator_read(it, buf, 0), 0);
-    roaring64_iterator_free(it);
+    {
+        // Check that a zero count results in zero elements read.
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        uint64_t buf[1];
+        assert_int_equal(roaring64_iterator_read(it, buf, 0), 0);
+        roaring64_iterator_free(it);
+    }
 
     readCompare(values, r, 1);
     readCompare(values, r, 2);
     readCompare(values, r, values.size() - 1);
     readCompare(values, r, values.size());
     readCompare(values, r, values.size() + 1);
+
+    {
+        // A count of UINT64_MAX.
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        std::vector<uint64_t> buf(values.size(), 0);
+        assert_int_equal(roaring64_iterator_read(it, buf.data(), UINT64_MAX),
+                         1000);
+        assert_vector_equal(buf, values);
+        roaring64_iterator_free(it);
+    }
+    {
+        // A count that becomes zero if cast to uint32.
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        std::vector<uint64_t> buf(values.size(), 0);
+        assert_int_equal(
+            roaring64_iterator_read(it, buf.data(), 0xFFFFFFFF00000000), 1000);
+        assert_vector_equal(buf, values);
+        roaring64_iterator_free(it);
+    }
 
     roaring64_bitmap_free(r);
 }
@@ -1504,6 +1551,7 @@ int main() {
         cmocka_unit_test(test_flip_inplace),
         cmocka_unit_test(test_portable_serialize),
         cmocka_unit_test(test_iterate),
+        cmocka_unit_test(test_to_uint64_array),
         cmocka_unit_test(test_iterator_create),
         cmocka_unit_test(test_iterator_create_last),
         cmocka_unit_test(test_iterator_reinit),

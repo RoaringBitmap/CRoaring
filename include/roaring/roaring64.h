@@ -523,6 +523,17 @@ bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
                               roaring_iterator64 iterator, void *ptr);
 
 /**
+ * Convert the bitmap to a sorted array `out`.
+ *
+ * Caller is responsible to ensure that there is enough memory allocated, e.g.
+ * ```
+ * out = malloc(roaring64_bitmap_get_cardinality(bitmap) * sizeof(uint64_t));
+ * ```
+ */
+void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
+                                      uint64_t *out);
+
+/**
  * Create an iterator object that can be used to iterate through the values.
  * Caller is responsible for calling `roaring64_iterator_free()`.
  *
