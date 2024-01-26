@@ -1133,6 +1133,37 @@ DEFINE_TEST(test_flip_inplace) {
     }
 }
 
+void check_portable_serialization(const roaring64_bitmap_t* r1) {
+    size_t serialized_size = roaring64_bitmap_portable_size_in_bytes(r1);
+    std::vector<char> buf(serialized_size, 0);
+    size_t serialized = roaring64_bitmap_portable_serialize(r1, buf.data());
+    assert_int_equal(serialized, serialized_size);
+    size_t deserialized_size =
+        roaring64_bitmap_portable_deserialize_size(buf.data(), SIZE_MAX);
+    assert_int_equal(deserialized_size, serialized_size);
+    roaring64_bitmap_t* r2 =
+        roaring64_bitmap_portable_deserialize_safe(buf.data(), serialized_size);
+    assert_true(roaring64_bitmap_equals(r2, r1));
+    roaring64_bitmap_free(r2);
+}
+
+DEFINE_TEST(test_portable_serialize) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    check_portable_serialization(r);
+
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1);
+    roaring64_bitmap_add(r, 1ULL << 16);
+    roaring64_bitmap_add(r, 1ULL << 32);
+    roaring64_bitmap_add(r, 1ULL << 48);
+    roaring64_bitmap_add(r, 1ULL << 60);
+    roaring64_bitmap_add(r, UINT64_MAX);
+    check_portable_serialization(r);
+
+    roaring64_bitmap_free(r);
+}
+
 bool roaring_iterator64_sumall(uint64_t value, void* param) {
     *(uint64_t*)param += value;
     return true;
@@ -1471,6 +1502,7 @@ int main() {
         cmocka_unit_test(test_andnot_inplace),
         cmocka_unit_test(test_flip),
         cmocka_unit_test(test_flip_inplace),
+        cmocka_unit_test(test_portable_serialize),
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterator_create),
         cmocka_unit_test(test_iterator_create_last),
