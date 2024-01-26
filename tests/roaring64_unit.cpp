@@ -277,6 +277,7 @@ DEFINE_TEST(test_contains_range) {
         assert_true(roaring64_bitmap_contains_range(r, 1, (1 << 16) + 10));
         assert_true(roaring64_bitmap_contains_range(r, 1, (1 << 16) - 1));
         assert_false(roaring64_bitmap_contains_range(r, 1, (1 << 16) + 11));
+        assert_false(roaring64_bitmap_contains_range(r, 0, (1 << 16) + 10));
         roaring64_bitmap_free(r);
     }
     {
@@ -300,6 +301,21 @@ DEFINE_TEST(test_contains_range) {
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range(r, 1, 1 << 16);
         assert_false(roaring64_bitmap_contains_range(r, 1, (1 << 16)));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range entirely before the bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add(r, 1 << 16);
+        assert_false(roaring64_bitmap_contains_range(r, 1, 10));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range entirely after the bitmap.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add(r, 1 << 16);
+        assert_false(
+            roaring64_bitmap_contains_range(r, 2 << 16, (2 << 16) + 1));
         roaring64_bitmap_free(r);
     }
 }
@@ -1058,8 +1074,8 @@ DEFINE_TEST(test_flip) {
     }
     {
         // A bitmap with values in all affected containers.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_from(
-            (2 << 16), (3 << 16) + 1, (4 << 16) + 3);
+        roaring64_bitmap_t* r1 =
+            roaring64_bitmap_from((2 << 16), (3 << 16) + 1, (4 << 16) + 3);
         roaring64_bitmap_t* r2 =
             roaring64_bitmap_flip(r1, (2 << 16), (4 << 16) + 4);
         roaring64_bitmap_t* r3 =
@@ -1104,8 +1120,8 @@ DEFINE_TEST(test_flip_inplace) {
     }
     {
         // A bitmap with values in all affected containers.
-        roaring64_bitmap_t* r1 = roaring64_bitmap_from(
-            (2 << 16), (3 << 16) + 1, (4 << 16) + 3);
+        roaring64_bitmap_t* r1 =
+            roaring64_bitmap_from((2 << 16), (3 << 16) + 1, (4 << 16) + 3);
         roaring64_bitmap_flip_inplace(r1, (2 << 16), (4 << 16) + 4);
         roaring64_bitmap_t* r2 =
             roaring64_bitmap_from_range((2 << 16) + 1, (4 << 16) + 3, 1);

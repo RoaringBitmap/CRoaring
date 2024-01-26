@@ -395,7 +395,7 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
     uint64_t max_high48_bits = max & 0xFFFFFFFFFFFF0000;
 
     art_iterator_t it = art_lower_bound(&r->art, min_high48);
-    if (it.value == NULL) {
+    if (it.value == NULL || combine_key(it.key, 0) > min) {
         return false;
     }
     uint64_t prev_high48_bits = min & 0xFFFFFFFFFFFF0000;
