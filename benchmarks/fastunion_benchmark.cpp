@@ -1,8 +1,10 @@
-#include <stdio.h>
 #include <iostream>
+#include <stdio.h>
+
 #include <roaring/roaring.h>
-#include "roaring64map.hh"
+
 #include "benchmark.h"
+#include "roaring64map.hh"
 
 using roaring::Roaring64Map;
 
@@ -54,7 +56,7 @@ void benchmarkLegacyFastUnion() {
     auto maps = makeMaps();
 
     // Need pointers to the above
-    std::vector<const Roaring64Map*> result_ptrs;
+    std::vector<const Roaring64Map *> result_ptrs;
     for (auto &map : maps) {
         result_ptrs.push_back(&map);
     }
@@ -67,7 +69,8 @@ void benchmarkLegacyFastUnion() {
 
         auto num_cycles = cycles_final - cycles_start;
         uint64_t cycles_per_map = num_cycles / maps.size();
-        std::cout << "Iteration " << iter << ": " << cycles_per_map << " per map\n";
+        std::cout << "Iteration " << iter << ": " << cycles_per_map
+                  << " per map\n";
     }
 }
 
@@ -76,7 +79,7 @@ void benchmarkNewFastUnion() {
     auto maps = makeMaps();
 
     // Need pointers to the above
-    std::vector<const Roaring64Map*> result_ptrs;
+    std::vector<const Roaring64Map *> result_ptrs;
     for (auto &map : maps) {
         result_ptrs.push_back(&map);
     }
@@ -90,7 +93,8 @@ void benchmarkNewFastUnion() {
 
         auto num_cycles = cycles_final - cycles_start;
         uint64_t cycles_per_map = num_cycles / maps.size();
-        std::cout << "Iteration " << iter << ": " << cycles_per_map << " per map\n";
+        std::cout << "Iteration " << iter << ": " << cycles_per_map
+                  << " per map\n";
     }
 }
 }  // namespace

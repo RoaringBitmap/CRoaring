@@ -9,9 +9,10 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace api {
+extern "C" {
+namespace roaring {
+namespace api {
 #endif
-
 
 /**
  * When building .c files as C++, there's added compile-time checking if the
@@ -26,12 +27,12 @@ extern "C" { namespace roaring { namespace api {
  * code #undefs that after declaring `typedef ROARING_CONTAINER_T container_t;`
  */
 #if defined(__cplusplus)
-    extern "C++" {
-      struct container_s {};
-    }
-    #define ROARING_CONTAINER_T ::roaring::api::container_s
+extern "C++" {
+struct container_s {};
+}
+#define ROARING_CONTAINER_T ::roaring::api::container_s
 #else
-    #define ROARING_CONTAINER_T void  // no compile-time checking
+#define ROARING_CONTAINER_T void  // no compile-time checking
 #endif
 
 #define ROARING_FLAG_COW UINT8_C(0x1)
@@ -56,15 +57,14 @@ typedef struct roaring_array_s {
     uint8_t flags;
 } roaring_array_t;
 
-
 typedef bool (*roaring_iterator)(uint32_t value, void *param);
 typedef bool (*roaring_iterator64)(uint64_t value, void *param);
 
 /**
-*  (For advanced users.)
-* The roaring_statistics_t can be used to collect detailed statistics about
-* the composition of a roaring bitmap.
-*/
+ *  (For advanced users.)
+ * The roaring_statistics_t can be used to collect detailed statistics about
+ * the composition of a roaring bitmap.
+ */
 typedef struct roaring_statistics_s {
     uint32_t n_containers; /* number of containers */
 
@@ -107,7 +107,9 @@ typedef struct roaring_container_iterator_s {
 } roaring_container_iterator_t;
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace api {
+}
+}
+}  // extern "C" { namespace roaring { namespace api {
 #endif
 
 #endif /* ROARING_TYPES_H */

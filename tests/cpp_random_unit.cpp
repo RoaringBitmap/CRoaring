@@ -26,7 +26,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-
 #include <iostream>
 #include <type_traits>
 #include <vector>
@@ -61,38 +60,42 @@ Roaring make_random_bitset() {
     int num_ops = rand() % 100;
     for (int i = 0; i < num_ops; ++i) {
         switch (rand() % 5) {
-          case 0:
-            r.add(gravity);
-            break;
+            case 0:
+                r.add(gravity);
+                break;
 
-          case 1: {
-            uint32_t start = gravity + (rand() % 50) - 25;
-            r.addRange(start, start + rand() % 100);
-            break; }
-
-          case 2: {
-            uint32_t start = gravity + (rand() % 10) - 5;
-            r.removeRange(start, start + rand() % 5);
-            break; }
-
-          case 3: {
-            uint32_t start = gravity + (rand() % 50) - 25;
-            r.flip(start, start + rand() % 50);
-            break; }
-
-          case 4: {  // tests remove(), select(), rank()
-            uint32_t card = r.cardinality();
-            if (card != 0) {
-                uint32_t rnk = rand() % card;
-                uint32_t element;
-                assert_true(r.select(rnk, &element));
-                assert_int_equal(rnk + 1, r.rank(element));
-                r.remove(rnk);
+            case 1: {
+                uint32_t start = gravity + (rand() % 50) - 25;
+                r.addRange(start, start + rand() % 100);
+                break;
             }
-            break; }
 
-          default:
-            assert_true(false);
+            case 2: {
+                uint32_t start = gravity + (rand() % 10) - 5;
+                r.removeRange(start, start + rand() % 5);
+                break;
+            }
+
+            case 3: {
+                uint32_t start = gravity + (rand() % 50) - 25;
+                r.flip(start, start + rand() % 50);
+                break;
+            }
+
+            case 4: {  // tests remove(), select(), rank()
+                uint32_t card = r.cardinality();
+                if (card != 0) {
+                    uint32_t rnk = rand() % card;
+                    uint32_t element;
+                    assert_true(r.select(rnk, &element));
+                    assert_int_equal(rnk + 1, r.rank(element));
+                    r.remove(rnk);
+                }
+                break;
+            }
+
+            default:
+                assert_true(false);
         }
         gravity += (rand() % 200) - 100;
     }
@@ -150,8 +153,7 @@ Roaring64Map make_random_bitset64() {
 
 DEFINE_TEST(sanity_check_doublechecking) {
     Roaring r;
-    while (r.isEmpty())
-        r = make_random_bitset();
+    while (r.isEmpty()) r = make_random_bitset();
 
     // Pick a random element out of the guaranteed non-empty bitset
     //
@@ -213,15 +215,12 @@ DEFINE_TEST(random_doublecheck_test) {
         const Roaring &left = roars[rand() % NUM_ROARS];
         const Roaring &right = roars[rand() % NUM_ROARS];
 
-      #ifdef ROARING_CPP_RANDOM_PRINT_STATUS
-        printf(
-            "[%lu]: %lu %lu %lu\n",
-            step,
-            static_cast<unsigned long>(left.cardinality()),
-            static_cast<unsigned long>(right.cardinality()),
-            static_cast<unsigned long>(out.cardinality())
-        );
-      #endif
+#ifdef ROARING_CPP_RANDOM_PRINT_STATUS
+        printf("[%lu]: %lu %lu %lu\n", step,
+               static_cast<unsigned long>(left.cardinality()),
+               static_cast<unsigned long>(right.cardinality()),
+               static_cast<unsigned long>(out.cardinality()));
+#endif
 
         int op = rand() % 6;
 
@@ -230,104 +229,103 @@ DEFINE_TEST(random_doublecheck_test) {
         // code twice).  Hence the inplace and/andnot/or/xor get tested too.
         //
         switch (op) {
-          case 0: {  // AND
-            uint64_t card = left.and_cardinality(right);
-            assert_int_equal(card, right.and_cardinality(left));
+            case 0: {  // AND
+                uint64_t card = left.and_cardinality(right);
+                assert_int_equal(card, right.and_cardinality(left));
 
-            out = left & right;
+                out = left & right;
 
-            assert_int_equal(card, out.cardinality());
-            if (&out != &left)
-                assert_true(out.isSubset(left));
-            if (&out != &right)
-                assert_true(out.isSubset(right));
-            break; }
-
-          case 1: {  // ANDNOT
-            uint64_t card = left.andnot_cardinality(right);
-
-            out = left - right;
-
-            assert_int_equal(card, out.cardinality());
-            if ((&out != &left) && (&out != &right))
-                assert_int_equal(
-                    card, left.cardinality() - right.and_cardinality(left)
-                );
-            if (&out != &left)
-                assert_true(out.isSubset(left));
-            if (&out != &right)
-                assert_false(out.intersect(right));
-            break; }
-
-          case 2: {  // OR
-            uint64_t card = left.or_cardinality(right);
-            assert_int_equal(card, right.or_cardinality(left));
-
-            out = left | right;
-
-            assert_int_equal(card, out.cardinality());
-            if (&out != &left)
-                assert_true(left.isSubset(out));
-            if (&out != &right)
-                assert_true(right.isSubset(out));
-            break; }
-
-          case 3: {  // XOR
-            uint64_t card = left.xor_cardinality(right);
-            assert_true(card == right.xor_cardinality(left));
-
-            out = left ^ right;
-
-            assert_int_equal(card, out.cardinality());
-            if ((&out != &left) && (&out != &right)) {
-                assert_false(out.intersect(left & right));
-                assert_true(
-                    card == left.cardinality() + right.cardinality()
-                        - (2 * left.and_cardinality(right))
-                );
+                assert_int_equal(card, out.cardinality());
+                if (&out != &left) assert_true(out.isSubset(left));
+                if (&out != &right) assert_true(out.isSubset(right));
+                break;
             }
-            break; }
 
-          case 4: {  // FASTUNION
-            const Roaring *inputs[3] = { &out, &left, &right };
-            out = Roaring::fastunion(3, inputs);  // result checked internally
-            break; }
+            case 1: {  // ANDNOT
+                uint64_t card = left.andnot_cardinality(right);
 
-          case 5: {  // FLIP
-            uint32_t card = out.cardinality();
-            if (card != 0) {  // pick gravity point inside set somewhere
-                uint32_t rnk = rand() % card;
-                uint32_t element;
-                assert_true(out.select(rnk, &element));
-                assert_int_equal(rnk + 1, out.rank(element));
-                gravity = element;
+                out = left - right;
+
+                assert_int_equal(card, out.cardinality());
+                if ((&out != &left) && (&out != &right))
+                    assert_int_equal(
+                        card, left.cardinality() - right.and_cardinality(left));
+                if (&out != &left) assert_true(out.isSubset(left));
+                if (&out != &right) assert_false(out.intersect(right));
+                break;
             }
-            uint32_t start = gravity + (rand() % 50) - 25;
-            out.flip(start, start + rand() % 50);
-            break; }
 
-          default:
-            assert_true(false);
+            case 2: {  // OR
+                uint64_t card = left.or_cardinality(right);
+                assert_int_equal(card, right.or_cardinality(left));
+
+                out = left | right;
+
+                assert_int_equal(card, out.cardinality());
+                if (&out != &left) assert_true(left.isSubset(out));
+                if (&out != &right) assert_true(right.isSubset(out));
+                break;
+            }
+
+            case 3: {  // XOR
+                uint64_t card = left.xor_cardinality(right);
+                assert_true(card == right.xor_cardinality(left));
+
+                out = left ^ right;
+
+                assert_int_equal(card, out.cardinality());
+                if ((&out != &left) && (&out != &right)) {
+                    assert_false(out.intersect(left & right));
+                    assert_true(card == left.cardinality() +
+                                            right.cardinality() -
+                                            (2 * left.and_cardinality(right)));
+                }
+                break;
+            }
+
+            case 4: {  // FASTUNION
+                const Roaring *inputs[3] = {&out, &left, &right};
+                out =
+                    Roaring::fastunion(3, inputs);  // result checked internally
+                break;
+            }
+
+            case 5: {  // FLIP
+                uint32_t card = out.cardinality();
+                if (card != 0) {  // pick gravity point inside set somewhere
+                    uint32_t rnk = rand() % card;
+                    uint32_t element;
+                    assert_true(out.select(rnk, &element));
+                    assert_int_equal(rnk + 1, out.rank(element));
+                    gravity = element;
+                }
+                uint32_t start = gravity + (rand() % 50) - 25;
+                out.flip(start, start + rand() % 50);
+                break;
+            }
+
+            default:
+                assert_true(false);
         }
 
         // Periodically apply a post-processing step to the out bitset
         //
         int post = rand() % 15;
         switch (post) {
-          case 0:
-            out.removeRunCompression();
-            break;
+            case 0:
+                out.removeRunCompression();
+                break;
 
-          case 1:
-            out.runOptimize();
-            break;
+            case 1:
+                out.runOptimize();
+                break;
 
-          case 2:
-            out.shrinkToFit();
-            break;
+            case 2:
+                out.shrinkToFit();
+                break;
 
-          default:
-            break;
+            default:
+                break;
         }
 
         // Explicitly ask if the `std::set` matches the roaring bitmap in out
@@ -351,8 +349,7 @@ DEFINE_TEST(random_doublecheck_test) {
         // lose all their data points over time.  So empty sets are usually
         // re-seeded with more data, but a few get through to test empty cases.
         //
-        if (out.isEmpty() && (rand() % 10 != 0))
-            out = make_random_bitset();
+        if (out.isEmpty() && (rand() % 10 != 0)) out = make_random_bitset();
     }
 }
 
@@ -380,9 +377,7 @@ DEFINE_TEST(random_doublecheck_test_64) {
 
 #ifdef ROARING_CPP_RANDOM_PRINT_STATUS
         printf("[%lu]: %" PRIu64 " %" PRIu64 " %" PRIu64 "\n", step,
-               left.cardinality(),
-               right.cardinality(),
-               out.cardinality());
+               left.cardinality(), right.cardinality(), out.cardinality());
 #endif
 
         int op = rand() % 6;

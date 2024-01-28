@@ -5,13 +5,12 @@
 
 #include <assert.h>
 
-#include <roaring/roaring.h>  // public api
-
 #include <roaring/array_util.h>  // union_uint32(), intersection_uint32()
 #include <roaring/misc/configreport.h>
+#include <roaring/roaring.h>  // public api
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "../benchmarks/numbersfromtextfiles.h"
@@ -27,7 +26,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer =
-            (roaring_bitmap_t**)malloc(sizeof(roaring_bitmap_t *) * count);
+        (roaring_bitmap_t **)malloc(sizeof(roaring_bitmap_t *) * count);
     for (size_t i = 0; i < count; i++) {
         printf(".");
         fflush(stdout);
@@ -49,7 +48,7 @@ bool serialize_correctly(roaring_bitmap_t *r) {
     return r;
 #else
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r);
-    char *serialized = (char*)malloc(expectedsize);
+    char *serialized = (char *)malloc(expectedsize);
     if (serialized == NULL) {
         printf("failure to allocate memory!\n");
         return false;
@@ -308,25 +307,23 @@ bool is_intersection_correct(roaring_bitmap_t *bitmap1,
     return answer;
 }
 
-
 bool is_intersect_correct(roaring_bitmap_t *bitmap1,
-                             roaring_bitmap_t *bitmap2) {
-	uint64_t c = roaring_bitmap_and_cardinality(bitmap1, bitmap2);
-	if(roaring_bitmap_intersect(bitmap1,bitmap2) != (c>0)) return false;
-	roaring_bitmap_t * bitmap1minus2 = roaring_bitmap_andnot(bitmap1, bitmap2);
-	bool answer = true;
-	if(roaring_bitmap_intersect(bitmap1minus2,bitmap2)) {
-		answer = false;
-	}
-	roaring_bitmap_t * bitmap1plus2 = roaring_bitmap_or(bitmap1, bitmap2);
-	if(!roaring_bitmap_intersect(bitmap1plus2,bitmap2)) {
-		answer =  false;
-	}
-	roaring_bitmap_free(bitmap1minus2);
-	roaring_bitmap_free(bitmap1plus2);
-	return answer;
+                          roaring_bitmap_t *bitmap2) {
+    uint64_t c = roaring_bitmap_and_cardinality(bitmap1, bitmap2);
+    if (roaring_bitmap_intersect(bitmap1, bitmap2) != (c > 0)) return false;
+    roaring_bitmap_t *bitmap1minus2 = roaring_bitmap_andnot(bitmap1, bitmap2);
+    bool answer = true;
+    if (roaring_bitmap_intersect(bitmap1minus2, bitmap2)) {
+        answer = false;
+    }
+    roaring_bitmap_t *bitmap1plus2 = roaring_bitmap_or(bitmap1, bitmap2);
+    if (!roaring_bitmap_intersect(bitmap1plus2, bitmap2)) {
+        answer = false;
+    }
+    roaring_bitmap_free(bitmap1minus2);
+    roaring_bitmap_free(bitmap1plus2);
+    return answer;
 }
-
 
 roaring_bitmap_t *inplace_union(roaring_bitmap_t *bitmap1,
                                 roaring_bitmap_t *bitmap2) {
@@ -415,8 +412,8 @@ bool compare_intersections(roaring_bitmap_t **rnorun, roaring_bitmap_t **rruns,
             return false;
         }
         if (!is_intersect_correct(rnorun[i], rnorun[i + 1])) {
-             printf("[inplace] no run intersect incorrect\n");
-             return false;
+            printf("[inplace] no run intersect incorrect\n");
+            return false;
         }
         tempandruns = inplace_intersection(rruns[i], rruns[i + 1]);
         if (!is_intersection_correct(rruns[i], rruns[i + 1])) {
@@ -802,7 +799,7 @@ bool loadAndCheckAll(const char *dirname, bool copy_on_write) {
     }
 
     roaring_bitmap_t **bitmapswrun =
-            (roaring_bitmap_t**)malloc(sizeof(roaring_bitmap_t *) * count);
+        (roaring_bitmap_t **)malloc(sizeof(roaring_bitmap_t *) * count);
     for (int i = 0; i < (int)count; i++) {
         bitmapswrun[i] = roaring_bitmap_copy(bitmaps[i]);
         roaring_bitmap_run_optimize(bitmapswrun[i]);

@@ -11,11 +11,10 @@
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
-
 
 DEFINE_TEST(printf_test) {
     run_container_t* B = run_container_create();
@@ -171,10 +170,11 @@ DEFINE_TEST(select_test) {
     run_container_free(B);
 }
 
-static inline void _run_container_add_range(run_container_t* run,
-                                           uint32_t min, uint32_t max) {
+static inline void _run_container_add_range(run_container_t* run, uint32_t min,
+                                            uint32_t max) {
     int32_t nruns_greater = rle16_count_greater(run->runs, run->n_runs, max);
-    int32_t nruns_less = rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
+    int32_t nruns_less =
+        rle16_count_less(run->runs, run->n_runs - nruns_greater, min);
     run_container_add_range_nruns(run, min, max, nruns_less, nruns_greater);
 }
 
@@ -208,9 +208,9 @@ DEFINE_TEST(remove_range_test) {
 
     // [131..139], [211..219], [311..319]
 
-    assert_true(run_container_contains_range(run, 131, 139+1));
-    assert_true(run_container_contains_range(run, 211, 219+1));
-    assert_true(run_container_contains_range(run, 311, 319+1));
+    assert_true(run_container_contains_range(run, 131, 139 + 1));
+    assert_true(run_container_contains_range(run, 211, 219 + 1));
+    assert_true(run_container_contains_range(run, 311, 319 + 1));
     assert_true(run_container_cardinality(run) == 27);
 
     run_container_free(run);
@@ -222,8 +222,7 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
         cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
-        cmocka_unit_test(select_test),
-        cmocka_unit_test(remove_range_test),
+        cmocka_unit_test(select_test), cmocka_unit_test(remove_range_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
-#include <roaring/roaring.h>
 #include <roaring/misc/configreport.h>
+#include <roaring/roaring.h>
+
 #include "benchmark.h"
 #include "numbersfromtextfiles.h"
 
@@ -9,7 +10,8 @@
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
                                              uint32_t **numbers, size_t count,
-                                             bool runoptimize, bool copy_on_write) {
+                                             bool runoptimize,
+                                             bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -17,7 +19,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
-        if(runoptimize) roaring_bitmap_run_optimize(answer[i]);
+        if (runoptimize) roaring_bitmap_run_optimize(answer[i]);
         roaring_bitmap_shrink_to_fit(answer[i]);
         roaring_bitmap_set_copy_on_write(answer[i], copy_on_write);
     }
@@ -175,8 +177,8 @@ int main(int argc, char **argv) {
            count, total_count, cycles_final - cycles_start);
 
     uint64_t portable_cycle_count = 0, portable_frozen_cycle_count = 0,
-      frozen_cycle_count = 0;
-    for(int i = 0; i < (int)count; i++) {
+             frozen_cycle_count = 0;
+    for (int i = 0; i < (int)count; i++) {
         int size = roaring_bitmap_portable_size_in_bytes(bitmaps[i]);
         char *buf = malloc(size);
         roaring_bitmap_portable_serialize(bitmaps[i], buf);
@@ -196,7 +198,8 @@ int main(int argc, char **argv) {
         portable_frozen_cycle_count += cycles_final - cycles_start;
 
         RDTSC_START(cycles_start);
-        const roaring_bitmap_t *r3 = roaring_bitmap_frozen_view(frozen_buf, frozen_size);
+        const roaring_bitmap_t *r3 =
+            roaring_bitmap_frozen_view(frozen_buf, frozen_size);
         RDTSC_FINAL(cycles_final);
         frozen_cycle_count += cycles_final - cycles_start;
 
@@ -207,11 +210,14 @@ int main(int argc, char **argv) {
         roaring_aligned_free(frozen_buf);
     }
 
-    printf("Deserializing %zu bitmaps took %" PRIu64 " cycles for portable format\n",
+    printf("Deserializing %zu bitmaps took %" PRIu64
+           " cycles for portable format\n",
            count, portable_cycle_count);
-    printf("Deserializing %zu bitmaps took %" PRIu64 " cycles for portable frozen format\n",
+    printf("Deserializing %zu bitmaps took %" PRIu64
+           " cycles for portable frozen format\n",
            count, portable_frozen_cycle_count);
-    printf("Deserializing %zu bitmaps took %" PRIu64 " cycles for frozen format\n",
+    printf("Deserializing %zu bitmaps took %" PRIu64
+           " cycles for frozen format\n",
            count, frozen_cycle_count);
 
     for (int i = 0; i < (int)count; ++i) {

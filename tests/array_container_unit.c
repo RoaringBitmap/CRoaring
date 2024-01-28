@@ -8,16 +8,15 @@
 #include <stdlib.h>
 
 #include <roaring/containers/array.h>
-#include <roaring/containers/mixed_equal.h>
 #include <roaring/containers/bitset.h>
+#include <roaring/containers/mixed_equal.h>
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
-
 
 DEFINE_TEST(printf_test) {
     array_container_t* B = array_container_create();
@@ -194,7 +193,6 @@ DEFINE_TEST(capacity_test) {
     array_container_free(array);
 }
 
-
 /* This is a fixed-increment version of Java 8's SplittableRandom generator
    See http://dx.doi.org/10.1145/2714064.2660195 and
    http://docs.oracle.com/javase/8/docs/api/java/util/SplittableRandom.html */
@@ -211,21 +209,19 @@ static inline void splitmix64_seed(uint64_t seed) { splitmix64_x = seed; }
 // returns random number, modifies seed[0]
 // compared with D. Lemire against
 // http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/8-b132/java/util/SplittableRandom.java#SplittableRandom.0gamma
-static inline uint64_t splitmix64_r(uint64_t *seed) {
-  uint64_t z = (*seed += GOLDEN_GAMMA);
-  // David Stafford's Mix13 for MurmurHash3's 64-bit finalizer
-  z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
-  z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
-  return z ^ (z >> 31);
+static inline uint64_t splitmix64_r(uint64_t* seed) {
+    uint64_t z = (*seed += GOLDEN_GAMMA);
+    // David Stafford's Mix13 for MurmurHash3's 64-bit finalizer
+    z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
+    z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
+    return z ^ (z >> 31);
 }
 
-static inline uint64_t splitmix64() {
-    return splitmix64_r(&splitmix64_x);
-}
+static inline uint64_t splitmix64() { return splitmix64_r(&splitmix64_x); }
 
 size_t populate(uint16_t* buffer, size_t maxsize) {
     size_t length = splitmix64() % maxsize;
-    for(size_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         buffer[i] = (uint16_t)splitmix64();
     }
     return length;
@@ -233,10 +229,10 @@ size_t populate(uint16_t* buffer, size_t maxsize) {
 
 DEFINE_TEST(mini_fuzz_array_container_intersection_inplace) {
     splitmix64_seed(12345);
-    uint16_t* buffer1 = (uint16_t*) malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
-    uint16_t* buffer2 = (uint16_t*) malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
-    uint16_t* buffer3 = (uint16_t*) malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
-    for(size_t z = 0; z < 3000; z++) {
+    uint16_t* buffer1 = (uint16_t*)malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
+    uint16_t* buffer2 = (uint16_t*)malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
+    uint16_t* buffer3 = (uint16_t*)malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
+    for (size_t z = 0; z < 3000; z++) {
         array_container_t* array1 = array_container_create();
         array_container_t* array2 = array_container_create();
         array_container_t* array3 = array_container_create();
@@ -259,7 +255,6 @@ DEFINE_TEST(mini_fuzz_array_container_intersection_inplace) {
         for (uint32_t i = 0; i < l3; i++) {
             array_container_add(array3, buffer3[i]);
             bitset_container_set(bitset3, buffer3[i]);
-
         }
         bitset1->cardinality = BITSET_UNKNOWN_CARDINALITY;
 
@@ -297,13 +292,11 @@ DEFINE_TEST(mini_fuzz_array_container_intersection_inplace) {
     free(buffer3);
 }
 
-
-
 DEFINE_TEST(mini_fuzz_recycle_array_container_intersection_inplace) {
     splitmix64_seed(12345);
-    uint16_t* buffer1 = (uint16_t*) malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
-    uint16_t* buffer2 = (uint16_t*) malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
-    uint16_t* buffer3 = (uint16_t*) malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
+    uint16_t* buffer1 = (uint16_t*)malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
+    uint16_t* buffer2 = (uint16_t*)malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
+    uint16_t* buffer3 = (uint16_t*)malloc(DEFAULT_MAX_SIZE * sizeof(uint16_t));
     array_container_t* array1 = array_container_create();
     array_container_t* array2 = array_container_create();
     array_container_t* array3 = array_container_create();
@@ -311,7 +304,7 @@ DEFINE_TEST(mini_fuzz_recycle_array_container_intersection_inplace) {
     bitset_container_t* bitset1 = bitset_container_create();
     bitset_container_t* bitset2 = bitset_container_create();
     bitset_container_t* bitset3 = bitset_container_create();
-    for(size_t z = 0; z < 3000; z++) {
+    for (size_t z = 0; z < 3000; z++) {
         bitset_container_clear(bitset1);
         bitset_container_clear(bitset2);
         bitset_container_clear(bitset3);
@@ -333,7 +326,6 @@ DEFINE_TEST(mini_fuzz_recycle_array_container_intersection_inplace) {
         for (uint32_t i = 0; i < l3; i++) {
             array_container_add(array3, buffer3[i]);
             bitset_container_set(bitset3, buffer3[i]);
-
         }
         bitset1->cardinality = BITSET_UNKNOWN_CARDINALITY;
 
@@ -359,7 +351,6 @@ DEFINE_TEST(mini_fuzz_recycle_array_container_intersection_inplace) {
         array_container_intersection_inplace(array1, array3);
         bitset_container_and_nocard(bitset1, bitset3, bitset1);
         assert_true(array_container_equal_bitset(array1, bitset1));
-
     }
     array_container_free(array1);
     array_container_free(array2);
@@ -376,12 +367,14 @@ DEFINE_TEST(mini_fuzz_recycle_array_container_intersection_inplace) {
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(mini_fuzz_array_container_intersection_inplace),
-        cmocka_unit_test(mini_fuzz_recycle_array_container_intersection_inplace),
-        cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(
+            mini_fuzz_recycle_array_container_intersection_inplace),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(add_contains_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
-        cmocka_unit_test(capacity_test)
-    };
+        cmocka_unit_test(capacity_test)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

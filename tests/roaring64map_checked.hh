@@ -13,8 +13,9 @@
 //
 // USAGE:
 //
-// The checked class has the same name (Roaring64Map) in `namespace doublechecked`.
-// So switching between versions could be done easily with a command-line
+// The checked class has the same name (Roaring64Map) in `namespace
+// doublechecked`. So switching between versions could be done easily with a
+// command-line
 // `-D` setting for a #define, e.g.:
 //
 //     #ifdef ROARING_DOUBLECHECK_CPP
@@ -27,17 +28,14 @@
 #ifndef INCLUDE_ROARING_64_MAP_CHECKED_HH_
 #define INCLUDE_ROARING_64_MAP_CHECKED_HH_
 
-#include <stdarg.h>
-
 #include <algorithm>
 #include <new>
+#include <set>  // sorted set, typically a red-black tree implementation
+#include <stdarg.h>
 #include <stdexcept>
 #include <string>
 
-#include <set>  // sorted set, typically a red-black tree implementation
-
 #include "test.h"
-
 
 #define ROARING_CPP_NAMESPACE unchecked  // can't be overridden if global
 #include "roaring64map.hh"  // contains Roaring64Map unchecked class
@@ -45,17 +43,15 @@
 namespace doublechecked {  // put the checked class in its own namespace
 
 class Roaring64Map {
-  public:  // members public to allow tests access to them
+   public:  // members public to allow tests access to them
     roaring::Roaring64Map plain;  // ordinary Roaring64Map bitset wrapper class
-    std::set<uint64_t> check;  // contents kept in sync with `plain`
+    std::set<uint64_t> check;     // contents kept in sync with `plain`
 
-  public:
-    Roaring64Map() : plain() {
-    }
+   public:
+    Roaring64Map() : plain() {}
 
-    Roaring64Map(size_t n, const uint32_t *data) : plain (n, data) {
-        for (size_t i = 0; i < n; ++i)
-            check.insert(data[i]);
+    Roaring64Map(size_t n, const uint32_t *data) : plain(n, data) {
+        for (size_t i = 0; i < n; ++i) check.insert(data[i]);
     }
 
     Roaring64Map(const Roaring64Map &r) {
@@ -76,12 +72,12 @@ class Roaring64Map {
     //
     Roaring64Map(roaring::Roaring64Map &&other_plain) {
         plain = std::move(other_plain);
-        for (auto value : plain)
-            check.insert(value);
+        for (auto value : plain) check.insert(value);
     }
 
-    // Note: This does not call `::Roaring64Map::bitmapOf()` because variadics can't
-    // forward their parameters.  But this is all the code does, so it's fine.
+    // Note: This does not call `::Roaring64Map::bitmapOf()` because variadics
+    // can't forward their parameters.  But this is all the code does, so it's
+    // fine.
     //
     static Roaring64Map bitmapOf(size_t n, ...) {
         doublechecked::Roaring64Map ans;
@@ -128,27 +124,23 @@ class Roaring64Map {
     void addRangeClosed(uint32_t min, uint32_t max) {
         plain.addRangeClosed(min, max);
         if (min <= max) {
-            for (uint32_t val = max; val != min - 1; --val)
-                check.insert(val);
+            for (uint32_t val = max; val != min - 1; --val) check.insert(val);
         }
     }
     void addRangeClosed(uint64_t min, uint64_t max) {
         plain.addRangeClosed(min, max);
         if (min <= max) {
-            for (uint64_t val = max; val != min - 1; --val)
-                check.insert(val);
+            for (uint64_t val = max; val != min - 1; --val) check.insert(val);
         }
     }
 
     void addMany(size_t n_args, const uint32_t *vals) {
         plain.addMany(n_args, vals);
-        for (size_t i = 0; i < n_args; ++i)
-            check.insert(vals[i]);
+        for (size_t i = 0; i < n_args; ++i) check.insert(vals[i]);
     }
     void addMany(size_t n_args, const uint64_t *vals) {
         plain.addMany(n_args, vals);
-        for (size_t i = 0; i < n_args; ++i)
-            check.insert(vals[i]);
+        for (size_t i = 0; i < n_args; ++i) check.insert(vals[i]);
     }
 
     void remove(uint32_t x) {
@@ -182,7 +174,8 @@ class Roaring64Map {
             auto start = check.lower_bound(min);
             // Points to the first entry with key >= max, or end.
             auto end = check.lower_bound(max);
-            // Removes the half-open interval [start, end) (i.e. does not include max).
+            // Removes the half-open interval [start, end) (i.e. does not
+            // include max).
             check.erase(start, end);
         }
     }
@@ -220,8 +213,8 @@ class Roaring64Map {
     uint64_t minimum() const {
         uint64_t ans = plain.minimum();
         assert_true(check.empty()
-            ? ans == (std::numeric_limits<uint64_t>::max)()
-            : ans == *check.begin());
+                        ? ans == (std::numeric_limits<uint64_t>::max)()
+                        : ans == *check.begin());
         return ans;
     }
 
@@ -236,7 +229,6 @@ class Roaring64Map {
         return ans;
     }
 
-
     // This method is exclusive to `doublechecked::Roaring64Map`
     //
     bool does_std_set_match_roaring() const {
@@ -246,16 +238,15 @@ class Roaring64Map {
         auto it_plain_end = plain.end();
 
         for (; it_check != it_check_end; ++it_check, ++it_plain) {
-            if (it_plain == it_plain_end)
-                return false;
-            if (*it_check != *it_plain)
-                return false;
+            if (it_plain == it_plain_end) return false;
+            if (*it_check != *it_plain) return false;
         }
         return it_plain == plain.end();  // should have visited all values
     }
 
     ~Roaring64Map() {
-        assert_true(does_std_set_match_roaring());  // always check on destructor
+        assert_true(
+            does_std_set_match_roaring());  // always check on destructor
     }
 
     Roaring64Map &operator=(const Roaring64Map &r) {
@@ -276,9 +267,14 @@ class Roaring64Map {
         auto it = check.begin();
         auto r_it = r.check.begin();
         while (it != check.end() && r_it != r.check.end()) {
-            if (*it < *r_it) { it = check.erase(it); }
-            else if (*r_it < *it) { ++r_it; }
-            else { ++it; ++r_it; }  // overlapped
+            if (*it < *r_it) {
+                it = check.erase(it);
+            } else if (*r_it < *it) {
+                ++r_it;
+            } else {
+                ++it;
+                ++r_it;
+            }  // overlapped
         }
         check.erase(it, check.end());  // erase rest of check not in r.check
 
@@ -309,19 +305,29 @@ class Roaring64Map {
         auto it_end = check.end();
         auto r_it = r.check.begin();
         auto r_it_end = r.check.end();
-        if (it == it_end) { check = r.check; }  // this empty
-        else if (r_it == r_it_end) { }  // r empty
+        if (it == it_end) {
+            check = r.check;
+        }  // this empty
+        else if (r_it == r_it_end) {
+        }  // r empty
         else if (*it > *r.check.rbegin() || *r_it > *check.rbegin()) {
             check.insert(r.check.begin(), r.check.end());  // obvious disjoint
-        } else while (r_it != r_it_end) {  // may overlap
-            if (it == it_end) { check.insert(*r_it); ++r_it; }
-            else if (*it == *r_it) {  // remove overlapping value
-                it = check.erase(it);  // returns *following* iterator
-                ++r_it;
+        } else
+            while (r_it != r_it_end) {  // may overlap
+                if (it == it_end) {
+                    check.insert(*r_it);
+                    ++r_it;
+                } else if (*it == *r_it) {  // remove overlapping value
+                    it = check.erase(it);   // returns *following* iterator
+                    ++r_it;
+                } else if (*it < *r_it) {
+                    ++it;
+                }  // keep value from this
+                else {
+                    check.insert(*r_it);
+                    ++r_it;
+                }  // add value from r
             }
-            else if (*it < *r_it) { ++it; }  // keep value from this
-            else { check.insert(*r_it); ++r_it; }  // add value from r
-        }
 
         return *this;
     }
@@ -346,18 +352,24 @@ class Roaring64Map {
     bool isSubset(const Roaring64Map &r) const {  // is `this` subset of `r`?
         bool ans = plain.isSubset(r.plain);
         assert_true(ans == std::includes(
-            r.check.begin(), r.check.end(),  // containing range
-            check.begin(), check.end()  // range to test for containment
-        ));
+                               r.check.begin(),
+                               r.check.end(),  // containing range
+                               check.begin(),
+                               check.end()  // range to test for containment
+                               ));
         return ans;
     }
 
-    bool isStrictSubset(const Roaring64Map &r) const {  // is `this` subset of `r`?
+    bool isStrictSubset(
+        const Roaring64Map &r) const {  // is `this` subset of `r`?
         bool ans = plain.isStrictSubset(r.plain);
-        assert_true(ans == (std::includes(
-            r.check.begin(), r.check.end(),  // containing range
-            check.begin(), check.end()  // range to test for containment
-        ) && r.check.size() > check.size()));
+        assert_true(
+            ans ==
+            (std::includes(r.check.begin(), r.check.end(),  // containing range
+                           check.begin(),
+                           check.end()  // range to test for containment
+                           ) &&
+             r.check.size() > check.size()));
         return ans;
     }
 
@@ -380,28 +392,23 @@ class Roaring64Map {
             auto it_end = check.end();
             for (uint64_t i = range_start; i < range_end; ++i) {
                 if (hint == it_end || *hint > i)  // i not present, so add
-                    check.insert(hint, i);  // leave hint past i
+                    check.insert(hint, i);        // leave hint past i
                 else  // *hint == i, must adjust hint and erase
                     hint = check.erase(hint);  // returns *following* iterator
             }
         }
     }
 
-    bool removeRunCompression() {
-        return plain.removeRunCompression();
-    }
+    bool removeRunCompression() { return plain.removeRunCompression(); }
 
-    bool runOptimize() {
-        return plain.runOptimize();
-    }
+    bool runOptimize() { return plain.runOptimize(); }
 
-    size_t shrinkToFit() {
-        return plain.shrinkToFit();
-    }
+    size_t shrinkToFit() { return plain.shrinkToFit(); }
 
     void iterate(roaring::api::roaring_iterator64 iterator, void *ptr) const {
         plain.iterate(iterator, ptr);
-        assert_true(does_std_set_match_roaring());  // checks equivalent iteration
+        assert_true(
+            does_std_set_match_roaring());  // checks equivalent iteration
     }
 
     bool select(uint64_t rnk, uint64_t *element) const {
@@ -409,8 +416,7 @@ class Roaring64Map {
 
         auto it = check.begin();
         auto it_end = check.end();
-        for (uint64_t i = 0; it != it_end && i < rnk; ++i)
-            ++it;
+        for (uint64_t i = 0; it != it_end && i < rnk; ++i) ++it;
         assert_true(ans == (it != it_end) && (ans ? *it == *element : true));
 
         return ans;
@@ -422,8 +428,7 @@ class Roaring64Map {
         uint64_t count = 0;
         auto it = check.begin();
         auto it_end = check.end();
-        for (; it != it_end && *it <= x; ++it)
-            ++count;
+        for (; it != it_end && *it <= x; ++it) ++count;
         assert_true(ans == count);
 
         return ans;
@@ -451,7 +456,8 @@ class Roaring64Map {
         Roaring64Map ans(plain & o.plain);
 
         Roaring64Map inplace(*this);
-        assert_true(ans == (inplace &= o));  // validate against in-place version
+        assert_true(ans ==
+                    (inplace &= o));  // validate against in-place version
 
         return ans;
     }
@@ -460,7 +466,8 @@ class Roaring64Map {
         Roaring64Map ans(plain - o.plain);
 
         Roaring64Map inplace(*this);
-        assert_true(ans == (inplace -= o));  // validate against in-place version
+        assert_true(ans ==
+                    (inplace -= o));  // validate against in-place version
 
         return ans;
     }
@@ -469,7 +476,8 @@ class Roaring64Map {
         Roaring64Map ans(plain | o.plain);
 
         Roaring64Map inplace(*this);
-        assert_true(ans == (inplace |= o));  // validate against in-place version
+        assert_true(ans ==
+                    (inplace |= o));  // validate against in-place version
 
         return ans;
     }
@@ -478,31 +486,23 @@ class Roaring64Map {
         Roaring64Map ans(plain ^ o.plain);
 
         Roaring64Map inplace(*this);
-        assert_true(ans == (inplace ^= o));  // validate against in-place version
+        assert_true(ans ==
+                    (inplace ^= o));  // validate against in-place version
 
         return ans;
     }
 
-    void setCopyOnWrite(bool val) {
-        plain.setCopyOnWrite(val);
-    }
+    void setCopyOnWrite(bool val) { plain.setCopyOnWrite(val); }
 
-    void printf() const {
-        plain.printf();
-    }
+    void printf() const { plain.printf(); }
 
-    std::string toString() const {
-        return plain.toString();
-    }
+    std::string toString() const { return plain.toString(); }
 
-    bool getCopyOnWrite() const {
-        return plain.getCopyOnWrite();
-    }
+    bool getCopyOnWrite() const { return plain.getCopyOnWrite(); }
 
     static Roaring64Map fastunion(size_t n, const Roaring64Map **inputs) {
-        auto plain_inputs = new const roaring::Roaring64Map*[n];
-        for (size_t i = 0; i < n; ++i)
-            plain_inputs[i] = &inputs[i]->plain;
+        auto plain_inputs = new const roaring::Roaring64Map *[n];
+        for (size_t i = 0; i < n; ++i) plain_inputs[i] = &inputs[i]->plain;
         Roaring64Map ans(roaring::Roaring64Map::fastunion(n, plain_inputs));
         delete[] plain_inputs;
 
@@ -510,8 +510,7 @@ class Roaring64Map {
             assert_true(ans.cardinality() == 0);
         else {
             Roaring64Map temp = *inputs[0];
-            for (size_t i = 1; i < n; ++i)
-                temp |= *inputs[i];
+            for (size_t i = 1; i < n; ++i) temp |= *inputs[i];
             assert_true(temp == ans);
         }
 
@@ -530,6 +529,6 @@ class Roaring64Map {
     }
 };
 
-}  // end `namespace doublechecked`
+}  // namespace doublechecked
 
 #endif  // INCLUDE_ROARING_64_MAP_CHECKED_HH_

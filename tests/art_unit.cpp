@@ -1,14 +1,14 @@
-#include <roaring/art/art.h>
-#include <stdio.h>
-
 #include <array>
 #include <cinttypes>
 #include <iomanip>
 #include <ios>
 #include <map>
 #include <sstream>
+#include <stdio.h>
 #include <string>
 #include <vector>
+
+#include <roaring/art/art.h>
 
 #include "test.h"
 
@@ -119,7 +119,8 @@ class ShadowedART {
                 break;
             }
             if (found_val->val != value.val) {
-                printf("Key %s: ART value %" PRIu64 " != shadow value %" PRIu64 "\n",
+                printf("Key %s: ART value %" PRIu64 " != shadow value %" PRIu64
+                       "\n",
                        key.string().c_str(), found_val->val, value.val);
                 assert_true(*found_val == value);
                 break;
@@ -450,7 +451,7 @@ DEFINE_TEST(test_art_shrink_grow_node48) {
     // Remove the first several containers
     for (int i = 0; i < 8; i++) {
         auto key = Key(i);
-        Value *removed_val = (Value *)(art_erase(&art, key.data()));
+        Value* removed_val = (Value*)(art_erase(&art, key.data()));
         assert_int_equal(removed_val->val, i);
     }
     {
@@ -504,4 +505,3 @@ int main() {
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
-

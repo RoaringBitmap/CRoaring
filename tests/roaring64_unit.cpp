@@ -1,10 +1,10 @@
-#include <roaring/roaring64.h>
-
 #include <array>
 #include <map>
 #include <numeric>
 #include <string>
 #include <vector>
+
+#include <roaring/roaring64.h>
 
 #include "test.h"
 
@@ -1604,4 +1604,3 @@ int main() {
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
-

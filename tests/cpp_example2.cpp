@@ -16,7 +16,7 @@ int main() {
 
     // compute how many bits there are:
     uint32_t cardinality = r1.cardinality();
-    (void)cardinality; // to silence unused variable warnings
+    (void)cardinality;  // to silence unused variable warnings
 
     // if your bitmaps have long runs, you can compress them by calling
     // run_optimize
@@ -67,7 +67,8 @@ int main() {
     Roaring i1_2 = r1 & r2;
 
 #if CROARING_IS_BIG_ENDIAN
-    printf("We omit serialization tests because you have a big endian system.\n");
+    printf(
+        "We omit serialization tests because you have a big endian system.\n");
 #else
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = r1.getSizeInBytes();
@@ -75,7 +76,8 @@ int main() {
     r1.write(serializedbytes);
     // readSafe will not overflow, but the resulting bitmap
     // is only valid and usable if the input follows the
-    // Roaring specification: https://github.com/RoaringBitmap/RoaringFormatSpec/
+    // Roaring specification:
+    // https://github.com/RoaringBitmap/RoaringFormatSpec/
     Roaring t = Roaring::readSafe(serializedbytes, expectedsize);
     assert_true(r1 == t);
     delete[] serializedbytes;

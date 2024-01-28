@@ -1,9 +1,10 @@
 #include <assert.h>
-#include <roaring/portability.h>
-#include <roaring/art/art.h>
-#include <roaring/memory.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <roaring/art/art.h>
+#include <roaring/memory.h>
+#include <roaring/portability.h>
 
 #define ART_NODE4_TYPE 0
 #define ART_NODE16_TYPE 1
@@ -27,7 +28,7 @@
 // The only places that use SET_LEAF are locations where a field is directly
 // assigned to a leaf pointer. After using SET_LEAF, the leaf should be treated
 // as a node of unknown type.
-#define IS_LEAF(p) (((uintptr_t)(p)&1))
+#define IS_LEAF(p) (((uintptr_t)(p) & 1))
 #define SET_LEAF(p) ((art_node_t *)((uintptr_t)(p) | 1))
 #define CAST_LEAF(p) ((art_leaf_t *)((void *)((uintptr_t)(p) & ~1)))
 
@@ -473,7 +474,8 @@ static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
 }
 
 static void art_free_node48(art_node48_t *node) {
-    uint64_t used_children = (node->available_children) ^ NODE48_AVAILABLE_CHILDREN_MASK;
+    uint64_t used_children =
+        (node->available_children) ^ NODE48_AVAILABLE_CHILDREN_MASK;
     while (used_children != 0) {
         // We checked above that used_children is not zero
         uint8_t child_idx = roaring_trailing_zeroes(used_children);
@@ -495,7 +497,8 @@ static inline art_node_t *art_node48_find_child(const art_node48_t *node,
 static art_node_t *art_node48_insert(art_node48_t *node, art_node_t *child,
                                      uint8_t key) {
     if (node->count < 48) {
-        // node->available_children is only zero when the node is full (count == 48), we just checked count < 48
+        // node->available_children is only zero when the node is full (count ==
+        // 48), we just checked count < 48
         uint8_t val_idx = roaring_trailing_zeroes(node->available_children);
         node->keys[key] = val_idx;
         node->children[val_idx] = child;
@@ -1614,4 +1617,3 @@ art_val_t *art_iterator_erase(art_t *art, art_iterator_t *iterator) {
 }  // namespace roaring
 }  // namespace internal
 #endif
-

@@ -12,22 +12,22 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-    //
-    // It's generally not good to span a header file with `extern "C"`, but
-    // this is how the cpp_unit.cpp test was doing it.  cmocka.h apparently
-    // only has #ifdefs for extern "C" under MSC (?)
-    //
-    extern "C" {
-        #include <cmocka.h>
-    }
+//
+// It's generally not good to span a header file with `extern "C"`, but
+// this is how the cpp_unit.cpp test was doing it.  cmocka.h apparently
+// only has #ifdefs for extern "C" under MSC (?)
+//
+extern "C" {
+#include <cmocka.h>
+}
 #else
-    #include <cmocka.h>
+#include <cmocka.h>
 #endif
-
 
 #define DESCRIBE_TEST fprintf(stderr, "--- %s\n", __func__)
 
-#define assert_bitmap_validate(b) do {                                       \
+#define assert_bitmap_validate(b)                                            \
+    do {                                                                     \
         const char *internal_reason_buf = NULL;                              \
         if (!roaring_bitmap_internal_validate((b), &internal_reason_buf)) {  \
             fail_msg("internal validation failed: %s", internal_reason_buf); \
@@ -56,7 +56,7 @@
 // rather than disabling warnings, this defines a macro to declare the tests.
 //
 #ifdef __cplusplus
-    #define DEFINE_TEST(name)   static void name(void**)
+#define DEFINE_TEST(name) static void name(void **)
 #else
-    #define DEFINE_TEST(name)   static void name()
+#define DEFINE_TEST(name) static void name()
 #endif

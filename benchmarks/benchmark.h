@@ -3,8 +3,9 @@
 
 #ifndef BENCHMARKS_INCLUDE_BENCHMARK_H_
 #define BENCHMARKS_INCLUDE_BENCHMARK_H_
-#include <roaring/portability.h>
 #include <time.h>
+
+#include <roaring/portability.h>
 
 #ifdef ROARING_INLINE_ASM
 #define CLOBBER_MEMORY __asm volatile("" ::: /* pretend to clobber */ "memory")
@@ -60,8 +61,8 @@
 #else  // defined(RDTSC_CLOCK_ID)
 
 /**
-* Fall back to the `clock` function
-*/
+ * Fall back to the `clock` function
+ */
 #define RDTSC_START(cycles) \
     do {                    \
         cycles = clock();   \

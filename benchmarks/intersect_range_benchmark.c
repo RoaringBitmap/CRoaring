@@ -1,7 +1,8 @@
 #define _GNU_SOURCE
 #include <math.h>
-#include <roaring/roaring.h>
 #include <stdio.h>
+
+#include <roaring/roaring.h>
 
 #include "benchmark.h"
 #include "random.h"
@@ -80,7 +81,7 @@ static bool range_intersect(void *base, testvalue_t tv) {
     return res;
 }
 
-#define NUM_SAMPLES  100
+#define NUM_SAMPLES 100
 static void run_test() {
     static testvalue_t testvalues[NUM_SAMPLES];
 
