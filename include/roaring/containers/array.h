@@ -8,10 +8,12 @@
 
 #include <string.h>
 
+#include <roaring/roaring_types.h>  // roaring_iterator
+
+// Include other headers after roaring_types.h
 #include <roaring/array_util.h>  // binarySearch()/memequals() for inlining
 #include <roaring/containers/container_defs.h>  // container_t, perfparameters
 #include <roaring/portability.h>
-#include <roaring/roaring_types.h>  // roaring_iterator
 
 #ifdef __cplusplus
 extern "C" {

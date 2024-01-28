@@ -124,24 +124,27 @@ extern "C" {  // portability definitions are in global scope, not a namespace
  * <x86intrin.h>  (or <intrin.h>) before, so the headers
  * are fooled.
  */
-#include <avx2intrin.h>
-#include <avxintrin.h>
-#include <bmiintrin.h>    // for _blsr_u64
-#include <immintrin.h>    // for most things (AVX2, AVX512, _popcnt64)
-#include <lzcntintrin.h>  // for  __lzcnt64
+// To avoid reordering imports:
+// clang-format off
+#include <bmiintrin.h>   // for _blsr_u64
+#include <lzcntintrin.h> // for  __lzcnt64
+#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
 #include <smmintrin.h>
 #include <tmmintrin.h>
+#include <avxintrin.h>
+#include <avx2intrin.h>
 #include <wmmintrin.h>
 #if _MSC_VER >= 1920
 // Important: we need the AVX-512 headers:
-#include <avx512bwintrin.h>
-#include <avx512cdintrin.h>
-#include <avx512dqintrin.h>
 #include <avx512fintrin.h>
-#include <avx512vbmi2intrin.h>
-#include <avx512vbmiintrin.h>
+#include <avx512dqintrin.h>
+#include <avx512cdintrin.h>
+#include <avx512bwintrin.h>
 #include <avx512vlintrin.h>
+#include <avx512vbmiintrin.h>
+#include <avx512vbmi2intrin.h>
 #include <avx512vpopcntdqintrin.h>
+// clang-format on
 #endif  // _MSC_VER >= 1920
 // unfortunately, we may not get _blsr_u64, but, thankfully, clang
 // has it as a macro.

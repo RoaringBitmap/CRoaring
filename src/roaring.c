@@ -5,10 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <roaring/roaring.h>
+
+// Include after roaring.h
 #include <roaring/array_util.h>
 #include <roaring/bitset_util.h>
 #include <roaring/containers/containers.h>
-#include <roaring/roaring.h>
 #include <roaring/roaring_array.h>
 
 #ifdef __cplusplus

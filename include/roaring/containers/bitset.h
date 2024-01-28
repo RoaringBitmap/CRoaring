@@ -9,6 +9,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <roaring/roaring_types.h>  // roaring_iterator
+
+// Include other headers after roaring_types.h
 #include <roaring/containers/container_defs.h>  // container_t, perfparameters
 #include <roaring/portability.h>
 #include <roaring/roaring_types.h>  // roaring_iterator

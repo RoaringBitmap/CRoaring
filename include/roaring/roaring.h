@@ -9,10 +9,12 @@
 #include <stddef.h>  // for `size_t`
 #include <stdint.h>
 
+#include <roaring/roaring_types.h>
+
+// Include other headers after roaring_types.h
 #include <roaring/bitset/bitset.h>
 #include <roaring/memory.h>
 #include <roaring/portability.h>
-#include <roaring/roaring_types.h>
 #include <roaring/roaring_version.h>
 
 #ifdef __cplusplus
