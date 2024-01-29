@@ -572,23 +572,23 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint3
     uint32_t *out = (uint32_t *)vout;
     uint32_t *initout = out;
     uint32_t *safeout = out + outcapacity;
-    __m512i base_v = _mm512_set1_epi32(base);    
+    __m512i base_v = _mm512_set1_epi32(base);
     __m512i index_table = _mm512_loadu_si512(vbmi2_table);
     size_t i = 0;
 
     for (; (i < length) && ((out + 64) < safeout); i += 1)
     {
-        uint64_t v = words[i];		
-        __m512i vec = _mm512_maskz_compress_epi8(v, index_table);	
-        	    
+        uint64_t v = words[i];
+        __m512i vec = _mm512_maskz_compress_epi8(v, index_table);
+
         uint8_t advance = (uint8_t)roaring_hamming(v);
-        
+
         __m512i vbase = _mm512_add_epi32(base_v, _mm512_set1_epi32((int)(i * 64)));
         __m512i r1 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,0));
         __m512i r2 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,1));
         __m512i r3 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,2));
         __m512i r4 = _mm512_cvtepi8_epi32(_mm512_extracti32x4_epi32(vec,3));
-        
+
         r1 = _mm512_add_epi32(r1, vbase);
         r2 = _mm512_add_epi32(r2, vbase);
         r3 = _mm512_add_epi32(r3, vbase);
@@ -599,11 +599,11 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length, uint3
         _mm512_storeu_si512((__m512i *)(out + 48), r4);
 
         out += advance;
-        
+
     }
 
     base += i * 64;
-    
+
     for (; (i < length) && (out < safeout); ++i) {
          uint64_t w = words[i];
          while ((w != 0) && (out < safeout)) {
@@ -1126,6 +1126,128 @@ void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length) {
         list++;
     }
 }
+
+
+
+#define VPOPCNT_AND_ADD(ptr, i, accu)   \
+    const __m512i v##i = _mm512_loadu_si512((const __m512i*)ptr + i);  \
+    const __m512i p##i = _mm512_popcnt_epi64(v##i);    \
+    accu = _mm512_add_epi64(accu, p##i);
+
+#if CROARING_COMPILER_SUPPORTS_AVX512
+CROARING_TARGET_AVX512
+static inline uint64_t sum_epu64_256(const __m256i v) {
+
+    return (uint64_t)(_mm256_extract_epi64(v, 0))
+         + (uint64_t)(_mm256_extract_epi64(v, 1))
+         + (uint64_t)(_mm256_extract_epi64(v, 2))
+         + (uint64_t)(_mm256_extract_epi64(v, 3));
+}
+
+
+uint64_t simd_sum_epu64(const __m512i v) {
+
+     __m256i lo = _mm512_extracti64x4_epi64(v, 0);
+     __m256i hi = _mm512_extracti64x4_epi64(v, 1);
+
+    return sum_epu64_256(lo) + sum_epu64_256(hi);
+}
+
+uint64_t avx512_vpopcount(const __m512i* data, const uint64_t size) {
+    const uint64_t limit = size - size % 4;
+    __m512i total = _mm512_setzero_si512();
+    uint64_t i = 0;
+
+    for (; i < limit; i += 4)
+    {
+        VPOPCNT_AND_ADD(data + i, 0, total);
+        VPOPCNT_AND_ADD(data + i, 1, total);
+        VPOPCNT_AND_ADD(data + i, 2, total);
+        VPOPCNT_AND_ADD(data + i, 3, total);
+    }
+
+    for (; i < size; i++)
+    {
+        total = _mm512_add_epi64(total, _mm512_popcnt_epi64(_mm512_loadu_si512(data + i)));
+    }
+
+    return simd_sum_epu64(total);
+}
+
+CROARING_UNTARGET_AVX512
+#endif
+
+
+#define AVXPOPCNTFNC512(opname, avx_intrinsic)                                 \
+    uint64_t avx512_harley_seal_popcount512_##opname(            \
+        const __m512i *data1, const __m512i *data2, const uint64_t size) {     \
+        __m512i total = _mm512_setzero_si512();                                \
+        const uint64_t limit = size - size % 4;                                \
+        uint64_t i = 0;                                                        \
+	    for (; i < limit; i += 4) {                                            \
+            __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
+                                       _mm512_loadu_si512(data2 + i));         \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));          \
+            __m512i a2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),      \
+                                       _mm512_loadu_si512(data2 + i + 1));     \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a2));          \
+             __m512i a3 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),     \
+                                       _mm512_loadu_si512(data2 + i + 2));     \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a3));          \
+             __m512i a4 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),     \
+                                       _mm512_loadu_si512(data2 + i + 3));     \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a4));          \
+       }                                                                       \
+       for(; i < size; i++) {                                                  \
+              __m512i a = avx_intrinsic(_mm512_loadu_si512(data1 + i),         \
+                       _mm512_loadu_si512(data2 + i));                         \
+              total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a));         \
+        }                                                                      \
+        return simd_sum_epu64(total);                                          \
+    }                                                                          \
+    uint64_t avx512_harley_seal_popcount512andstore_##opname(    \
+        const __m512i *__restrict__ data1, const __m512i *__restrict__ data2,  \
+        __m512i *__restrict__ out, const uint64_t size) {                      \
+        __m512i total = _mm512_setzero_si512();                                \
+        const uint64_t limit = size - size % 4;                                \
+        uint64_t i = 0;                                                        \
+	    for (; i < limit; i += 4) {                                        \
+            __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
+                                       _mm512_loadu_si512(data2 + i));         \
+            _mm512_storeu_si512(out + i, a1);                                  \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));          \
+            __m512i a2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),      \
+                                       _mm512_loadu_si512(data2 + i + 1));     \
+            _mm512_storeu_si512(out + i + 1, a2);                              \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a2));          \
+             __m512i a3 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),     \
+                                       _mm512_loadu_si512(data2 + i + 2));     \
+            _mm512_storeu_si512(out + i + 2, a3);                              \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a3));          \
+            __m512i a4 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),      \
+                                       _mm512_loadu_si512(data2 + i + 3));     \
+            _mm512_storeu_si512(out + i + 3, a4);                              \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a4));          \
+       }                                                                       \
+       for(; i < size; i++) {                                                  \
+              __m512i a = avx_intrinsic(_mm512_loadu_si512(data1 + i),         \
+                       _mm512_loadu_si512(data2 + i));                         \
+            _mm512_storeu_si512(out + i, a);                                   \
+            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a));        \
+        }                                                                      \
+        return simd_sum_epu64(total);                                          \
+    }                                                                          \
+
+#if CROARING_COMPILER_SUPPORTS_AVX512
+CROARING_TARGET_AVX512
+AVXPOPCNTFNC512(or, _mm512_or_si512)
+AVXPOPCNTFNC512(union, _mm512_or_si512)
+AVXPOPCNTFNC512(and, _mm512_and_si512)
+AVXPOPCNTFNC512(intersection, _mm512_and_si512)
+AVXPOPCNTFNC512(xor, _mm512_xor_si512)
+AVXPOPCNTFNC512(andnot, _mm512_andnot_si512)
+CROARING_UNTARGET_AVX512
+#endif
 
 #ifdef __cplusplus
 } } }  // extern "C" { namespace roaring { namespace api {
