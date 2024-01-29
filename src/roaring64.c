@@ -48,6 +48,12 @@ typedef struct roaring64_iterator_s {
 
     uint64_t value;
     bool has_value;
+
+    // If has_value is false, then the iterator is saturated. This field
+    // indicates the direction of saturation. If true, there are no more values
+    // in the forward direction. If false, there are no more values in the
+    // backward direction.
+    bool saturated_forward;
 } roaring64_iterator_t;
 
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
@@ -126,6 +132,8 @@ static inline roaring64_iterator_t *roaring64_iterator_init_at(
         } else {
             roaring64_iterator_init_at_leaf_last(it);
         }
+    } else {
+        it->saturated_forward = first;
     }
     return it;
 }
@@ -1955,7 +1963,11 @@ uint64_t roaring64_iterator_value(const roaring64_iterator_t *it) {
 
 bool roaring64_iterator_advance(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
-        return (it->has_value = false);
+        if (it->saturated_forward) {
+            return (it->has_value = false);
+        }
+        roaring64_iterator_init_at(it->parent, it, /*first=*/true);
+        return it->has_value;
     }
     leaf_t *leaf = (leaf_t *)it->art_it.value;
     uint16_t low16 = (uint16_t)it->value;
@@ -1964,15 +1976,21 @@ bool roaring64_iterator_advance(roaring64_iterator_t *it) {
         it->value = it->high48 | low16;
         return (it->has_value = true);
     }
-    if (!art_iterator_next(&it->art_it)) {
-        return (it->has_value = false);
+    if (art_iterator_next(&it->art_it)) {
+        return roaring64_iterator_init_at_leaf_first(it);
     }
-    return roaring64_iterator_init_at_leaf_first(it);
+    it->saturated_forward = true;
+    return (it->has_value = false);
 }
 
 bool roaring64_iterator_previous(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
-        return (it->has_value = false);
+        if (!it->saturated_forward) {
+            // Saturated backward.
+            return (it->has_value = false);
+        }
+        roaring64_iterator_init_at(it->parent, it, /*first=*/false);
+        return it->has_value;
     }
     leaf_t *leaf = (leaf_t *)it->art_it.value;
     uint16_t low16 = (uint16_t)it->value;
@@ -1981,10 +1999,11 @@ bool roaring64_iterator_previous(roaring64_iterator_t *it) {
         it->value = it->high48 | low16;
         return (it->has_value = true);
     }
-    if (!art_iterator_prev(&it->art_it)) {
-        return (it->has_value = false);
+    if (art_iterator_prev(&it->art_it)) {
+        return roaring64_iterator_init_at_leaf_last(it);
     }
-    return roaring64_iterator_init_at_leaf_last(it);
+    it->saturated_forward = false;  // Saturated backward.
+    return (it->has_value = false);
 }
 
 bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
@@ -2000,6 +2019,7 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
         // move to a leaf with a key equal or greater.
         if (!art_iterator_lower_bound(&it->art_it, val_high48)) {
             // Only smaller keys found.
+            it->saturated_forward = true;
             return (it->has_value = false);
         }
         it->high48 = combine_key(it->art_it.key, 0);
@@ -2019,6 +2039,7 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
         }
         // Only smaller entries in this container, move to the next.
         if (!art_iterator_next(&it->art_it)) {
+            it->saturated_forward = true;
             return (it->has_value = false);
         }
     }
