@@ -1136,7 +1136,7 @@ void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length) {
 
 #if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
-static inline uint64_t sum_epu64_256(const __m256i v) {
+uint64_t sum_epu64_256(const __m256i v) {
 
     return (uint64_t)(_mm256_extract_epi64(v, 0))
          + (uint64_t)(_mm256_extract_epi64(v, 1))
