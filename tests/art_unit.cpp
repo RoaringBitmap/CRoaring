@@ -30,8 +30,15 @@ void assert_key_eq(const art_key_chunk_t* key1, const art_key_chunk_t* key2) {
             print_key(key2);
             printf("\n");
 
-            assert_true(false);
+            fail();
         }
+    }
+}
+
+void assert_art_valid(art_t* art) {
+    const char* reason = nullptr;
+    if (!art_internal_validate(art, &reason, nullptr)) {
+        fail_msg("ART is invalid: '%s'\n", reason);
     }
 }
 
@@ -176,11 +183,14 @@ DEFINE_TEST(test_art_erase_all) {
     art_t art{NULL};
     art_insert(&art, (uint8_t*)keys[0], &values[0]);
     art_insert(&art, (uint8_t*)keys[1], &values[1]);
+    assert_art_valid(&art);
 
     Value* erased_val1 = (Value*)art_erase(&art, (uint8_t*)keys[0]);
     Value* erased_val2 = (Value*)art_erase(&art, (uint8_t*)keys[1]);
     assert_true(*erased_val1 == values[0]);
     assert_true(*erased_val2 == values[1]);
+
+    assert_art_valid(&art);
     art_free(&art);
 }
 
@@ -191,10 +201,12 @@ DEFINE_TEST(test_art_is_empty) {
     std::vector<Value> values = {{1}, {2}, {3}, {4}, {5}};
 
     art_t art{NULL};
+    assert_art_valid(&art);
     assert_true(art_is_empty(&art));
     const char* key = "000001";
     Value val{1};
     art_insert(&art, (art_key_chunk_t*)key, &val);
+    assert_art_valid(&art);
     assert_false(art_is_empty(&art));
     art_free(&art);
 }
@@ -214,6 +226,7 @@ DEFINE_TEST(test_art_iterator_next) {
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
         art_insert(&art, (art_key_chunk_t*)keys[i].data(), &values[i]);
+        assert_art_valid(&art);
     }
 
     art_iterator_t iterator = art_init_iterator(&art, true);
@@ -241,6 +254,7 @@ DEFINE_TEST(test_art_iterator_prev) {
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
         art_insert(&art, (art_key_chunk_t*)keys[i].data(), &values[i]);
+        assert_art_valid(&art);
     }
 
     art_iterator_t iterator = art_init_iterator(&art, /*first=*/false);
@@ -261,6 +275,7 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
         art_t art{NULL};
         for (size_t i = 0; i < keys.size(); ++i) {
             art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+            assert_art_valid(&art);
         }
 
         art_iterator_t iterator = art_init_iterator(&art, true);
@@ -280,6 +295,7 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
         art_t art{NULL};
         for (size_t i = 0; i < keys.size(); ++i) {
             art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+            assert_art_valid(&art);
         }
         art_iterator_t iterator = art_init_iterator(&art, true);
 
@@ -304,6 +320,7 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
         art_t art{NULL};
         for (size_t i = 0; i < keys.size(); ++i) {
             art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+            assert_art_valid(&art);
         }
         art_iterator_t iterator = art_init_iterator(&art, true);
 
@@ -357,6 +374,7 @@ DEFINE_TEST(test_art_lower_bound) {
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
         art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+        assert_art_valid(&art);
     }
 
     {
@@ -394,6 +412,7 @@ DEFINE_TEST(test_art_upper_bound) {
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
         art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
+        assert_art_valid(&art);
     }
 
     {
@@ -438,6 +457,7 @@ DEFINE_TEST(test_art_iterator_erase) {
     art_t art{NULL};
     for (size_t i = 0; i < keys.size(); ++i) {
         art_insert(&art, (art_key_chunk_t*)keys[i].data(), &values[i]);
+        assert_art_valid(&art);
     }
     art_iterator_t iterator = art_init_iterator(&art, true);
     size_t i = 0;
@@ -445,6 +465,7 @@ DEFINE_TEST(test_art_iterator_erase) {
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i].data());
         assert_true(iterator.value == &values[i]);
         assert_true(art_iterator_erase(&art, &iterator) == &values[i]);
+        assert_art_valid(&art);
         assert_false(art_find(&art, (art_key_chunk_t*)keys[i].data()));
         ++i;
     } while (iterator.value != NULL);
@@ -463,6 +484,7 @@ DEFINE_TEST(test_art_iterator_insert) {
     for (size_t i = 1; i < keys.size(); ++i) {
         art_iterator_insert(&art, &iterator, (art_key_chunk_t*)keys[i],
                             &values[i]);
+        assert_art_valid(&art);
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
         assert_true(iterator.value == &values[i]);
     }
@@ -492,11 +514,13 @@ DEFINE_TEST(test_art_shrink_grow_node48) {
         auto key = Key(i);
         values[i].val = i;
         art_insert(&art, key.data(), &values[i]);
+        assert_art_valid(&art);
     }
     // Remove the first several containers
     for (int i = 0; i < 8; i++) {
         auto key = Key(i);
         Value* removed_val = (Value*)(art_erase(&art, key.data()));
+        assert_art_valid(&art);
         assert_int_equal(removed_val->val, i);
     }
     {

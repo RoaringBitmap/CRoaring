@@ -100,6 +100,21 @@ size_t art_size_in_bytes(const art_t *art);
 void art_printf(const art_t *art);
 
 /**
+ * Callback for validating the value stored in a leaf.
+ *
+ * Should return true if the value is valid, false otherwise
+ * If false is returned, `*reason` should be set to a static string describing
+ * the reason for the failure.
+ */
+typedef bool (*art_validate_cb_t)(const art_val_t *val, const char **reason);
+
+/**
+ * Validate the ART tree, ensuring it is internally consistent.
+ */
+bool art_internal_validate(const art_t *art, const char **reason,
+                           art_validate_cb_t validate_cb);
+
+/**
  * ART-internal iterator bookkeeping. Users should treat this as an opaque type.
  */
 typedef struct art_iterator_frame_s {

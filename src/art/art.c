@@ -46,6 +46,21 @@ typedef uint8_t art_typecode_t;
 // of the trie internals.
 typedef art_val_t art_leaf_t;
 
+typedef struct art_internal_validate_s {
+    const char **reason;
+    art_validate_cb_t validate_cb;
+
+    int depth;
+    art_key_chunk_t current_key[ART_KEY_BYTES];
+} art_internal_validate_t;
+
+// Set the reason message, and return false for convenience.
+static inline bool art_validate_fail(const art_internal_validate_t *validate,
+                                     const char *msg) {
+    *validate->reason = msg;
+    return false;
+}
+
 // Inner node, with prefix.
 //
 // We use a fixed-length array as a pointer would be larger than the array.
@@ -308,6 +323,43 @@ static inline art_indexed_child_t art_node4_lower_bound(
     return indexed_child;
 }
 
+static bool art_internal_validate_at(const art_node_t *node,
+                                     art_internal_validate_t validator);
+
+static bool art_node4_internal_validate(const art_node4_t *node,
+                                        art_internal_validate_t validator) {
+    if (node->count == 0) {
+        return art_validate_fail(&validator, "Node4 has no children");
+    }
+    if (node->count > 4) {
+        return art_validate_fail(&validator, "Node4 has too many children");
+    }
+    if (node->count == 1) {
+        return art_validate_fail(
+            &validator, "Node4 and child node should have been combined");
+    }
+    validator.depth++;
+    for (int i = 0; i < node->count; ++i) {
+        if (i > 0) {
+            if (node->keys[i - 1] >= node->keys[i]) {
+                return art_validate_fail(
+                    &validator, "Node4 keys are not strictly increasing");
+            }
+        }
+        for (int j = i + 1; j < node->count; ++j) {
+            if (node->children[i] == node->children[j]) {
+                return art_validate_fail(&validator,
+                                         "Node4 has duplicate children");
+            }
+        }
+        validator.current_key[validator.depth - 1] = node->keys[i];
+        if (!art_internal_validate_at(node->children[i], validator)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static art_node16_t *art_node16_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     art_node16_t *node = (art_node16_t *)roaring_malloc(sizeof(art_node16_t));
@@ -459,6 +511,36 @@ static inline art_indexed_child_t art_node16_lower_bound(
     }
     indexed_child.child = NULL;
     return indexed_child;
+}
+
+static bool art_node16_internal_validate(const art_node16_t *node,
+                                         art_internal_validate_t validator) {
+    if (node->count <= 4) {
+        return art_validate_fail(&validator, "Node16 has too few children");
+    }
+    if (node->count > 16) {
+        return art_validate_fail(&validator, "Node16 has too many children");
+    }
+    validator.depth++;
+    for (int i = 0; i < node->count; ++i) {
+        if (i > 0) {
+            if (node->keys[i - 1] >= node->keys[i]) {
+                return art_validate_fail(
+                    &validator, "Node16 keys are not strictly increasing");
+            }
+        }
+        for (int j = i + 1; j < node->count; ++j) {
+            if (node->children[i] == node->children[j]) {
+                return art_validate_fail(&validator,
+                                         "Node16 has duplicate children");
+            }
+        }
+        validator.current_key[validator.depth - 1] = node->keys[i];
+        if (!art_internal_validate_at(node->children[i], validator)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
@@ -614,6 +696,65 @@ static inline art_indexed_child_t art_node48_lower_bound(
     return indexed_child;
 }
 
+static bool art_node48_internal_validate(const art_node48_t *node,
+                                         art_internal_validate_t validator) {
+    if (node->count <= 16) {
+        return art_validate_fail(&validator, "Node48 has too few children");
+    }
+    if (node->count > 48) {
+        return art_validate_fail(&validator, "Node48 has too many children");
+    }
+    uint64_t used_children = 0;
+    for (int i = 0; i < 256; ++i) {
+        uint8_t child_idx = node->keys[i];
+        if (child_idx != ART_NODE48_EMPTY_VAL) {
+            if (used_children & (UINT64_C(1) << child_idx)) {
+                return art_validate_fail(
+                    &validator, "Node48 keys point to the same child index");
+            }
+
+            art_node_t *child = node->children[child_idx];
+            if (child == NULL) {
+                return art_validate_fail(&validator, "Node48 has a NULL child");
+            }
+            used_children |= UINT64_C(1) << child_idx;
+        }
+    }
+    uint64_t expected_used_children =
+        (node->available_children) ^ NODE48_AVAILABLE_CHILDREN_MASK;
+    if (used_children != expected_used_children) {
+        return art_validate_fail(
+            &validator,
+            "Node48 available_children does not match actual children");
+    }
+    while (used_children != 0) {
+        uint8_t child_idx = roaring_trailing_zeroes(used_children);
+        used_children &= used_children - 1;
+
+        uint64_t other_children = used_children;
+        while (other_children != 0) {
+            uint8_t other_child_idx = roaring_trailing_zeroes(other_children);
+            if (node->children[child_idx] == node->children[other_child_idx]) {
+                return art_validate_fail(&validator,
+                                         "Node48 has duplicate children");
+            }
+            other_children &= other_children - 1;
+        }
+    }
+
+    validator.depth++;
+    for (int i = 0; i < 256; ++i) {
+        if (node->keys[i] != ART_NODE48_EMPTY_VAL) {
+            validator.current_key[validator.depth - 1] = i;
+            if (!art_internal_validate_at(node->children[node->keys[i]],
+                                          validator)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 static art_node256_t *art_node256_create(const art_key_chunk_t prefix[],
                                          uint8_t prefix_size) {
     art_node256_t *node =
@@ -733,6 +874,40 @@ static inline art_indexed_child_t art_node256_lower_bound(
     }
     indexed_child.child = NULL;
     return indexed_child;
+}
+
+static bool art_node256_internal_validate(const art_node256_t *node,
+                                          art_internal_validate_t validator) {
+    if (node->count <= 48) {
+        return art_validate_fail(&validator, "Node256 has too few children");
+    }
+    if (node->count > 256) {
+        return art_validate_fail(&validator, "Node256 has too many children");
+    }
+    validator.depth++;
+    int actual_count = 0;
+    for (int i = 0; i < 256; ++i) {
+        if (node->children[i] != NULL) {
+            actual_count++;
+
+            for (int j = i + 1; j < 256; ++j) {
+                if (node->children[i] == node->children[j]) {
+                    return art_validate_fail(&validator,
+                                             "Node256 has duplicate children");
+                }
+            }
+
+            validator.current_key[validator.depth - 1] = i;
+            if (!art_internal_validate_at(node->children[i], validator)) {
+                return false;
+            }
+        }
+    }
+    if (actual_count != node->count) {
+        return art_validate_fail(
+            &validator, "Node256 count does not match actual children");
+    }
+    return true;
 }
 
 // Finds the child with the given key chunk in the inner node, returns NULL if
@@ -1615,6 +1790,89 @@ art_val_t *art_iterator_erase(art_t *art, art_iterator_t *iterator) {
     // start from the current position.
     art_node_iterator_lower_bound(art->root, iterator, initial_key);
     return value_erased;
+}
+
+static bool art_internal_validate_at(const art_node_t *node,
+                                     art_internal_validate_t validator) {
+    if (node == NULL) {
+        return art_validate_fail(&validator, "node is null");
+    }
+    if (art_is_leaf(node)) {
+        art_leaf_t *leaf = CAST_LEAF(node);
+        if (art_compare_prefix(leaf->key, 0, validator.current_key, 0,
+                               validator.depth) != 0) {
+            return art_validate_fail(
+                &validator,
+                "leaf key does not match its position's prefix in the tree");
+        }
+        if (validator.validate_cb != NULL &&
+            !validator.validate_cb(leaf, validator.reason)) {
+            if (*validator.reason == NULL) {
+                *validator.reason = "leaf validation failed";
+            }
+            return false;
+        }
+    } else {
+        art_inner_node_t *inner_node = (art_inner_node_t *)node;
+
+        if (validator.depth + inner_node->prefix_size + 1 > ART_KEY_BYTES) {
+            return art_validate_fail(&validator,
+                                     "node has too much prefix at given depth");
+        }
+        memcpy(validator.current_key + validator.depth, inner_node->prefix,
+               inner_node->prefix_size);
+        validator.depth += inner_node->prefix_size;
+
+        switch (inner_node->typecode) {
+            case ART_NODE4_TYPE:
+                if (!art_node4_internal_validate((art_node4_t *)inner_node,
+                                                 validator)) {
+                    return false;
+                }
+                break;
+            case ART_NODE16_TYPE:
+                if (!art_node16_internal_validate((art_node16_t *)inner_node,
+                                                  validator)) {
+                    return false;
+                }
+                break;
+            case ART_NODE48_TYPE:
+                if (!art_node48_internal_validate((art_node48_t *)inner_node,
+                                                  validator)) {
+                    return false;
+                }
+                break;
+            case ART_NODE256_TYPE:
+                if (!art_node256_internal_validate((art_node256_t *)inner_node,
+                                                   validator)) {
+                    return false;
+                }
+                break;
+            default:
+                return art_validate_fail(&validator, "invalid node type");
+        }
+    }
+    return true;
+}
+
+bool art_internal_validate(const art_t *art, const char **reason,
+                           art_validate_cb_t validate_cb) {
+    const char *reason_local;
+    if (reason == NULL) {
+        // Always allow assigning through *reason
+        reason = &reason_local;
+    }
+    *reason = NULL;
+    if (art->root == NULL) {
+        return true;
+    }
+    art_internal_validate_t validator = {
+        .reason = reason,
+        .validate_cb = validate_cb,
+        .depth = 0,
+        .current_key = {0},
+    };
+    return art_internal_validate_at(art->root, validator);
 }
 
 #ifdef __cplusplus

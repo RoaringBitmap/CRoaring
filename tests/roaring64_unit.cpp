@@ -23,14 +23,23 @@ void assert_vector_equal(const std::vector<uint64_t>& lhs,
     }
 }
 
+void assert_r64_valid(roaring64_bitmap_t* b) {
+    const char* reason = nullptr;
+    if (!roaring64_bitmap_internal_validate(b, &reason)) {
+        fail_msg("Roaring64 bitmap is invalid: '%s'\n", reason);
+    }
+}
+
 DEFINE_TEST(test_copy) {
     roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+    assert_r64_valid(r1);
 
     roaring64_bitmap_add(r1, 0);
     roaring64_bitmap_add(r1, 10000);
     roaring64_bitmap_add(r1, 200000);
 
     roaring64_bitmap_t* r2 = roaring64_bitmap_copy(r1);
+    assert_r64_valid(r1);
     assert_true(roaring64_bitmap_contains(r2, 0));
     assert_true(roaring64_bitmap_contains(r2, 10000));
     assert_true(roaring64_bitmap_contains(r2, 200000));
@@ -38,6 +47,7 @@ DEFINE_TEST(test_copy) {
     roaring64_bitmap_remove(r1, 200000);
     roaring64_bitmap_add(r1, 300000);
 
+    assert_r64_valid(r1);
     assert_true(roaring64_bitmap_contains(r2, 200000));
     assert_false(roaring64_bitmap_contains(r2, 300000));
 
@@ -49,6 +59,7 @@ DEFINE_TEST(test_from_range) {
     {
         // Step greater than 2 ^ 16.
         roaring64_bitmap_t* r = roaring64_bitmap_from_range(0, 1000000, 200000);
+        assert_r64_valid(r);
         assert_true(roaring64_bitmap_contains(r, 0));
         assert_true(roaring64_bitmap_contains(r, 200000));
         assert_true(roaring64_bitmap_contains(r, 400000));
@@ -60,6 +71,7 @@ DEFINE_TEST(test_from_range) {
     {
         // Step less than 2 ^ 16 and within one container.
         roaring64_bitmap_t* r = roaring64_bitmap_from_range(0, 100, 20);
+        assert_r64_valid(r);
         assert_true(roaring64_bitmap_contains(r, 0));
         assert_true(roaring64_bitmap_contains(r, 20));
         assert_true(roaring64_bitmap_contains(r, 40));
@@ -72,6 +84,7 @@ DEFINE_TEST(test_from_range) {
         // Step less than 2 ^ 16 and across two containers.
         roaring64_bitmap_t* r =
             roaring64_bitmap_from_range((1 << 16) - 1, (1 << 16) + 5, 2);
+        assert_r64_valid(r);
         assert_true(roaring64_bitmap_contains(r, (1 << 16) - 1));
         assert_true(roaring64_bitmap_contains(r, (1 << 16) + 1));
         assert_true(roaring64_bitmap_contains(r, (1 << 16) + 3));
@@ -82,6 +95,7 @@ DEFINE_TEST(test_from_range) {
         // Step less than 2 ^ 16 and across multiple containers.
         roaring64_bitmap_t* r =
             roaring64_bitmap_from_range((1 << 16) - 1, (1 << 17) + 2, 1);
+        assert_r64_valid(r);
         assert_true(roaring64_bitmap_contains(r, (1 << 16) - 1));
         assert_true(roaring64_bitmap_contains(r, (1 << 16) + 0));
         assert_true(roaring64_bitmap_contains(r, (1 << 16) + 1));
@@ -97,6 +111,7 @@ DEFINE_TEST(test_of_ptr) {
     std::array<uint64_t, 1000> vals;
     std::iota(vals.begin(), vals.end(), 0);
     roaring64_bitmap_t* r = roaring64_bitmap_of_ptr(vals.size(), vals.data());
+    assert_r64_valid(r);
     for (uint64_t i = 0; i < 1000; ++i) {
         assert_true(roaring64_bitmap_contains(r, vals[i]));
     }
@@ -105,6 +120,7 @@ DEFINE_TEST(test_of_ptr) {
 
 DEFINE_TEST(test_of) {
     roaring64_bitmap_t* r = roaring64_bitmap_from(1, 20000, 500000);
+    assert_r64_valid(r);
     assert_true(roaring64_bitmap_contains(r, 1));
     assert_true(roaring64_bitmap_contains(r, 20000));
     assert_true(roaring64_bitmap_contains(r, 500000));
@@ -118,6 +134,7 @@ DEFINE_TEST(test_add) {
     roaring64_bitmap_add(r, 10000);
     roaring64_bitmap_add(r, 200000);
 
+    assert_r64_valid(r);
     assert_true(roaring64_bitmap_contains(r, 0));
     assert_true(roaring64_bitmap_contains(r, 10000));
     assert_true(roaring64_bitmap_contains(r, 200000));
@@ -137,6 +154,7 @@ DEFINE_TEST(test_add_checked) {
     assert_true(roaring64_bitmap_add_checked(r, 200000));
     assert_false(roaring64_bitmap_add_checked(r, 200000));
 
+    assert_r64_valid(r);
     assert_true(roaring64_bitmap_contains(r, 0));
     assert_true(roaring64_bitmap_contains(r, 10000));
     assert_true(roaring64_bitmap_contains(r, 200000));
@@ -150,6 +168,7 @@ DEFINE_TEST(test_add_bulk) {
     roaring64_bulk_context_t context{};
     for (uint64_t i = 0; i < 10000; ++i) {
         roaring64_bitmap_add_bulk(r, &context, i * 10000);
+        assert_r64_valid(r);
     }
     for (uint64_t i = 0; i < 10000; ++i) {
         assert_true(roaring64_bitmap_contains(r, i * 10000));
@@ -165,6 +184,7 @@ DEFINE_TEST(test_add_many) {
         std::iota(vals.begin(), vals.end(), 0);
 
         roaring64_bitmap_add_many(r, vals.size(), vals.data());
+        assert_r64_valid(r);
         for (uint64_t i = 0; i < 1000; ++i) {
             assert_true(roaring64_bitmap_contains(r, vals[i]));
         }
@@ -179,6 +199,7 @@ DEFINE_TEST(test_add_many) {
         roaring64_bitmap_add(r, value);
         assert_true(roaring64_bitmap_contains(r, value));
         roaring64_bitmap_add_many(r, 1, &value);
+        assert_r64_valid(r);
         assert_true(roaring64_bitmap_contains(r, value));
         assert_int_equal(roaring64_bitmap_get_cardinality(r), 1);
         roaring64_bitmap_free(r);
@@ -190,6 +211,7 @@ DEFINE_TEST(test_add_range_closed) {
         // Entire range within one container.
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, 10, 20);
+        assert_r64_valid(r);
         roaring64_bulk_context_t context{};
         assert_false(roaring64_bitmap_contains_bulk(r, &context, 9));
         for (uint64_t i = 10; i <= 20; ++i) {
@@ -202,6 +224,7 @@ DEFINE_TEST(test_add_range_closed) {
         // Range spans two containers.
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, (1 << 16) - 10, (1 << 16) + 10);
+        assert_r64_valid(r);
         roaring64_bulk_context_t context{};
         assert_false(
             roaring64_bitmap_contains_bulk(r, &context, (1 << 16) - 11));
@@ -216,6 +239,7 @@ DEFINE_TEST(test_add_range_closed) {
         // Range spans more than two containers.
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, 100, 300000);
+        assert_r64_valid(r);
         assert_int_equal(roaring64_bitmap_get_cardinality(r), 300000 - 100 + 1);
         roaring64_bulk_context_t context{};
         assert_false(roaring64_bitmap_contains_bulk(r, &context, 99));
@@ -229,6 +253,7 @@ DEFINE_TEST(test_add_range_closed) {
         // Add range to existing container
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add(r, 100);
+        assert_r64_valid(r);
         roaring64_bitmap_add_range_closed(r, 0, 0);
         assert_int_equal(roaring64_bitmap_get_cardinality(r), 2);
         assert_true(roaring64_bitmap_contains(r, 0));
@@ -241,6 +266,7 @@ DEFINE_TEST(test_add_range_closed) {
         uint64_t end = 0x101ffff;
         uint64_t start = 0;
         roaring64_bitmap_add_range_closed(r, start, end);
+        assert_r64_valid(r);
         assert_int_equal(roaring64_bitmap_get_cardinality(r), end - start + 1);
         roaring64_bitmap_free(r);
     }
@@ -399,6 +425,7 @@ DEFINE_TEST(test_remove) {
     }
     for (uint64_t i = 0; i < 100; ++i) {
         roaring64_bitmap_remove(r, i * 10000);
+        assert_r64_valid(r);
     }
     for (uint64_t i = 0; i < 100; ++i) {
         assert_false(roaring64_bitmap_contains(r, i * 10000));
@@ -414,6 +441,7 @@ DEFINE_TEST(test_remove_checked) {
     for (uint64_t i = 0; i < 100; ++i) {
         assert_true(roaring64_bitmap_remove_checked(r, i * 10000));
         assert_false(roaring64_bitmap_remove_checked(r, i * 10000));
+        assert_r64_valid(r);
     }
     for (uint64_t i = 0; i < 100; ++i) {
         assert_false(roaring64_bitmap_contains(r, i * 10000));
@@ -430,6 +458,7 @@ DEFINE_TEST(test_remove_bulk) {
     context = {};
     for (uint64_t i = 1; i < 9999; ++i) {
         roaring64_bitmap_remove_bulk(r, &context, i * 1000);
+        assert_r64_valid(r);
     }
     context = {};
     assert_true(roaring64_bitmap_contains_bulk(r, &context, 0));
@@ -447,6 +476,7 @@ DEFINE_TEST(test_remove_many) {
 
     roaring64_bitmap_add_many(r, vals.size(), vals.data());
     roaring64_bitmap_remove_many(r, vals.size(), vals.data());
+    assert_r64_valid(r);
     for (uint64_t i = 0; i < 1000; ++i) {
         assert_false(roaring64_bitmap_contains(r, vals[i]));
     }
@@ -459,6 +489,7 @@ DEFINE_TEST(test_remove_range_closed) {
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, 10, 20);
         roaring64_bitmap_remove_range_closed(r, 11, 21);
+        assert_r64_valid(r);
         roaring64_bulk_context_t context{};
         assert_true(roaring64_bitmap_contains_bulk(r, &context, 10));
         for (uint64_t i = 11; i <= 21; ++i) {
@@ -471,6 +502,7 @@ DEFINE_TEST(test_remove_range_closed) {
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, (1 << 16) - 10, (1 << 16) + 10);
         roaring64_bitmap_remove_range_closed(r, (1 << 16) - 9, (1 << 16) + 9);
+        assert_r64_valid(r);
         roaring64_bulk_context_t context{};
         assert_true(
             roaring64_bitmap_contains_bulk(r, &context, (1 << 16) - 10));
@@ -486,6 +518,7 @@ DEFINE_TEST(test_remove_range_closed) {
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range_closed(r, 100, 300000);
         roaring64_bitmap_remove_range_closed(r, 101, 299999);
+        assert_r64_valid(r);
         roaring64_bulk_context_t context{};
         assert_true(roaring64_bitmap_contains_bulk(r, &context, 100));
         for (uint64_t i = 101; i <= 299999; ++i) {
@@ -506,6 +539,7 @@ DEFINE_TEST(test_remove_range_closed) {
             roaring64_bitmap_add(r, i);
         }
         roaring64_bitmap_remove_range_closed(r, 0, 0x30000);
+        assert_r64_valid(r);
         assert_true(roaring64_bitmap_is_empty(r));
         roaring64_bitmap_free(r);
     }
@@ -544,8 +578,10 @@ DEFINE_TEST(test_range_cardinality) {
 
 DEFINE_TEST(test_is_empty) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
+    assert_r64_valid(r);
     assert_true(roaring64_bitmap_is_empty(r));
     roaring64_bitmap_add(r, 1);
+    assert_r64_valid(r);
     assert_false(roaring64_bitmap_is_empty(r));
     roaring64_bitmap_free(r);
 }
@@ -584,11 +620,13 @@ DEFINE_TEST(test_run_optimize) {
 
     roaring64_bitmap_add(r, 20000);
     assert_false(roaring64_bitmap_run_optimize(r));
+    assert_r64_valid(r);
 
     for (uint64_t i = 0; i < 30000; ++i) {
         roaring64_bitmap_add(r, i);
     }
     assert_true(roaring64_bitmap_run_optimize(r));
+    assert_r64_valid(r);
 
     roaring64_bitmap_free(r);
 }
@@ -696,6 +734,7 @@ DEFINE_TEST(test_and) {
 
     roaring64_bitmap_t* r3 = roaring64_bitmap_and(r1, r2);
 
+    assert_r64_valid(r3);
     assert_false(roaring64_bitmap_contains(r3, 100000));
     assert_true(roaring64_bitmap_contains(r3, 100001));
     assert_true(roaring64_bitmap_contains(r3, 200000));
@@ -743,6 +782,7 @@ DEFINE_TEST(test_and_inplace) {
 
         roaring64_bitmap_and_inplace(r1, r2);
 
+        assert_r64_valid(r1);
         assert_false(roaring64_bitmap_contains(r1, 50000));
         assert_false(roaring64_bitmap_contains(r1, 100000));
         assert_true(roaring64_bitmap_contains(r1, 100001));
@@ -759,6 +799,7 @@ DEFINE_TEST(test_and_inplace) {
         roaring64_bitmap_t* r2 = roaring64_bitmap_from_range(100, 200, 1);
 
         roaring64_bitmap_and_inplace(r1, r2);
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_is_empty(r1));
 
         roaring64_bitmap_free(r1);
@@ -863,6 +904,7 @@ DEFINE_TEST(test_or) {
 
     roaring64_bitmap_t* r3 = roaring64_bitmap_or(r1, r2);
 
+    assert_r64_valid(r3);
     assert_true(roaring64_bitmap_contains(r3, 100000));
     assert_true(roaring64_bitmap_contains(r3, 100001));
     assert_true(roaring64_bitmap_contains(r3, 200000));
@@ -908,6 +950,7 @@ DEFINE_TEST(test_or_inplace) {
 
     roaring64_bitmap_or_inplace(r1, r2);
 
+    assert_r64_valid(r1);
     assert_true(roaring64_bitmap_contains(r1, 100000));
     assert_true(roaring64_bitmap_contains(r1, 100001));
     assert_true(roaring64_bitmap_contains(r1, 200000));
@@ -933,6 +976,7 @@ DEFINE_TEST(test_xor) {
 
     roaring64_bitmap_t* r3 = roaring64_bitmap_xor(r1, r2);
 
+    assert_r64_valid(r3);
     assert_true(roaring64_bitmap_contains(r3, 100000));
     assert_false(roaring64_bitmap_contains(r3, 100001));
     assert_false(roaring64_bitmap_contains(r3, 200000));
@@ -978,6 +1022,7 @@ DEFINE_TEST(test_xor_inplace) {
 
     roaring64_bitmap_xor_inplace(r1, r2);
 
+    assert_r64_valid(r1);
     assert_true(roaring64_bitmap_contains(r1, 100000));
     assert_false(roaring64_bitmap_contains(r1, 100001));
     assert_false(roaring64_bitmap_contains(r1, 200000));
@@ -1003,6 +1048,7 @@ DEFINE_TEST(test_andnot) {
 
     roaring64_bitmap_t* r3 = roaring64_bitmap_andnot(r1, r2);
 
+    assert_r64_valid(r3);
     assert_true(roaring64_bitmap_contains(r3, 100000));
     assert_false(roaring64_bitmap_contains(r3, 100001));
     assert_false(roaring64_bitmap_contains(r3, 200000));
@@ -1049,6 +1095,7 @@ DEFINE_TEST(test_andnot_inplace) {
 
         roaring64_bitmap_andnot_inplace(r1, r2);
 
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_contains(r1, 100000));
         assert_false(roaring64_bitmap_contains(r1, 100001));
         assert_false(roaring64_bitmap_contains(r1, 200000));
@@ -1064,6 +1111,7 @@ DEFINE_TEST(test_andnot_inplace) {
         roaring64_bitmap_t* r2 = roaring64_bitmap_from_range(0, 100, 1);
 
         roaring64_bitmap_andnot_inplace(r1, r2);
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_is_empty(r1));
 
         roaring64_bitmap_free(r1);
@@ -1076,6 +1124,7 @@ DEFINE_TEST(test_flip) {
         // Flipping an empty bitmap should result in a non-empty range.
         roaring64_bitmap_t* r1 = roaring64_bitmap_create();
         roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 10, 100000);
+        assert_r64_valid(r2);
         assert_true(roaring64_bitmap_contains_range(r2, 10, 100000));
 
         roaring64_bitmap_free(r1);
@@ -1085,6 +1134,7 @@ DEFINE_TEST(test_flip) {
         // Only the specified range should be flipped.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 2, 5);
+        assert_r64_valid(r2);
         roaring64_bitmap_t* r3 = roaring64_bitmap_from(1, 2, 4, 6);
         assert_true(roaring64_bitmap_equals(r2, r3));
 
@@ -1096,6 +1146,7 @@ DEFINE_TEST(test_flip) {
         // An empty range does nothing.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_t* r2 = roaring64_bitmap_flip(r1, 3, 3);
+        assert_r64_valid(r2);
         assert_true(roaring64_bitmap_equals(r2, r1));
 
         roaring64_bitmap_free(r1);
@@ -1110,6 +1161,8 @@ DEFINE_TEST(test_flip) {
         roaring64_bitmap_t* r3 =
             roaring64_bitmap_from_range((2 << 16) + 1, (4 << 16) + 3, 1);
         roaring64_bitmap_remove(r3, (3 << 16) + 1);
+        assert_r64_valid(r2);
+        assert_r64_valid(r3);
         assert_true(roaring64_bitmap_equals(r2, r3));
 
         roaring64_bitmap_free(r1);
@@ -1123,6 +1176,7 @@ DEFINE_TEST(test_flip_inplace) {
         // Flipping an empty bitmap should result in a non-empty range.
         roaring64_bitmap_t* r1 = roaring64_bitmap_create();
         roaring64_bitmap_flip_inplace(r1, 10, 100000);
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_contains_range(r1, 10, 100000));
 
         roaring64_bitmap_free(r1);
@@ -1132,6 +1186,7 @@ DEFINE_TEST(test_flip_inplace) {
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_flip_inplace(r1, 2, 5);
         roaring64_bitmap_t* r2 = roaring64_bitmap_from(1, 2, 4, 6);
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_equals(r1, r2));
 
         roaring64_bitmap_free(r1);
@@ -1142,6 +1197,7 @@ DEFINE_TEST(test_flip_inplace) {
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 3, 6);
         roaring64_bitmap_flip_inplace(r1, 3, 3);
         roaring64_bitmap_t* r2 = roaring64_bitmap_from(1, 3, 6);
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_equals(r1, r2));
 
         roaring64_bitmap_free(r1);
@@ -1155,6 +1211,7 @@ DEFINE_TEST(test_flip_inplace) {
         roaring64_bitmap_t* r2 =
             roaring64_bitmap_from_range((2 << 16) + 1, (4 << 16) + 3, 1);
         roaring64_bitmap_remove(r2, (3 << 16) + 1);
+        assert_r64_valid(r1);
         assert_true(roaring64_bitmap_equals(r1, r2));
 
         roaring64_bitmap_free(r1);
@@ -1172,6 +1229,7 @@ void check_portable_serialization(const roaring64_bitmap_t* r1) {
     assert_int_equal(deserialized_size, serialized_size);
     roaring64_bitmap_t* r2 =
         roaring64_bitmap_portable_deserialize_safe(buf.data(), serialized_size);
+    assert_r64_valid(r2);
     assert_true(roaring64_bitmap_equals(r2, r1));
     roaring64_bitmap_free(r2);
 }
@@ -1188,6 +1246,9 @@ DEFINE_TEST(test_portable_serialize) {
     roaring64_bitmap_add(r, 1ULL << 48);
     roaring64_bitmap_add(r, 1ULL << 60);
     roaring64_bitmap_add(r, UINT64_MAX);
+    check_portable_serialization(r);
+
+    roaring64_bitmap_add_range(r, 1ULL << 16, 1ULL << 32);
     check_portable_serialization(r);
 
     roaring64_bitmap_free(r);
