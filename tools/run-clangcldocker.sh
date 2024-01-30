@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-
+set -e
 set -o noglob
+COMMAND=$@
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 MAINSOURCE=$SCRIPTPATH/..
 
@@ -48,7 +49,7 @@ docker info >/dev/null 2>&1 || { echo >&2 "Docker server is not running? type 'd
 docker image inspect $container_name >/dev/null 2>&1 || ( echo "instantiating the container" ; docker build --no-cache -t $container_name -f $SCRIPTPATH/clangcldockerfile --build-arg USER_NAME="$tuser"  --build-arg USER_ID=$(id -u)  --build-arg GROUP_ID=$(id -g) .  )
 
 if [ -t 0 ]; then DOCKER_ARGS=-it; fi
-docker run --rm $DOCKER_ARGS -h $container_name -v $MAINSOURCE:$MAINSOURCE:Z  -w $MAINSOURCE $container_name sh --style=file --verbose -i $ALL_CROARING_FILES
+docker run --rm $DOCKER_ARGS -h $container_name -v $MAINSOURCE:$MAINSOURCE:Z  -w $MAINSOURCE $container_name sh --style=file --verbose -i $ALL_CROARING_FILES $COMMAND
 
 
 
