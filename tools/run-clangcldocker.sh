@@ -4,39 +4,7 @@ set -o noglob
 COMMAND=$@
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 MAINSOURCE=$SCRIPTPATH/..
-
-ALL_CROARING_FILES="
-$MAINSOURCE/include/roaring/roaring_version.h
-$MAINSOURCE/include/roaring/roaring_types.h
-$MAINSOURCE/include/roaring/portability.h
-$MAINSOURCE/include/roaring/bitset/bitset.h
-$MAINSOURCE/include/roaring/roaring.h
-$MAINSOURCE/include/roaring/memory.h
-$MAINSOURCE/include/roaring/roaring64.h
-$MAINSOURCE/cpp/roaring.hh
-$MAINSOURCE/cpp/roaring64map.hh
-$MAINSOURCE/include/roaring/isadetection.h
-$MAINSOURCE/include/roaring/containers/perfparameters.h
-$MAINSOURCE/include/roaring/containers/container_defs.h
-$MAINSOURCE/include/roaring/array_util.h
-$MAINSOURCE/include/roaring/utilasm.h
-$MAINSOURCE/include/roaring/bitset_util.h
-$MAINSOURCE/include/roaring/containers/array.h
-$MAINSOURCE/include/roaring/containers/bitset.h
-$MAINSOURCE/include/roaring/containers/run.h
-$MAINSOURCE/include/roaring/containers/convert.h
-$MAINSOURCE/include/roaring/containers/mixed_equal.h
-$MAINSOURCE/include/roaring/containers/mixed_subset.h
-$MAINSOURCE/include/roaring/containers/mixed_andnot.h
-$MAINSOURCE/include/roaring/containers/mixed_intersection.h
-$MAINSOURCE/include/roaring/containers/mixed_negation.h
-$MAINSOURCE/include/roaring/containers/mixed_union.h
-$MAINSOURCE/include/roaring/containers/mixed_xor.h
-$MAINSOURCE/include/roaring/containers/containers.h
-$MAINSOURCE/include/roaring/roaring_array.h
-$MAINSOURCE/include/roaring/art/art.h
-"
-
+ALL_CROARING_FILES=$(cd $SCRIPTPATH/.. && git ls-tree --full-tree --name-only -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$" | grep -vFf clang-format-ignore.txt)
 tuser=$(echo $USER | tr -dc 'a-z')
 
 container_name=${CONTAINER_NAME:-"clang-format-for-$tuser"}
