@@ -4,7 +4,7 @@ set -o noglob
 COMMAND=$@
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 MAINSOURCE=$SCRIPTPATH/..
-ALL_CROARING_FILES=$(cd $SCRIPTPATH/.. && git ls-tree --full-tree --name-only -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$" | grep -vFf clang-format-ignore.txt)
+ALL_CROARING_FILES=$(cd $MAINSOURCE && git ls-tree --full-tree --name-only -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$" | grep -vFf clang-format-ignore.txt)
 tuser=$(echo $USER | tr -dc 'a-z')
 
 container_name=${CONTAINER_NAME:-"clang-format-for-$tuser"}
