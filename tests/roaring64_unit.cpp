@@ -1388,6 +1388,15 @@ DEFINE_TEST(test_iterator_advance) {
         i++;
     } while (roaring64_iterator_advance(it));
     assert_int_equal(i, values.size());
+
+    // Check that we can move backward from after the last entry.
+    assert_true(roaring64_iterator_previous(it));
+    i--;
+    assert_int_equal(roaring64_iterator_value(it), values[i]);
+
+    // Check that we can't move forward again.
+    assert_false(roaring64_iterator_advance(it));
+
     roaring64_iterator_free(it);
     roaring64_bitmap_free(r);
 }
@@ -1402,13 +1411,22 @@ DEFINE_TEST(test_iterator_previous) {
         values.push_back(v);
         roaring64_bitmap_add_bulk(r, &context, v);
     }
-    size_t i = values.size();
+    int i = ((int)values.size()) - 1;
     roaring64_iterator_t* it = roaring64_iterator_create_last(r);
     do {
-        i--;
         assert_int_equal(roaring64_iterator_value(it), values[i]);
+        i--;
     } while (roaring64_iterator_previous(it));
-    assert_int_equal(i, 0);
+    assert_int_equal(i, -1);
+
+    // Check that we can move forward from before the first entry.
+    assert_true(roaring64_iterator_advance(it));
+    i++;
+    assert_int_equal(roaring64_iterator_value(it), values[i]);
+
+    // Check that we can't move backward again.
+    assert_false(roaring64_iterator_previous(it));
+
     roaring64_iterator_free(it);
     roaring64_bitmap_free(r);
 }
@@ -1447,6 +1465,10 @@ DEFINE_TEST(test_iterator_move_equalorlarger) {
 
     assert_false(roaring64_iterator_move_equalorlarger(it, (1ULL << 36) + 1));
     assert_false(roaring64_iterator_has_value(it));
+
+    // Check that we can move backward from after the last entry.
+    assert_true(roaring64_iterator_previous(it));
+    assert_int_equal(roaring64_iterator_value(it), (1ULL << 36));
 
     roaring64_iterator_free(it);
     roaring64_bitmap_free(r);
