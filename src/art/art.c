@@ -1508,12 +1508,17 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
                               const art_key_chunk_t *key) {
     int compare_result =
         art_compare_prefix(iterator->key, 0, key, 0, ART_KEY_BYTES);
-    // Move up until we have an equal or greater prefix, after which we can do a
-    // normal lower bound search.
-    while (compare_result < 0) {
+    // Move up until we have an equal prefix, after which we can do a normal
+    // lower bound search.
+    while (compare_result != 0) {
         if (!art_iterator_up(iterator)) {
-            // Only smaller keys found.
-            return art_iterator_invalid_loc(iterator);
+            if (compare_result < 0) {
+                // Only smaller keys found.
+                return art_iterator_invalid_loc(iterator);
+            } else {
+                return art_node_init_iterator(art_iterator_node(iterator),
+                                              iterator, true);
+            }
         }
         // Since we're only moving up, we can keep comparing against the
         // iterator key.

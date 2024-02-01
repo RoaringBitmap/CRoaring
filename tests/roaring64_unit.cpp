@@ -1470,6 +1470,11 @@ DEFINE_TEST(test_iterator_move_equalorlarger) {
     assert_true(roaring64_iterator_previous(it));
     assert_int_equal(roaring64_iterator_value(it), (1ULL << 36));
 
+    // Check that we can move backward using move_equalorlarger.
+    assert_true(roaring64_iterator_move_equalorlarger(it, (1ULL << 35) - 1));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), (1ULL << 35));
+
     roaring64_iterator_free(it);
     roaring64_bitmap_free(r);
 }

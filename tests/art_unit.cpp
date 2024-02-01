@@ -282,9 +282,18 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
             art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
         }
         art_iterator_t iterator = art_init_iterator(&art, true);
-        const char* key = "000002";
-        assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+
+        const char* key1 = "000002";
+        assert_true(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key1));
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[1]);
+
+        // Check that we can go backward within a node's children.
+        const char* key2 = "000001";
+        assert_true(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key2));
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[0]);
+
         art_free(&art);
     }
     {
@@ -297,9 +306,45 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
             art_insert(&art, (art_key_chunk_t*)keys[i], &values[i]);
         }
         art_iterator_t iterator = art_init_iterator(&art, true);
-        const char* key = "000201";
-        assert_true(art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
-        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
+
+        {
+            const char* key = "000201";
+            assert_true(
+                art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
+        }
+        {
+            // Check that we can go backward.
+            const char* key = "000099";
+            assert_true(
+                art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[0]);
+        }
+
+        art_free(&art);
+    }
+    {
+        // Lower bound search with only a single leaf.
+        const char* key1 = "000001";
+        Value value{1};
+        art_t art{NULL};
+        art_insert(&art, (art_key_chunk_t*)key1, &value);
+
+        art_iterator_t iterator = art_init_iterator(&art, true);
+
+        assert_true(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key1));
+        assert_key_eq(iterator.key, (art_key_chunk_t*)key1);
+
+        const char* key2 = "000000";
+        assert_true(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key2));
+        assert_key_eq(iterator.key, (art_key_chunk_t*)key1);
+
+        const char* key3 = "000002";
+        assert_false(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key3));
+
         art_free(&art);
     }
 }
