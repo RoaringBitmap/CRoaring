@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 set -e
-COMMAND=$@
+COMMAND=$*
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 MAINSOURCE=$SCRIPTPATH/..
 ALL_CROARING_FILES=$(cd $MAINSOURCE && git ls-tree --full-tree --name-only -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$" | grep -vFf clang-format-ignore.txt)
 
 if clang-format-17 --version | grep -qF 'version 17.'; then
-  clang-format-17 "$@"
+  clang-format-17 --style=file --verbose -i "$@" $ALL_CROARING_FILES
   exit 0
 elif clang-format --version | grep -qF 'version 17.'; then
-  clang_format=( clang-format )
-  clang-format "$@"
+  clang-format --style=file --verbose -i "$@" $ALL_CROARING_FILES
   exit 0
 fi
 echo "Trying to use docker"
