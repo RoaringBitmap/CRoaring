@@ -1,8 +1,9 @@
 /*
  * configreport.h
- * If this gets compiled into a different execution unit than the CRoaring library,
- * the functions croaring_hardware_support() & ROARING_SUPPORTS_AVX512 and croaring_hardware_support() & ROARING_SUPPORTS_AVX2 *may* trigger an additional
- * call to dynamic_croaring_detect_supported_architectures().
+ * If this gets compiled into a different execution unit than the CRoaring
+ * library, the functions croaring_hardware_support() & ROARING_SUPPORTS_AVX512
+ * and croaring_hardware_support() & ROARING_SUPPORTS_AVX2 *may* trigger an
+ * additional call to dynamic_croaring_detect_supported_architectures().
  */
 #ifndef INCLUDE_MISC_CONFIGREPORT_H_
 #define INCLUDE_MISC_CONFIGREPORT_H_
@@ -13,7 +14,9 @@
 
 #include <roaring/portability.h>
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace misc {
+extern "C" {
+namespace roaring {
+namespace misc {
 #endif
 
 #if CROARING_IS_X64
@@ -38,7 +41,7 @@ static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
                        "=d"(*edx)  // output equal to "movl  %%eax %1"
                      : "a"(code)   // input equal to "movl %1, %%eax"
                      //:"%eax","%ebx","%ecx","%edx"// clobbered register
-                     );
+    );
 #endif /* not sure what to do when inline assembly is unavailable*/
 }
 
@@ -118,8 +121,8 @@ static inline const char *guessprocessor() {
         case 0x506c:
             codename = "Goldmont";
             break;
-       case 0x806c:
-       case 0x806d:
+        case 0x806c:
+        case 0x806d:
             codename = "TigerLake";
             break;
         case 0x806e:
@@ -173,9 +176,9 @@ static inline void tellmeall() {
     printf(" compiler version: %s\t", __VERSION__);
 #endif
 
- #ifdef __AVX2__
+#ifdef __AVX2__
     printf(" Building for AVX2\t");
- #endif
+#endif
 
     printf("\n");
     if ((sizeof(int) != 4) || (sizeof(long) != 8)) {
@@ -229,7 +232,9 @@ static inline void tellmeall() {
 #endif
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace misc {
+}
+}
+}  // extern "C" { namespace roaring { namespace misc {
 #endif
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */

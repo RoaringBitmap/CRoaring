@@ -3,7 +3,7 @@ set -e
 COMMAND=$*
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 MAINSOURCE=$SCRIPTPATH/..
-ALL_CROARING_FILES=$(cd $MAINSOURCE && git ls-tree --full-tree --name-only -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$" | grep -vFf clang-format-ignore.txt)
+ALL_CROARING_FILES=$(cd $MAINSOURCE && git ls-tree --full-tree --name-only -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$" | grep -vf .clang-format-ignore)
 
 if clang-format-17 --version  2>/dev/null | grep -qF 'version 17.'; then
   cd $MAINSOURCE; clang-format-17 --style=file --verbose -i "$@" $ALL_CROARING_FILES

@@ -1,20 +1,24 @@
 #define _GNU_SOURCE
-#include <roaring/roaring.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-#include "benchmark.h"
-#include "random.h"
-#include "numbersfromtextfiles.h"
 
-void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
+#include <roaring/roaring.h>
+
+#include "benchmark.h"
+#include "numbersfromtextfiles.h"
+#include "random.h"
+
+void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values,
+                                 bool* results, const size_t count) {
     for (size_t i = 0; i < count; ++i) {
         results[i] = roaring_bitmap_contains(bm, values[i]);
     }
 }
 
-void contains_multi_bulk(roaring_bitmap_t* bm, const uint32_t* values, bool* results, const size_t count) {
+void contains_multi_bulk(roaring_bitmap_t* bm, const uint32_t* values,
+                         bool* results, const size_t count) {
     roaring_bulk_context_t context = {0};
     for (size_t i = 0; i < count; ++i) {
         results[i] = roaring_bitmap_contains_bulk(bm, &context, values[i]);
@@ -30,15 +34,16 @@ int compare_uint32(const void* a, const void* b) {
 }
 
 int main(int argc, char* argv[]) {
-    (void)&read_all_integer_files; // suppress unused warning
+    (void)&read_all_integer_files;  // suppress unused warning
 
     if (argc < 2) {
         printf("Usage: %s <comma_separated_integers_file> ...\n", argv[0]);
-        printf("Example: %s ~/CRoaring/benchmarks/realdata/weather_sept_85/*\n", argv[0]);
+        printf("Example: %s ~/CRoaring/benchmarks/realdata/weather_sept_85/*\n",
+               argv[0]);
         return 1;
     }
 
-    size_t fields = argc-1;
+    size_t fields = argc - 1;
     uint32_t* values[argc];
     size_t count[argc];
 
@@ -54,15 +59,16 @@ int main(int argc, char* argv[]) {
 
         shuffle_uint32(t_values, t_count);
 
-        values[i-1] = t_values;
-        count[i-1] = t_count;
+        values[i - 1] = t_values;
+        count[i - 1] = t_count;
     }
-    //roaring_bitmap_run_optimize(bm);
+    // roaring_bitmap_run_optimize(bm);
 
     printf("Data:\n");
-    printf("  cardinality: %"PRIu64"\n", roaring_bitmap_get_cardinality(bm));
+    printf("  cardinality: %" PRIu64 "\n", roaring_bitmap_get_cardinality(bm));
     printf("  buckets: %d\n", (int)bm->high_low_container.size);
-    printf("  range: %"PRIu32"-%"PRIu32"\n", roaring_bitmap_minimum(bm) >> 16, roaring_bitmap_maximum(bm) >> 16);
+    printf("  range: %" PRIu32 "-%" PRIu32 "\n",
+           roaring_bitmap_minimum(bm) >> 16, roaring_bitmap_maximum(bm) >> 16);
 
     const int num_passes = 10;
     printf("Cycles/element: %d\n", num_passes);

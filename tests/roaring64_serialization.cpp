@@ -1,6 +1,3 @@
-#include <roaring/portability.h>
-#include <roaring/roaring64.h>
-
 #include <array>
 #include <cstring>
 #include <fstream>
@@ -9,6 +6,9 @@
 #include <numeric>
 #include <string>
 #include <vector>
+
+#include <roaring/portability.h>
+#include <roaring/roaring64.h>
 
 #include "config.h"
 #include "test.h"

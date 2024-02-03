@@ -1,12 +1,13 @@
 #ifndef ROARING64_H
 #define ROARING64_H
 
-#include <roaring/memory.h>
-#include <roaring/portability.h>
-#include <roaring/roaring_types.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <roaring/memory.h>
+#include <roaring/portability.h>
+#include <roaring/roaring_types.h>
 
 #ifdef __cplusplus
 extern "C" {

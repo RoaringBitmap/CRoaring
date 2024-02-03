@@ -1,2 +1,10 @@
 BasedOnStyle: Google
 IndentWidth: 4
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<roaring/'
+    Priority: 2
+  - Regex: '^"'
+    Priority: 3
+  - Regex: '.*'
+    Priority: 1

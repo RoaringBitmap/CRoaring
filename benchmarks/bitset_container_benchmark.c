@@ -1,15 +1,14 @@
-#include <roaring/portability.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/convert.h>
 #include <roaring/misc/configreport.h>
+#include <roaring/portability.h>
 
 #include "benchmark.h"
 #include "random.h"
 
-#define DIV_CEIL_64K(denom) (((1 << 16) + ((denom) - 1)) / (denom))
+#define DIV_CEIL_64K(denom) (((1 << 16) + ((denom)-1)) / (denom))
 
 const int repeat = 500;
-
 
 #if defined(CROARING_IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
 // flushes the array of words from cache
@@ -39,7 +38,7 @@ void bitset_cache_prefetch(bitset_container_t* B) {
          k += CACHELINESIZE / (int32_t)sizeof(uint64_t)) {
         __builtin_prefetch(B->words + k);
     }
-#endif // !CROARING_REGULAR_VISUAL_STUDIO
+#endif  // !CROARING_REGULAR_VISUAL_STUDIO
 }
 
 // used to benchmark array_container_from_bitset
@@ -96,24 +95,29 @@ void benchmark_logical_operations() {
 
     bitset_container_t* BO = bitset_container_create();
 
-    const int and_cardinality = DIV_CEIL_64K(3*5);
-    BEST_TIME(bitset_container_and_nocard(B1, B2, BO), BITSET_UNKNOWN_CARDINALITY, repeat, 1);
+    const int and_cardinality = DIV_CEIL_64K(3 * 5);
+    BEST_TIME(bitset_container_and_nocard(B1, B2, BO),
+              BITSET_UNKNOWN_CARDINALITY, repeat, 1);
     BEST_TIME(bitset_container_and(B1, B2, BO), and_cardinality, repeat, 1);
-    BEST_TIME(bitset_container_and_justcard(B1, B2), and_cardinality, repeat, 1);
-    BEST_TIME(bitset_container_compute_cardinality(BO), and_cardinality, repeat, 1);
+    BEST_TIME(bitset_container_and_justcard(B1, B2), and_cardinality, repeat,
+              1);
+    BEST_TIME(bitset_container_compute_cardinality(BO), and_cardinality, repeat,
+              1);
 
-    const int or_cardinality = DIV_CEIL_64K(3) + DIV_CEIL_64K(5) - DIV_CEIL_64K(3*5);
-    BEST_TIME(bitset_container_or_nocard(B1, B2, BO), BITSET_UNKNOWN_CARDINALITY, repeat, 1);
+    const int or_cardinality =
+        DIV_CEIL_64K(3) + DIV_CEIL_64K(5) - DIV_CEIL_64K(3 * 5);
+    BEST_TIME(bitset_container_or_nocard(B1, B2, BO),
+              BITSET_UNKNOWN_CARDINALITY, repeat, 1);
     BEST_TIME(bitset_container_or(B1, B2, BO), or_cardinality, repeat, 1);
     BEST_TIME(bitset_container_or_justcard(B1, B2), or_cardinality, repeat, 1);
-    BEST_TIME(bitset_container_compute_cardinality(BO), or_cardinality, repeat, 1);
+    BEST_TIME(bitset_container_compute_cardinality(BO), or_cardinality, repeat,
+              1);
 
     bitset_container_free(BO);
     bitset_container_free(B1);
     bitset_container_free(B2);
     printf("\n");
 }
-
 
 int main() {
     int size = (1 << 16) / 3;

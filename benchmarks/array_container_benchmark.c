@@ -1,6 +1,7 @@
-#include <roaring/portability.h>
 #include <roaring/containers/array.h>
 #include <roaring/misc/configreport.h>
+#include <roaring/portability.h>
+
 #include "benchmark.h"
 #include "random.h"
 
@@ -33,7 +34,7 @@ void array_cache_prefetch(array_container_t* B) {
          k += CACHELINESIZE / (int32_t)sizeof(uint16_t)) {
         __builtin_prefetch(B->array + k);
     }
-#endif // !CROARING_REGULAR_VISUAL_STUDIO
+#endif  // !CROARING_REGULAR_VISUAL_STUDIO
 }
 
 int add_test(array_container_t* B) {

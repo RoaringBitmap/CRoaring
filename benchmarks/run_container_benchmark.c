@@ -1,6 +1,7 @@
-#include <roaring/portability.h>
 #include <roaring/containers/run.h>
 #include <roaring/misc/configreport.h>
+#include <roaring/portability.h>
+
 #include "benchmark.h"
 #include "random.h"
 
@@ -33,7 +34,7 @@ static inline void run_cache_prefetch(run_container_t* B) {
          k += CACHELINESIZE / (int32_t)sizeof(uint16_t)) {
         __builtin_prefetch(B->runs + k);
     }
-#endif // !CROARING_REGULAR_VISUAL_STUDIO
+#endif  // !CROARING_REGULAR_VISUAL_STUDIO
 }
 
 static inline int add_test(run_container_t* B) {
@@ -61,13 +62,14 @@ static inline int contains_test(run_container_t* B) {
     return card;
 }
 
-static inline int union_test(run_container_t* B1, run_container_t* B2, run_container_t* BO) {
+static inline int union_test(run_container_t* B1, run_container_t* B2,
+                             run_container_t* BO) {
     run_container_union(B1, B2, BO);
     return run_container_cardinality(BO);
 }
 
 static inline int intersection_test(run_container_t* B1, run_container_t* B2,
-                      run_container_t* BO) {
+                                    run_container_t* BO) {
     run_container_intersection(B1, B2, BO);
     return run_container_cardinality(BO);
 }

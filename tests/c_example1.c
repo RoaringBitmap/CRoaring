@@ -1,8 +1,10 @@
-#include <roaring/roaring.h>
-#include <roaring/misc/configreport.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+
+#include <roaring/misc/configreport.h>
+#include <roaring/roaring.h>
+
 #include "test.h"
 
 bool roaring_iterator_sumall(uint32_t value, void *param) {
@@ -84,10 +86,13 @@ int main() {
 
     // we can write a bitmap to a pointer and recover it later
     uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);
-    char *serializedbytes = (char*)malloc(expectedsize);
+    char *serializedbytes = (char *)malloc(expectedsize);
     roaring_bitmap_portable_serialize(r1, serializedbytes);
-    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
-    if(t == NULL) { return EXIT_FAILURE; }
+    roaring_bitmap_t *t =
+        roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
+    if (t == NULL) {
+        return EXIT_FAILURE;
+    }
     const char *reason = NULL;
     if (!roaring_bitmap_internal_validate(t, &reason)) {
         return EXIT_FAILURE;
@@ -99,11 +104,12 @@ int main() {
     size_t sizeofbitmap =
         roaring_bitmap_portable_deserialize_size(serializedbytes, expectedsize);
     printf("\nsizeofbitmap = %zu \n", sizeofbitmap);
-    assert_true(sizeofbitmap ==
-           expectedsize);  // sizeofbitmap would be zero if no bitmap were found
+    assert_true(
+        sizeofbitmap ==
+        expectedsize);  // sizeofbitmap would be zero if no bitmap were found
     // we can also read the bitmap "safely" by specifying a byte size limit:
     t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);
-    if(t == NULL) {
+    if (t == NULL) {
         printf("Problem during deserialization.\n");
         // We could clear any memory and close any file here.
         return EXIT_FAILURE;

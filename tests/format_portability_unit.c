@@ -8,13 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <roaring/roaring.h>
 #include <roaring/misc/configreport.h>
+#include <roaring/roaring.h>
 
 #include "config.h"
-
 #include "test.h"
-
 
 static inline long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");
@@ -107,5 +105,5 @@ int main() {
         cmocka_unit_test(test_deserialize_portable_wrun),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
-#endif 
+#endif
 }

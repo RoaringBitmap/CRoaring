@@ -16,23 +16,23 @@
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
 
-
 static inline void container_checked_add(container_t *container, uint16_t val,
                                          uint8_t typecode) {
     uint8_t new_type;
-    container_t *new_container = container_add(container, val, typecode, &new_type);
+    container_t *new_container =
+        container_add(container, val, typecode, &new_type);
     assert_int_equal(typecode, new_type);
     assert_true(container == new_container);
 }
 
 static inline void delegated_add(container_t *container, uint8_t typecode,
                                  uint16_t val) {
-    switch(typecode) {
+    switch (typecode) {
         case BITSET_CONTAINER_TYPE:
             bitset_container_add(CAST_bitset(container), val);
             break;

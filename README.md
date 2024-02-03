@@ -882,6 +882,10 @@ Justin Whear wrote a Zig wrapper available at https://github.com/jwhear/roaring-
 
 https://groups.google.com/forum/#!forum/roaring-bitmaps
 
+# Contributing
+
+When contributing a change to the project, please run `tools/clang-format.sh` after making any changes. A github action runs on all PRs to ensure formatting is consistent with this.
+
 # References about Roaring
 
 - Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience Volume 48, Issue 4 April 2018 Pages 867-895 [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)

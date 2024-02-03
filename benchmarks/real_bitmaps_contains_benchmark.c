@@ -1,30 +1,32 @@
 #define _GNU_SOURCE
 #include <roaring/roaring.h>
+
 #include "benchmark.h"
 #include "numbersfromtextfiles.h"
 
-#define STARTBEST(numberoftests) \
-   { \
-   uint64_t min_diff = -1 ; \
-   uint64_t boguscyclesstart = 0; \
-   uint64_t boguscyclesend = 0; \
-   for(int bogustest = 0; bogustest < numberoftests; bogustest++ ) { \
-     uint64_t cycles_diff = 0;\
-     RDTSC_START(boguscyclesstart);
+#define STARTBEST(numberoftests)                                          \
+    {                                                                     \
+        uint64_t min_diff = -1;                                           \
+        uint64_t boguscyclesstart = 0;                                    \
+        uint64_t boguscyclesend = 0;                                      \
+        for (int bogustest = 0; bogustest < numberoftests; bogustest++) { \
+            uint64_t cycles_diff = 0;                                     \
+            RDTSC_START(boguscyclesstart);
 
-#define ENDBEST(outputvar) \
-     RDTSC_FINAL(boguscyclesend); \
-     cycles_diff = (boguscyclesend - boguscyclesstart);              \
-     if (cycles_diff < min_diff) min_diff = cycles_diff;       \
-   } \
-   outputvar = min_diff;\
-   }
+#define ENDBEST(outputvar)                              \
+    RDTSC_FINAL(boguscyclesend);                        \
+    cycles_diff = (boguscyclesend - boguscyclesstart);  \
+    if (cycles_diff < min_diff) min_diff = cycles_diff; \
+    }                                                   \
+    outputvar = min_diff;                               \
+    }
 /**
  * Once you have collected all the integers, build the bitmaps.
  */
 static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
                                              uint32_t **numbers, size_t count,
-                                             bool runoptimize, bool copy_on_write) {
+                                             bool runoptimize,
+                                             bool copy_on_write) {
     if (numbers == NULL) return NULL;
     printf("Constructing %d  bitmaps.\n", (int)count);
     roaring_bitmap_t **answer = malloc(sizeof(roaring_bitmap_t *) * count);
@@ -32,7 +34,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
         printf(".");
         fflush(stdout);
         answer[i] = roaring_bitmap_of_ptr(howmany[i], numbers[i]);
-        if(runoptimize) roaring_bitmap_run_optimize(answer[i]);
+        if (runoptimize) roaring_bitmap_run_optimize(answer[i]);
         roaring_bitmap_shrink_to_fit(answer[i]);
         roaring_bitmap_set_copy_on_write(answer[i], copy_on_write);
     }
@@ -101,29 +103,27 @@ int main(int argc, char **argv) {
 
     printf("Creating %zu bitmaps took %" PRIu64 " cycles\n", count,
            cycles_final - cycles_start);
-    if(count == 0) return -1;
+    if (count == 0) return -1;
     uint32_t maxvalue = roaring_bitmap_maximum(bitmaps[0]);
-    for (int i = 1; i < (int)count; i ++) {
-      uint32_t thismax = roaring_bitmap_maximum(bitmaps[0]);
-      if(thismax > maxvalue) maxvalue = thismax;
+    for (int i = 1; i < (int)count; i++) {
+        uint32_t thismax = roaring_bitmap_maximum(bitmaps[0]);
+        if (thismax > maxvalue) maxvalue = thismax;
     }
     const int quartile_test_repetitions = 1000;
-
 
     uint64_t quartcount;
     uint64_t cycles;
     STARTBEST(quartile_test_repetitions)
     quartcount = 0;
-    for (size_t i = 0; i < count ; ++i) {
-        quartcount += roaring_bitmap_contains(bitmaps[i],maxvalue/4);
-        quartcount += roaring_bitmap_contains(bitmaps[i],maxvalue/2);
-        quartcount += roaring_bitmap_contains(bitmaps[i],3*maxvalue/4);
+    for (size_t i = 0; i < count; ++i) {
+        quartcount += roaring_bitmap_contains(bitmaps[i], maxvalue / 4);
+        quartcount += roaring_bitmap_contains(bitmaps[i], maxvalue / 2);
+        quartcount += roaring_bitmap_contains(bitmaps[i], 3 * maxvalue / 4);
     }
     ENDBEST(cycles)
 
     printf("Quartile queries on %zu bitmaps took %" PRIu64 " cycles\n", count,
-                           cycles);
-
+           cycles);
 
     for (int i = 0; i < (int)count; ++i) {
         free(numbers[i]);
@@ -135,5 +135,5 @@ int main(int argc, char **argv) {
     free(howmany);
     free(numbers);
 
-    return (int) quartcount;
+    return (int)quartcount;
 }

@@ -17,13 +17,12 @@
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
 
-
-//#define UNVERBOSE_MIXED_CONTAINER
+// #define UNVERBOSE_MIXED_CONTAINER
 
 DEFINE_TEST(array_bitset_and_or_xor_andnot_test) {
     array_container_t* A1 = array_container_create();
@@ -297,11 +296,12 @@ DEFINE_TEST(array_bitset_run_lazy_xor_test) {
     assert_int_equal(cx, bitset_container_compute_cardinality(B2));
     bitset_container_copy(B2copy, B2);
 
-    container_t *ans = 0;
+    container_t* ans = 0;
     assert_true(array_array_container_lazy_xor(A1, A2, &ans));
     assert_int_equal(BITSET_UNKNOWN_CARDINALITY,
                      bitset_container_cardinality(CAST_bitset(ans)));
-    assert_int_equal(cx, bitset_container_compute_cardinality(CAST_bitset(ans)));
+    assert_int_equal(cx,
+                     bitset_container_compute_cardinality(CAST_bitset(ans)));
     bitset_container_free(CAST_bitset(ans));
 
     array_run_container_lazy_xor(A1, R2, RX);  // destroys content of RX
@@ -455,7 +455,7 @@ DEFINE_TEST(array_bitset_iandnot_test) {
     int cm = array_container_cardinality(AM);    // expected difference
     int cm1 = array_container_cardinality(AM1);  // expected reverse difference
 
-    container_t *C = NULL;
+    container_t* C = NULL;
 
     assert_false(bitset_array_container_iandnot(B2, A1, &C));
     assert_int_equal(cm1, array_container_cardinality(CAST_array(C)));
@@ -575,16 +575,14 @@ DEFINE_TEST(run_xor_test) {
     array_container_free(CAST_array(C));
     C = NULL;
 
-    assert_int_equal(ARRAY_CONTAINER_TYPE,
-                     array_run_container_xor(A1, R1, &C));
+    assert_int_equal(ARRAY_CONTAINER_TYPE, array_run_container_xor(A1, R1, &C));
     assert_int_equal(0, array_container_cardinality(CAST_array(C)));
     array_container_free(CAST_array(C));
     C = NULL;
 
     // both run coding and array coding have same serialized size for
     // empty
-    assert_int_equal(RUN_CONTAINER_TYPE,
-                     run_run_container_xor(R1, R1, &C));
+    assert_int_equal(RUN_CONTAINER_TYPE, run_run_container_xor(R1, R1, &C));
     assert_int_equal(0, run_container_cardinality(CAST_run(C)));
     run_container_free(CAST_run(C));
     C = NULL;
@@ -594,14 +592,12 @@ DEFINE_TEST(run_xor_test) {
     array_container_free(CAST_array(C));
     C = NULL;
 
-    assert_int_equal(ARRAY_CONTAINER_TYPE,
-                     array_run_container_xor(A3, R1, &C));
+    assert_int_equal(ARRAY_CONTAINER_TYPE, array_run_container_xor(A3, R1, &C));
     assert_int_equal(2000, array_container_cardinality(CAST_array(C)));
     array_container_free(CAST_array(C));
     C = NULL;
 
-    assert_int_equal(ARRAY_CONTAINER_TYPE,
-                     run_run_container_xor(R1, R3, &C));
+    assert_int_equal(ARRAY_CONTAINER_TYPE, run_run_container_xor(R1, R3, &C));
     assert_int_equal(2000, array_container_cardinality(CAST_array(C)));
     array_container_free(CAST_array(C));
     C = NULL;
@@ -622,13 +618,11 @@ DEFINE_TEST(run_xor_test) {
 
     assert_int_equal(RUN_CONTAINER_TYPE,
                      array_run_container_xor(A_small, R2, &C));
-    assert_int_equal(0x98bd,
-                     run_container_cardinality(CAST_run(C)));
+    assert_int_equal(0x98bd, run_container_cardinality(CAST_run(C)));
     run_container_free(CAST_run(C));
     C = NULL;
 
-    assert_int_equal(BITSET_CONTAINER_TYPE,
-                     run_run_container_xor(R1, R2, &C));
+    assert_int_equal(BITSET_CONTAINER_TYPE, run_run_container_xor(R1, R2, &C));
     assert_int_equal(cx12, bitset_container_cardinality(CAST_bitset(C)));
     bitset_container_free(CAST_bitset(C));
     C = NULL;
@@ -646,8 +640,7 @@ DEFINE_TEST(run_xor_test) {
     bitset_container_free(CAST_bitset(C));
     C = NULL;
 
-    assert_int_equal(BITSET_CONTAINER_TYPE,
-                     run_run_container_xor(R4, R3, &C));
+    assert_int_equal(BITSET_CONTAINER_TYPE, run_run_container_xor(R4, R3, &C));
     assert_int_equal(card_3_4, bitset_container_cardinality(CAST_bitset(C)));
     bitset_container_free(CAST_bitset(C));
     C = NULL;
@@ -822,9 +815,8 @@ DEFINE_TEST(run_andnot_test) {
     array_container_add(temp_ac, 994);
     array_container_add(temp_ac, 2000);
 
-    assert_int_equal(
-        RUN_CONTAINER_TYPE,
-        run_array_container_andnot(R_small_complex, temp_ac, &BM_1));
+    assert_int_equal(RUN_CONTAINER_TYPE, run_array_container_andnot(
+                                             R_small_complex, temp_ac, &BM_1));
     assert_int_equal(13, run_container_cardinality(CAST_run(BM_1)));
     array_container_free(CAST_array(BM_1));
     BM_1 = NULL;
@@ -1429,10 +1421,9 @@ static int array_negation_range_test(int r_start, int r_end, bool is_bitset) {
             result_size_should_be++;
     }
 
-    result_is_bitset =
-        array_container_negation_range(AI, r_start, r_end, &BO);
-    uint8_t result_typecode = (result_is_bitset ? BITSET_CONTAINER_TYPE
-                                                : ARRAY_CONTAINER_TYPE);
+    result_is_bitset = array_container_negation_range(AI, r_start, r_end, &BO);
+    uint8_t result_typecode =
+        (result_is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE);
 
     int result_card = container_get_cardinality(BO, result_typecode);
 
@@ -1502,14 +1493,14 @@ static int bitset_negation_range_tests(int sparsity, int r_start, int r_end,
     }
 
     if (inplace)
-        result_is_bitset = bitset_container_negation_range_inplace(
-            BI, r_start, r_end, &BO);
+        result_is_bitset =
+            bitset_container_negation_range_inplace(BI, r_start, r_end, &BO);
     else
         result_is_bitset =
             bitset_container_negation_range(BI, r_start, r_end, &BO);
 
-    uint8_t result_typecode = (result_is_bitset ? BITSET_CONTAINER_TYPE
-                                                : ARRAY_CONTAINER_TYPE);
+    uint8_t result_typecode =
+        (result_is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE);
 
     int result_card = container_get_cardinality(BO, result_typecode);
 
@@ -1586,7 +1577,8 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
     int result_size_should_be;
     bool result_should_be[1 << 16];
 
-    assert_true(h < k);  // bad test call otherwise..not failure of code under test
+    assert_true(h <
+                k);  // bad test call otherwise..not failure of code under test
 
     int runlen = h;
     for (int x = 0; x < (1 << 16) - start_offset; x++) {
@@ -1598,8 +1590,8 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
 
             // run_container_append does not dynamically increase its
             // array
-            run_container_append_first(
-                RI, MAKE_RLE16(offsetx, actual_runlen - 1));
+            run_container_append_first(RI,
+                                       MAKE_RLE16(offsetx, actual_runlen - 1));
             if (++runlen == k) runlen = h;  // wrap after k-1 back to h.
         }
     }
@@ -1615,11 +1607,10 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
             result_should_be[i] = false;
     }
     if (inplace)
-        returned_type = run_container_negation_range_inplace(RI, r_start, r_end,
-                                                             &BO);
-    else
         returned_type =
-            run_container_negation_range(RI, r_start, r_end, &BO);
+            run_container_negation_range_inplace(RI, r_start, r_end, &BO);
+    else
+        returned_type = run_container_negation_range(RI, r_start, r_end, &BO);
 
     uint8_t result_typecode = (uint8_t)returned_type;
 
@@ -1677,8 +1668,8 @@ static int run_negation_range_tests_simpler(int k, int h, int start_offset,
             if (offsetx + actual_runlen > (1 << 16))
                 actual_runlen = (1 << 16) - offsetx;
 
-            run_container_append_first(
-                RI, MAKE_RLE16(offsetx, actual_runlen - 1));
+            run_container_append_first(RI,
+                                       MAKE_RLE16(offsetx, actual_runlen - 1));
             if (++runlen == k) runlen = h;
         }
     }
@@ -1694,11 +1685,10 @@ static int run_negation_range_tests_simpler(int k, int h, int start_offset,
             result_should_be[i] = false;
     }
     if (inplace)
-        returned_type = run_container_negation_range_inplace(RI, r_start, r_end,
-                                                             &BO);
-    else
         returned_type =
-            run_container_negation_range(RI, r_start, r_end, &BO);
+            run_container_negation_range_inplace(RI, r_start, r_end, &BO);
+    else
+        returned_type = run_container_negation_range(RI, r_start, r_end, &BO);
 
     uint8_t result_typecode = (uint8_t)returned_type;
 
@@ -1759,8 +1749,8 @@ DEFINE_TEST(run_negation_range_inplace_test1) {
     // negation over whole range.  Result should be
     // bitset
 
-    run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
-                             BITSET_CONTAINER_TYPE, true,
+    run_negation_range_tests(10, 7, 0, 0x0000, 0x10000, BITSET_CONTAINER_TYPE,
+                             true,
                              false);  // request but don't get inplace
 }
 
@@ -1772,8 +1762,8 @@ DEFINE_TEST(run_negation_range_inplace_test2) {
     // negation over whole range.  Result should be
     // bitset
 
-    run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
-                             BITSET_CONTAINER_TYPE, true,
+    run_negation_range_tests(10, 7, 1, 0x0000, 0x10000, BITSET_CONTAINER_TYPE,
+                             true,
                              false);  // request but don't get inplace
 }
 
@@ -1786,8 +1776,8 @@ DEFINE_TEST(run_negation_range_inplace_test3) {
     // negation over whole range.  Result should be
     // bitset
 
-    run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
-                             BITSET_CONTAINER_TYPE, true,
+    run_negation_range_tests(10, 2, 1, 0x0000, 0x10000, BITSET_CONTAINER_TYPE,
+                             true,
                              false);  // request but don't get inplace
 }
 
@@ -1826,8 +1816,8 @@ DEFINE_TEST(run_negation_range_inplace_test6) {
     // negation over whole range except some
     // initial.  Result should be array
 
-    run_negation_range_tests(1000, 999, 536, 530, 0x10000,
-                             ARRAY_CONTAINER_TYPE, true,
+    run_negation_range_tests(1000, 999, 536, 530, 0x10000, ARRAY_CONTAINER_TYPE,
+                             true,
                              false);  // request but don't get inplace
 }
 
@@ -1841,8 +1831,8 @@ DEFINE_TEST(run_negation_range_inplace_test7) {
     // run.
     // should always fit in the previous space
 
-    run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
-                             RUN_CONTAINER_TYPE, true,
+    run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000, RUN_CONTAINER_TYPE,
+                             true,
                              true);  // request and  get inplace
 }
 
@@ -1854,8 +1844,8 @@ DEFINE_TEST(run_negation_range_inplace_test8) {
     // negation over whole range.  Result should be
     // run and will fit.
 
-    run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
-                             RUN_CONTAINER_TYPE, true,
+    run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000, RUN_CONTAINER_TYPE,
+                             true,
                              true);  // request, get inplace
 }
 
@@ -1869,8 +1859,8 @@ DEFINE_TEST(run_negation_range_inplace_test9) {
     // more than original, and buffer happens to not
     // have any extra space.
 
-    run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
-                             RUN_CONTAINER_TYPE, true,
+    run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000, RUN_CONTAINER_TYPE,
+                             true,
                              false);  // request, but not get, inplace
 }
 
@@ -1886,8 +1876,8 @@ DEFINE_TEST(run_negation_range_test1) {
     // negation over whole range.  Result should be
     // bitset
 
-    run_negation_range_tests(10, 7, 0, 0x0000, 0x10000,
-                             BITSET_CONTAINER_TYPE, false, false);
+    run_negation_range_tests(10, 7, 0, 0x0000, 0x10000, BITSET_CONTAINER_TYPE,
+                             false, false);
 }
 
 DEFINE_TEST(run_negation_range_test2) {
@@ -1898,8 +1888,8 @@ DEFINE_TEST(run_negation_range_test2) {
     // negation over whole range.  Result should be
     // bitset
 
-    run_negation_range_tests(10, 7, 1, 0x0000, 0x10000,
-                             BITSET_CONTAINER_TYPE, false, false);
+    run_negation_range_tests(10, 7, 1, 0x0000, 0x10000, BITSET_CONTAINER_TYPE,
+                             false, false);
 }
 
 DEFINE_TEST(run_negation_range_test3) {
@@ -1911,8 +1901,8 @@ DEFINE_TEST(run_negation_range_test3) {
     // negation over whole range.  Result should be
     // bitset
 
-    run_negation_range_tests(10, 2, 1, 0x0000, 0x10000,
-                             BITSET_CONTAINER_TYPE, false,
+    run_negation_range_tests(10, 2, 1, 0x0000, 0x10000, BITSET_CONTAINER_TYPE,
+                             false,
                              false);  // request but don't get inplace
 }
 
@@ -1949,8 +1939,8 @@ DEFINE_TEST(run_negation_range_test6) {
     // negation over whole range except initial
     // fragment. Result should be array
 
-    run_negation_range_tests(1000, 999, 536, 530, 0x10000,
-                             ARRAY_CONTAINER_TYPE, false, false);
+    run_negation_range_tests(1000, 999, 536, 530, 0x10000, ARRAY_CONTAINER_TYPE,
+                             false, false);
 }
 
 /* Results are going to be runs*/
@@ -1963,8 +1953,8 @@ DEFINE_TEST(run_negation_range_test7) {
     // run.
     // should always fit in the previous space
 
-    run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000,
-                             RUN_CONTAINER_TYPE, false, false);
+    run_negation_range_tests(1000, 2, 550, 0x0000, 0x10000, RUN_CONTAINER_TYPE,
+                             false, false);
 }
 
 DEFINE_TEST(run_negation_range_test8) {
@@ -1975,8 +1965,8 @@ DEFINE_TEST(run_negation_range_test8) {
     // negation over whole range.  Result should be
     // run and will fit.
 
-    run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000,
-                             RUN_CONTAINER_TYPE, false, false);
+    run_negation_range_tests(1000, 2, 0, 0x0000, 0x10000, RUN_CONTAINER_TYPE,
+                             false, false);
 }
 
 DEFINE_TEST(run_negation_range_test9) {
@@ -1989,8 +1979,8 @@ DEFINE_TEST(run_negation_range_test9) {
     // more than original, but we think buffer will
     // usually have space  :)
 
-    run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000,
-                             RUN_CONTAINER_TYPE, false, false);
+    run_negation_range_tests(1000, 2, 1, 0x0000, 0x10000, RUN_CONTAINER_TYPE,
+                             false, false);
 }
 
 int main() {

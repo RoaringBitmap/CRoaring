@@ -1,7 +1,8 @@
 #include <assert.h>
-#include <roaring/bitset/bitset.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <roaring/bitset/bitset.h>
 
 #include "test.h"
 

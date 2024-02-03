@@ -1,10 +1,11 @@
 #include <assert.h>
-#include <roaring/art/art.h>
-#include <roaring/portability.h>
-#include <roaring/roaring64.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <roaring/art/art.h>
+#include <roaring/portability.h>
+#include <roaring/roaring64.h>
 
 // For serialization / deserialization
 #include <roaring/roaring.h>

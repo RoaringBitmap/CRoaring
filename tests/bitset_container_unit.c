@@ -7,41 +7,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <roaring/bitset_util.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/misc/configreport.h>
-#include <roaring/bitset_util.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
-    using namespace roaring::internal;
+using namespace roaring::internal;
 #endif
 
 #include "test.h"
 
 DEFINE_TEST(hamming_test) {
-  assert_true(roaring_hamming(0xffffffffffffffffULL) == 64);
-  for(int k = 0; k < 64; k++) {
-    assert_true(roaring_hamming(1ULL<<k) == 1);
-  }
-  for(int k = 0; k < 64; k++) {
-    for(int l = 0; l < 64; l++) {
-       assert_true(roaring_hamming((1ULL<<k)|(1ULL<<l)) == 2-(k==l));
+    assert_true(roaring_hamming(0xffffffffffffffffULL) == 64);
+    for (int k = 0; k < 64; k++) {
+        assert_true(roaring_hamming(1ULL << k) == 1);
     }
-  }
+    for (int k = 0; k < 64; k++) {
+        for (int l = 0; l < 64; l++) {
+            assert_true(roaring_hamming((1ULL << k) | (1ULL << l)) ==
+                        2 - (k == l));
+        }
+    }
 }
 
 DEFINE_TEST(test_bitset_lenrange_cardinality) {
-  uint64_t words[] = {~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
-  for(int k = 0; k < 64 * 4; k++) {
-    assert_true(bitset_lenrange_cardinality(words, 0, k) == k + 1); // ok
-  }
-  for(int k = 64 * 4; k < 64 * 8; k++) {
-      assert_true(bitset_lenrange_cardinality(words, 0, k) == 4 * 64); // ok
-  }
+    uint64_t words[] = {
+        ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), ~UINT64_C(0), 0, 0, 0, 0};
+    for (int k = 0; k < 64 * 4; k++) {
+        assert_true(bitset_lenrange_cardinality(words, 0, k) == k + 1);  // ok
+    }
+    for (int k = 64 * 4; k < 64 * 8; k++) {
+        assert_true(bitset_lenrange_cardinality(words, 0, k) == 4 * 64);  // ok
+    }
 }
 
 DEFINE_TEST(test_bitset_compute_cardinality) {
     // check that overflow doesn't happen
-    bitset_container_t *b = bitset_container_create();
+    bitset_container_t* b = bitset_container_create();
     bitset_container_add_from_range(b, 0, 0x10000, 1);
     assert_true(bitset_container_compute_cardinality(b) == 0x10000);
     bitset_container_free(b);
@@ -157,7 +159,8 @@ DEFINE_TEST(and_or_test) {
     assert_true(bitset_container_compute_cardinality(BI) == card_union);
     assert_true(bi_count == card_union);
     assert_true(bitset_container_compute_cardinality(BO) == bo_count);
-    assert_true(bitset_container_compute_cardinality(BO) == bitset_container_compute_cardinality(BO));
+    assert_true(bitset_container_compute_cardinality(BO) ==
+                bitset_container_compute_cardinality(BO));
     assert_true(card_inter == bo_count);
     bitset_container_printf(B1);  // does it crash?
     bitset_container_printf(B2);  // does it crash?
@@ -169,7 +172,7 @@ DEFINE_TEST(and_or_test) {
     bitset_container_printf(B2);  // does it crash?
     bitset_container_printf(BI);  // does it crash?
     int interc = 0;
-    for (size_t x = 0; x < max_value; x ++) {
+    for (size_t x = 0; x < max_value; x++) {
         bool in1 = bitset_container_get(B1, x);
         bool in2 = bitset_container_get(B2, x);
         bool ini = bitset_container_get(BI, x);
@@ -315,9 +318,12 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(hamming_test),
         cmocka_unit_test(test_bitset_lenrange_cardinality),
-        cmocka_unit_test(printf_test), cmocka_unit_test(set_get_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(xor_test),
-        cmocka_unit_test(andnot_test), cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(set_get_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(xor_test),
+        cmocka_unit_test(andnot_test),
+        cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_bitset_compute_cardinality),
     };
