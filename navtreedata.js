@@ -60,7 +60,8 @@ var NAVTREE =
       [ "Zig", "index.html#autotoc_md32", null ]
     ] ],
     [ "Mailing list/discussion group", "index.html#autotoc_md33", null ],
-    [ "References about Roaring", "index.html#autotoc_md34", null ],
+    [ "Contributing", "index.html#autotoc_md34", null ],
+    [ "References about Roaring", "index.html#autotoc_md35", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ]
     ] ],
