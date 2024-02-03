@@ -1,0 +1,5 @@
+.*microbenchmarks/performancecounters/ibireme.h
+.*microbenchmarks/performancecounters/linux-perf-events.h
+.*microbenchmarks/performancecounters/event_counter.h
+.*microbenchmarks/performancecounters/apple_arm_events.h
+.*microbenchmarks/toni_ronnko_dirent.h
