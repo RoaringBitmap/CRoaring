@@ -553,7 +553,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf) {
     uint32_t startOffset = 0;
     bool hasrun = ra_has_run_container(ra);
     if (hasrun) {
-        uint32_t cookie = SERIAL_COOKIE | ((ra->size - 1) << 16);
+        uint32_t cookie = SERIAL_COOKIE | ((uint32_t)(ra->size - 1) << 16);
         memcpy(buf, &cookie, sizeof(cookie));
         buf += sizeof(cookie);
         uint32_t s = (ra->size + 7) / 8;
