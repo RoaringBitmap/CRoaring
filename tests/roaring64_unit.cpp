@@ -91,6 +91,27 @@ DEFINE_TEST(test_from_range) {
         assert_false(roaring64_bitmap_contains(r, (1 << 17) + 2));
         roaring64_bitmap_free(r);
     }
+    {
+        // Range extending into the max container
+        roaring64_bitmap_t* r = roaring64_bitmap_from_range(
+            UINT64_MAX - 0x10000 - 10, UINT64_MAX - 0x10000 + 10, 2);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 10);
+        assert_int_equal(roaring64_bitmap_minimum(r),
+                         UINT64_MAX - 0x10000 - 10);
+        assert_int_equal(roaring64_bitmap_maximum(r), UINT64_MAX - 0x10000 + 8);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range fully in the max container
+        roaring64_bitmap_t* r =
+            roaring64_bitmap_from_range(UINT64_MAX - 5, UINT64_MAX, 1);
+        // From range is exclusive, so UINT64_MAX is not included
+        assert_false(roaring64_bitmap_contains(r, UINT64_MAX));
+        assert_int_equal(roaring64_bitmap_minimum(r), UINT64_MAX - 5);
+        assert_int_equal(roaring64_bitmap_maximum(r), UINT64_MAX - 1);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 5);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_of_ptr) {
@@ -244,6 +265,31 @@ DEFINE_TEST(test_add_range_closed) {
         assert_int_equal(roaring64_bitmap_get_cardinality(r), end - start + 1);
         roaring64_bitmap_free(r);
     }
+    {
+        // Range extending into the max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range_closed(r, UINT64_MAX - 0x10000 - 10,
+                                          UINT64_MAX - 0x10000 + 10);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 21);
+        assert_int_equal(roaring64_bitmap_minimum(r),
+                         UINT64_MAX - 0x10000 - 10);
+        assert_int_equal(roaring64_bitmap_maximum(r),
+                         UINT64_MAX - 0x10000 + 10);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range fully inside max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range_closed(r, UINT64_MAX - 5, UINT64_MAX);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 6);
+        assert_true(roaring64_bitmap_contains(r, UINT64_MAX - 5));
+        assert_true(roaring64_bitmap_contains(r, UINT64_MAX - 4));
+        assert_true(roaring64_bitmap_contains(r, UINT64_MAX - 3));
+        assert_true(roaring64_bitmap_contains(r, UINT64_MAX - 2));
+        assert_true(roaring64_bitmap_contains(r, UINT64_MAX - 1));
+        assert_true(roaring64_bitmap_contains(r, UINT64_MAX));
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_contains_bulk) {
@@ -345,6 +391,33 @@ DEFINE_TEST(test_contains_range) {
         roaring64_bitmap_add(r, (1 << 16));
         assert_true(
             roaring64_bitmap_contains_range(r, (1 << 16), (1 << 16) + 1));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range extending into the max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        assert_false(roaring64_bitmap_contains_range(
+            r, UINT64_MAX - 0x10000 - 10, UINT64_MAX - 0x10000 + 10));
+        roaring64_bitmap_add_range(r, UINT64_MAX - 0x10000 - 10,
+                                   UINT64_MAX - 0x10000 + 10);
+        assert_true(roaring64_bitmap_contains_range(
+            r, UINT64_MAX - 0x10000 - 10, UINT64_MAX - 0x10000 + 10));
+        assert_false(roaring64_bitmap_contains_range(
+            r, UINT64_MAX - 0x10000 - 10, UINT64_MAX));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range fully inside max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        assert_false(
+            roaring64_bitmap_contains_range(r, UINT64_MAX - 2, UINT64_MAX));
+        roaring64_bitmap_add(r, UINT64_MAX - 1);
+        assert_false(
+            roaring64_bitmap_contains_range(r, UINT64_MAX - 2, UINT64_MAX));
+        roaring64_bitmap_add(r, UINT64_MAX - 2);
+        // contains_range is exclusive, so UINT64_MAX is not required
+        assert_true(
+            roaring64_bitmap_contains_range(r, UINT64_MAX - 2, UINT64_MAX));
         roaring64_bitmap_free(r);
     }
 }
@@ -509,6 +582,35 @@ DEFINE_TEST(test_remove_range_closed) {
         assert_true(roaring64_bitmap_is_empty(r));
         roaring64_bitmap_free(r);
     }
+    {
+        // Range extending into the max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range_closed(r, UINT64_MAX - 0x10000 - 10,
+                                          UINT64_MAX - 0x10000 + 10);
+        roaring64_bitmap_remove_range_closed(r, UINT64_MAX - 0x10000 - 5,
+                                             UINT64_MAX - 0x10000 + 5);
+        assert_false(roaring64_bitmap_intersect_with_range(
+            r, UINT64_MAX - 0x10000 - 5, UINT64_MAX - 0x10000 + 6));
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 10);
+        assert_int_equal(roaring64_bitmap_minimum(r),
+                         UINT64_MAX - 0x10000 - 10);
+        assert_int_equal(roaring64_bitmap_maximum(r),
+                         UINT64_MAX - 0x10000 + 10);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range fully inside max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        // It's fine to remove a range that isn't in the bitmap
+        roaring64_bitmap_remove_range_closed(r, UINT64_MAX - 5, UINT64_MAX);
+
+        roaring64_bitmap_add_range_closed(r, UINT64_MAX - 10, UINT64_MAX);
+        roaring64_bitmap_remove_range_closed(r, UINT64_MAX - 5, UINT64_MAX);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 5);
+        assert_int_equal(roaring64_bitmap_minimum(r), UINT64_MAX - 10);
+        assert_int_equal(roaring64_bitmap_maximum(r), UINT64_MAX - 6);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_get_cardinality) {
@@ -526,20 +628,57 @@ DEFINE_TEST(test_get_cardinality) {
 }
 
 DEFINE_TEST(test_range_cardinality) {
-    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    {
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
 
-    roaring64_bitmap_add(r, 0);
-    roaring64_bitmap_add(r, 100000);
-    roaring64_bitmap_add(r, 100001);
-    roaring64_bitmap_add(r, 100002);
-    roaring64_bitmap_add(r, 200000);
+        roaring64_bitmap_add(r, 0);
+        roaring64_bitmap_add(r, 100000);
+        roaring64_bitmap_add(r, 100001);
+        roaring64_bitmap_add(r, 100002);
+        roaring64_bitmap_add(r, 200000);
 
-    assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 0), 0);
-    assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 100000), 1);
-    assert_int_equal(roaring64_bitmap_range_cardinality(r, 1, 100001), 1);
-    assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 200001), 5);
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 0), 0);
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 100000), 1);
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, 1, 100001), 1);
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, 0, 200001), 5);
 
-    roaring64_bitmap_free(r);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range extending into the max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range_closed(r, UINT64_MAX - 0x10000 - 10,
+                                          UINT64_MAX - 0x10000 + 10);
+        assert_int_equal(roaring64_bitmap_range_cardinality(
+                             r, UINT64_MAX - 0x20000, UINT64_MAX),
+                         21);
+        assert_int_equal(
+            roaring64_bitmap_range_cardinality(r, UINT64_MAX - 0x10000 - 10,
+                                               UINT64_MAX - 0x1000 + 11),
+            21);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Range fully inside max container
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        uint64_t start = UINT64_MAX - 1000;
+
+        roaring64_bitmap_add(r, start + 0);
+        roaring64_bitmap_add(r, start + 100);
+        roaring64_bitmap_add(r, start + 101);
+        roaring64_bitmap_add(r, start + 201);
+
+        assert_int_equal(
+            roaring64_bitmap_range_cardinality(r, start, start + 100), 1);
+        assert_int_equal(
+            roaring64_bitmap_range_cardinality(r, start, UINT64_MAX), 4);
+        roaring64_bitmap_add(r, UINT64_MAX);
+        // range is exclusive, so UINT64_MAX is not included
+        assert_int_equal(
+            roaring64_bitmap_range_cardinality(r, start, UINT64_MAX), 4);
+
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_is_empty) {
