@@ -149,8 +149,6 @@ bool art_iterator_prev(art_iterator_t *iterator);
 
 /**
  * Moves the iterator forward to a key equal to or greater than the given key.
- * Assumes the given key is greater or equal to the current position of the
- * iterator.
  */
 bool art_iterator_lower_bound(art_iterator_t *iterator,
                               const art_key_chunk_t *key);

@@ -2015,9 +2015,9 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
 
     uint8_t val_high48[ART_KEY_BYTES];
     uint16_t val_low16 = split_key(val, val_high48);
-    if (it->high48 < (val & 0xFFFFFFFFFFFF0000)) {
-        // The ART iterator is before the high48 bits of `val`, so we need to
-        // move to a leaf with a key equal or greater.
+    if (it->high48 != (val & 0xFFFFFFFFFFFF0000)) {
+        // The ART iterator is before or after the high48 bits of `val`, so we
+        // need to move to a leaf with a key equal or greater.
         if (!art_iterator_lower_bound(&it->art_it, val_high48)) {
             // Only smaller keys found.
             it->saturated_forward = true;
