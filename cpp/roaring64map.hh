@@ -248,6 +248,7 @@ class Roaring64Map {
         // assuming that adjacent values will belong to the same inner bitmap.
         Roaring *last_inner_bitmap = nullptr;
         uint32_t last_value_high = 0;
+        BulkContext last_bulk_context;
         for (size_t lcv = 0; lcv < n_args; lcv++) {
             auto value = vals[lcv];
             auto value_high = highBytes(value);
@@ -255,8 +256,9 @@ class Roaring64Map {
             if (last_inner_bitmap == nullptr || value_high != last_value_high) {
                 last_inner_bitmap = &lookupOrCreateInner(value_high);
                 last_value_high = value_high;
+                last_bulk_context = BulkContext{};
             }
-            last_inner_bitmap->add(value_low);
+            last_inner_bitmap->addBulk(last_bulk_context, value_low);
         }
     }
 
@@ -473,12 +475,18 @@ class Roaring64Map {
      * Check if value x is present
      */
     bool contains(uint32_t x) const {
-        return roarings.count(0) == 0 ? false : roarings.at(0).contains(x);
+        auto iter = roarings.find(0);
+        if (iter == roarings.end()) {
+            return false;
+        }
+        return iter->second.contains(x);
     }
     bool contains(uint64_t x) const {
-        return roarings.count(highBytes(x)) == 0
-                   ? false
-                   : roarings.at(highBytes(x)).contains(lowBytes(x));
+        auto iter = roarings.find(highBytes(x));
+        if (iter == roarings.end()) {
+            return false;
+        }
+        return iter->second.contains(lowBytes(x));
     }
 
     /**
