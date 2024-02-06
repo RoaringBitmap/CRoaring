@@ -419,7 +419,7 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
             // the range.
             return true;
         }
-        if (current_high48_bits > prev_high48_bits + 0x10000) {
+        if (current_high48_bits - prev_high48_bits > 0x10000) {
             // There is a gap in the iterator that falls in the range.
             return false;
         }
