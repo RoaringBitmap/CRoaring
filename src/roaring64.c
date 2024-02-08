@@ -808,6 +808,18 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
     return has_run_container;
 }
 
+static bool roaring64_leaf_internal_validate(const art_val_t *val,
+                                             const char **reason) {
+    leaf_t *leaf = (leaf_t *)val;
+    return container_internal_validate(leaf->container, leaf->typecode, reason);
+}
+
+bool roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r,
+                                        const char **reason) {
+    return art_internal_validate(&r->art, reason,
+                                 roaring64_leaf_internal_validate);
+}
+
 bool roaring64_bitmap_equals(const roaring64_bitmap_t *r1,
                              const roaring64_bitmap_t *r2) {
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);

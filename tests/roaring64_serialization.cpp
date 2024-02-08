@@ -22,17 +22,25 @@ bool test_serialization(const std::string& filename) {
     std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
     std::vector<char> buf1(std::istreambuf_iterator<char>(in), {});
 
+    const char* reason = nullptr;
     // Deserialize.
     size_t deserialized_size =
         roaring64_bitmap_portable_deserialize_size(buf1.data(), buf1.size());
+    if (deserialized_size != 0) {
+        assert_int_equal(deserialized_size, buf1.size());
+    }
     roaring64_bitmap_t* r = roaring64_bitmap_portable_deserialize_safe(
         buf1.data(), deserialized_size);
-    if (r == NULL) {
+    if (r == nullptr) {
         return false;
+    }
+    if (!roaring64_bitmap_internal_validate(r, &reason)) {
+        fail_msg("Validation failed: %s", reason);
     }
 
     // Reserialize.
     size_t serialized_size = roaring64_bitmap_portable_size_in_bytes(r);
+    assert_int_equal(serialized_size, deserialized_size);
     std::vector<char> buf2(serialized_size, 0);
     size_t serialized = roaring64_bitmap_portable_serialize(r, buf2.data());
     assert_int_equal(serialized, serialized_size);

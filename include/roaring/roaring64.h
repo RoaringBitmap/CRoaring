@@ -293,6 +293,20 @@ uint64_t roaring64_bitmap_maximum(const roaring64_bitmap_t *r);
 bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r);
 
 /**
+ * Perform internal consistency checks.
+ *
+ * Returns true if the bitmap is consistent. It may be useful to call this
+ * after deserializing bitmaps from untrusted sources. If
+ * roaring64_bitmap_internal_validate returns true, then the bitmap is
+ * consistent and can be trusted not to cause crashes or memory corruption.
+ *
+ * If reason is non-null, it will be set to a string describing the first
+ * inconsistency found if any.
+ */
+bool roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r,
+                                        const char **reason);
+
+/**
  * Return true if the two bitmaps contain the same elements.
  */
 bool roaring64_bitmap_equals(const roaring64_bitmap_t *r1,
