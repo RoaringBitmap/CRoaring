@@ -32,6 +32,9 @@ namespace roaring {
 using roaring::Roaring;
 
 class Roaring64MapSetBitBiDirectionalIterator;
+
+// For backwards compatibility; there used to be two kinds of iterators
+// (forward and bidirectional) and now there's only one.
 typedef Roaring64MapSetBitBiDirectionalIterator
     Roaring64MapSetBitForwardIterator;
 
@@ -1710,7 +1713,7 @@ class Roaring64Map {
 /**
  * Used to go through the set bits. Not optimally fast, but convenient.
  */
-class Roaring64MapSetBitBiDirectionalIterator final {
+class Roaring64MapSetBitBiDirectionalIterator {
    public:
     typedef std::bidirectional_iterator_tag iterator_category;
     typedef uint64_t *pointer;
@@ -1718,6 +1721,22 @@ class Roaring64MapSetBitBiDirectionalIterator final {
     typedef uint64_t value_type;
     typedef int64_t difference_type;
     typedef Roaring64MapSetBitBiDirectionalIterator type_of_iterator;
+
+    Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
+                                            bool exhausted = false)
+        : p(&parent.roarings) {
+        if (exhausted || parent.roarings.empty()) {
+            map_iter = p->cend();
+        } else {
+            map_iter = parent.roarings.cbegin();
+            roaring_iterator_init(&map_iter->second.roaring, &i);
+            while (!i.has_value) {
+                map_iter++;
+                if (map_iter == p->cend()) return;
+                roaring_iterator_init(&map_iter->second.roaring, &i);
+            }
+        }
+    }
 
     /**
      * Provides the location of the set bit.
@@ -1831,22 +1850,6 @@ class Roaring64MapSetBitBiDirectionalIterator final {
         if (map_iter == p->cend() && o.map_iter == o.p->cend()) return false;
         if (o.map_iter == o.p->cend()) return true;
         return **this != *o;
-    }
-
-    Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
-                                            bool exhausted = false)
-        : p(&parent.roarings) {
-        if (exhausted || parent.roarings.empty()) {
-            map_iter = p->cend();
-        } else {
-            map_iter = parent.roarings.cbegin();
-            roaring_iterator_init(&map_iter->second.roaring, &i);
-            while (!i.has_value) {
-                map_iter++;
-                if (map_iter == p->cend()) return;
-                roaring_iterator_init(&map_iter->second.roaring, &i);
-            }
-        }
     }
 
    private:
