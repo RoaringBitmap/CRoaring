@@ -2146,6 +2146,20 @@ DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
     roaring.containsRange(0x1FFFF, 0x2FFFF + 2);
 }
 
+// Test that it is pointed to the new map, see
+// https://github.com/RoaringBitmap/CRoaring/issues/589
+DEFINE_TEST(test_cpp_copy_map_iterator_to_different_map) {
+    Roaring64Map m1{1};
+    Roaring64Map m2{10, 20, 30, 40};
+    auto it = m1.begin();
+    it = m2.begin();
+    it.move(21);
+    int n = 0;
+    for (; it != m2.end(); ++it, ++n) {
+    }
+    assert_int_equal(2, n);
+}
+
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
@@ -2222,6 +2236,7 @@ int main() {
         cmocka_unit_test(test_cpp_to_string),
         cmocka_unit_test(test_cpp_remove_run_compression),
         cmocka_unit_test(test_cpp_contains_range_interleaved_containers),
+        cmocka_unit_test(test_cpp_copy_map_iterator_to_different_map),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
