@@ -63,12 +63,15 @@ var NAVTREE =
     [ "Contributing", "index.html#autotoc_md34", null ],
     [ "References about Roaring", "index.html#autotoc_md35", null ],
     [ "Namespaces", "namespaces.html", [
-      [ "Namespace List", "namespaces.html", "namespaces_dup" ]
+      [ "Namespace List", "namespaces.html", "namespaces_dup" ],
+      [ "Namespace Members", "namespacemembers.html", [
+        [ "All", "namespacemembers.html", null ],
+        [ "Typedefs", "namespacemembers_type.html", null ]
+      ] ]
     ] ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
-      [ "Class Hierarchy", "hierarchy.html", "hierarchy" ],
       [ "Class Members", "functions.html", [
         [ "All", "functions.html", "functions_dup" ],
         [ "Functions", "functions_func.html", null ],
@@ -90,7 +93,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"functions_w.html"
+"index.html#autotoc_md12"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

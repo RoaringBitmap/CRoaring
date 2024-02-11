@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['difference_5ftype_213',['difference_type',['../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#aae6d9aed28f9c6110899b54238a85b20',1,'roaring::RoaringSetBitForwardIterator::difference_type()'],['../df/d71/classroaring_1_1Roaring64MapSetBitForwardIterator.html#a3674d8a656986e78858dac646d4b1672',1,'roaring::Roaring64MapSetBitForwardIterator::difference_type()']]]
+  ['difference_5ftype_204',['difference_type',['../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#aae6d9aed28f9c6110899b54238a85b20',1,'roaring::RoaringSetBitForwardIterator::difference_type()'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ae8b1c6fa466e39d82da783b062719041',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::difference_type()']]]
 ];

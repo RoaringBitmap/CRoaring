@@ -1,7 +1,7 @@
 var classroaring_1_1Roaring64Map =
 [
     [ "const_bidirectional_iterator", "d4/dcf/classroaring_1_1Roaring64Map.html#abe657fbb5cc92b5c2ad16160b96adb39", null ],
-    [ "const_iterator", "d4/dcf/classroaring_1_1Roaring64Map.html#adb76824b31443b648d902e6a592ecae0", null ],
+    [ "const_iterator", "d4/dcf/classroaring_1_1Roaring64Map.html#a44aeaae51642c6bfed539a84d0a46bb3", null ],
     [ "Roaring64Map", "d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831", null ],
     [ "Roaring64Map", "d4/dcf/classroaring_1_1Roaring64Map.html#a2482d3025f0618a4c6eb0fc830c1ef33", null ],
     [ "Roaring64Map", "d4/dcf/classroaring_1_1Roaring64Map.html#a089e975d420d57d640c96676d5acdb38", null ],
@@ -20,14 +20,14 @@ var classroaring_1_1Roaring64Map =
     [ "addRange", "d4/dcf/classroaring_1_1Roaring64Map.html#a9953e98cb02e3bd471cdc8199c5ec304", null ],
     [ "addRangeClosed", "d4/dcf/classroaring_1_1Roaring64Map.html#af19c3ba0265150648628b7b83b035b87", null ],
     [ "addRangeClosed", "d4/dcf/classroaring_1_1Roaring64Map.html#a781ec13fb67422807b22d054f1f3edb0", null ],
-    [ "begin", "d4/dcf/classroaring_1_1Roaring64Map.html#a82cb74f663e241e4e866e4ba738ad29e", null ],
+    [ "begin", "d4/dcf/classroaring_1_1Roaring64Map.html#a54da377e9b105600f71d38411cace92a", null ],
     [ "bitmapOf", "d4/dcf/classroaring_1_1Roaring64Map.html#aa5b07277062ffefaf5c3ea808f9d2ce3", null ],
     [ "bitmapOfList", "d4/dcf/classroaring_1_1Roaring64Map.html#a96b246b0d078bf131c5e59e500149ba0", null ],
     [ "cardinality", "d4/dcf/classroaring_1_1Roaring64Map.html#a1c768a3502c441531f76ae24ec28ab11", null ],
     [ "clear", "d4/dcf/classroaring_1_1Roaring64Map.html#a75cb282058feaf656985a69cdd855cc5", null ],
     [ "contains", "d4/dcf/classroaring_1_1Roaring64Map.html#a180f81212a14f38946ae96abc20cbb6a", null ],
     [ "contains", "d4/dcf/classroaring_1_1Roaring64Map.html#a246a9152c39913956ba74d7e1e06d2d5", null ],
-    [ "end", "d4/dcf/classroaring_1_1Roaring64Map.html#a9b15198bec4e3feaa07c2631ec477ee5", null ],
+    [ "end", "d4/dcf/classroaring_1_1Roaring64Map.html#a1e101bcc9f646ce57f60c8381eb64adb", null ],
     [ "fastunion", "d4/dcf/classroaring_1_1Roaring64Map.html#a85b1c96beaa6c0358983a9b56fc4cc17", null ],
     [ "flip", "d4/dcf/classroaring_1_1Roaring64Map.html#a02c0cb520fdd31cadda8811f01737dbb", null ],
     [ "flipClosed", "d4/dcf/classroaring_1_1Roaring64Map.html#a17aa887118794517f874a5388c512dc5", null ],
@@ -78,6 +78,5 @@ var classroaring_1_1Roaring64Map =
     [ "toUint64Array", "d4/dcf/classroaring_1_1Roaring64Map.html#ace0c9f8826b57b3ac279d4cde6a6e6f5", null ],
     [ "write", "d4/dcf/classroaring_1_1Roaring64Map.html#a567f77f809bf327187d926de2201c8ea", null ],
     [ "writeFrozen", "d4/dcf/classroaring_1_1Roaring64Map.html#afa32b06ddfca7791d545ad0d8a641c40", null ],
-    [ "Roaring64MapSetBitBiDirectionalIterator", "d4/dcf/classroaring_1_1Roaring64Map.html#a057e121febcb1bc8abce8e221f994f72", null ],
-    [ "Roaring64MapSetBitForwardIterator", "d4/dcf/classroaring_1_1Roaring64Map.html#a9b4407ef62045a09bf3e4a87560dca00", null ]
+    [ "Roaring64MapSetBitBiDirectionalIterator", "d4/dcf/classroaring_1_1Roaring64Map.html#a057e121febcb1bc8abce8e221f994f72", null ]
 ];
