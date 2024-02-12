@@ -696,17 +696,12 @@ void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
     // Remove a range across containers. Remove intermediate containers
     // entirely.
     remove_range_closed_at(art, min_high48, min_low16, 0xffff);
-    uint64_t min_high_bits = min >> 16;
-    uint64_t max_high_bits = max >> 16;
-    for (uint64_t current = min_high_bits + 1; current < max_high_bits;
-         ++current) {
-        uint8_t current_high48[ART_KEY_BYTES];
-        split_key(current << 16, current_high48);
-        leaf_t *leaf = (leaf_t *)art_erase(art, current_high48);
-        if (leaf != NULL) {
-            container_free(leaf->container, leaf->typecode);
-            free_leaf(leaf);
-        }
+
+    art_iterator_t it = art_upper_bound(art, min_high48);
+    while (it.value != NULL && art_compare_keys(it.key, max_high48) < 0) {
+        leaf_t *leaf = (leaf_t *)art_iterator_erase(art, &it);
+        container_free(leaf->container, leaf->typecode);
+        free_leaf(leaf);
     }
     remove_range_closed_at(art, max_high48, 0, max_low16);
 }

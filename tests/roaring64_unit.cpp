@@ -645,6 +645,12 @@ DEFINE_TEST(test_remove_range_closed) {
         assert_int_equal(roaring64_bitmap_maximum(r), UINT64_MAX - 6);
         roaring64_bitmap_free(r);
     }
+    {
+        // Remove a huge range
+        roaring64_bitmap_t* r = roaring64_bitmap_from(1, UINT64_MAX - 1);
+        roaring64_bitmap_remove_range_closed(r, 0, UINT64_MAX);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_get_cardinality) {
