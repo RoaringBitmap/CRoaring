@@ -389,6 +389,28 @@ DEFINE_TEST(test_art_iterator_lower_bound) {
                 art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
             assert_key_eq(iterator.key, (art_key_chunk_t*)keys[0]);
         }
+        {
+            // Check that we can go backward from after the end.
+            const char* key = "000300";
+            assert_true(
+                art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
+            assert_false(art_iterator_next(&iterator));
+            assert_true(
+                art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[2]);
+        }
+        {
+            // Check that we can go forward from before the start.
+            const char* key = "000100";
+            assert_true(
+                art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[0]);
+            assert_false(art_iterator_prev(&iterator));
+            assert_true(
+                art_iterator_lower_bound(&iterator, (art_key_chunk_t*)key));
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[0]);
+        }
 
         art_free(&art);
     }
