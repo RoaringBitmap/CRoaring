@@ -132,7 +132,10 @@ typedef struct art_iterator_s {
 
     uint8_t depth;  // Key depth
     uint8_t frame;  // Node depth
-    art_iterator_frame_t frames[ART_KEY_BYTES];
+
+    // State for each node in the ART the iterator has travelled from the root.
+    // This is `ART_KEY_BYTES + 1` because it includes state for the leaf too.
+    art_iterator_frame_t frames[ART_KEY_BYTES + 1];
 } art_iterator_t;
 
 /**

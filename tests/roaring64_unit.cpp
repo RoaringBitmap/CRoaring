@@ -654,17 +654,28 @@ DEFINE_TEST(test_remove_range_closed) {
 }
 
 DEFINE_TEST(test_get_cardinality) {
-    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    {
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
 
-    roaring64_bitmap_add(r, 0);
-    roaring64_bitmap_add(r, 100000);
-    roaring64_bitmap_add(r, 100001);
-    roaring64_bitmap_add(r, 100002);
-    roaring64_bitmap_add(r, 200000);
+        roaring64_bitmap_add(r, 0);
+        roaring64_bitmap_add(r, 100000);
+        roaring64_bitmap_add(r, 100001);
+        roaring64_bitmap_add(r, 100002);
+        roaring64_bitmap_add(r, 200000);
 
-    assert_int_equal(roaring64_bitmap_get_cardinality(r), 5);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 5);
 
-    roaring64_bitmap_free(r);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Max depth ART.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        for (int i = 0; i < 7; ++i) {
+            roaring64_bitmap_add(r, 1ULL << (i * 8 + 8));
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 7);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_range_cardinality) {
