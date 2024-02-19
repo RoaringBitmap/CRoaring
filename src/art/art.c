@@ -1681,6 +1681,14 @@ bool art_iterator_prev(art_iterator_t *iterator) {
 
 bool art_iterator_lower_bound(art_iterator_t *iterator,
                               const art_key_chunk_t *key) {
+    if (iterator->value == NULL) {
+        // We're beyond the end / start of the ART so the iterator does not have
+        // a valid key. Start from the root.
+        iterator->frame = 0;
+        iterator->depth = 0;
+        return art_node_iterator_lower_bound(art_iterator_node(iterator),
+                                             iterator, key);
+    }
     int compare_result =
         art_compare_prefix(iterator->key, 0, key, 0, ART_KEY_BYTES);
     // Move up until we have an equal prefix, after which we can do a normal
