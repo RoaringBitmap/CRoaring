@@ -5,15 +5,14 @@
 #ifdef __cplusplus
 extern "C" {
 // In Windows MSVC C++ compiler, (type){init} does not compile,
-// it causes C4576: a parenthesized type followed by an initializer list is a non-standard explicit type conversion syntax
-// The correct syntax is type{init}
+// it causes C4576: a parenthesized type followed by an initializer list is a
+// non-standard explicit type conversion syntax The correct syntax is type{init}
 #define ROARING_INIT_ROARING_CONTAINER_ITERATOR_T roaring_container_iterator_t
 namespace roaring {
 namespace internal {
 #else
 #define ROARING_INIT_ROARING_CONTAINER_ITERATOR_T (roaring_container_iterator_t)
 #endif
-
 
 static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
     return (a < b) ? a : b;
