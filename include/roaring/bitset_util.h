@@ -593,114 +593,23 @@ CROARING_UNTARGET_AVX2
     accu = _mm512_add_epi64(accu, p##i);
 
 #if CROARING_COMPILER_SUPPORTS_AVX512
-CROARING_TARGET_AVX512
-static inline uint64_t sum_epu64_256(const __m256i v) {
-    return (uint64_t)(_mm256_extract_epi64(v, 0)) +
-           (uint64_t)(_mm256_extract_epi64(v, 1)) +
-           (uint64_t)(_mm256_extract_epi64(v, 2)) +
-           (uint64_t)(_mm256_extract_epi64(v, 3));
-}
-
-static inline uint64_t simd_sum_epu64(const __m512i v) {
-    __m256i lo = _mm512_extracti64x4_epi64(v, 0);
-    __m256i hi = _mm512_extracti64x4_epi64(v, 1);
-
-    return sum_epu64_256(lo) + sum_epu64_256(hi);
-}
-
-static inline uint64_t avx512_vpopcount(const __m512i *data,
-                                        const uint64_t size) {
-    const uint64_t limit = size - size % 4;
-    __m512i total = _mm512_setzero_si512();
-    uint64_t i = 0;
-
-    for (; i < limit; i += 4) {
-        VPOPCNT_AND_ADD(data + i, 0, total);
-        VPOPCNT_AND_ADD(data + i, 1, total);
-        VPOPCNT_AND_ADD(data + i, 2, total);
-        VPOPCNT_AND_ADD(data + i, 3, total);
-    }
-
-    for (; i < size; i++) {
-        total = _mm512_add_epi64(
-            total, _mm512_popcnt_epi64(_mm512_loadu_si512(data + i)));
-    }
-
-    return simd_sum_epu64(total);
-}
-CROARING_UNTARGET_AVX512
-#endif
-
-#define AVXPOPCNTFNC512(opname, avx_intrinsic)                                \
-    static inline uint64_t avx512_harley_seal_popcount512_##opname(           \
-        const __m512i *data1, const __m512i *data2, const uint64_t size) {    \
-        __m512i total = _mm512_setzero_si512();                               \
-        const uint64_t limit = size - size % 4;                               \
-        uint64_t i = 0;                                                       \
-        for (; i < limit; i += 4) {                                           \
-            __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),         \
-                                       _mm512_loadu_si512(data2 + i));        \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));         \
-            __m512i a2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),     \
-                                       _mm512_loadu_si512(data2 + i + 1));    \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a2));         \
-            __m512i a3 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),     \
-                                       _mm512_loadu_si512(data2 + i + 2));    \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a3));         \
-            __m512i a4 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),     \
-                                       _mm512_loadu_si512(data2 + i + 3));    \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a4));         \
-        }                                                                     \
-        for (; i < size; i++) {                                               \
-            __m512i a = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
-                                      _mm512_loadu_si512(data2 + i));         \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a));          \
-        }                                                                     \
-        return simd_sum_epu64(total);                                         \
-    }                                                                         \
-    static inline uint64_t avx512_harley_seal_popcount512andstore_##opname(   \
-        const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, \
-        __m512i *__restrict__ out, const uint64_t size) {                     \
-        __m512i total = _mm512_setzero_si512();                               \
-        const uint64_t limit = size - size % 4;                               \
-        uint64_t i = 0;                                                       \
-        for (; i < limit; i += 4) {                                           \
-            __m512i a1 = avx_intrinsic(_mm512_loadu_si512(data1 + i),         \
-                                       _mm512_loadu_si512(data2 + i));        \
-            _mm512_storeu_si512(out + i, a1);                                 \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a1));         \
-            __m512i a2 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 1),     \
-                                       _mm512_loadu_si512(data2 + i + 1));    \
-            _mm512_storeu_si512(out + i + 1, a2);                             \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a2));         \
-            __m512i a3 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 2),     \
-                                       _mm512_loadu_si512(data2 + i + 2));    \
-            _mm512_storeu_si512(out + i + 2, a3);                             \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a3));         \
-            __m512i a4 = avx_intrinsic(_mm512_loadu_si512(data1 + i + 3),     \
-                                       _mm512_loadu_si512(data2 + i + 3));    \
-            _mm512_storeu_si512(out + i + 3, a4);                             \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a4));         \
-        }                                                                     \
-        for (; i < size; i++) {                                               \
-            __m512i a = avx_intrinsic(_mm512_loadu_si512(data1 + i),          \
-                                      _mm512_loadu_si512(data2 + i));         \
-            _mm512_storeu_si512(out + i, a);                                  \
-            total = _mm512_add_epi64(total, _mm512_popcnt_epi64(a));          \
-        }                                                                     \
-        return simd_sum_epu64(total);                                         \
-    }
-
-#if CROARING_COMPILER_SUPPORTS_AVX512
-CROARING_TARGET_AVX512
-AVXPOPCNTFNC512(or, _mm512_or_si512)
-AVXPOPCNTFNC512(union, _mm512_or_si512)
-AVXPOPCNTFNC512(and, _mm512_and_si512)
-AVXPOPCNTFNC512(intersection, _mm512_and_si512)
-AVXPOPCNTFNC512(xor, _mm512_xor_si512)
-AVXPOPCNTFNC512(andnot, _mm512_andnot_si512)
-CROARING_UNTARGET_AVX512
-#endif
+uint64_t sum_epu64_256(const __m256i v);
+uint64_t simd_sum_epu64(const __m512i v);
+uint64_t avx512_vpopcount(const __m512i* data, const uint64_t size);
+// todo: these function declarations should be done with a macro
+uint64_t avx512_harley_seal_popcount512_or(const __m512i *data1, const __m512i *data2, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512andstore_or(const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, __m512i *__restrict__ out, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512_union(const __m512i *data1, const __m512i *data2, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512andstore_union(const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, __m512i *__restrict__ out, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512_and(const __m512i *data1, const __m512i *data2, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512andstore_and(const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, __m512i *__restrict__ out, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512_intersection(const __m512i *data1, const __m512i *data2, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512andstore_intersection(const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, __m512i *__restrict__ out, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512_xor(const __m512i *data1, const __m512i *data2, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512andstore_xor(const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, __m512i *__restrict__ out, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512_andnot(const __m512i *data1, const __m512i *data2, const uint64_t size);
+uint64_t avx512_harley_seal_popcount512andstore_andnot(const __m512i *__restrict__ data1, const __m512i *__restrict__ data2, __m512i *__restrict__ out, const uint64_t size);
+#endif // CROARING_COMPILER_SUPPORTS_AVX512
 /***
  * END Harley-Seal popcount functions.
  */
