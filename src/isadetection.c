@@ -56,7 +56,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #if _MSC_VER >= 1938
 #define ROARING_DISABLE_AVX 1
 #endif  // _MSC_VER >= 1938
-#endif // __clang__
+#endif  // __clang__
 
 // We need portability.h to be included first, see
 // https://github.com/RoaringBitmap/CRoaring/issues/394
