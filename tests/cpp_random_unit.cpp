@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "roaring_checked.hh"
-using doublechecked::Roaring;  // so `Roaring` means `doublecheck::Roaring`
+using doublechecked::Roaring;  // so `Roaring` means `doublechecked::Roaring`
 #include "roaring64map_checked.hh"
 using doublechecked::Roaring64Map;
 
