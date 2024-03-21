@@ -47,6 +47,7 @@ option(ROARING_BUILD_C_AS_CPP "Build library C files using C++ compilation" OFF)
 option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" OFF)
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
+option(ROARING_SANITIZE_UNDEFINED "Sanitize undefined behaviors" OFF)
 
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
 if(NOT ENABLE_ROARING_TESTS)
