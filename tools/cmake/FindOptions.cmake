@@ -2,16 +2,6 @@ macro(append var string)
   set(${var} "${${var}} ${string}")
 endmacro(append)
 
-set(SANITIZE_FLAGS "")
-
-if(ROARING_SANITIZE)
-  set(ROARING_SANITIZE_FLAGS "-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all")
-  if (CMAKE_COMPILER_IS_GNUCC)
-    # Ubuntu bug for GCC 5.0+ (safe for all versions)
-    append(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=gold")
-    append(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=gold")
-  endif()
-endif()
 
 if((NOT MSVC) AND ROARING_ARCH)
 set(OPT_FLAGS "-march=${ROARING_ARCH}")
