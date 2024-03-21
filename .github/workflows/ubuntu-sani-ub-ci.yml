@@ -1,0 +1,27 @@
+name: Ubuntu-Sanitized-UB-CI
+
+'on':
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ubuntu-gcc
+    runs-on: ubuntu-latest
+
+    env:
+      CC: gcc
+      CXX: g++
+
+    steps: 
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake  -DROARING_SANITIZE_UNDEFINED=ON -DENABLE_ROARING_TESTS=ON ..
+          cmake --build . 
+          ctest . --output-on-failure

@@ -2,16 +2,6 @@ macro(append var string)
   set(${var} "${${var}} ${string}")
 endmacro(append)
 
-set(SANITIZE_FLAGS "")
-
-if(ROARING_SANITIZE)
-  set(ROARING_SANITIZE_FLAGS "-fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all")
-  if (CMAKE_COMPILER_IS_GNUCC)
-    # Ubuntu bug for GCC 5.0+ (safe for all versions)
-    append(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=gold")
-    append(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=gold")
-  endif()
-endif()
 
 if((NOT MSVC) AND ROARING_ARCH)
 set(OPT_FLAGS "-march=${ROARING_ARCH}")
@@ -42,9 +32,9 @@ set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-stri
 endif()
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${ROARING_SANITIZE_FLAGS} ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${STD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXSTD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${ROARING_SANITIZE_FLAGS} ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXSTD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ")
 
 if(MSVC)
 add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4267 /wd4244  /wd4113 /nologo")
