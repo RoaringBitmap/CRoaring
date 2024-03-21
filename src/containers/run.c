@@ -1055,6 +1055,7 @@ int run_container_cardinality(const run_container_t *run) {
 #else
 
 /* Get the cardinality of `run'. Requires an actual computation. */
+ALLOW_UNALIGNED
 int run_container_cardinality(const run_container_t *run) {
     const int32_t n_runs = run->n_runs;
     const rle16_t *runs = run->runs;
