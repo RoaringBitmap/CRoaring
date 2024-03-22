@@ -5,7 +5,7 @@
 #include <roaring/misc/configreport.h>
 #include <roaring/roaring.h>
 
-// We are mostly running this test to check for data races suing thread
+// We are mostly running this test to check for data races using thread
 // sanitizer.
 void run(roaring_bitmap_t **rarray) {
     for (size_t i = 0; i < 100; i++) {
@@ -47,8 +47,17 @@ bool run_threads_unit_tests() {
     roaring_bitmap_t *r3 = roaring_bitmap_copy(r1);
     roaring_bitmap_set_copy_on_write(r3, true);
 
-    roaring_bitmap_t *rarray1[3] = {r1, r2, r3};
-    roaring_bitmap_t *rarray2[3] = {r1, r2, r3};
+    roaring_bitmap_t * r1a = roaring_bitmap_copy(r1);
+    roaring_bitmap_t * r1b = roaring_bitmap_copy(r1);
+
+    roaring_bitmap_t * r2a = roaring_bitmap_copy(r2);
+    roaring_bitmap_t * r2b = roaring_bitmap_copy(r2);
+
+    roaring_bitmap_t * r3a = roaring_bitmap_copy(r3);
+    roaring_bitmap_t * r3b = roaring_bitmap_copy(r3);
+
+    roaring_bitmap_t *rarray1[3] = {r1a, r2a, r3a};
+    roaring_bitmap_t *rarray2[3] = {r1b, r2b, r3b};
     std::thread thread1(run, rarray1);
     std::thread thread2(run, rarray2);
     thread1.join();
@@ -56,6 +65,12 @@ bool run_threads_unit_tests() {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
     roaring_bitmap_free(r3);
+    roaring_bitmap_free(r1a);
+    roaring_bitmap_free(r2a);
+    roaring_bitmap_free(r3a);
+    roaring_bitmap_free(r1b);
+    roaring_bitmap_free(r2b);
+    roaring_bitmap_free(r3b);
     return true;
 }
 

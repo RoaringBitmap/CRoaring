@@ -1,4 +1,4 @@
-name: Ubuntu-Sanitized-CI
+name: Ubuntu-Thread-Sanitized-CI
 
 'on':
   - push
