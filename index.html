@@ -216,7 +216,7 @@ Running microbenchmarks</h1>
 <div class="line">cmake --build build</div>
 <div class="line">./build/microbenchmarks/bench</div>
 </div><!-- fragment --><p>By default, the benchmark tools picks one data set (e.g., <code>CRoaring/benchmarks/realdata/census1881</code>). We have several data sets and you may pick others:</p>
-<div class="fragment"><div class="line">./build/microbenchmarks/bench benchmarks/realdata/wikileaks-noquotes </div>
+<div class="fragment"><div class="line">./build/microbenchmarks/bench benchmarks/realdata/wikileaks-noquotes</div>
 </div><!-- fragment --><p>You may disable some functionality for the purpose of benchmarking. For example, assuming you have an x64 processor, you could benchmark the code without AVX-512 even if both your processor and compiler supports it:</p>
 <div class="fragment"><div class="line">cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON</div>
 <div class="line">cmake --build buildnoavx512</div>
@@ -631,7 +631,7 @@ Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 <p>On Windows (64-bit):</p>
 <div class="fragment"><div class="line">.\vcpkg.exe install roaring:x64-windows</div>
 </div><!-- fragment --><p>will build and install <code>roaring</code> as a shared library.</p>
-<div class="fragment"><div class="line">.\vcpkg.exe install roaring:x64-windows-static  </div>
+<div class="fragment"><div class="line">.\vcpkg.exe install roaring:x64-windows-static</div>
 </div><!-- fragment --><p>will build and install <code>roaring</code> as a static library.</p>
 <p>These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.</p>
 <p>If you find the version of <code>roaring</code> shipped with <code>vcpkg</code> is out-of-date, feel free to report it to <code>vcpkg</code> community either by submiting an issue or by creating a PR.</p>
@@ -641,9 +641,31 @@ SIMD-related throttling</h1>
 <p>Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.</p>
 <h1><a class="anchor" id="autotoc_md21"></a>
 Thread safety</h1>
-<p>Like, for example, STL containers or Java's default data structures, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. It is safe however to query bitmaps (without modifying them) from several distinct threads, as long as you do not use the copy-on-write attribute. For example, you can safely copy a bitmap and use both copies in concurrently. One should probably avoid the use of the copy-on-write attribute in a threaded environment.</p>
-<p>Some of our users rely on "copy-on-write" (default to disabled). A bitmap with the copy-on-write flag set to true might generate shared containers. A shared container is just a reference to a single container with reference counting (we keep track of the number of shallow copies). If you copy shared containers over several threads, this might be unsafe due to the need to update the counter concurrently. Thus for shared containers, we use reference counting with an atomic counter. If the library is compiled as a C library (the default), we use C11 atomics. Unfortunately, Visual Studio does not support C11 atomics at this times (though this is subject to change). To compensate, we use Windows-specific code in such instances (<code>_InterlockedDecrement</code> <code>_InterlockedIncrement</code>).</p>
-<h1><a class="anchor" id="autotoc_md22"></a>
+<p>Like, for example, STL containers, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. However, you can safely copy a bitmap and use both copies in concurrently.</p>
+<p>If you use "copy-on-write" (default to disabled), then you should pass copies to the different threads. They will create shared containers, and for shared containers, we use reference counting with an atomic counter.</p>
+<p>To summarize:</p><ul>
+<li>If you do not use copy-on-write, you can access concurrent the same bitmap safely as long as you do not modify it. If you plan on modifying it, you should pass different copies to the different threads.</li>
+<li>If you use copy-on-write, you should always pass copies to the different threads. The copies and then lightweight (shared containers).</li>
+</ul>
+<p>Thus the following pattern where you copy bitmaps and pass them to different threads is safe with or without COW:</p>
+<div class="fragment"><div class="line">roaring_bitmap_set_copy_on_write(r1, <span class="keyword">true</span>);</div>
+<div class="line">roaring_bitmap_set_copy_on_write(r2, <span class="keyword">true</span>);</div>
+<div class="line">roaring_bitmap_set_copy_on_write(r3, <span class="keyword">true</span>);</div>
+<div class="line"> </div>
+<div class="line">roaring_bitmap_t * r1a = roaring_bitmap_copy(r1);</div>
+<div class="line">roaring_bitmap_t * r1b = roaring_bitmap_copy(r1);</div>
+<div class="line"> </div>
+<div class="line">roaring_bitmap_t * r2a = roaring_bitmap_copy(r2);</div>
+<div class="line">roaring_bitmap_t * r2b = roaring_bitmap_copy(r2);</div>
+<div class="line"> </div>
+<div class="line">roaring_bitmap_t * r3a = roaring_bitmap_copy(r3);</div>
+<div class="line">roaring_bitmap_t * r3b = roaring_bitmap_copy(r3);</div>
+<div class="line"> </div>
+<div class="line">roaring_bitmap_t *rarray1[3] = {r1a, r2a, r3a};</div>
+<div class="line">roaring_bitmap_t *rarray2[3] = {r1b, r2b, r3b};</div>
+<div class="line">std::thread thread1(run, rarray1);</div>
+<div class="line">std::thread thread2(run, rarray2);</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md22"></a>
 How to best aggregate bitmaps?</h1>
 <p>Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many different strategies.</p>
 <p>You can use <code>roaring_bitmap_or_many(bitmapcount, bitmaps)</code> or <code>roaring_bitmap_or_many_heap(bitmapcount, bitmaps)</code> or you may even roll your own aggregation:</p>
