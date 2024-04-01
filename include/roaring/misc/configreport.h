@@ -5,8 +5,8 @@
  * and croaring_hardware_support() & ROARING_SUPPORTS_AVX2 *may* trigger an
  * additional call to dynamic_croaring_detect_supported_architectures().
  */
-#ifndef INCLUDE_MISC_CONFIGREPORT_H_
-#define INCLUDE_MISC_CONFIGREPORT_H_
+#ifndef CROARING_INCLUDE_MISC_CONFIGREPORT_H_
+#define CROARING_INCLUDE_MISC_CONFIGREPORT_H_
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>
@@ -237,4 +237,4 @@ static inline void tellmeall() {
 }  // extern "C" { namespace roaring { namespace misc {
 #endif
 
-#endif /* INCLUDE_MISC_CONFIGREPORT_H_ */
+#endif /* CROARING_INCLUDE_MISC_CONFIGREPORT_H_ */
