@@ -331,7 +331,8 @@ int run_array_container_andnot(const run_container_t *src_1,
             }
         }
         if (rlepos < src_1->n_runs) {
-            answer->runs[answer->n_runs++] = CROARING_MAKE_RLE16(start, end - start - 1);
+            answer->runs[answer->n_runs++] =
+                CROARING_MAKE_RLE16(start, end - start - 1);
             rlepos++;
             if (rlepos < src_1->n_runs) {
                 memcpy(answer->runs + answer->n_runs, src_1->runs + rlepos,

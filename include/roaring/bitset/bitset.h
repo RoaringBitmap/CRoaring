@@ -178,12 +178,14 @@ size_t bitset_difference_count(const bitset_t *CROARING_CBITSET_RESTRICT b1,
 
 /* compute the symmetric difference in-place (to b1), return true if successful,
  * to generate a new bitset first call bitset_copy */
-bool bitset_inplace_symmetric_difference(bitset_t *CROARING_CBITSET_RESTRICT b1,
-                                         const bitset_t *CROARING_CBITSET_RESTRICT b2);
+bool bitset_inplace_symmetric_difference(
+    bitset_t *CROARING_CBITSET_RESTRICT b1,
+    const bitset_t *CROARING_CBITSET_RESTRICT b2);
 
 /* compute the size of the symmetric difference  */
-size_t bitset_symmetric_difference_count(const bitset_t *CROARING_CBITSET_RESTRICT b1,
-                                         const bitset_t *CROARING_CBITSET_RESTRICT b2);
+size_t bitset_symmetric_difference_count(
+    const bitset_t *CROARING_CBITSET_RESTRICT b1,
+    const bitset_t *CROARING_CBITSET_RESTRICT b2);
 
 /* iterate over the set bits
  like so :

@@ -415,8 +415,9 @@ size_t bitset_difference_count(const bitset_t *CROARING_CBITSET_RESTRICT b1,
     return answer;
 }
 
-bool bitset_inplace_symmetric_difference(bitset_t *CROARING_CBITSET_RESTRICT b1,
-                                         const bitset_t *CROARING_CBITSET_RESTRICT b2) {
+bool bitset_inplace_symmetric_difference(
+    bitset_t *CROARING_CBITSET_RESTRICT b1,
+    const bitset_t *CROARING_CBITSET_RESTRICT b2) {
     size_t minlength =
         b1->arraysize < b2->arraysize ? b1->arraysize : b2->arraysize;
     size_t k = 0;
@@ -432,8 +433,9 @@ bool bitset_inplace_symmetric_difference(bitset_t *CROARING_CBITSET_RESTRICT b1,
     return true;
 }
 
-size_t bitset_symmetric_difference_count(const bitset_t *CROARING_CBITSET_RESTRICT b1,
-                                         const bitset_t *CROARING_CBITSET_RESTRICT b2) {
+size_t bitset_symmetric_difference_count(
+    const bitset_t *CROARING_CBITSET_RESTRICT b1,
+    const bitset_t *CROARING_CBITSET_RESTRICT b2) {
     size_t minlength =
         b1->arraysize < b2->arraysize ? b1->arraysize : b2->arraysize;
     size_t k = 0;

@@ -47,14 +47,14 @@ bool run_threads_unit_tests() {
     roaring_bitmap_t *r3 = roaring_bitmap_copy(r1);
     roaring_bitmap_set_copy_on_write(r3, true);
 
-    roaring_bitmap_t * r1a = roaring_bitmap_copy(r1);
-    roaring_bitmap_t * r1b = roaring_bitmap_copy(r1);
+    roaring_bitmap_t *r1a = roaring_bitmap_copy(r1);
+    roaring_bitmap_t *r1b = roaring_bitmap_copy(r1);
 
-    roaring_bitmap_t * r2a = roaring_bitmap_copy(r2);
-    roaring_bitmap_t * r2b = roaring_bitmap_copy(r2);
+    roaring_bitmap_t *r2a = roaring_bitmap_copy(r2);
+    roaring_bitmap_t *r2b = roaring_bitmap_copy(r2);
 
-    roaring_bitmap_t * r3a = roaring_bitmap_copy(r3);
-    roaring_bitmap_t * r3b = roaring_bitmap_copy(r3);
+    roaring_bitmap_t *r3a = roaring_bitmap_copy(r3);
+    roaring_bitmap_t *r3b = roaring_bitmap_copy(r3);
 
     roaring_bitmap_t *rarray1[3] = {r1a, r2a, r3a};
     roaring_bitmap_t *rarray2[3] = {r1b, r2b, r3b};

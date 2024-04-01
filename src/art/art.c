@@ -24,10 +24,10 @@
 // deallocation of the ART, we know not to free the leaves without having to
 // dereference the leaf pointers.
 //
-// All internal operations on leaves should use CROARING_CAST_LEAF before using the leaf.
-// The only places that use CROARING_SET_LEAF are locations where a field is directly
-// assigned to a leaf pointer. After using CROARING_SET_LEAF, the leaf should be treated
-// as a node of unknown type.
+// All internal operations on leaves should use CROARING_CAST_LEAF before using
+// the leaf. The only places that use CROARING_SET_LEAF are locations where a
+// field is directly assigned to a leaf pointer. After using CROARING_SET_LEAF,
+// the leaf should be treated as a node of unknown type.
 #define CROARING_IS_LEAF(p) (((uintptr_t)(p) & 1))
 #define CROARING_SET_LEAF(p) ((art_node_t *)((uintptr_t)(p) | 1))
 #define CROARING_CAST_LEAF(p) ((art_leaf_t *)((void *)((uintptr_t)(p) & ~1)))
@@ -89,7 +89,8 @@ typedef struct art_node16_s {
 } art_node16_t;
 
 // Node48: key[i] corresponds with children[key[i]] if key[i] !=
-// CROARING_ART_NODE48_EMPTY_VAL. Keys are naturally sorted due to direct indexing.
+// CROARING_ART_NODE48_EMPTY_VAL. Keys are naturally sorted due to direct
+// indexing.
 typedef struct art_node48_s {
     art_inner_node_t base;
     uint8_t count;
@@ -115,7 +116,9 @@ typedef struct art_indexed_child_s {
     art_key_chunk_t key_chunk;
 } art_indexed_child_t;
 
-static inline bool art_is_leaf(const art_node_t *node) { return CROARING_IS_LEAF(node); }
+static inline bool art_is_leaf(const art_node_t *node) {
+    return CROARING_IS_LEAF(node);
+}
 
 static void art_leaf_populate(art_leaf_t *leaf, const art_key_chunk_t key[]) {
     memcpy(leaf->key, key, ART_KEY_BYTES);
@@ -159,7 +162,8 @@ static art_node_t *art_node256_insert(art_node256_t *node, art_node_t *child,
 static art_node4_t *art_node4_create(const art_key_chunk_t prefix[],
                                      uint8_t prefix_size) {
     art_node4_t *node = (art_node4_t *)roaring_malloc(sizeof(art_node4_t));
-    art_init_inner_node(&node->base, CROARING_ART_NODE4_TYPE, prefix, prefix_size);
+    art_init_inner_node(&node->base, CROARING_ART_NODE4_TYPE, prefix,
+                        prefix_size);
     node->count = 0;
     return node;
 }
@@ -363,7 +367,8 @@ static bool art_node4_internal_validate(const art_node4_t *node,
 static art_node16_t *art_node16_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     art_node16_t *node = (art_node16_t *)roaring_malloc(sizeof(art_node16_t));
-    art_init_inner_node(&node->base, CROARING_ART_NODE16_TYPE, prefix, prefix_size);
+    art_init_inner_node(&node->base, CROARING_ART_NODE16_TYPE, prefix,
+                        prefix_size);
     node->count = 0;
     return node;
 }
@@ -546,7 +551,8 @@ static bool art_node16_internal_validate(const art_node16_t *node,
 static art_node48_t *art_node48_create(const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     art_node48_t *node = (art_node48_t *)roaring_malloc(sizeof(art_node48_t));
-    art_init_inner_node(&node->base, CROARING_ART_NODE48_TYPE, prefix, prefix_size);
+    art_init_inner_node(&node->base, CROARING_ART_NODE48_TYPE, prefix,
+                        prefix_size);
     node->count = 0;
     node->available_children = CROARING_NODE48_AVAILABLE_CHILDREN_MASK;
     for (size_t i = 0; i < 256; ++i) {
@@ -759,7 +765,8 @@ static art_node256_t *art_node256_create(const art_key_chunk_t prefix[],
                                          uint8_t prefix_size) {
     art_node256_t *node =
         (art_node256_t *)roaring_malloc(sizeof(art_node256_t));
-    art_init_inner_node(&node->base, CROARING_ART_NODE256_TYPE, prefix, prefix_size);
+    art_init_inner_node(&node->base, CROARING_ART_NODE256_TYPE, prefix,
+                        prefix_size);
     node->count = 0;
     for (size_t i = 0; i < 256; ++i) {
         node->children[i] = NULL;

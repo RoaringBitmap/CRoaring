@@ -383,7 +383,7 @@ inline static uint64_t avx2_harley_seal_popcount256(const __m256i *data,
 }
 CROARING_UNTARGET_AVX2
 
-#define CROARING_AVXPOPCNTFNC(opname, avx_intrinsic)                                    \
+#define CROARING_AVXPOPCNTFNC(opname, avx_intrinsic)                           \
     static inline uint64_t avx2_harley_seal_popcount256_##opname(              \
         const __m256i *data1, const __m256i *data2, const uint64_t size) {     \
         __m256i total = _mm256_setzero_si256();                                \
@@ -631,7 +631,7 @@ static inline uint64_t avx512_vpopcount(const __m512i *data,
 CROARING_UNTARGET_AVX512
 #endif
 
-#define CROARING_AVXPOPCNTFNC512(opname, avx_intrinsic)                                \
+#define CROARING_AVXPOPCNTFNC512(opname, avx_intrinsic)                       \
     static inline uint64_t avx512_harley_seal_popcount512_##opname(           \
         const __m512i *data1, const __m512i *data2, const uint64_t size) {    \
         __m512i total = _mm512_setzero_si512();                               \
