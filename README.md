@@ -147,7 +147,7 @@ Linux or macOS users might follow the following instructions if they have a rece
 # Using Roaring as a CPM dependency
 
 
-If you like CMake and CPM, you can just a few lines in you `CMakeLists.txt` file to grab a `CRoaring` release. [See our CPM demonstration for further details](https://github.com/RoaringBitmap/CPMdemo).
+If you like CMake and CPM, you can add just a few lines in your `CMakeLists.txt` file to grab a `CRoaring` release. [See our CPM demonstration for further details](https://github.com/RoaringBitmap/CPMdemo).
 
 
 
@@ -177,7 +177,7 @@ target_link_libraries(hello roaring::roaring)
 
 # Using as a CMake dependency with FetchContent
 
-If you like CMake, you can just a few lines in you `CMakeLists.txt` file to grab a `CRoaring` release. [See our demonstration for further details](https://github.com/RoaringBitmap/croaring_cmake_demo_single_file).
+If you like CMake, you can add just a few lines in your `CMakeLists.txt` file to grab a `CRoaring` release. [See our demonstration for further details](https://github.com/RoaringBitmap/croaring_cmake_demo_single_file).
 
 If you installed the CRoaring library locally, you may use it with CMake's `find_package` function as in this example:
 
