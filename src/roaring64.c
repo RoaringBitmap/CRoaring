@@ -803,6 +803,70 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
     return has_run_container;
 }
 
+typedef struct min_max_sum64_s {
+    uint64_t min;
+    uint64_t max;
+    uint64_t sum;
+} min_max_sum64_s;
+
+static bool min_max_sum64_fnc(uint64_t value, void *param) {
+    min_max_sum64_s *mms = (min_max_sum64_s *)param;
+    if (value > mms->max) mms->max = value;
+    if (value < mms->min) mms->min = value;
+    mms->sum += value;
+    return true;  // we always process all data points
+}
+
+/**
+ *  (For advanced users.)
+ * Collect statistics about the bitmap
+ */
+void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
+                               roaring64_statistics_t *stat) {
+    memset(stat, 0, sizeof(*stat));
+    stat->cardinality = roaring64_bitmap_get_cardinality(r);
+    min_max_sum64_s mms;
+    mms.min = UINT64_C(0xFFFFFFFFFFFFFFFF);
+    mms.max = UINT64_C(0);
+    mms.sum = 0;
+    roaring64_bitmap_iterate(r, &min_max_sum64_fnc, &mms);
+    stat->min_value = mms.min;
+    stat->max_value = mms.max;
+    stat->sum_value = mms.sum;
+
+    art_iterator_t it = art_init_iterator(&r->art, true);
+    while (it.value != NULL) {
+        leaf_t *leaf = (leaf_t *)it.value;
+        stat->n_containers++;
+        uint8_t truetype =
+            get_container_type(leaf->container, leaf->typecode);
+        uint32_t card =
+            container_get_cardinality(leaf->container, leaf->typecode);
+        uint32_t sbytes =
+            container_size_in_bytes(leaf->container, leaf->typecode);
+        switch (truetype) {
+            case BITSET_CONTAINER_TYPE:
+                stat->n_bitset_containers++;
+                stat->n_values_bitset_containers += card;
+                stat->n_bytes_bitset_containers += sbytes;
+                break;
+            case ARRAY_CONTAINER_TYPE:
+                stat->n_array_containers++;
+                stat->n_values_array_containers += card;
+                stat->n_bytes_array_containers += sbytes;
+                break;
+            case RUN_CONTAINER_TYPE:
+                stat->n_run_containers++;
+                stat->n_values_run_containers += card;
+                stat->n_bytes_run_containers += sbytes;
+                break;
+            default:
+                assert(false);
+                roaring_unreachable;
+        }
+    }
+}
+
 static bool roaring64_leaf_internal_validate(const art_val_t *val,
                                              const char **reason) {
     leaf_t *leaf = (leaf_t *)val;
