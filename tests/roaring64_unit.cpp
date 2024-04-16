@@ -1778,7 +1778,7 @@ DEFINE_TEST(test_iterator_read) {
 
 DEFINE_TEST(test_stats) {
     // create a new empty bitmap
-    roaring64_bitmap_t *r1 = roaring64_bitmap_create();
+    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
     assert_non_null(r1);
     // then we can add values
     for (uint32_t i = 100; i < 1000; i++) {

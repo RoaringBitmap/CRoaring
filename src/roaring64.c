@@ -822,7 +822,7 @@ static bool min_max_sum64_fnc(uint64_t value, void *param) {
  * Collect statistics about the bitmap
  */
 void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
-                               roaring64_statistics_t *stat) {
+                                 roaring64_statistics_t *stat) {
     memset(stat, 0, sizeof(*stat));
     stat->cardinality = roaring64_bitmap_get_cardinality(r);
     min_max_sum64_s mms;
@@ -838,8 +838,7 @@ void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
         stat->n_containers++;
-        uint8_t truetype =
-            get_container_type(leaf->container, leaf->typecode);
+        uint8_t truetype = get_container_type(leaf->container, leaf->typecode);
         uint32_t card =
             container_get_cardinality(leaf->container, leaf->typecode);
         uint32_t sbytes =

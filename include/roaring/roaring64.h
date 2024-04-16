@@ -297,7 +297,7 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r);
  * Collect statistics about the bitmap
  */
 void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
-                               roaring64_statistics_t *stat);
+                                 roaring64_statistics_t *stat);
 
 /**
  * Perform internal consistency checks.
