@@ -249,7 +249,7 @@ We have microbenchmarks constructed with the Google Benchmarks.
 Under Linux or macOS, you may run them as follows:
 
 ```
-cmake -B build
+cmake -B build -D ENABLE_ROARING_MICROBENCHMARKS=ON
 cmake --build build
 ./build/microbenchmarks/bench
 ```
@@ -266,7 +266,7 @@ have an x64 processor, you could benchmark the code without AVX-512 even if both
 and compiler supports it:
 
 ```
-cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON
+cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON -D ENABLE_ROARING_MICROBENCHMARKS=ON
 cmake --build buildnoavx512
 ./buildnoavx512/microbenchmarks/bench
 ```
@@ -274,7 +274,7 @@ cmake --build buildnoavx512
 You can benchmark without AVX or AVX-512 as well:
 
 ```
-cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON
+cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON -D ENABLE_ROARING_MICROBENCHMARKS=ON
 cmake --build buildnoavx
 ./buildnoavx/microbenchmarks/bench
 ```
