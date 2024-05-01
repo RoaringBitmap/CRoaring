@@ -105,29 +105,27 @@ typedef struct roaring_statistics_s {
 typedef struct roaring64_statistics_s {
     uint32_t n_containers; /* number of containers */
 
-    uint32_t n_array_containers;  /* number of array containers */
-    uint32_t n_run_containers;    /* number of run containers */
-    uint32_t n_bitset_containers; /* number of bitmap containers */
+    uint64_t n_array_containers;  /* number of array containers */
+    uint64_t n_run_containers;    /* number of run containers */
+    uint64_t n_bitset_containers; /* number of bitmap containers */
 
-    uint32_t
+    uint64_t
         n_values_array_containers;    /* number of values in array containers */
-    uint32_t n_values_run_containers; /* number of values in run containers */
-    uint32_t
+    uint64_t n_values_run_containers; /* number of values in run containers */
+    uint64_t
         n_values_bitset_containers; /* number of values in  bitmap containers */
 
-    uint32_t n_bytes_array_containers;  /* number of allocated bytes in array
+    uint64_t n_bytes_array_containers;  /* number of allocated bytes in array
                                            containers */
-    uint32_t n_bytes_run_containers;    /* number of allocated bytes in run
+    uint64_t n_bytes_run_containers;    /* number of allocated bytes in run
                                            containers */
-    uint32_t n_bytes_bitset_containers; /* number of allocated bytes in  bitmap
+    uint64_t n_bytes_bitset_containers; /* number of allocated bytes in  bitmap
                                            containers */
 
     uint64_t
         max_value; /* the maximal value, undefined if cardinality is zero */
     uint64_t
         min_value; /* the minimal value, undefined if cardinality is zero */
-    uint64_t sum_value; /* the sum of all values (could be used to compute
-                           average) */
 
     uint64_t cardinality; /* total number of values stored in the bitmap */
 

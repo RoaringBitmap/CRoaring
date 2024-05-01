@@ -803,20 +803,6 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
     return has_run_container;
 }
 
-typedef struct min_max_sum64_s {
-    uint64_t min;
-    uint64_t max;
-    uint64_t sum;
-} min_max_sum64_s;
-
-static bool min_max_sum64_fnc(uint64_t value, void *param) {
-    min_max_sum64_s *mms = (min_max_sum64_s *)param;
-    if (value > mms->max) mms->max = value;
-    if (value < mms->min) mms->min = value;
-    mms->sum += value;
-    return true;  // we always process all data points
-}
-
 /**
  *  (For advanced users.)
  * Collect statistics about the bitmap
@@ -825,14 +811,8 @@ void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
                                  roaring64_statistics_t *stat) {
     memset(stat, 0, sizeof(*stat));
     stat->cardinality = roaring64_bitmap_get_cardinality(r);
-    min_max_sum64_s mms;
-    mms.min = UINT64_C(0xFFFFFFFFFFFFFFFF);
-    mms.max = UINT64_C(0);
-    mms.sum = 0;
-    roaring64_bitmap_iterate(r, &min_max_sum64_fnc, &mms);
-    stat->min_value = mms.min;
-    stat->max_value = mms.max;
-    stat->sum_value = mms.sum;
+    stat->min_value = roaring64_bitmap_minimum(r);
+    stat->max_value = roaring64_bitmap_maximum(r);
 
     art_iterator_t it = art_init_iterator(&r->art, true);
     while (it.value != NULL) {

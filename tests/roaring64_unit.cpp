@@ -1791,9 +1791,9 @@ DEFINE_TEST(test_stats) {
 
     roaring64_statistics_t stats;
     roaring64_bitmap_statistics(r1, &stats);
-    assert_true(stats.cardinality == roaring64_bitmap_get_cardinality(r1));
-    assert_true(stats.min_value == 100);
-    assert_true(stats.max_value == 100000);
+    assert_int_equal(stats.cardinality, roaring64_bitmap_get_cardinality(r1));
+    assert_int_equal(stats.min_value, 100);
+    assert_int_equal(stats.max_value, 100000);
     roaring64_bitmap_free(r1);
 }
 
