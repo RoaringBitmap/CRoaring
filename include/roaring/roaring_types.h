@@ -103,7 +103,7 @@ typedef struct roaring_statistics_s {
  * the composition of a roaring64 bitmap.
  */
 typedef struct roaring64_statistics_s {
-    uint32_t n_containers; /* number of containers */
+    uint64_t n_containers; /* number of containers */
 
     uint64_t n_array_containers;  /* number of array containers */
     uint64_t n_run_containers;    /* number of run containers */
