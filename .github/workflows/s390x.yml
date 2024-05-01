@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: uraimo/run-on-arch-action@4803fad82c266c7860218e93d3024b5810c7866a # v2.6.0
+      - uses: uraimo/run-on-arch-action@b0ffb25eb00af00468375982384441f063da1741 # v2.7.2
         name: Test
         id: runcmd
         with:
