@@ -843,6 +843,7 @@ void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
                 assert(false);
                 roaring_unreachable;
         }
+        art_iterator_next(&it);
     }
 }
 
