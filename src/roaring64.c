@@ -810,7 +810,6 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
 void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
                                  roaring64_statistics_t *stat) {
     memset(stat, 0, sizeof(*stat));
-    stat->cardinality = roaring64_bitmap_get_cardinality(r);
     stat->min_value = roaring64_bitmap_minimum(r);
     stat->max_value = roaring64_bitmap_maximum(r);
 
@@ -823,6 +822,7 @@ void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
             container_get_cardinality(leaf->container, leaf->typecode);
         uint32_t sbytes =
             container_size_in_bytes(leaf->container, leaf->typecode);
+        stat->cardinality += card;
         switch (truetype) {
             case BITSET_CONTAINER_TYPE:
                 stat->n_bitset_containers++;
