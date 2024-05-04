@@ -803,6 +803,50 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
     return has_run_container;
 }
 
+/**
+ *  (For advanced users.)
+ * Collect statistics about the bitmap
+ */
+void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
+                                 roaring64_statistics_t *stat) {
+    memset(stat, 0, sizeof(*stat));
+    stat->min_value = roaring64_bitmap_minimum(r);
+    stat->max_value = roaring64_bitmap_maximum(r);
+
+    art_iterator_t it = art_init_iterator(&r->art, true);
+    while (it.value != NULL) {
+        leaf_t *leaf = (leaf_t *)it.value;
+        stat->n_containers++;
+        uint8_t truetype = get_container_type(leaf->container, leaf->typecode);
+        uint32_t card =
+            container_get_cardinality(leaf->container, leaf->typecode);
+        uint32_t sbytes =
+            container_size_in_bytes(leaf->container, leaf->typecode);
+        stat->cardinality += card;
+        switch (truetype) {
+            case BITSET_CONTAINER_TYPE:
+                stat->n_bitset_containers++;
+                stat->n_values_bitset_containers += card;
+                stat->n_bytes_bitset_containers += sbytes;
+                break;
+            case ARRAY_CONTAINER_TYPE:
+                stat->n_array_containers++;
+                stat->n_values_array_containers += card;
+                stat->n_bytes_array_containers += sbytes;
+                break;
+            case RUN_CONTAINER_TYPE:
+                stat->n_run_containers++;
+                stat->n_values_run_containers += card;
+                stat->n_bytes_run_containers += sbytes;
+                break;
+            default:
+                assert(false);
+                roaring_unreachable;
+        }
+        art_iterator_next(&it);
+    }
+}
+
 static bool roaring64_leaf_internal_validate(const art_val_t *val,
                                              const char **reason) {
     leaf_t *leaf = (leaf_t *)val;
