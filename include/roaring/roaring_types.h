@@ -89,8 +89,7 @@ typedef struct roaring_statistics_s {
         max_value; /* the maximal value, undefined if cardinality is zero */
     uint32_t
         min_value; /* the minimal value, undefined if cardinality is zero */
-    uint64_t sum_value; /* the sum of all values (could be used to compute
-                           average) */
+    uint64_t sum_value; /* deprecated always zero */
 
     uint64_t cardinality; /* total number of values stored in the bitmap */
 
