@@ -16,7 +16,7 @@ Bitsets, also called bitmaps, are commonly used as fast data structures. Unfortu
 
 Roaring bitmaps are compressed bitmaps which tend to outperform conventional compressed bitmaps such as WAH, EWAH or Concise.
 They are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
-[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas], [Apache Spark][spark], [OpenSearchServer][opensearchserver], [Cloud Torrent][cloudtorrent], [Whoosh][whoosh], [InfluxDB](https://www.influxdata.com), [Pilosa][pilosa], [Bleve](http://www.blevesearch.com), [Microsoft Visual Studio Team Services (VSTS)][vsts], and eBay's [Apache Kylin][kylin]. The CRoaring library is used in several systems such as [Apache Doris](http://doris.incubator.apache.org), [ClickHouse](https://github.com/ClickHouse/ClickHouse), and [StarRocks](https://github.com/StarRocks/starrocks). The YouTube SQL Engine, [Google Procella](https://research.google/pubs/pub48388/), uses Roaring bitmaps for indexing.
+[Elasticsearch][elasticsearch], [Metamarkets' Druid][druid], [LinkedIn Pinot][pinot], [Netflix Atlas][atlas], [Apache Spark][spark], [OpenSearchServer][opensearchserver], [Cloud Torrent][cloudtorrent], [Whoosh][whoosh], [InfluxDB](https://www.influxdata.com), [Pilosa][pilosa], [Bleve](http://www.blevesearch.com), [Microsoft Visual Studio Team Services (VSTS)][vsts], and eBay's [Apache Kylin][kylin]. The CRoaring library is used in several systems such as [Apache Doris](http://doris.incubator.apache.org), [ClickHouse](https://github.com/ClickHouse/ClickHouse), [Redpanda](https://github.com/redpanda-data/redpanda), and [StarRocks](https://github.com/StarRocks/starrocks). The YouTube SQL Engine, [Google Procella](https://research.google/pubs/pub48388/), uses Roaring bitmaps for indexing.
 
 We published a peer-reviewed article on the design and evaluation of this library:
 
@@ -236,7 +236,17 @@ It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``ama
 
 # API
 
-The C interface is found in the file ``include/roaring/roaring.h``. We have C++ interface at `cpp/roaring.hh`.
+The C interface is found in the files
+
+- [roaring.h](https://github.com/RoaringBitmap/CRoaring/blob/master/include/roaring/roaring.h)
+- [roaring64.h](https://github.com/RoaringBitmap/CRoaring/blob/master/include/roaring/roaring64.h)
+
+
+We have C++ interface at:
+
+- [roaring.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring.hh)
+- [roaring64map.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring64map.hh)
+
 
 # Dealing with large volumes
 
@@ -249,7 +259,7 @@ We have microbenchmarks constructed with the Google Benchmarks.
 Under Linux or macOS, you may run them as follows:
 
 ```
-cmake -B build
+cmake -B build -D ENABLE_ROARING_MICROBENCHMARKS=ON
 cmake --build build
 ./build/microbenchmarks/bench
 ```
@@ -266,7 +276,7 @@ have an x64 processor, you could benchmark the code without AVX-512 even if both
 and compiler supports it:
 
 ```
-cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON
+cmake -B buildnoavx512 -D ROARING_DISABLE_AVX512=ON -D ENABLE_ROARING_MICROBENCHMARKS=ON
 cmake --build buildnoavx512
 ./buildnoavx512/microbenchmarks/bench
 ```
@@ -274,7 +284,7 @@ cmake --build buildnoavx512
 You can benchmark without AVX or AVX-512 as well:
 
 ```
-cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON
+cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON -D ENABLE_ROARING_MICROBENCHMARKS=ON
 cmake --build buildnoavx
 ./buildnoavx/microbenchmarks/bench
 ```
