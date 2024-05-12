@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['tostring_98',['toString',['../d1/d51/classroaring_1_1Roaring.html#a76025dce1281887311157c681e43b00b',1,'roaring::Roaring::toString()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a39e6d92e37d318f09bad9f6d208ac5f5',1,'roaring::Roaring64Map::toString()']]],
-  ['touint32array_99',['toUint32Array',['../d1/d51/classroaring_1_1Roaring.html#abd642754ab8cc140eb5cf0b2c98a585e',1,'roaring::Roaring']]],
-  ['touint64array_100',['toUint64Array',['../d4/dcf/classroaring_1_1Roaring64Map.html#ace0c9f8826b57b3ac279d4cde6a6e6f5',1,'roaring::Roaring64Map']]],
-  ['type_5fof_5fiterator_101',['type_of_iterator',['../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#abfb27a5e94de247e54101a1b2bb07588',1,'roaring::RoaringSetBitForwardIterator::type_of_iterator()'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab911b81817ac5378fcacf8ad834df72d',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::type_of_iterator()']]]
+  ['parent_73',['parent',['../da/d27/structroaring__uint32__iterator__s.html#a0a1ffd1bb31a9a4e6d3a263f354fea3a',1,'roaring_uint32_iterator_s']]],
+  ['pointer_74',['pointer',['../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a88ae3f9d1d9283e061302b3bbecc350c',1,'roaring::RoaringSetBitForwardIterator::pointer()'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a3eabe74ef801052a998773237d5a427e',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::pointer()']]],
+  ['portabledeserializefrozen_75',['portableDeserializeFrozen',['../d1/d51/classroaring_1_1Roaring.html#aa395a60f8fbe0987bd2f714171762c6b',1,'roaring::Roaring::portableDeserializeFrozen()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#acf8aecabd7e1542c63b76861cb103691',1,'roaring::Roaring64Map::portableDeserializeFrozen()']]],
+  ['printf_76',['printf',['../d1/d51/classroaring_1_1Roaring.html#ad956e9ff3afc9ad367340457a20fb54c',1,'roaring::Roaring::printf()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#af8a3ff65c058b528e0c1b7d08b4cacf4',1,'roaring::Roaring64Map::printf()']]]
 ];

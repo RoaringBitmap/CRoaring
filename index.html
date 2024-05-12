@@ -128,7 +128,7 @@ Quick Start</h1>
 <p>Linux or macOS users might follow the following instructions if they have a recent C or C++ compiler installed and a standard utility (<code>wget</code>).</p>
 <ol type="1">
 <li>Pull the library in a directory ``` wget <a href="https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.c">https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.c</a> wget <a href="https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.h">https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.h</a> wget <a href="https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.hh">https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.hh</a> ``<code></code></li>
-<li><p class="startli"><code>Create a new file named</code>demo.c&lt;tt&gt;with this content: ``C #include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #include "roaring.c" int main() { roaring_bitmap_t *r1 = roaring_bitmap_create(); for (uint32_t i = 100; i &lt; 1000; i++) roaring_bitmap_add(r1, i); printf("cardinality = %d\n", (int) roaring_bitmap_get_cardinality(r1)); roaring_bitmap_free(r1);</p>
+<li><p class="startli"><code>Create a new file named</code>demo.c&lt;tt&gt;with this content: ``C #include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #include "roaring.c" int main() { roaring_bitmap_t *r1 = <a class="el" href="dc/d56/roaring_8h.html#a46ca47f47e474b348fbc412ba74d2d77">roaring_bitmap_create()</a>; for (uint32_t i = 100; i &lt; 1000; i++) roaring_bitmap_add(r1, i); printf("cardinality = %d\n", (int) roaring_bitmap_get_cardinality(r1)); roaring_bitmap_free(r1);</p>
 <p class="startli">bitset_t *b = bitset_create(); for (int k = 0; k &lt; 1000; ++k) { bitset_set(b, 3 * k); } printf("%zu \n", bitset_count(b)); bitset_free(b); return EXIT_SUCCESS; } ``<code></code></p>
 </li>
 </ol>
@@ -202,7 +202,7 @@ Amalgamating</h1>
 <div class="fragment"><div class="line">./amalgamation.sh &gt; /dev/null</div>
 </div><!-- fragment --><p>(Bash shells are standard under Linux and macOS. Bash shells are available under Windows as part of the &#160;<a href="https://desktop.github.com/">GitHub Desktop</a> under the name <code>Git Shell</code>. So if you have cloned the <code>CRoaring</code> GitHub repository from within the GitHub Desktop, you can right-click on <code>CRoaring</code>, select <code>Git Shell</code> and then enter the above commands.)</p>
 <p>It is not necessary to invoke the script in the CRoaring directory. You can invoke it from any directory where you want the amalgamation files to be written.</p>
-<p>It will generate three files for C users: <code>roaring.h</code>, <code>roaring.c</code> and <code>amalgamation_demo.c</code>... as well as some brief instructions. The <code>amalgamation_demo.c</code> file is a short example, whereas <code>roaring.h</code> and <code>roaring.c</code> are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files <code>roaring.h</code> and <code>roaring.c</code> into your project and be ready to go! No need to produce a library! See the <code>amalgamation_demo.c</code> file.</p>
+<p>It will generate three files for C users: <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code>, <code>roaring.c</code> and <code>amalgamation_demo.c</code>... as well as some brief instructions. The <code>amalgamation_demo.c</code> file is a short example, whereas <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code> and <code>roaring.c</code> are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code> and <code>roaring.c</code> into your project and be ready to go! No need to produce a library! See the <code>amalgamation_demo.c</code> file.</p>
 <h1><a class="anchor" id="autotoc_md8"></a>
 API</h1>
 <p>The C interface is found in the files</p>
@@ -236,7 +236,7 @@ Running microbenchmarks</h1>
 <div class="line">./buildnoavx/microbenchmarks/bench</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md11"></a>
 Custom memory allocators</h1>
-<p>For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example: </p><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;roaring.h&gt;</span></div>
+<p>For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example: </p><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring.h</a>&gt;</span></div>
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main(){</div>
 <div class="line">    <span class="comment">// define with your own memory hook</span></div>
@@ -246,10 +246,11 @@ Custom memory allocators</h1>
 <div class="line">    <span class="comment">// write you code here</span></div>
 <div class="line">    ...</div>
 <div class="line">}</div>
+<div class="ttc" id="aroaring_8h_html"><div class="ttname"><a href="dc/d56/roaring_8h.html">roaring.h</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md12"></a>
 Example (C)</h1>
-<p>This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a <code>roaring</code> directory. If you are working from the amalgamation script, you may add the line <code>#include "roaring.c"</code> if you are not linking against a prebuilt CRoaring library and replace <code>#include &lt;roaring/roaring.h&gt;</code> by <code>#include "roaring.h"</code>.</p>
-<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;roaring/roaring.h&gt;</span></div>
+<p>This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a <code>roaring</code> directory. If you are working from the amalgamation script, you may add the line <code>#include "roaring.c"</code> if you are not linking against a prebuilt CRoaring library and replace <code>#include &lt;<a class="el" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</code> by <code>#include "roaring.h"</code>.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;assert.h&gt;</span></div>
@@ -261,99 +262,99 @@ Example (C)</h1>
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main() {</div>
 <div class="line">    <span class="comment">// create a new empty bitmap</span></div>
-<div class="line">    roaring_bitmap_t *r1 = roaring_bitmap_create();</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r1 = <a class="code" href="dc/d56/roaring_8h.html#a46ca47f47e474b348fbc412ba74d2d77">roaring_bitmap_create</a>();</div>
 <div class="line">    <span class="comment">// then we can add values</span></div>
-<div class="line">    <span class="keywordflow">for</span> (uint32_t i = 100; i &lt; 1000; i++) roaring_bitmap_add(r1, i);</div>
+<div class="line">    <span class="keywordflow">for</span> (uint32_t i = 100; i &lt; 1000; i++) <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
 <div class="line">    <span class="comment">// check whether a value is contained</span></div>
-<div class="line">    assert(roaring_bitmap_contains(r1, 500));</div>
+<div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains</a>(r1, 500));</div>
 <div class="line">    <span class="comment">// compute how many bits there are:</span></div>
-<div class="line">    uint32_t cardinality = roaring_bitmap_get_cardinality(r1);</div>
+<div class="line">    uint32_t cardinality = <a class="code" href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a>(r1);</div>
 <div class="line">    printf(<span class="stringliteral">&quot;Cardinality = %d \n&quot;</span>, cardinality);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// if your bitmaps have long runs, you can compress them by calling</span></div>
 <div class="line">    <span class="comment">// run_optimize</span></div>
-<div class="line">    uint32_t expectedsizebasic = roaring_bitmap_portable_size_in_bytes(r1);</div>
-<div class="line">    roaring_bitmap_run_optimize(r1);</div>
-<div class="line">    uint32_t expectedsizerun = roaring_bitmap_portable_size_in_bytes(r1);</div>
+<div class="line">    uint32_t expectedsizebasic = <a class="code" href="dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes</a>(r1);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a3a71a1bef6c0233c93caabfd8db22c2a">roaring_bitmap_run_optimize</a>(r1);</div>
+<div class="line">    uint32_t expectedsizerun = <a class="code" href="dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes</a>(r1);</div>
 <div class="line">    printf(<span class="stringliteral">&quot;size before run optimize %d bytes, and after %d bytes\n&quot;</span>,</div>
 <div class="line">           expectedsizebasic, expectedsizerun);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a new bitmap containing the values {1,2,3,5,6}</span></div>
-<div class="line">    roaring_bitmap_t *r2 = roaring_bitmap_from(1, 2, 3, 5, 6);</div>
-<div class="line">    roaring_bitmap_printf(r2);  <span class="comment">// print it</span></div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r2 = <a class="code" href="dc/d56/roaring_8h.html#adfb882359d1d5219449bdb40ef5e67e4">roaring_bitmap_from</a>(1, 2, 3, 5, 6);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#aeb2bce70178e0d7ba0096eb96beed660">roaring_bitmap_printf</a>(r2);  <span class="comment">// print it</span></div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also create a bitmap from a pointer to 32-bit integers</span></div>
 <div class="line">    uint32_t somevalues[] = {2, 3, 4};</div>
-<div class="line">    roaring_bitmap_t *r3 = roaring_bitmap_of_ptr(3, somevalues);</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r3 = <a class="code" href="dc/d56/roaring_8h.html#a7dc0a11e377161f913cfaa2c78a7ce1b">roaring_bitmap_of_ptr</a>(3, somevalues);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also go in reverse and go from arrays to bitmaps</span></div>
-<div class="line">    uint64_t card1 = roaring_bitmap_get_cardinality(r1);</div>
+<div class="line">    uint64_t card1 = <a class="code" href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a>(r1);</div>
 <div class="line">    uint32_t *arr1 = (uint32_t *)malloc(card1 * <span class="keyword">sizeof</span>(uint32_t));</div>
 <div class="line">    assert(arr1 != NULL);</div>
-<div class="line">    roaring_bitmap_to_uint32_array(r1, arr1);</div>
-<div class="line">    roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a4b15efab08a78a20645a96d9a69ad587">roaring_bitmap_to_uint32_array</a>(r1, arr1);</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r1f = <a class="code" href="dc/d56/roaring_8h.html#a7dc0a11e377161f913cfaa2c78a7ce1b">roaring_bitmap_of_ptr</a>(card1, arr1);</div>
 <div class="line">    free(arr1);</div>
-<div class="line">    assert(roaring_bitmap_equals(r1, r1f));  <span class="comment">// what we recover is equal</span></div>
-<div class="line">    roaring_bitmap_free(r1f);</div>
+<div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1, r1f));  <span class="comment">// what we recover is equal</span></div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r1f);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can go from arrays to bitmaps from &quot;offset&quot; by &quot;limit&quot;</span></div>
 <div class="line">    <span class="keywordtype">size_t</span> offset = 100;</div>
 <div class="line">    <span class="keywordtype">size_t</span> limit = 1000;</div>
 <div class="line">    uint32_t *arr3 = (uint32_t *)malloc(limit * <span class="keyword">sizeof</span>(uint32_t));</div>
 <div class="line">    assert(arr3 != NULL);</div>
-<div class="line">    roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a48b73721e801bee831cb7b2872cf0a29">roaring_bitmap_range_uint32_array</a>(r1, offset, limit, arr3);</div>
 <div class="line">    free(arr3);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can copy and compare bitmaps</span></div>
-<div class="line">    roaring_bitmap_t *z = roaring_bitmap_copy(r3);</div>
-<div class="line">    assert(roaring_bitmap_equals(r3, z));  <span class="comment">// what we recover is equal</span></div>
-<div class="line">    roaring_bitmap_free(z);</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *z = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r3);</div>
+<div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r3, z));  <span class="comment">// what we recover is equal</span></div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(z);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can compute union two-by-two</span></div>
-<div class="line">    roaring_bitmap_t *r1_2_3 = roaring_bitmap_or(r1, r2);</div>
-<div class="line">    roaring_bitmap_or_inplace(r1_2_3, r3);</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r1_2_3 = <a class="code" href="dc/d56/roaring_8h.html#a527a8b7b1fe19b4aaf1533e7ca9283f8">roaring_bitmap_or</a>(r1, r2);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#aa76a1e1fb5d1dcf88931aa7cd3961d1f">roaring_bitmap_or_inplace</a>(r1_2_3, r3);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can compute a big union</span></div>
-<div class="line">    <span class="keyword">const</span> roaring_bitmap_t *allmybitmaps[] = {r1, r2, r3};</div>
-<div class="line">    roaring_bitmap_t *bigunion = roaring_bitmap_or_many(3, allmybitmaps);</div>
+<div class="line">    <span class="keyword">const</span> <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *allmybitmaps[] = {r1, r2, r3};</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *bigunion = <a class="code" href="dc/d56/roaring_8h.html#a21d0f9d97d392aac2b4cac9eaa7f8048">roaring_bitmap_or_many</a>(3, allmybitmaps);</div>
 <div class="line">    assert(</div>
-<div class="line">        roaring_bitmap_equals(r1_2_3, bigunion));  <span class="comment">// what we recover is equal</span></div>
+<div class="line">        <a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1_2_3, bigunion));  <span class="comment">// what we recover is equal</span></div>
 <div class="line">    <span class="comment">// can also do the big union with a heap</span></div>
-<div class="line">    roaring_bitmap_t *bigunionheap =</div>
-<div class="line">        roaring_bitmap_or_many_heap(3, allmybitmaps);</div>
-<div class="line">    assert(roaring_bitmap_equals(r1_2_3, bigunionheap));</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *bigunionheap =</div>
+<div class="line">        <a class="code" href="dc/d56/roaring_8h.html#ab1a64de94e3577b1f23b4c378c13e186">roaring_bitmap_or_many_heap</a>(3, allmybitmaps);</div>
+<div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1_2_3, bigunionheap));</div>
 <div class="line"> </div>
-<div class="line">    roaring_bitmap_free(r1_2_3);</div>
-<div class="line">    roaring_bitmap_free(bigunion);</div>
-<div class="line">    roaring_bitmap_free(bigunionheap);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r1_2_3);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(bigunion);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(bigunionheap);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can compute intersection two-by-two</span></div>
-<div class="line">    roaring_bitmap_t *i1_2 = roaring_bitmap_and(r1, r2);</div>
-<div class="line">    roaring_bitmap_free(i1_2);</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *i1_2 = <a class="code" href="dc/d56/roaring_8h.html#a00421552b0fd562e676e562d314f1f2b">roaring_bitmap_and</a>(r1, r2);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(i1_2);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can write a bitmap to a pointer and recover it later</span></div>
-<div class="line">    uint32_t expectedsize = roaring_bitmap_portable_size_in_bytes(r1);</div>
+<div class="line">    uint32_t expectedsize = <a class="code" href="dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes</a>(r1);</div>
 <div class="line">    <span class="keywordtype">char</span> *serializedbytes = malloc(expectedsize);</div>
-<div class="line">    roaring_bitmap_portable_serialize(r1, serializedbytes);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a14ca6fb130b35a5497f2b1e463bda66d">roaring_bitmap_portable_serialize</a>(r1, serializedbytes);</div>
 <div class="line">    <span class="comment">// Note: it is expected that the input follows the specification</span></div>
 <div class="line">    <span class="comment">// https://github.com/RoaringBitmap/RoaringFormatSpec</span></div>
 <div class="line">    <span class="comment">// otherwise the result may be unusable.</span></div>
-<div class="line">    roaring_bitmap_t *t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);</div>
+<div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *t = <a class="code" href="dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe</a>(serializedbytes, expectedsize);</div>
 <div class="line">    <span class="keywordflow">if</span>(t == NULL) { <span class="keywordflow">return</span> EXIT_FAILURE; }</div>
 <div class="line">    <span class="keyword">const</span> <span class="keywordtype">char</span> *reason = NULL;</div>
-<div class="line">    <span class="keywordflow">if</span> (!roaring_bitmap_internal_validate(t, &amp;reason)) {</div>
+<div class="line">    <span class="keywordflow">if</span> (!<a class="code" href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate</a>(t, &amp;reason)) {</div>
 <div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
 <div class="line">    }</div>
-<div class="line">    assert(roaring_bitmap_equals(r1, t));  <span class="comment">// what we recover is equal</span></div>
-<div class="line">    roaring_bitmap_free(t);</div>
+<div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1, t));  <span class="comment">// what we recover is equal</span></div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(t);</div>
 <div class="line">    <span class="comment">// we can also check whether there is a bitmap at a memory location without</span></div>
 <div class="line">    <span class="comment">// reading it</span></div>
 <div class="line">    <span class="keywordtype">size_t</span> sizeofbitmap =</div>
-<div class="line">        roaring_bitmap_portable_deserialize_size(serializedbytes, expectedsize);</div>
+<div class="line">        <a class="code" href="dc/d56/roaring_8h.html#a1136ca5cea06c428356cd24a8c423a74">roaring_bitmap_portable_deserialize_size</a>(serializedbytes, expectedsize);</div>
 <div class="line">    assert(sizeofbitmap ==</div>
 <div class="line">           expectedsize);  <span class="comment">// sizeofbitmap would be zero if no bitmap were found</span></div>
 <div class="line">    <span class="comment">// we can also read the bitmap &quot;safely&quot; by specifying a byte size limit:</span></div>
-<div class="line">    t = roaring_bitmap_portable_deserialize_safe(serializedbytes, expectedsize);</div>
+<div class="line">    t = <a class="code" href="dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe</a>(serializedbytes, expectedsize);</div>
 <div class="line">    <span class="keywordflow">if</span>(t == NULL) {</div>
 <div class="line">        printf(<span class="stringliteral">&quot;Problem during deserialization.\n&quot;</span>);</div>
 <div class="line">        <span class="comment">// We could clear any memory and close any file here.</span></div>
@@ -361,7 +362,7 @@ Example (C)</h1>
 <div class="line">    }</div>
 <div class="line">    <span class="comment">// We can validate the bitmap we recovered to make sure it is proper.</span></div>
 <div class="line">    <span class="keyword">const</span> <span class="keywordtype">char</span> *reason_failure = NULL;</div>
-<div class="line">    <span class="keywordflow">if</span> (!roaring_bitmap_internal_validate(t, &amp;reason_failure)) {</div>
+<div class="line">    <span class="keywordflow">if</span> (!<a class="code" href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate</a>(t, &amp;reason_failure)) {</div>
 <div class="line">        printf(<span class="stringliteral">&quot;safely deserialized invalid bitmap: %s\n&quot;</span>, reason_failure);</div>
 <div class="line">        <span class="comment">// We could clear any memory and close any file here.</span></div>
 <div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
@@ -369,33 +370,33 @@ Example (C)</h1>
 <div class="line">    <span class="comment">// It is still necessary for the content of seriallizedbytes to follow</span></div>
 <div class="line">    <span class="comment">// the standard: https://github.com/RoaringBitmap/RoaringFormatSpec</span></div>
 <div class="line">    <span class="comment">// This is guaranted when calling &#39;roaring_bitmap_portable_deserialize&#39;.</span></div>
-<div class="line">    assert(roaring_bitmap_equals(r1, t));  <span class="comment">// what we recover is equal</span></div>
-<div class="line">    roaring_bitmap_free(t);</div>
+<div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1, t));  <span class="comment">// what we recover is equal</span></div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(t);</div>
 <div class="line"> </div>
 <div class="line">    free(serializedbytes);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can iterate over all values using custom functions</span></div>
 <div class="line">    uint32_t counter = 0;</div>
-<div class="line">    roaring_iterate(r1, roaring_iterator_sumall, &amp;counter);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a5ea3f16e31066414ae7f3d0526030781">roaring_iterate</a>(r1, roaring_iterator_sumall, &amp;counter);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also create iterator structs</span></div>
 <div class="line">    counter = 0;</div>
-<div class="line">    roaring_uint32_iterator_t *i = roaring_iterator_create(r1);</div>
-<div class="line">    <span class="keywordflow">while</span> (i-&gt;has_value) {</div>
+<div class="line">    <a class="code" href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_t</a> *i = <a class="code" href="dc/d56/roaring_8h.html#a5aa02a6e9acc580802d02dbbe9087410">roaring_iterator_create</a>(r1);</div>
+<div class="line">    <span class="keywordflow">while</span> (i-&gt;<a class="code" href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">has_value</a>) {</div>
 <div class="line">        counter++;  <span class="comment">// could use    i-&gt;current_value</span></div>
-<div class="line">        roaring_uint32_iterator_advance(i);</div>
+<div class="line">        <a class="code" href="dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a>(i);</div>
 <div class="line">    }</div>
 <div class="line">    <span class="comment">// you can skip over values and move the iterator with</span></div>
 <div class="line">    <span class="comment">// roaring_uint32_iterator_move_equalorlarger(i,someintvalue)</span></div>
 <div class="line"> </div>
-<div class="line">    roaring_uint32_iterator_free(i);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free</a>(i);</div>
 <div class="line">    <span class="comment">// roaring_bitmap_get_cardinality(r1) == counter</span></div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// for greater speed, you can iterate over the data in bulk</span></div>
-<div class="line">    i = roaring_iterator_create(r1);</div>
+<div class="line">    i = <a class="code" href="dc/d56/roaring_8h.html#a5aa02a6e9acc580802d02dbbe9087410">roaring_iterator_create</a>(r1);</div>
 <div class="line">    uint32_t buffer[256];</div>
 <div class="line">    <span class="keywordflow">while</span> (1) {</div>
-<div class="line">        uint32_t ret = roaring_uint32_iterator_read(i, buffer, 256);</div>
+<div class="line">        uint32_t ret = <a class="code" href="dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read</a>(i, buffer, 256);</div>
 <div class="line">        <span class="keywordflow">for</span> (uint32_t j = 0; j &lt; ret; j++) {</div>
 <div class="line">            counter += buffer[j];</div>
 <div class="line">        }</div>
@@ -403,13 +404,44 @@ Example (C)</h1>
 <div class="line">            <span class="keywordflow">break</span>;</div>
 <div class="line">        }</div>
 <div class="line">    }</div>
-<div class="line">    roaring_uint32_iterator_free(i);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free</a>(i);</div>
 <div class="line"> </div>
-<div class="line">    roaring_bitmap_free(r1);</div>
-<div class="line">    roaring_bitmap_free(r2);</div>
-<div class="line">    roaring_bitmap_free(r3);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r1);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r2);</div>
+<div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r3);</div>
 <div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
+<div class="ttc" id="aroaring_8h_html_a00421552b0fd562e676e562d314f1f2b"><div class="ttname"><a href="dc/d56/roaring_8h.html#a00421552b0fd562e676e562d314f1f2b">roaring_bitmap_and</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_and(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
+<div class="ttc" id="aroaring_8h_html_a0b7fd5d1ac702c49e0d1da8b5b66fc7f"><div class="ttname"><a href="dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes)</div></div>
+<div class="ttc" id="aroaring_8h_html_a1136ca5cea06c428356cd24a8c423a74"><div class="ttname"><a href="dc/d56/roaring_8h.html#a1136ca5cea06c428356cd24a8c423a74">roaring_bitmap_portable_deserialize_size</a></div><div class="ttdeci">size_t roaring_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes)</div></div>
+<div class="ttc" id="aroaring_8h_html_a14ca6fb130b35a5497f2b1e463bda66d"><div class="ttname"><a href="dc/d56/roaring_8h.html#a14ca6fb130b35a5497f2b1e463bda66d">roaring_bitmap_portable_serialize</a></div><div class="ttdeci">size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *r, char *buf)</div></div>
+<div class="ttc" id="aroaring_8h_html_a14d2c72b7b3d0fe2b8dde0764ebff7fd"><div class="ttname"><a href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a></div><div class="ttdeci">bool roaring_bitmap_equals(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
+<div class="ttc" id="aroaring_8h_html_a21d0f9d97d392aac2b4cac9eaa7f8048"><div class="ttname"><a href="dc/d56/roaring_8h.html#a21d0f9d97d392aac2b4cac9eaa7f8048">roaring_bitmap_or_many</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or_many(size_t number, const roaring_bitmap_t **rs)</div></div>
+<div class="ttc" id="aroaring_8h_html_a2b6a2da78ef1345086afe070f6831db3"><div class="ttname"><a href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate</a></div><div class="ttdeci">bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **reason)</div></div>
+<div class="ttc" id="aroaring_8h_html_a3a71a1bef6c0233c93caabfd8db22c2a"><div class="ttname"><a href="dc/d56/roaring_8h.html#a3a71a1bef6c0233c93caabfd8db22c2a">roaring_bitmap_run_optimize</a></div><div class="ttdeci">bool roaring_bitmap_run_optimize(roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a46ca47f47e474b348fbc412ba74d2d77"><div class="ttname"><a href="dc/d56/roaring_8h.html#a46ca47f47e474b348fbc412ba74d2d77">roaring_bitmap_create</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_create(void)</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00043">roaring.h:43</a></div></div>
+<div class="ttc" id="aroaring_8h_html_a48b73721e801bee831cb7b2872cf0a29"><div class="ttname"><a href="dc/d56/roaring_8h.html#a48b73721e801bee831cb7b2872cf0a29">roaring_bitmap_range_uint32_array</a></div><div class="ttdeci">bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *r, size_t offset, size_t limit, uint32_t *ans)</div></div>
+<div class="ttc" id="aroaring_8h_html_a4b15efab08a78a20645a96d9a69ad587"><div class="ttname"><a href="dc/d56/roaring_8h.html#a4b15efab08a78a20645a96d9a69ad587">roaring_bitmap_to_uint32_array</a></div><div class="ttdeci">void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans)</div></div>
+<div class="ttc" id="aroaring_8h_html_a527a8b7b1fe19b4aaf1533e7ca9283f8"><div class="ttname"><a href="dc/d56/roaring_8h.html#a527a8b7b1fe19b4aaf1533e7ca9283f8">roaring_bitmap_or</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
+<div class="ttc" id="aroaring_8h_html_a5aa02a6e9acc580802d02dbbe9087410"><div class="ttname"><a href="dc/d56/roaring_8h.html#a5aa02a6e9acc580802d02dbbe9087410">roaring_iterator_create</a></div><div class="ttdeci">roaring_uint32_iterator_t * roaring_iterator_create(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a5ea3f16e31066414ae7f3d0526030781"><div class="ttname"><a href="dc/d56/roaring_8h.html#a5ea3f16e31066414ae7f3d0526030781">roaring_iterate</a></div><div class="ttdeci">bool roaring_iterate(const roaring_bitmap_t *r, roaring_iterator iterator, void *ptr)</div></div>
+<div class="ttc" id="aroaring_8h_html_a77dba28e5abf41cbd2502b0fffc5eeeb"><div class="ttname"><a href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a></div><div class="ttdeci">void roaring_bitmap_free(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a7c1d6efba899e68a68d436cb9db62964"><div class="ttname"><a href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains</a></div><div class="ttdeci">bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val)</div></div>
+<div class="ttc" id="aroaring_8h_html_a7dc0a11e377161f913cfaa2c78a7ce1b"><div class="ttname"><a href="dc/d56/roaring_8h.html#a7dc0a11e377161f913cfaa2c78a7ce1b">roaring_bitmap_of_ptr</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals)</div></div>
+<div class="ttc" id="aroaring_8h_html_a8ab9957bc9370c641322ce182a91bbd2"><div class="ttname"><a href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_copy(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a9e01791b047756c2e31f27b58531968c"><div class="ttname"><a href="dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes</a></div><div class="ttdeci">size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_aa76a1e1fb5d1dcf88931aa7cd3961d1f"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa76a1e1fb5d1dcf88931aa7cd3961d1f">roaring_bitmap_or_inplace</a></div><div class="ttdeci">void roaring_bitmap_or_inplace(roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
+<div class="ttc" id="aroaring_8h_html_aa7d6e6919e46905bf7e5ddd824f3eb55"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read</a></div><div class="ttdeci">uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it, uint32_t *buf, uint32_t count)</div></div>
+<div class="ttc" id="aroaring_8h_html_aa879e686552e794ad36d33a9eedece3c"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free</a></div><div class="ttdeci">void roaring_uint32_iterator_free(roaring_uint32_iterator_t *it)</div></div>
+<div class="ttc" id="aroaring_8h_html_ab1a64de94e3577b1f23b4c378c13e186"><div class="ttname"><a href="dc/d56/roaring_8h.html#ab1a64de94e3577b1f23b4c378c13e186">roaring_bitmap_or_many_heap</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or_many_heap(uint32_t number, const roaring_bitmap_t **rs)</div></div>
+<div class="ttc" id="aroaring_8h_html_abf071a021966c2eb8da4473a9dabaad6"><div class="ttname"><a href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a></div><div class="ttdeci">uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_adfb882359d1d5219449bdb40ef5e67e4"><div class="ttname"><a href="dc/d56/roaring_8h.html#adfb882359d1d5219449bdb40ef5e67e4">roaring_bitmap_from</a></div><div class="ttdeci">#define roaring_bitmap_from(...)</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00144">roaring.h:144</a></div></div>
+<div class="ttc" id="aroaring_8h_html_aeb2bce70178e0d7ba0096eb96beed660"><div class="ttname"><a href="dc/d56/roaring_8h.html#aeb2bce70178e0d7ba0096eb96beed660">roaring_bitmap_printf</a></div><div class="ttdeci">void roaring_bitmap_printf(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_aec401e111190871fb95faaa0e4d66757"><div class="ttname"><a href="dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a></div><div class="ttdeci">bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it)</div></div>
+<div class="ttc" id="aroaring_8h_html_af85d814ca8a6cd369905f629922c1c98"><div class="ttname"><a href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a></div><div class="ttdeci">void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x)</div></div>
+<div class="ttc" id="astructroaring__bitmap__s_html"><div class="ttname"><a href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_s</a></div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00026">roaring.h:26</a></div></div>
+<div class="ttc" id="astructroaring__uint32__iterator__s_html"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_s</a></div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00960">roaring.h:960</a></div></div>
+<div class="ttc" id="astructroaring__uint32__iterator__s_html_a99e95f8cbd08320c6ac27b1569ca6bb4"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">roaring_uint32_iterator_s::has_value</a></div><div class="ttdeci">bool has_value</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00969">roaring.h:969</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md13"></a>
 Compressed 64-bit Roaring bitmaps (C)</h1>
 <p>We also support efficient 64-bit compressed bitmaps in C:</p>
@@ -448,18 +480,18 @@ Conventional bitsets (C)</h1>
 <div class="line"><span class="comment">// bitsets_disjoint</span></div>
 <div class="line"><span class="comment">// bitsets_intersect</span></div>
 </div><!-- fragment --><p>In some instances, you may want to convert a Roaring bitmap into a conventional (uncompressed) bitset. Indeed, bitsets have advantages such as higher query performances in some cases. The following code illustrates how you may do so:</p>
-<div class="fragment"><div class="line">roaring_bitmap_t *r1 = roaring_bitmap_create();</div>
+<div class="fragment"><div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r1 = <a class="code" href="dc/d56/roaring_8h.html#a46ca47f47e474b348fbc412ba74d2d77">roaring_bitmap_create</a>();</div>
 <div class="line"><span class="keywordflow">for</span> (uint32_t i = 100; i &lt; 100000; i+= 1 + (i%5)) {</div>
-<div class="line"> roaring_bitmap_add(r1, i);</div>
+<div class="line"> <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
 <div class="line">}</div>
 <div class="line"><span class="keywordflow">for</span> (uint32_t i = 100000; i &lt; 500000; i+= 100) {</div>
-<div class="line"> roaring_bitmap_add(r1, i);</div>
+<div class="line"> <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
 <div class="line">}</div>
-<div class="line">roaring_bitmap_add_range(r1, 500000, 600000);</div>
+<div class="line"><a class="code" href="dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range</a>(r1, 500000, 600000);</div>
 <div class="line">bitset_t * bitset = bitset_create();</div>
-<div class="line"><span class="keywordtype">bool</span> success = roaring_bitmap_to_bitset(r1, bitset);</div>
+<div class="line"><span class="keywordtype">bool</span> success = <a class="code" href="dc/d56/roaring_8h.html#a981ceddb33269e47cc3c61b9bf71a450">roaring_bitmap_to_bitset</a>(r1, bitset);</div>
 <div class="line">assert(success); <span class="comment">// could fail due to memory allocation.</span></div>
-<div class="line">assert(bitset_count(bitset) == roaring_bitmap_get_cardinality(r1));</div>
+<div class="line">assert(bitset_count(bitset) == <a class="code" href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a>(r1));</div>
 <div class="line"><span class="comment">// You can then query the bitset:</span></div>
 <div class="line"><span class="keywordflow">for</span> (uint32_t i = 100; i &lt; 100000; i+= 1 + (i%5)) {</div>
 <div class="line">    assert(bitset_get(bitset,i));</div>
@@ -469,7 +501,9 @@ Conventional bitsets (C)</h1>
 <div class="line">}</div>
 <div class="line"><span class="comment">// you must free the memory:</span></div>
 <div class="line">bitset_free(bitset);</div>
-<div class="line">roaring_bitmap_free(r1);</div>
+<div class="line"><a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r1);</div>
+<div class="ttc" id="aroaring_8h_html_a981ceddb33269e47cc3c61b9bf71a450"><div class="ttname"><a href="dc/d56/roaring_8h.html#a981ceddb33269e47cc3c61b9bf71a450">roaring_bitmap_to_bitset</a></div><div class="ttdeci">bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset)</div></div>
+<div class="ttc" id="aroaring_8h_html_ab3a666ebfe5de619bd334b9ebe059d73"><div class="ttname"><a href="dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range</a></div><div class="ttdeci">void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min, uint64_t max)</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00388">roaring.h:388</a></div></div>
 </div><!-- fragment --><p>You should be aware that a convention bitset (<code>bitset_t *</code>) may use much more memory than a Roaring bitmap in some cases. You should run benchmarks to determine whether the conversion to a bitset has performance benefits in your case.</p>
 <h1><a class="anchor" id="autotoc_md15"></a>
 Example (C++)</h1>
@@ -657,30 +691,31 @@ Thread safety</h1>
 <li>If you use copy-on-write, you should always pass copies to the different threads. The copies and then lightweight (shared containers).</li>
 </ul>
 <p>Thus the following pattern where you copy bitmaps and pass them to different threads is safe with or without COW:</p>
-<div class="fragment"><div class="line">roaring_bitmap_set_copy_on_write(r1, <span class="keyword">true</span>);</div>
-<div class="line">roaring_bitmap_set_copy_on_write(r2, <span class="keyword">true</span>);</div>
-<div class="line">roaring_bitmap_set_copy_on_write(r3, <span class="keyword">true</span>);</div>
+<div class="fragment"><div class="line"><a class="code" href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a>(r1, <span class="keyword">true</span>);</div>
+<div class="line"><a class="code" href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a>(r2, <span class="keyword">true</span>);</div>
+<div class="line"><a class="code" href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a>(r3, <span class="keyword">true</span>);</div>
 <div class="line"> </div>
-<div class="line">roaring_bitmap_t * r1a = roaring_bitmap_copy(r1);</div>
-<div class="line">roaring_bitmap_t * r1b = roaring_bitmap_copy(r1);</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> * r1a = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r1);</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> * r1b = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r1);</div>
 <div class="line"> </div>
-<div class="line">roaring_bitmap_t * r2a = roaring_bitmap_copy(r2);</div>
-<div class="line">roaring_bitmap_t * r2b = roaring_bitmap_copy(r2);</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> * r2a = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r2);</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> * r2b = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r2);</div>
 <div class="line"> </div>
-<div class="line">roaring_bitmap_t * r3a = roaring_bitmap_copy(r3);</div>
-<div class="line">roaring_bitmap_t * r3b = roaring_bitmap_copy(r3);</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> * r3a = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r3);</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> * r3b = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(r3);</div>
 <div class="line"> </div>
-<div class="line">roaring_bitmap_t *rarray1[3] = {r1a, r2a, r3a};</div>
-<div class="line">roaring_bitmap_t *rarray2[3] = {r1b, r2b, r3b};</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *rarray1[3] = {r1a, r2a, r3a};</div>
+<div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *rarray2[3] = {r1b, r2b, r3b};</div>
 <div class="line">std::thread thread1(run, rarray1);</div>
 <div class="line">std::thread thread2(run, rarray2);</div>
+<div class="ttc" id="aroaring_8h_html_a84bd77c991d7520ab336433b3dff4cf5"><div class="ttname"><a href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a></div><div class="ttdeci">void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r, bool cow)</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00087">roaring.h:87</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md22"></a>
 How to best aggregate bitmaps?</h1>
 <p>Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many different strategies.</p>
 <p>You can use <code>roaring_bitmap_or_many(bitmapcount, bitmaps)</code> or <code>roaring_bitmap_or_many_heap(bitmapcount, bitmaps)</code> or you may even roll your own aggregation:</p>
-<div class="fragment"><div class="line">roaring_bitmap_t *answer = roaring_bitmap_copy(bitmaps[0]);</div>
+<div class="fragment"><div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *answer = <a class="code" href="dc/d56/roaring_8h.html#a8ab9957bc9370c641322ce182a91bbd2">roaring_bitmap_copy</a>(bitmaps[0]);</div>
 <div class="line"><span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 1; i &lt; bitmapcount; i++) {</div>
-<div class="line">  roaring_bitmap_or_inplace(answer, bitmaps[i]);</div>
+<div class="line">  <a class="code" href="dc/d56/roaring_8h.html#aa76a1e1fb5d1dcf88931aa7cd3961d1f">roaring_bitmap_or_inplace</a>(answer, bitmaps[i]);</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>All of them will work but they have different performance characteristics. The <code>roaring_bitmap_or_many_heap</code> should probably only be used if, after benchmarking, you find that it is faster by a good margin: it uses more memory.</p>
 <p>The <code>roaring_bitmap_or_many</code> is meant as a good default. It works by trying to delay work as much as possible. However, because it delays computations, it also does not optimize the format as the computation runs. It might thus fail to see some useful pattern in the data such as long consecutive values.</p>

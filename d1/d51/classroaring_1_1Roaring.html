@@ -310,6 +310,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00074">74</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a61f87bdea50d8e30e9b9615356c8bfd8">roaring_bitmap_init_cleared()</a>.</p>
+
 </div>
 </div>
 <a id="a799fbdbf362d43833dce223b43248dea"></a>
@@ -348,6 +350,8 @@ Public Attributes</h2></td></tr>
 <p>Construct a bitmap from a list of 32-bit integer values. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00083">83</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a66c267716a36f31756e29a96dee20f6d">roaring_bitmap_add_many()</a>.</p>
 
 </div>
 </div>
@@ -407,7 +411,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00098">98</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a491b63c05555f770b04b1dc81d6523c1">roaring_bitmap_get_copy_on_write()</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a4d0a6fe3ad2b4142452b0f279bc77642">roaring_bitmap_overwrite()</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -437,6 +441,8 @@ Public Attributes</h2></td></tr>
 <p>Move constructor. The moved-from object remains valid but empty, i.e. it behaves as though it was just freshly constructed. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00110">110</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a61f87bdea50d8e30e9b9615356c8bfd8">roaring_bitmap_init_cleared()</a>.</p>
 
 </div>
 </div>
@@ -492,9 +498,11 @@ Public Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Destructor. By contract, calling roaring_bitmap_clear() is enough to release all auxiliary memory used by the structure. </p>
+<p>Destructor. By contract, calling <a class="el" href="../../dc/d56/roaring_8h.html#a2916e66c2048b9ae08ef25e80f11e37d">roaring_bitmap_clear()</a> is enough to release all auxiliary memory used by the structure. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00277">277</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a2916e66c2048b9ae08ef25e80f11e37d">roaring_bitmap_clear()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free()</a>.</p>
 
 </div>
 </div>
@@ -525,6 +533,8 @@ Public Attributes</h2></td></tr>
 <p>Add value x </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00158">158</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a7e4e487b5527decc51069135b9d1a0b3">roaring::Roaring64Map::add()</a>, and <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a5e297902e9c95a996b12f1d6f1abbf31">bitmapOf()</a>.</p>
 
@@ -568,6 +578,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00198">198</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a644665c8891df9d072664c564e1ab49c">roaring_bitmap_add_bulk()</a>.</p>
+
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a9135b2e9c2453c947b1634485443e1af">roaring::Roaring64Map::addMany()</a>.</p>
 
 </div>
@@ -598,6 +610,8 @@ Public Attributes</h2></td></tr>
 <p>Add value x Returns true if a new value was added, false if the value was already existing. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00165">165</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a0c7bf3ea34b89f92c57f8f6a47751ede">roaring_bitmap_add_checked()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#affc39bb069b1cfee9384def30036c6aa">roaring::Roaring64Map::addChecked()</a>.</p>
 
@@ -640,6 +654,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00186">186</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a66c267716a36f31756e29a96dee20f6d">roaring_bitmap_add_many()</a>.</p>
+
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a008cd821bbed2e2168353cbf495d1c40">roaring::Roaring64Map::addMany()</a>, and <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a43bc331cee0889b2ae0d1cd3f85ac10f">bitmapOfList()</a>.</p>
 
 </div>
@@ -681,6 +697,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00172">172</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range()</a>.</p>
+
 </div>
 </div>
 <a id="a31bc793317a074586e90ac3a4be051d7"></a>
@@ -720,6 +738,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00179">179</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a0f06fc10964f5683ad634af54a2dad98">roaring_bitmap_add_range_closed()</a>.</p>
+
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#af19c3ba0265150648628b7b83b035b87">roaring::Roaring64Map::addRangeClosed()</a>.</p>
 
 </div>
@@ -751,6 +771,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00504">504</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#ac461456936827f17e85adc725dffdaf5">roaring_bitmap_and_cardinality()</a>.</p>
+
 </div>
 </div>
 <a id="a9ed24a219840a0fb414e3f3373a25d95"></a>
@@ -779,6 +801,8 @@ Public Attributes</h2></td></tr>
 <p>Computes the size of the difference (andnot) between two bitmaps. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00536">536</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a98f7c61498ecace6a4af136d0ba093aa">roaring_bitmap_andnot_cardinality()</a>.</p>
 
 </div>
 </div>
@@ -909,6 +933,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00385">385</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality()</a>.</p>
+
 </div>
 </div>
 <a id="aa2e9462ac7abb7a4cc2e783c54a9e87d"></a>
@@ -937,6 +963,8 @@ Public Attributes</h2></td></tr>
 <p>Check if value x is present </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00262">262</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains()</a>.</p>
 
 </div>
 </div>
@@ -978,6 +1006,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00210">210</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a135778147691a0c8ae7249bb3eb0f099">roaring_bitmap_contains_bulk()</a>.</p>
+
 </div>
 </div>
 <a id="a57363257f4583165b9ba2bfc20424eef"></a>
@@ -1016,6 +1046,8 @@ Public Attributes</h2></td></tr>
 <p>Check if all values from x (included) to y (excluded) are present </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00269">269</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a67e51796607f3609c5d018c0e98d284a">roaring_bitmap_contains_range()</a>.</p>
 
 </div>
 </div>
@@ -1084,7 +1116,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00853">853</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a21d0f9d97d392aac2b4cac9eaa7f8048">roaring_bitmap_or_many()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -1125,6 +1157,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00437">437</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a17d8bbc313ddf5be18802f60dd4ed77f">roaring_bitmap_flip_inplace()</a>.</p>
+
 </div>
 </div>
 <a id="a8d4ab1c04a7dc9020001b9006d8e5476"></a>
@@ -1163,6 +1197,8 @@ Public Attributes</h2></td></tr>
 <p>Compute the negation of the roaring bitmap within the closed interval [range_start, range_end]. Areas outside the interval are unchanged. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00445">445</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a17d8bbc313ddf5be18802f60dd4ed77f">roaring_bitmap_flip_inplace()</a>.</p>
 
 </div>
 </div>
@@ -1203,7 +1239,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00706">706</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a8abaecb836163c0b0c81912975a18a3f">roaring_bitmap_frozen_view()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a8e841864dcba989a6d469cbc26d6a23a">roaring::Roaring64Map::frozenView()</a>.</p>
 
@@ -1235,6 +1271,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00844">844</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a491b63c05555f770b04b1dc81d6523c1">roaring_bitmap_get_copy_on_write()</a>.</p>
+
 </div>
 </div>
 <a id="a0b3ab3f5da48d69f43a85b21c8f6196b"></a>
@@ -1262,6 +1300,8 @@ Public Attributes</h2></td></tr>
 <p>For advanced users. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00742">742</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45ee2d20cf5c40d9898c88a8320f136b">roaring_bitmap_frozen_size_in_bytes()</a>.</p>
 
 </div>
 </div>
@@ -1292,6 +1332,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00577">577</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#ab8119688c132cae9e9e97fc933bdf92e">roaring_bitmap_get_index()</a>.</p>
+
 </div>
 </div>
 <a id="aa879e2858a0b55c702131fe9554c2637"></a>
@@ -1321,6 +1363,8 @@ Public Attributes</h2></td></tr>
 <p>Setting the portable flag to false enable a custom format that can save space compared to the portable format (e.g., for very sparse bitmaps). </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00694">694</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a56663517d4387a41f457b61ed7efac4c">roaring_bitmap_size_in_bytes()</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#acf8aecabd7e1542c63b76861cb103691">roaring::Roaring64Map::portableDeserializeFrozen()</a>, <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a8fb0ab5d74212c781ba42e37412ac396">roaring::Roaring64Map::read()</a>, and <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a7d794469dbb843482fd3ac9ed7aba609">roaring::Roaring64Map::readSafe()</a>.</p>
 
@@ -1353,6 +1397,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00511">511</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a29624fedd47210cdb2aa3d5cae36b439">roaring_bitmap_intersect()</a>.</p>
+
 </div>
 </div>
 <a id="ac3f8cb65dabb943bab59aa8e2441faad"></a>
@@ -1380,6 +1426,8 @@ Public Attributes</h2></td></tr>
 <p>Returns true if the bitmap is empty (cardinality is zero). </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00392">392</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a6fa6da5896222a61bb42c692fce03372">roaring_bitmap_is_empty()</a>.</p>
 
 </div>
 </div>
@@ -1410,6 +1458,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00406">406</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a8e20dbeb65d1c31c64c1f39112f25bbe">roaring_bitmap_is_strict_subset()</a>.</p>
+
 </div>
 </div>
 <a id="ae54cf23d5f1b327fb13fab83800d88f3"></a>
@@ -1438,6 +1488,8 @@ Public Attributes</h2></td></tr>
 <p>Returns true if the bitmap is subset of the other. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00399">399</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a9fdc6af1c9980831703fbdc4b25e5a6c">roaring_bitmap_is_subset()</a>.</p>
 
 </div>
 </div>
@@ -1479,6 +1531,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00485">485</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5ea3f16e31066414ae7f3d0526030781">roaring_iterate()</a>.</p>
+
 </div>
 </div>
 <a id="add2c2d7d75b08900498ee7744a61a210"></a>
@@ -1509,6 +1563,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00522">522</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a53202e64cf7f07dc53419ceee15094fe">roaring_bitmap_jaccard_index()</a>.</p>
+
 </div>
 </div>
 <a id="af7029f92076b5b7ea9ddc4bc3551dcd9"></a>
@@ -1537,6 +1593,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00248">248</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aaf36975bb1cb6949e4f7812620c8e489">roaring_bitmap_maximum()</a>.</p>
+
 </div>
 </div>
 <a id="adc787c794380d50e2ee1e31e81017240"></a>
@@ -1564,6 +1622,8 @@ Public Attributes</h2></td></tr>
 <p>Return the smallest value (if not empty) </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00255">255</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#af51452ca175a60a1f5cc0255a529cb7b">roaring_bitmap_minimum()</a>.</p>
 
 </div>
 </div>
@@ -1595,7 +1655,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00756">756</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a00421552b0fd562e676e562d314f1f2b">roaring_bitmap_and()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -1627,6 +1687,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00340">340</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a3db3f5d33cf464ea2b42db9569303fab">roaring_bitmap_and_inplace()</a>.</p>
+
 </div>
 </div>
 <a id="a012c91164e662be8bcf2a5f46bdbfe87"></a>
@@ -1656,7 +1718,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00769">769</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#ac601a4cf264975808ba66acf22329e0c">roaring_bitmap_andnot()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -1687,6 +1749,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00350">350</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a0d2c947c99abbb3a96419fa54b59a1f1">roaring_bitmap_andnot_inplace()</a>.</p>
+
 </div>
 </div>
 <a id="a9c5310aaf3de75b9d80c8a0780157350"></a>
@@ -1716,7 +1780,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00299">299</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a491b63c05555f770b04b1dc81d6523c1">roaring_bitmap_get_copy_on_write()</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a4d0a6fe3ad2b4142452b0f279bc77642">roaring_bitmap_overwrite()</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -1746,6 +1810,8 @@ Public Attributes</h2></td></tr>
 <p>Moves the content of the provided bitmap, and discard the current content. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00312">312</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a2916e66c2048b9ae08ef25e80f11e37d">roaring_bitmap_clear()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a61f87bdea50d8e30e9b9615356c8bfd8">roaring_bitmap_init_cleared()</a>.</p>
 
 </div>
 </div>
@@ -1807,6 +1873,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00429">429</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals()</a>.</p>
+
 </div>
 </div>
 <a id="ad119231c3ae35decc73e1cc9168f6157"></a>
@@ -1836,7 +1904,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00795">795</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#aa65647d08ab896055519de308a513e77">roaring_bitmap_xor()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -1867,6 +1935,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00372">372</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a4eb22c2860d271742c9ead0856b30c71">roaring_bitmap_xor_inplace()</a>.</p>
+
 </div>
 </div>
 <a id="a4f781a37ba74f8c09c51135ce01be6b1"></a>
@@ -1896,7 +1966,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00782">782</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a527a8b7b1fe19b4aaf1533e7ca9283f8">roaring_bitmap_or()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 </div>
 </div>
@@ -1928,6 +1998,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00362">362</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa76a1e1fb5d1dcf88931aa7cd3961d1f">roaring_bitmap_or_inplace()</a>.</p>
+
 </div>
 </div>
 <a id="a36e0af9c1767b6d4f9a7a1ff624ab690"></a>
@@ -1956,6 +2028,8 @@ Public Attributes</h2></td></tr>
 <p>Computes the size of the union between two bitmaps. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00529">529</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a3fb75ea5b6ef44ae1c94591ec7d34b65">roaring_bitmap_or_cardinality()</a>.</p>
 
 </div>
 </div>
@@ -1986,7 +2060,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00721">721</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ab947d795184f735a184b7a27ad76ec64">roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a769a0bcbd15ebc689e302b3b2194ef7d">roaring_bitmap_portable_deserialize_frozen()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#acf8aecabd7e1542c63b76861cb103691">roaring::Roaring64Map::portableDeserializeFrozen()</a>.</p>
 
@@ -2017,6 +2091,8 @@ Public Attributes</h2></td></tr>
 <p>Print the content of the bitmap </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00813">813</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aeb2bce70178e0d7ba0096eb96beed660">roaring_bitmap_printf()</a>.</p>
 
 </div>
 </div>
@@ -2063,6 +2139,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00421">421</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a48b73721e801bee831cb7b2872cf0a29">roaring_bitmap_range_uint32_array()</a>.</p>
+
 </div>
 </div>
 <a id="a1e6c5beddebe4a2f4b1af1ca83463e7b"></a>
@@ -2091,6 +2169,8 @@ Public Attributes</h2></td></tr>
 <p>Returns the number of integers that are smaller or equal to x. Thus the rank of the smallest element is one. If x is smaller than the smallest element, this function will return 0. The rank and select functions differ in convention: this function returns 1 when ranking the smallest value, but the select function returns the smallest value when using index 0. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00556">556</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa8159988f65fa955b6e90069006af859">roaring_bitmap_rank()</a>.</p>
 
 </div>
 </div>
@@ -2137,6 +2217,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00565">565</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa1ec1a6dca94afc4bebd39d86e799395">roaring_bitmap_rank_many()</a>.</p>
+
 </div>
 </div>
 <a id="a49f4dc67b6f3522a4f33051b1fc5d427"></a>
@@ -2179,7 +2261,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00644">644</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a6f76e4fc60ece2e58715254c736270a5">roaring_bitmap_deserialize()</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a92f9603d4e927f551ab888ba0461be1c">roaring_bitmap_portable_deserialize()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a8fb0ab5d74212c781ba42e37412ac396">roaring::Roaring64Map::read()</a>.</p>
 
@@ -2223,7 +2305,7 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00677">677</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
+<p class="reference">References <a class="el" href="../../d6/d7d/classroaring_1_1BulkContext.html#a7556a4b61235a319de80e9b7b503fe63">roaring::BulkContext::Roaring</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe()</a>, and <a class="el" href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a>.</p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a7d794469dbb843482fd3ac9ed7aba609">roaring::Roaring64Map::readSafe()</a>.</p>
 
@@ -2256,6 +2338,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00218">218</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a7d8cab9c84f67c8deed8836a8eef712b">roaring_bitmap_remove()</a>.</p>
+
 </div>
 </div>
 <a id="a9c3d950a53537568aba6cf4f89a06062"></a>
@@ -2284,6 +2368,8 @@ Public Attributes</h2></td></tr>
 <p>Remove value x Returns true if a new value was removed, false if the value was not existing. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00227">227</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#adaee041b6dc87876e5456c49d96ee5b1">roaring_bitmap_remove_checked()</a>.</p>
 
 </div>
 </div>
@@ -2324,6 +2410,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00234">234</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a648e6a546a88667120bf5bfd3a1dd632">roaring_bitmap_remove_range()</a>.</p>
+
 </div>
 </div>
 <a id="affc9d12a9aff3fd080903d8897705358"></a>
@@ -2363,6 +2451,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00241">241</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a89e082a93608a752f763e8aee5df8082">roaring_bitmap_remove_range_closed()</a>.</p>
+
 </div>
 </div>
 <a id="a5ab2a0a8fb23d5600a2b73009a362f5d"></a>
@@ -2391,6 +2481,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00454">454</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5bdd7bac04c54bca69caa27c9a72d007">roaring_bitmap_remove_run_compression()</a>.</p>
+
 </div>
 </div>
 <a id="a4e03658d632048ae3814ffc6ac538c93"></a>
@@ -2418,6 +2510,8 @@ Public Attributes</h2></td></tr>
 <p>Convert array and bitmap containers to run containers when it is more efficient; also convert from run containers when more space efficient. Returns true if the result has at least one run container. Additional savings might be possible by calling <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a0c6e9b2d99fb23eeb5515e7f5a05f20c">shrinkToFit()</a>. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00464">464</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a3a71a1bef6c0233c93caabfd8db22c2a">roaring_bitmap_run_optimize()</a>.</p>
 
 </div>
 </div>
@@ -2459,6 +2553,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00497">497</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a01266ff2d52916b16d3bde5bed8f3677">roaring_bitmap_select()</a>.</p>
+
 </div>
 </div>
 <a id="ad59939f1fbfc88a1e7a9bd6224d22ed8"></a>
@@ -2488,6 +2584,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00806">806</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write()</a>.</p>
+
 </div>
 </div>
 <a id="a0c6e9b2d99fb23eeb5515e7f5a05f20c"></a>
@@ -2515,6 +2613,8 @@ Public Attributes</h2></td></tr>
 <p>If needed, reallocate memory to shrink the memory usage. Returns the number of bytes saved. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00472">472</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a18d50c48c536cabe4632fc7e2fafd2ef">roaring_bitmap_shrink_to_fit()</a>.</p>
 
 </div>
 </div>
@@ -2602,6 +2702,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00415">415</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a4b15efab08a78a20645a96d9a69ad587">roaring_bitmap_to_uint32_array()</a>.</p>
+
 </div>
 </div>
 <a id="a305434227cedd4587679d67e0435bc5f"></a>
@@ -2669,6 +2771,8 @@ Public Attributes</h2></td></tr>
 </pre> 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00620">620</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a14ca6fb130b35a5497f2b1e463bda66d">roaring_bitmap_portable_serialize()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#ac3f780d854eef42ccf7cee7332c7fb37">roaring_bitmap_serialize()</a>.</p>
+
 </div>
 </div>
 <a id="a9a8e3442abe87e7049ad23ab4f4a45ad"></a>
@@ -2698,6 +2802,8 @@ Public Attributes</h2></td></tr>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00735">735</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
 
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a64493674546039de39dd74e66a2a1dd8">roaring_bitmap_frozen_serialize()</a>.</p>
+
 </div>
 </div>
 <a id="a100c76d9bb4064eeab95ffd5e44d6629"></a>
@@ -2726,6 +2832,8 @@ Public Attributes</h2></td></tr>
 <p>Computes the size of the symmetric difference (andnot) between two bitmaps. </p>
 
 <p class="definition">Definition at line <a class="el" href="../../db/d6e/roaring_8hh_source.html#l00544">544</a> of file <a class="el" href="../../db/d6e/roaring_8hh_source.html">roaring.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a953a31622e8ded6e92758fb259f28a86">roaring_bitmap_xor_cardinality()</a>.</p>
 
 </div>
 </div>

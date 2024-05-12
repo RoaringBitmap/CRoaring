@@ -124,7 +124,7 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l00039"></a><span class="lineno"><a class="line" href="../../dc/db7/namespaceroaring.html#af70fe556c9f0854ff52cbd0519907298">   39</a></span>&#160;    <a class="code" href="../../dc/db7/namespaceroaring.html#af70fe556c9f0854ff52cbd0519907298">Roaring64MapSetBitForwardIterator</a>;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno"><a class="line" href="../../d4/dcf/classroaring_1_1Roaring64Map.html">   41</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../d4/dcf/classroaring_1_1Roaring64Map.html">Roaring64Map</a> {</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">typedef</span> api::roaring_bitmap_t roaring_bitmap_t;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">api::roaring_bitmap_t</a> roaring_bitmap_t;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;   <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831">   48</a></span>&#160;    <a class="code" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a2bb7b3003c46af5e5fdc20e58d776831">Roaring64Map</a>() = <span class="keywordflow">default</span>;</div>
@@ -928,7 +928,7 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01044"></a><span class="lineno"><a class="line" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#ae5d56a187810e7fd1cef36f80c2a67f1"> 1044</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#ae5d56a187810e7fd1cef36f80c2a67f1">iterate</a>(api::roaring_iterator64 iterator, <span class="keywordtype">void</span> *ptr)<span class="keyword"> const </span>{</div>
 <div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span> &amp;map_entry : roarings) {</div>
 <div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;            <span class="keywordtype">bool</span> should_continue =</div>
-<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;                roaring_iterate64(&amp;map_entry.second.roaring, iterator,</div>
+<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;                <a class="code" href="../../dc/d56/roaring_8h.html#a29ac102977f4d93063ef0737e313bc45">roaring_iterate64</a>(&amp;map_entry.second.roaring, iterator,</div>
 <div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;                                  uint64_t(map_entry.first) &lt;&lt; 32, ptr);</div>
 <div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;            <span class="keywordflow">if</span> (!should_continue) {</div>
 <div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;                <span class="keywordflow">break</span>;</div>
@@ -1341,7 +1341,7 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01546"></a><span class="lineno"> 1546</span>&#160;            }</div>
 <div class="line"><a name="l01547"></a><span class="lineno"> 1547</span>&#160; </div>
 <div class="line"><a name="l01548"></a><span class="lineno"> 1548</span>&#160;            <span class="comment">// Use the fast inner union to combine these.</span></div>
-<div class="line"><a name="l01549"></a><span class="lineno"> 1549</span>&#160;            <span class="keyword">auto</span> *inner_result = roaring_bitmap_or_many(group_bitmaps.size(),</div>
+<div class="line"><a name="l01549"></a><span class="lineno"> 1549</span>&#160;            <span class="keyword">auto</span> *inner_result = <a class="code" href="../../dc/d56/roaring_8h.html#a21d0f9d97d392aac2b4cac9eaa7f8048">roaring_bitmap_or_many</a>(group_bitmaps.size(),</div>
 <div class="line"><a name="l01550"></a><span class="lineno"> 1550</span>&#160;                                                        group_bitmaps.data());</div>
 <div class="line"><a name="l01551"></a><span class="lineno"> 1551</span>&#160;            <span class="comment">// Insert the 32-bit result at end of the &#39;roarings&#39; map of the</span></div>
 <div class="line"><a name="l01552"></a><span class="lineno"> 1552</span>&#160;            <span class="comment">// result we are building.</span></div>
@@ -1495,11 +1495,11 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01729"></a><span class="lineno"> 1729</span>&#160;            map_iter = p-&gt;cend();</div>
 <div class="line"><a name="l01730"></a><span class="lineno"> 1730</span>&#160;        } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l01731"></a><span class="lineno"> 1731</span>&#160;            map_iter = parent.roarings.cbegin();</div>
-<div class="line"><a name="l01732"></a><span class="lineno"> 1732</span>&#160;            roaring_iterator_init(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01732"></a><span class="lineno"> 1732</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01733"></a><span class="lineno"> 1733</span>&#160;            <span class="keywordflow">while</span> (!i.has_value) {</div>
 <div class="line"><a name="l01734"></a><span class="lineno"> 1734</span>&#160;                map_iter++;</div>
 <div class="line"><a name="l01735"></a><span class="lineno"> 1735</span>&#160;                <span class="keywordflow">if</span> (map_iter == p-&gt;cend()) <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l01736"></a><span class="lineno"> 1736</span>&#160;                roaring_iterator_init(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01736"></a><span class="lineno"> 1736</span>&#160;                <a class="code" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01737"></a><span class="lineno"> 1737</span>&#160;            }</div>
 <div class="line"><a name="l01738"></a><span class="lineno"> 1738</span>&#160;        }</div>
 <div class="line"><a name="l01739"></a><span class="lineno"> 1739</span>&#160;    }</div>
@@ -1533,22 +1533,22 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01770"></a><span class="lineno"> 1770</span>&#160;    }</div>
 <div class="line"><a name="l01771"></a><span class="lineno"> 1771</span>&#160; </div>
 <div class="line"><a name="l01772"></a><span class="lineno"><a class="line" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac92da32727aed2510ef723af5b1116de"> 1772</a></span>&#160;    <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html">type_of_iterator</a> &amp;<a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac92da32727aed2510ef723af5b1116de">operator++</a>() {  <span class="comment">// ++i, must returned inc. value</span></div>
-<div class="line"><a name="l01773"></a><span class="lineno"> 1773</span>&#160;        <span class="keywordflow">if</span> (i.has_value == <span class="keyword">true</span>) roaring_uint32_iterator_advance(&amp;i);</div>
+<div class="line"><a name="l01773"></a><span class="lineno"> 1773</span>&#160;        <span class="keywordflow">if</span> (i.has_value == <span class="keyword">true</span>) <a class="code" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a>(&amp;i);</div>
 <div class="line"><a name="l01774"></a><span class="lineno"> 1774</span>&#160;        <span class="keywordflow">while</span> (!i.has_value) {</div>
 <div class="line"><a name="l01775"></a><span class="lineno"> 1775</span>&#160;            ++map_iter;</div>
 <div class="line"><a name="l01776"></a><span class="lineno"> 1776</span>&#160;            <span class="keywordflow">if</span> (map_iter == p-&gt;cend()) <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l01777"></a><span class="lineno"> 1777</span>&#160;            roaring_iterator_init(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01777"></a><span class="lineno"> 1777</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01778"></a><span class="lineno"> 1778</span>&#160;        }</div>
 <div class="line"><a name="l01779"></a><span class="lineno"> 1779</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l01780"></a><span class="lineno"> 1780</span>&#160;    }</div>
 <div class="line"><a name="l01781"></a><span class="lineno"> 1781</span>&#160; </div>
 <div class="line"><a name="l01782"></a><span class="lineno"><a class="line" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a0416282aa655d3c59d2d7acd5ffa30a6"> 1782</a></span>&#160;    <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html">type_of_iterator</a> <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a0416282aa655d3c59d2d7acd5ffa30a6">operator++</a>(<span class="keywordtype">int</span>) {  <span class="comment">// i++, must return orig. value</span></div>
 <div class="line"><a name="l01783"></a><span class="lineno"> 1783</span>&#160;        <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html">Roaring64MapSetBitBiDirectionalIterator</a> orig(*<span class="keyword">this</span>);</div>
-<div class="line"><a name="l01784"></a><span class="lineno"> 1784</span>&#160;        roaring_uint32_iterator_advance(&amp;i);</div>
+<div class="line"><a name="l01784"></a><span class="lineno"> 1784</span>&#160;        <a class="code" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a>(&amp;i);</div>
 <div class="line"><a name="l01785"></a><span class="lineno"> 1785</span>&#160;        <span class="keywordflow">while</span> (!i.has_value) {</div>
 <div class="line"><a name="l01786"></a><span class="lineno"> 1786</span>&#160;            ++map_iter;</div>
 <div class="line"><a name="l01787"></a><span class="lineno"> 1787</span>&#160;            <span class="keywordflow">if</span> (map_iter == p-&gt;cend()) <span class="keywordflow">return</span> orig;</div>
-<div class="line"><a name="l01788"></a><span class="lineno"> 1788</span>&#160;            roaring_iterator_init(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01788"></a><span class="lineno"> 1788</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01789"></a><span class="lineno"> 1789</span>&#160;        }</div>
 <div class="line"><a name="l01790"></a><span class="lineno"> 1790</span>&#160;        <span class="keywordflow">return</span> orig;</div>
 <div class="line"><a name="l01791"></a><span class="lineno"> 1791</span>&#160;    }</div>
@@ -1556,14 +1556,14 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01793"></a><span class="lineno"><a class="line" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a54e84a33347ef2821707bb5b54a32f88"> 1793</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a54e84a33347ef2821707bb5b54a32f88">move</a>(<span class="keyword">const</span> <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000">value_type</a> &amp;x) {</div>
 <div class="line"><a name="l01794"></a><span class="lineno"> 1794</span>&#160;        map_iter = p-&gt;lower_bound(Roaring64Map::highBytes(x));</div>
 <div class="line"><a name="l01795"></a><span class="lineno"> 1795</span>&#160;        <span class="keywordflow">if</span> (map_iter != p-&gt;cend()) {</div>
-<div class="line"><a name="l01796"></a><span class="lineno"> 1796</span>&#160;            roaring_iterator_init(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01796"></a><span class="lineno"> 1796</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01797"></a><span class="lineno"> 1797</span>&#160;            <span class="keywordflow">if</span> (map_iter-&gt;first == Roaring64Map::highBytes(x)) {</div>
-<div class="line"><a name="l01798"></a><span class="lineno"> 1798</span>&#160;                <span class="keywordflow">if</span> (roaring_uint32_iterator_move_equalorlarger(</div>
+<div class="line"><a name="l01798"></a><span class="lineno"> 1798</span>&#160;                <span class="keywordflow">if</span> (<a class="code" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger</a>(</div>
 <div class="line"><a name="l01799"></a><span class="lineno"> 1799</span>&#160;                        &amp;i, Roaring64Map::lowBytes(x)))</div>
 <div class="line"><a name="l01800"></a><span class="lineno"> 1800</span>&#160;                    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01801"></a><span class="lineno"> 1801</span>&#160;                ++map_iter;</div>
 <div class="line"><a name="l01802"></a><span class="lineno"> 1802</span>&#160;                <span class="keywordflow">if</span> (map_iter == p-&gt;cend()) <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a name="l01803"></a><span class="lineno"> 1803</span>&#160;                roaring_iterator_init(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01803"></a><span class="lineno"> 1803</span>&#160;                <a class="code" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01804"></a><span class="lineno"> 1804</span>&#160;            }</div>
 <div class="line"><a name="l01805"></a><span class="lineno"> 1805</span>&#160;            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l01806"></a><span class="lineno"> 1806</span>&#160;        }</div>
@@ -1573,15 +1573,15 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01810"></a><span class="lineno"><a class="line" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a16659fff311adc780897752bf0150dc1"> 1810</a></span>&#160;    <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html">type_of_iterator</a> &amp;<a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a16659fff311adc780897752bf0150dc1">operator--</a>() {  <span class="comment">//  --i, must return dec.value</span></div>
 <div class="line"><a name="l01811"></a><span class="lineno"> 1811</span>&#160;        <span class="keywordflow">if</span> (map_iter == p-&gt;cend()) {</div>
 <div class="line"><a name="l01812"></a><span class="lineno"> 1812</span>&#160;            --map_iter;</div>
-<div class="line"><a name="l01813"></a><span class="lineno"> 1813</span>&#160;            roaring_iterator_init_last(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01813"></a><span class="lineno"> 1813</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01814"></a><span class="lineno"> 1814</span>&#160;            <span class="keywordflow">if</span> (i.has_value) <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l01815"></a><span class="lineno"> 1815</span>&#160;        }</div>
 <div class="line"><a name="l01816"></a><span class="lineno"> 1816</span>&#160; </div>
-<div class="line"><a name="l01817"></a><span class="lineno"> 1817</span>&#160;        roaring_uint32_iterator_previous(&amp;i);</div>
+<div class="line"><a name="l01817"></a><span class="lineno"> 1817</span>&#160;        <a class="code" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous</a>(&amp;i);</div>
 <div class="line"><a name="l01818"></a><span class="lineno"> 1818</span>&#160;        <span class="keywordflow">while</span> (!i.has_value) {</div>
 <div class="line"><a name="l01819"></a><span class="lineno"> 1819</span>&#160;            <span class="keywordflow">if</span> (map_iter == p-&gt;cbegin()) <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l01820"></a><span class="lineno"> 1820</span>&#160;            map_iter--;</div>
-<div class="line"><a name="l01821"></a><span class="lineno"> 1821</span>&#160;            roaring_iterator_init_last(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01821"></a><span class="lineno"> 1821</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01822"></a><span class="lineno"> 1822</span>&#160;        }</div>
 <div class="line"><a name="l01823"></a><span class="lineno"> 1823</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l01824"></a><span class="lineno"> 1824</span>&#160;    }</div>
@@ -1590,15 +1590,15 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01827"></a><span class="lineno"> 1827</span>&#160;        <a class="code" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html">Roaring64MapSetBitBiDirectionalIterator</a> orig(*<span class="keyword">this</span>);</div>
 <div class="line"><a name="l01828"></a><span class="lineno"> 1828</span>&#160;        <span class="keywordflow">if</span> (map_iter == p-&gt;cend()) {</div>
 <div class="line"><a name="l01829"></a><span class="lineno"> 1829</span>&#160;            --map_iter;</div>
-<div class="line"><a name="l01830"></a><span class="lineno"> 1830</span>&#160;            roaring_iterator_init_last(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01830"></a><span class="lineno"> 1830</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01831"></a><span class="lineno"> 1831</span>&#160;            <span class="keywordflow">return</span> orig;</div>
 <div class="line"><a name="l01832"></a><span class="lineno"> 1832</span>&#160;        }</div>
 <div class="line"><a name="l01833"></a><span class="lineno"> 1833</span>&#160; </div>
-<div class="line"><a name="l01834"></a><span class="lineno"> 1834</span>&#160;        roaring_uint32_iterator_previous(&amp;i);</div>
+<div class="line"><a name="l01834"></a><span class="lineno"> 1834</span>&#160;        <a class="code" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous</a>(&amp;i);</div>
 <div class="line"><a name="l01835"></a><span class="lineno"> 1835</span>&#160;        <span class="keywordflow">while</span> (!i.has_value) {</div>
 <div class="line"><a name="l01836"></a><span class="lineno"> 1836</span>&#160;            <span class="keywordflow">if</span> (map_iter == p-&gt;cbegin()) <span class="keywordflow">return</span> orig;</div>
 <div class="line"><a name="l01837"></a><span class="lineno"> 1837</span>&#160;            map_iter--;</div>
-<div class="line"><a name="l01838"></a><span class="lineno"> 1838</span>&#160;            roaring_iterator_init_last(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
+<div class="line"><a name="l01838"></a><span class="lineno"> 1838</span>&#160;            <a class="code" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last</a>(&amp;map_iter-&gt;second.roaring, &amp;i);</div>
 <div class="line"><a name="l01839"></a><span class="lineno"> 1839</span>&#160;        }</div>
 <div class="line"><a name="l01840"></a><span class="lineno"> 1840</span>&#160;        <span class="keywordflow">return</span> orig;</div>
 <div class="line"><a name="l01841"></a><span class="lineno"> 1841</span>&#160;    }</div>
@@ -1620,7 +1620,7 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="line"><a name="l01857"></a><span class="lineno"> 1857</span>&#160;    std::map&lt;uint32_t, Roaring&gt;::const_iterator</div>
 <div class="line"><a name="l01858"></a><span class="lineno"> 1858</span>&#160;        map_iter{};  <span class="comment">// The empty constructor silences warnings from pedantic</span></div>
 <div class="line"><a name="l01859"></a><span class="lineno"> 1859</span>&#160;                     <span class="comment">// static analyzers.</span></div>
-<div class="line"><a name="l01860"></a><span class="lineno"> 1860</span>&#160;    api::roaring_uint32_iterator_t</div>
+<div class="line"><a name="l01860"></a><span class="lineno"> 1860</span>&#160;    <a class="code" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">api::roaring_uint32_iterator_t</a></div>
 <div class="line"><a name="l01861"></a><span class="lineno"> 1861</span>&#160;        i{};  <span class="comment">// The empty constructor silences warnings from pedantic static</span></div>
 <div class="line"><a name="l01862"></a><span class="lineno"> 1862</span>&#160;              <span class="comment">// analyzers.</span></div>
 <div class="line"><a name="l01863"></a><span class="lineno"> 1863</span>&#160;};</div>
@@ -1750,6 +1750,15 @@ $(document).ready(function(){initNavTree('db/d2c/roaring64map_8hh_source.html','
 <div class="ttc" id="aclassroaring_1_1Roaring_html_aa879e2858a0b55c702131fe9554c2637"><div class="ttname"><a href="../../d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">roaring::Roaring::getSizeInBytes</a></div><div class="ttdeci">size_t getSizeInBytes(bool portable=true) const noexcept</div><div class="ttdef"><b>Definition:</b> <a href="../../db/d6e/roaring_8hh_source.html#l00694">roaring.hh:694</a></div></div>
 <div class="ttc" id="anamespaceroaring_html"><div class="ttname"><a href="../../dc/db7/namespaceroaring.html">roaring</a></div><div class="ttdef"><b>Definition:</b> <a href="../../db/d6e/roaring_8hh_source.html#l00040">roaring.hh:40</a></div></div>
 <div class="ttc" id="anamespaceroaring_html_af70fe556c9f0854ff52cbd0519907298"><div class="ttname"><a href="../../dc/db7/namespaceroaring.html#af70fe556c9f0854ff52cbd0519907298">roaring::Roaring64MapSetBitForwardIterator</a></div><div class="ttdeci">Roaring64MapSetBitBiDirectionalIterator Roaring64MapSetBitForwardIterator</div><div class="ttdef"><b>Definition:</b> <a href="../../db/d2c/roaring64map_8hh_source.html#l00039">roaring64map.hh:34</a></div></div>
+<div class="ttc" id="aroaring_8h_html_a1c2a6c8c7381614389c12406aea38f34"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last</a></div><div class="ttdeci">void roaring_iterator_init_last(const roaring_bitmap_t *r, roaring_uint32_iterator_t *newit)</div></div>
+<div class="ttc" id="aroaring_8h_html_a21d0f9d97d392aac2b4cac9eaa7f8048"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a21d0f9d97d392aac2b4cac9eaa7f8048">roaring_bitmap_or_many</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or_many(size_t number, const roaring_bitmap_t **rs)</div></div>
+<div class="ttc" id="aroaring_8h_html_a29ac102977f4d93063ef0737e313bc45"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a29ac102977f4d93063ef0737e313bc45">roaring_iterate64</a></div><div class="ttdeci">bool roaring_iterate64(const roaring_bitmap_t *r, roaring_iterator64 iterator, uint64_t high_bits, void *ptr)</div></div>
+<div class="ttc" id="aroaring_8h_html_a45b84c4acc0a65ebf4fa529ee35b3c70"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init</a></div><div class="ttdeci">void roaring_iterator_init(const roaring_bitmap_t *r, roaring_uint32_iterator_t *newit)</div></div>
+<div class="ttc" id="aroaring_8h_html_a523be4d9d334d99a54385cf1b8492602"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger</a></div><div class="ttdeci">bool roaring_uint32_iterator_move_equalorlarger(roaring_uint32_iterator_t *it, uint32_t val)</div></div>
+<div class="ttc" id="aroaring_8h_html_a5843d31058d4671164e719c1676a5a2a"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous</a></div><div class="ttdeci">bool roaring_uint32_iterator_previous(roaring_uint32_iterator_t *it)</div></div>
+<div class="ttc" id="aroaring_8h_html_a946b719adc4b8027b3d4aeeb63c64fbc"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a></div><div class="ttdeci">struct roaring_bitmap_s roaring_bitmap_t</div></div>
+<div class="ttc" id="aroaring_8h_html_ad94c4b740cc310341e4c0dcd30e718ce"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a></div><div class="ttdeci">struct roaring_uint32_iterator_s roaring_uint32_iterator_t</div></div>
+<div class="ttc" id="aroaring_8h_html_aec401e111190871fb95faaa0e4d66757"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a></div><div class="ttdeci">bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it)</div></div>
 <div class="ttc" id="aroaring_8hh_html"><div class="ttname"><a href="../../db/d6e/roaring_8hh.html">roaring.hh</a></div></div>
 <div class="ttc" id="aroaring_8hh_html_a14763ef48ed276d856563d6a3673f64d"><div class="ttname"><a href="../../db/d6e/roaring_8hh.html#a14763ef48ed276d856563d6a3673f64d">ROARING_TERMINATE</a></div><div class="ttdeci">#define ROARING_TERMINATE(_s)</div><div class="ttdef"><b>Definition:</b> <a href="../../db/d6e/roaring_8hh_source.html#l00030">roaring.hh:30</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
