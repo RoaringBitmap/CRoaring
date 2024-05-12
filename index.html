@@ -205,7 +205,16 @@ Amalgamating</h1>
 <p>It will generate three files for C users: <code>roaring.h</code>, <code>roaring.c</code> and <code>amalgamation_demo.c</code>... as well as some brief instructions. The <code>amalgamation_demo.c</code> file is a short example, whereas <code>roaring.h</code> and <code>roaring.c</code> are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files <code>roaring.h</code> and <code>roaring.c</code> into your project and be ready to go! No need to produce a library! See the <code>amalgamation_demo.c</code> file.</p>
 <h1><a class="anchor" id="autotoc_md8"></a>
 API</h1>
-<p>The C interface is found in the file <code>include/roaring/roaring.h</code>. We have C++ interface at <code><a class="el" href="db/d6e/roaring_8hh.html">cpp/roaring.hh</a></code>.</p>
+<p>The C interface is found in the files</p>
+<ul>
+<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/include/roaring/roaring.h">roaring.h</a></li>
+<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/include/roaring/roaring64.h">roaring64.h</a></li>
+</ul>
+<p>We have C++ interface at:</p>
+<ul>
+<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring.hh">roaring.hh</a></li>
+<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring64map.hh">roaring64map.hh</a></li>
+</ul>
 <h1><a class="anchor" id="autotoc_md9"></a>
 Dealing with large volumes</h1>
 <p>Some users have to deal with large volumes of data. It may be important for these users to be aware of the <code>addMany</code> (C++) <code>roaring_bitmap_or_many</code> (C) functions as it is much faster and economical to add values in batches when possible. Furthermore, calling periodically the <code>runOptimize</code> (C++) or <code>roaring_bitmap_run_optimize</code> (C) functions may help.</p>
