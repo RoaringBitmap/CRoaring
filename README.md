@@ -236,7 +236,17 @@ It will generate three files for C users: ``roaring.h``, ``roaring.c`` and ``ama
 
 # API
 
-The C interface is found in the file ``include/roaring/roaring.h``. We have C++ interface at `cpp/roaring.hh`.
+The C interface is found in the files
+
+- [roaring.h](https://github.com/RoaringBitmap/CRoaring/blob/master/include/roaring/roaring.h)
+- [roaring64.h](https://github.com/RoaringBitmap/CRoaring/blob/master/include/roaring/roaring64.h)
+
+
+We have C++ interface at:
+
+- [roaring.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring.hh)
+- [roaring64map.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring64map.hh)
+
 
 # Dealing with large volumes
 
