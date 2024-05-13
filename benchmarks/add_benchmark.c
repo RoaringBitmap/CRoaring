@@ -117,7 +117,7 @@ void run_test(uint32_t spanlen, uint32_t intvlen, double density,
     for (int p = 0; p < num_passes; p++) {
         roaring_bitmap_t *r = roaring_bitmap_create();
         RDTSC_START(cycles_start);
-        roaring_bulk_context_t context = {0};
+        roaring_bulk_context_t context = {0, 0, 0, 0};
         for (int64_t i = 0; i < count; i++) {
             for (uint32_t j = 0; j < intvlen; j++) {
                 roaring_bitmap_add_bulk(r, &context, offsets[i] + j);
