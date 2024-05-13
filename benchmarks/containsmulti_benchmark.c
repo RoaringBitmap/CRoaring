@@ -19,7 +19,7 @@ void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values,
 
 void contains_multi_bulk(roaring_bitmap_t* bm, const uint32_t* values,
                          bool* results, const size_t count) {
-    roaring_bulk_context_t context = {0};
+    roaring_bulk_context_t context = {0, 0};
     for (size_t i = 0; i < count; ++i) {
         results[i] = roaring_bitmap_contains_bulk(bm, &context, values[i]);
     }

@@ -139,7 +139,7 @@ DEFINE_TEST(range_contains) {
 
 DEFINE_TEST(contains_bulk) {
     roaring_bitmap_t *bm = roaring_bitmap_create();
-    roaring_bulk_context_t context = {0};
+    roaring_bulk_context_t context = {0, 0, 0, 0};
 
     // Ensure checking an empty bitmap is okay
     assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0));
@@ -176,7 +176,7 @@ DEFINE_TEST(contains_bulk) {
     size_t test_count = sizeof(values) / sizeof(values[0]);
 
     for (size_t i = 0; i < test_count; i++) {
-        roaring_bulk_context_t empty_context = {0};
+        roaring_bulk_context_t empty_context = {0, 0, 0, 0};
         bool expected_contains = roaring_bitmap_contains(bm, values[i]);
         assert_true(expected_contains == roaring_bitmap_contains_bulk(
                                              bm, &empty_context, values[i]));
@@ -1055,7 +1055,7 @@ DEFINE_TEST(test_addremove) {
 
 DEFINE_TEST(test_addremove_bulk) {
     roaring_bitmap_t *bm = roaring_bitmap_create();
-    roaring_bulk_context_t context = {0};
+    roaring_bulk_context_t context = {0, 0, 0, 0};
     for (uint32_t value = 33057; value < 147849; value += 8) {
         roaring_bitmap_add_bulk(bm, &context, value);
     }
