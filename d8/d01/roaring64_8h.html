@@ -161,6 +161,8 @@ Functions</h2></td></tr>
 <tr class="separator:a8c6195c8c90d9d366383225a96975b24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a81059df6642264a003da8172fb9a3a8f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a81059df6642264a003da8172fb9a3a8f">roaring64_bitmap_remove_range_closed</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
 <tr class="separator:a81059df6642264a003da8172fb9a3a8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa2719fdf100f23188a47b7492b600cc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#afa2719fdf100f23188a47b7492b600cc">roaring64_bitmap_clear</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
+<tr class="separator:afa2719fdf100f23188a47b7492b600cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9936db4cd41d8ff0797cbb08f8441e15"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a9936db4cd41d8ff0797cbb08f8441e15">roaring64_bitmap_contains</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t val)</td></tr>
 <tr class="separator:a9936db4cd41d8ff0797cbb08f8441e15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd79ff6e789543ea7354492c322603f3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#abd79ff6e789543ea7354492c322603f3">roaring64_bitmap_contains_range</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
@@ -177,6 +179,8 @@ Functions</h2></td></tr>
 <tr class="separator:af1c9e7991db9341d1b3da6989395e444"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a550a74b38bfa5c943447403041296f7b"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a550a74b38bfa5c943447403041296f7b">roaring64_bitmap_range_cardinality</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
 <tr class="separator:a550a74b38bfa5c943447403041296f7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81146e238b609f528416ea684077a5c8"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a81146e238b609f528416ea684077a5c8">roaring64_bitmap_range_closed_cardinality</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
+<tr class="separator:a81146e238b609f528416ea684077a5c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af738c650b2e32a3976e81301b0c500c0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#af738c650b2e32a3976e81301b0c500c0">roaring64_bitmap_is_empty</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
 <tr class="separator:af738c650b2e32a3976e81301b0c500c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5ea73443856e75c00fc6085356b910a"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#ae5ea73443856e75c00fc6085356b910a">roaring64_bitmap_minimum</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
@@ -739,6 +743,25 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>In-place version of <code><a class="el" href="../../d8/d01/roaring64_8h.html#a2f84f2aeb4fcaef3a4018a6112e9f46a">roaring64_bitmap_andnot()</a></code>, modifies <code>r1</code>. <code>r1</code> and <code>r2</code> are not allowed to be equal (that would result in an empty bitmap). </p>
+
+</div>
+</div>
+<a id="afa2719fdf100f23188a47b7492b600cc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa2719fdf100f23188a47b7492b600cc">&#9670;&nbsp;</a></span>roaring64_bitmap_clear()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void roaring64_bitmap_clear </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Empties the bitmap. </p>
 
 </div>
 </div>
@@ -1698,6 +1721,41 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Returns the number of elements in the range [min, max). </p>
+
+</div>
+</div>
+<a id="a81146e238b609f528416ea684077a5c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a81146e238b609f528416ea684077a5c8">&#9670;&nbsp;</a></span>roaring64_bitmap_range_closed_cardinality()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint64_t roaring64_bitmap_range_closed_cardinality </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>max</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Returns the number of elements in the range [min, max] </p>
 
 </div>
 </div>
