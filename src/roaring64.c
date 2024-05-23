@@ -707,6 +707,10 @@ void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
     remove_range_closed_at(art, max_high48, 0, max_low16);
 }
 
+void roaring64_bitmap_clear(roaring64_bitmap_t *r) {
+    roaring64_bitmap_remove_range_closed(r, 0, UINT64_MAX);
+}
+
 uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r) {
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     uint64_t cardinality = 0;
