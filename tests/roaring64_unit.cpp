@@ -727,6 +727,29 @@ DEFINE_TEST(test_range_cardinality) {
         // range is exclusive, so UINT64_MAX is not included
         assert_int_equal(
             roaring64_bitmap_range_cardinality(r, start, UINT64_MAX), 4);
+        // With an inclusive range, UINT64_MAX _is_ included
+        assert_int_equal(
+            roaring64_bitmap_range_closed_cardinality(r, start, UINT64_MAX), 5);
+
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Empty ranges always have zero cardinality
+        roaring64_bitmap_t* r =
+            roaring64_bitmap_from(0, 1, 2, 3, 4, 5, UINT64_MAX);
+
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, 1, 1), 0);
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, 1, 0), 0);
+        assert_int_equal(roaring64_bitmap_range_cardinality(r, UINT64_MAX, 0),
+                         0);
+        assert_int_equal(
+            roaring64_bitmap_range_cardinality(r, UINT64_MAX, UINT64_MAX), 0);
+        assert_int_equal(roaring64_bitmap_range_closed_cardinality(r, 1, 0), 0);
+        assert_int_equal(
+            roaring64_bitmap_range_closed_cardinality(r, UINT64_MAX, 0), 0);
+        assert_int_equal(roaring64_bitmap_range_closed_cardinality(
+                             r, UINT64_MAX, UINT64_MAX - 1),
+                         0);
 
         roaring64_bitmap_free(r);
     }
