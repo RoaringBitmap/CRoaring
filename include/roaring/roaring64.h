@@ -273,6 +273,12 @@ uint64_t roaring64_bitmap_range_cardinality(const roaring64_bitmap_t *r,
                                             uint64_t min, uint64_t max);
 
 /**
+ * Returns the number of elements in the range [min, max]
+ */
+uint64_t roaring64_bitmap_range_closed_cardinality(const roaring64_bitmap_t *r,
+                                                   uint64_t min, uint64_t max);
+
+/**
  * Returns true if the bitmap is empty (cardinality is zero).
  */
 bool roaring64_bitmap_is_empty(const roaring64_bitmap_t *r);

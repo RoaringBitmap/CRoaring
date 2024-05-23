@@ -724,7 +724,17 @@ uint64_t roaring64_bitmap_range_cardinality(const roaring64_bitmap_t *r,
     if (min >= max) {
         return 0;
     }
-    max--;  // A closed range is easier to work with.
+    // Convert to a closed range
+    // No underflow here: passing the above condition implies min < max, so
+    // there is a number less than max
+    return roaring64_bitmap_range_closed_cardinality(r, min, max - 1);
+}
+
+uint64_t roaring64_bitmap_range_closed_cardinality(const roaring64_bitmap_t *r,
+                                                   uint64_t min, uint64_t max) {
+    if (min > max) {
+        return 0;
+    }
 
     uint64_t cardinality = 0;
     uint8_t min_high48[ART_KEY_BYTES];
