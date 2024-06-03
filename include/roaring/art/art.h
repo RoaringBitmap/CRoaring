@@ -139,6 +139,11 @@ typedef struct art_iterator_s {
 } art_iterator_t;
 
 /**
+ * Initialize the iterator to zero.
+ */
+void art_iterator_init(art_iterator_t *iterator);
+
+/**
  * Creates an iterator initialzed to the first or last entry in the ART,
  * depending on `first`. The iterator is not valid if there are no entries in
  * the ART.

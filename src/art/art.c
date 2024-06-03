@@ -40,6 +40,10 @@ namespace roaring {
 namespace internal {
 #endif
 
+void art_iterator_init(art_iterator_t *iterator) {
+    memset(iterator, 0, sizeof(art_iterator_t));
+}
+
 typedef uint8_t art_typecode_t;
 
 // Aliasing with a "leaf" naming so that its purpose is clearer in the context
@@ -1670,7 +1674,8 @@ static bool art_node_iterator_lower_bound(const art_node_t *node,
 }
 
 art_iterator_t art_init_iterator(const art_t *art, bool first) {
-    art_iterator_t iterator = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    art_iterator_t iterator;
+    art_iterator_init(&iterator);
     if (art->root == NULL) {
         return iterator;
     }
@@ -1727,7 +1732,8 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
 }
 
 art_iterator_t art_lower_bound(const art_t *art, const art_key_chunk_t *key) {
-    art_iterator_t iterator = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    art_iterator_t iterator;
+    art_iterator_init(&iterator);
     if (art->root != NULL) {
         art_node_iterator_lower_bound(art->root, &iterator, key);
     }
@@ -1735,7 +1741,8 @@ art_iterator_t art_lower_bound(const art_t *art, const art_key_chunk_t *key) {
 }
 
 art_iterator_t art_upper_bound(const art_t *art, const art_key_chunk_t *key) {
-    art_iterator_t iterator = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    art_iterator_t iterator;
+    art_iterator_init(&iterator);
     if (art->root != NULL) {
         if (art_node_iterator_lower_bound(art->root, &iterator, key) &&
             art_compare_keys(iterator.key, key) == 0) {

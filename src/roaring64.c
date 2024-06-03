@@ -21,8 +21,9 @@ namespace roaring {
 namespace api {
 #endif
 
-// TODO: Copy on write.
-// TODO: Error on failed allocation.
+void roaring64_bulk_context_init(roaring64_bulk_context_t *context) {
+    memset(context, 0, sizeof(roaring64_bulk_context_t));
+}
 
 typedef struct roaring64_bitmap_s {
     art_t art;
@@ -224,7 +225,8 @@ roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
 
 roaring64_bitmap_t *roaring64_bitmap_of(size_t n_args, ...) {
     roaring64_bitmap_t *r = roaring64_bitmap_create();
-    roaring64_bulk_context_t context = {0, 0, 0, 0, 0, 0, 0};
+    roaring64_bulk_context_t context;
+    roaring64_bulk_context_init(&context);
     va_list ap;
     va_start(ap, n_args);
     for (size_t i = 0; i < n_args; i++) {
@@ -317,7 +319,8 @@ void roaring64_bitmap_add_many(roaring64_bitmap_t *r, size_t n_args,
         return;
     }
     const uint64_t *end = vals + n_args;
-    roaring64_bulk_context_t context = {0, 0, 0, 0, 0, 0, 0};
+    roaring64_bulk_context_t context;
+    roaring64_bulk_context_init(&context);
     for (const uint64_t *current_val = vals; current_val != end;
          current_val++) {
         roaring64_bitmap_add_bulk(r, &context, *current_val);
@@ -641,7 +644,8 @@ void roaring64_bitmap_remove_many(roaring64_bitmap_t *r, size_t n_args,
         return;
     }
     const uint64_t *end = vals + n_args;
-    roaring64_bulk_context_t context = {0, 0, 0, 0, 0, 0, 0};
+    roaring64_bulk_context_t context;
+    roaring64_bulk_context_init(&context);
     for (const uint64_t *current_val = vals; current_val != end;
          current_val++) {
         roaring64_bitmap_remove_bulk(r, &context, *current_val);

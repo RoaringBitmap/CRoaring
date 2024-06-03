@@ -36,6 +36,11 @@ typedef struct roaring64_bulk_context_s {
 } roaring64_bulk_context_t;
 
 /**
+ * Initialize a bulk context to zero.
+ */
+void roaring64_bulk_context_init(roaring64_bulk_context_t * context);
+
+/**
  * Dynamically allocates a new bitmap (initially empty).
  * Client is responsible for calling `roaring64_bitmap_free()`.
  */
