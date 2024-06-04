@@ -148,6 +148,9 @@ roaring64_bitmap_t *roaring64_bitmap_create(void) {
 }
 
 void roaring64_bitmap_free(roaring64_bitmap_t *r) {
+    if (!r) {
+        return;
+    }
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
