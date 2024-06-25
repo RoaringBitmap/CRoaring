@@ -36,8 +36,8 @@ DEMOCPP="amalgamation_demo.cpp"
 #
 ALL_PUBLIC_H="
 $SCRIPTPATH/include/roaring/roaring_version.h
-$SCRIPTPATH/include/roaring/roaring_types.h
 $SCRIPTPATH/include/roaring/portability.h
+$SCRIPTPATH/include/roaring/roaring_types.h
 $SCRIPTPATH/include/roaring/bitset/bitset.h
 $SCRIPTPATH/include/roaring/roaring.h
 $SCRIPTPATH/include/roaring/memory.h
