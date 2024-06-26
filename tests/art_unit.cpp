@@ -320,6 +320,16 @@ DEFINE_TEST(test_art_iterator_prev) {
 
 DEFINE_TEST(test_art_iterator_lower_bound) {
     {
+        art_t art{NULL};
+        art_iterator_t iterator = art_init_iterator(&art, true);
+        assert_null(iterator.value);
+        assert_false(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)"000000"));
+        assert_false(
+            art_iterator_lower_bound(&iterator, (art_key_chunk_t*)"000001"));
+        art_free(&art);
+    }
+    {
         std::vector<const char*> keys = {
             "000001", "000002", "000003", "000004", "001005",
         };
