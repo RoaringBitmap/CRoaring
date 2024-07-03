@@ -1693,8 +1693,11 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
         // a valid key. Start from the root.
         iterator->frame = 0;
         iterator->depth = 0;
-        return art_node_iterator_lower_bound(art_iterator_node(iterator),
-                                             iterator, key);
+        art_node_t *root = art_iterator_node(iterator);
+        if (root == NULL) {
+            return false;
+        }
+        return art_node_iterator_lower_bound(root, iterator, key);
     }
     int compare_result =
         art_compare_prefix(iterator->key, 0, key, 0, ART_KEY_BYTES);

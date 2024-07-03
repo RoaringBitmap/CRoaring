@@ -1053,6 +1053,11 @@ DEFINE_TEST(test_intersect) {
 DEFINE_TEST(test_intersect_with_range) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
+    // Empty bitmap never intersects
+    assert_false(roaring64_bitmap_intersect_with_range(r, 0, 0));
+    assert_false(roaring64_bitmap_intersect_with_range(r, 0, 50000));
+    assert_false(roaring64_bitmap_intersect_with_range(r, 0, UINT64_MAX));
+
     roaring64_bitmap_add(r, 50000);
     roaring64_bitmap_add(r, 100000);
     roaring64_bitmap_add(r, 100001);
@@ -1064,6 +1069,13 @@ DEFINE_TEST(test_intersect_with_range) {
     assert_false(roaring64_bitmap_intersect_with_range(r, 50001, 100000));
     assert_true(roaring64_bitmap_intersect_with_range(r, 50001, 100001));
     assert_false(roaring64_bitmap_intersect_with_range(r, 300001, UINT64_MAX));
+
+    // Empty ranges never intersect
+    assert_false(roaring64_bitmap_intersect_with_range(r, 0, 0));
+    assert_false(
+        roaring64_bitmap_intersect_with_range(r, UINT64_MAX, UINT64_MAX));
+    assert_false(roaring64_bitmap_intersect_with_range(r, UINT64_MAX, 0));
+    assert_false(roaring64_bitmap_intersect_with_range(r, 50000, 50000));
 
     roaring64_bitmap_free(r);
 }
@@ -1674,13 +1686,17 @@ DEFINE_TEST(test_iterator_previous) {
 DEFINE_TEST(test_iterator_move_equalorlarger) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    assert_false(roaring64_iterator_move_equalorlarger(it, 0));
+    assert_false(roaring64_iterator_move_equalorlarger(it, UINT64_MAX));
+
     roaring64_bitmap_add(r, 0);
     roaring64_bitmap_add(r, 1ULL << 35);
     roaring64_bitmap_add(r, (1ULL << 35) + 1);
     roaring64_bitmap_add(r, (1ULL << 35) + 2);
     roaring64_bitmap_add(r, (1ULL << 36));
 
-    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    roaring64_iterator_reinit(r, it);
     assert_true(roaring64_iterator_move_equalorlarger(it, 0));
     assert_true(roaring64_iterator_has_value(it));
     assert_int_equal(roaring64_iterator_value(it), 0);
