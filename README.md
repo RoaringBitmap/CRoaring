@@ -749,12 +749,16 @@ We have optimizations specific to AVX2 and AVX-512 in the code, and they are tur
 
 ## Usage (Using `conan`)
 
-You can install the library using the conan package manager:
+You can install pre-built binaries for `roaring` or build it from source using [Conan](https://conan.io/). Use the following command to install latest version:
 
 ```
-$ echo -e "[requires]\nroaring/0.3.3" > conanfile.txt
-$ conan install .
+conan install --requires="roaring/[*]" --build=missing
 ```
+
+For detailed instructions on how to use Conan, please refer to the [Conan documentation](https://docs.conan.io/2/).
+
+The `roaring` Conan recipe is kept up to date by Conan maintainers and community contributors.
+If the version is out of date, please [create an issue or pull request](https://github.com/conan-io/conan-center-index) on the ConanCenterIndex repository.
 
 
 ## Usage (Using `vcpkg` on Windows, Linux and macOS)
