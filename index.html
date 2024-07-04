@@ -662,10 +662,11 @@ Building (Visual Studio under Windows)</h1>
 <p>We have optimizations specific to AVX2 and AVX-512 in the code, and they are turned dynamically based on the detected hardware at runtime.</p>
 <h2><a class="anchor" id="autotoc_md18"></a>
 Usage (Using &lt;tt&gt;conan&lt;/tt&gt;)</h2>
-<p>You can install the library using the conan package manager:</p>
-<div class="fragment"><div class="line">$ echo -e &quot;[requires]\nroaring/0.3.3&quot; &gt; conanfile.txt</div>
-<div class="line">$ conan install .</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md19"></a>
+<p>You can install pre-built binaries for <code>roaring</code> or build it from source using <a href="https://conan.io/">Conan</a>. Use the following command to install latest version:</p>
+<div class="fragment"><div class="line">conan install --requires=&quot;roaring/[*]&quot; --build=missing</div>
+</div><!-- fragment --><p>For detailed instructions on how to use Conan, please refer to the <a href="https://docs.conan.io/2/">Conan documentation</a>.</p>
+<p>The <code>roaring</code> Conan recipe is kept up to date by Conan maintainers and community contributors. If the version is out of date, please <a href="https://github.com/conan-io/conan-center-index">create an issue or pull request</a> on the ConanCenterIndex repository.</p>
+<h2><a class="anchor" id="autotoc_md19"></a>
 Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 <p><a href="https://github.com/Microsoft/vcpkg">vcpkg</a> users on Windows, Linux and macOS can download and install <code>roaring</code> with one single command from their favorite shell.</p>
 <p>On Linux and macOS:</p>
