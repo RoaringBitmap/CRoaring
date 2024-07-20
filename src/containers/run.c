@@ -1017,25 +1017,33 @@ int _avx2_run_container_to_uint32_array(void *vout, const run_container_t *cont,
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
-        int j = 0;
-        __m256i run_start_v = _mm256_set1_epi32(run_start);
-        // [8,8,8,8....]
-        __m256i inc = _mm256_set1_epi32(8);
-        // used for generate sequence:
-        // [0, 1, 2, 3...], [8, 9, 10,...]
-        __m256i delta = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
-        for (j = 0; j + 8 <= le; j += 8) {
-            __m256i val_v = _mm256_add_epi32(run_start_v, delta);
-            _mm256_storeu_si256((__m256i *)(out + outpos), val_v);
-            delta = _mm256_add_epi32(inc, delta);
-            outpos += 8;
-        }
-
-        for (; j <= le; ++j) {
-            uint32_t val = run_start + j;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
+        if (le < 8) {
+            for (int j = 0; j <= le; ++j) {
+                uint32_t val = run_start + j;
+                memcpy(out + outpos, &val,
+                       sizeof(uint32_t));  // should be compiled as a MOV on x64
+                outpos++;
+            }
+        } else {
+            int j = 0;
+            __m256i run_start_v = _mm256_set1_epi32(run_start);
+            // [8,8,8,8....]
+            __m256i inc = _mm256_set1_epi32(8);
+            // used for generate sequence:
+            // [0, 1, 2, 3...], [8, 9, 10,...]
+            __m256i delta = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+            for (j = 0; j + 8 <= le; j += 8) {
+                __m256i val_v = _mm256_add_epi32(run_start_v, delta);
+                _mm256_storeu_si256((__m256i *)(out + outpos), val_v);
+                delta = _mm256_add_epi32(inc, delta);
+                outpos += 8;
+            }
+            for (; j <= le; ++j) {
+                uint32_t val = run_start + j;
+                memcpy(out + outpos, &val,
+                       sizeof(uint32_t));  // should be compiled as a MOV on x64
+                outpos++;
+            }
         }
     }
     return outpos;
