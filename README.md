@@ -303,6 +303,20 @@ int main(){
 }
 ```
 
+By default we use:
+```C
+static roaring_memory_t global_memory_hook = {
+    .malloc = malloc,
+    .realloc = realloc,
+    .calloc = calloc,
+    .free = free,
+    .aligned_malloc = roaring_bitmap_aligned_malloc,
+    .aligned_free = roaring_bitmap_aligned_free,
+};
+```
+
+We use the C convention regarding `free`: `free(NULL)` should have no effect. Thus our code does not check whether the provided pointer is non-null.
+
 
 # Example (C)
 
