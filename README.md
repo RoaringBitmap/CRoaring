@@ -315,7 +315,8 @@ static roaring_memory_t global_memory_hook = {
 };
 ```
 
-We use the C convention regarding `free`: `free(NULL)` should have no effect. Thus our code does not check whether the provided pointer is non-null.
+We require that the `free`/`aligned_free` functions follow the C
+convention where `free(NULL)`/`aligned_free(NULL)` have no effect.
 
 
 # Example (C)
