@@ -130,11 +130,7 @@ void bitset_container_add_from_range(bitset_container_t *bitset, uint32_t min,
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset) {
-    if (bitset->words !=
-        NULL) {  // Jon Strabala reports that some tools complain otherwise
-        roaring_aligned_free(bitset->words);
-        bitset->words = NULL;  // pedantic
-    }
+    roaring_aligned_free(bitset->words);
     roaring_free(bitset);
 }
 

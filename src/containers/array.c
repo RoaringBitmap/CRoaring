@@ -146,7 +146,6 @@ int array_container_shrink_to_fit(array_container_t *src) {
 /* Free memory. */
 void array_container_free(array_container_t *arr) {
     roaring_free(arr->array);
-    arr->array = NULL;  // pedantic
     roaring_free(arr);
 }
 
