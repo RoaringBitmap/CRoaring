@@ -189,7 +189,7 @@ void run_container_offset(const run_container_t *c, container_t **loc,
 
 /* Free memory. */
 void run_container_free(run_container_t *run) {
-    if(run == NULL) return;
+    if (run == NULL) return;
     roaring_free(run->runs);
     roaring_free(run);
 }
