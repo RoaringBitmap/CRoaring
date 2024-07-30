@@ -303,6 +303,21 @@ int main(){
 }
 ```
 
+By default we use:
+```C
+static roaring_memory_t global_memory_hook = {
+    .malloc = malloc,
+    .realloc = realloc,
+    .calloc = calloc,
+    .free = free,
+    .aligned_malloc = roaring_bitmap_aligned_malloc,
+    .aligned_free = roaring_bitmap_aligned_free,
+};
+```
+
+We require that the `free`/`aligned_free` functions follow the C
+convention where `free(NULL)`/`aligned_free(NULL)` have no effect.
+
 
 # Example (C)
 

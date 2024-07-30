@@ -189,11 +189,8 @@ void run_container_offset(const run_container_t *c, container_t **loc,
 
 /* Free memory. */
 void run_container_free(run_container_t *run) {
-    if (run->runs !=
-        NULL) {  // Jon Strabala reports that some tools complain otherwise
-        roaring_free(run->runs);
-        run->runs = NULL;  // pedantic
-    }
+    if (run == NULL) return;
+    roaring_free(run->runs);
     roaring_free(run);
 }
 
@@ -211,10 +208,7 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
                                                run->capacity * sizeof(rle16_t));
         if (run->runs == NULL) roaring_free(oldruns);
     } else {
-        // Jon Strabala reports that some tools complain otherwise
-        if (run->runs != NULL) {
-            roaring_free(run->runs);
-        }
+        roaring_free(run->runs);
         run->runs = (rle16_t *)roaring_malloc(run->capacity * sizeof(rle16_t));
     }
     // We may have run->runs == NULL.
