@@ -100,7 +100,7 @@ with open(versionfile, 'w') as file:
 print(versionfile + " modified")
 from pathlib import Path
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
-projectlocation = Path(os.path.abspath(__file__)).parent.absolute()
+projectlocation = Path(os.path.abspath(__file__)).parent.parent.absolute()
 amal_path = os.path.join(projectlocation, "amalgamation.sh")
 
 import fileinput
@@ -144,8 +144,10 @@ doxygenfile = maindir + os.sep + "doxygen"
 for line in fileinput.input(doxygenfile, inplace=1, backup='.bak'):
     line = re.sub(r'PROJECT_NUMBER         = "\d+\.\d+\.\d+','PROJECT_NUMBER         = "'+newversionstring, line.rstrip())
     print(line)
-ret = subprocess.call(["bash", amal_path])
-if(ret != 0):
-    print("failed to update amalgamation")
+
+
+
+pipe = subprocess.Popen(["bash", amal_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+print( pipe.communicate()[0].decode().strip() )
 print("Please run the tests before issuing a release: "+scriptlocation + "/prereleasetests.sh \n")
 print("to issue release, enter \n git commit -a \n git push \n git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\"\n git push --tags \n")
