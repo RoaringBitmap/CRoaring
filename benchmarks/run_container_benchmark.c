@@ -109,6 +109,31 @@ int main() {
         free(testvalues);
         run_container_free(Bt);
     }
+
+    printf("==dense range test \n");
+    for (int howmany = 32; howmany <= (1 << 16); howmany *= 8) {
+        run_container_t* Bt = run_container_create();
+        for (int j = 0; j < howmany; ++j) {
+            uint16_t min = (uint16_t)pcg32_random() % 4096;
+            uint16_t max = min + 4096;
+            int32_t nruns_greater =
+                rle16_count_greater(Bt->runs, Bt->n_runs, max);
+            int32_t nruns_less =
+                rle16_count_less(Bt->runs, Bt->n_runs - nruns_greater, min);
+            run_container_add_range_nruns(Bt, min, max, nruns_less,
+                                          nruns_greater);
+        }
+        printf("\n number of values in container = %d\n",
+               run_container_cardinality(Bt));
+        int card = run_container_cardinality(Bt);
+        uint32_t* out = malloc(sizeof(uint32_t) * (unsigned long)card);
+        BEST_TIME(run_container_to_uint32_array(out, Bt, 1234), card, repeat,
+                  card);
+        free(out);
+
+        run_container_free(Bt);
+    }
+
     printf("\n");
 
     run_container_t* B1 = run_container_create();
