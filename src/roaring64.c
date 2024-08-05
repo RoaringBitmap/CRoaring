@@ -185,9 +185,9 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
  * After calling this function, the original bitmap will be empty, and the
  * returned bitmap will contain all the values from the original bitmap.
  */
-static void steal_from_roaring32_offset(roaring64_bitmap_t *dst,
-                                        roaring_bitmap_t *src,
-                                        uint32_t high_bits) {
+static void move_from_roaring32_offset(roaring64_bitmap_t *dst,
+                                       roaring_bitmap_t *src,
+                                       uint32_t high_bits) {
     uint64_t key_base = ((uint64_t)high_bits) << 32;
     uint32_t r32_size = ra_get_size(&src->high_low_container);
     for (uint32_t i = 0; i < r32_size; ++i) {
@@ -206,11 +206,11 @@ static void steal_from_roaring32_offset(roaring64_bitmap_t *dst,
     src->high_low_container.size = 0;
 }
 
-roaring64_bitmap_t *roaring64_bitmap_steal_roaring32(
+roaring64_bitmap_t *roaring64_bitmap_move_from_roaring32(
     roaring_bitmap_t *bitmap32) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
 
-    steal_from_roaring32_offset(result, bitmap32, 0);
+    move_from_roaring32_offset(result, bitmap32, 0);
 
     return result;
 }
@@ -1984,7 +1984,7 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         read_bytes += bitmap32_size;
 
         // Insert all containers of the 32-bit bitmap into the 64-bit bitmap.
-        steal_from_roaring32_offset(r, bitmap32, high32);
+        move_from_roaring32_offset(r, bitmap32, high32);
         roaring_bitmap_free(bitmap32);
     }
     return r;

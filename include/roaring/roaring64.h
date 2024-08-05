@@ -94,12 +94,12 @@ roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
 #endif
 
 /**
- * Create a new bitmap by stealing containers from a 32 bit roaring bitmap.
+ * Create a new bitmap by moving containers from a 32 bit roaring bitmap.
  *
  * After calling this function, the original bitmap will be empty, and the
  * returned bitmap will contain all the values from the original bitmap.
  */
-roaring64_bitmap_t *roaring64_bitmap_steal_roaring32(roaring_bitmap_t *r);
+roaring64_bitmap_t *roaring64_bitmap_move_from_roaring32(roaring_bitmap_t *r);
 
 /**
  * Create a new bitmap containing all the values in [min, max) that are at a
