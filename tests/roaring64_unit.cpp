@@ -23,6 +23,13 @@ void assert_vector_equal(const std::vector<uint64_t>& lhs,
     }
 }
 
+void assert_r32_valid(roaring_bitmap_t* b) {
+    const char* reason = nullptr;
+    if (!roaring_bitmap_internal_validate(b, &reason)) {
+        fail_msg("Roaring64 bitmap is invalid: '%s'\n", reason);
+    }
+}
+
 void assert_r64_valid(roaring64_bitmap_t* b) {
     const char* reason = nullptr;
     if (!roaring64_bitmap_internal_validate(b, &reason)) {
@@ -53,6 +60,38 @@ DEFINE_TEST(test_copy) {
 
     roaring64_bitmap_free(r1);
     roaring64_bitmap_free(r2);
+}
+
+DEFINE_TEST(test_move_from_roaring32) {
+    {
+        // Empty bitmap
+        roaring_bitmap_t* r32 = roaring_bitmap_create();
+        roaring64_bitmap_t* r = roaring64_bitmap_move_from_roaring32(r32);
+
+        assert_r32_valid(r32);
+        assert_true(roaring_bitmap_is_empty(r32));
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_is_empty(r));
+
+        roaring64_bitmap_free(r);
+        roaring_bitmap_free(r32);
+    }
+    {
+        roaring_bitmap_t* r32 = roaring_bitmap_from(0, 100, UINT32_MAX);
+        roaring64_bitmap_t* r = roaring64_bitmap_move_from_roaring32(r32);
+
+        assert_r32_valid(r32);
+        assert_true(roaring_bitmap_is_empty(r32));
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 3);
+
+        assert_true(roaring64_bitmap_contains(r, 0));
+        assert_true(roaring64_bitmap_contains(r, 100));
+        assert_true(roaring64_bitmap_contains(r, UINT32_MAX));
+
+        roaring_bitmap_free(r32);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_from_range) {
@@ -1842,6 +1881,7 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_copy),
         cmocka_unit_test(test_from_range),
+        cmocka_unit_test(test_move_from_roaring32),
         cmocka_unit_test(test_of_ptr),
         cmocka_unit_test(test_of),
         cmocka_unit_test(test_add),
