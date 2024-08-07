@@ -95,7 +95,8 @@ $(document).ready(function(){initNavTree('d8/d01/roaring64_8h.html','../../'); i
 <div class="title">roaring64.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;stdbool.h&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>&gt;</code><br />
+<code>#include &lt;stdbool.h&gt;</code><br />
 <code>#include &lt;stddef.h&gt;</code><br />
 <code>#include &lt;stdint.h&gt;</code><br />
 <code>#include &lt;roaring/memory.h&gt;</code><br />
@@ -135,6 +136,8 @@ Functions</h2></td></tr>
 <tr class="separator:a2149886993fb84b66e850b66d47a7262"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7e115c3371d7cbcae0da04f21f6d48e4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a7e115c3371d7cbcae0da04f21f6d48e4">roaring64_bitmap_of_ptr</a> (size_t n_args, const uint64_t *vals)</td></tr>
 <tr class="separator:a7e115c3371d7cbcae0da04f21f6d48e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0577e0293dcee723882b9ff613e96fbb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a0577e0293dcee723882b9ff613e96fbb">roaring64_bitmap_move_from_roaring32</a> (<a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *r)</td></tr>
+<tr class="separator:a0577e0293dcee723882b9ff613e96fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a650e07e75fa31ef121e913f8f5d7e1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a4a650e07e75fa31ef121e913f8f5d7e1">roaring64_bitmap_from_range</a> (uint64_t min, uint64_t max, uint64_t step)</td></tr>
 <tr class="separator:a4a650e07e75fa31ef121e913f8f5d7e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a511b38d167a3c0f4ddfbd5c8ca7b6f19"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t val)</td></tr>
@@ -297,7 +300,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Creates a new bitmap which contains all values passed in as arguments.</p>
 <p>To create a bitmap from a variable number of arguments, use the <code>roaring64_bitmap_of_ptr</code> function instead. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00089">89</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00090">90</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -1456,6 +1459,26 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Returns the smallest value in the set, or UINT64_MAX if the set is empty. </p>
+
+</div>
+</div>
+<a id="a0577e0293dcee723882b9ff613e96fbb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0577e0293dcee723882b9ff613e96fbb">&#9670;&nbsp;</a></span>roaring64_bitmap_move_from_roaring32()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a>* roaring64_bitmap_move_from_roaring32 </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Create a new bitmap by moving containers from a 32 bit roaring bitmap.</p>
+<p>After calling this function, the original bitmap will be empty, and the returned bitmap will contain all the values from the original bitmap. </p>
 
 </div>
 </div>

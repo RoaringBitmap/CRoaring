@@ -43,6 +43,7 @@ var roaring64_8h =
     [ "roaring64_bitmap_jaccard_index", "d8/d01/roaring64_8h.html#af01cf39530a4efe28bef23a097ad147c", null ],
     [ "roaring64_bitmap_maximum", "d8/d01/roaring64_8h.html#aa88e1e355f93c7850e201aba984c6741", null ],
     [ "roaring64_bitmap_minimum", "d8/d01/roaring64_8h.html#ae5ea73443856e75c00fc6085356b910a", null ],
+    [ "roaring64_bitmap_move_from_roaring32", "d8/d01/roaring64_8h.html#a0577e0293dcee723882b9ff613e96fbb", null ],
     [ "roaring64_bitmap_of_ptr", "d8/d01/roaring64_8h.html#a7e115c3371d7cbcae0da04f21f6d48e4", null ],
     [ "roaring64_bitmap_or", "d8/d01/roaring64_8h.html#a1df63e2ae3dfa17c516f07acbf4a5e79", null ],
     [ "roaring64_bitmap_or_cardinality", "d8/d01/roaring64_8h.html#a05eca3acce1654bd170e73549ed43a69", null ],
