@@ -493,6 +493,8 @@ class Roaring64Map {
         return iter->second.contains(lowBytes(x));
     }
 
+    // TODO: implement `containsRange`
+
     /**
      * Compute the intersection of the current bitmap and the provided bitmap,
      * writing the result in the current bitmap. The provided bitmap is not
@@ -785,17 +787,11 @@ class Roaring64Map {
         // to avoid a clash with the Windows.h header under Windows
         return roarings.size() ==
                        ((uint64_t)(std::numeric_limits<uint32_t>::max)()) + 1
-                   ? std::all_of(
-                         roarings.cbegin(), roarings.cend(),
-                         [](const std::pair<const uint32_t, Roaring>
-                                &roaring_map_entry) {
-                             // roarings within map are saturated if cardinality
-                             // is uint32_t max + 1
-                             return roaring_map_entry.second.cardinality() ==
-                                    ((uint64_t)(std::numeric_limits<
-                                                uint32_t>::max)()) +
-                                        1;
-                         })
+                   ? std::all_of(roarings.cbegin(), roarings.cend(),
+                                 [](const std::pair<const uint32_t, Roaring>
+                                        &roaring_map_entry) {
+                                     return roaring_map_entry.second.isFull();
+                                 })
                    : false;
     }
 
@@ -843,6 +839,8 @@ class Roaring64Map {
                 return previous;
             });
     }
+
+    // TODO: implement `rangeUint64Array`
 
     /**
      * Return true if the two bitmaps contain the same elements.
@@ -1722,8 +1720,8 @@ class Roaring64MapSetBitBiDirectionalIterator {
     typedef int64_t difference_type;
     typedef Roaring64MapSetBitBiDirectionalIterator type_of_iterator;
 
-    Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
-                                            bool exhausted = false)
+    explicit Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
+                                                     bool exhausted = false)
         : p(&parent.roarings) {
         if (exhausted || parent.roarings.empty()) {
             map_iter = p->cend();
@@ -1790,7 +1788,11 @@ class Roaring64MapSetBitBiDirectionalIterator {
         return orig;
     }
 
-    bool move(const value_type &x) {
+    /**
+     * Move the iterator to the first value >= val.
+     * Return true if there is such a value.
+     */
+    bool move_equalorlarger(const value_type &x) {
         map_iter = p->lower_bound(Roaring64Map::highBytes(x));
         if (map_iter != p->cend()) {
             roaring_iterator_init(&map_iter->second.roaring, &i);
@@ -1805,6 +1807,11 @@ class Roaring64MapSetBitBiDirectionalIterator {
             return true;
         }
         return false;
+    }
+
+    /** DEPRECATED, use `move_equalorlarger`. */
+    CROARING_DEPRECATED bool move(const value_type &x) {
+        return move_equalorlarger(x);
     }
 
     type_of_iterator &operator--() {  //  --i, must return dec.value

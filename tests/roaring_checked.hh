@@ -670,14 +670,14 @@ class Roaring {
         return ans;
     }
 
-    typedef roaring::RoaringSetBitForwardIterator const_iterator;
+    typedef roaring::RoaringSetBitBiDirectionalIterator const_iterator;
 
     const_iterator begin() const {
-        return roaring::RoaringSetBitForwardIterator(plain);
+        return roaring::RoaringSetBitBiDirectionalIterator(plain);
     }
 
     const_iterator &end() const {
-        static roaring::RoaringSetBitForwardIterator e(plain, true);
+        static roaring::RoaringSetBitBiDirectionalIterator e(plain, true);
         return e;
     }
 };

@@ -422,7 +422,7 @@ void test_example_cpp(bool copy_on_write) {
     const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
     Roaring rogue(5, manyvalues);
     Roaring::const_iterator j = rogue.begin();
-    j.equalorlarger(4);
+    j.move_equalorlarger(4);
     assert_true(*j == 4);
 
     // test move constructor
@@ -1295,11 +1295,11 @@ DEFINE_TEST(test_cpp_move_64) {
     }
 
     Roaring64Map::const_iterator i(roaring);
-    i.move(123ULL);
+    i.move_equalorlarger(123ULL);
     assert_true(*i == 123ULL);
-    i.move(0xAFFFFFFF8ULL);
+    i.move_equalorlarger(0xAFFFFFFF8ULL);
     assert_true(*i == 0xFFFFFFFFFULL);
-    assert_false(i.move(0xFFFFFFFFFFULL));
+    assert_false(i.move_equalorlarger(0xFFFFFFFFFFULL));
 }
 
 DEFINE_TEST(test_cpp_bidirectional_iterator_64) {
@@ -2153,7 +2153,7 @@ DEFINE_TEST(test_cpp_copy_map_iterator_to_different_map) {
     Roaring64Map m2{10, 20, 30, 40};
     auto it = m1.begin();
     it = m2.begin();
-    it.move(21);
+    it.move_equalorlarger(21);
     int n = 0;
     for (; it != m2.end(); ++it, ++n) {
     }
