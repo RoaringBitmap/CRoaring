@@ -1331,15 +1331,22 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r) {
 uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *r,
                                           uint64_t range_start,
                                           uint64_t range_end) {
-    const roaring_array_t *ra = &r->high_low_container;
-
-    if (range_end > UINT32_MAX) {
-        range_end = UINT32_MAX + UINT64_C(1);
-    }
-    if (range_start >= range_end) {
+    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1) {
         return 0;
     }
-    range_end--;  // make range_end inclusive
+    return roaring_bitmap_range_cardinality_closed(r, (uint32_t)range_start,
+                                                   (uint32_t)(range_end - 1));
+}
+
+uint64_t roaring_bitmap_range_cardinality_closed(const roaring_bitmap_t *r,
+                                                 uint32_t range_start,
+                                                 uint32_t range_end) {
+    const roaring_array_t *ra = &r->high_low_container;
+
+    if (range_start > range_end) {
+        return 0;
+    }
+
     // now we have: 0 <= range_start <= range_end <= UINT32_MAX
 
     uint16_t minhb = (uint16_t)(range_start >> 16);
@@ -2006,7 +2013,7 @@ static void inplace_fully_flip_container(roaring_array_t *x1_arr, uint16_t hb) {
 roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
                                       uint64_t range_start,
                                       uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT_MAX + 1)
+    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1)
         return roaring_bitmap_copy(x1);
     return roaring_bitmap_flip_closed(x1, (uint32_t)range_start,
                                       (uint32_t)(range_end - 1));
@@ -2066,7 +2073,7 @@ roaring_bitmap_t *roaring_bitmap_flip_closed(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
                                  uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT_MAX + 1)
+    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1)
         return;
     roaring_bitmap_flip_inplace_closed(x1, (uint32_t)range_start,
                                        (uint32_t)(range_end - 1));
@@ -2840,7 +2847,7 @@ bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
  */
 bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_start, uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT_MAX + 1)
+    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1)
         return true;
     return roaring_bitmap_contains_range_closed(r, (uint32_t)range_start,
                                                 (uint32_t)(range_end - 1));

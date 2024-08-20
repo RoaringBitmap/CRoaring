@@ -840,8 +840,6 @@ class Roaring64Map {
             });
     }
 
-    // TODO: implement `rangeUint64Array`
-
     /**
      * Return true if the two bitmaps contain the same elements.
      */
