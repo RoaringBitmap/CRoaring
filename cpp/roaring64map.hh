@@ -1708,6 +1708,9 @@ class Roaring64Map {
 
 /**
  * Used to go through the set bits. Not optimally fast, but convenient.
+ *
+ * strongly recommend not to implicitly construct this iterator:
+ * implicit construction may be prohibited in the future.
  */
 class Roaring64MapSetBitBiDirectionalIterator {
    public:
@@ -1718,8 +1721,8 @@ class Roaring64MapSetBitBiDirectionalIterator {
     typedef int64_t difference_type;
     typedef Roaring64MapSetBitBiDirectionalIterator type_of_iterator;
 
-    explicit Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
-                                                     bool exhausted = false)
+    Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
+                                            bool exhausted = false)
         : p(&parent.roarings) {
         if (exhausted || parent.roarings.empty()) {
             map_iter = p->cend();
