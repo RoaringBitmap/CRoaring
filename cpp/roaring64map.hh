@@ -1709,8 +1709,7 @@ class Roaring64Map {
 /**
  * Used to go through the set bits. Not optimally fast, but convenient.
  *
- * strongly recommend not to implicitly construct this iterator:
- * implicit construction may be prohibited in the future.
+ * Recommend to explicitly construct this iterator.
  */
 class Roaring64MapSetBitBiDirectionalIterator {
    public:
