@@ -74,12 +74,12 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/roaring.pc" DESTINATION ${CMAKE_INSTA
 
 add_library(roaring-headers INTERFACE)
 target_include_directories(roaring-headers INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/roaring>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 add_library(roaring-headers-cpp INTERFACE)
 target_include_directories(roaring-headers-cpp INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cpp>
-   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 ####
 ### Some users want the C++ header files to be installed as well.
@@ -93,7 +93,7 @@ install(TARGETS roaring-headers roaring-headers-cpp
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   INCLUDES DESTINATION ${CMAKE_INSTALL_INCDIR})
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 include(CTest)
 
 ##################################
