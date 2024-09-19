@@ -450,7 +450,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_advance</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01028">1028</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01045">1045</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -1340,7 +1340,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Serializes bitmap using frozen format. Buffer size must be at least <a class="el" href="../../dc/d56/roaring_8h.html#a45ee2d20cf5c40d9898c88a8320f136b">roaring_bitmap_frozen_size_in_bytes()</a>.</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>When serializing data to a file, we recommend that you also use checksums so that, at deserialization, you can be confident that you are recovering the correct data. </p>
 
 <p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a9a8e3442abe87e7049ad23ab4f4a45ad">roaring::Roaring::writeFrozen()</a>.</p>
 
@@ -2261,8 +2262,10 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Read bitmap from a serialized buffer safely (reading up to maxbytes). In case of failure, NULL is returned.</p>
 <p>This is meant to be compatible with the Java and Go versions: <a href="https://github.com/RoaringBitmap/RoaringFormatSpec">https://github.com/RoaringBitmap/RoaringFormatSpec</a></p>
-<p>The function itself is safe in the sense that it will not cause buffer overflows. However, for correct operations, it is assumed that the bitmap read was once serialized from a valid bitmap (i.e., it follows the format specification). If you provided an incorrect input (garbage), then the bitmap read may not be in a valid state and following operations may not lead to sensible results. In particular, the serialized array containers need to be in sorted order, and the run containers should be in sorted non-overlapping order. This is is guaranteed to happen when serializing an existing bitmap, but not for random inputs.</p>
-<p>You may use roaring_bitmap_internal_validate to check the validity of the bitmap prior to using it. You may also use other strategies to check for corrupted inputs (e.g., checksums).</p>
+<p>The function itself is safe in the sense that it will not cause buffer overflows: it will not read beyond the scope of the provided buffer (buf,maxbytes).</p>
+<p>However, for correct operations, it is assumed that the bitmap read was once serialized from a valid bitmap (i.e., it follows the format specification). If you provided an incorrect input (garbage), then the bitmap read may not be in a valid state and following operations may not lead to sensible results. In particular, the serialized array containers need to be in sorted order, and the run containers should be in sorted non-overlapping order. This is is guaranteed to happen when serializing an existing bitmap, but not for random inputs.</p>
+<p>You may use roaring_bitmap_internal_validate to check the validity of the bitmap prior to using it.</p>
+<p>We recommend that you use checksums to check that serialized data corresponds to a serialized bitmap.</p>
 <p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
 
 <p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a129a1d354fd32d20fc9e2732e288ebb5">roaring::Roaring::readSafe()</a>.</p>
@@ -2327,7 +2330,8 @@ Functions</h2></td></tr>
 <p>Write a bitmap to a char buffer. The output buffer should refer to at least <code>roaring_bitmap_portable_size_in_bytes(r)</code> bytes of allocated memory.</p>
 <p>Returns how many bytes were written which should match <code>roaring_bitmap_portable_size_in_bytes(r)</code>.</p>
 <p>This is meant to be compatible with the Java and Go versions: <a href="https://github.com/RoaringBitmap/RoaringFormatSpec">https://github.com/RoaringBitmap/RoaringFormatSpec</a></p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>When serializing data to a file, we recommend that you also use checksums so that, at deserialization, you can be confident that you are recovering the correct data. </p>
 
 <p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a305434227cedd4587679d67e0435bc5f">roaring::Roaring::write()</a>.</p>
 
@@ -2862,7 +2866,8 @@ Functions</h2></td></tr>
 <p>Write the bitmap to an output pointer, this output buffer should refer to at least <code>roaring_bitmap_size_in_bytes(r)</code> allocated bytes.</p>
 <p>See <code><a class="el" href="../../dc/d56/roaring_8h.html#a14ca6fb130b35a5497f2b1e463bda66d">roaring_bitmap_portable_serialize()</a></code> if you want a format that's compatible with Java and Go implementations. This format can sometimes be more space efficient than the portable form, e.g. when the data is sparse.</p>
 <p>Returns how many bytes written, should be <code>roaring_bitmap_size_in_bytes(r)</code>.</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>When serializing data to a file, we recommend that you also use checksums so that, at deserialization, you can be confident that you are recovering the correct data. </p>
 
 <p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a305434227cedd4587679d67e0435bc5f">roaring::Roaring::write()</a>.</p>
 
@@ -3191,7 +3196,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_copy</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01074">1074</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01091">1091</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#ace36f119f07f406f54efe51331253359">roaring_uint32_iterator_copy()</a>.</p>
 
@@ -3222,7 +3227,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_create</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01012">1012</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01029">1029</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5aa02a6e9acc580802d02dbbe9087410">roaring_iterator_create()</a>.</p>
 
@@ -3253,7 +3258,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_free</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01084">1084</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01101">1101</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free()</a>.</p>
 
@@ -3294,7 +3299,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00981">981</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00998">998</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>.</p>
 
@@ -3335,7 +3340,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init_last</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00995">995</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01012">1012</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>.</p>
 
@@ -3542,7 +3547,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_move_equalorlarger</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01060">1060</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01077">1077</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger()</a>.</p>
 
@@ -3573,7 +3578,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_previous</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01045">1045</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01062">1062</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -3620,7 +3625,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_read</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01104">1104</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01121">1121</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read()</a>.</p>
 
