@@ -85,6 +85,46 @@ DEFINE_TEST(test_64mapspreadvals) {
     assert_true(test_serialization("64mapspreadvals.bin"));
 }
 
+DEFINE_TEST(test_64deseroverlappingkeys) {
+    // clang-format off
+    char simple_bitmap[] = {
+        // Number of 32 bit bitmaps
+        1, 0, 0, 0, 0, 0, 0, 0,
+        // Top 32 bits of the first bitmap
+        0, 0, 0, 0,
+        // Serial Cookie
+        0x3B, 0x30,
+        // Container count - 1
+        1, 0,
+        // Run Flag Bitset (no runs)
+        0, 0,
+        // Upper 16 bits of the first container
+        0, 0,
+        // Cardinality - 1 of the first container
+        0, 0,
+        // Upper 16 bits of the second container - DUPLICATE
+        0, 0,
+        // Cardinality - 1 of the second container
+        0, 0,
+        // Only value of first container
+        0, 0,
+        // Only value of second container
+        0, 0,
+    };
+    // clang-format on
+
+    roaring64_bitmap_t* r = roaring64_bitmap_portable_deserialize_safe(
+        simple_bitmap, sizeof(simple_bitmap));
+    const char* reason = nullptr;
+    if (r != nullptr) {
+        if (roaring64_bitmap_internal_validate(r, &reason)) {
+            fail_msg(
+                "Validation must fail if a bitmap was returned, duplicate keys "
+                "are not allowed.");
+        }
+        roaring64_bitmap_free(r);
+    }
+}
 }  // namespace
 
 int main() {
@@ -101,6 +141,7 @@ int main() {
         cmocka_unit_test(test_64mapkeytoosmall),
         cmocka_unit_test(test_64mapsizetoosmall),
         cmocka_unit_test(test_64mapspreadvals),
+        cmocka_unit_test(test_64deseroverlappingkeys),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 #endif  // CROARING_IS_BIG_ENDIAN
