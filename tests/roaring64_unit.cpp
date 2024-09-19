@@ -12,6 +12,15 @@
 
 using namespace roaring::api;
 
+static unsigned int seed = 123456789;
+static const int OUR_RAND_MAX = (1 << 30) - 1;
+inline static unsigned int
+our_rand() {  // we do not want to depend on a system-specific
+              // random number generator
+    seed = (1103515245 * seed + 12345);
+    return seed & OUR_RAND_MAX;
+}
+
 namespace {
 
 void assert_vector_equal(const std::vector<uint64_t>& lhs,
@@ -69,14 +78,14 @@ bool deserialization_test(const char* data, size_t size) {
 }
 
 DEFINE_TEST(fuzz_deserializer) {
-    std::mt19937 gen(1234);
-    std::uniform_int_distribution<size_t> size_dist(0, 10000);
-    std::uniform_int_distribution<unsigned char> char_dist(0, 255);
     for (size_t i = 0; i < 10000; i++) {
-        size_t vec_size = size_dist(gen);
-        std::vector<char> vec(vec_size);
-        std::generate(vec.begin(), vec.end(), [&]() { return char_dist(gen); });
-        deserialization_test(vec.data(), vec.size());
+        size_t vec_size = our_rand() % 10000;
+        char *buffer = (char *)malloc(vec_size);
+        for (size_t j = 0; j < vec_size; j++) {
+            buffer[j] = our_rand() % 256;
+        }
+        deserialization_test(buffer, vec_size);
+        free(buffer);
     }
 }
 
