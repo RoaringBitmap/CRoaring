@@ -80,7 +80,7 @@ bool deserialization_test(const char* data, size_t size) {
 DEFINE_TEST(fuzz_deserializer) {
     for (size_t i = 0; i < 10000; i++) {
         size_t vec_size = our_rand() % 10000;
-        char *buffer = (char *)malloc(vec_size);
+        char* buffer = (char*)malloc(vec_size);
         for (size_t j = 0; j < vec_size; j++) {
             buffer[j] = our_rand() % 256;
         }
