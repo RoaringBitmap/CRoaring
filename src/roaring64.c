@@ -1954,6 +1954,7 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
 
     roaring64_bitmap_t *r = roaring64_bitmap_create();
     // Iterate through buckets ordered by increasing keys.
+    int64_t previous_high32 = -1;
     for (uint64_t bucket = 0; bucket < buckets; ++bucket) {
         // Read as uint32 the most significant 32 bits of the bucket.
         uint32_t high32;
@@ -1964,7 +1965,10 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         memcpy(&high32, buf, sizeof(high32));
         buf += sizeof(high32);
         read_bytes += sizeof(high32);
-
+        if(high32 < previous_high32) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
         // Read the 32-bit Roaring bitmaps representing the least significant
         // bits of a set of elements.
         size_t bitmap32_size = roaring_bitmap_portable_deserialize_size(
