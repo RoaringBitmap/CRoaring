@@ -1965,7 +1965,7 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         memcpy(&high32, buf, sizeof(high32));
         buf += sizeof(high32);
         read_bytes += sizeof(high32);
-        if(high32 < previous_high32) {
+        if (high32 < previous_high32) {
             roaring64_bitmap_free(r);
             return NULL;
         }
