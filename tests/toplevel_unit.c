@@ -46,6 +46,18 @@ bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
     return true;  // continue till the end
 }
+
+DEFINE_TEST(issue660) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_add(r1, 0);
+    bitset_t *b = bitset_create();
+    bool success =
+        roaring_bitmap_to_bitset(r1, b);  // Segfault happens on this line
+    assert_true(success);
+    bitset_free(b);
+    roaring_bitmap_free(r1);
+}
+
 DEFINE_TEST(issue457) {
     roaring_bitmap_t *r1 = roaring_bitmap_from_range(65539, 65541, 1);
     roaring_bitmap_printf_describe(r1);
@@ -1807,7 +1819,6 @@ static roaring_bitmap_t *gen_bitmap(double start_density,
                                     double density_gradient, int run_length,
                                     int blank_range_start, int blank_range_end,
                                     int universe_size) {
-    srand(2345);
     roaring_bitmap_t *ans = roaring_bitmap_create();
     double d = start_density;
 
@@ -3340,7 +3351,6 @@ DEFINE_TEST(test_inplace_negation_run2) {
 // TODO it
 
 DEFINE_TEST(test_rand_flips) {
-    srand(1234);
     const int min_runs = 1;
     const int flip_trials = 5;  // these are expensive tests
     const int range = 2000000;
@@ -3398,7 +3408,6 @@ DEFINE_TEST(test_rand_flips) {
 
 // randomized flipping test - inplace version
 DEFINE_TEST(test_inplace_rand_flips) {
-    srand(1234);
     const int min_runs = 1;
     const int flip_trials = 5;  // these are expensive tests
     const int range = 2000000;
@@ -3486,7 +3495,6 @@ DEFINE_TEST(test_flip_run_container_removal2) {
 
 // randomized test for rank query
 DEFINE_TEST(select_test) {
-    srand(1234);
     const int min_runs = 1;
     const uint32_t range = 2000000;
     char *input = (char *)malloc(range);
@@ -4702,6 +4710,18 @@ DEFINE_TEST(robust_deserialization) {
     assert_true(deserialization_test(test1, sizeof(test1)));
 }
 
+DEFINE_TEST(fuzz_deserializer) {
+    for (size_t i = 0; i < 10000; i++) {
+        size_t vec_size = our_rand() % 10000;
+        char *buffer = malloc(vec_size);
+        for (size_t j = 0; j < vec_size; j++) {
+            buffer[j] = our_rand() % 256;
+        }
+        deserialization_test(buffer, vec_size);
+        free(buffer);
+    }
+}
+
 DEFINE_TEST(issue538) {
     roaring_bitmap_t *dense = roaring_bitmap_create();
     int *values = (int *)malloc(4500 * sizeof(int));
@@ -4785,6 +4805,8 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(fuzz_deserializer),
+        cmocka_unit_test(issue660),
         cmocka_unit_test(issue538b),
         cmocka_unit_test(issue538),
         cmocka_unit_test(simple_roaring_bitmap_or_many),

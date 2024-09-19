@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <array>
 #include <map>
 #include <numeric>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -9,6 +11,15 @@
 #include "test.h"
 
 using namespace roaring::api;
+
+static unsigned int seed = 123456789;
+static const int OUR_RAND_MAX = (1 << 30) - 1;
+inline static unsigned int
+our_rand() {  // we do not want to depend on a system-specific
+              // random number generator
+    seed = (1103515245 * seed + 12345);
+    return seed & OUR_RAND_MAX;
+}
 
 namespace {
 
@@ -34,6 +45,47 @@ void assert_r64_valid(roaring64_bitmap_t* b) {
     const char* reason = nullptr;
     if (!roaring64_bitmap_internal_validate(b, &reason)) {
         fail_msg("Roaring64 bitmap is invalid: '%s'\n", reason);
+    }
+}
+
+bool deserialization_test(const char* data, size_t size) {
+    // We test that deserialization never fails.
+    roaring64_bitmap_t* bitmap =
+        roaring64_bitmap_portable_deserialize_safe(data, size);
+    if (bitmap) {
+        // The bitmap may not be usable if it does not follow the specification.
+        // We can validate the bitmap we recovered to make sure it is proper.
+        const char* reason_failure = NULL;
+        if (roaring64_bitmap_internal_validate(bitmap, &reason_failure)) {
+            // the bitmap is ok!
+            uint32_t cardinality = roaring64_bitmap_get_cardinality(bitmap);
+
+            for (uint32_t i = 100; i < 1000; i++) {
+                if (!roaring64_bitmap_contains(bitmap, i)) {
+                    cardinality++;
+                    roaring64_bitmap_add(bitmap, i);
+                }
+            }
+
+            uint32_t new_cardinality = roaring64_bitmap_get_cardinality(bitmap);
+            if (cardinality != new_cardinality) {
+                return false;
+            }
+        }
+        roaring64_bitmap_free(bitmap);
+    }
+    return true;
+}
+
+DEFINE_TEST(fuzz_deserializer) {
+    for (size_t i = 0; i < 10000; i++) {
+        size_t vec_size = our_rand() % 10000;
+        char *buffer = (char *)malloc(vec_size);
+        for (size_t j = 0; j < vec_size; j++) {
+            buffer[j] = our_rand() % 256;
+        }
+        deserialization_test(buffer, vec_size);
+        free(buffer);
     }
 }
 
@@ -1879,6 +1931,7 @@ DEFINE_TEST(test_stats) {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(test_copy),
         cmocka_unit_test(test_from_range),
         cmocka_unit_test(test_move_from_roaring32),
