@@ -59,12 +59,6 @@ if(ROARING_DISABLE_NEON)
   target_compile_definitions(roaring PUBLIC DISABLENEON=1)
 endif(ROARING_DISABLE_NEON)
 
-
-target_include_directories(roaring
-  PUBLIC
-   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
 target_link_libraries(roaring PUBLIC roaring-headers)
 target_link_libraries(roaring PUBLIC roaring-headers-cpp)
 #
@@ -75,7 +69,7 @@ install(TARGETS roaring
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   INCLUDES DESTINATION ${CMAKE_INSTALL_INCDIR}
+   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 install(EXPORT roaring-config
    FILE roaring-config.cmake
