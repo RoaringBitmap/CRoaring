@@ -1970,6 +1970,8 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
             roaring64_bitmap_free(r);
             return NULL;
         }
+        previous_high32 = high32;
+
         // Read the 32-bit Roaring bitmaps representing the least significant
         // bits of a set of elements.
         size_t bitmap32_size = roaring_bitmap_portable_deserialize_size(
