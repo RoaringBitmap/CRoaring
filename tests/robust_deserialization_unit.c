@@ -14,6 +14,8 @@
 #include "config.h"
 #include "test.h"
 
+#define MAX_CONTAINERS (1 << 16)
+
 long filesize(FILE* fp) {
     fseek(fp, 0L, SEEK_END);
     return ftell(fp);
@@ -163,6 +165,53 @@ static void valid_deserialize_test(const void* data, size_t size) {
     roaring_bitmap_free(bitmap);
 }
 
+DEFINE_TEST(deserialize_negative_container_count) {
+    // clang-format off
+    const uint8_t data[] = {
+        0x3A, 0x30, 0, 0,       // Serial Cookie No Run Container
+        0x00, 0x00, 0x00, 0x80, // Container count (NEGATIVE)
+    };
+    // clang-format on
+    assert_int_equal(roaring_bitmap_portable_deserialize_size((const char*)data,
+                                                              sizeof(data)),
+                     0);
+    roaring_bitmap_t* bitmap = roaring_bitmap_portable_deserialize_safe(
+        (const char*)data, sizeof(data));
+    assert_null(bitmap);
+}
+
+DEFINE_TEST(deserialize_huge_container_count) {
+    // clang-format off
+    const uint8_t data_begin[] = {
+        0x3A, 0x30, 0, 0,       // Serial Cookie No Run Container
+        0x00, 0x00, 0x01, 0x00, // Container count (MAX_CONTAINERS + 1)
+    };
+    // clang-format on
+#define EXTRA_DATA(num_containers) \
+    ((num_containers) * (3 * sizeof(uint16_t) + sizeof(uint32_t)))
+
+    // For each container, 32 bits for container offset,
+    //   16 bits each for a key, cardinality - 1, and a value
+    uint8_t data[sizeof(data_begin) + EXTRA_DATA(MAX_CONTAINERS + 1)];
+    memcpy(data, data_begin, sizeof(data_begin));
+    memset(data + sizeof(data_begin), 0, EXTRA_DATA(MAX_CONTAINERS + 1));
+
+    size_t valid_size = sizeof(data_begin) + EXTRA_DATA(MAX_CONTAINERS);
+    assert_int_equal(
+        roaring_bitmap_portable_deserialize_size((const char*)data, valid_size),
+        valid_size);
+
+    // Add an extra container
+    data[4] += 1;
+    assert_int_equal(roaring_bitmap_portable_deserialize_size((const char*)data,
+                                                              sizeof(data)),
+                     0);
+    roaring_bitmap_t* bitmap = roaring_bitmap_portable_deserialize_safe(
+        (const char*)data, sizeof(data));
+    assert_null(bitmap);
+#undef EXTRA_DATA
+}
+
 DEFINE_TEST(deserialize_duplicate_keys) {
     // clang-format off
     const char data[] = {
@@ -265,6 +314,8 @@ int main() {
         cmocka_unit_test(test_robust_deserialize5),
         cmocka_unit_test(test_robust_deserialize6),
         cmocka_unit_test(test_robust_deserialize7),
+        cmocka_unit_test(deserialize_negative_container_count),
+        cmocka_unit_test(deserialize_huge_container_count),
         cmocka_unit_test(deserialize_duplicate_keys),
         cmocka_unit_test(deserialize_unsorted_keys),
         cmocka_unit_test(deserialize_duplicate_array),
