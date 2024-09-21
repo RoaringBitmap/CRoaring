@@ -212,6 +212,92 @@ DEFINE_TEST(deserialize_huge_container_count) {
 #undef EXTRA_DATA
 }
 
+DEFINE_TEST(deserialize_run_container_empty) {
+    // clang-format off
+    const uint8_t data[] = {
+        0x3B, 0x30, // Serial Cookie
+        0, 0,       // Container count - 1
+        0x01,       // Run Flag Bitset (single container is a run)
+        0, 0,       // Upper 16 bits of the first container
+        0, 0,       // Cardinality - 1 of the first container
+        0, 0,       // First Container - Number of runs
+    };
+    // clang-format on
+    invalid_deserialize_test(data, sizeof(data), "empty run container");
+}
+
+DEFINE_TEST(deserialize_run_container_should_combine) {
+    // clang-format off
+    const uint8_t data[] = {
+        0x3B, 0x30, // Serial Cookie
+        0, 0,       // Container count - 1
+        0x01,       // Run Flag Bitset (single container is a run)
+        0, 0,       // Upper 16 bits of the first container
+        1, 0,       // Cardinality - 1 of the first container
+        2, 0,       // First Container - Number of runs
+        0, 0,       // First run start
+        0, 0,       // First run length - 1
+        1, 0,       // Second run start (STARTS AT THE END OF THE FIRST)
+        0, 0,       // Second run length - 1
+    };
+    // clang-format on
+    invalid_deserialize_test(data, sizeof(data),
+                             "ranges shouldn't be contiguous");
+}
+
+DEFINE_TEST(deserialize_run_container_overlap) {
+    // clang-format off
+    const uint8_t data[] = {
+        0x3B, 0x30, // Serial Cookie
+        0, 0,       // Container count - 1
+        0x01,       // Run Flag Bitset (single container is a run)
+        0, 0,       // Upper 16 bits of the first container
+        4, 0,       // Cardinality - 1 of the first container
+        2, 0,       // First Container - Number of runs
+        0, 0,       // First run start
+        4, 0,       // First run length - 1
+        1, 0,       // Second run start (STARTS INSIDE THE FIRST)
+        0, 0,       // Second run length - 1
+    };
+    // clang-format on
+    invalid_deserialize_test(data, sizeof(data), "overlapping ranges");
+}
+
+DEFINE_TEST(deserialize_run_container_overflow) {
+    // clang-format off
+    const uint8_t data[] = {
+        0x3B, 0x30, // Serial Cookie
+        0, 0,       // Container count - 1
+        0x01,       // Run Flag Bitset (single container is a run)
+        0, 0,       // Upper 16 bits of the first container
+        4, 0,       // Cardinality - 1 of the first container
+        1, 0,       // First Container - Number of runs
+        0xFE, 0xFF, // First run start
+        4, 0,       // First run length - 1 (OVERFLOW)
+    };
+    // clang-format on
+    invalid_deserialize_test(data, sizeof(data), "run length overflow");
+}
+
+DEFINE_TEST(deserialize_run_container_incorrect_cardinality_still_allowed) {
+    // clang-format off
+    const uint8_t data[] = {
+        0x3B, 0x30, // Serial Cookie
+        0, 0,       // Container count - 1
+        0x01,       // Run Flag Bitset (single container is a run)
+        0, 0,       // Upper 16 bits of the first container
+        0, 0,       // Cardinality - 1 of the first container
+        1, 0,       // First Container - Number of runs
+        0, 0,       // First run start
+        8, 0,       // First run length - 1 (9 items, but cardinality is 1)
+    };
+    // clang-format on
+
+    // The cardinality doesn't match the actual number of items in the run,
+    // but the implementation ignores the cardinality field.
+    valid_deserialize_test(data, sizeof(data));
+}
+
 DEFINE_TEST(deserialize_duplicate_keys) {
     // clang-format off
     const char data[] = {
@@ -321,6 +407,12 @@ int main() {
         cmocka_unit_test(deserialize_duplicate_array),
         cmocka_unit_test(deserialize_unsorted_array),
         cmocka_unit_test(deserialize_bitset_incorrect_cardinality),
+        cmocka_unit_test(deserialize_run_container_empty),
+        cmocka_unit_test(deserialize_run_container_should_combine),
+        cmocka_unit_test(deserialize_run_container_overlap),
+        cmocka_unit_test(deserialize_run_container_overflow),
+        cmocka_unit_test(
+            deserialize_run_container_incorrect_cardinality_still_allowed),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
