@@ -225,7 +225,6 @@ bool bitset_empty(const bitset_t *bitset) {
     return true;
 }
 
-
 size_t bitset_minimum(const bitset_t *bitset) {
     for (size_t k = 0; k < bitset->arraysize; k++) {
         uint64_t w = bitset->array[k];
