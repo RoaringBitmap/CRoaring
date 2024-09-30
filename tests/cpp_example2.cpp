@@ -102,7 +102,7 @@ int main() {
     const uint32_t manyvalues[] = {2, 3, 4, 7, 8};
     Roaring rogue(5, manyvalues);
     Roaring::const_iterator j = rogue.begin();
-    j.equalorlarger(4);  // *j == 4
+    j.move_equalorlarger(4);  // *j == 4
 
     return EXIT_SUCCESS;
 }
