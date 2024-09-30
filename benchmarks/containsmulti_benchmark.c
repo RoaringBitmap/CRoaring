@@ -8,7 +8,6 @@
 
 #include "benchmark.h"
 #include "numbersfromtextfiles.h"
-#include "portability.h"
 #include "random.h"
 
 void contains_multi_via_contains(roaring_bitmap_t* bm, const uint32_t* values,

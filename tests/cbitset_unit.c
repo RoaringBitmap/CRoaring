@@ -60,6 +60,7 @@ void test_construct() {
 
 void test_max_min() {
     bitset_t *b = bitset_create();
+    assert_true(bitset_empty(b));
     for (size_t k = 100; k < 1000; ++k) {
         bitset_set(b, 3 * k);
         assert_true(bitset_minimum(b) == 3 * 100);
