@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['end_25',['end',['../d1/d51/classroaring_1_1Roaring.html#a7b4e642a9e383a508ba9b1af10186542',1,'roaring::Roaring::end()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a1e101bcc9f646ce57f60c8381eb64adb',1,'roaring::Roaring64Map::end()']]],
-  ['equalorlarger_26',['equalorlarger',['../da/d37/classroaring_1_1RoaringSetBitForwardIterator.html#a97c7bac108fd9c06d290ab4823b12ad5',1,'roaring::RoaringSetBitForwardIterator']]]
+  ['end_26',['end',['../d1/d51/classroaring_1_1Roaring.html#afc6c8582a3a8545cc84e95191c4dfe34',1,'roaring::Roaring::end()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a1e101bcc9f646ce57f60c8381eb64adb',1,'roaring::Roaring64Map::end()']]],
+  ['equalorlarger_27',['equalorlarger',['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#a6508ffcac249c6f355cee87d66decbc9',1,'roaring::RoaringSetBitBiDirectionalIterator']]]
 ];

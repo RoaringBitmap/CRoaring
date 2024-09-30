@@ -130,8 +130,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ac92da32727aed2510ef723af5b1116de"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0416282aa655d3c59d2d7acd5ffa30a6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab911b81817ac5378fcacf8ad834df72d">type_of_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a0416282aa655d3c59d2d7acd5ffa30a6">operator++</a> (int)</td></tr>
 <tr class="separator:a0416282aa655d3c59d2d7acd5ffa30a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54e84a33347ef2821707bb5b54a32f88"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a54e84a33347ef2821707bb5b54a32f88">move</a> (const <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000">value_type</a> &amp;x)</td></tr>
-<tr class="separator:a54e84a33347ef2821707bb5b54a32f88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5e926eae57201b1132da84d91bc24bc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac5e926eae57201b1132da84d91bc24bc">move_equalorlarger</a> (const <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000">value_type</a> &amp;x)</td></tr>
+<tr class="separator:ac5e926eae57201b1132da84d91bc24bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a583ab1e2148193638993622392eeec02"><td class="memItemLeft" align="right" valign="top">CROARING_DEPRECATED bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a583ab1e2148193638993622392eeec02">move</a> (const <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000">value_type</a> &amp;x)</td></tr>
+<tr class="separator:a583ab1e2148193638993622392eeec02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16659fff311adc780897752bf0150dc1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab911b81817ac5378fcacf8ad834df72d">type_of_iterator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a16659fff311adc780897752bf0150dc1">operator--</a> ()</td></tr>
 <tr class="separator:a16659fff311adc780897752bf0150dc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ddc21b129bd005d78eb260d6dc6f713"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab911b81817ac5378fcacf8ad834df72d">type_of_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a9ddc21b129bd005d78eb260d6dc6f713">operator--</a> (int)</td></tr>
@@ -142,9 +144,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a1cbe70e90a38e17f0cc3c6e8dbcb445d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Used to go through the set bits. Not optimally fast, but convenient. </p>
+<div class="textblock"><p>Used to go through the set bits. Not optimally fast, but convenient.</p>
+<p>Recommend to explicitly construct this iterator. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01716">1716</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01714">1714</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="ae8b1c6fa466e39d82da783b062719041"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae8b1c6fa466e39d82da783b062719041">&#9670;&nbsp;</a></span>difference_type</h2>
@@ -158,7 +161,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01722">1722</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01720">1720</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -174,7 +177,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01718">1718</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01716">1716</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -190,7 +193,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01719">1719</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01717">1717</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -206,7 +209,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01720">1720</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01718">1718</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -222,7 +225,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01723">1723</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01721">1721</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -238,7 +241,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01721">1721</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01719">1719</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -277,15 +280,15 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01725">1725</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01723">1723</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a54e84a33347ef2821707bb5b54a32f88"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a54e84a33347ef2821707bb5b54a32f88">&#9670;&nbsp;</a></span>move()</h2>
+<a id="a583ab1e2148193638993622392eeec02"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a583ab1e2148193638993622392eeec02">&#9670;&nbsp;</a></span>move()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -294,7 +297,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool roaring::Roaring64MapSetBitBiDirectionalIterator::move </td>
+          <td class="memname">CROARING_DEPRECATED bool roaring::Roaring64MapSetBitBiDirectionalIterator::move </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000">value_type</a> &amp;&#160;</td>
           <td class="paramname"><em>x</em></td><td>)</td>
@@ -307,10 +310,44 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+<p>DEPRECATED, use <code>move_equalorlarger</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01793">1793</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01813">1813</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+
+<p class="reference">References <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac5e926eae57201b1132da84d91bc24bc">move_equalorlarger()</a>.</p>
+
+</div>
+</div>
+<a id="ac5e926eae57201b1132da84d91bc24bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac5e926eae57201b1132da84d91bc24bc">&#9670;&nbsp;</a></span>move_equalorlarger()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool roaring::Roaring64MapSetBitBiDirectionalIterator::move_equalorlarger </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000">value_type</a> &amp;&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Move the iterator to the first value &gt;= val. Return true if there is such a value. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01795">1795</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a583ab1e2148193638993622392eeec02">move()</a>.</p>
 
 </div>
 </div>
@@ -338,7 +375,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01849">1849</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01856">1856</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -366,7 +403,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Provides the location of the set bit. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01744">1744</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01742">1742</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -393,7 +430,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01772">1772</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01770">1770</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -423,7 +460,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01782">1782</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01780">1780</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -452,7 +489,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01810">1810</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01817">1817</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -482,7 +519,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01826">1826</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01833">1833</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -512,7 +549,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01748">1748</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01746">1746</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -540,7 +577,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01754">1754</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01752">1752</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -568,7 +605,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01843">1843</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01850">1850</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -596,7 +633,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01760">1760</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01758">1758</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
@@ -624,7 +661,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01766">1766</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../db/d2c/roaring64map_8hh_source.html#l01764">1764</a> of file <a class="el" href="../../db/d2c/roaring64map_8hh_source.html">roaring64map.hh</a>.</p>
 
 </div>
 </div>
