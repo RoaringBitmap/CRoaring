@@ -20,7 +20,7 @@
 
 #include "roaring/roaring.h"
 
-int LLVMFuzzerTestOneInput(const char *data, size_t size) {
+int bitmap32(const char *data, size_t size) {
     // We test that deserialization never fails.
     roaring_bitmap_t *bitmap =
         roaring_bitmap_portable_deserialize_safe(data, size);
@@ -45,6 +45,47 @@ int LLVMFuzzerTestOneInput(const char *data, size_t size) {
             }
         }
         roaring_bitmap_free(bitmap);
+    }
+    return 0;
+}
+
+int bitmap64(const char *data, size_t size) {
+    // We test that deserialization never fails.
+    roaring64_bitmap_t *bitmap =
+        roaring64_bitmap_portable_deserialize_safe(data, size);
+    if (bitmap) {
+        // The bitmap may not be usable if it does not follow the specification.
+        // We can validate the bitmap we recovered to make sure it is proper.
+        const char *reason_failure = NULL;
+        if (roaring64_bitmap_internal_validate(bitmap, &reason_failure)) {
+            // the bitmap is ok!
+            uint64_t cardinality = roaring64_bitmap_get_cardinality(bitmap);
+
+            for (uint32_t i = 100; i < 1000; i++) {
+                if (!roaring64_bitmap_contains(bitmap, i)) {
+                    cardinality++;
+                    roaring64_bitmap_add(bitmap, i);
+                }
+            }
+            uint64_t new_cardinality = roaring64_bitmap_get_cardinality(bitmap);
+            if (cardinality != new_cardinality) {
+                printf("bug\n");
+                exit(1);
+            }
+        }
+        roaring64_bitmap_free(bitmap);
+    }
+    return 0;
+}
+int LLVMFuzzerTestOneInput(const char *data, size_t size) {
+    int r;
+    r = bitmap32(data, size);
+    if (r) {
+        return r;
+    }
+    r = bitmap64(data, size);
+    if (r) {
+        return r;
     }
     return 0;
 }
