@@ -1183,3 +1183,9 @@ CROARING_DEPRECATED static inline uint32_t roaring_read_uint32_iterator(
 using namespace ::roaring::api;
 #endif
 #endif
+
+
+// roaring64 will include roaring.h, but we would
+// prefer to avoid having our users include roaring64.h
+// in addition to roaring.h.
+#include <roaring/roaring64.h>
