@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "roaring/roaring.h"
+#include "roaring/roaring64.h"
 
 int bitmap32(const char *data, size_t size) {
     // We test that deserialization never fails.
@@ -77,15 +78,14 @@ int bitmap64(const char *data, size_t size) {
     }
     return 0;
 }
+
 int LLVMFuzzerTestOneInput(const char *data, size_t size) {
-    int r;
-    r = bitmap32(data, size);
-    if (r) {
-        return r;
+    if (size == 0) {
+        return 0;
     }
-    r = bitmap64(data, size);
-    if (r) {
-        return r;
+    if (data[0] % 2 == 0) {
+        return bitmap32(data + 1, size - 1);
+    } else {
+        return bitmap64(data + 1, size - 1);
     }
-    return 0;
 }
