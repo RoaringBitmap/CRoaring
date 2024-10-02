@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "roaring/roaring.h"
+#include "roaring/roaring64.h"
 
 int bitmap32(const char *data, size_t size) {
     // We test that deserialization never fails.
