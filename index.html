@@ -503,10 +503,10 @@ Conventional bitsets (C)</h1>
 </div><!-- fragment --><p>In some instances, you may want to convert a Roaring bitmap into a conventional (uncompressed) bitset. Indeed, bitsets have advantages such as higher query performances in some cases. The following code illustrates how you may do so:</p>
 <div class="fragment"><div class="line"><a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *r1 = <a class="code" href="dc/d56/roaring_8h.html#a46ca47f47e474b348fbc412ba74d2d77">roaring_bitmap_create</a>();</div>
 <div class="line"><span class="keywordflow">for</span> (uint32_t i = 100; i &lt; 100000; i+= 1 + (i%5)) {</div>
-<div class="line"> <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
+<div class="line">     <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
 <div class="line">}</div>
 <div class="line"><span class="keywordflow">for</span> (uint32_t i = 100000; i &lt; 500000; i+= 100) {</div>
-<div class="line"> <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
+<div class="line">     <a class="code" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(r1, i);</div>
 <div class="line">}</div>
 <div class="line"><a class="code" href="dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range</a>(r1, 500000, 600000);</div>
 <div class="line">bitset_t * bitset = bitset_create();</div>
