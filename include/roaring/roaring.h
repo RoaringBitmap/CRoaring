@@ -1184,7 +1184,6 @@ using namespace ::roaring::api;
 #endif
 #endif
 
-
 // roaring64 will include roaring.h, but we would
 // prefer to avoid having our users include roaring64.h
 // in addition to roaring.h.
