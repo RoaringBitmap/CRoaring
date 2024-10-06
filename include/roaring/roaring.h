@@ -654,8 +654,9 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
  * bitmap prior to using it. Only after calling roaring_bitmap_internal_validate
  * is the bitmap considered safe for use.
  *
- * We also recommend that you use checksums to check that serialized data corresponds
- * to the serialized bitmap. The CRoaring library does not provide checksumming.
+ * We also recommend that you use checksums to check that serialized data
+ * corresponds to the serialized bitmap. The CRoaring library does not provide
+ * checksumming.
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
