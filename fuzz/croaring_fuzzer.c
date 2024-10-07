@@ -78,7 +78,6 @@ int bitmap64(const char *data, size_t size) {
     }
     return 0;
 }
-<<<<<<< HEAD
 
 int LLVMFuzzerTestOneInput(const char *data, size_t size) {
     if (size == 0) {
@@ -89,17 +88,4 @@ int LLVMFuzzerTestOneInput(const char *data, size_t size) {
     } else {
         return bitmap64(data + 1, size - 1);
     }
-=======
-int LLVMFuzzerTestOneInput(const char *data, size_t size) {
-    int r;
-    r = bitmap32(data, size);
-    if (r) {
-        return r;
-    }
-    r = bitmap64(data, size);
-    if (r) {
-        return r;
-    }
-    return 0;
->>>>>>> 345433598c21c4e35f817a0cc01d023c949961d1
 }
