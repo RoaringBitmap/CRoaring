@@ -1627,8 +1627,8 @@ Functions</h2></td></tr>
 <p>This is meant to be compatible with other languages <a href="https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations">https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations</a></p>
 <p>The function itself is safe in the sense that it will not cause buffer overflows: it will not read beyond the scope of the provided buffer (buf,maxbytes).</p>
 <p>However, for correct operations, it is assumed that the bitmap read was once serialized from a valid bitmap (i.e., it follows the format specification). If you provided an incorrect input (garbage), then the bitmap read may not be in a valid state and following operations may not lead to sensible results. In particular, the serialized array containers need to be in sorted order, and the run containers should be in sorted non-overlapping order. This is is guaranteed to happen when serializing an existing bitmap, but not for random inputs.</p>
-<p>You may use roaring64_bitmap_internal_validate to check the validity of the bitmap prior to using it.</p>
-<p>We recommend that you use checksums to check that serialized data corresponds to a serialized bitmap.</p>
+<p>If the source is untrusted, you should call roaring64_bitmap_internal_validate to check the validity of the bitmap prior to using it. Only after calling roaring64_bitmap_internal_validate is the bitmap considered safe for use.</p>
+<p>We also recommend that you use checksums to check that serialized data corresponds to the serialized bitmap. The CRoaring library does not provide checksumming.</p>
 <p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
 
 </div>

@@ -353,14 +353,17 @@ Example (C)</h1>
 <div class="line">    <span class="comment">// otherwise the result may be unusable.</span></div>
 <div class="line">    <span class="comment">// The &#39;roaring_bitmap_portable_deserialize_safe&#39; function will not read</span></div>
 <div class="line">    <span class="comment">// beyond expectedsize bytes.</span></div>
-<div class="line">    <span class="comment">// We recommend you further use checksums to make sure that the input is from</span></div>
-<div class="line">    <span class="comment">// serialized data.</span></div>
+<div class="line">    <span class="comment">// We also recommend that you use checksums to check that serialized data corresponds</span></div>
+<div class="line">    <span class="comment">// to the serialized bitmap. The CRoaring library does not provide checksumming.</span></div>
 <div class="line">    <a class="code" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *t = <a class="code" href="dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe</a>(serializedbytes, expectedsize);</div>
 <div class="line">    <span class="keywordflow">if</span>(t == NULL) { <span class="keywordflow">return</span> EXIT_FAILURE; }</div>
 <div class="line">    <span class="keyword">const</span> <span class="keywordtype">char</span> *reason = NULL;</div>
+<div class="line">    <span class="comment">// If your input came from an untrusted source, then you need to validate the</span></div>
+<div class="line">    <span class="comment">// resulting bitmap. Failing to do so could lead to undefined behavior, crashes and so forth.</span></div>
 <div class="line">    <span class="keywordflow">if</span> (!<a class="code" href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate</a>(t, &amp;reason)) {</div>
 <div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
 <div class="line">    }</div>
+<div class="line">    <span class="comment">// At this point, the bitmap is safe.</span></div>
 <div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1, t));  <span class="comment">// what we recover is equal</span></div>
 <div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(t);</div>
 <div class="line">    <span class="comment">// we can also check whether there is a bitmap at a memory location without</span></div>
@@ -372,8 +375,8 @@ Example (C)</h1>
 <div class="line">    <span class="comment">// We can also read the bitmap &quot;safely&quot; by specifying a byte size limit.</span></div>
 <div class="line">    <span class="comment">// The &#39;roaring_bitmap_portable_deserialize_safe&#39; function will not read</span></div>
 <div class="line">    <span class="comment">// beyond expectedsize bytes.</span></div>
-<div class="line">    <span class="comment">// We recommend you further use checksums to make sure that the input is from</span></div>
-<div class="line">    <span class="comment">// serialized data.</span></div>
+<div class="line">    <span class="comment">// We also recommend that you use checksums to check that serialized data corresponds</span></div>
+<div class="line">    <span class="comment">// to the serialized bitmap. The CRoaring library does not provide checksumming.</span></div>
 <div class="line">    t = <a class="code" href="dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe</a>(serializedbytes, expectedsize);</div>
 <div class="line">    <span class="keywordflow">if</span>(t == NULL) {</div>
 <div class="line">        printf(<span class="stringliteral">&quot;Problem during deserialization.\n&quot;</span>);</div>
@@ -381,15 +384,14 @@ Example (C)</h1>
 <div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="comment">// We can validate the bitmap we recovered to make sure it is proper.</span></div>
+<div class="line">    <span class="comment">// If the data came from an untrusted source, you should call</span></div>
+<div class="line">    <span class="comment">// roaring_bitmap_internal_validate.</span></div>
 <div class="line">    <span class="keyword">const</span> <span class="keywordtype">char</span> *reason_failure = NULL;</div>
 <div class="line">    <span class="keywordflow">if</span> (!<a class="code" href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate</a>(t, &amp;reason_failure)) {</div>
 <div class="line">        printf(<span class="stringliteral">&quot;safely deserialized invalid bitmap: %s\n&quot;</span>, reason_failure);</div>
 <div class="line">        <span class="comment">// We could clear any memory and close any file here.</span></div>
 <div class="line">        <span class="keywordflow">return</span> EXIT_FAILURE;</div>
 <div class="line">    }</div>
-<div class="line">    <span class="comment">// It is still necessary for the content of seriallizedbytes to follow</span></div>
-<div class="line">    <span class="comment">// the standard: https://github.com/RoaringBitmap/RoaringFormatSpec</span></div>
-<div class="line">    <span class="comment">// This is guaranted when calling &#39;roaring_bitmap_portable_deserialize&#39;.</span></div>
 <div class="line">    assert(<a class="code" href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a>(r1, t));  <span class="comment">// what we recover is equal</span></div>
 <div class="line">    <a class="code" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(t);</div>
 <div class="line"> </div>
@@ -460,8 +462,8 @@ Example (C)</h1>
 <div class="ttc" id="aroaring_8h_html_aec401e111190871fb95faaa0e4d66757"><div class="ttname"><a href="dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a></div><div class="ttdeci">bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it)</div></div>
 <div class="ttc" id="aroaring_8h_html_af85d814ca8a6cd369905f629922c1c98"><div class="ttname"><a href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a></div><div class="ttdeci">void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x)</div></div>
 <div class="ttc" id="astructroaring__bitmap__s_html"><div class="ttname"><a href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_s</a></div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l00026">roaring.h:26</a></div></div>
-<div class="ttc" id="astructroaring__uint32__iterator__s_html"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_s</a></div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l01013">roaring.h:1013</a></div></div>
-<div class="ttc" id="astructroaring__uint32__iterator__s_html_a99e95f8cbd08320c6ac27b1569ca6bb4"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">roaring_uint32_iterator_s::has_value</a></div><div class="ttdeci">bool has_value</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l01022">roaring.h:1022</a></div></div>
+<div class="ttc" id="astructroaring__uint32__iterator__s_html"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_s</a></div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l01016">roaring.h:1016</a></div></div>
+<div class="ttc" id="astructroaring__uint32__iterator__s_html_a99e95f8cbd08320c6ac27b1569ca6bb4"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">roaring_uint32_iterator_s::has_value</a></div><div class="ttdeci">bool has_value</div><div class="ttdef"><b>Definition:</b> <a href="dc/d56/roaring_8h_source.html#l01025">roaring.h:1025</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md13"></a>
 Compressed 64-bit Roaring bitmaps (C)</h1>
 <p>We also support efficient 64-bit compressed bitmaps in C:</p>
