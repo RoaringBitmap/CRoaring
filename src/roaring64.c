@@ -79,6 +79,9 @@ static inline uint64_t minimum(uint64_t a, uint64_t b) {
 
 static inline leaf_t *create_leaf(container_t *container, uint8_t typecode) {
     leaf_t *leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
+    if (leaf == NULL) {
+        return NULL;
+    }
     leaf->container = container;
     leaf->typecode = typecode;
     return leaf;
@@ -86,6 +89,9 @@ static inline leaf_t *create_leaf(container_t *container, uint8_t typecode) {
 
 static inline leaf_t *copy_leaf_container(const leaf_t *leaf) {
     leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
+    if (result_leaf == NULL) {
+        return NULL;
+    }
     result_leaf->typecode = leaf->typecode;
     // get_copy_of_container modifies the typecode passed in.
     result_leaf->container = get_copy_of_container(
@@ -142,6 +148,9 @@ static inline roaring64_iterator_t *roaring64_iterator_init_at(
 roaring64_bitmap_t *roaring64_bitmap_create(void) {
     roaring64_bitmap_t *r =
         (roaring64_bitmap_t *)roaring_malloc(sizeof(roaring64_bitmap_t));
+    if (r == NULL) {
+        return NULL;
+    }
     r->art.root = NULL;
     r->flags = 0;
     return r;
@@ -164,6 +173,9 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
 
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    if (result == NULL) {
+        return NULL;
+    }
 
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
@@ -171,6 +183,10 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
         uint8_t result_typecode = leaf->typecode;
         container_t *result_container = get_copy_of_container(
             leaf->container, &result_typecode, /*copy_on_write=*/false);
+        if (result_container == NULL) {
+            roaring64_bitmap_free(result);
+            return NULL;
+        }
         leaf_t *result_leaf = create_leaf(result_container, result_typecode);
         art_insert(&result->art, it.key, (art_val_t *)result_leaf);
         art_iterator_next(&it);
@@ -221,6 +237,9 @@ roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
         return NULL;
     }
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
     if (step >= (1 << 16)) {
         // Only one value per container.
         for (uint64_t value = min; value < max; value += step) {
@@ -258,12 +277,18 @@ roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
 roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
                                             const uint64_t *vals) {
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
     roaring64_bitmap_add_many(r, n_args, vals);
     return r;
 }
 
 roaring64_bitmap_t *roaring64_bitmap_of(size_t n_args, ...) {
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
     roaring64_bulk_context_t context = CROARING_ZERO_INITIALIZER;
     va_list ap;
     va_start(ap, n_args);
@@ -976,6 +1001,9 @@ bool roaring64_bitmap_is_strict_subset(const roaring64_bitmap_t *r1,
 roaring64_bitmap_t *roaring64_bitmap_and(const roaring64_bitmap_t *r1,
                                          const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    if (result == NULL) {
+        return NULL;
+    }
 
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
@@ -989,6 +1017,10 @@ roaring64_bitmap_t *roaring64_bitmap_and(const roaring64_bitmap_t *r1,
         if (compare_result == 0) {
             // Case 2: iterators at the same high key position.
             leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
+            if (result_leaf == NULL) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             leaf_t *leaf1 = (leaf_t *)it1.value;
             leaf_t *leaf2 = (leaf_t *)it2.value;
             result_leaf->container = container_and(
@@ -1178,6 +1210,9 @@ double roaring64_bitmap_jaccard_index(const roaring64_bitmap_t *r1,
 roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
                                         const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    if (result == NULL) {
+        return NULL;
+    }
 
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
@@ -1201,6 +1236,10 @@ roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
                 leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
+                if (result_leaf == NULL) {
+                    roaring64_bitmap_free(result);
+                    return NULL;
+                }
                 result_leaf->container = container_or(
                     leaf1->container, leaf1->typecode, leaf2->container,
                     leaf2->typecode, &result_leaf->typecode);
@@ -1212,11 +1251,19 @@ roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
         if ((it1_present && !it2_present) || compare_result < 0) {
             // Cases 1 and 3a: it1 is the only iterator or is before it2.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it1.value);
+            if (result_leaf == NULL) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             art_insert(&result->art, it1.key, (art_val_t *)result_leaf);
             art_iterator_next(&it1);
         } else if ((!it1_present && it2_present) || compare_result > 0) {
             // Cases 2 and 3c: it2 is the only iterator or is before it1.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it2.value);
+            if (result_leaf == NULL) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             art_insert(&result->art, it2.key, (art_val_t *)result_leaf);
             art_iterator_next(&it2);
         }
@@ -1284,6 +1331,9 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
         } else if ((!it1_present && it2_present) || compare_result > 0) {
             // Cases 2 and 3c: it2 is the only iterator or is before it1.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it2.value);
+            if (result_leaf == NULL) {
+                return;
+            }
             art_iterator_insert(&r1->art, &it1, it2.key,
                                 (art_val_t *)result_leaf);
             art_iterator_next(&it2);
@@ -1294,6 +1344,9 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
 roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
                                          const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    if (result == NULL) {
+        return NULL;
+    }
 
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
@@ -1317,6 +1370,10 @@ roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
                 leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
+                if (result_leaf == NULL) {
+                    roaring64_bitmap_free(result);
+                    return NULL;
+                }
                 result_leaf->container = container_xor(
                     leaf1->container, leaf1->typecode, leaf2->container,
                     leaf2->typecode, &result_leaf->typecode);
@@ -1335,11 +1392,19 @@ roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
         if ((it1_present && !it2_present) || compare_result < 0) {
             // Cases 1 and 3a: it1 is the only iterator or is before it2.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it1.value);
+            if (result_leaf == NULL) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             art_insert(&result->art, it1.key, (art_val_t *)result_leaf);
             art_iterator_next(&it1);
         } else if ((!it1_present && it2_present) || compare_result > 0) {
             // Cases 2 and 3c: it2 is the only iterator or is before it1.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it2.value);
+            if (result_leaf == NULL) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             art_insert(&result->art, it2.key, (art_val_t *)result_leaf);
             art_iterator_next(&it2);
         }
@@ -1419,6 +1484,9 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
         } else if ((!it1_present && it2_present) || compare_result > 0) {
             // Cases 2 and 3c: it2 is the only iterator or is before it1.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it2.value);
+            if (result_leaf == NULL) {
+                return;
+            }
             if (it1_present) {
                 art_iterator_insert(&r1->art, &it1, it2.key,
                                     (art_val_t *)result_leaf);
@@ -1434,6 +1502,9 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
 roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
                                             const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    if (result == NULL) {
+        return NULL;
+    }
 
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator(&r2->art, /*first=*/true);
@@ -1452,6 +1523,10 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
             if (compare_result == 0) {
                 // Case 2b: iterators at the same high key position.
                 leaf_t *result_leaf = (leaf_t *)roaring_malloc(sizeof(leaf_t));
+                if (result_leaf == NULL) {
+                    roaring64_bitmap_free(result);
+                    return NULL;
+                }
                 leaf_t *leaf1 = (leaf_t *)it1.value;
                 leaf_t *leaf2 = (leaf_t *)it2.value;
                 result_leaf->container = container_andnot(
@@ -1473,6 +1548,10 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
         if (!it2_present || compare_result < 0) {
             // Cases 1 and 2a: it1 is the only iterator or is before it2.
             leaf_t *result_leaf = copy_leaf_container((leaf_t *)it1.value);
+            if (result_leaf == NULL) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             art_insert(&result->art, it1.key, (art_val_t *)result_leaf);
             art_iterator_next(&it1);
         } else if (compare_result > 0) {
@@ -1645,6 +1724,9 @@ roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r1,
     uint64_t max_high48_bits = (max & 0xFFFFFFFFFFFF0000ULL) >> 16;
 
     roaring64_bitmap_t *r2 = roaring64_bitmap_create();
+    if (r2 == NULL) {
+        return NULL;
+    }
     art_iterator_t it = art_init_iterator(&r1->art, /*first=*/true);
 
     // Copy the containers before min unchanged.
@@ -1653,6 +1735,10 @@ roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r1,
         uint8_t typecode2 = leaf1->typecode;
         container_t *container2 = get_copy_of_container(
             leaf1->container, &typecode2, /*copy_on_write=*/false);
+        if (container2 == NULL) {
+            roaring64_bitmap_free(r2);
+            return NULL;
+        }
         art_insert(&r2->art, it.key,
                    (art_val_t *)create_leaf(container2, typecode2));
         art_iterator_next(&it);
@@ -1687,6 +1773,10 @@ roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r1,
         uint8_t typecode2 = leaf1->typecode;
         container_t *container2 = get_copy_of_container(
             leaf1->container, &typecode2, /*copy_on_write=*/false);
+        if (container2 == NULL) {
+            roaring64_bitmap_free(r2);
+            return NULL;
+        }
         art_insert(&r2->art, it.key,
                    (art_val_t *)create_leaf(container2, typecode2));
         art_iterator_next(&it);
@@ -1953,6 +2043,9 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
     }
 
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
     // Iterate through buckets ordered by increasing keys.
     int64_t previous_high32 = -1;
     for (uint64_t bucket = 0; bucket < buckets; ++bucket) {
@@ -2042,6 +2135,9 @@ void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
 roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
     roaring64_iterator_t *it =
         (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    if (it == NULL) {
+        return NULL;
+    }
     return roaring64_iterator_init_at(r, it, /*first=*/true);
 }
 
@@ -2049,6 +2145,9 @@ roaring64_iterator_t *roaring64_iterator_create_last(
     const roaring64_bitmap_t *r) {
     roaring64_iterator_t *it =
         (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    if (it == NULL) {
+        return NULL;
+    }
     return roaring64_iterator_init_at(r, it, /*first=*/false);
 }
 
@@ -2065,6 +2164,9 @@ void roaring64_iterator_reinit_last(const roaring64_bitmap_t *r,
 roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it) {
     roaring64_iterator_t *new_it =
         (roaring64_iterator_t *)roaring_malloc(sizeof(roaring64_iterator_t));
+    if (new_it == NULL) {
+        return NULL;
+    }
     memcpy(new_it, it, sizeof(*it));
     return new_it;
 }
