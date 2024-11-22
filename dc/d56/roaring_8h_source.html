@@ -555,7 +555,13 @@ $(document).ready(function(){initNavTree('dc/d56/roaring_8h_source.html','../../
 <div class="line"><a name="l01186"></a><span class="lineno"> 1186</span>&#160;<span class="keyword">using namespace </span>::roaring::api;</div>
 <div class="line"><a name="l01187"></a><span class="lineno"> 1187</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l01188"></a><span class="lineno"> 1188</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l01189"></a><span class="lineno"> 1189</span>&#160; </div>
+<div class="line"><a name="l01190"></a><span class="lineno"> 1190</span>&#160;<span class="comment">// roaring64 will include roaring.h, but we would</span></div>
+<div class="line"><a name="l01191"></a><span class="lineno"> 1191</span>&#160;<span class="comment">// prefer to avoid having our users include roaring64.h</span></div>
+<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160;<span class="comment">// in addition to roaring.h.</span></div>
+<div class="line"><a name="l01193"></a><span class="lineno"> 1193</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="../../d8/d01/roaring64_8h.html">roaring/roaring64.h</a>&gt;</span></div>
 <div class="ttc" id="anamespaceroaring_html"><div class="ttname"><a href="../../dc/db7/namespaceroaring.html">roaring</a></div><div class="ttdef"><b>Definition:</b> <a href="../../db/d6e/roaring_8hh_source.html#l00041">roaring.hh:41</a></div></div>
+<div class="ttc" id="aroaring64_8h_html"><div class="ttname"><a href="../../d8/d01/roaring64_8h.html">roaring64.h</a></div></div>
 <div class="ttc" id="aroaring_8h_html_a00421552b0fd562e676e562d314f1f2b"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a00421552b0fd562e676e562d314f1f2b">roaring_bitmap_and</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_and(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
 <div class="ttc" id="aroaring_8h_html_a01266ff2d52916b16d3bde5bed8f3677"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a01266ff2d52916b16d3bde5bed8f3677">roaring_bitmap_select</a></div><div class="ttdeci">bool roaring_bitmap_select(const roaring_bitmap_t *r, uint32_t rank, uint32_t *element)</div></div>
 <div class="ttc" id="aroaring_8h_html_a0b7fd5d1ac702c49e0d1da8b5b66fc7f"><div class="ttname"><a href="../../dc/d56/roaring_8h.html#a0b7fd5d1ac702c49e0d1da8b5b66fc7f">roaring_bitmap_portable_deserialize_safe</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes)</div></div>
