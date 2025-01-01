@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdalign.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
@@ -8,10 +9,24 @@
 #include <roaring/roaring64.h>
 
 // For serialization / deserialization
+#include <roaring/containers/array.h>
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/run.h>
 #include <roaring/roaring.h>
 #include <roaring/roaring_array.h>
 // containers.h last to avoid conflict with ROARING_CONTAINER_T.
 #include <roaring/containers/containers.h>
+
+#define CROARING_ALIGN_BUF(buf, alignment)          \
+    (char *)(((uintptr_t)(buf) + ((alignment)-1)) & \
+             (ptrdiff_t)(~((alignment)-1)))
+
+#define CROARING_ALIGN_RELATIVE(buf_cur, buf_start, alignment)           \
+    (char *)((buf_start) +                                               \
+             (((ptrdiff_t)((buf_cur) - (buf_start)) + ((alignment)-1)) & \
+              (ptrdiff_t)(~((alignment)-1))))
+
+#define CROARING_BITSET_ALIGNMENT 64
 
 #ifdef __cplusplus
 using namespace ::roaring::internal;
@@ -53,6 +68,10 @@ typedef struct roaring64_iterator_s {
     // backward direction.
     bool saturated_forward;
 } roaring64_iterator_t;
+
+static inline bool is_frozen64(const roaring64_bitmap_t *r) {
+    return r->flags & ROARING_FLAG_FROZEN;
+}
 
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
 // Expects high48_out to be of length ART_KEY_BYTES.
@@ -219,10 +238,18 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t leaf = (leaf_t)*it.value;
-        container_free(get_container(r, leaf), get_typecode(leaf));
+        if (is_frozen64(r)) {
+            // Only free the container itself, not the buffer-backed contents
+            // within.
+            roaring_free(get_container(r, leaf));
+        } else {
+            container_free(get_container(r, leaf), get_typecode(leaf));
+        }
         art_iterator_next(&it);
     }
-    art_free(&r->art);
+    if (!is_frozen64(r)) {
+        art_free(&r->art);
+    }
     roaring_free(r->containers);
     roaring_free(r);
 }
@@ -921,6 +948,37 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
         art_iterator_next(&it);
     }
     return has_run_container;
+}
+
+static void move_to_shrink(roaring64_bitmap_t *r, leaf_t *leaf) {
+    size_t idx = get_index(*leaf);
+    if (idx < r->first_free) {
+        return;
+    }
+    r->containers[r->first_free] = get_container(r, *leaf);
+    r->containers[idx] = NULL;
+    *leaf = create_leaf(r->first_free, get_typecode(*leaf));
+    r->first_free = next_free_container_idx(r);
+}
+
+size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
+    size_t freed = art_shrink_to_fit(&r->art);
+    art_iterator_t it = art_init_iterator(&r->art, true);
+    while (it.value != NULL) {
+        leaf_t *leaf = (leaf_t *)it.value;
+        freed += container_shrink_to_fit(get_container(r, *leaf),
+                                         get_typecode(*leaf));
+        move_to_shrink(r, leaf);
+        art_iterator_next(&it);
+    }
+    size_t new_capacity = r->first_free;
+    if (new_capacity < r->capacity) {
+        r->containers = roaring_realloc(r->containers,
+                                        new_capacity * sizeof(container_t *));
+        freed += r->capacity - new_capacity;
+        r->capacity = new_capacity;
+    }
+    return freed;
 }
 
 /**
@@ -2103,6 +2161,330 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         move_from_roaring32_offset(r, bitmap32, high32);
         roaring_bitmap_free(bitmap32);
     }
+    return r;
+}
+
+// Returns an "element count" for the given container. This has a different
+// meaning for each container type, but the purpose is the minimal information
+// required to serialize the container metadata.
+static inline uint32_t container_get_element_count(const container_t *c,
+                                                   uint8_t typecode) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE: {
+            return ((bitset_container_t *)c)->cardinality;
+        }
+        case ARRAY_CONTAINER_TYPE: {
+            return ((array_container_t *)c)->cardinality;
+        }
+        case RUN_CONTAINER_TYPE: {
+            return ((run_container_t *)c)->n_runs;
+        }
+        default: {
+            assert(false);
+            roaring_unreachable;
+            return 0;
+        }
+    }
+}
+
+static inline size_t container_get_frozen_size(const container_t *c,
+                                               uint8_t typecode) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE: {
+            return BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+        }
+        case ARRAY_CONTAINER_TYPE: {
+            return container_get_element_count(c, typecode) * sizeof(uint16_t);
+        }
+        case RUN_CONTAINER_TYPE: {
+            return container_get_element_count(c, typecode) * sizeof(rle16_t);
+        }
+        default: {
+            assert(false);
+            roaring_unreachable;
+            return 0;
+        }
+    }
+}
+
+size_t align_size(size_t size, size_t alignment) {
+    return (size + alignment - 1) & ~(alignment - 1);
+}
+
+size_t roaring64_bitmap_frozen_size_in_bytes(const roaring64_bitmap_t *r) {
+    // Flags.
+    size_t size = sizeof(r->flags);
+    // Container count.
+    size += sizeof(r->capacity);
+    // Container element counts.
+    size += r->capacity * sizeof(uint16_t);
+    // Total container sizes.
+    size += 3 * sizeof(size_t);
+    // ART (8 byte aligned).
+    size = align_size(size, 8);
+    size += art_size_in_bytes(&r->art);
+    // Containers (aligned).
+    size = align_size(size, CROARING_BITSET_ALIGNMENT);
+    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint8_t typecode = get_typecode(leaf);
+        size += container_get_frozen_size(get_container(r, leaf), typecode);
+        art_iterator_next(&it);
+    }
+    // Padding to make overall size a multiple of required alignment.
+    size = align_size(size, CROARING_BITSET_ALIGNMENT);
+    return size;
+}
+
+static inline void container_frozen_serialize(const container_t *container,
+                                              uint8_t typecode,
+                                              uint64_t **bitsets,
+                                              uint16_t **arrays,
+                                              rle16_t **runs) {
+    size_t size = container_get_frozen_size(container, typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE: {
+            bitset_container_t *bitset = (bitset_container_t *)container;
+            memcpy(*bitsets, bitset->words, size);
+            *bitsets += BITSET_CONTAINER_SIZE_IN_WORDS;
+            break;
+        }
+        case ARRAY_CONTAINER_TYPE: {
+            array_container_t *array = (array_container_t *)container;
+            memcpy(*arrays, array->array, size);
+            *arrays += container_get_element_count(container, typecode);
+            break;
+        }
+        case RUN_CONTAINER_TYPE: {
+            run_container_t *run = (run_container_t *)container;
+            memcpy(*runs, run->runs, size);
+            *runs += container_get_element_count(container, typecode);
+            break;
+        }
+        default: {
+            assert(false);
+            roaring_unreachable;
+        }
+    }
+}
+
+size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
+                                         char *buf) {
+    if (buf == NULL) {
+        return 0;
+    }
+    const char *initial_buf = buf;
+
+    // Flags.
+    memcpy(buf, &r->flags, sizeof(r->flags));
+    buf += sizeof(r->flags);
+
+    // Container count.
+    memcpy(buf, &r->capacity, sizeof(r->capacity));
+    buf += sizeof(r->capacity);
+
+    // Container element counts.
+    size_t total_sizes[4] = CROARING_ZERO_INITIALIZER;  // Indexed by typecode.
+    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint8_t typecode = get_typecode(leaf);
+        container_t *container = get_container(r, leaf);
+
+        uint32_t elem_count = container_get_element_count(container, typecode);
+        uint16_t compressed_elem_count = (uint16_t)(elem_count - 1);
+        memcpy(buf, &compressed_elem_count, sizeof(compressed_elem_count));
+        buf += sizeof(compressed_elem_count);
+
+        total_sizes[typecode] += container_get_frozen_size(container, typecode);
+        art_iterator_next(&it);
+    }
+
+    // Total container sizes.
+    memcpy(buf, &(total_sizes[BITSET_CONTAINER_TYPE]), sizeof(size_t));
+    buf += sizeof(size_t);
+    memcpy(buf, &(total_sizes[RUN_CONTAINER_TYPE]), sizeof(size_t));
+    buf += sizeof(size_t);
+    memcpy(buf, &(total_sizes[ARRAY_CONTAINER_TYPE]), sizeof(size_t));
+    buf += sizeof(size_t);
+
+    // ART.
+    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, 8);
+    buf += art_serialize(&r->art, buf);
+
+    // Containers (aligned).
+    // Runs before arrays as run elements are larger than array elements and
+    // smaller than bitset elements.
+    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
+    uint64_t *bitsets = (uint64_t *)buf;
+    buf += total_sizes[BITSET_CONTAINER_TYPE];
+    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, alignof(rle16_t));
+    rle16_t *runs = (rle16_t *)buf;
+    buf += total_sizes[RUN_CONTAINER_TYPE];
+    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, alignof(uint16_t));
+    uint16_t *arrays = (uint16_t *)buf;
+    buf += total_sizes[ARRAY_CONTAINER_TYPE];
+
+    it = art_init_iterator((art_t *)&r->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint8_t typecode = get_typecode(leaf);
+        container_t *container = get_container(r, leaf);
+        container_frozen_serialize(container, typecode, &bitsets, &arrays,
+                                   &runs);
+        art_iterator_next(&it);
+    }
+
+    // Padding to make overall size a multiple of required alignment.
+    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
+
+    return buf - initial_buf;
+}
+
+static container_t *container_frozen_view(uint8_t typecode, uint32_t elem_count,
+                                          const uint64_t **bitsets,
+                                          const uint16_t **arrays,
+                                          const rle16_t **runs) {
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE: {
+            bitset_container_t *c = (bitset_container_t *)roaring_malloc(
+                sizeof(bitset_container_t));
+            c->cardinality = elem_count;
+            c->words = (uint64_t *)*bitsets;
+            *bitsets += BITSET_CONTAINER_SIZE_IN_WORDS;
+            return (container_t *)c;
+        }
+        case ARRAY_CONTAINER_TYPE: {
+            array_container_t *c =
+                (array_container_t *)roaring_malloc(sizeof(array_container_t));
+            c->cardinality = elem_count;
+            c->capacity = elem_count;
+            c->array = (uint16_t *)*arrays;
+            *arrays += elem_count;
+            return (container_t *)c;
+        }
+        case RUN_CONTAINER_TYPE: {
+            run_container_t *c =
+                (run_container_t *)roaring_malloc(sizeof(run_container_t));
+            c->n_runs = elem_count;
+            c->capacity = elem_count;
+            c->runs = (rle16_t *)*runs;
+            *runs += elem_count;
+            return (container_t *)c;
+        }
+        default: {
+            assert(false);
+            roaring_unreachable;
+            return NULL;
+        }
+    }
+}
+
+roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
+                                                 size_t maxbytes) {
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    roaring64_bitmap_t *r = roaring64_bitmap_create();
+
+    // Flags.
+    if (maxbytes < sizeof(r->flags)) {
+        roaring64_bitmap_free(r);
+        return NULL;
+    }
+    memcpy(&r->flags, buf, sizeof(r->flags));
+    buf += sizeof(r->flags);
+    maxbytes -= sizeof(r->flags);
+    r->flags |= ROARING_FLAG_FROZEN;
+
+    // Container count.
+    if (maxbytes < sizeof(r->capacity)) {
+        roaring64_bitmap_free(r);
+        return NULL;
+    }
+    memcpy(&r->capacity, buf, sizeof(r->capacity));
+    buf += sizeof(r->capacity);
+    maxbytes -= sizeof(r->capacity);
+
+    r->containers =
+        (container_t *)roaring_malloc(r->capacity * sizeof(container_t *));
+
+    // Container element counts.
+    if (maxbytes < r->capacity * sizeof(uint16_t)) {
+        roaring64_bitmap_free(r);
+        return NULL;
+    }
+    const char *elem_counts = buf;
+    buf += r->capacity * sizeof(uint16_t);
+    maxbytes -= r->capacity * sizeof(uint16_t);
+
+    // Total container sizes.
+    size_t total_sizes[4];
+    if (maxbytes < sizeof(size_t) * 3) {
+        roaring64_bitmap_free(r);
+        return NULL;
+    }
+    memcpy(&(total_sizes[BITSET_CONTAINER_TYPE]), buf, sizeof(size_t));
+    buf += sizeof(size_t);
+    maxbytes -= sizeof(size_t);
+    memcpy(&(total_sizes[RUN_CONTAINER_TYPE]), buf, sizeof(size_t));
+    buf += sizeof(size_t);
+    maxbytes -= sizeof(size_t);
+    memcpy(&(total_sizes[ARRAY_CONTAINER_TYPE]), buf, sizeof(size_t));
+    buf += sizeof(size_t);
+    maxbytes -= sizeof(size_t);
+
+    // ART (8 byte aligned).
+    buf = CROARING_ALIGN_BUF(buf, 8);
+    size_t art_size = art_frozen_view(buf, maxbytes, &r->art);
+    if (art_size == 0) {
+        roaring64_bitmap_free(r);
+        return NULL;
+    }
+    buf += art_size;
+    maxbytes -= art_size;
+
+    // Containers (aligned).
+    const char *before_containers = buf;
+    buf = CROARING_ALIGN_BUF(buf, CROARING_BITSET_ALIGNMENT);
+    const uint64_t *bitsets = (const uint64_t *)buf;
+    buf += total_sizes[BITSET_CONTAINER_TYPE];
+    buf = CROARING_ALIGN_BUF(buf, alignof(rle16_t));
+    const rle16_t *runs = (const rle16_t *)buf;
+    buf += total_sizes[RUN_CONTAINER_TYPE];
+    buf = CROARING_ALIGN_BUF(buf, alignof(uint16_t));
+    const uint16_t *arrays = (const uint16_t *)buf;
+    buf += total_sizes[ARRAY_CONTAINER_TYPE];
+    if (maxbytes < (size_t)(buf - before_containers)) {
+        roaring64_bitmap_free(r);
+        return NULL;
+    }
+    maxbytes -= buf - before_containers;
+
+    // Deserialize in ART iteration order.
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
+    for (size_t i = 0; it.value != NULL; ++i) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint8_t typecode = get_typecode(leaf);
+
+        uint16_t compressed_elem_count;
+        memcpy(&compressed_elem_count, elem_counts + (i * sizeof(uint16_t)),
+               sizeof(compressed_elem_count));
+        uint32_t elem_count = (uint32_t)(compressed_elem_count) + 1;
+
+        // The container index is unrelated to the iteration order.
+        size_t index = get_index(leaf);
+        r->containers[index] = container_frozen_view(typecode, elem_count,
+                                                     &bitsets, &arrays, &runs);
+
+        art_iterator_next(&it);
+    }
+
+    // Padding to make overall size a multiple of required alignment.
+    buf = CROARING_ALIGN_BUF(buf, CROARING_BITSET_ALIGNMENT);
+
     return r;
 }
 
