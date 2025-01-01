@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <roaring/art/art.h>
+#include <roaring/memory.h>
 
 #include "test.h"
 
@@ -654,6 +655,80 @@ DEFINE_TEST(test_art_shrink_grow_node48) {
     art_free(&art);
 }
 
+DEFINE_TEST(test_art_frozen_view) {
+    {
+        // ART with multiple node sizes.
+        std::vector<std::array<uint8_t, 6>> keys;
+        std::vector<art_val_t> values;
+        std::vector<size_t> sizes = {4, 16, 48, 256};
+        for (size_t i = 0; i < sizes.size(); i++) {
+            size_t size = sizes[i];
+            for (size_t j = 0; j < size; j++) {
+                keys.push_back({0, 0, 0, static_cast<uint8_t>(i),
+                                static_cast<uint8_t>(j)});
+                values.push_back(i * j);
+            }
+        }
+        art_t art1;
+        art_init_cleared(&art1);
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_insert(&art1, (art_key_chunk_t*)keys[i].data(), values[i]);
+            assert_art_valid(&art1);
+        }
+
+        size_t serialized_size = art_size_in_bytes(&art1);
+        char* buf = (char*)roaring_aligned_malloc(8, serialized_size);
+        assert_int_equal(art_serialize(&art1, buf), serialized_size);
+        art_free(&art1);
+
+        art_t art2;
+        assert_int_equal(art_frozen_view(buf, serialized_size, &art2),
+                         serialized_size);
+
+        art_iterator_t iterator = art_init_iterator(&art2, true);
+        size_t i = 0;
+        do {
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i].data());
+            assert_true(*iterator.value == values[i]);
+            ++i;
+        } while (art_iterator_next(&iterator));
+        roaring_aligned_free(buf);
+    }
+    {
+        // Max-depth ART.
+        std::vector<std::array<uint8_t, 6>> keys{
+            {0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 1, 0},
+            {0, 0, 0, 1, 0, 0}, {0, 0, 1, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
+            {1, 0, 0, 0, 0, 0},
+        };
+        std::vector<art_val_t> values = {0, 1, 2, 3, 4, 5, 6};
+        art_t art1;
+        art_init_cleared(&art1);
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_insert(&art1, (art_key_chunk_t*)keys[i].data(), values[i]);
+            assert_art_valid(&art1);
+        }
+
+        size_t serialized_size = art_size_in_bytes(&art1);
+        char* buf = (char*)roaring_aligned_malloc(8, serialized_size);
+        assert_int_equal(art_serialize(&art1, buf), serialized_size);
+        art_free(&art1);
+
+        art_t art2;
+        assert_int_equal(art_frozen_view(buf, serialized_size, &art2),
+                         serialized_size);
+
+        art_iterator_t iterator = art_init_iterator(&art2, true);
+        size_t i = 0;
+        do {
+            assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i].data());
+            assert_true(*iterator.value == values[i]);
+            ++i;
+        } while (art_iterator_next(&iterator));
+        roaring_aligned_free(buf);
+    }
+}
+
 }  // namespace
 
 int main() {
@@ -670,6 +745,7 @@ int main() {
         cmocka_unit_test(test_art_iterator_insert),
         cmocka_unit_test(test_art_shadowed),
         cmocka_unit_test(test_art_shrink_grow_node48),
+        cmocka_unit_test(test_art_frozen_view),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

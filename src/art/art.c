@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdalign.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -2289,6 +2290,163 @@ bool art_internal_validate(const art_t *art, const char **reason,
         }
     }
     return art_internal_validate_at(art, art->root, validator);
+}
+
+_Static_assert(alignof(art_leaf_t) == alignof(art_node4_t),
+               "Serialization assumes node type alignment is equal");
+_Static_assert(alignof(art_leaf_t) == alignof(art_node16_t),
+               "Serialization assumes node type alignment is equal");
+_Static_assert(alignof(art_leaf_t) == alignof(art_node48_t),
+               "Serialization assumes node type alignment is equal");
+_Static_assert(alignof(art_leaf_t) == alignof(art_node256_t),
+               "Serialization assumes node type alignment is equal");
+
+size_t art_size_in_bytes(const art_t *art) {
+    // Root.
+    size_t size = sizeof(art->root);
+    // Node counts.
+    size += sizeof(art->capacities);
+    // Alignment for leaves. The rest of the nodes are aligned the same way.
+    size +=
+        ((size + alignof(art_leaf_t) - 1) & ~(alignof(art_leaf_t) - 1)) - size;
+    size += art->capacities[CROARING_ART_LEAF_TYPE] * sizeof(art_leaf_t);
+    size += art->capacities[CROARING_ART_NODE4_TYPE] * sizeof(art_node4_t);
+    size += art->capacities[CROARING_ART_NODE16_TYPE] * sizeof(art_node16_t);
+    size += art->capacities[CROARING_ART_NODE48_TYPE] * sizeof(art_node48_t);
+    size += art->capacities[CROARING_ART_NODE256_TYPE] * sizeof(art_node256_t);
+    return size;
+}
+
+size_t art_serialize(const art_t *art, char *buf) {
+    if (buf == NULL) {
+        return 0;
+    }
+    const char *initial_buf = buf;
+
+    // Root.
+    memcpy(buf, &art->root, sizeof(art->root));
+    buf += sizeof(art->root);
+
+    // Node counts.
+    memcpy(buf, art->capacities, sizeof(art->capacities));
+    buf += sizeof(art->capacities);
+
+    if (art->capacities[CROARING_ART_LEAF_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_LEAF_TYPE] * sizeof(art_leaf_t);
+        // Alignment for leaves. The rest of the nodes are aligned the same way.
+        buf =
+            CROARING_ART_ALIGN_RELATIVE(buf, initial_buf, alignof(art_leaf_t));
+        memcpy(buf, art->leaves, size);
+        buf += size;
+    }
+    if (art->capacities[CROARING_ART_NODE4_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE4_TYPE] * sizeof(art_node4_t);
+        memcpy(buf, art->node4s, size);
+        buf += size;
+    }
+    if (art->capacities[CROARING_ART_NODE16_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE16_TYPE] * sizeof(art_node16_t);
+        memcpy(buf, art->node16s, size);
+        buf += size;
+    }
+    if (art->capacities[CROARING_ART_NODE48_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE48_TYPE] * sizeof(art_node48_t);
+        memcpy(buf, art->node48s, size);
+        buf += size;
+    }
+    if (art->capacities[CROARING_ART_NODE256_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE256_TYPE] * sizeof(art_node256_t);
+        memcpy(buf, art->node256s, size);
+        buf += size;
+    }
+
+    return buf - initial_buf;
+}
+
+size_t art_frozen_view(const char *buf, size_t maxbytes, art_t *art) {
+    if (buf == NULL || art == NULL) {
+        return 0;
+    }
+    const char *initial_buf = buf;
+    art_init_cleared(art);
+
+    if (maxbytes < sizeof(art->root)) {
+        return 0;
+    }
+    memcpy(&art->root, buf, sizeof(art->root));
+    buf += sizeof(art->root);
+    maxbytes -= sizeof(art->root);
+
+    if (maxbytes < sizeof(art->capacities)) {
+        return 0;
+    }
+    _Static_assert(sizeof(art->first_free) == sizeof(art->capacities),
+                   "first_free is read from capacities");
+    memcpy(art->first_free, buf, sizeof(art->capacities));
+    memcpy(art->capacities, buf, sizeof(art->capacities));
+    buf += sizeof(art->capacities);
+    maxbytes -= sizeof(art->capacities);
+
+    if (art->capacities[CROARING_ART_LEAF_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_LEAF_TYPE] * sizeof(art_leaf_t);
+        const char *before_align = buf;
+        // Alignment for leaves. The rest of the nodes are aligned the same way.
+        buf = CROARING_ART_ALIGN_BUF(buf, alignof(art_leaf_t));
+        if (maxbytes < (buf - before_align) + size) {
+            return 0;
+        }
+        art->leaves = (art_leaf_t *)buf;
+        buf += size;
+        maxbytes -= (buf - before_align);
+    }
+    if (art->capacities[CROARING_ART_NODE4_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE4_TYPE] * sizeof(art_node4_t);
+        if (maxbytes < size) {
+            return 0;
+        }
+        art->node4s = (art_node4_t *)buf;
+        buf += size;
+        maxbytes -= size;
+    }
+    if (art->capacities[CROARING_ART_NODE16_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE16_TYPE] * sizeof(art_node16_t);
+        if (maxbytes < size) {
+            return 0;
+        }
+        art->node16s = (art_node16_t *)buf;
+        buf += size;
+        maxbytes -= size;
+    }
+    if (art->capacities[CROARING_ART_NODE48_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE48_TYPE] * sizeof(art_node48_t);
+        if (maxbytes < size) {
+            return 0;
+        }
+        art->node48s = (art_node48_t *)buf;
+        buf += size;
+        maxbytes -= size;
+    }
+    if (art->capacities[CROARING_ART_NODE256_TYPE] > 0) {
+        size_t size =
+            art->capacities[CROARING_ART_NODE256_TYPE] * sizeof(art_node256_t);
+        if (maxbytes < size) {
+            art_free(art);
+            return 0;
+        }
+        art->node256s = (art_node256_t *)buf;
+        buf += size;
+        maxbytes -= size;
+    }
+    return buf - initial_buf;
 }
 
 #ifdef __cplusplus

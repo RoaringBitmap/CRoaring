@@ -208,6 +208,34 @@ void art_iterator_insert(art_iterator_t *iterator, const art_key_chunk_t *key,
  */
 bool art_iterator_erase(art_iterator_t *iterator, art_val_t *erased_val);
 
+/**
+ * Shrinks the internal arrays in the ART to remove any unused elements. Returns
+ * the number of bytes freed.
+ */
+size_t art_shrink_to_fit(art_t *art);
+
+/**
+ * Returns the serialized size in bytes.
+ * Requires `art_shrink_to_fit` to be called first.
+ */
+size_t art_size_in_bytes(const art_t *art);
+
+/**
+ * Serializes the ART and returns the number of bytes written. Returns 0 on
+ * error. Requires `art_shrink_to_fit` to be called first.
+ */
+size_t art_serialize(const art_t *art, char *buf);
+
+/**
+ * Deserializes the ART from a serialized buffer, reading up to `maxbytes`
+ * bytes. Returns 0 on error. Requires `buf` to be 8 byte aligned.
+ *
+ * An ART deserialized in this way should only be used in a readonly context.The
+ * underlying buffer must not be freed before the ART. `art_free` should not be
+ * called on the ART deserialized in this way.
+ */
+size_t art_frozen_view(const char *buf, size_t maxbytes, art_t *art);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace roaring
