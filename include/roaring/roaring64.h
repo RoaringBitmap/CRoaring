@@ -17,7 +17,7 @@ namespace api {
 #endif
 
 typedef struct roaring64_bitmap_s roaring64_bitmap_t;
-typedef struct roaring64_leaf_s roaring64_leaf_t;
+typedef uint64_t roaring64_leaf_t;
 typedef struct roaring64_iterator_s roaring64_iterator_t;
 
 /**
