@@ -601,7 +601,7 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
 
 /**
  * Creates a readonly bitmap that is a view of the given buffer. The buffer
- * should be created with `roaring64_bitmap_frozen_serialize()`, and must be
+ * must be created with `roaring64_bitmap_frozen_serialize()`, and must be
  * aligned by 64 bytes.
  *
  * Returns NULL if deserialization fails.

@@ -21,11 +21,6 @@
     (char *)(((uintptr_t)(buf) + ((alignment)-1)) & \
              (ptrdiff_t)(~((alignment)-1)))
 
-#define CROARING_ALIGN_RELATIVE(buf_cur, buf_start, alignment)           \
-    (char *)((buf_start) +                                               \
-             (((ptrdiff_t)((buf_cur) - (buf_start)) + ((alignment)-1)) & \
-              (ptrdiff_t)(~((alignment)-1))))
-
 #define CROARING_BITSET_ALIGNMENT 64
 
 #ifdef __cplusplus
@@ -117,13 +112,23 @@ static inline leaf_t replace_container(roaring64_bitmap_t *r, leaf_t *leaf,
     return *leaf;
 }
 
-static void extend_containers(roaring64_bitmap_t *r, size_t items) {
-    size_t desired_cap = r->capacity + items;
-    if (desired_cap <= r->capacity) {
+/**
+ * Extends the array of container pointers. Must only be called when the array
+ * is "full" (first_free == capacity).
+ */
+static void extend_containers(roaring64_bitmap_t *r) {
+    size_t size = r->first_free;
+    if (size < r->capacity) {
         return;
     }
-    size_t new_capacity =
-        (r->capacity < 1024) ? 2 * desired_cap : 5 * desired_cap / 4;
+    size_t new_capacity;
+    if (r->capacity == 0) {
+        new_capacity = 2;
+    } else if (r->capacity < 1024) {
+        new_capacity = 2 * r->capacity;
+    } else {
+        new_capacity = 5 * r->capacity / 4;
+    }
     size_t increase = new_capacity - r->capacity;
     r->containers =
         roaring_realloc(r->containers, new_capacity * sizeof(container_t *));
@@ -143,7 +148,7 @@ static size_t next_free_container_idx(const roaring64_bitmap_t *r) {
 static size_t allocate_index(roaring64_bitmap_t *r) {
     size_t first_free = r->first_free;
     if (first_free == r->capacity) {
-        extend_containers(r, 1);
+        extend_containers(r);
     }
     r->first_free = next_free_container_idx(r);
     return first_free;
@@ -961,8 +966,15 @@ static void move_to_shrink(roaring64_bitmap_t *r, leaf_t *leaf) {
     r->first_free = next_free_container_idx(r);
 }
 
+static inline bool is_shrunken(const roaring64_bitmap_t *r) {
+    return r->first_free == r->capacity;
+}
+
 size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
     size_t freed = art_shrink_to_fit(&r->art);
+    if (is_shrunken(r)) {
+        return freed;
+    }
     art_iterator_t it = art_init_iterator(&r->art, true);
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -975,7 +987,7 @@ size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
     if (new_capacity < r->capacity) {
         r->containers = roaring_realloc(r->containers,
                                         new_capacity * sizeof(container_t *));
-        freed += r->capacity - new_capacity;
+        freed += (r->capacity - new_capacity) * sizeof(container_t *);
         r->capacity = new_capacity;
     }
     return freed;
@@ -2212,6 +2224,9 @@ size_t align_size(size_t size, size_t alignment) {
 }
 
 size_t roaring64_bitmap_frozen_size_in_bytes(const roaring64_bitmap_t *r) {
+    if (!is_shrunken(r)) {
+        return 0;
+    }
     // Flags.
     size_t size = sizeof(r->flags);
     // Container count.
@@ -2223,15 +2238,23 @@ size_t roaring64_bitmap_frozen_size_in_bytes(const roaring64_bitmap_t *r) {
     // ART (8 byte aligned).
     size = align_size(size, 8);
     size += art_size_in_bytes(&r->art);
-    // Containers (aligned).
-    size = align_size(size, CROARING_BITSET_ALIGNMENT);
+
+    size_t total_sizes[4] = CROARING_ZERO_INITIALIZER;  // Indexed by typecode.
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t leaf = (leaf_t)*it.value;
         uint8_t typecode = get_typecode(leaf);
-        size += container_get_frozen_size(get_container(r, leaf), typecode);
+        total_sizes[typecode] +=
+            container_get_frozen_size(get_container(r, leaf), typecode);
         art_iterator_next(&it);
     }
+    // Containers (aligned).
+    size = align_size(size, CROARING_BITSET_ALIGNMENT);
+    size += total_sizes[BITSET_CONTAINER_TYPE];
+    size = align_size(size, alignof(rle16_t));
+    size += total_sizes[ARRAY_CONTAINER_TYPE];
+    size = align_size(size, alignof(uint16_t));
+    size += total_sizes[RUN_CONTAINER_TYPE];
     // Padding to make overall size a multiple of required alignment.
     size = align_size(size, CROARING_BITSET_ALIGNMENT);
     return size;
@@ -2269,9 +2292,20 @@ static inline void container_frozen_serialize(const container_t *container,
     }
 }
 
+static inline char *pad_align(char *buf, const char *initial_buf,
+                              size_t alignment) {
+    size_t buf_size = buf - initial_buf;
+    size_t pad = align_size(buf_size, alignment) - buf_size;
+    memset(buf, 0, pad);
+    return buf + pad;
+}
+
 size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
                                          char *buf) {
     if (buf == NULL) {
+        return 0;
+    }
+    if (!is_shrunken(r)) {
         return 0;
     }
     const char *initial_buf = buf;
@@ -2310,19 +2344,19 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
     buf += sizeof(size_t);
 
     // ART.
-    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, 8);
+    buf = pad_align(buf, initial_buf, 8);
     buf += art_serialize(&r->art, buf);
 
     // Containers (aligned).
     // Runs before arrays as run elements are larger than array elements and
     // smaller than bitset elements.
-    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
+    buf = pad_align(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
     uint64_t *bitsets = (uint64_t *)buf;
     buf += total_sizes[BITSET_CONTAINER_TYPE];
-    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, alignof(rle16_t));
+    buf = pad_align(buf, initial_buf, alignof(rle16_t));
     rle16_t *runs = (rle16_t *)buf;
     buf += total_sizes[RUN_CONTAINER_TYPE];
-    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, alignof(uint16_t));
+    buf = pad_align(buf, initial_buf, alignof(uint16_t));
     uint16_t *arrays = (uint16_t *)buf;
     buf += total_sizes[ARRAY_CONTAINER_TYPE];
 
@@ -2337,7 +2371,7 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
     }
 
     // Padding to make overall size a multiple of required alignment.
-    buf = CROARING_ALIGN_RELATIVE(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
+    buf = pad_align(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
 
     return buf - initial_buf;
 }

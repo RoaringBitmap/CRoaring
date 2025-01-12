@@ -676,6 +676,7 @@ DEFINE_TEST(test_art_frozen_view) {
             assert_art_valid(&art1);
         }
 
+        art_shrink_to_fit(&art1);
         size_t serialized_size = art_size_in_bytes(&art1);
         char* buf = (char*)roaring_aligned_malloc(8, serialized_size);
         assert_int_equal(art_serialize(&art1, buf), serialized_size);
@@ -709,6 +710,7 @@ DEFINE_TEST(test_art_frozen_view) {
             assert_art_valid(&art1);
         }
 
+        art_shrink_to_fit(&art1);
         size_t serialized_size = art_size_in_bytes(&art1);
         char* buf = (char*)roaring_aligned_malloc(8, serialized_size);
         assert_int_equal(art_serialize(&art1, buf), serialized_size);
