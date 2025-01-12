@@ -299,6 +299,55 @@ static void setRemove(benchmark::State& state) {
 }
 BENCHMARK(setRemove)->ArgsProduct({kCountAndDensityRange});
 
+static void r64InsertRemoveRandom(benchmark::State& state) {
+    uint64_t bitmask = kBitmasks[state.range(0)];
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    for (size_t i = 0; i < (1 << 20); ++i) {
+        uint64_t val = randUint64() & bitmask;
+        roaring64_bitmap_add(r, val);
+    }
+    for (auto _ : state) {
+        uint64_t val1 = randUint64() & bitmask;
+        uint64_t val2 = randUint64() & bitmask;
+        roaring64_bitmap_add(r, val1);
+        roaring64_bitmap_remove(r, val2);
+    }
+    roaring64_bitmap_free(r);
+}
+BENCHMARK(r64InsertRemoveRandom)->DenseRange(0, kBitmasks.size() - 1, 1);
+
+static void cppInsertRemoveRandom(benchmark::State& state) {
+    uint64_t bitmask = kBitmasks[state.range(0)];
+    Roaring64Map r;
+    for (size_t i = 0; i < (1 << 20); ++i) {
+        uint64_t val = randUint64() & bitmask;
+        r.add(val);
+    }
+    for (auto _ : state) {
+        uint64_t val1 = randUint64() & bitmask;
+        uint64_t val2 = randUint64() & bitmask;
+        r.add(val1);
+        r.remove(val2);
+    }
+}
+BENCHMARK(cppInsertRemoveRandom)->DenseRange(0, kBitmasks.size() - 1, 1);
+
+static void setInsertRemoveRandom(benchmark::State& state) {
+    uint64_t bitmask = kBitmasks[state.range(0)];
+    std::set<uint64_t> set;
+    for (size_t i = 0; i < (1 << 20); ++i) {
+        uint64_t val = randUint64() & bitmask;
+        set.insert(val);
+    }
+    for (auto _ : state) {
+        uint64_t val1 = randUint64() & bitmask;
+        uint64_t val2 = randUint64() & bitmask;
+        set.insert(val1);
+        set.erase(val2);
+    }
+}
+BENCHMARK(setInsertRemoveRandom)->DenseRange(0, kBitmasks.size() - 1, 1);
+
 static void r64PortableSerialize(benchmark::State& state) {
     size_t count = state.range(0);
     uint64_t step = state.range(1);
