@@ -37,19 +37,15 @@ namespace internal {
 #endif
 
 typedef uint8_t art_typecode_t;
-
-// All node types should count as unoccupied if zeroed with memset.
-
 typedef void art_node_t;
 
 typedef struct art_leaf_s {
-    bool occupied;
     union {
         struct {
             art_key_chunk_t key[ART_KEY_BYTES];
             art_val_t val;
         };
-        size_t next_free;  // Used if !occupied.
+        size_t next_free;
     };
 } art_leaf_t;
 
@@ -65,27 +61,27 @@ typedef struct art_inner_node_s {
 
 // Node4: key[i] corresponds with children[i]. Keys are sorted.
 typedef struct art_node4_s {
-    art_inner_node_t base;
-    uint8_t count;
     union {
         struct {
+            art_inner_node_t base;
+            uint8_t count;
             uint8_t keys[4];
             art_ref_t children[4];
         };
-        size_t next_free;  // Used if count == 0.
+        size_t next_free;
     };
 } art_node4_t;
 
 // Node16: key[i] corresponds with children[i]. Keys are sorted.
 typedef struct art_node16_s {
-    art_inner_node_t base;
-    uint8_t count;
     union {
         struct {
+            art_inner_node_t base;
+            uint8_t count;
             uint8_t keys[16];
             art_ref_t children[16];
         };
-        size_t next_free;  // Used if count == 0.
+        size_t next_free;
     };
 } art_node16_t;
 
@@ -93,10 +89,10 @@ typedef struct art_node16_s {
 // CROARING_ART_NODE48_EMPTY_VAL. Keys are naturally sorted due to direct
 // indexing.
 typedef struct art_node48_s {
-    art_inner_node_t base;
-    uint8_t count;
     union {
         struct {
+            art_inner_node_t base;
+            uint8_t count;
             // Bitset where the ith bit is set if children[i] is available
             // Because there are at most 48 children, only the bottom 48 bits
             // are used.
@@ -104,20 +100,20 @@ typedef struct art_node48_s {
             uint8_t keys[256];
             art_ref_t children[48];
         };
-        size_t next_free;  // Used if count == 0.
+        size_t next_free;
     };
 } art_node48_t;
 
 // Node256: children[i] is directly indexed by key chunk. A child is present if
 // children[i] != NULL.
 typedef struct art_node256_s {
-    art_inner_node_t base;
-    uint16_t count;
     union {
         struct {
+            art_inner_node_t base;
+            uint16_t count;
             art_ref_t children[256];
         };
-        size_t next_free;  // Used if count == 0.
+        size_t next_free;
     };
 } art_node256_t;
 
@@ -235,14 +231,12 @@ static art_ref_t art_leaf_create(art_t *art, const art_key_chunk_t key[],
                                  art_val_t val) {
     uint64_t index = art_allocate_index(art, CROARING_ART_LEAF_TYPE);
     art_leaf_t *leaf = art->leaves + index;
-    leaf->occupied = true;
     memcpy(leaf->key, key, ART_KEY_BYTES);
     leaf->val = val;
     return art_to_ref(index, CROARING_ART_LEAF_TYPE);
 }
 
 static inline void art_leaf_clear(art_leaf_t *leaf, art_ref_t next_free) {
-    leaf->occupied = false;
     leaf->next_free = next_free;
 }
 

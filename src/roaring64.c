@@ -179,8 +179,6 @@ static inline leaf_t copy_leaf_container(const roaring64_bitmap_t *r1,
     return add_container(r2, container, typecode);
 }
 
-static inline void free_leaf(leaf_t *leaf) { roaring_free(leaf); }
-
 static inline int compare_high48(art_key_chunk_t key1[],
                                  art_key_chunk_t key2[]) {
     return art_compare_keys(key1, key2);
