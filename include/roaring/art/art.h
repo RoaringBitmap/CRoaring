@@ -58,8 +58,8 @@ typedef struct art_s {
     // Indexed by node typecode, thus 1 larger than it needs to be for
     // convenience. `first_free` indicates the index where the first free node
     // lives, which may be equal to the capacity.
-    size_t first_free[6];
-    size_t capacities[6];
+    uint64_t first_free[6];
+    uint64_t capacities[6];
 
     art_leaf_t *leaves;
     art_node4_t *node4s;
