@@ -15,6 +15,9 @@
 #define CROARING_ART_NODE48_TYPE 4
 #define CROARING_ART_NODE256_TYPE 5
 
+#define CROARING_ART_MIN_TYPE CROARING_ART_LEAF_TYPE
+#define CROARING_ART_MAX_TYPE CROARING_ART_NODE256_TYPE
+
 // Node48 placeholder value to indicate no child is present at this key index.
 #define CROARING_ART_NODE48_EMPTY_VAL 48
 #define CROARING_NODE48_AVAILABLE_CHILDREN_MASK ((UINT64_C(1) << 48) - 1)
@@ -37,7 +40,6 @@ namespace internal {
 #endif
 
 typedef uint8_t art_typecode_t;
-typedef void art_node_t;
 
 typedef struct art_leaf_s {
     union {
@@ -117,6 +119,16 @@ typedef struct art_node256_s {
     };
 } art_node256_t;
 
+// Size of each node type, indexed by typecode for convenience.
+static const size_t ART_NODE_SIZES[] = {
+    0,
+    sizeof(art_leaf_t),
+    sizeof(art_node4_t),
+    sizeof(art_node16_t),
+    sizeof(art_node48_t),
+    sizeof(art_node256_t),
+};
+
 // Helper struct to refer to a child within a node at a specific index.
 typedef struct art_indexed_child_s {
     art_ref_t child;
@@ -159,22 +171,9 @@ static inline art_typecode_t art_ref_typecode(art_ref_t ref) {
  */
 static art_node_t *art_deref(const art_t *art, art_ref_t ref) {
     assert(ref != CROARING_ART_NULL_REF);
-    uint64_t index = art_ref_index(ref);
-    switch (art_ref_typecode(ref)) {
-        case CROARING_ART_LEAF_TYPE:
-            return (art_node_t *)&art->leaves[index];
-        case CROARING_ART_NODE4_TYPE:
-            return (art_node_t *)&art->node4s[index];
-        case CROARING_ART_NODE16_TYPE:
-            return (art_node_t *)&art->node16s[index];
-        case CROARING_ART_NODE48_TYPE:
-            return (art_node_t *)&art->node48s[index];
-        case CROARING_ART_NODE256_TYPE:
-            return (art_node_t *)&art->node256s[index];
-        default:
-            assert(false);
-            return NULL;
-    }
+    art_typecode_t typecode = art_ref_typecode(ref);
+    return (art_node_t *)((char *)art->nodes[typecode] +
+                          art_ref_index(ref) * ART_NODE_SIZES[typecode]);
 }
 
 static inline art_node_t *art_get_node(const art_t *art, uint64_t index,
@@ -184,17 +183,18 @@ static inline art_node_t *art_get_node(const art_t *art, uint64_t index,
 
 static inline uint64_t art_get_index(const art_t *art, const art_node_t *node,
                                      art_typecode_t typecode) {
+    art_node_t *nodes = art->nodes[typecode];
     switch (typecode) {
         case CROARING_ART_LEAF_TYPE:
-            return (art_leaf_t *)node - art->leaves;
+            return (art_leaf_t *)node - (art_leaf_t *)nodes;
         case CROARING_ART_NODE4_TYPE:
-            return (art_node4_t *)node - art->node4s;
+            return (art_node4_t *)node - (art_node4_t *)nodes;
         case CROARING_ART_NODE16_TYPE:
-            return (art_node16_t *)node - art->node16s;
+            return (art_node16_t *)node - (art_node16_t *)nodes;
         case CROARING_ART_NODE48_TYPE:
-            return (art_node48_t *)node - art->node48s;
+            return (art_node48_t *)node - (art_node48_t *)nodes;
         case CROARING_ART_NODE256_TYPE:
-            return (art_node256_t *)node - art->node256s;
+            return (art_node256_t *)node - (art_node256_t *)nodes;
         default:
             assert(false);
             return 0;
@@ -230,7 +230,8 @@ static uint64_t art_allocate_index(art_t *art, art_typecode_t typecode);
 static art_ref_t art_leaf_create(art_t *art, const art_key_chunk_t key[],
                                  art_val_t val) {
     uint64_t index = art_allocate_index(art, CROARING_ART_LEAF_TYPE);
-    art_leaf_t *leaf = art->leaves + index;
+    art_leaf_t *leaf =
+        ((art_leaf_t *)art->nodes[CROARING_ART_LEAF_TYPE]) + index;
     memcpy(leaf->key, key, ART_KEY_BYTES);
     leaf->val = val;
     return art_to_ref(index, CROARING_ART_LEAF_TYPE);
@@ -264,7 +265,8 @@ static art_ref_t art_node256_insert(art_t *art, art_node256_t *node,
 static art_node4_t *art_node4_create(art_t *art, const art_key_chunk_t prefix[],
                                      uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE4_TYPE);
-    art_node4_t *node = art->node4s + index;
+    art_node4_t *node =
+        ((art_node4_t *)art->nodes[CROARING_ART_NODE4_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
     node->count = 0;
     return node;
@@ -470,7 +472,8 @@ static art_node16_t *art_node16_create(art_t *art,
                                        const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE16_TYPE);
-    art_node16_t *node = art->node16s + index;
+    art_node16_t *node =
+        ((art_node16_t *)art->nodes[CROARING_ART_NODE16_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
     node->count = 0;
     return node;
@@ -654,7 +657,8 @@ static art_node48_t *art_node48_create(art_t *art,
                                        const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE48_TYPE);
-    art_node48_t *node = art->node48s + index;
+    art_node48_t *node =
+        ((art_node48_t *)art->nodes[CROARING_ART_NODE48_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
     node->count = 0;
     node->available_children = CROARING_NODE48_AVAILABLE_CHILDREN_MASK;
@@ -862,7 +866,8 @@ static art_node256_t *art_node256_create(art_t *art,
                                          const art_key_chunk_t prefix[],
                                          uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE256_TYPE);
-    art_node256_t *node = art->node256s + index;
+    art_node256_t *node =
+        ((art_node256_t *)art->nodes[CROARING_ART_NODE256_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
     node->count = 0;
     for (size_t i = 0; i < 256; ++i) {
@@ -1313,42 +1318,11 @@ static void art_extend(art_t *art, art_typecode_t typecode) {
         new_capacity = 5 * capacity / 4;
     }
     art->capacities[typecode] = new_capacity;
+    art->nodes[typecode] = roaring_realloc(
+        art->nodes[typecode], new_capacity * ART_NODE_SIZES[typecode]);
     uint64_t increase = new_capacity - capacity;
-    switch (typecode) {
-        case CROARING_ART_LEAF_TYPE: {
-            art->leaves =
-                roaring_realloc(art->leaves, new_capacity * sizeof(art_leaf_t));
-            memset(art->leaves + capacity, 0, increase * sizeof(art_leaf_t));
-            break;
-        }
-        case CROARING_ART_NODE4_TYPE: {
-            art->node4s = roaring_realloc(art->node4s,
-                                          new_capacity * sizeof(art_node4_t));
-            memset(art->node4s + capacity, 0, increase * sizeof(art_node4_t));
-            break;
-        }
-        case CROARING_ART_NODE16_TYPE: {
-            art->node16s = roaring_realloc(art->node16s,
-                                           new_capacity * sizeof(art_node16_t));
-            memset(art->node16s + capacity, 0, increase * sizeof(art_node16_t));
-            break;
-        }
-        case CROARING_ART_NODE48_TYPE: {
-            art->node48s = roaring_realloc(art->node48s,
-                                           new_capacity * sizeof(art_node48_t));
-            memset(art->node48s + capacity, 0, increase * sizeof(art_node48_t));
-            break;
-        }
-        case CROARING_ART_NODE256_TYPE: {
-            art->node256s = roaring_realloc(
-                art->node256s, new_capacity * sizeof(art_node256_t));
-            memset(art->node256s + capacity, 0,
-                   increase * sizeof(art_node256_t));
-            break;
-        }
-        default:
-            assert(false);
-    }
+    memset(art_get_node(art, capacity, typecode), 0,
+           increase * ART_NODE_SIZES[typecode]);
     for (uint64_t i = capacity; i < new_capacity; ++i) {
         art_node_set_next_free(art_get_node(art, i, typecode), typecode, i + 1);
     }
@@ -1689,35 +1663,8 @@ static art_ref_t art_move_node_to_shrink(art_t *art, art_ref_t ref) {
     uint64_t from = idx;
     uint64_t to = first_free;
     uint64_t next_free = art_node_get_next_free(art, art_to_ref(to, typecode));
-    switch (typecode) {
-        case CROARING_ART_LEAF_TYPE: {
-            memcpy(art->leaves + to, art->leaves + from, sizeof(art_leaf_t));
-            break;
-        }
-        case CROARING_ART_NODE4_TYPE: {
-            memcpy(art->node4s + to, art->node4s + from, sizeof(art_node4_t));
-            break;
-        }
-        case CROARING_ART_NODE16_TYPE: {
-            memcpy(art->node16s + to, art->node16s + from,
-                   sizeof(art_node16_t));
-            break;
-        }
-        case CROARING_ART_NODE48_TYPE: {
-            memcpy(art->node48s + to, art->node48s + from,
-                   sizeof(art_node48_t));
-            break;
-        }
-        case CROARING_ART_NODE256_TYPE: {
-            memcpy(art->node256s + to, art->node256s + from,
-                   sizeof(art_node256_t));
-            break;
-        }
-        default: {
-            assert(false);
-            return 0;
-        }
-    }
+    memcpy(art_get_node(art, to, typecode), art_get_node(art, from, typecode),
+           ART_NODE_SIZES[typecode]);
 
     // With an integer representing the next free index, and an `x` representing
     // an occupied index, assume the following scenario at the start of this
@@ -1785,50 +1732,15 @@ static void art_sort_free_lists(art_t *art) {
  */
 static size_t art_shrink_node_arrays(art_t *art) {
     size_t freed = 0;
-    if (art->first_free[CROARING_ART_LEAF_TYPE] <
-        art->capacities[CROARING_ART_LEAF_TYPE]) {
-        uint64_t new_capacity = art->first_free[CROARING_ART_LEAF_TYPE];
-        art->leaves =
-            roaring_realloc(art->leaves, new_capacity * sizeof(art_leaf_t));
-        freed += (art->capacities[CROARING_ART_LEAF_TYPE] - new_capacity) *
-                 sizeof(art_leaf_t);
-        art->capacities[CROARING_ART_LEAF_TYPE] = new_capacity;
-    }
-    if (art->first_free[CROARING_ART_NODE4_TYPE] <
-        art->capacities[CROARING_ART_NODE4_TYPE]) {
-        uint64_t new_capacity = art->first_free[CROARING_ART_NODE4_TYPE];
-        art->node4s =
-            roaring_realloc(art->node4s, new_capacity * sizeof(art_node4_t));
-        freed += (art->capacities[CROARING_ART_LEAF_TYPE] - new_capacity) *
-                 sizeof(art_node4_t);
-        art->capacities[CROARING_ART_NODE4_TYPE] = new_capacity;
-    }
-    if (art->first_free[CROARING_ART_NODE16_TYPE] <
-        art->capacities[CROARING_ART_NODE16_TYPE]) {
-        uint64_t new_capacity = art->first_free[CROARING_ART_NODE16_TYPE];
-        art->node16s =
-            roaring_realloc(art->node16s, new_capacity * sizeof(art_node16_t));
-        freed += (art->capacities[CROARING_ART_LEAF_TYPE] - new_capacity) *
-                 sizeof(art_node16_t);
-        art->capacities[CROARING_ART_NODE16_TYPE] = new_capacity;
-    }
-    if (art->first_free[CROARING_ART_NODE48_TYPE] <
-        art->capacities[CROARING_ART_NODE48_TYPE]) {
-        uint64_t new_capacity = art->first_free[CROARING_ART_NODE48_TYPE];
-        art->node48s =
-            roaring_realloc(art->node48s, new_capacity * sizeof(art_node48_t));
-        freed += (art->capacities[CROARING_ART_LEAF_TYPE] - new_capacity) *
-                 sizeof(art_node48_t);
-        art->capacities[CROARING_ART_NODE48_TYPE] = new_capacity;
-    }
-    if (art->first_free[CROARING_ART_NODE256_TYPE] <
-        art->capacities[CROARING_ART_NODE256_TYPE]) {
-        uint64_t new_capacity = art->first_free[CROARING_ART_NODE256_TYPE];
-        art->node256s = roaring_realloc(art->node256s,
-                                        new_capacity * sizeof(art_node256_t));
-        freed += (art->capacities[CROARING_ART_NODE256_TYPE] - new_capacity) *
-                 sizeof(art_node256_t);
-        art->capacities[CROARING_ART_NODE256_TYPE] = new_capacity;
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        if (art->first_free[t] < art->capacities[t]) {
+            uint64_t new_capacity = art->first_free[t];
+            art->nodes[t] = roaring_realloc(art->nodes[t],
+                                            new_capacity * ART_NODE_SIZES[t]);
+            freed += (art->capacities[t] - new_capacity) * ART_NODE_SIZES[t];
+            art->capacities[t] = new_capacity;
+        }
     }
     return freed;
 }
@@ -1902,11 +1814,10 @@ void art_init_cleared(art_t *art) {
     art->root = CROARING_ART_NULL_REF;
     memset(art->first_free, 0, sizeof(art->first_free));
     memset(art->capacities, 0, sizeof(art->capacities));
-    art->leaves = NULL;
-    art->node4s = NULL;
-    art->node16s = NULL;
-    art->node48s = NULL;
-    art->node256s = NULL;
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        art->nodes[t] = NULL;
+    }
 }
 
 size_t art_shrink_to_fit(art_t *art) {
@@ -1960,11 +1871,10 @@ bool art_is_empty(const art_t *art) {
 }
 
 void art_free(art_t *art) {
-    roaring_free(art->leaves);
-    roaring_free(art->node4s);
-    roaring_free(art->node16s);
-    roaring_free(art->node48s);
-    roaring_free(art->node256s);
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        roaring_free(art->nodes[t]);
+    }
 }
 
 void art_printf(const art_t *art) {
@@ -2424,11 +2334,10 @@ size_t art_size_in_bytes(const art_t *art) {
     // Alignment for leaves. The rest of the nodes are aligned the same way.
     size +=
         ((size + alignof(art_leaf_t) - 1) & ~(alignof(art_leaf_t) - 1)) - size;
-    size += art->capacities[CROARING_ART_LEAF_TYPE] * sizeof(art_leaf_t);
-    size += art->capacities[CROARING_ART_NODE4_TYPE] * sizeof(art_node4_t);
-    size += art->capacities[CROARING_ART_NODE16_TYPE] * sizeof(art_node16_t);
-    size += art->capacities[CROARING_ART_NODE48_TYPE] * sizeof(art_node48_t);
-    size += art->capacities[CROARING_ART_NODE256_TYPE] * sizeof(art_node256_t);
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        size += art->capacities[t] * ART_NODE_SIZES[t];
+    }
     return size;
 }
 
@@ -2455,35 +2364,13 @@ size_t art_serialize(const art_t *art, char *buf) {
     memset(buf, 0, align_bytes);
     buf += align_bytes;
 
-    if (art->capacities[CROARING_ART_LEAF_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_LEAF_TYPE] * sizeof(art_leaf_t);
-        memcpy(buf, art->leaves, size);
-        buf += size;
-    }
-    if (art->capacities[CROARING_ART_NODE4_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE4_TYPE] * sizeof(art_node4_t);
-        memcpy(buf, art->node4s, size);
-        buf += size;
-    }
-    if (art->capacities[CROARING_ART_NODE16_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE16_TYPE] * sizeof(art_node16_t);
-        memcpy(buf, art->node16s, size);
-        buf += size;
-    }
-    if (art->capacities[CROARING_ART_NODE48_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE48_TYPE] * sizeof(art_node48_t);
-        memcpy(buf, art->node48s, size);
-        buf += size;
-    }
-    if (art->capacities[CROARING_ART_NODE256_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE256_TYPE] * sizeof(art_node256_t);
-        memcpy(buf, art->node256s, size);
-        buf += size;
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        if (art->capacities[t] > 0) {
+            size_t size = art->capacities[t] * ART_NODE_SIZES[t];
+            memcpy(buf, art->nodes[t], size);
+            buf += size;
+        }
     }
 
     return buf - initial_buf;
@@ -2521,56 +2408,17 @@ size_t art_frozen_view(const char *buf, size_t maxbytes, art_t *art) {
     }
     maxbytes -= buf - before_align;
 
-    if (art->capacities[CROARING_ART_LEAF_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_LEAF_TYPE] * sizeof(art_leaf_t);
-        if (maxbytes < size) {
-            return 0;
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        if (art->capacities[t] > 0) {
+            size_t size = art->capacities[t] * ART_NODE_SIZES[t];
+            if (maxbytes < size) {
+                return 0;
+            }
+            art->nodes[t] = (char *)buf;
+            buf += size;
+            maxbytes -= size;
         }
-        art->leaves = (art_leaf_t *)buf;
-        buf += size;
-        maxbytes -= size;
-    }
-    if (art->capacities[CROARING_ART_NODE4_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE4_TYPE] * sizeof(art_node4_t);
-        if (maxbytes < size) {
-            return 0;
-        }
-        art->node4s = (art_node4_t *)buf;
-        buf += size;
-        maxbytes -= size;
-    }
-    if (art->capacities[CROARING_ART_NODE16_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE16_TYPE] * sizeof(art_node16_t);
-        if (maxbytes < size) {
-            return 0;
-        }
-        art->node16s = (art_node16_t *)buf;
-        buf += size;
-        maxbytes -= size;
-    }
-    if (art->capacities[CROARING_ART_NODE48_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE48_TYPE] * sizeof(art_node48_t);
-        if (maxbytes < size) {
-            return 0;
-        }
-        art->node48s = (art_node48_t *)buf;
-        buf += size;
-        maxbytes -= size;
-    }
-    if (art->capacities[CROARING_ART_NODE256_TYPE] > 0) {
-        size_t size =
-            art->capacities[CROARING_ART_NODE256_TYPE] * sizeof(art_node256_t);
-        if (maxbytes < size) {
-            art_free(art);
-            return 0;
-        }
-        art->node256s = (art_node256_t *)buf;
-        buf += size;
-        maxbytes -= size;
     }
     return buf - initial_buf;
 }

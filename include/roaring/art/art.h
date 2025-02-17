@@ -39,11 +39,7 @@ typedef uint8_t art_key_chunk_t;
 // CROARING_ART_NULL_REF when pointing to a non-existent node.
 typedef uint64_t art_ref_t;
 
-typedef struct art_leaf_s art_leaf_t;
-typedef struct art_node4_s art_node4_t;
-typedef struct art_node16_s art_node16_t;
-typedef struct art_node48_s art_node48_t;
-typedef struct art_node256_s art_node256_t;
+typedef void art_node_t;
 
 /**
  * The ART is empty when root is a null ref.
@@ -55,17 +51,12 @@ typedef struct art_node256_s art_node256_t;
 typedef struct art_s {
     art_ref_t root;
 
-    // Indexed by node typecode, thus 1 larger than it needs to be for
+    // Indexed by node typecode, thus 1 larger than they need to be for
     // convenience. `first_free` indicates the index where the first free node
     // lives, which may be equal to the capacity.
     uint64_t first_free[6];
     uint64_t capacities[6];
-
-    art_leaf_t *leaves;
-    art_node4_t *node4s;
-    art_node16_t *node16s;
-    art_node48_t *node48s;
-    art_node256_t *node256s;
+    art_node_t *nodes[6];
 } art_t;
 
 typedef uint64_t art_val_t;
