@@ -969,9 +969,6 @@ static inline bool is_shrunken(const roaring64_bitmap_t *r) {
 
 size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
     size_t freed = art_shrink_to_fit(&r->art);
-    if (is_shrunken(r)) {
-        return freed;
-    }
     art_iterator_t it = art_init_iterator(&r->art, true);
     while (it.value != NULL) {
         leaf_t *leaf = (leaf_t *)it.value;
@@ -979,6 +976,9 @@ size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
                                          get_typecode(*leaf));
         move_to_shrink(r, leaf);
         art_iterator_next(&it);
+    }
+    if (is_shrunken(r)) {
+        return freed;
     }
     size_t new_capacity = r->first_free;
     if (new_capacity < r->capacity) {
