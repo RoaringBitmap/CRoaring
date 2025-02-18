@@ -1299,9 +1299,6 @@ static uint8_t art_common_prefix(const art_key_chunk_t key1[],
 /**
  * Extends the array of nodes of the given typecode. Invalidates pointers into
  * the array obtained by `art_deref`.
- *
- * Must only be called when the node array of the given type is "full"
- * (first_free == capacity).
  */
 static void art_extend(art_t *art, art_typecode_t typecode) {
     uint64_t size = art->first_free[typecode];

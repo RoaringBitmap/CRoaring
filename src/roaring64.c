@@ -113,8 +113,7 @@ static inline leaf_t replace_container(roaring64_bitmap_t *r, leaf_t *leaf,
 }
 
 /**
- * Extends the array of container pointers. Must only be called when the array
- * is "full" (first_free == capacity).
+ * Extends the array of container pointers.
  */
 static void extend_containers(roaring64_bitmap_t *r) {
     size_t size = r->first_free;
