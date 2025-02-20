@@ -1794,19 +1794,6 @@ static void art_shrink_at(art_t *art, art_ref_t ref) {
     }
 }
 
-static bool art_is_shrunken(const art_t *art) {
-    return art->first_free[CROARING_ART_LEAF_TYPE] ==
-               art->capacities[CROARING_ART_LEAF_TYPE] &&
-           art->first_free[CROARING_ART_NODE4_TYPE] ==
-               art->capacities[CROARING_ART_NODE4_TYPE] &&
-           art->first_free[CROARING_ART_NODE16_TYPE] ==
-               art->capacities[CROARING_ART_NODE16_TYPE] &&
-           art->first_free[CROARING_ART_NODE48_TYPE] ==
-               art->capacities[CROARING_ART_NODE48_TYPE] &&
-           art->first_free[CROARING_ART_NODE256_TYPE] ==
-               art->capacities[CROARING_ART_NODE256_TYPE];
-}
-
 void art_init_cleared(art_t *art) {
     art->root = CROARING_ART_NULL_REF;
     memset(art->first_free, 0, sizeof(art->first_free));
@@ -1827,6 +1814,16 @@ size_t art_shrink_to_fit(art_t *art) {
         art_shrink_at(art, art->root);
     }
     return art_shrink_node_arrays(art);
+}
+
+bool art_is_shrunken(const art_t *art) {
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        if (art->first_free[t] != art->capacities[t]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 art_val_t *art_insert(art_t *art, const art_key_chunk_t *key, art_val_t val) {

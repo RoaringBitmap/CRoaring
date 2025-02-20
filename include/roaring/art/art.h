@@ -206,6 +206,11 @@ bool art_iterator_erase(art_iterator_t *iterator, art_val_t *erased_val);
 size_t art_shrink_to_fit(art_t *art);
 
 /**
+ * Returns true if the ART has no unused elements.
+ */
+bool art_is_shrunken(const art_t *art);
+
+/**
  * Returns the serialized size in bytes.
  * Requires `art_shrink_to_fit` to be called first.
  */

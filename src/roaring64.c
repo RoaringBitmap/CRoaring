@@ -964,7 +964,7 @@ static void move_to_shrink(roaring64_bitmap_t *r, leaf_t *leaf) {
 }
 
 static inline bool is_shrunken(const roaring64_bitmap_t *r) {
-    return r->first_free == r->capacity;
+    return art_is_shrunken(&r->art) && r->first_free == r->capacity;
 }
 
 size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
