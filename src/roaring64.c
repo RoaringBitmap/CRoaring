@@ -37,8 +37,8 @@ namespace api {
 typedef struct roaring64_bitmap_s {
     art_t art;
     uint8_t flags;
-    size_t first_free;
-    size_t capacity;
+    uint64_t first_free;
+    uint64_t capacity;
     container_t **containers;
 } roaring64_bitmap_t;
 
@@ -94,7 +94,7 @@ static inline leaf_t create_leaf(uint64_t container_index, uint8_t typecode) {
 
 static inline uint8_t get_typecode(leaf_t leaf) { return (uint8_t)leaf; }
 
-static inline size_t get_index(leaf_t leaf) { return leaf >> 8; }
+static inline uint64_t get_index(leaf_t leaf) { return leaf >> 8; }
 
 static inline container_t *get_container(const roaring64_bitmap_t *r,
                                          leaf_t leaf) {
@@ -106,7 +106,7 @@ static inline container_t *get_container(const roaring64_bitmap_t *r,
 static inline leaf_t replace_container(roaring64_bitmap_t *r, leaf_t *leaf,
                                        container_t *container,
                                        uint8_t typecode) {
-    size_t index = get_index(*leaf);
+    uint64_t index = get_index(*leaf);
     r->containers[index] = container;
     *leaf = create_leaf(index, typecode);
     return *leaf;
@@ -116,11 +116,11 @@ static inline leaf_t replace_container(roaring64_bitmap_t *r, leaf_t *leaf,
  * Extends the array of container pointers.
  */
 static void extend_containers(roaring64_bitmap_t *r) {
-    size_t size = r->first_free;
+    uint64_t size = r->first_free;
     if (size < r->capacity) {
         return;
     }
-    size_t new_capacity;
+    uint64_t new_capacity;
     if (r->capacity == 0) {
         new_capacity = 2;
     } else if (r->capacity < 1024) {
@@ -128,15 +128,15 @@ static void extend_containers(roaring64_bitmap_t *r) {
     } else {
         new_capacity = 5 * r->capacity / 4;
     }
-    size_t increase = new_capacity - r->capacity;
+    uint64_t increase = new_capacity - r->capacity;
     r->containers =
         roaring_realloc(r->containers, new_capacity * sizeof(container_t *));
     memset(r->containers + r->capacity, 0, increase * sizeof(container_t *));
     r->capacity = new_capacity;
 }
 
-static size_t next_free_container_idx(const roaring64_bitmap_t *r) {
-    for (size_t i = r->first_free + 1; i < r->capacity; ++i) {
+static uint64_t next_free_container_idx(const roaring64_bitmap_t *r) {
+    for (uint64_t i = r->first_free + 1; i < r->capacity; ++i) {
         if (r->containers[i] == NULL) {
             return i;
         }
@@ -144,8 +144,8 @@ static size_t next_free_container_idx(const roaring64_bitmap_t *r) {
     return r->capacity;
 }
 
-static size_t allocate_index(roaring64_bitmap_t *r) {
-    size_t first_free = r->first_free;
+static uint64_t allocate_index(roaring64_bitmap_t *r) {
+    uint64_t first_free = r->first_free;
     if (first_free == r->capacity) {
         extend_containers(r);
     }
@@ -155,13 +155,13 @@ static size_t allocate_index(roaring64_bitmap_t *r) {
 
 static leaf_t add_container(roaring64_bitmap_t *r, container_t *container,
                             uint8_t typecode) {
-    size_t index = allocate_index(r);
+    uint64_t index = allocate_index(r);
     r->containers[index] = container;
     return create_leaf(index, typecode);
 }
 
 static void remove_container(roaring64_bitmap_t *r, leaf_t leaf) {
-    size_t index = get_index(leaf);
+    uint64_t index = get_index(leaf);
     r->containers[index] = NULL;
     if (index < r->first_free) {
         r->first_free = index;
@@ -953,7 +953,7 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
 }
 
 static void move_to_shrink(roaring64_bitmap_t *r, leaf_t *leaf) {
-    size_t idx = get_index(*leaf);
+    uint64_t idx = get_index(*leaf);
     if (idx < r->first_free) {
         return;
     }
@@ -980,7 +980,7 @@ size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
     if (is_shrunken(r)) {
         return freed;
     }
-    size_t new_capacity = r->first_free;
+    uint64_t new_capacity = r->first_free;
     if (new_capacity < r->capacity) {
         r->containers = roaring_realloc(r->containers,
                                         new_capacity * sizeof(container_t *));
@@ -2216,7 +2216,7 @@ static inline size_t container_get_frozen_size(const container_t *c,
     }
 }
 
-size_t align_size(size_t size, size_t alignment) {
+uint64_t align_size(uint64_t size, uint64_t alignment) {
     return (size + alignment - 1) & ~(alignment - 1);
 }
 
@@ -2225,18 +2225,19 @@ size_t roaring64_bitmap_frozen_size_in_bytes(const roaring64_bitmap_t *r) {
         return 0;
     }
     // Flags.
-    size_t size = sizeof(r->flags);
+    uint64_t size = sizeof(r->flags);
     // Container count.
     size += sizeof(r->capacity);
     // Container element counts.
     size += r->capacity * sizeof(uint16_t);
     // Total container sizes.
-    size += 3 * sizeof(size_t);
+    size += 3 * sizeof(uint64_t);
     // ART (8 byte aligned).
     size = align_size(size, 8);
     size += art_size_in_bytes(&r->art);
 
-    size_t total_sizes[4] = CROARING_ZERO_INITIALIZER;  // Indexed by typecode.
+    uint64_t total_sizes[4] =
+        CROARING_ZERO_INITIALIZER;  // Indexed by typecode.
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t leaf = (leaf_t)*it.value;
@@ -2291,8 +2292,8 @@ static inline void container_frozen_serialize(const container_t *container,
 
 static inline char *pad_align(char *buf, const char *initial_buf,
                               size_t alignment) {
-    size_t buf_size = buf - initial_buf;
-    size_t pad = align_size(buf_size, alignment) - buf_size;
+    uint64_t buf_size = buf - initial_buf;
+    uint64_t pad = align_size(buf_size, alignment) - buf_size;
     memset(buf, 0, pad);
     return buf + pad;
 }
@@ -2316,7 +2317,8 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
     buf += sizeof(r->capacity);
 
     // Container element counts.
-    size_t total_sizes[4] = CROARING_ZERO_INITIALIZER;  // Indexed by typecode.
+    uint64_t total_sizes[4] =
+        CROARING_ZERO_INITIALIZER;  // Indexed by typecode.
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t leaf = (leaf_t)*it.value;
@@ -2333,12 +2335,12 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
     }
 
     // Total container sizes.
-    memcpy(buf, &(total_sizes[BITSET_CONTAINER_TYPE]), sizeof(size_t));
-    buf += sizeof(size_t);
-    memcpy(buf, &(total_sizes[RUN_CONTAINER_TYPE]), sizeof(size_t));
-    buf += sizeof(size_t);
-    memcpy(buf, &(total_sizes[ARRAY_CONTAINER_TYPE]), sizeof(size_t));
-    buf += sizeof(size_t);
+    memcpy(buf, &(total_sizes[BITSET_CONTAINER_TYPE]), sizeof(uint64_t));
+    buf += sizeof(uint64_t);
+    memcpy(buf, &(total_sizes[RUN_CONTAINER_TYPE]), sizeof(uint64_t));
+    buf += sizeof(uint64_t);
+    memcpy(buf, &(total_sizes[ARRAY_CONTAINER_TYPE]), sizeof(uint64_t));
+    buf += sizeof(uint64_t);
 
     // ART.
     buf = pad_align(buf, initial_buf, 8);
@@ -2452,20 +2454,20 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     maxbytes -= r->capacity * sizeof(uint16_t);
 
     // Total container sizes.
-    size_t total_sizes[4];
-    if (maxbytes < sizeof(size_t) * 3) {
+    uint64_t total_sizes[4];
+    if (maxbytes < sizeof(uint64_t) * 3) {
         roaring64_bitmap_free(r);
         return NULL;
     }
-    memcpy(&(total_sizes[BITSET_CONTAINER_TYPE]), buf, sizeof(size_t));
-    buf += sizeof(size_t);
-    maxbytes -= sizeof(size_t);
-    memcpy(&(total_sizes[RUN_CONTAINER_TYPE]), buf, sizeof(size_t));
-    buf += sizeof(size_t);
-    maxbytes -= sizeof(size_t);
-    memcpy(&(total_sizes[ARRAY_CONTAINER_TYPE]), buf, sizeof(size_t));
-    buf += sizeof(size_t);
-    maxbytes -= sizeof(size_t);
+    memcpy(&(total_sizes[BITSET_CONTAINER_TYPE]), buf, sizeof(uint64_t));
+    buf += sizeof(uint64_t);
+    maxbytes -= sizeof(uint64_t);
+    memcpy(&(total_sizes[RUN_CONTAINER_TYPE]), buf, sizeof(uint64_t));
+    buf += sizeof(uint64_t);
+    maxbytes -= sizeof(uint64_t);
+    memcpy(&(total_sizes[ARRAY_CONTAINER_TYPE]), buf, sizeof(uint64_t));
+    buf += sizeof(uint64_t);
+    maxbytes -= sizeof(uint64_t);
 
     // ART (8 byte aligned).
     buf = CROARING_ALIGN_BUF(buf, 8);
@@ -2488,7 +2490,7 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     buf = CROARING_ALIGN_BUF(buf, alignof(uint16_t));
     const uint16_t *arrays = (const uint16_t *)buf;
     buf += total_sizes[ARRAY_CONTAINER_TYPE];
-    if (maxbytes < (size_t)(buf - before_containers)) {
+    if (maxbytes < (uint64_t)(buf - before_containers)) {
         roaring64_bitmap_free(r);
         return NULL;
     }
@@ -2506,7 +2508,7 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
         uint32_t elem_count = (uint32_t)(compressed_elem_count) + 1;
 
         // The container index is unrelated to the iteration order.
-        size_t index = get_index(leaf);
+        uint64_t index = get_index(leaf);
         r->containers[index] = container_frozen_view(typecode, elem_count,
                                                      &bitsets, &arrays, &runs);
 
