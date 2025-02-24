@@ -28,6 +28,34 @@ DEFINE_TEST(test_iterate) {
     bitset_free(b);
 }
 
+DEFINE_TEST(test_next_bits_iterate) {
+    bitset_t *b = bitset_create();
+    for (int i = 0; i < 100; i++) bitset_set(b, i);
+    for (int i = 1000; i < 1100; i += 2) bitset_set(b, i);
+
+    // Use an odd, small buffer size
+    size_t buffer[3];
+    size_t howmany = 0;
+    size_t i = 0;
+    for (size_t startfrom = 0;
+         (howmany = bitset_next_set_bits(
+              b, buffer, sizeof(buffer) / sizeof(buffer[0]), &startfrom)) > 0;
+         startfrom++) {
+        for (size_t j = 0; j < howmany; j++) {
+            size_t expected;
+            if (i < 100) {
+                expected = i;
+            } else {
+                expected = 1000 + 2 * (i - 100);
+            }
+            assert_int_equal(buffer[j], expected);
+            ++i;
+        }
+    }
+    assert_int_equal(i, 150);
+    bitset_free(b);
+}
+
 bool increment(size_t value, void *param) {
     size_t k;
     memcpy(&k, param, sizeof(size_t));
@@ -268,6 +296,7 @@ int main() {
         cmocka_unit_test(test_union_intersection),
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_iterate2),
+        cmocka_unit_test(test_next_bits_iterate),
         cmocka_unit_test(test_max_min),
         cmocka_unit_test(test_counts),
         cmocka_unit_test(test_shift_right),
