@@ -77,7 +77,7 @@ var NAVTREE =
         [ "Functions", "functions_func.html", null ],
         [ "Variables", "functions_vars.html", null ],
         [ "Typedefs", "functions_type.html", null ],
-        [ "Related Functions", "functions_rela.html", null ]
+        [ "Related Symbols", "functions_rela.html", null ]
       ] ]
     ] ],
     [ "Files", "files.html", [
@@ -95,8 +95,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"d8/d01/roaring64_8h.html#a7349fd348c08b34794fa9b4645361147",
-"index.html#autotoc_md27"
+"d4/dcf/classroaring_1_1Roaring64Map.html#a4131558631d223b255af92c81253f750",
+"d8/d01/roaring64_8h.html#af01cf39530a4efe28bef23a097ad147c"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -1,16 +1,15 @@
 var searchData=
 [
-  ['cardinality_12',['cardinality',['../d4/dcf/classroaring_1_1Roaring64Map.html#a1c768a3502c441531f76ae24ec28ab11',1,'roaring::Roaring64Map::cardinality()'],['../d1/d51/classroaring_1_1Roaring.html#a5421644f170815768cad891ac1fd053b',1,'roaring::Roaring::cardinality() const noexcept']]],
-  ['clear_13',['clear',['../d1/d51/classroaring_1_1Roaring.html#a4450fd8f2d80639246ec62dfb65f548b',1,'roaring::Roaring::clear()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a75cb282058feaf656985a69cdd855cc5',1,'roaring::Roaring64Map::clear()']]],
-  ['const_5fbidirectional_5fiterator_14',['const_bidirectional_iterator',['../d1/d51/classroaring_1_1Roaring.html#adeb03e75a5b15caec9c486db8ac47084',1,'roaring::Roaring::const_bidirectional_iterator()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#abe657fbb5cc92b5c2ad16160b96adb39',1,'roaring::Roaring64Map::const_bidirectional_iterator()']]],
-  ['const_5fiterator_15',['const_iterator',['../d1/d51/classroaring_1_1Roaring.html#a7d195ca2e429e36e5730806ab6f139b4',1,'roaring::Roaring::const_iterator()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a44aeaae51642c6bfed539a84d0a46bb3',1,'roaring::Roaring64Map::const_iterator()']]],
-  ['container_16',['container',['../db/d0d/structroaring__bulk__context__s.html#a9959594ea0333621537eb14c8089b06c',1,'roaring_bulk_context_s::container()'],['../da/d27/structroaring__uint32__iterator__s.html#a43c864a1f20b9d55ad38f8b404446650',1,'roaring_uint32_iterator_s::container()']]],
-  ['container_5findex_17',['container_index',['../da/d27/structroaring__uint32__iterator__s.html#a0e3db4bb59369a55459bd1adeaa7f554',1,'roaring_uint32_iterator_s']]],
-  ['container_5fit_18',['container_it',['../da/d27/structroaring__uint32__iterator__s.html#ada5b5422d9ea7874b52802adae40f25c',1,'roaring_uint32_iterator_s']]],
-  ['contains_19',['contains',['../d1/d51/classroaring_1_1Roaring.html#aa2e9462ac7abb7a4cc2e783c54a9e87d',1,'roaring::Roaring::contains()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a180f81212a14f38946ae96abc20cbb6a',1,'roaring::Roaring64Map::contains(uint32_t x) const'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a246a9152c39913956ba74d7e1e06d2d5',1,'roaring::Roaring64Map::contains(uint64_t x) const']]],
-  ['containsbulk_20',['containsBulk',['../d1/d51/classroaring_1_1Roaring.html#a7a2c3ad496b362cca32cecbee40a2444',1,'roaring::Roaring']]],
-  ['containsrange_21',['containsRange',['../d1/d51/classroaring_1_1Roaring.html#a57363257f4583165b9ba2bfc20424eef',1,'roaring::Roaring']]],
-  ['containsrangeclosed_22',['containsRangeClosed',['../d1/d51/classroaring_1_1Roaring.html#a5dc728e8fc1c4bac103d48981958821e',1,'roaring::Roaring']]],
-  ['croaring_23',['CRoaring',['../index.html',1,'']]],
-  ['current_5fvalue_24',['current_value',['../da/d27/structroaring__uint32__iterator__s.html#ab6729438a346958f8075ef0c72a9ba47',1,'roaring_uint32_iterator_s']]]
+  ['begin_0',['begin',['../d1/d51/classroaring_1_1Roaring.html#a6b5fe6688c18bcd0b91abc55f47e73bc',1,'roaring::Roaring::begin()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a54da377e9b105600f71d38411cace92a',1,'roaring::Roaring64Map::begin()']]],
+  ['below_1',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md16',1,'']]],
+  ['best_20aggregate_20bitmaps_2',['How to best aggregate bitmaps?',['../index.html#autotoc_md22',1,'']]],
+  ['bit_20roaring_20bitmaps_20c_3',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md13',1,'']]],
+  ['bitmapof_4',['bitmapof',['../d1/d51/classroaring_1_1Roaring.html#a5e297902e9c95a996b12f1d6f1abbf31',1,'roaring::Roaring::bitmapOf()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#aa5b07277062ffefaf5c3ea808f9d2ce3',1,'roaring::Roaring64Map::bitmapOf()']]],
+  ['bitmapoflist_5',['bitmapoflist',['../d1/d51/classroaring_1_1Roaring.html#a43bc331cee0889b2ae0d1cd3f85ac10f',1,'roaring::Roaring::bitmapOfList()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a96b246b0d078bf131c5e59e500149ba0',1,'roaring::Roaring64Map::bitmapOfList()']]],
+  ['bitmaps_6',['How to best aggregate bitmaps?',['../index.html#autotoc_md22',1,'']]],
+  ['bitmaps_20c_7',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md13',1,'']]],
+  ['bitsets_20c_8',['Conventional bitsets (C)',['../index.html#autotoc_md14',1,'']]],
+  ['building_20visual_20studio_20under_20windows_9',['Building (Visual Studio under Windows)',['../index.html#autotoc_md17',1,'']]],
+  ['building_20with_20cmake_20linux_20and_20macos_20visual_20studio_20users_20should_20see_20below_10',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md16',1,'']]],
+  ['bulkcontext_11',['bulkcontext',['../d6/d7d/classroaring_1_1BulkContext.html#a788364255970a019e420cdcc90e7d627',1,'roaring::BulkContext::BulkContext(BulkContext &amp;&amp;) noexcept=default'],['../d6/d7d/classroaring_1_1BulkContext.html#a66476ef945f422d88202f1da5585a0e7',1,'roaring::BulkContext::BulkContext(const BulkContext &amp;)=delete'],['../d6/d7d/classroaring_1_1BulkContext.html#a37535c67451f0c4bd2539527e87273c5',1,'roaring::BulkContext::BulkContext()'],['../d6/d7d/classroaring_1_1BulkContext.html',1,'roaring::BulkContext']]]
 ];

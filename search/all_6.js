@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['getcopyonwrite_32',['getCopyOnWrite',['../d1/d51/classroaring_1_1Roaring.html#aa3a45100e354d3d4d348c0cb08b9353b',1,'roaring::Roaring::getCopyOnWrite()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a7b6b5483e3c8afb96ea5aaba064632cd',1,'roaring::Roaring64Map::getCopyOnWrite()']]],
-  ['getfrozensizeinbytes_33',['getFrozenSizeInBytes',['../d1/d51/classroaring_1_1Roaring.html#a0b3ab3f5da48d69f43a85b21c8f6196b',1,'roaring::Roaring::getFrozenSizeInBytes()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a0f857b498b247022ff184581acaf1595',1,'roaring::Roaring64Map::getFrozenSizeInBytes()']]],
-  ['getindex_34',['getIndex',['../d1/d51/classroaring_1_1Roaring.html#aee90d40c2b4ac2069c3d4440d7dd5be5',1,'roaring::Roaring::getIndex()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#affc3bb231ef8476580188049f08a3e9c',1,'roaring::Roaring64Map::getIndex()']]],
-  ['getsizeinbytes_35',['getSizeInBytes',['../d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637',1,'roaring::Roaring::getSizeInBytes()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#ad6e5c423a34de4a3711a2ad4cf1bf502',1,'roaring::Roaring64Map::getSizeInBytes()']]]
+  ['fastunion_0',['fastunion',['../d1/d51/classroaring_1_1Roaring.html#a08aafea61f2ea2176d59a73cbb348d96',1,'roaring::Roaring::fastunion()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a85b1c96beaa6c0358983a9b56fc4cc17',1,'roaring::Roaring64Map::fastunion()']]],
+  ['fetchcontent_1',['Using as a CMake dependency with FetchContent',['../index.html#autotoc_md6',1,'']]],
+  ['flip_2',['flip',['../d1/d51/classroaring_1_1Roaring.html#aaa50b7f966f380bfc399660642909e66',1,'roaring::Roaring::flip()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a02c0cb520fdd31cadda8811f01737dbb',1,'roaring::Roaring64Map::flip()']]],
+  ['flipclosed_3',['flipclosed',['../d1/d51/classroaring_1_1Roaring.html#a8d4ab1c04a7dc9020001b9006d8e5476',1,'roaring::Roaring::flipClosed()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a17aa887118794517f874a5388c512dc5',1,'roaring::Roaring64Map::flipClosed(uint32_t min, uint32_t max)'],['../d4/dcf/classroaring_1_1Roaring64Map.html#acda9215fa264f44250413ce6f99d6a08',1,'roaring::Roaring64Map::flipClosed(uint64_t min, uint64_t max)']]],
+  ['frozenview_4',['frozenview',['../d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340',1,'roaring::Roaring::frozenView()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a8e841864dcba989a6d469cbc26d6a23a',1,'roaring::Roaring64Map::frozenView()']]]
 ];

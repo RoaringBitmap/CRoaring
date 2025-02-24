@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['key_50',['key',['../db/d0d/structroaring__bulk__context__s.html#af3dbd91adf2ee030dfc44a527eecdc91',1,'roaring_bulk_context_s']]]
+  ['jaccard_5findex_0',['jaccard_index',['../d1/d51/classroaring_1_1Roaring.html#add2c2d7d75b08900498ee7744a61a210',1,'roaring::Roaring']]],
+  ['javascript_1',['JavaScript',['../index.html#autotoc_md25',1,'']]]
 ];

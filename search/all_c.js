@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['maximum_52',['maximum',['../d1/d51/classroaring_1_1Roaring.html#af7029f92076b5b7ea9ddc4bc3551dcd9',1,'roaring::Roaring::maximum()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a4b4a35703d4187e85378b969ee4f3df4',1,'roaring::Roaring64Map::maximum()']]],
-  ['minimum_53',['minimum',['../d1/d51/classroaring_1_1Roaring.html#adc787c794380d50e2ee1e31e81017240',1,'roaring::Roaring::minimum()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#ab3de6c60784eed4b32cfb998ad35adb8',1,'roaring::Roaring64Map::minimum()']]],
-  ['move_54',['move',['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a583ab1e2148193638993622392eeec02',1,'roaring::Roaring64MapSetBitBiDirectionalIterator']]],
-  ['move_5fequalorlarger_55',['move_equalorlarger',['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#a0091dea28af0570523dde27dd569fa41',1,'roaring::RoaringSetBitBiDirectionalIterator::move_equalorlarger()'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac5e926eae57201b1132da84d91bc24bc',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::move_equalorlarger()']]]
+  ['large_20volumes_0',['Dealing with large volumes',['../index.html#autotoc_md9',1,'']]],
+  ['leaf_1',['leaf',['../df/dce/structroaring64__bulk__context__s.html#ac1c1e04fc8ac939eabee19b5ab0c992f',1,'roaring64_bulk_context_s']]],
+  ['linux_20and_20macos_2',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md19',1,'']]],
+  ['linux_20and_20macos_20visual_20studio_20users_20should_20see_20below_3',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md16',1,'']]],
+  ['list_20discussion_20group_4',['Mailing list/discussion group',['../index.html#autotoc_md33',1,'']]]
 ];
