@@ -60,7 +60,7 @@
 #ifdef __illumos__
 #ifndef __EXTENSIONS__
 #define __EXTENSIONS__
-#endif // __EXTENSIONS__
+#endif  // __EXTENSIONS__
 #endif
 
 #include <stdbool.h>
