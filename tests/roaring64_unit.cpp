@@ -1536,6 +1536,47 @@ DEFINE_TEST(test_portable_serialize) {
     roaring64_bitmap_free(r);
 }
 
+void check_frozen_serialization(roaring64_bitmap_t* r1) {
+    roaring64_bitmap_shrink_to_fit(r1);
+    assert_r64_valid(r1);
+
+    // Serialize to an unaligned buffer, deserialize from an 32-byte aligned
+    // buffer.
+    size_t serialized_size = roaring64_bitmap_frozen_size_in_bytes(r1);
+    char* buf = (char*)roaring_aligned_malloc(64, serialized_size + 1);
+    size_t serialized = roaring64_bitmap_frozen_serialize(r1, buf + 1);
+    assert_int_equal(serialized, serialized_size);
+    memmove(buf, buf + 1, serialized_size);
+
+    roaring64_bitmap_t* r2 = roaring64_bitmap_frozen_view(buf, serialized_size);
+    assert_true(r2 != NULL);
+    assert_r64_valid(r2);
+    assert_true(roaring64_bitmap_equals(r2, r1));
+
+    roaring64_bitmap_free(r2);
+    roaring_aligned_free(buf);
+}
+
+DEFINE_TEST(test_frozen_serialize) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    check_frozen_serialization(r);
+
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1);
+    roaring64_bitmap_add(r, 1ULL << 16);
+    roaring64_bitmap_add(r, 1ULL << 32);
+    roaring64_bitmap_add(r, 1ULL << 48);
+    roaring64_bitmap_add(r, 1ULL << 60);
+    roaring64_bitmap_add(r, UINT64_MAX);
+    check_frozen_serialization(r);
+
+    roaring64_bitmap_add_range(r, 1ULL << 16, 1ULL << 32);
+    check_frozen_serialization(r);
+
+    roaring64_bitmap_free(r);
+}
+
 bool roaring_iterator64_sumall(uint64_t value, void* param) {
     *(uint64_t*)param += value;
     return true;
@@ -1978,6 +2019,7 @@ int main() {
         cmocka_unit_test(test_flip),
         cmocka_unit_test(test_flip_inplace),
         cmocka_unit_test(test_portable_serialize),
+        cmocka_unit_test(test_frozen_serialize),
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_to_uint64_array),
         cmocka_unit_test(test_iterator_create),

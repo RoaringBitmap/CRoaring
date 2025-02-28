@@ -25,3 +25,7 @@ add_executable(bench bench.cpp)
 target_link_libraries(bench PRIVATE roaring)
 target_link_libraries(bench PRIVATE benchmark::benchmark)
 target_compile_definitions(bench PRIVATE BENCHMARK_DATA_DIR="${BENCHMARK_DATA_DIR}")
+
+add_executable(synthetic_bench synthetic_bench.cpp)
+target_link_libraries(synthetic_bench PRIVATE roaring)
+target_link_libraries(synthetic_bench PRIVATE benchmark::benchmark)
