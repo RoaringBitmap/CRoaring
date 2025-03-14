@@ -13,7 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {arch: ARM}
           - {arch: ARM64}
     steps:
       - name: checkout
