@@ -2420,6 +2420,9 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     if (buf == NULL) {
         return NULL;
     }
+    if ((uintptr_t)buf % CROARING_BITSET_ALIGNMENT != 0) {
+        return NULL;
+    }
 
     roaring64_bitmap_t *r = roaring64_bitmap_create();
 

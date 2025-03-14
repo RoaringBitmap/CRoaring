@@ -1546,10 +1546,12 @@ void check_frozen_serialization(roaring64_bitmap_t* r1) {
     char* buf = (char*)roaring_aligned_malloc(64, serialized_size + 1);
     size_t serialized = roaring64_bitmap_frozen_serialize(r1, buf + 1);
     assert_int_equal(serialized, serialized_size);
+    // Cannot deserialize from an unaligned buffer.
+    assert_null(roaring64_bitmap_frozen_view(buf + 1, serialized_size));
     memmove(buf, buf + 1, serialized_size);
 
     roaring64_bitmap_t* r2 = roaring64_bitmap_frozen_view(buf, serialized_size);
-    assert_true(r2 != NULL);
+    assert_non_null(r2);
     assert_r64_valid(r2);
     assert_true(roaring64_bitmap_equals(r2, r1));
 
