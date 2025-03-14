@@ -1563,6 +1563,10 @@ DEFINE_TEST(test_frozen_serialize) {
     check_frozen_serialization(r);
 
     roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_remove(r, 0);
+    check_frozen_serialization(r);
+
+    roaring64_bitmap_add(r, 0);
     roaring64_bitmap_add(r, 1);
     roaring64_bitmap_add(r, 1ULL << 16);
     roaring64_bitmap_add(r, 1ULL << 32);

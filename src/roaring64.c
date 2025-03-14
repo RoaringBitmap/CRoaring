@@ -697,6 +697,7 @@ static inline bool containerptr_roaring64_bitmap_remove(roaring64_bitmap_t *r,
         container_free(container2, typecode2);
         bool erased = art_erase(&r->art, high48, (art_val_t *)leaf);
         assert(erased);
+        remove_container(r, *leaf);
         return true;
     }
     return false;
