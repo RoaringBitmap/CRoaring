@@ -218,6 +218,18 @@ DEFINE_TEST(is_really_empty) {
     roaring_bitmap_free(bm);
 }
 
+// https://github.com/Ezibenroc/PyRoaringBitMap/issues/124
+DEFINE_TEST(PyRoaringBitMap124) {
+    // adversarial test case
+    const char *data = "\x020\x00\x00\x01\x00\x00\x00\x00\x00\t\x00\x10\x00\x00\x002\x003\x004\x005\x006\x007\x008\x00:\x00;\x00<\x00";
+    size_t length = 36;
+    roaring_bitmap_t *deserialized_bitmap =
+        roaring_bitmap_portable_deserialize_safe(data, length);
+    assert_true(deserialized_bitmap == NULL);
+    const roaring_bitmap_t *r2 = roaring_bitmap_frozen_view(data, length);
+    assert_true(r2 == NULL);
+}
+
 DEFINE_TEST(inplaceorwide) {
     uint64_t end = 4294901761;
     roaring_bitmap_t *r1 = roaring_bitmap_from_range(0, 1, 1);
@@ -4805,6 +4817,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(PyRoaringBitMap124),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(issue660),
         cmocka_unit_test(issue538b),
