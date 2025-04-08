@@ -314,7 +314,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Creates a new bitmap which contains all values passed in as arguments.</p>
 <p>To create a bitmap from a variable number of arguments, use the <code>roaring64_bitmap_of_ptr</code> function instead. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00090">90</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00092">92</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -613,7 +613,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Computes the intersection between two bitmaps and returns new bitmap. The caller is responsible for free-ing the result.</p>
-<p>Performance hint: if you are computing the intersection between several bitmaps, two-by-two, it is best to start with the smallest bitmaps. You may also rely on roaring64_bitmap_and_inplace to avoid creating many temporary bitmaps. </p>
+<p>Performance hint: if you are computing the intersection between several bitmaps, two-by-two, it is best to start with the smallest bitmaps. You may also rely on roaring64_bitmap_and_inplace to avoid creating many temporary bitmaps.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -701,7 +702,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Computes the difference (andnot) between two bitmaps and returns a new bitmap. The caller is responsible for free-ing the result. </p>
+<p>Computes the difference (andnot) between two bitmaps and returns a new bitmap. The caller is responsible for free-ing the result. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -899,7 +900,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Returns a copy of a bitmap. </p>
+<p>Returns a copy of a bitmap. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -918,7 +919,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Dynamically allocates a new bitmap (initially empty). Client is responsible for calling <code><a class="el" href="../../d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free()</a></code>. </p>
+<p>Dynamically allocates a new bitmap (initially empty). Client is responsible for calling <code><a class="el" href="../../d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free()</a></code>. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -982,7 +983,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Compute the negation of the bitmap in the interval [min, max). The number of negated values is <code>max - min</code>. Areas outside the range are passed through unchanged. </p>
+<p>Compute the negation of the bitmap in the interval [min, max). The number of negated values is <code>max - min</code>. Areas outside the range are passed through unchanged. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1017,7 +1018,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Compute the negation of the bitmap in the interval [min, max]. The number of negated values is <code>max - min + 1</code>. Areas outside the range are passed through unchanged. </p>
+<p>Compute the negation of the bitmap in the interval [min, max]. The number of negated values is <code>max - min + 1</code>. Areas outside the range are passed through unchanged. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1140,7 +1141,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Create a new bitmap containing all the values in [min, max) that are at a distance k*step from min. </p>
+<p>Create a new bitmap containing all the values in [min, max) that are at a distance k*step from min. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1635,7 +1636,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Computes the union between two bitmaps and returns new bitmap. The caller is responsible for free-ing the result. </p>
+<p>Computes the union between two bitmaps and returns new bitmap. The caller is responsible for free-ing the result. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2275,7 +2276,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Computes the symmetric difference (xor) between two bitmaps and returns a new bitmap. The caller is responsible for free-ing the result. </p>
+<p>Computes the symmetric difference (xor) between two bitmaps and returns a new bitmap. The caller is responsible for free-ing the result. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>

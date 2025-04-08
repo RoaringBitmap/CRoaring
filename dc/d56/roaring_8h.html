@@ -386,7 +386,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Creates a new bitmap which contains all values passed in as arguments.</p>
 <p>To create a bitmap from a variable number of arguments, use the <code>roaring_bitmap_of_ptr</code> function instead. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00144">144</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00151">151</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -465,7 +465,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_advance</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01084">1084</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01114">1114</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -628,6 +628,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Return a copy of the bitmap with all values shifted by offset. The returned pointer may be NULL in case of errors. The caller is responsible for freeing the return bitmap. </p>
 
 </div>
 </div>
@@ -672,7 +673,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Add all values in range [min, max) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00388">388</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00402">402</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a0f06fc10964f5683ad634af54a2dad98">roaring_bitmap_add_range_closed()</a>.</p>
 
@@ -741,7 +742,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Computes the intersection between two bitmaps and returns new bitmap. The caller is responsible for memory management.</p>
-<p>Performance hint: if you are computing the intersection between several bitmaps, two-by-two, it is best to start with the smallest bitmap. You may also rely on roaring_bitmap_and_inplace to avoid creating many temporary bitmaps. </p>
+<p>Performance hint: if you are computing the intersection between several bitmaps, two-by-two, it is best to start with the smallest bitmap. You may also rely on roaring_bitmap_and_inplace to avoid creating many temporary bitmaps. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -829,7 +830,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Computes the difference (andnot) between two bitmaps and returns new bitmap. Caller is responsible for freeing the result. </p>
+<p>Computes the difference (andnot) between two bitmaps and returns new bitmap. Caller is responsible for freeing the result. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1062,7 +1063,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Copies a bitmap (this does memory allocation). The caller is responsible for memory management. </p>
+<p>Copies a bitmap (this does memory allocation). The caller is responsible for memory management. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1135,7 +1136,8 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Use with <code><a class="el" href="../../dc/d56/roaring_8h.html#ac3f780d854eef42ccf7cee7332c7fb37">roaring_bitmap_serialize()</a></code>.</p>
 <p>(See <code><a class="el" href="../../dc/d56/roaring_8h.html#a4e62108bb3305ccfad82eab16ba79ad4">roaring_bitmap_portable_deserialize()</a></code> if you want a format that's compatible with Java and Go implementations).</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1167,7 +1169,8 @@ Functions</h2></td></tr>
 <p>Use with <code><a class="el" href="../../dc/d56/roaring_8h.html#ac3f780d854eef42ccf7cee7332c7fb37">roaring_bitmap_serialize()</a></code>.</p>
 <p>(See <code><a class="el" href="../../dc/d56/roaring_8h.html#a728aebc73dd5010e4041ea40d8c7faf8">roaring_bitmap_portable_deserialize_safe()</a></code> if you want a format that's compatible with Java and Go implementations).</p>
 <p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
-<p>The difference with <code><a class="el" href="../../dc/d56/roaring_8h.html#a9cdb5dee30b072070df5aceca7f1b615">roaring_bitmap_deserialize()</a></code> is that this function checks that the input buffer is a valid bitmap. If the buffer is too small, NULL is returned. </p>
+<p>The difference with <code><a class="el" href="../../dc/d56/roaring_8h.html#a9cdb5dee30b072070df5aceca7f1b615">roaring_bitmap_deserialize()</a></code> is that this function checks that the input buffer is a valid bitmap. If the buffer is too small, NULL is returned.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1231,7 +1234,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Compute the negation of the bitmap in the interval [range_start, range_end). The number of negated values is range_end - range_start. Areas outside the range are passed through unchanged. </p>
+<p>Compute the negation of the bitmap in the interval [range_start, range_end). The number of negated values is range_end - range_start. Areas outside the range are passed through unchanged. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1266,7 +1269,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Compute the negation of the bitmap in the interval [range_start, range_end]. The number of negated values is range_end - range_start + 1. Areas outside the range are passed through unchanged. </p>
+<p>Compute the negation of the bitmap in the interval [range_start, range_end]. The number of negated values is range_end - range_start + 1. Areas outside the range are passed through unchanged. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1396,7 +1399,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Add all the values between min (included) and max (excluded) that are at a distance k*step from min. </p>
+<p>Add all the values between min (included) and max (excluded) that are at a distance k*step from min. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1528,7 +1531,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00084">84</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00086">86</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19">roaring_bitmap_s::high_low_container</a>.</p>
 
@@ -1862,7 +1865,8 @@ Functions</h2></td></tr>
 <p>Computes the union between two bitmaps and returns new bitmap. The caller is responsible for memory management.</p>
 <p>The lazy version defers some computations such as the maintenance of the cardinality counts. Thus you must call <code><a class="el" href="../../dc/d56/roaring_8h.html#ae48843352925e0703674422d78a87d14">roaring_bitmap_repair_after_lazy()</a></code> after executing "lazy" computations.</p>
 <p>It is safe to repeatedly call roaring_bitmap_lazy_or_inplace on the result.</p>
-<p><code>bitsetconversion</code> is a flag which determines whether container-container operations force a bitset conversion. </p>
+<p><code>bitsetconversion</code> is a flag which determines whether container-container operations force a bitset conversion.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -1930,7 +1934,8 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Computes the symmetric difference between two bitmaps and returns new bitmap. The caller is responsible for memory management.</p>
 <p>The lazy version defers some computations such as the maintenance of the cardinality counts. Thus you must call <code><a class="el" href="../../dc/d56/roaring_8h.html#ae48843352925e0703674422d78a87d14">roaring_bitmap_repair_after_lazy()</a></code> after executing "lazy" computations.</p>
-<p>It is safe to repeatedly call <code><a class="el" href="../../dc/d56/roaring_8h.html#a657aabc7642c17f55dd4f9752fa91258">roaring_bitmap_lazy_xor_inplace()</a></code> on the result. </p>
+<p>It is safe to repeatedly call <code><a class="el" href="../../dc/d56/roaring_8h.html#a657aabc7642c17f55dd4f9752fa91258">roaring_bitmap_lazy_xor_inplace()</a></code> on the result.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2058,7 +2063,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Creates a new bitmap from a pointer of uint32_t integers </p>
+<p>Creates a new bitmap from a pointer of uint32_t integers The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2087,7 +2092,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Computes the union between two bitmaps and returns new bitmap. The caller is responsible for memory management. </p>
+<p>Computes the union between two bitmaps and returns new bitmap. The caller is responsible for memory management. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2174,7 +2179,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Compute the union of 'number' bitmaps. Caller is responsible for freeing the result. See also <code><a class="el" href="../../dc/d56/roaring_8h.html#a44fa6bb2413242b37966a40856db20c2">roaring_bitmap_or_many_heap()</a></code> </p>
+<p>Compute the union of 'number' bitmaps. Caller is responsible for freeing the result. See also <code><a class="el" href="../../dc/d56/roaring_8h.html#a44fa6bb2413242b37966a40856db20c2">roaring_bitmap_or_many_heap()</a></code> The returned pointer may be NULL in case of errors. </p>
 
 <p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a85b1c96beaa6c0358983a9b56fc4cc17">roaring::Roaring64Map::fastunion()</a>.</p>
 
@@ -2258,7 +2263,8 @@ Functions</h2></td></tr>
 <p>Read bitmap from a serialized buffer. In case of failure, NULL is returned.</p>
 <p>This function is unsafe in the sense that if there is no valid serialized bitmap at the pointer, then many bytes could be read, possibly causing a buffer overflow. See also <a class="el" href="../../dc/d56/roaring_8h.html#a728aebc73dd5010e4041ea40d8c7faf8">roaring_bitmap_portable_deserialize_safe()</a>.</p>
 <p>This is meant to be compatible with the Java and Go versions: <a href="https://github.com/RoaringBitmap/RoaringFormatSpec">https://github.com/RoaringBitmap/RoaringFormatSpec</a></p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2281,7 +2287,8 @@ Functions</h2></td></tr>
 <p>Bitmap returned by this function can be used in all readonly contexts. Bitmap must be freed as usual, by calling <a class="el" href="../../dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free()</a>. Underlying buffer must not be freed or modified while it backs any bitmaps.</p>
 <p>The function is unsafe in the following ways: 1) It may execute unaligned memory accesses. 2) A buffer overflow may occur if buf does not point to a valid serialized bitmap.</p>
 <p>This is meant to be compatible with the Java and Go versions: <a href="https://github.com/RoaringBitmap/RoaringFormatSpec">https://github.com/RoaringBitmap/RoaringFormatSpec</a></p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2316,7 +2323,8 @@ Functions</h2></td></tr>
 <p>However, for correct operations, it is assumed that the bitmap read was once serialized from a valid bitmap (i.e., it follows the format specification). If you provided an incorrect input (garbage), then the bitmap read may not be in a valid state and following operations may not lead to sensible results. In particular, the serialized array containers need to be in sorted order, and the run containers should be in sorted non-overlapping order. This is is guaranteed to happen when serializing an existing bitmap, but not for random inputs.</p>
 <p>If the source is untrusted, you should call roaring_bitmap_internal_validate to check the validity of the bitmap prior to using it. Only after calling roaring_bitmap_internal_validate is the bitmap considered safe for use.</p>
 <p>We also recommend that you use checksums to check that serialized data corresponds to the serialized bitmap. The CRoaring library does not provide checksumming.</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
+<p>The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -2760,7 +2768,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Remove all values in range [min, max) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00410">410</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00424">424</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a89e082a93608a752f763e8aee5df8082">roaring_bitmap_remove_range_closed()</a>.</p>
 
@@ -2964,7 +2972,7 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00087">87</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00089">89</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19">roaring_bitmap_s::high_low_container</a>.</p>
 
@@ -3123,7 +3131,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Computes the symmetric difference (xor) between two bitmaps and returns new bitmap. The caller is responsible for memory management. </p>
+<p>Computes the symmetric difference (xor) between two bitmaps and returns new bitmap. The caller is responsible for memory management. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -3210,7 +3218,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Compute the xor of 'number' bitmaps. Caller is responsible for freeing the result. </p>
+<p>Compute the xor of 'number' bitmaps. Caller is responsible for freeing the result. The returned pointer may be NULL in case of errors. </p>
 
 </div>
 </div>
@@ -3239,7 +3247,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_copy</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01130">1130</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01160">1160</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a4b5f51c2a3c015ca56bdeb477d0e84c6">roaring_uint32_iterator_copy()</a>.</p>
 
@@ -3270,7 +3278,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_create</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01068">1068</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01098">1098</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create()</a>.</p>
 
@@ -3301,7 +3309,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_free</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01140">1140</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01170">1170</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free()</a>.</p>
 
@@ -3342,7 +3350,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01037">1037</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01067">1067</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>.</p>
 
@@ -3383,7 +3391,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init_last</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01051">1051</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01081">1081</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>.</p>
 
@@ -3588,7 +3596,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_move_equalorlarger</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01116">1116</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01146">1146</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger()</a>.</p>
 
@@ -3619,7 +3627,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_previous</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01101">1101</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01131">1131</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -3666,7 +3674,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_read</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01160">1160</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01190">1190</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read()</a>.</p>
 
