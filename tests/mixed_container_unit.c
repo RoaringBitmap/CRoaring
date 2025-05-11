@@ -580,11 +580,11 @@ DEFINE_TEST(run_xor_test) {
     array_container_free(CAST_array(C));
     C = NULL;
 
-    // both run coding and array coding have same serialized size for
-    // empty
-    assert_int_equal(RUN_CONTAINER_TYPE, run_run_container_xor(R1, R1, &C));
-    assert_int_equal(0, run_container_cardinality(CAST_run(C)));
-    run_container_free(CAST_run(C));
+    // even though it should never exist, an array container would take less
+    // space than a run container when empty
+    assert_int_equal(ARRAY_CONTAINER_TYPE, run_run_container_xor(R1, R1, &C));
+    assert_int_equal(0, array_container_cardinality(CAST_array(C)));
+    array_container_free(CAST_array(C));
     C = NULL;
 
     assert_false(run_bitset_container_xor(R1, B3, &C));
@@ -738,12 +738,12 @@ DEFINE_TEST(run_andnot_test) {
     array_run_container_andnot(A1, R1, AM);
     assert_int_equal(0, array_container_cardinality(AM));
 
-    // both run coding and array coding have same serialized size for
-    // empty
-    assert_int_equal(RUN_CONTAINER_TYPE,
+    // even though it should never exist, an array container would take less
+    // space than a run container when empty
+    assert_int_equal(ARRAY_CONTAINER_TYPE,
                      run_run_container_andnot(R1, R1, &BM_1));
-    assert_int_equal(0, run_container_cardinality(CAST_run(BM_1)));
-    run_container_free(CAST_run(BM_1));
+    assert_int_equal(0, array_container_cardinality(CAST_array(BM_1)));
+    array_container_free(CAST_array(BM_1));
     BM_1 = NULL;
 
     assert_false(run_bitset_container_andnot(R1, B3, &BM_1));
@@ -794,11 +794,10 @@ DEFINE_TEST(run_andnot_test) {
     array_container_free(CAST_array(BM_1));
     BM_1 = NULL;
 
-    // note, result is equally small as an array or a run
-    assert_int_equal(RUN_CONTAINER_TYPE,
+    assert_int_equal(ARRAY_CONTAINER_TYPE,
                      run_array_container_andnot(R_small, A2, &BM_1));
-    assert_int_equal(2, run_container_cardinality(CAST_run(BM_1)));
-    run_container_free(CAST_run(BM_1));
+    assert_int_equal(2, array_container_cardinality(CAST_array(BM_1)));
+    array_container_free(CAST_array(BM_1));
     BM_1 = NULL;
 
     // test with more complicated small run structure (to do)
