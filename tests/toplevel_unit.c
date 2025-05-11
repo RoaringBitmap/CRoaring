@@ -221,8 +221,12 @@ DEFINE_TEST(is_really_empty) {
 // https://github.com/Ezibenroc/PyRoaringBitMap/issues/124
 DEFINE_TEST(PyRoaringBitMap124) {
     // adversarial test case
-    const char *data = "\x020\x00\x00\x01\x00\x00\x00\x00\x00\t\x00\x10\x00\x00\x002\x003\x004\x005\x006\x007\x008\x00:\x00;\x00<\x00";
-    size_t length = 36;
+    const char data[] = {
+        0x3a, 0x30, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x32, 0x00, 0x33, 0x00, 0x34, 0x00, 0x35, 0x00,
+        0x36, 0x00, 0x37, 0x00, 0x38, 0x00, 0x3a, 0x00, 0x3b, 0x00, 0x3c, 0x00,
+    };
+    size_t length = sizeof(data);
     roaring_bitmap_t *deserialized_bitmap =
         roaring_bitmap_portable_deserialize_safe(data, length);
     assert_true(deserialized_bitmap == NULL);
