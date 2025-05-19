@@ -1,7 +1,7 @@
 var searchData=
 [
   ['objective_0',['Objective',['../index.html#autotoc_md2',1,'']]],
-  ['on_20windows_20linux_20and_20macos_1',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md19',1,'']]],
+  ['on_20windows_20linux_20and_20macos_1',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md20',1,'']]],
   ['operator_21_3d_2',['operator!=',['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a1cbe70e90a38e17f0cc3c6e8dbcb445d',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::operator!=()'],['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#aeff5caed04ac33ea522e08c04b669bec',1,'roaring::RoaringSetBitBiDirectionalIterator::operator!=()']]],
   ['operator_26_3',['operator&amp;',['../d4/dcf/classroaring_1_1Roaring64Map.html#aa036f297d2c95bf4ca58a1f763a224fa',1,'roaring::Roaring64Map::operator&amp;()'],['../d1/d51/classroaring_1_1Roaring.html#a9e21593f6d227dc6b31dbffc6f4f6f1d',1,'roaring::Roaring::operator&amp;(const Roaring &amp;o) const']]],
   ['operator_26_3d_4',['operator&amp;=',['../d1/d51/classroaring_1_1Roaring.html#aa89f78a6b761b117e513683658634249',1,'roaring::Roaring::operator&amp;=()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#ad9044c963958583b7d0f3ff801746c0c',1,'roaring::Roaring64Map::operator&amp;=()']]],
