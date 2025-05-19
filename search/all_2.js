@@ -6,7 +6,7 @@ var searchData=
   ['bit_20roaring_20bitmaps_20c_3',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md14',1,'']]],
   ['bitmapof_4',['bitmapof',['../d1/d51/classroaring_1_1Roaring.html#a5e297902e9c95a996b12f1d6f1abbf31',1,'roaring::Roaring::bitmapOf()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#aa5b07277062ffefaf5c3ea808f9d2ce3',1,'roaring::Roaring64Map::bitmapOf()']]],
   ['bitmapoflist_5',['bitmapoflist',['../d1/d51/classroaring_1_1Roaring.html#a43bc331cee0889b2ae0d1cd3f85ac10f',1,'roaring::Roaring::bitmapOfList()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a96b246b0d078bf131c5e59e500149ba0',1,'roaring::Roaring64Map::bitmapOfList()']]],
-  ['bitmaps_6',['How to best aggregate bitmaps?',['../index.html#autotoc_md23',1,'']]],
+  ['bitmaps_6',['bitmaps',['../index.html#autotoc_md23',1,'How to best aggregate bitmaps?'],['../index.html#autotoc_md24',1,'Wrappers for Roaring Bitmaps']]],
   ['bitmaps_20c_7',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md14',1,'']]],
   ['bitsets_20c_8',['Conventional bitsets (C)',['../index.html#autotoc_md15',1,'']]],
   ['building_20visual_20studio_20under_20windows_9',['Building (Visual Studio under Windows)',['../index.html#autotoc_md18',1,'']]],

@@ -50,15 +50,15 @@ var NAVTREE =
     [ "SIMD-related throttling", "index.html#autotoc_md21", null ],
     [ "Thread safety", "index.html#autotoc_md22", null ],
     [ "How to best aggregate bitmaps?", "index.html#autotoc_md23", null ],
-    [ "Wrappers", "index.html#autotoc_md24", [
+    [ "Wrappers for Roaring Bitmaps", "index.html#autotoc_md24", [
       [ "Python", "index.html#autotoc_md25", null ],
-      [ "JavaScript", "index.html#autotoc_md26", null ],
+      [ "JavaScript (Node.js)", "index.html#autotoc_md26", null ],
       [ "Swift", "index.html#autotoc_md27", null ],
       [ "C", "index.html#autotoc_md28", null ],
-      [ "Go (golang)", "index.html#autotoc_md29", null ],
+      [ "Go (Golang)", "index.html#autotoc_md29", null ],
       [ "Rust", "index.html#autotoc_md30", null ],
       [ "D", "index.html#autotoc_md31", null ],
-      [ "Redis", "index.html#autotoc_md32", null ],
+      [ "Redis Module", "index.html#autotoc_md32", null ],
       [ "Zig", "index.html#autotoc_md33", null ]
     ] ],
     [ "Mailing list/discussion group", "index.html#autotoc_md34", null ],

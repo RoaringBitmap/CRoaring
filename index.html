@@ -779,36 +779,39 @@ How to best aggregate bitmaps?</h1>
 <p>The approach based on repeated calls to <code>roaring_bitmap_or_inplace</code> is also fine, and might even be faster in some cases. You can expect it to be faster if, after a few calls, you get long sequences of consecutive values in the answer. That is, if the final answer is all integers in the range [0,1000000), and this is apparent quickly, then the later <code>roaring_bitmap_or_inplace</code> will be very fast.</p>
 <p>You should benchmark these alternatives on your own data to decide what is best.</p>
 <h1><a class="anchor" id="autotoc_md24"></a>
-Wrappers</h1>
+Wrappers for Roaring Bitmaps</h1>
+<p>This page lists several community-contributed wrappers for the Roaring Bitmap library, enabling its use in various programming languages and environments.</p>
 <h2><a class="anchor" id="autotoc_md25"></a>
 Python</h2>
-<p>Tom Cornebize wrote a Python wrapper available at <a href="https://github.com/Ezibenroc/PyRoaringBitMap">https://github.com/Ezibenroc/PyRoaringBitMap</a> Installing it is as easy as typing...</p>
+<p>Tom Cornebize developed a Python wrapper, <b>PyRoaringBitMap</b>, which can be found at <a href="https://github.com/Ezibenroc/PyRoaringBitMap">https://github.com/Ezibenroc/PyRoaringBitMap</a>.</p>
+<p>Installation is straightforward using pip:</p>
 <div class="fragment"><div class="line">pip install pyroaring</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md26"></a>
-JavaScript</h2>
-<p>Salvatore Previti wrote a Node/JavaScript wrapper available at <a href="https://github.com/SalvatorePreviti/roaring-node">https://github.com/SalvatorePreviti/roaring-node</a> Installing it is as easy as typing...</p>
+JavaScript (Node.js)</h2>
+<p>Salvatore Previti created a Node.js wrapper, <b>roaring-node</b>, available at <a href="https://github.com/SalvatorePreviti/roaring-node">https://github.com/SalvatorePreviti/roaring-node</a>.</p>
+<p>You can install it via npm with the following command:</p>
 <div class="fragment"><div class="line">npm install roaring</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md27"></a>
 Swift</h2>
-<p>Jérémie Piotte wrote a <a href="https://github.com/RoaringBitmap/SwiftRoaring">Swift wrapper</a>.</p>
+<p>Jérémie Piotte authored the <a href="https://github.com/RoaringBitmap/SwiftRoaring">Swift wrapper</a>.</p>
 <h2><a class="anchor" id="autotoc_md28"></a>
 C</h2>
-<p>Brandon Smith wrote a C# wrapper available at <a href="https://github.com/RogueException/CRoaring.Net">https://github.com/RogueException/CRoaring.Net</a> (works for Windows and Linux under x64 processors)</p>
+<p>Brandon Smith contributed a C# wrapper, <b>CRoaring.Net</b>, located at <a href="https://github.com/RogueException/CRoaring.Net">https://github.com/RogueException/CRoaring.Net</a>. This wrapper is compatible with Windows and Linux on x64 processors.</p>
 <h2><a class="anchor" id="autotoc_md29"></a>
-Go (golang)</h2>
-<p>There is a Go (golang) wrapper available at <a href="https://github.com/RoaringBitmap/gocroaring">https://github.com/RoaringBitmap/gocroaring</a></p>
+Go (Golang)</h2>
+<p>A Go wrapper is available at the official RoaringBitmap GitHub organization: <a href="https://github.com/RoaringBitmap/gocroaring">https://github.com/RoaringBitmap/gocroaring</a>.</p>
 <h2><a class="anchor" id="autotoc_md30"></a>
 Rust</h2>
-<p>Saulius Grigaliunas wrote a Rust wrapper available at <a href="https://github.com/saulius/croaring-rs">https://github.com/saulius/croaring-rs</a></p>
+<p>Saulius Grigaliunas developed a Rust wrapper, <b>croaring-rs</b>, which can be found at <a href="https://github.com/saulius/croaring-rs">https://github.com/saulius/croaring-rs</a>.</p>
 <h2><a class="anchor" id="autotoc_md31"></a>
 D</h2>
-<p>Yuce Tekol wrote a D wrapper available at <a href="https://github.com/yuce/droaring">https://github.com/yuce/droaring</a></p>
+<p>Yuce Tekol created a D wrapper, <b>droaring</b>, available at <a href="https://github.com/yuce/droaring">https://github.com/yuce/droaring</a>.</p>
 <h2><a class="anchor" id="autotoc_md32"></a>
-Redis</h2>
-<p>Antonio Guilherme Ferreira Viggiano wrote a Redis Module available at <a href="https://github.com/aviggiano/redis-roaring">https://github.com/aviggiano/redis-roaring</a></p>
+Redis Module</h2>
+<p>Antonio Guilherme Ferreira Viggiano wrote a Redis Module integrating Roaring Bitmaps, available at <a href="https://github.com/aviggiano/redis-roaring">https://github.com/aviggiano/redis-roaring</a>.</p>
 <h2><a class="anchor" id="autotoc_md33"></a>
 Zig</h2>
-<p>Justin Whear wrote a Zig wrapper available at <a href="https://github.com/jwhear/roaring-zig">https://github.com/jwhear/roaring-zig</a></p>
+<p>Justin Whear contributed a Zig wrapper, located at <a href="https://github.com/jwhear/roaring-zig">https://github.com/jwhear/roaring-zig</a>.</p>
 <h1><a class="anchor" id="autotoc_md34"></a>
 Mailing list/discussion group</h1>
 <p><a href="https://groups.google.com/forum/#!forum/roaring-bitmaps">https://groups.google.com/forum/#!forum/roaring-bitmaps</a></p>
