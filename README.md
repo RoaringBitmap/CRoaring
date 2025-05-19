@@ -144,6 +144,12 @@ Linux or macOS users might follow the following instructions if they have a rece
     ```
 
 
+
+Packages
+------
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/croaring.svg)](https://repology.org/project/croaring/versions)
+
 # Using Roaring as a CPM dependency
 
 
