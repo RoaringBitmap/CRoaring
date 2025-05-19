@@ -232,12 +232,12 @@ DEFINE_TEST(PyRoaringBitMap124) {
     assert_true(deserialized_bitmap != NULL);
     roaring_bitmap_printf_describe(deserialized_bitmap);
     const char *reason_failure = NULL;
-    assert_true(roaring_bitmap_internal_validate(deserialized_bitmap, &reason_failure));
+    assert_true(
+        roaring_bitmap_internal_validate(deserialized_bitmap, &reason_failure));
     roaring_bitmap_free(deserialized_bitmap);
 
     const roaring_bitmap_t *r2 = roaring_bitmap_frozen_view(data, length);
     assert_true(r2 == NULL);
-
 }
 
 DEFINE_TEST(inplaceorwide) {
