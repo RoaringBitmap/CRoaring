@@ -927,7 +927,7 @@ Jérémie Piotte authored the [Swift wrapper](https://github.com/RoaringBitmap/S
 
 ## C\#
 
-Brandon Smith contributed a C\# wrapper, **CRoaring.Net**, located at [https://github.com/RogueException/CRoaring.Net](https://github.com/RogueException/CRoaring.Net). This wrapper is compatible with Windows and Linux on x64 processors.
+There is a C\# wrapper, **CRoaring.Net**, located at [https://github.com/k-wojcik/Roaring.Net](https://github.com/k-wojcik/Roaring.Net). This wrapper is compatible with Windows and Linux on x64 processors.
 
 ## Go (Golang)
 
