@@ -1,8 +1,12 @@
 var searchData=
 [
-  ['value_5ftype_0',['value_type',['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#acd0e119cfed55a8d7c32b3848cac8c4b',1,'roaring::RoaringSetBitBiDirectionalIterator::value_type'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::value_type']]],
-  ['vcpkg_20tt_20on_20windows_20linux_20and_20macos_1',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md20',1,'']]],
-  ['visual_20studio_20under_20windows_2',['Building (Visual Studio under Windows)',['../index.html#autotoc_md18',1,'']]],
-  ['visual_20studio_20users_20should_20see_20below_3',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md17',1,'']]],
-  ['volumes_4',['Dealing with large volumes',['../index.html#autotoc_md10',1,'']]]
+  ['under_20windows_0',['Building (Visual Studio under Windows)',['../index.html#autotoc_md36',1,'']]],
+  ['usage_1',['Example Usage',['../index.html#autotoc_md27',1,'']]],
+  ['usage_20using_20tt_20conan_20tt_2',['Usage (Using &lt;tt&gt;conan&lt;/tt&gt;)',['../index.html#autotoc_md37',1,'']]],
+  ['usage_20using_20tt_20vcpkg_20tt_20on_20windows_20linux_20and_20macos_3',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md38',1,'']]],
+  ['users_20should_20see_20below_4',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md35',1,'']]],
+  ['using_20as_20a_20cmake_20dependency_20with_20fetchcontent_5',['Using as a CMake dependency with FetchContent',['../index.html#autotoc_md8',1,'']]],
+  ['using_20roaring_20as_20a_20cpm_20dependency_6',['Using Roaring as a CPM dependency',['../index.html#autotoc_md7',1,'']]],
+  ['using_20tt_20conan_20tt_7',['Usage (Using &lt;tt&gt;conan&lt;/tt&gt;)',['../index.html#autotoc_md37',1,'']]],
+  ['using_20tt_20vcpkg_20tt_20on_20windows_20linux_20and_20macos_8',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md38',1,'']]]
 ];

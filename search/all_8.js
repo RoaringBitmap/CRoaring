@@ -1,8 +1,10 @@
 var searchData=
 [
-  ['has_5fvalue_0',['has_value',['../da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4',1,'roaring_uint32_iterator_s']]],
-  ['high_5fbytes_1',['high_bytes',['../df/dce/structroaring64__bulk__context__s.html#a3dad528d3cc158f622898442e311044b',1,'roaring64_bulk_context_s']]],
-  ['high_5flow_5fcontainer_2',['high_low_container',['../dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19',1,'roaring_bitmap_s']]],
-  ['highbits_3',['highbits',['../da/d27/structroaring__uint32__iterator__s.html#ab133b03c8a997b36abeece06dbf909d7',1,'roaring_uint32_iterator_s']]],
-  ['how_20to_20best_20aggregate_20bitmaps_4',['How to best aggregate bitmaps?',['../index.html#autotoc_md23',1,'']]]
+  ['getcopyonwrite_0',['getcopyonwrite',['../d1/d51/classroaring_1_1Roaring.html#aa3a45100e354d3d4d348c0cb08b9353b',1,'roaring::Roaring::getCopyOnWrite()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a7b6b5483e3c8afb96ea5aaba064632cd',1,'roaring::Roaring64Map::getCopyOnWrite()']]],
+  ['getfrozensizeinbytes_1',['getfrozensizeinbytes',['../d1/d51/classroaring_1_1Roaring.html#a0b3ab3f5da48d69f43a85b21c8f6196b',1,'roaring::Roaring::getFrozenSizeInBytes()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a0f857b498b247022ff184581acaf1595',1,'roaring::Roaring64Map::getFrozenSizeInBytes()']]],
+  ['getindex_2',['getindex',['../d1/d51/classroaring_1_1Roaring.html#aee90d40c2b4ac2069c3d4440d7dd5be5',1,'roaring::Roaring::getIndex()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#affc3bb231ef8476580188049f08a3e9c',1,'roaring::Roaring64Map::getIndex()']]],
+  ['getsizeinbytes_3',['getsizeinbytes',['../d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637',1,'roaring::Roaring::getSizeInBytes()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#ad6e5c423a34de4a3711a2ad4cf1bf502',1,'roaring::Roaring64Map::getSizeInBytes()']]],
+  ['go_20golang_4',['Go (Golang)',['../index.html#autotoc_md47',1,'']]],
+  ['golang_5',['Go (Golang)',['../index.html#autotoc_md47',1,'']]],
+  ['group_6',['Mailing list/discussion group',['../index.html#autotoc_md52',1,'']]]
 ];

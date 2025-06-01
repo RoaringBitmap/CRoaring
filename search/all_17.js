@@ -1,11 +1,10 @@
 var searchData=
 [
-  ['windows_0',['Building (Visual Studio under Windows)',['../index.html#autotoc_md18',1,'']]],
-  ['windows_20linux_20and_20macos_1',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md20',1,'']]],
-  ['with_20cmake_20linux_20and_20macos_20visual_20studio_20users_20should_20see_20below_2',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md17',1,'']]],
-  ['with_20fetchcontent_3',['Using as a CMake dependency with FetchContent',['../index.html#autotoc_md7',1,'']]],
-  ['with_20large_20volumes_4',['Dealing with large volumes',['../index.html#autotoc_md10',1,'']]],
-  ['wrappers_20for_20roaring_20bitmaps_5',['Wrappers for Roaring Bitmaps',['../index.html#autotoc_md24',1,'']]],
-  ['write_6',['write',['../d1/d51/classroaring_1_1Roaring.html#a305434227cedd4587679d67e0435bc5f',1,'roaring::Roaring::write()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a567f77f809bf327187d926de2201c8ea',1,'roaring::Roaring64Map::write()']]],
-  ['writefrozen_7',['writefrozen',['../d1/d51/classroaring_1_1Roaring.html#a9a8e3442abe87e7049ad23ab4f4a45ad',1,'roaring::Roaring::writeFrozen()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#afa32b06ddfca7791d545ad0d8a641c40',1,'roaring::Roaring64Map::writeFrozen()']]]
+  ['validation_0',['Validation',['../index.html#autotoc_md18',1,'']]],
+  ['value_5ftype_1',['value_type',['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#acd0e119cfed55a8d7c32b3848cac8c4b',1,'roaring::RoaringSetBitBiDirectionalIterator::value_type'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ab6201fd7eff854f2e4037866b65fd000',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::value_type']]],
+  ['values_2',['Adding and Removing Values',['../index.html#autotoc_md13',1,'']]],
+  ['vcpkg_20tt_20on_20windows_20linux_20and_20macos_3',['Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)',['../index.html#autotoc_md38',1,'']]],
+  ['visual_20studio_20under_20windows_4',['Building (Visual Studio under Windows)',['../index.html#autotoc_md36',1,'']]],
+  ['visual_20studio_20users_20should_20see_20below_5',['Building with cmake (Linux and macOS, Visual Studio users should see below)',['../index.html#autotoc_md35',1,'']]],
+  ['volumes_20of_20data_6',['Dealing with large volumes of data',['../index.html#autotoc_md28',1,'']]]
 ];

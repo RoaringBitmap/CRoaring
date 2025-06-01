@@ -1,9 +1,7 @@
 var searchData=
 [
-  ['fastunion_0',['fastunion',['../d1/d51/classroaring_1_1Roaring.html#a08aafea61f2ea2176d59a73cbb348d96',1,'roaring::Roaring::fastunion()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a85b1c96beaa6c0358983a9b56fc4cc17',1,'roaring::Roaring64Map::fastunion()']]],
-  ['fetchcontent_1',['Using as a CMake dependency with FetchContent',['../index.html#autotoc_md7',1,'']]],
-  ['flip_2',['flip',['../d1/d51/classroaring_1_1Roaring.html#aaa50b7f966f380bfc399660642909e66',1,'roaring::Roaring::flip()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a02c0cb520fdd31cadda8811f01737dbb',1,'roaring::Roaring64Map::flip()']]],
-  ['flipclosed_3',['flipclosed',['../d1/d51/classroaring_1_1Roaring.html#a8d4ab1c04a7dc9020001b9006d8e5476',1,'roaring::Roaring::flipClosed()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a17aa887118794517f874a5388c512dc5',1,'roaring::Roaring64Map::flipClosed(uint32_t min, uint32_t max)'],['../d4/dcf/classroaring_1_1Roaring64Map.html#acda9215fa264f44250413ce6f99d6a08',1,'roaring::Roaring64Map::flipClosed(uint64_t min, uint64_t max)']]],
-  ['for_20roaring_20bitmaps_4',['Wrappers for Roaring Bitmaps',['../index.html#autotoc_md24',1,'']]],
-  ['frozenview_5',['frozenview',['../d1/d51/classroaring_1_1Roaring.html#a778becc5ac4102e417dc6e3cf8e85340',1,'roaring::Roaring::frozenView()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a8e841864dcba989a6d469cbc26d6a23a',1,'roaring::Roaring64Map::frozenView()']]]
+  ['end_0',['end',['../d1/d51/classroaring_1_1Roaring.html#afc6c8582a3a8545cc84e95191c4dfe34',1,'roaring::Roaring::end()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a1e101bcc9f646ce57f60c8381eb64adb',1,'roaring::Roaring64Map::end()']]],
+  ['equalorlarger_1',['equalorlarger',['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#a6508ffcac249c6f355cee87d66decbc9',1,'roaring::RoaringSetBitBiDirectionalIterator']]],
+  ['example_20c_2',['example c',['../index.html#autotoc_md31',1,'Example (C)'],['../index.html#autotoc_md34',1,'Example (C++)']]],
+  ['example_20usage_3',['Example Usage',['../index.html#autotoc_md27',1,'']]]
 ];
