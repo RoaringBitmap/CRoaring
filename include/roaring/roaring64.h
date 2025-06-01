@@ -21,6 +21,10 @@ typedef uint64_t roaring64_leaf_t;
 typedef struct roaring64_iterator_s roaring64_iterator_t;
 
 /**
+ * roaring64_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * A bit of context usable with `roaring64_bitmap_*_bulk()` functions.
  *
  * Should be initialized with `{0}` (or `memset()` to all zeros).
@@ -123,6 +127,10 @@ void roaring64_bitmap_add(roaring64_bitmap_t *r, uint64_t val);
 bool roaring64_bitmap_add_checked(roaring64_bitmap_t *r, uint64_t val);
 
 /**
+ * roaring64_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * Add an item, using context from a previous insert for faster insertion.
  *
  * `context` will be used to store information between calls to make bulk
@@ -174,6 +182,10 @@ void roaring64_bitmap_remove(roaring64_bitmap_t *r, uint64_t val);
 bool roaring64_bitmap_remove_checked(roaring64_bitmap_t *r, uint64_t val);
 
 /**
+ * roaring64_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * Remove an item, using context from a previous insert for faster removal.
  *
  * `context` will be used to store information between calls to make bulk
@@ -231,6 +243,10 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
                                      uint64_t max);
 
 /**
+ * roaring64_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * Check if an item is present using context from a previous insert or search
  * for faster search.
  *

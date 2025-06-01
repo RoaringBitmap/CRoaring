@@ -46,6 +46,10 @@ class RoaringSetBitBiDirectionalIterator;
 using RoaringSetBitForwardIterator = RoaringSetBitBiDirectionalIterator;
 
 /**
+ * BulkContext is an advanced feature for performance sensitive scenarios.
+ * Most users do not need to use it. Always write your own benchmarks on
+ * your own use cases.
+ *
  * A bit of context usable with `*Bulk()` functions.
  *
  * A context may only be used with a single bitmap, and any modification to a
@@ -230,6 +234,10 @@ class Roaring {
     }
 
     /**
+     * BulkContext is an advanced feature for performance sensitive scenarios.
+     * Most users do not need to use it. Always write your own benchmarks on
+     * your own use cases.
+     *
      * Add value val, using context from a previous insert for speed
      * optimization.
      *
@@ -242,6 +250,10 @@ class Roaring {
     }
 
     /**
+     * BulkContext is an advanced feature for performance sensitive scenarios.
+     * Most users do not need to use it. Always write your own benchmarks on
+     * your own use cases.
+     *
      * Check if item x is present, using context from a previous insert or
      * search for speed optimization.
      *

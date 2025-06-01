@@ -304,10 +304,28 @@ Below is an overview of the main functions provided by CRoaring in C, covering b
   Add value `x` to a 32-bit bitmap.
 - `void roaring64_bitmap_add(roaring64_bitmap_t *r, uint64_t x);`  
   Add value `x` to a 64-bit bitmap.
+- `void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min, uint32_t max);`
+  Add values from min to max to a 32-bit bitmap.
+- `void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min, uint64_t max);`
+  Add values from min to max to a 64-bit bitmap.
+- `void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min, uint32_t max);`
+  Remove values from min to max from a 32-bit bitmap.
+- `void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min, uint64_t max);`
+  Remove values from min to max from a 64-bit bitmap.
 - `void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);`  
   Remove value `x` from a 32-bit bitmap.
 - `void roaring64_bitmap_remove(roaring64_bitmap_t *r, uint64_t x);`  
   Remove value `x` from a 64-bit bitmap.
+
+## Adding and Removing Values in bulk
+- `void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args, const uint32_t *vals);`
+  Add many values to a 32-bit bitmap. Might be faster than 1-by-1. (Run your own benchmarks!)
+- `void roaring64_bitmap_add_many(roaring64_bitmap_t *r, size_t n_args, const uint64_t *vals);`
+  Add many values to a 64-bit bitmap. Might be faster than 1-by-1. (Run your own benchmarks!)
+- `void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args, const uint32_t *vals);`
+  Remove many values from a 32-bit bitmap. Might be faster than 1-by-1. (Run your own benchmarks!)
+- `void roaring64_bitmap_remove_many(roaring64_bitmap_t *r, size_t n_args, const uint64_t *vals);`
+  Remove many values from a 64-bit bitmap. Might be faster than 1-by-1. (Run your own benchmarks!)
 
 ## Queries and Cardinality
 - `bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t x);`  
@@ -371,7 +389,45 @@ Below is an overview of the main functions provided by CRoaring in C, covering b
 - `bool roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r, const char **reason);`  
   Validate the internal structure of a 64-bit bitmap.
 
+
+## Example Usage
+```c
+#include "roaring.h"
+using namespace roaring;
+
+// Create a new bitmap and add a value
+roaring_bitmap_t *r1 = roaring_bitmap_create();
+roaring_bitmap_add(r1, 42);
+
+// Check if a value is present
+if (roaring_bitmap_contains(r1, 42)) {
+  // ...
+}
+
+// Create a bitmap from a list of values
+roaring_bitmap_t *r2 = roaring_bitmap_from(1, 2, 3);
+
+// Compute the union of two bitmaps
+roaring_bitmap_t *r3 = roaring_bitmap_or(r1, r2);
+
+// Iterate over the values in the bitmap
+roaring_uint32_iterator_t *it = roaring_iterator_create(r3);
+while (it->has_value) {
+    uint32_t v = it->current_value;
+    // ... use v ...
+    roaring_uint32_iterator_advance(it);
+}
+roaring_uint32_iterator_free(it);
+
+// Free memory
+roaring_bitmap_free(r1);
+roaring_bitmap_free(r2);
+roaring_bitmap_free(r3);
+
+```
+
 ## Notes
+- This is a summary of our API, please refer to the header files for more functions.
 - All memory allocated by the library must be freed using the corresponding `free` function.
 - The portable serialization format is cross-platform and can be shared between different languages and architectures.
 - Always validate bitmaps deserialized from untrusted sources before using them.
@@ -393,6 +449,10 @@ The C++ interface is provided via the `roaring.hh` (32-bit) and `roaring64map.hh
   - Construct from a list of values.
 - `void add(uint32_t x)` / `void add(uint64_t x)`
   - Add a value to the bitmap.
+- `void addRangeClosed(min, max);`
+  - Add values from min to max inclusively.
+- `void removeRangeClosed(min, max);`
+  - Remove values from min to max inclusively.
 - `void remove(uint32_t x)` / `void remove(uint64_t x)`
   - Remove a value from the bitmap.
 - `bool contains(uint32_t x) const` / `bool contains(uint64_t x) const`
@@ -463,6 +523,11 @@ for (auto v : r3) {
 ```
 
 For 64-bit values, use `#include "roaring64map.hh"` and the `Roaring64Map` class, which has a similar API.
+
+
+## Notes
+- This is a summary of our API, please refer to the header files for more functions.
+- Generally speaking, the C++ is a subset of the C API.
 
 
 # Dealing with large volumes of data

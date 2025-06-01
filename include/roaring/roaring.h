@@ -334,6 +334,10 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
 void roaring_bitmap_free(const roaring_bitmap_t *r);
 
 /**
+ * roaring_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * A bit of context usable with `roaring_bitmap_*_bulk()` functions
  *
  * Should be initialized with `{0}` (or `memset()` to all zeros).
@@ -352,6 +356,10 @@ typedef struct roaring_bulk_context_s {
 } roaring_bulk_context_t;
 
 /**
+ * roaring_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * Add an item, using context from a previous insert for speed optimization.
  *
  * `context` will be used to store information between calls to make bulk
@@ -462,6 +470,10 @@ bool roaring_bitmap_contains_range_closed(const roaring_bitmap_t *r,
                                           uint32_t range_end);
 
 /**
+ * roaring_bulk_context_t is an advanced feature for performance sensitive
+ * scenarios. Most users do not need to use it. Always write your own benchmarks
+ * on your own use cases.
+ *
  * Check if an items is present, using context from a previous insert or search
  * for speed optimization.
  *
