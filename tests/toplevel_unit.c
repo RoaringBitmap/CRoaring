@@ -218,6 +218,7 @@ DEFINE_TEST(is_really_empty) {
     roaring_bitmap_free(bm);
 }
 
+#if !CROARING_IS_BIG_ENDIAN
 // https://github.com/Ezibenroc/PyRoaringBitMap/issues/124
 DEFINE_TEST(PyRoaringBitMap124) {
     // adversarial test case
@@ -239,6 +240,7 @@ DEFINE_TEST(PyRoaringBitMap124) {
     const roaring_bitmap_t *r2 = roaring_bitmap_frozen_view(data, length);
     assert_true(r2 == NULL);
 }
+#endif
 
 DEFINE_TEST(inplaceorwide) {
     uint64_t end = 4294901761;
@@ -4827,7 +4829,6 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(PyRoaringBitMap124),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(issue660),
         cmocka_unit_test(issue538b),
@@ -4845,6 +4846,7 @@ int main() {
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
 #if !CROARING_IS_BIG_ENDIAN
+        cmocka_unit_test(PyRoaringBitMap124),
         cmocka_unit_test(issue245),
 #endif
         cmocka_unit_test(issue208),
