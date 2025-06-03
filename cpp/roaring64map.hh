@@ -802,7 +802,7 @@ class Roaring64Map {
         // in a 64-bit integer, so we return false.
         return false;
 #endif
-        }
+    }
 
     /**
      * Returns true if the bitmap is subset of the other.
