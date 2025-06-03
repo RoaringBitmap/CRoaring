@@ -1,6 +1,6 @@
 include(${PROJECT_SOURCE_DIR}/tools/cmake/Import.cmake)
 set(BUILD_STATIC_LIB ON)
-if (ENABLE_ROARING_TESTS)
+if (ENABLE_ROARING_TESTS AND NOT EMSCRIPTEN)
   if(ROARING_USE_CPM)
     CPMAddPackage(
       NAME cmocka
