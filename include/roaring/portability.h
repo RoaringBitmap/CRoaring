@@ -588,11 +588,10 @@ static inline uint32_t croaring_refcount_get(const croaring_refcount_t *val) {
 #endif
 
 #if defined(__cplusplus)
-#define CROARING_STATIC_ASSERT(x,y) static_assert(x, y)
+#define CROARING_STATIC_ASSERT(x, y) static_assert(x, y)
 #else
-#define CROARING_STATIC_ASSERT(x,y) _Static_assert(x, y)
+#define CROARING_STATIC_ASSERT(x, y) _Static_assert(x, y)
 #endif
-
 
 // We need portability.h to be included first,
 // but we also always want isadetection.h to be

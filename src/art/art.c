@@ -2285,13 +2285,13 @@ bool art_internal_validate(const art_t *art, const char **reason,
 }
 
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node4_t),
-               "Serialization assumes node type alignment is equal");
+                       "Serialization assumes node type alignment is equal");
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node16_t),
-               "Serialization assumes node type alignment is equal");
+                       "Serialization assumes node type alignment is equal");
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node48_t),
-               "Serialization assumes node type alignment is equal");
+                       "Serialization assumes node type alignment is equal");
 CROARING_STATIC_ASSERT(alignof(art_leaf_t) == alignof(art_node256_t),
-               "Serialization assumes node type alignment is equal");
+                       "Serialization assumes node type alignment is equal");
 
 size_t art_size_in_bytes(const art_t *art) {
     if (!art_is_shrunken(art)) {
@@ -2364,7 +2364,7 @@ size_t art_frozen_view(const char *buf, size_t maxbytes, art_t *art) {
         return 0;
     }
     CROARING_STATIC_ASSERT(sizeof(art->first_free) == sizeof(art->capacities),
-                   "first_free is read from capacities");
+                           "first_free is read from capacities");
     memcpy(art->first_free, buf, sizeof(art->capacities));
     memcpy(art->capacities, buf, sizeof(art->capacities));
     buf += sizeof(art->capacities);
