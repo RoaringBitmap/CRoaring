@@ -61,3 +61,79 @@ endif()
 
 get_directory_property(parent_dir PARENT_DIRECTORY)
 configure_file("${parent_dir}/tools/cmake/CTestCustom.cmake" "${CMAKE_BINARY_DIR}")
+
+
+# The amalgamate_demo and amalgamate_demo_cpp do not catch errors from our
+# quick start instructions.
+
+if(BASH_EXECUTABLE)
+  set(AMALGAMATION_DIR "${CMAKE_BINARY_DIR}/tests/amalgamation")
+  file(MAKE_DIRECTORY "${AMALGAMATION_DIR}")
+
+  add_custom_command(
+    OUTPUT "${AMALGAMATION_DIR}/roaring.c" "${AMALGAMATION_DIR}/roaring.h" "${AMALGAMATION_DIR}/roaring.hh"
+    COMMAND "${BASH_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/amalgamation.sh" "${AMALGAMATION_DIR}"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Running amalgamation.sh to generate amalgamated files"
+    VERBATIM
+  )
+
+  add_custom_target(amalgamation ALL
+    DEPENDS "${AMALGAMATION_DIR}/roaring.c" "${AMALGAMATION_DIR}/roaring.h" "${AMALGAMATION_DIR}/roaring.hh"
+  )
+
+  set(AMALG_C "${AMALGAMATION_DIR}/demo_amalg_c.c")
+  file(WRITE "${AMALG_C}" "
+#include <stdio.h>
+#include <stdlib.h>
+#include \"roaring.c\"
+int main() {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    for (uint32_t i = 100; i < 1000; i++) roaring_bitmap_add(r1, i);
+    printf(\"cardinality = %d\\n\", (int) roaring_bitmap_get_cardinality(r1));
+    roaring_bitmap_free(r1);
+
+    bitset_t *b = bitset_create();
+    for (int k = 0; k < 1000; ++k) {
+            bitset_set(b, 3 * k);
+    }
+    printf(\"%zu \\n\", bitset_count(b));
+    bitset_free(b);
+    return EXIT_SUCCESS;
+}
+")
+
+  add_executable(amalg_c_demo "${AMALG_C}")
+  add_dependencies(amalg_c_demo amalgamation)
+  target_include_directories(amalg_c_demo PRIVATE "${AMALGAMATION_DIR}")
+
+  set(AMALG_CPP "${AMALGAMATION_DIR}/demo_amalg_cpp.cpp")
+  file(WRITE "${AMALG_CPP}" "
+#include <iostream>
+#include \"roaring.hh\" // the amalgamated roaring.hh includes roaring64map.hh
+#include \"roaring.c\"
+int main() {
+    roaring::Roaring r1;
+    for (uint32_t i = 100; i < 1000; i++) {
+        r1.add(i);
+    }
+    std::cout << \"cardinality = \" << r1.cardinality() << std::endl;
+
+    roaring::Roaring64Map r2;
+    for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {
+        r2.add(i);
+    }
+    std::cout << \"cardinality = \" << r2.cardinality() << std::endl;
+    return 0;
+}
+")
+
+  add_executable(amalg_cpp_demo "${AMALG_CPP}")
+  add_dependencies(amalg_cpp_demo amalgamation)
+  target_include_directories(amalg_cpp_demo PRIVATE "${AMALGAMATION_DIR}")
+
+  add_test(NAME amalg_c_demo_test COMMAND amalg_c_demo)
+  add_test(NAME amalg_cpp_demo_test COMMAND amalg_cpp_demo)
+else()
+  message(STATUS "Bash executable not found, skipping amalgamation tests.")
+endif()
