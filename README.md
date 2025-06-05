@@ -1168,7 +1168,7 @@ https://groups.google.com/forum/#!forum/roaring-bitmaps
 
 # Contributing
 
-When contributing a change to the project, please run `tools/clang-format.sh` after making any changes. A github action runs on all PRs to ensure formatting is consistent with this.
+When contributing a change to the project, please run `tools/run-clangcldocker.sh` after making any changes. A github action runs on all PRs to ensure formatting is consistent with this.
 
 # References about Roaring
 
