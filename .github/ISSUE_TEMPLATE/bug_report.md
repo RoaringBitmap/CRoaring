@@ -26,7 +26,7 @@ Steps to reproduce the behaviour: provide a code sample if possible. Please prov
 
 If we cannot reproduce the issue, then we cannot address it. Note that a stack trace from your own program is not enough. A sample of your source code is insufficient: please provide a complete test for us to reproduce the issue. Please reduce the issue: use as small and as simple an example of the bug as possible.
 
-It should be possible to trigger the bug by using solely CRoaribg with our default build setup. If you can only observe the bug within some specific context, with some other software, please reduce the issue first.
+It should be possible to trigger the bug by using solely CRoaring with our default build setup. If you can only observe the bug within some specific context, with some other software, please reduce the issue first.
 
 **CRoaring release**
 
@@ -48,6 +48,4 @@ invite contributions either in the form an analysis or of a code contribution.
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 
-If you plan to contribute to simdjson, please read our guide:
-* CONTRIBUTING guide: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md and our
-* HACKING guide: https://github.com/simdjson/simdjson/blob/master/HACKING.md
+We are a community driven project.
