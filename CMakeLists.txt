@@ -116,7 +116,7 @@ if(ENABLE_ROARING_TESTS)
 endif()
 find_program(BASH bash)
 
-if(BASH)
+if(ENABLE_ROARING_TESTS AND BASH)
   message(STATUS "Amalgamation tests enabled")
   set(CROARING_SINGLEHEADER_FILES
     ${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.c
