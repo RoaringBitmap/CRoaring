@@ -921,7 +921,7 @@ int main() {
 
 
 
-# Building with cmake (Linux and macOS, Visual Studio users should see below)
+# Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)
 
 CRoaring follows the standard cmake workflow. Starting from the root directory of
 the project (CRoaring), you can do:
@@ -1038,6 +1038,11 @@ will build and install `roaring` as a static library.
 These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.
 
 If you find the version of `roaring` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submiting an issue or by creating a PR.
+
+
+# Building (OpenHarmony)
+
+To build with OpenHarmony SDK please see the [OpenHarmony Cross Compile Guide](https://gitcode.com/openharmony-sig/tpc_c_cplusplus/blob/master/Cross-Compilation Guide for Open-Source Third-Party Libraries in OpenHarmony_en.md)
 
 # SIMD-related throttling
 
