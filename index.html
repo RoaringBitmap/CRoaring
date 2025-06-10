@@ -956,7 +956,7 @@ Example (C++)</h1>
 <div class="ttc" id="aclassroaring_1_1Roaring_html_ad956e9ff3afc9ad367340457a20fb54c"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#ad956e9ff3afc9ad367340457a20fb54c">roaring::Roaring::printf</a></div><div class="ttdeci">void printf() const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00816">roaring.hh:816</a></div></div>
 <div class="ttc" id="aclassroaring_1_1Roaring_html_afc6c8582a3a8545cc84e95191c4dfe34"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#afc6c8582a3a8545cc84e95191c4dfe34">roaring::Roaring::end</a></div><div class="ttdeci">const_iterator &amp; end() const</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l01024">roaring.hh:1024</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md35"></a>
-Building with cmake (Linux and macOS, Visual Studio users should see below)</h1>
+Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)</h1>
 <p>CRoaring follows the standard cmake workflow. Starting from the root directory of the project (CRoaring), you can do:</p>
 <div class="fragment"><div class="line">mkdir -p build</div>
 <div class="line">cd build</div>
@@ -1021,10 +1021,13 @@ Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 <p>These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.</p>
 <p>If you find the version of <code>roaring</code> shipped with <code>vcpkg</code> is out-of-date, feel free to report it to <code>vcpkg</code> community either by submiting an issue or by creating a PR.</p>
 <h1><a class="anchor" id="autotoc_md39"></a>
+Building (OpenHarmony)</h1>
+<p>To build with OpenHarmony SDK please see the <a href="https://gitcode.com/openharmony-sig/tpc_c_cplusplus/blob/master/Cross-Compilation Guide for Open-Source Third-Party Libraries in OpenHarmony_en.md">OpenHarmony Cross Compile Guide</a></p>
+<h1><a class="anchor" id="autotoc_md40"></a>
 SIMD-related throttling</h1>
 <p>Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.</p>
 <p>Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.</p>
-<h1><a class="anchor" id="autotoc_md40"></a>
+<h1><a class="anchor" id="autotoc_md41"></a>
 Thread safety</h1>
 <p>Like, for example, STL containers, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. However, you can safely copy a bitmap and use both copies in concurrently.</p>
 <p>If you use "copy-on-write" (default to disabled), then you should pass copies to the different threads. They will create shared containers, and for shared containers, we use reference counting with an atomic counter.</p>
@@ -1051,7 +1054,7 @@ Thread safety</h1>
 <div class="line">std::thread thread1(run, rarray1);</div>
 <div class="line">std::thread thread2(run, rarray2);</div>
 <div class="ttc" id="aroaring_8h_html_a84bd77c991d7520ab336433b3dff4cf5"><div class="ttname"><a href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a></div><div class="ttdeci">void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r, bool cow)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00089">roaring.h:89</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md41"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md42"></a>
 How to best aggregate bitmaps?</h1>
 <p>Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many different strategies.</p>
 <p>You can use <code>roaring_bitmap_or_many(bitmapcount, bitmaps)</code> or <code>roaring_bitmap_or_many_heap(bitmapcount, bitmaps)</code> or you may even roll your own aggregation:</p>
@@ -1063,47 +1066,47 @@ How to best aggregate bitmaps?</h1>
 <p>The <code>roaring_bitmap_or_many</code> is meant as a good default. It works by trying to delay work as much as possible. However, because it delays computations, it also does not optimize the format as the computation runs. It might thus fail to see some useful pattern in the data such as long consecutive values.</p>
 <p>The approach based on repeated calls to <code>roaring_bitmap_or_inplace</code> is also fine, and might even be faster in some cases. You can expect it to be faster if, after a few calls, you get long sequences of consecutive values in the answer. That is, if the final answer is all integers in the range [0,1000000), and this is apparent quickly, then the later <code>roaring_bitmap_or_inplace</code> will be very fast.</p>
 <p>You should benchmark these alternatives on your own data to decide what is best.</p>
-<h1><a class="anchor" id="autotoc_md42"></a>
+<h1><a class="anchor" id="autotoc_md43"></a>
 Wrappers for Roaring Bitmaps</h1>
 <p>This page lists several community-contributed wrappers for the Roaring Bitmap library, enabling its use in various programming languages and environments.</p>
-<h2><a class="anchor" id="autotoc_md43"></a>
+<h2><a class="anchor" id="autotoc_md44"></a>
 Python</h2>
 <p>Tom Cornebize developed a Python wrapper, <b>PyRoaringBitMap</b>, which can be found at <a href="https://github.com/Ezibenroc/PyRoaringBitMap">https://github.com/Ezibenroc/PyRoaringBitMap</a>.</p>
 <p>Installation is straightforward using pip:</p>
 <div class="fragment"><div class="line">pip install pyroaring</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md44"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md45"></a>
 JavaScript (Node.js)</h2>
 <p>Salvatore Previti created a Node.js wrapper, <b>roaring-node</b>, available at <a href="https://github.com/SalvatorePreviti/roaring-node">https://github.com/SalvatorePreviti/roaring-node</a>.</p>
 <p>You can install it via npm with the following command:</p>
 <div class="fragment"><div class="line">npm install roaring</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md45"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md46"></a>
 Swift</h2>
 <p>Jérémie Piotte authored the <a href="https://github.com/RoaringBitmap/SwiftRoaring">Swift wrapper</a>.</p>
-<h2><a class="anchor" id="autotoc_md46"></a>
+<h2><a class="anchor" id="autotoc_md47"></a>
 C</h2>
 <p>There is a C# wrapper, <b>CRoaring.Net</b>, located at <a href="https://github.com/k-wojcik/Roaring.Net">https://github.com/k-wojcik/Roaring.Net</a>. This wrapper is compatible with Windows and Linux on x64 processors.</p>
-<h2><a class="anchor" id="autotoc_md47"></a>
+<h2><a class="anchor" id="autotoc_md48"></a>
 Go (Golang)</h2>
 <p>A Go wrapper is available at the official RoaringBitmap GitHub organization: <a href="https://github.com/RoaringBitmap/gocroaring">https://github.com/RoaringBitmap/gocroaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md48"></a>
+<h2><a class="anchor" id="autotoc_md49"></a>
 Rust</h2>
 <p>Saulius Grigaliunas developed a Rust wrapper, <b>croaring-rs</b>, which can be found at <a href="https://github.com/saulius/croaring-rs">https://github.com/saulius/croaring-rs</a>.</p>
-<h2><a class="anchor" id="autotoc_md49"></a>
+<h2><a class="anchor" id="autotoc_md50"></a>
 D</h2>
 <p>Yuce Tekol created a D wrapper, <b>droaring</b>, available at <a href="https://github.com/yuce/droaring">https://github.com/yuce/droaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md50"></a>
+<h2><a class="anchor" id="autotoc_md51"></a>
 Redis Module</h2>
 <p>Antonio Guilherme Ferreira Viggiano wrote a Redis Module integrating Roaring Bitmaps, available at <a href="https://github.com/aviggiano/redis-roaring">https://github.com/aviggiano/redis-roaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md51"></a>
+<h2><a class="anchor" id="autotoc_md52"></a>
 Zig</h2>
 <p>Justin Whear contributed a Zig wrapper, located at <a href="https://github.com/jwhear/roaring-zig">https://github.com/jwhear/roaring-zig</a>.</p>
-<h1><a class="anchor" id="autotoc_md52"></a>
+<h1><a class="anchor" id="autotoc_md53"></a>
 Mailing list/discussion group</h1>
 <p><a href="https://groups.google.com/forum/#!forum/roaring-bitmaps">https://groups.google.com/forum/#!forum/roaring-bitmaps</a></p>
-<h1><a class="anchor" id="autotoc_md53"></a>
+<h1><a class="anchor" id="autotoc_md54"></a>
 Contributing</h1>
 <p>When contributing a change to the project, please run <code>tools/run-clangcldocker.sh</code> after making any changes. A github action runs on all PRs to ensure formatting is consistent with this.</p>
-<h1><a class="anchor" id="autotoc_md54"></a>
+<h1><a class="anchor" id="autotoc_md55"></a>
 References about Roaring</h1>
 <ul>
 <li>Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience Volume 48, Issue 4 April 2018 Pages 867-895 <a href="https://arxiv.org/abs/1709.07821">arXiv:1709.07821</a></li>

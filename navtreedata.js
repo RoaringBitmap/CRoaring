@@ -62,28 +62,29 @@ var NAVTREE =
     [ "Compressed 64-bit Roaring bitmaps (C)", "index.html#autotoc_md32", null ],
     [ "Conventional bitsets (C)", "index.html#autotoc_md33", null ],
     [ "Example (C++)", "index.html#autotoc_md34", null ],
-    [ "Building with cmake (Linux and macOS, Visual Studio users should see below)", "index.html#autotoc_md35", null ],
+    [ "Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)", "index.html#autotoc_md35", null ],
     [ "Building (Visual Studio under Windows)", "index.html#autotoc_md36", [
       [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md37", null ],
       [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md38", null ]
     ] ],
-    [ "SIMD-related throttling", "index.html#autotoc_md39", null ],
-    [ "Thread safety", "index.html#autotoc_md40", null ],
-    [ "How to best aggregate bitmaps?", "index.html#autotoc_md41", null ],
-    [ "Wrappers for Roaring Bitmaps", "index.html#autotoc_md42", [
-      [ "Python", "index.html#autotoc_md43", null ],
-      [ "JavaScript (Node.js)", "index.html#autotoc_md44", null ],
-      [ "Swift", "index.html#autotoc_md45", null ],
-      [ "C", "index.html#autotoc_md46", null ],
-      [ "Go (Golang)", "index.html#autotoc_md47", null ],
-      [ "Rust", "index.html#autotoc_md48", null ],
-      [ "D", "index.html#autotoc_md49", null ],
-      [ "Redis Module", "index.html#autotoc_md50", null ],
-      [ "Zig", "index.html#autotoc_md51", null ]
+    [ "Building (OpenHarmony)", "index.html#autotoc_md39", null ],
+    [ "SIMD-related throttling", "index.html#autotoc_md40", null ],
+    [ "Thread safety", "index.html#autotoc_md41", null ],
+    [ "How to best aggregate bitmaps?", "index.html#autotoc_md42", null ],
+    [ "Wrappers for Roaring Bitmaps", "index.html#autotoc_md43", [
+      [ "Python", "index.html#autotoc_md44", null ],
+      [ "JavaScript (Node.js)", "index.html#autotoc_md45", null ],
+      [ "Swift", "index.html#autotoc_md46", null ],
+      [ "C", "index.html#autotoc_md47", null ],
+      [ "Go (Golang)", "index.html#autotoc_md48", null ],
+      [ "Rust", "index.html#autotoc_md49", null ],
+      [ "D", "index.html#autotoc_md50", null ],
+      [ "Redis Module", "index.html#autotoc_md51", null ],
+      [ "Zig", "index.html#autotoc_md52", null ]
     ] ],
-    [ "Mailing list/discussion group", "index.html#autotoc_md52", null ],
-    [ "Contributing", "index.html#autotoc_md53", null ],
-    [ "References about Roaring", "index.html#autotoc_md54", null ],
+    [ "Mailing list/discussion group", "index.html#autotoc_md53", null ],
+    [ "Contributing", "index.html#autotoc_md54", null ],
+    [ "References about Roaring", "index.html#autotoc_md55", null ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
@@ -119,7 +120,7 @@ var NAVTREEINDEX =
 "annotated.html",
 "d4/dcf/classroaring_1_1Roaring64Map.html#a4131558631d223b255af92c81253f750",
 "d8/d01/roaring64_8h.html#adacafc55212545d014e4f2b542f93b09",
-"index.html#autotoc_md7"
+"index.html#autotoc_md6"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

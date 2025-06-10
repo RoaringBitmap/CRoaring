@@ -1,9 +1,9 @@
 var searchData=
 [
   ['table_20of_20contents_0',['Table of Contents',['../index.html#autotoc_md1',1,'']]],
-  ['thread_20safety_1',['Thread safety',['../index.html#autotoc_md40',1,'']]],
-  ['throttling_2',['SIMD-related throttling',['../index.html#autotoc_md39',1,'']]],
-  ['to_20best_20aggregate_20bitmaps_3',['How to best aggregate bitmaps?',['../index.html#autotoc_md41',1,'']]],
+  ['thread_20safety_1',['Thread safety',['../index.html#autotoc_md41',1,'']]],
+  ['throttling_2',['SIMD-related throttling',['../index.html#autotoc_md40',1,'']]],
+  ['to_20best_20aggregate_20bitmaps_3',['How to best aggregate bitmaps?',['../index.html#autotoc_md42',1,'']]],
   ['tostring_4',['tostring',['../d1/d51/classroaring_1_1Roaring.html#a76025dce1281887311157c681e43b00b',1,'roaring::Roaring::toString()'],['../d4/dcf/classroaring_1_1Roaring64Map.html#a39e6d92e37d318f09bad9f6d208ac5f5',1,'roaring::Roaring64Map::toString()']]],
   ['touint32array_5',['toUint32Array',['../d1/d51/classroaring_1_1Roaring.html#abd642754ab8cc140eb5cf0b2c98a585e',1,'roaring::Roaring']]],
   ['touint64array_6',['toUint64Array',['../d4/dcf/classroaring_1_1Roaring64Map.html#ace0c9f8826b57b3ac279d4cde6a6e6f5',1,'roaring::Roaring64Map']]],
