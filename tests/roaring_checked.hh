@@ -21,7 +21,7 @@
 //         #include "roaring_checked.hh"
 //         using doublechecked::Roaring;
 //     #else
-//         #include "roaring.hh"
+//         #include "roaring/roaring.hh"
 //     #endif
 //
 // NOTES:
@@ -44,7 +44,7 @@
 #include "test.h"
 
 #define ROARING_CPP_NAMESPACE unchecked  // can't be overridden if global
-#include "roaring.hh"                    // contains Roaring unchecked class
+#include "roaring/roaring.hh"            // contains Roaring unchecked class
 
 namespace doublechecked {  // put the checked class in its own namespace
 

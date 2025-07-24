@@ -1,8 +1,8 @@
 #include <iostream>
 #include <random>
-#include <roaring64map.hh>
 
 #include <roaring/roaring.h>
+#include <roaring/roaring64map.hh>
 
 #include "benchmark.h"
 

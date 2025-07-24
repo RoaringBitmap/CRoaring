@@ -16,7 +16,7 @@
 
 #include <vector>
 
-#include "cpp/roaring.hh"
+#include "cpp/roaring/roaring.hh"
 #include "fuzzer/FuzzedDataProvider.h"
 
 std::vector<uint32_t> ConsumeVecInRange(FuzzedDataProvider &fdp, size_t length,
