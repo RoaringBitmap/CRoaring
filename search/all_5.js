@@ -7,6 +7,5 @@ var searchData=
   ['dependency_20with_20fetchcontent_4',['Using as a CMake dependency with FetchContent',['../index.html#autotoc_md8',1,'']]],
   ['deserialization_5',['deserialization',['../index.html#autotoc_md17',1,'Serialization and Deserialization'],['../index.html#autotoc_md25',1,'Serialization and Deserialization']]],
   ['destruction_6',['Creation and Destruction',['../index.html#autotoc_md12',1,'']]],
-  ['difference_5ftype_7',['difference_type',['../d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#ab41f5edbacd937c43409eba0f007fac0',1,'roaring::RoaringSetBitBiDirectionalIterator::difference_type'],['../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ae8b1c6fa466e39d82da783b062719041',1,'roaring::Roaring64MapSetBitBiDirectionalIterator::difference_type']]],
-  ['discussion_20group_8',['Mailing list/discussion group',['../index.html#autotoc_md53',1,'']]]
+  ['discussion_20group_7',['Mailing list/discussion group',['../index.html#autotoc_md53',1,'']]]
 ];

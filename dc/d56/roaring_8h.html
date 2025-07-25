@@ -1364,8 +1364,6 @@ Functions</h2></td></tr>
  responsible for freeing the result.""</p>
 <p>roaring_bitmap_t *roaring_bitmap_xor_many_heap(uint32_t number, const roaring_bitmap_t **rs); Frees the memory. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#ac6494f64fdae0b83086a2852231a3ecd">roaring::Roaring::~Roaring()</a>.</p>
-
 </div>
 </div>
 <a id="a7426a2e73d83db8ae66f8a7cb4bc1df1" name="a7426a2e73d83db8ae66f8a7cb4bc1df1"></a>
@@ -1432,8 +1430,6 @@ Functions</h2></td></tr>
 <p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
 <p>When serializing data to a file, we recommend that you also use checksums so that, at deserialization, you can be confident that you are recovering the correct data. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a9a8e3442abe87e7049ad23ab4f4a45ad">roaring::Roaring::writeFrozen()</a>.</p>
-
 </div>
 </div>
 <a id="a45ee2d20cf5c40d9898c88a8320f136b" name="a45ee2d20cf5c40d9898c88a8320f136b"></a>
@@ -1452,8 +1448,6 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Returns number of bytes required to serialize bitmap using frozen format. </p>
-
-<p class="reference">Referenced by <a class="el" href="../../d1/d51/classroaring_1_1Roaring.html#a0b3ab3f5da48d69f43a85b21c8f6196b">roaring::Roaring::getFrozenSizeInBytes()</a>.</p>
 
 </div>
 </div>
@@ -2180,8 +2174,6 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Compute the union of 'number' bitmaps. Caller is responsible for freeing the result. See also <code><a class="el" href="../../dc/d56/roaring_8h.html#a44fa6bb2413242b37966a40856db20c2">roaring_bitmap_or_many_heap()</a></code> The returned pointer may be NULL in case of errors. </p>
-
-<p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#a85b1c96beaa6c0358983a9b56fc4cc17">roaring::Roaring64Map::fastunion()</a>.</p>
 
 </div>
 </div>
@@ -3473,8 +3465,6 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="reference">Referenced by <a class="el" href="../../d4/dcf/classroaring_1_1Roaring64Map.html#ae5d56a187810e7fd1cef36f80c2a67f1">roaring::Roaring64Map::iterate()</a>.</p>
-
 </div>
 </div>
 <a id="a6411fc557537acffd5d584b29f76e5ab" name="a6411fc557537acffd5d584b29f76e5ab"></a>
@@ -3526,7 +3516,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Initialize an iterator object that can be used to iterate through the values. If there is a value, then this iterator points to the first value and <code>it-&gt;has_value</code> is true. The value is in <code>it-&gt;current_value</code>. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac5e926eae57201b1132da84d91bc24bc">roaring::Roaring64MapSetBitBiDirectionalIterator::move_equalorlarger()</a>, <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a002db154cde9d6f1f0fc9739d4932721">roaring::Roaring64MapSetBitBiDirectionalIterator::operator++()</a>, <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a0416282aa655d3c59d2d7acd5ffa30a6">roaring::Roaring64MapSetBitBiDirectionalIterator::operator++()</a>, <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a3d7ecf7e2bd5c9e8aaefe5305a9dfcfe">roaring::Roaring64MapSetBitBiDirectionalIterator::Roaring64MapSetBitBiDirectionalIterator()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a2dbaf71dd639ad7ba246795f59360013">roaring_init_iterator()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#a2dbaf71dd639ad7ba246795f59360013">roaring_init_iterator()</a>.</p>
 
 </div>
 </div>
@@ -3557,7 +3547,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Initialize an iterator object that can be used to iterate through the values. If there is a value, then this iterator points to the last value and <code>it-&gt;has_value</code> is true. The value is in <code>it-&gt;current_value</code>. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac91216d02ea79af52eda0d378fbcba58">roaring::Roaring64MapSetBitBiDirectionalIterator::operator--()</a>, <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a9ddc21b129bd005d78eb260d6dc6f713">roaring::Roaring64MapSetBitBiDirectionalIterator::operator--()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a408694be1d63e75c5ab4c2c776bf906e">roaring_init_iterator_last()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#a408694be1d63e75c5ab4c2c776bf906e">roaring_init_iterator_last()</a>.</p>
 
 </div>
 </div>
@@ -3698,7 +3688,7 @@ Functions</h2></td></tr>
 <p>Advance the iterator. If there is a new value, then <code>it-&gt;has_value</code> is true. The new value is in <code>it-&gt;current_value</code>. Values are traversed in increasing orders. For convenience, returns <code>it-&gt;has_value</code>.</p>
 <p>Once <code>it-&gt;has_value</code> is false, <code>roaring_uint32_iterator_advance</code> should not be called on the iterator again. Calling <code>roaring_uint32_iterator_previous</code> is allowed. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a002db154cde9d6f1f0fc9739d4932721">roaring::Roaring64MapSetBitBiDirectionalIterator::operator++()</a>, <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a0416282aa655d3c59d2d7acd5ffa30a6">roaring::Roaring64MapSetBitBiDirectionalIterator::operator++()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#ae21109ca88a4e7e5a39f508b5c527f6e">roaring_advance_uint32_iterator()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#ae21109ca88a4e7e5a39f508b5c527f6e">roaring_advance_uint32_iterator()</a>.</p>
 
 </div>
 </div>
@@ -3771,7 +3761,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Move the iterator to the first value &gt;= <code>val</code>. If there is a such a value, then <code>it-&gt;has_value</code> is true. The new value is in <code>it-&gt;current_value</code>. For convenience, returns <code>it-&gt;has_value</code>. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac5e926eae57201b1132da84d91bc24bc">roaring::Roaring64MapSetBitBiDirectionalIterator::move_equalorlarger()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#aa89c342b592e9b2d0e2291e86d7c8289">roaring_move_uint32_iterator_equalorlarger()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#aa89c342b592e9b2d0e2291e86d7c8289">roaring_move_uint32_iterator_equalorlarger()</a>.</p>
 
 </div>
 </div>
@@ -3793,7 +3783,7 @@ Functions</h2></td></tr>
 <p>Decrement the iterator. If there's a new value, then <code>it-&gt;has_value</code> is true. The new value is in <code>it-&gt;current_value</code>. Values are traversed in decreasing order. For convenience, returns <code>it-&gt;has_value</code>.</p>
 <p>Once <code>it-&gt;has_value</code> is false, <code>roaring_uint32_iterator_previous</code> should not be called on the iterator again. Calling <code>roaring_uint32_iterator_advance</code> is allowed. </p>
 
-<p class="reference">Referenced by <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#ac91216d02ea79af52eda0d378fbcba58">roaring::Roaring64MapSetBitBiDirectionalIterator::operator--()</a>, <a class="el" href="../../d3/d48/classroaring_1_1Roaring64MapSetBitBiDirectionalIterator.html#a9ddc21b129bd005d78eb260d6dc6f713">roaring::Roaring64MapSetBitBiDirectionalIterator::operator--()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a70a374d72e8fcfefcdd07deb94987881">roaring_previous_uint32_iterator()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#a70a374d72e8fcfefcdd07deb94987881">roaring_previous_uint32_iterator()</a>.</p>
 
 </div>
 </div>

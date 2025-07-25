@@ -85,28 +85,18 @@ var NAVTREE =
     [ "Mailing list/discussion group", "index.html#autotoc_md53", null ],
     [ "Contributing", "index.html#autotoc_md54", null ],
     [ "References about Roaring", "index.html#autotoc_md55", null ],
-    [ "Namespaces", "namespaces.html", [
-      [ "Namespace List", "namespaces.html", "namespaces_dup" ],
-      [ "Namespace Members", "namespacemembers.html", [
-        [ "All", "namespacemembers.html", null ],
-        [ "Typedefs", "namespacemembers_type.html", null ]
-      ] ]
-    ] ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
       [ "Class Members", "functions.html", [
-        [ "All", "functions.html", "functions_dup" ],
-        [ "Functions", "functions_func.html", null ],
-        [ "Variables", "functions_vars.html", null ],
-        [ "Typedefs", "functions_type.html", null ],
-        [ "Related Symbols", "functions_rela.html", null ]
+        [ "All", "functions.html", null ],
+        [ "Variables", "functions_vars.html", null ]
       ] ]
     ] ],
     [ "Files", "files.html", [
       [ "File List", "files.html", "files_dup" ],
       [ "File Members", "globals.html", [
-        [ "All", "globals.html", "globals_dup" ],
+        [ "All", "globals.html", null ],
         [ "Functions", "globals_func.html", null ],
         [ "Typedefs", "globals_type.html", null ],
         [ "Macros", "globals_defs.html", null ]
@@ -118,9 +108,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"d4/dcf/classroaring_1_1Roaring64Map.html#a4131558631d223b255af92c81253f750",
-"d8/d01/roaring64_8h.html#adacafc55212545d014e4f2b542f93b09",
-"index.html#autotoc_md6"
+"index.html#autotoc_md24"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

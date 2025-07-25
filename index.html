@@ -176,8 +176,8 @@ Quick Start</h1>
 </li>
 </ol>
 <ol type="1">
-<li><p class="startli"><code>Create a new file named `demo.cpp` with this content: </code>C++ #include &lt;iostream&gt; #include "roaring.hh" // the amalgamated <a class="el" href="db/d6e/roaring_8hh.html">roaring.hh</a> includes <a class="el" href="db/d2c/roaring64map_8hh.html">roaring64map.hh</a> #include "roaring.c" int main() { <a class="el" href="d1/d51/classroaring_1_1Roaring.html">roaring::Roaring</a> r1; for (uint32_t i = 100; i &lt; 1000; i++) { r1.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r1.cardinality() &lt;&lt; std::endl;</p>
-<p class="startli"><a class="el" href="d4/dcf/classroaring_1_1Roaring64Map.html">roaring::Roaring64Map</a> r2; for (uint64_t i = 18000000000000000100ull; i &lt; 18000000000000001000ull; i++) { r2.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r2.cardinality() &lt;&lt; std::endl; return 0; } <code></code></p>
+<li><p class="startli"><code>Create a new file named `demo.cpp` with this content: </code>C++ #include &lt;iostream&gt; #include "roaring.hh" // the amalgamated roaring.hh includes roaring64map.hh #include "roaring.c" int main() { roaring::Roaring r1; for (uint32_t i = 100; i &lt; 1000; i++) { r1.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r1.cardinality() &lt;&lt; std::endl;</p>
+<p class="startli">roaring::Roaring64Map r2; for (uint64_t i = 18000000000000000100ull; i &lt; 18000000000000001000ull; i++) { r2.add(i); } std::cout &lt;&lt; "cardinality = " &lt;&lt; r2.cardinality() &lt;&lt; std::endl; return 0; } <code></code></p>
 </li>
 </ol>
 <ol type="1">
@@ -260,8 +260,8 @@ API</h1>
 </ul>
 <p>We also have a C++ interface:</p>
 <ul>
-<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring.hh">roaring.hh</a>,</li>
-<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring64map.hh">roaring64map.hh</a>.</li>
+<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring.hh">roaring.hh</a>,</li>
+<li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring64map.hh">roaring64map.hh</a>.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md11"></a>
 Main API functions</h1>
@@ -371,12 +371,12 @@ Notes</h2>
 </ul>
 <h1><a class="anchor" id="autotoc_md20"></a>
 C++ API functions</h1>
-<p>The C++ interface is provided via the <code><a class="el" href="db/d6e/roaring_8hh.html">roaring.hh</a></code> (32-bit) and <code><a class="el" href="db/d2c/roaring64map_8hh.html">roaring64map.hh</a></code> (64-bit) headers. These offer a modern, type-safe, and convenient API for manipulating Roaring bitmaps in C++.</p>
+<p>The C++ interface is provided via the <code>roaring.hh</code> (32-bit) and <code>roaring64map.hh</code> (64-bit) headers. These offer a modern, type-safe, and convenient API for manipulating Roaring bitmaps in C++.</p>
 <h2><a class="anchor" id="autotoc_md21"></a>
 Main Classes</h2>
 <ul>
-<li><code><a class="el" href="d1/d51/classroaring_1_1Roaring.html">roaring::Roaring</a></code> — 32-bit Roaring bitmap</li>
-<li><code><a class="el" href="d4/dcf/classroaring_1_1Roaring64Map.html">roaring::Roaring64Map</a></code> — 64-bit Roaring bitmap</li>
+<li><code>roaring::Roaring</code> — 32-bit Roaring bitmap</li>
+<li><code>roaring::Roaring64Map</code> — 64-bit Roaring bitmap</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md22"></a>
 Common Methods (32-bit and 64-bit)</h2>
@@ -497,24 +497,19 @@ Bulk Operations</h2>
 </ul>
 <h2><a class="anchor" id="autotoc_md27"></a>
 Example Usage</h2>
-<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="db/d6e/roaring_8hh.html">roaring.hh</a>&quot;</span></div>
-<div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="dc/db7/namespaceroaring.html">roaring</a>;</div>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;roaring/roaring.hh&quot;</span></div>
+<div class="line"><span class="keyword">using namespace </span>roaring;</div>
 <div class="line"> </div>
-<div class="line"><a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r1;</div>
-<div class="line">r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a5b630e50aee5a80764c90e9f3650b718">add</a>(42);</div>
-<div class="line"><span class="keywordflow">if</span> (r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#aa2e9462ac7abb7a4cc2e783c54a9e87d">contains</a>(42)) {</div>
+<div class="line">Roaring r1;</div>
+<div class="line">r1.add(42);</div>
+<div class="line"><span class="keywordflow">if</span> (r1.contains(42)) {</div>
 <div class="line">    <span class="comment">// ...</span></div>
 <div class="line">}</div>
-<div class="line"><a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r2 = Roaring::bitmapOf(3, 1, 2, 3);</div>
-<div class="line"><a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r3 = r1 | r2;</div>
+<div class="line">Roaring r2 = Roaring::bitmapOf(3, 1, 2, 3);</div>
+<div class="line">Roaring r3 = r1 | r2;</div>
 <div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> v : r3) {</div>
 <div class="line">    <span class="comment">// iterate over values</span></div>
 <div class="line">}</div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html">roaring::Roaring</a></div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00070">roaring.hh:70</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_a5b630e50aee5a80764c90e9f3650b718"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#a5b630e50aee5a80764c90e9f3650b718">roaring::Roaring::add</a></div><div class="ttdeci">void add(uint32_t x) noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00200">roaring.hh:200</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_aa2e9462ac7abb7a4cc2e783c54a9e87d"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#aa2e9462ac7abb7a4cc2e783c54a9e87d">roaring::Roaring::contains</a></div><div class="ttdeci">bool contains(uint32_t x) const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00309">roaring.hh:309</a></div></div>
-<div class="ttc" id="anamespaceroaring_html"><div class="ttname"><a href="dc/db7/namespaceroaring.html">roaring</a></div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00041">roaring.hh:41</a></div></div>
-<div class="ttc" id="aroaring_8hh_html"><div class="ttname"><a href="db/d6e/roaring_8hh.html">roaring.hh</a></div></div>
 </div><!-- fragment --><p>For 64-bit values, use <code>#include "roaring64map.hh"</code> and the <code>Roaring64Map</code> class, which has a similar API.</p>
 <h1><a class="anchor" id="autotoc_md28"></a>
 Dealing with large volumes of data</h1>
@@ -840,89 +835,89 @@ Example (C++)</h1>
 <div class="fragment"><div class="line"> ++</div>
 <div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
 <div class="line"> </div>
-<div class="line"><span class="preprocessor">#include &quot;<a class="code" href="db/d6e/roaring_8hh.html">roaring.hh</a>&quot;</span></div>
+<div class="line"><span class="preprocessor">#include &quot;roaring.hh&quot;</span></div>
 <div class="line"> </div>
-<div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="dc/db7/namespaceroaring.html">roaring</a>;</div>
+<div class="line"><span class="keyword">using namespace </span>roaring;</div>
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">int</span> main() {</div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r1;</div>
+<div class="line">    Roaring r1;</div>
 <div class="line">    <span class="keywordflow">for</span> (uint32_t i = 100; i &lt; 1000; i++) {</div>
-<div class="line">        r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a5b630e50aee5a80764c90e9f3650b718">add</a>(i);</div>
+<div class="line">        r1.add(i);</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// check whether a value is contained</span></div>
-<div class="line">    assert(r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#aa2e9462ac7abb7a4cc2e783c54a9e87d">contains</a>(500));</div>
+<div class="line">    assert(r1.contains(500));</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// compute how many bits there are:</span></div>
-<div class="line">    uint32_t cardinality = r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a5421644f170815768cad891ac1fd053b">cardinality</a>();</div>
+<div class="line">    uint32_t cardinality = r1.cardinality();</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// if your bitmaps have long runs, you can compress them by calling</span></div>
 <div class="line">    <span class="comment">// run_optimize</span></div>
-<div class="line">    uint32_t size = r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">getSizeInBytes</a>();</div>
-<div class="line">    r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a4e03658d632048ae3814ffc6ac538c93">runOptimize</a>();</div>
+<div class="line">    uint32_t size = r1.getSizeInBytes();</div>
+<div class="line">    r1.runOptimize();</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// you can enable &quot;copy-on-write&quot; for fast and shallow copies</span></div>
-<div class="line">    r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#ad59939f1fbfc88a1e7a9bd6224d22ed8">setCopyOnWrite</a>(<span class="keyword">true</span>);</div>
+<div class="line">    r1.setCopyOnWrite(<span class="keyword">true</span>);</div>
 <div class="line"> </div>
-<div class="line">    uint32_t compact_size = r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">getSizeInBytes</a>();</div>
+<div class="line">    uint32_t compact_size = r1.getSizeInBytes();</div>
 <div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;size before run optimize &quot;</span> &lt;&lt; size &lt;&lt; <span class="stringliteral">&quot; bytes, and after &quot;</span></div>
 <div class="line">              &lt;&lt; compact_size &lt;&lt; <span class="stringliteral">&quot; bytes.&quot;</span> &lt;&lt; std::endl;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a new bitmap with varargs</span></div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r2 = Roaring::bitmapOf(5, 1, 2, 3, 5, 6);</div>
+<div class="line">    Roaring r2 = Roaring::bitmapOf(5, 1, 2, 3, 5, 6);</div>
 <div class="line"> </div>
-<div class="line">    r2.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#ad956e9ff3afc9ad367340457a20fb54c">printf</a>();</div>
+<div class="line">    r2.printf();</div>
 <div class="line">    printf(<span class="stringliteral">&quot;\n&quot;</span>);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// create a new bitmap with initializer list</span></div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r2i = Roaring::bitmapOfList({1, 2, 3, 5, 6});</div>
+<div class="line">    Roaring r2i = Roaring::bitmapOfList({1, 2, 3, 5, 6});</div>
 <div class="line"> </div>
 <div class="line">    assert(r2i == r2);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also create a bitmap from a pointer to 32-bit integers</span></div>
 <div class="line">    <span class="keyword">const</span> uint32_t values[] = {2, 3, 4};</div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r3(3, values);</div>
+<div class="line">    Roaring r3(3, values);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also go in reverse and go from arrays to bitmaps</span></div>
-<div class="line">    uint64_t card1 = r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a5421644f170815768cad891ac1fd053b">cardinality</a>();</div>
+<div class="line">    uint64_t card1 = r1.cardinality();</div>
 <div class="line">    uint32_t *arr1 = <span class="keyword">new</span> uint32_t[card1];</div>
-<div class="line">    r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#abd642754ab8cc140eb5cf0b2c98a585e">toUint32Array</a>(arr1);</div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r1f(card1, arr1);</div>
+<div class="line">    r1.toUint32Array(arr1);</div>
+<div class="line">    Roaring r1f(card1, arr1);</div>
 <div class="line">    <span class="keyword">delete</span>[] arr1;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// bitmaps shall be equal</span></div>
 <div class="line">    assert(r1 == r1f);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can copy and compare bitmaps</span></div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> z(r3);</div>
+<div class="line">    Roaring z(r3);</div>
 <div class="line">    assert(r3 == z);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can compute union two-by-two</span></div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> r1_2_3 = r1 | r2;</div>
+<div class="line">    Roaring r1_2_3 = r1 | r2;</div>
 <div class="line">    r1_2_3 |= r3;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can compute a big union</span></div>
-<div class="line">    <span class="keyword">const</span> <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> *allmybitmaps[] = {&amp;r1, &amp;r2, &amp;r3};</div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> bigunion = Roaring::fastunion(3, allmybitmaps);</div>
+<div class="line">    <span class="keyword">const</span> Roaring *allmybitmaps[] = {&amp;r1, &amp;r2, &amp;r3};</div>
+<div class="line">    Roaring bigunion = Roaring::fastunion(3, allmybitmaps);</div>
 <div class="line">    assert(r1_2_3 == bigunion);</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can compute intersection two-by-two</span></div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> i1_2 = r1 &amp; r2;</div>
+<div class="line">    Roaring i1_2 = r1 &amp; r2;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can write a bitmap to a pointer and recover it later</span></div>
-<div class="line">    uint32_t expectedsize = r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">getSizeInBytes</a>();</div>
+<div class="line">    uint32_t expectedsize = r1.getSizeInBytes();</div>
 <div class="line">    <span class="keywordtype">char</span> *serializedbytes = <span class="keyword">new</span> <span class="keywordtype">char</span>[expectedsize];</div>
-<div class="line">    r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a305434227cedd4587679d67e0435bc5f">write</a>(serializedbytes);</div>
+<div class="line">    r1.write(serializedbytes);</div>
 <div class="line">    <span class="comment">// readSafe will not overflow, but the resulting bitmap</span></div>
 <div class="line">    <span class="comment">// is only valid and usable if the input follows the</span></div>
 <div class="line">    <span class="comment">// Roaring specification: https://github.com/RoaringBitmap/RoaringFormatSpec/</span></div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> t = Roaring::readSafe(serializedbytes, expectedsize);</div>
+<div class="line">    Roaring t = Roaring::readSafe(serializedbytes, expectedsize);</div>
 <div class="line">    assert(r1 == t);</div>
 <div class="line">    <span class="keyword">delete</span>[] serializedbytes;</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can iterate over all values using custom functions</span></div>
 <div class="line">    uint32_t counter = 0;</div>
-<div class="line">    r1.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#aab10adf454586da9a4589b6f1ab3dfed">iterate</a>(</div>
+<div class="line">    r1.iterate(</div>
 <div class="line">        [](uint32_t value, <span class="keywordtype">void</span> *param) {</div>
 <div class="line">            *(uint32_t *)param += value;</div>
 <div class="line">            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -931,30 +926,18 @@ Example (C++)</h1>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can also iterate the C++ way</span></div>
 <div class="line">    counter = 0;</div>
-<div class="line">    <span class="keywordflow">for</span> (<a class="code hl_class" href="d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html">Roaring::const_iterator</a> i = t.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#a6b5fe6688c18bcd0b91abc55f47e73bc">begin</a>(); i != t.<a class="code hl_function" href="d1/d51/classroaring_1_1Roaring.html#afc6c8582a3a8545cc84e95191c4dfe34">end</a>(); i++) {</div>
+<div class="line">    <span class="keywordflow">for</span> (Roaring::const_iterator i = t.begin(); i != t.end(); i++) {</div>
 <div class="line">        ++counter;</div>
 <div class="line">    }</div>
 <div class="line">    <span class="comment">// counter == t.cardinality()</span></div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// we can move iterators to skip values</span></div>
 <div class="line">    <span class="keyword">const</span> uint32_t manyvalues[] = {2, 3, 4, 7, 8};</div>
-<div class="line">    <a class="code hl_class" href="d1/d51/classroaring_1_1Roaring.html">Roaring</a> rogue(5, manyvalues);</div>
-<div class="line">    <a class="code hl_class" href="d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html">Roaring::const_iterator</a> j = rogue.begin();</div>
-<div class="line">    j.<a class="code hl_function" href="d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#a6508ffcac249c6f355cee87d66decbc9">equalorlarger</a>(4);  <span class="comment">// *j == 4</span></div>
+<div class="line">    Roaring rogue(5, manyvalues);</div>
+<div class="line">    Roaring::const_iterator j = rogue.begin();</div>
+<div class="line">    j.equalorlarger(4);  <span class="comment">// *j == 4</span></div>
 <div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
-<div class="ttc" id="aclassroaring_1_1RoaringSetBitBiDirectionalIterator_html"><div class="ttname"><a href="d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html">roaring::RoaringSetBitBiDirectionalIterator</a></div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00922">roaring.hh:922</a></div></div>
-<div class="ttc" id="aclassroaring_1_1RoaringSetBitBiDirectionalIterator_html_a6508ffcac249c6f355cee87d66decbc9"><div class="ttname"><a href="d5/d70/classroaring_1_1RoaringSetBitBiDirectionalIterator.html#a6508ffcac249c6f355cee87d66decbc9">roaring::RoaringSetBitBiDirectionalIterator::equalorlarger</a></div><div class="ttdeci">CROARING_DEPRECATED void equalorlarger(uint32_t val)</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00992">roaring.hh:992</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_a305434227cedd4587679d67e0435bc5f"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#a305434227cedd4587679d67e0435bc5f">roaring::Roaring::write</a></div><div class="ttdeci">size_t write(char *buf, bool portable=true) const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00623">roaring.hh:623</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_a4e03658d632048ae3814ffc6ac538c93"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#a4e03658d632048ae3814ffc6ac538c93">roaring::Roaring::runOptimize</a></div><div class="ttdeci">bool runOptimize() noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00467">roaring.hh:467</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_a5421644f170815768cad891ac1fd053b"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#a5421644f170815768cad891ac1fd053b">roaring::Roaring::cardinality</a></div><div class="ttdeci">uint64_t cardinality() const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00378">roaring.hh:378</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_a6b5fe6688c18bcd0b91abc55f47e73bc"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#a6b5fe6688c18bcd0b91abc55f47e73bc">roaring::Roaring::begin</a></div><div class="ttdeci">const_iterator begin() const</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l01020">roaring.hh:1020</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_aa879e2858a0b55c702131fe9554c2637"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#aa879e2858a0b55c702131fe9554c2637">roaring::Roaring::getSizeInBytes</a></div><div class="ttdeci">size_t getSizeInBytes(bool portable=true) const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00697">roaring.hh:697</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_aab10adf454586da9a4589b6f1ab3dfed"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#aab10adf454586da9a4589b6f1ab3dfed">roaring::Roaring::iterate</a></div><div class="ttdeci">void iterate(api::roaring_iterator iterator, void *ptr) const</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00488">roaring.hh:488</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_abd642754ab8cc140eb5cf0b2c98a585e"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#abd642754ab8cc140eb5cf0b2c98a585e">roaring::Roaring::toUint32Array</a></div><div class="ttdeci">void toUint32Array(uint32_t *ans) const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00418">roaring.hh:418</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_ad59939f1fbfc88a1e7a9bd6224d22ed8"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#ad59939f1fbfc88a1e7a9bd6224d22ed8">roaring::Roaring::setCopyOnWrite</a></div><div class="ttdeci">void setCopyOnWrite(bool val) noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00809">roaring.hh:809</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_ad956e9ff3afc9ad367340457a20fb54c"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#ad956e9ff3afc9ad367340457a20fb54c">roaring::Roaring::printf</a></div><div class="ttdeci">void printf() const noexcept</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l00816">roaring.hh:816</a></div></div>
-<div class="ttc" id="aclassroaring_1_1Roaring_html_afc6c8582a3a8545cc84e95191c4dfe34"><div class="ttname"><a href="d1/d51/classroaring_1_1Roaring.html#afc6c8582a3a8545cc84e95191c4dfe34">roaring::Roaring::end</a></div><div class="ttdeci">const_iterator &amp; end() const</div><div class="ttdef"><b>Definition</b> <a href="db/d6e/roaring_8hh_source.html#l01024">roaring.hh:1024</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md35"></a>
 Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)</h1>
 <p>CRoaring follows the standard cmake workflow. Starting from the root directory of the project (CRoaring), you can do:</p>
