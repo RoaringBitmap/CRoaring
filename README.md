@@ -281,8 +281,8 @@ The C interface is found in the files
 
 We also have a C++ interface:
 
-- [roaring.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring.hh),
-- [roaring64map.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring64map.hh).
+- [roaring.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring.hh),
+- [roaring64map.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring64map.hh).
 
 
 # Main API functions
@@ -447,7 +447,7 @@ The C++ interface is provided via the `roaring.hh` (32-bit) and `roaring64map.hh
 
 ## Example Usage
 ```cpp
-#include "roaring.hh"
+#include "roaring/roaring.hh"
 using namespace roaring;
 
 Roaring r1;

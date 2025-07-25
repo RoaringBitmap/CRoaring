@@ -22,7 +22,7 @@
 //         #include "roaring64map_checked.hh"
 //         using doublechecked::Roaring64Map;
 //     #else
-//         #include "roaring64map.hh"
+//         #include "roaring/roaring64map.hh"
 //     #endif
 
 #ifndef INCLUDE_ROARING_64_MAP_CHECKED_HH_
@@ -38,7 +38,7 @@
 #include "test.h"
 
 #define ROARING_CPP_NAMESPACE unchecked  // can't be overridden if global
-#include "roaring64map.hh"  // contains Roaring64Map unchecked class
+#include "roaring/roaring64map.hh"  // contains Roaring64Map unchecked class
 
 namespace doublechecked {  // put the checked class in its own namespace
 

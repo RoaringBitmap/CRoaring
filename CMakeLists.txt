@@ -84,7 +84,9 @@ target_include_directories(roaring-headers-cpp INTERFACE
 ####
 ### Some users want the C++ header files to be installed as well.
 ### C++ header files get installed to /usr/local/include/roaring typically
-SET(CPP_ROARING_HEADERS cpp/roaring64map.hh  cpp/roaring.hh) # needs to be updated if we add more files
+SET(CPP_ROARING_HEADERS
+   cpp/roaring/roaring64map.hh
+   cpp/roaring/roaring.hh) # needs to be updated if we add more files
 install(FILES ${CPP_ROARING_HEADERS} DESTINATION include/roaring)
 install(DIRECTORY include/roaring DESTINATION include)
 

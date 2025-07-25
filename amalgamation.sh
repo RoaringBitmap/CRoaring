@@ -47,8 +47,8 @@ $SCRIPTPATH/include/roaring/roaring64.h
 # .hh header files for the C++ API wrapper => Order does not matter at present
 #
 ALL_PUBLIC_HH="
-$SCRIPTPATH/cpp/roaring.hh
-$SCRIPTPATH/cpp/roaring64map.hh
+$SCRIPTPATH/cpp/roaring/roaring.hh
+$SCRIPTPATH/cpp/roaring/roaring64map.hh
 "
 
 # internal .h files => These are used in the implementation but aren't part of

@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 #include <roaring/roaring.h>
+#include <roaring/roaring64map.hh>
 
 #include "benchmark.h"
-#include "roaring64map.hh"
 
 using roaring::Roaring64Map;
 

@@ -1,8 +1,8 @@
 #include <fstream>
 #include <vector>
 
-#include "roaring.hh"
-#include "roaring64map.hh"
+#include "roaring/roaring.hh"
+#include "roaring/roaring64map.hh"
 
 using namespace roaring;
 
