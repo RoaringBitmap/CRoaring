@@ -20,8 +20,8 @@ endif()
 set(ROARING_LIB_NAME roaring)
 set(PROJECT_VERSION_MAJOR 4)
 set(PROJECT_VERSION_MINOR 3)
-set(PROJECT_VERSION_PATCH 5)
-set(ROARING_LIB_VERSION "4.3.5" CACHE STRING "Roaring library version")
+set(PROJECT_VERSION_PATCH 6)
+set(ROARING_LIB_VERSION "4.3.6" CACHE STRING "Roaring library version")
 set(ROARING_LIB_SOVERSION "18" CACHE STRING "Roaring library soversion")
 
 option(ROARING_EXCEPTIONS "Enable exception-throwing interface" ON)
@@ -48,6 +48,7 @@ option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" O
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
 option(ROARING_SANITIZE_UNDEFINED "Sanitize undefined behaviors" OFF)
+option(ROARING_UNSAFE_FROZEN_TESTS "If ON, tests some frozen functions which are unsafe as they include unaligned reads, this can cause crashes" OFF)
 
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)
 if(NOT ENABLE_ROARING_TESTS)

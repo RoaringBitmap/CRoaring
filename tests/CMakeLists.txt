@@ -1,9 +1,7 @@
-### This code is buggy because it does not ensure that all variables have been defined :
-#set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata/")
-#configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
-#                "${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 
-
+if(ROARING_UNSAFE_FROZEN_TESTS)
+  add_compile_definitions(ROARING_UNSAFE_FROZEN_TESTS=1)
+endif()
 add_cpp_test(cpp_unit)
 add_cpp_test(cpp_random_unit)
 add_cpp_test(cpp_example1)
