@@ -4985,7 +4985,9 @@ int main() {
 #if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
+#if ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_portable_deserialize_frozen),
+#endif  // ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(issue_15jan2024),
 #endif
     };

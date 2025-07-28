@@ -1551,8 +1551,7 @@ DEFINE_TEST(test_cpp_frozen_portable) {
 
     free(buf);
 }
-#endif // ROARING_UNSAFE_FROZEN_TESTS
-
+#endif  // ROARING_UNSAFE_FROZEN_TESTS
 
 #if ROARING_UNSAFE_FROZEN_TESTS
 // This test is unsafe, as it may trigger unaligned memory access
@@ -1619,7 +1618,7 @@ DEFINE_TEST(test_cpp_frozen_64_portable) {
 
     free(buf);
 }
-#endif // ROARING_UNSAFE_FROZEN_TESTS
+#endif  // ROARING_UNSAFE_FROZEN_TESTS
 
 DEFINE_TEST(test_cpp_flip) {
     {
@@ -2216,8 +2215,10 @@ int main() {
         cmocka_unit_test(test_cpp_bidirectional_iterator_64),
         cmocka_unit_test(test_cpp_frozen),
         cmocka_unit_test(test_cpp_frozen_64),
+#if ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_cpp_frozen_portable),
         cmocka_unit_test(test_cpp_frozen_64_portable),
+#endif  // ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_cpp_flip),
         cmocka_unit_test(test_cpp_flip_closed),
         cmocka_unit_test(test_cpp_flip_64),
