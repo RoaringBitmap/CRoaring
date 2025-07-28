@@ -1476,6 +1476,9 @@ DEFINE_TEST(test_cpp_frozen_64) {
     roaring_aligned_free(buf);
 }
 
+#if ROARING_UNSAFE_FROZEN_TESTS
+// This test is unsafe, as it may trigger unaligned memory access
+// It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_cpp_frozen_portable) {
     const uint64_t s = 65536;
 
@@ -1548,7 +1551,12 @@ DEFINE_TEST(test_cpp_frozen_portable) {
 
     free(buf);
 }
+#endif // ROARING_UNSAFE_FROZEN_TESTS
 
+
+#if ROARING_UNSAFE_FROZEN_TESTS
+// This test is unsafe, as it may trigger unaligned memory access
+// It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_cpp_frozen_64_portable) {
     const uint64_t s = 65536;
 
@@ -1611,6 +1619,7 @@ DEFINE_TEST(test_cpp_frozen_64_portable) {
 
     free(buf);
 }
+#endif // ROARING_UNSAFE_FROZEN_TESTS
 
 DEFINE_TEST(test_cpp_flip) {
     {

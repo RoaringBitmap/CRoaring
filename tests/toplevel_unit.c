@@ -4562,6 +4562,9 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
     frozen_serialization_compare(r);
 }
 
+#if ROARING_UNSAFE_FROZEN_TESTS
+// This test is unsafe, as it may trigger unaligned memory access
+// It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_portable_deserialize_frozen) {
     roaring_bitmap_t *r1 =
         roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
@@ -4655,6 +4658,7 @@ DEFINE_TEST(test_portable_deserialize_frozen) {
     roaring_bitmap_free(r2);
     free(serialized);
 }
+#endif  // ROARING_UNSAFE_FROZEN_TESTS
 
 DEFINE_TEST(convert_to_bitset) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();

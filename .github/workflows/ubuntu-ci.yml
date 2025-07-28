@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON  -DROARING_UNSAFE_FROZEN_TESTS=ON ..
           cmake --build .
           ctest . --output-on-failure
           cmake --install . 
@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir builddebug
           cd builddebug
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON -DROARING_UNSAFE_FROZEN_TESTS=ON ..
           cmake --build .
           ctest . --output-on-failure
           cmake --install . 
