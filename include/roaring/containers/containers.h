@@ -2627,6 +2627,35 @@ bool container_iterator_skip_backward(const container_t *c, uint8_t typecode,
                                       uint32_t *consumed_count,
                                       uint16_t *value_out);
 
+/**
+ * Finds the end of the consecutive run starting at the current iterator
+ * position within a container. Returns the low16 of the last consecutive
+ * value. If there are more values in the container after the run,
+ * *has_more is set to true, the iterator is positioned at the next value,
+ * and *value is updated to that value. Otherwise *has_more is set to false.
+ *
+ * *value must be the low 16 bits of the current value at the iterator's
+ * position on entry.
+ */
+uint16_t container_iterator_find_run_end(const container_t *c, uint8_t typecode,
+                                         roaring_container_iterator_t *it,
+                                         uint16_t *value, bool *has_more);
+
+/**
+ * Finds the start of the consecutive run ending at the current iterator
+ * position within a container. Returns the low16 of the first consecutive
+ * value. If there are more values in the container before the run,
+ * *has_more is set to true, the iterator is positioned at the previous value,
+ * and *value is updated to that value. Otherwise *has_more is set to false.
+ *
+ * *value must be the low 16 bits of the current value at the iterator's
+ * position on entry.
+ */
+uint16_t container_iterator_find_run_start(const container_t *c,
+                                           uint8_t typecode,
+                                           roaring_container_iterator_t *it,
+                                           uint16_t *value, bool *has_more);
+
 #ifdef __cplusplus
 }
 }

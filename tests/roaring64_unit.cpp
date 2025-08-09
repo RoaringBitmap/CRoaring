@@ -2320,6 +2320,362 @@ DEFINE_TEST(test_iterator_read) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_iterator_read_ranges) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    // Empty bitmap
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_range_closed_t buf[1];
+        assert_int_equal(roaring64_iterator_read_ranges(it, buf, 1), 0);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Build test data: a few ranges with gaps, spanning high48 boundaries
+    // Range 1: [0..2]
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1);
+    roaring64_bitmap_add(r, 2);
+    // Range 2: [10..10] (single value)
+    roaring64_bitmap_add(r, 10);
+    // Range 3 spanning container boundary: [0xFFFE..0x10001]
+    roaring64_bitmap_add(r, 0xFFFE);
+    roaring64_bitmap_add(r, 0xFFFF);
+    roaring64_bitmap_add(r, 0x10000);
+    roaring64_bitmap_add(r, 0x10001);
+    // Range 4 in high48 space: a run at a large offset
+    uint64_t high_base = UINT64_C(1) << 40;
+    roaring64_bitmap_add(r, high_base);
+    roaring64_bitmap_add(r, high_base + 1);
+    roaring64_bitmap_add(r, high_base + 2);
+
+    // Forward: read all at once
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_range_closed_t buf[10];
+        size_t got = roaring64_iterator_read_ranges(it, buf, 10);
+        assert_int_equal(got, 4);
+        assert_int_equal(buf[0].min, 0);
+        assert_int_equal(buf[0].max, 2);
+        assert_int_equal(buf[1].min, 10);
+        assert_int_equal(buf[1].max, 10);
+        assert_int_equal(buf[2].min, 0xFFFE);
+        assert_int_equal(buf[2].max, 0x10001);
+        assert_int_equal(buf[3].min, high_base);
+        assert_int_equal(buf[3].max, high_base + 2);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Forward: read one at a time
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_range_closed_t buf[1];
+        size_t got;
+
+        got = roaring64_iterator_read_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 0);
+        assert_int_equal(buf[0].max, 2);
+
+        got = roaring64_iterator_read_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 10);
+        assert_int_equal(buf[0].max, 10);
+
+        got = roaring64_iterator_read_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 0xFFFE);
+        assert_int_equal(buf[0].max, 0x10001);
+
+        got = roaring64_iterator_read_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, high_base);
+        assert_int_equal(buf[0].max, high_base + 2);
+
+        got = roaring64_iterator_read_ranges(it, buf, 1);
+        assert_int_equal(got, 0);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_iterator_read_prev_ranges) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    // Empty bitmap
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_range_closed_t buf[1];
+        assert_int_equal(roaring64_iterator_read_prev_ranges(it, buf, 1), 0);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Same data as forward test
+    roaring64_bitmap_add(r, 0);
+    roaring64_bitmap_add(r, 1);
+    roaring64_bitmap_add(r, 2);
+    roaring64_bitmap_add(r, 10);
+    roaring64_bitmap_add(r, 0xFFFE);
+    roaring64_bitmap_add(r, 0xFFFF);
+    roaring64_bitmap_add(r, 0x10000);
+    roaring64_bitmap_add(r, 0x10001);
+    uint64_t high_base = UINT64_C(1) << 40;
+    roaring64_bitmap_add(r, high_base);
+    roaring64_bitmap_add(r, high_base + 1);
+    roaring64_bitmap_add(r, high_base + 2);
+
+    // Backward: read all at once
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_range_closed_t buf[10];
+        size_t got = roaring64_iterator_read_prev_ranges(it, buf, 10);
+        assert_int_equal(got, 4);
+        // Ranges in reverse order
+        assert_int_equal(buf[0].min, high_base);
+        assert_int_equal(buf[0].max, high_base + 2);
+        assert_int_equal(buf[1].min, 0xFFFE);
+        assert_int_equal(buf[1].max, 0x10001);
+        assert_int_equal(buf[2].min, 10);
+        assert_int_equal(buf[2].max, 10);
+        assert_int_equal(buf[3].min, 0);
+        assert_int_equal(buf[3].max, 2);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Backward: read one at a time
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_range_closed_t buf[1];
+        size_t got;
+
+        got = roaring64_iterator_read_prev_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, high_base);
+        assert_int_equal(buf[0].max, high_base + 2);
+
+        got = roaring64_iterator_read_prev_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 0xFFFE);
+        assert_int_equal(buf[0].max, 0x10001);
+
+        got = roaring64_iterator_read_prev_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 10);
+        assert_int_equal(buf[0].max, 10);
+
+        got = roaring64_iterator_read_prev_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 0);
+        assert_int_equal(buf[0].max, 2);
+
+        got = roaring64_iterator_read_prev_ranges(it, buf, 1);
+        assert_int_equal(got, 0);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_iterator_read_ranges_mid_range) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    roaring64_bitmap_add_range_closed(r, 0, 10);
+    roaring64_bitmap_add_range_closed(r, 20, 25);
+
+    roaring64_range_closed_t buf[4];
+
+    // Forward: start mid-range at 5, first range should be [5..10]
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_iterator_move_equalorlarger(it, 5);
+        assert_int_equal(roaring64_iterator_value(it), 5);
+
+        size_t got = roaring64_iterator_read_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, 5);
+        assert_int_equal(buf[0].max, 10);
+        assert_int_equal(buf[1].min, 20);
+        assert_int_equal(buf[1].max, 25);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Backward: start mid-range at 22, first range should be [20..22]
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_iterator_move_equalorlarger(it, 22);
+        assert_int_equal(roaring64_iterator_value(it), 22);
+
+        size_t got = roaring64_iterator_read_prev_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, 20);
+        assert_int_equal(buf[0].max, 22);
+        assert_int_equal(buf[1].min, 0);
+        assert_int_equal(buf[1].max, 10);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_iterator_read_ranges_uint64_max) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    // Values near UINT64_MAX
+    roaring64_bitmap_add_range_closed(r, UINT64_MAX - 2, UINT64_MAX);
+    // Also a low value to verify separation
+    roaring64_bitmap_add(r, 42);
+
+    // Forward: read all
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_range_closed_t buf[4];
+        size_t got = roaring64_iterator_read_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, 42);
+        assert_int_equal(buf[0].max, 42);
+        assert_int_equal(buf[1].min, UINT64_MAX - 2);
+        assert_int_equal(buf[1].max, UINT64_MAX);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Backward: read all
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_range_closed_t buf[4];
+        size_t got = roaring64_iterator_read_prev_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, UINT64_MAX - 2);
+        assert_int_equal(buf[0].max, UINT64_MAX);
+        assert_int_equal(buf[1].min, 42);
+        assert_int_equal(buf[1].max, 42);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_iterator_read_ranges_multi_leaf) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    // In roaring64, each leaf covers 2^16 consecutive values (the low 16 bits).
+    // Add a single range spanning the tail of leaf N, all of leaf N+1, and the
+    // head of leaf N+2 -- this must come back as one merged range.
+    uint64_t leaf_size = UINT64_C(0x10000);
+    uint64_t base = UINT64_C(0x000100000000);
+    uint64_t range_start = base + leaf_size / 2;  // mid leaf N
+    uint64_t range_end =
+        base + 2 * leaf_size + leaf_size / 2 - 1;  // mid leaf N+2
+    roaring64_bitmap_add_range_closed(r, range_start, range_end);
+
+    // Also add a disjoint range to verify separation
+    roaring64_bitmap_add(r, 5);
+    roaring64_bitmap_add(r, 6);
+
+    // Forward: two ranges total, the multi-leaf span is one range
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_range_closed_t buf[4];
+        size_t got = roaring64_iterator_read_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, 5);
+        assert_int_equal(buf[0].max, 6);
+        assert_int_equal(buf[1].min, range_start);
+        assert_int_equal(buf[1].max, range_end);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // Backward
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_range_closed_t buf[4];
+        size_t got = roaring64_iterator_read_prev_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, range_start);
+        assert_int_equal(buf[0].max, range_end);
+        assert_int_equal(buf[1].min, 5);
+        assert_int_equal(buf[1].max, 6);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_iterator_read_ranges_interleaved) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    // Ranges: [10..12], [20..20], [30..32], [40..40]
+    roaring64_bitmap_add_range_closed(r, 10, 12);
+    roaring64_bitmap_add(r, 20);
+    roaring64_bitmap_add_range_closed(r, 30, 32);
+    roaring64_bitmap_add(r, 40);
+
+    // read_ranges then advance then read_ranges
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        roaring64_range_closed_t buf[4];
+        size_t got = roaring64_iterator_read_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 10);
+        assert_int_equal(buf[0].max, 12);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 20);
+
+        roaring64_iterator_advance(it);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 30);
+
+        got = roaring64_iterator_read_ranges(it, buf, 4);
+        assert_int_equal(got, 2);
+        assert_int_equal(buf[0].min, 30);
+        assert_int_equal(buf[0].max, 32);
+        assert_int_equal(buf[1].min, 40);
+        assert_int_equal(buf[1].max, 40);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    // read_prev_ranges then previous then read_prev_ranges
+    {
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        roaring64_range_closed_t buf[4];
+        size_t got = roaring64_iterator_read_prev_ranges(it, buf, 1);
+        assert_int_equal(got, 1);
+        assert_int_equal(buf[0].min, 40);
+        assert_int_equal(buf[0].max, 40);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 32);
+
+        roaring64_iterator_previous(it);
+        assert_true(roaring64_iterator_has_value(it));
+        assert_int_equal(roaring64_iterator_value(it), 31);
+
+        got = roaring64_iterator_read_prev_ranges(it, buf, 4);
+        assert_int_equal(got, 3);
+        assert_int_equal(buf[0].min, 30);
+        assert_int_equal(buf[0].max, 31);
+        assert_int_equal(buf[1].min, 20);
+        assert_int_equal(buf[1].max, 20);
+        assert_int_equal(buf[2].min, 10);
+        assert_int_equal(buf[2].max, 12);
+        assert_false(roaring64_iterator_has_value(it));
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_stats) {
     // create a new empty bitmap
     roaring64_bitmap_t* r1 = roaring64_bitmap_create();
@@ -2435,6 +2791,12 @@ int main() {
         cmocka_unit_test(test_iterator_previous),
         cmocka_unit_test(test_iterator_move_equalorlarger),
         cmocka_unit_test(test_iterator_read),
+        cmocka_unit_test(test_iterator_read_ranges),
+        cmocka_unit_test(test_iterator_read_prev_ranges),
+        cmocka_unit_test(test_iterator_read_ranges_mid_range),
+        cmocka_unit_test(test_iterator_read_ranges_uint64_max),
+        cmocka_unit_test(test_iterator_read_ranges_multi_leaf),
+        cmocka_unit_test(test_iterator_read_ranges_interleaved),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_iterator_read_past_end_can_go_previous),
     };

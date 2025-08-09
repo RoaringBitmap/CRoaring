@@ -1261,6 +1261,60 @@ uint32_t roaring_uint32_iterator_skip(roaring_uint32_iterator_t *it,
 uint32_t roaring_uint32_iterator_skip_backward(roaring_uint32_iterator_t *it,
                                                uint32_t count);
 
+typedef struct roaring_uint32_range_closed_s {
+    uint32_t min;
+    uint32_t max;
+} roaring_uint32_range_closed_t;
+
+/**
+ * Reads next ${count} ranges from iterator into user-supplied ${buf}.
+ * A range is defined as a maximal interval of consecutive values.
+ * For example, the set {1,2,3,5,6} contains two ranges: [1..3] and [5..6].
+ * Each range is represented as a struct {min,max}, both endpoints included.
+ * Consecutive values that span internal container boundaries are merged into
+ * a single range.
+ *
+ * Returns the number of read ranges.
+ * This number can be smaller than ${count}, which means that the iterator is
+ * drained.
+ *
+ * This function satisfies the semantics of iteration and can be used together
+ * with other iterator functions.
+ *  - first range will start with ${it}->current_value
+ *  - after the function returns, the iterator is positioned at the next element
+ *    after the end of the last returned range, or ${it}->has_value is false if
+ *    the bitmap is exhausted.
+ */
+size_t roaring_uint32_iterator_read_ranges(roaring_uint32_iterator_t *it,
+                                           roaring_uint32_range_closed_t *buf,
+                                           size_t count);
+
+/**
+ * Reads previous ${count} ranges from iterator into user-supplied ${buf}.
+ * A range is defined as a maximal interval of consecutive values.
+ * For example, the set {1,2,3,5,6} contains two ranges: [1..3] and [5..6].
+ * Each range is represented as a struct {min,max}, both endpoints included.
+ * Consecutive values that span internal container boundaries are merged into
+ * a single range.
+ *
+ * Returns the number of read ranges.
+ * This number can be smaller than ${count}, which means that the iterator is
+ * drained.
+ *
+ * Ranges are returned in reverse order, e.g. the first range returned is the
+ * highest range (ending at the current value)
+ *
+ * This function satisfies the semantics of reverse iteration and can be used
+ * together with other iterator functions.
+ *  - first range will end with ${it}->current_value
+ *  - after the function returns, the iterator is positioned at the element
+ *    before the beginning of the last returned range, or ${it}->has_value is
+ *    false if the bitmap is exhausted.
+ */
+size_t roaring_uint32_iterator_read_prev_ranges(
+    roaring_uint32_iterator_t *it, roaring_uint32_range_closed_t *buf,
+    size_t count);
+
 #ifdef __cplusplus
 }
 }

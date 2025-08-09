@@ -1002,6 +1002,24 @@ class RoaringSetBitBiDirectionalIterator final {
         api::roaring_uint32_iterator_move_equalorlarger(&i, val);
     }
 
+    /**
+     * Reads up to ${count} ranges into ${buf}. Returns the number of ranges
+     * read. See roaring_uint32_iterator_read_ranges for full semantics.
+     */
+    size_t read_ranges(api::roaring_uint32_range_closed_t *buf, size_t count) {
+        return api::roaring_uint32_iterator_read_ranges(&i, buf, count);
+    }
+
+    /**
+     * Reads up to ${count} ranges in reverse into ${buf}. Returns the number
+     * of ranges read. See roaring_uint32_iterator_read_prev_ranges for full
+     * semantics.
+     */
+    size_t read_prev_ranges(api::roaring_uint32_range_closed_t *buf,
+                            size_t count) {
+        return api::roaring_uint32_iterator_read_prev_ranges(&i, buf, count);
+    }
+
     type_of_iterator &operator--() {  // prefix --
         api::roaring_uint32_iterator_previous(&i);
         return *this;

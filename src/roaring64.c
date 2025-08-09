@@ -2897,6 +2897,82 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
     return consumed;
 }
 
+size_t roaring64_iterator_read_ranges(roaring64_iterator_t *it,
+                                      roaring64_range_closed_t *buf,
+                                      size_t count) {
+    size_t ret = 0;
+    while (it->has_value && ret < count) {
+        buf[ret].min = it->value;
+        for (;;) {
+            uint16_t low16 = (uint16_t)it->value;
+            leaf_t leaf = (leaf_t)*it->art_it.value;
+            bool container_has_more;
+            uint16_t run_end_low16 = container_iterator_find_run_end(
+                get_container(it->r, leaf), get_typecode(leaf),
+                &it->container_it, &low16, &container_has_more);
+            buf[ret].max = it->high48 | run_end_low16;
+
+            if (container_has_more) {
+                it->value = it->high48 | low16;
+                break;
+            }
+            // Move to next leaf
+            it->has_value = art_iterator_next(&it->art_it);
+            if (it->has_value) {
+                roaring64_iterator_init_at_leaf_first(it);
+            } else {
+                it->saturated_forward = true;
+                break;
+            }
+            // Continue merging only if the run reached the container
+            // boundary and the next leaf starts exactly at max+1.
+            if (run_end_low16 != UINT16_MAX || it->value != buf[ret].max + 1) {
+                break;
+            }
+        }
+        ret++;
+    }
+    return ret;
+}
+
+size_t roaring64_iterator_read_prev_ranges(roaring64_iterator_t *it,
+                                           roaring64_range_closed_t *buf,
+                                           size_t count) {
+    size_t ret = 0;
+    while (it->has_value && ret < count) {
+        buf[ret].max = it->value;
+        for (;;) {
+            uint16_t low16 = (uint16_t)it->value;
+            leaf_t leaf = (leaf_t)*it->art_it.value;
+            bool container_has_more;
+            uint16_t run_start_low16 = container_iterator_find_run_start(
+                get_container(it->r, leaf), get_typecode(leaf),
+                &it->container_it, &low16, &container_has_more);
+            buf[ret].min = it->high48 | run_start_low16;
+
+            if (container_has_more) {
+                it->value = it->high48 | low16;
+                break;
+            }
+            // Move to previous leaf
+            it->has_value = art_iterator_prev(&it->art_it);
+            if (it->has_value) {
+                roaring64_iterator_init_at_leaf_last(it);
+            } else {
+                it->saturated_forward = false;
+                break;
+            }
+            // Continue merging only if the run reached the container
+            // boundary and the previous leaf ends exactly at min-1.
+            if (run_start_low16 != 0 || it->value != buf[ret].min - 1) {
+                break;
+            }
+        }
+        ret++;
+    }
+    return ret;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace roaring

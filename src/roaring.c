@@ -1932,6 +1932,72 @@ uint32_t roaring_uint32_iterator_skip_backward(roaring_uint32_iterator_t *it,
     return ret;
 }
 
+size_t roaring_uint32_iterator_read_ranges(roaring_uint32_iterator_t *it,
+                                           roaring_uint32_range_closed_t *buf,
+                                           size_t count) {
+    size_t ret = 0;
+    while (it->has_value && ret < count) {
+        buf[ret].min = it->current_value;
+        for (;;) {
+            uint16_t low16 = (uint16_t)it->current_value;
+            bool container_has_more;
+            uint16_t run_end_low16 = container_iterator_find_run_end(
+                it->container, it->typecode, &it->container_it, &low16,
+                &container_has_more);
+            buf[ret].max = it->highbits | run_end_low16;
+
+            if (container_has_more) {
+                it->current_value = it->highbits | low16;
+                break;
+            }
+            // Move to next container
+            it->container_index++;
+            it->has_value = loadfirstvalue(it);
+            // Continue merging only if the run reached the container
+            // boundary and the next container starts exactly at max+1.
+            if (run_end_low16 != UINT16_MAX || !it->has_value ||
+                it->current_value != buf[ret].max + 1) {
+                break;
+            }
+        }
+        ret++;
+    }
+    return ret;
+}
+
+size_t roaring_uint32_iterator_read_prev_ranges(
+    roaring_uint32_iterator_t *it, roaring_uint32_range_closed_t *buf,
+    size_t count) {
+    size_t ret = 0;
+    while (it->has_value && ret < count) {
+        buf[ret].max = it->current_value;
+        for (;;) {
+            uint16_t low16 = (uint16_t)it->current_value;
+            bool container_has_more;
+            uint16_t run_start_low16 = container_iterator_find_run_start(
+                it->container, it->typecode, &it->container_it, &low16,
+                &container_has_more);
+            buf[ret].min = it->highbits | run_start_low16;
+
+            if (container_has_more) {
+                it->current_value = it->highbits | low16;
+                break;
+            }
+            // Move to previous container
+            it->container_index--;
+            it->has_value = loadlastvalue(it);
+            // Continue merging only if the run reached the container
+            // boundary and the previous container ends exactly at min-1.
+            if (run_start_low16 != 0 || !it->has_value ||
+                it->current_value != buf[ret].min - 1) {
+                break;
+            }
+        }
+        ret++;
+    }
+    return ret;
+}
+
 void roaring_uint32_iterator_free(roaring_uint32_iterator_t *it) {
     roaring_free(it);
 }
