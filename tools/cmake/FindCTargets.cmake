@@ -4,8 +4,9 @@ if (ENABLE_ROARING_TESTS AND NOT EMSCRIPTEN)
   if(ROARING_USE_CPM)
     CPMAddPackage(
       NAME cmocka
-      GITHUB_REPOSITORY clibs/cmocka
-      GIT_TAG f5e2cd7
+      GIT_REPOSITORY https://gitlab.com/cmocka/cmocka.git
+      GIT_TAG cmocka-1.1.8
+      OPTIONS "UNIT_TESTING ON"
     )
   else()
     find_package(cmocka REQUIRED)
@@ -42,6 +43,7 @@ if (CMAKE_VERSION VERSION_GREATER 2.8.10)
 
     if(ROARING_USE_CPM)
       target_link_libraries(${TEST_NAME} roaring cmocka-static)
+      target_include_directories(${TEST_NAME} PRIVATE "${CMAKE_BINARY_DIR}/_deps/cmocka-src/include")
     else()
       target_link_libraries(${TEST_NAME} roaring cmocka)
     endif()
