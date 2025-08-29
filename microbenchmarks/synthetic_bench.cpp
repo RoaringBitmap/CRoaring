@@ -1,6 +1,7 @@
 #include <benchmark/benchmark.h>
 #include <random>
 #include <set>
+#include <array>
 
 #include "performancecounters/event_counter.h"
 #include "roaring/roaring64.h"
