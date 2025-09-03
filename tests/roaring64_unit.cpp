@@ -1974,6 +1974,32 @@ DEFINE_TEST(test_stats) {
     roaring64_bitmap_free(r1);
 }
 
+DEFINE_TEST(test_iterator_read_past_end_can_go_previous) {
+    roaring64_bitmap_t* bitmap = roaring64_bitmap_create();
+    assert_non_null(bitmap);
+
+    roaring64_bitmap_add(bitmap, 10);
+    assert_r64_valid(bitmap);
+
+    roaring64_iterator_t* iter = roaring64_iterator_create(bitmap);
+    assert_non_null(iter);
+
+    uint64_t buffer[100];
+    uint64_t actual_read1 = roaring64_iterator_read(
+        iter, buffer, sizeof(buffer) / sizeof(buffer[0]));
+    assert_int_equal(actual_read1, 1);  // Only one value should be present
+
+    // Should now be one past the end, but should be able to move backwards
+    assert_false(roaring64_iterator_has_value(iter));
+    bool prev_result = roaring64_iterator_previous(iter);
+    assert_true(prev_result);
+    assert_true(roaring64_iterator_has_value(iter));
+    assert_int_equal(roaring64_iterator_value(iter), 10);
+
+    roaring64_iterator_free(iter);
+    roaring64_bitmap_free(bitmap);
+}
+
 }  // namespace
 
 int main() {
@@ -2038,6 +2064,7 @@ int main() {
         cmocka_unit_test(test_iterator_move_equalorlarger),
         cmocka_unit_test(test_iterator_read),
         cmocka_unit_test(test_stats),
+        cmocka_unit_test(test_iterator_read_past_end_can_go_previous),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
