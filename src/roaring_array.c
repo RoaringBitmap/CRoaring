@@ -511,7 +511,7 @@ bool ra_range_uint32_array(const roaring_array_t *ra, size_t offset,
     }
     if (t_ans != NULL) {
         memcpy(ans, t_ans + first_skip, limit * sizeof(uint32_t));
-        free(t_ans);
+        roaring_free(t_ans);
     }
     return true;
 }
