@@ -71,11 +71,38 @@ install(TARGETS roaring
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-install(EXPORT roaring-config
-   FILE roaring-config.cmake
-   NAMESPACE roaring::
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/roaring
- )
+
+include(CMakePackageConfigHelpers)
+
+foreach(tree_type BUILD INSTALL)
+  if(tree_type STREQUAL "BUILD")
+    set(install_location ".")
+  else()
+    set(install_location "${CMAKE_INSTALL_LIBDIR}/cmake/roaring")
+  endif()
+
+  set(build_location "${PROJECT_BINARY_DIR}/${install_location}")
+  write_basic_package_version_file(
+    "${build_location}/roaring-config-version.cmake"
+    VERSION ${ROARING_LIB_VERSION}
+    COMPATIBILITY SameMajorVersion)
+  configure_package_config_file("${CMAKE_SOURCE_DIR}/cmake/config.cmake.in"
+                                "${build_location}/roaring-config.cmake"
+                                INSTALL_DESTINATION "${install_location}")
+
+  if(tree_type STREQUAL "BUILD")
+    export(EXPORT roaring-config
+           FILE "${build_location}/roaring-targets.cmake"
+           NAMESPACE roaring::)
+
+  else()
+    install(DIRECTORY "${build_location}/" DESTINATION "${install_location}")
+    install(EXPORT roaring-config
+            DESTINATION "${install_location}"
+            FILE "roaring-targets.cmake"
+            NAMESPACE roaring::)
+  endif()
+endforeach()
 
 if(NOT MSVC)
 ## We output the library at the root of the current directory where cmake is invoked
