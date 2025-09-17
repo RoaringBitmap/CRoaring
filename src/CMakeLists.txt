@@ -74,6 +74,10 @@ install(TARGETS roaring
 
 include(CMakePackageConfigHelpers)
 
+# Set up both the build and install trees as suitable for find_package calls.
+# Configuring the build tree as well as the install tree makes it much easier
+# to test other libraries against custom builds of CRoaring by pointing
+# CMAKE_PREFIX_PATH or equivalent directly at the build directory of CRoaring.
 foreach(tree_type BUILD INSTALL)
   if(tree_type STREQUAL "BUILD")
     set(install_location ".")
