@@ -789,6 +789,9 @@ void test_example(bool copy_on_write) {
     uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
     assert_true(arr3 != NULL);
     roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
+    for (size_t i = 0; i < card1 - offset; ++i) {
+        assert_int_equal(arr3[i], arr1[i + offset]);
+    }
     free(arr3);
 
     roaring_bitmap_t *r1f = roaring_bitmap_of_ptr(card1, arr1);
@@ -4164,6 +4167,163 @@ DEFINE_TEST(read_uint32_iterator_zero_count) {
     roaring_bitmap_free(r);
 }
 
+void test_uint32_iterator_skip(uint8_t type) {
+    uint32_t *ref_values;
+    uint32_t ref_count;
+    test_iterator_generate_data(&ref_values, &ref_count);
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 0; i < ref_count; i++) {
+        roaring_bitmap_add(r, ref_values[i]);
+    }
+    if (type != UINT8_MAX) {
+        convert_all_containers(r, type);
+    }
+
+    // Ensure skip(n) is equivalent to calling advance() n times
+    roaring_uint32_iterator_t iter_skip;
+    roaring_iterator_init(r, &iter_skip);
+
+    for (uint32_t count = 0; count <= ref_count + 200; count += 181) {
+        // Reset the iterator
+        roaring_iterator_init(r, &iter_skip);
+
+        uint32_t skip_result = roaring_uint32_iterator_skip(&iter_skip, count);
+
+        // Should be equivalent
+        assert_int_equal(skip_result, minimum_uint32(count, ref_count));
+        bool expected_has_value = count < ref_count;
+        assert_int_equal(iter_skip.has_value, expected_has_value);
+        if (iter_skip.has_value) {
+            assert_int_equal(iter_skip.current_value, ref_values[count]);
+        }
+
+        // Also skip but after advancing by one already
+        if (count > 0) {
+            roaring_iterator_init(r, &iter_skip);
+            roaring_uint32_iterator_advance(&iter_skip);
+
+            skip_result = roaring_uint32_iterator_skip(&iter_skip, count - 1);
+
+            assert_int_equal(skip_result,
+                             minimum_uint32(count - 1, ref_count - 1));
+            assert_int_equal(iter_skip.has_value, expected_has_value);
+            if (iter_skip.has_value) {
+                assert_int_equal(iter_skip.current_value, ref_values[count]);
+            }
+        }
+    }
+
+    // Test skip way beyond end
+    roaring_iterator_init(r, &iter_skip);
+    uint32_t skipped = roaring_uint32_iterator_skip(&iter_skip, UINT32_MAX);
+    assert_int_equal(skipped, ref_count);
+    assert_false(iter_skip.has_value);
+
+    // Ensure we can go back after skipping as far as we can.
+    roaring_uint32_iterator_previous(&iter_skip);
+    assert_true(iter_skip.has_value);
+    assert_int_equal(iter_skip.current_value, ref_values[ref_count - 1]);
+
+    roaring_bitmap_free(r);
+    free(ref_values);
+}
+
+DEFINE_TEST(test_uint32_iterator_skip_array) {
+    test_uint32_iterator_skip(ARRAY_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(test_uint32_iterator_skip_bitset) {
+    test_uint32_iterator_skip(BITSET_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(test_uint32_iterator_skip_run) {
+    test_uint32_iterator_skip(RUN_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(test_uint32_iterator_skip_native) {
+    test_uint32_iterator_skip(UINT8_MAX);
+}
+
+static void test_uint32_iterator_skip_backward(uint8_t type) {
+    uint32_t *ref_values;
+    uint32_t ref_count;
+    test_iterator_generate_data(&ref_values, &ref_count);
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 0; i < ref_count; i++) {
+        roaring_bitmap_add(r, ref_values[i]);
+    }
+    if (type != UINT8_MAX) {
+        convert_all_containers(r, type);
+    }
+
+    // Ensure skip(n) is equivalent to calling advance() n times
+    roaring_uint32_iterator_t iter_skip;
+    roaring_iterator_init(r, &iter_skip);
+
+    for (uint32_t count = 0; count <= ref_count + 200; count += 181) {
+        // Reset the iterator
+        roaring_iterator_init_last(r, &iter_skip);
+
+        uint32_t skip_result =
+            roaring_uint32_iterator_skip_backward(&iter_skip, count);
+
+        // Should be equivalent
+        assert_int_equal(skip_result, minimum_uint32(count, ref_count));
+        bool expected_has_value = count < ref_count;
+        assert_int_equal(iter_skip.has_value, expected_has_value);
+        if (iter_skip.has_value) {
+            assert_int_equal(iter_skip.current_value,
+                             ref_values[ref_count - count - 1]);
+        }
+
+        // Also skip but after advancing by one already
+        if (count > 0) {
+            roaring_iterator_init_last(r, &iter_skip);
+            roaring_uint32_iterator_previous(&iter_skip);
+
+            skip_result =
+                roaring_uint32_iterator_skip_backward(&iter_skip, count - 1);
+
+            assert_int_equal(skip_result,
+                             minimum_uint32(count - 1, ref_count - 1));
+            assert_int_equal(iter_skip.has_value, expected_has_value);
+            if (iter_skip.has_value) {
+                assert_int_equal(iter_skip.current_value,
+                                 ref_values[ref_count - count - 1]);
+            }
+        }
+    }
+
+    // Test skip way beyond start
+    roaring_iterator_init_last(r, &iter_skip);
+    uint32_t skipped = roaring_uint32_iterator_skip_backward(&iter_skip, UINT32_MAX);
+    assert_int_equal(skipped, ref_count);
+    assert_false(iter_skip.has_value);
+
+    // Ensure we can go forward after skipping backward as far as we can.
+    roaring_uint32_iterator_advance(&iter_skip);
+    assert_true(iter_skip.has_value);
+    assert_int_equal(iter_skip.current_value, ref_values[0]);
+
+    roaring_bitmap_free(r);
+    free(ref_values);
+}
+
+DEFINE_TEST(test_uint32_iterator_skip_backward_array) {
+    test_uint32_iterator_skip_backward(ARRAY_CONTAINER_TYPE);
+}
+DEFINE_TEST(test_uint32_iterator_skip_backward_bitset) {
+    test_uint32_iterator_skip_backward(BITSET_CONTAINER_TYPE);
+}
+DEFINE_TEST(test_uint32_iterator_skip_backward_run) {
+    test_uint32_iterator_skip_backward(RUN_CONTAINER_TYPE);
+}
+DEFINE_TEST(test_uint32_iterator_skip_backward_native) {
+    test_uint32_iterator_skip_backward(UINT8_MAX);
+}
+
 DEFINE_TEST(test_add_range) {
     // autoconversion: BITSET -> BITSET -> RUN
     {
@@ -4978,6 +5138,14 @@ int main() {
         cmocka_unit_test(test_iterator_reuse),
         cmocka_unit_test(test_iterator_reuse_many),
         cmocka_unit_test(read_uint32_iterator_zero_count),
+        cmocka_unit_test(test_uint32_iterator_skip_array),
+        cmocka_unit_test(test_uint32_iterator_skip_bitset),
+        cmocka_unit_test(test_uint32_iterator_skip_run),
+        cmocka_unit_test(test_uint32_iterator_skip_native),
+        cmocka_unit_test(test_uint32_iterator_skip_backward_array),
+        cmocka_unit_test(test_uint32_iterator_skip_backward_bitset),
+        cmocka_unit_test(test_uint32_iterator_skip_backward_run),
+        cmocka_unit_test(test_uint32_iterator_skip_backward_native),
         cmocka_unit_test(test_add_range),
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),

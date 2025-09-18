@@ -1172,7 +1172,7 @@ CROARING_DEPRECATED static inline void roaring_free_uint32_iterator(
     roaring_uint32_iterator_free(it);
 }
 
-/*
+/**
  * Reads next ${count} values from iterator into user-supplied ${buf}.
  * Returns the number of read elements.
  * This number can be smaller than ${count}, which means that iterator is
@@ -1191,6 +1191,30 @@ CROARING_DEPRECATED static inline uint32_t roaring_read_uint32_iterator(
     roaring_uint32_iterator_t *it, uint32_t *buf, uint32_t count) {
     return roaring_uint32_iterator_read(it, buf, count);
 }
+
+/**
+ * Skip the next ${count} values from iterator.
+ * Returns the number of values actually skipped.
+ * The number can be smaller than ${count}, which means that iterator is
+ * drained.
+ *
+ * This function is equivalent to calling `roaring_uint32_iterator_advance()`
+ * ${count} times but is much more efficient.
+ */
+uint32_t roaring_uint32_iterator_skip(roaring_uint32_iterator_t *it,
+                                      uint32_t count);
+
+/**
+ * Skip the previous ${count} values from iterator (move backwards).
+ * Returns the number of values actually skipped backwards.
+ * The number can be smaller than ${count}, which means that iterator reached
+ * the beginning.
+ *
+ * This function is equivalent to calling `roaring_uint32_iterator_previous()`
+ * ${count} times but is much more efficient.
+ */
+uint32_t roaring_uint32_iterator_skip_backward(roaring_uint32_iterator_t *it,
+                                               uint32_t count);
 
 #ifdef __cplusplus
 }
