@@ -206,7 +206,7 @@ CPMAddPackage(
   NAME roaring
   GITHUB_REPOSITORY "RoaringBitmap/CRoaring"
   GIT_TAG v2.0.4
-  OPTIONS "BUILD_TESTING OFF"
+  OPTIONS "ENABLE_ROARING_TESTS OFF"
 )
 
 target_link_libraries(hello roaring::roaring)
