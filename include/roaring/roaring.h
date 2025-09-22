@@ -545,7 +545,11 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset);
  *
  *     ans = malloc(roaring_bitmap_get_cardinality(limit) * sizeof(uint32_t));
  *
- * Return false in case of failure (e.g., insufficient memory)
+ * This function always returns `true`
+ *
+ * For more control, see `roaring_uint32_iterator_skip` and
+ * `roaring_uint32_iterator_read`, which can be used to e.g. tell how many
+ * values were actually read.
  */
 bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *r, size_t offset,
                                        size_t limit, uint32_t *ans);

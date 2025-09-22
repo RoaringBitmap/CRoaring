@@ -1399,7 +1399,13 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans) {
 
 bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *r, size_t offset,
                                        size_t limit, uint32_t *ans) {
-    return ra_range_uint32_array(&r->high_low_container, offset, limit, ans);
+    roaring_uint32_iterator_t it;
+    roaring_iterator_init(r, &it);
+    roaring_uint32_iterator_skip(&it, offset);
+    roaring_uint32_iterator_read(&it, ans, limit);
+
+    // This function always succeeds
+    return true;
 }
 
 /** convert array and bitmap containers to run containers when it is more
