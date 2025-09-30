@@ -75,7 +75,7 @@ void run_test(uint32_t spanlen, uint32_t intvlen, double density,
     uint32_t *offsets;
     uint32_t count;
     make_data(spanlen, intvlen, density, order, &offsets, &count);
-    #define num_passes 5
+#define num_passes 5
     uint64_t cycles_start, cycles_final;
     double results[num_passes];
 
