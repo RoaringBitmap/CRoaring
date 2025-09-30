@@ -59,8 +59,9 @@ if(ROARING_DISABLE_NEON)
   target_compile_definitions(roaring PUBLIC DISABLENEON=1)
 endif(ROARING_DISABLE_NEON)
 
-target_link_libraries(roaring PUBLIC roaring-headers)
-target_link_libraries(roaring PUBLIC roaring-headers-cpp)
+target_link_libraries(roaring PUBLIC "$<BUILD_INTERFACE:roaring-headers>")
+target_link_libraries(roaring PUBLIC "$<BUILD_INTERFACE:roaring-headers-cpp>")
+
 #
 #install(TARGETS roaring DESTINATION lib)
 #
