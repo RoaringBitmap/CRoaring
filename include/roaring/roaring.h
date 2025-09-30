@@ -74,6 +74,18 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
  */
 roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
 
+/**
+ * Check if the bitmap contains any shared containers.
+ */
+bool roaring_contains_shared(const roaring_bitmap_t *r);
+
+/**
+ * Unshare all shared containers.
+ * Returns true if any unsharing was performed, false if there were no shared
+ * containers.
+ */
+bool roaring_unshare_all(roaring_bitmap_t *r);
+
 /*
  * Whether you want to use copy-on-write.
  * Saves memory and avoids copies, but needs more care in a threaded context.
@@ -82,6 +94,9 @@ roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
  * Note: If you do turn this flag to 'true', enabling COW, then ensure that you
  * do so for all of your bitmaps, since interactions between bitmaps with and
  * without COW is unsafe.
+ *
+ * When setting this flag to false, if any containers are shared, they
+ * are unshared (cloned) immediately.
  */
 inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t *r) {
     return r->high_low_container.flags & ROARING_FLAG_COW;
@@ -90,6 +105,9 @@ inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r, bool cow) {
     if (cow) {
         r->high_low_container.flags |= ROARING_FLAG_COW;
     } else {
+        if (roaring_bitmap_get_copy_on_write(r)) {
+            roaring_unshare_all(r);
+        }
         r->high_low_container.flags &= ~ROARING_FLAG_COW;
     }
 }

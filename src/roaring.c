@@ -416,6 +416,30 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
     }
 }
 
+bool roaring_contains_shared(const roaring_bitmap_t *r) {
+    const roaring_array_t *ra = &r->high_low_container;
+    for (int i = 0; i < ra->size; ++i) {
+        if (ra->typecodes[i] == SHARED_CONTAINER_TYPE) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool roaring_unshare_all(roaring_bitmap_t *r) {
+    const roaring_array_t *ra = &r->high_low_container;
+    bool unshared = false;
+    for (int i = 0; i < ra->size; ++i) {
+        uint8_t typecode = ra->typecodes[i];
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            ra->containers[i] = get_writable_copy_if_shared(ra->containers[i],
+                                                            &ra->typecodes[i]);
+            unshared = true;
+        }
+    }
+    return unshared;
+}
+
 /*
  * Checks that:
  * - Array containers are sorted and contain no duplicates
@@ -423,6 +447,7 @@ void roaring_bitmap_statistics(const roaring_bitmap_t *r,
  * - Roaring containers are sorted by key and there are no duplicate keys
  * - The correct container type is use for each container (e.g. bitmaps aren't
  * used for small containers)
+ * - Shared containers are only used when the bitmap is COW
  */
 bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r,
                                       const char **reason) {
@@ -475,7 +500,13 @@ bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r,
         prev_key = ra->keys[i];
     }
 
+    bool cow = roaring_bitmap_get_copy_on_write(r);
+
     for (int32_t i = 0; i < ra->size; ++i) {
+        if (ra->typecodes[i] == SHARED_CONTAINER_TYPE && !cow) {
+            *reason = "shared container in non-COW bitmap";
+            return false;
+        }
         if (!container_internal_validate(ra->containers[i], ra->typecodes[i],
                                          reason)) {
             // reason should already be set

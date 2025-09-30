@@ -252,6 +252,28 @@ DEFINE_TEST(inplaceorwide) {
     roaring_bitmap_free(r2);
 }
 
+DEFINE_TEST(issue743) {
+    roaring_bitmap_t *A = roaring_bitmap_from(1, 2, 3, 4);
+    roaring_bitmap_t *B =
+        roaring_bitmap_from(0x38000000, 0x38000001, 0x38000002, 0x38000003);
+    roaring_bitmap_set_copy_on_write(A, true);
+    roaring_bitmap_set_copy_on_write(B, true);
+    roaring_bitmap_t *C = roaring_bitmap_andnot(B, A);
+    roaring_bitmap_set_copy_on_write(C, false);
+    roaring_bitmap_free(A);
+    roaring_bitmap_free(B);
+    roaring_bitmap_t *D = roaring_bitmap_from(1, 2, 3, 4, 5, 6);
+    roaring_bitmap_t *E = roaring_bitmap_lazy_xor(D, C);
+    roaring_bitmap_repair_after_lazy(E);
+    roaring_bitmap_t *expectedE = roaring_bitmap_from(
+        1, 2, 3, 4, 5, 6, 939524096, 939524097, 939524098, 939524099);
+    assert_true(roaring_bitmap_equals(E, expectedE));
+    roaring_bitmap_free(C);
+    roaring_bitmap_free(D);
+    roaring_bitmap_free(E);
+    roaring_bitmap_free(expectedE);
+}
+
 void can_copy_empty(bool copy_on_write) {
     roaring_bitmap_t *bm1 = roaring_bitmap_create();
     roaring_bitmap_set_copy_on_write(bm1, copy_on_write);
@@ -4833,6 +4855,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(issue743),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(issue660),
         cmocka_unit_test(issue538b),
