@@ -100,6 +100,7 @@ var roaring_8h =
     [ "roaring_bitmap_xor_cardinality", "dc/d56/roaring_8h.html#a953a31622e8ded6e92758fb259f28a86", null ],
     [ "roaring_bitmap_xor_inplace", "dc/d56/roaring_8h.html#a4eb22c2860d271742c9ead0856b30c71", null ],
     [ "roaring_bitmap_xor_many", "dc/d56/roaring_8h.html#ab340ec8537d7ff651ada807d2967c391", null ],
+    [ "roaring_contains_shared", "dc/d56/roaring_8h.html#ab2f81f9c14d0582f861fe77bea913552", null ],
     [ "roaring_copy_uint32_iterator", "dc/d56/roaring_8h.html#a9eec22321550dda4bef9fb8617add445", null ],
     [ "roaring_create_iterator", "dc/d56/roaring_8h.html#a301acc7aeeab4c7da4ff47bd98a5c884", null ],
     [ "roaring_free_uint32_iterator", "dc/d56/roaring_8h.html#aed6dd374e56801d5d81d3fbc4aefcfa7", null ],
@@ -118,5 +119,6 @@ var roaring_8h =
     [ "roaring_uint32_iterator_free", "dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c", null ],
     [ "roaring_uint32_iterator_move_equalorlarger", "dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602", null ],
     [ "roaring_uint32_iterator_previous", "dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a", null ],
-    [ "roaring_uint32_iterator_read", "dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55", null ]
+    [ "roaring_uint32_iterator_read", "dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55", null ],
+    [ "roaring_unshare_all", "dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2", null ]
 ];

@@ -150,6 +150,10 @@ Functions</h2></td></tr>
 <tr class="separator:a7426a2e73d83db8ae66f8a7cb4bc1df1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af6611d4a7cb36e597353ce944104e3f6" id="r_af6611d4a7cb36e597353ce944104e3f6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#af6611d4a7cb36e597353ce944104e3f6">roaring_bitmap_of_ptr</a> (size_t n_args, const uint32_t *vals)</td></tr>
 <tr class="separator:af6611d4a7cb36e597353ce944104e3f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2f81f9c14d0582f861fe77bea913552" id="r_ab2f81f9c14d0582f861fe77bea913552"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#ab2f81f9c14d0582f861fe77bea913552">roaring_contains_shared</a> (const <a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *r)</td></tr>
+<tr class="separator:ab2f81f9c14d0582f861fe77bea913552"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a273c78a958942b3ebaa38110823fb5b2" id="r_a273c78a958942b3ebaa38110823fb5b2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2">roaring_unshare_all</a> (<a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *r)</td></tr>
+<tr class="separator:a273c78a958942b3ebaa38110823fb5b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a491b63c05555f770b04b1dc81d6523c1" id="r_a491b63c05555f770b04b1dc81d6523c1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a491b63c05555f770b04b1dc81d6523c1">roaring_bitmap_get_copy_on_write</a> (const <a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *r)</td></tr>
 <tr class="separator:a491b63c05555f770b04b1dc81d6523c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84bd77c991d7520ab336433b3dff4cf5" id="r_a84bd77c991d7520ab336433b3dff4cf5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a> (<a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *r, bool cow)</td></tr>
@@ -386,7 +390,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Creates a new bitmap which contains all values passed in as arguments.</p>
 <p>To create a bitmap from a variable number of arguments, use the <code>roaring_bitmap_of_ptr</code> function instead. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00151">151</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00169">169</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -465,7 +469,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_advance</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01114">1114</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01132">1132</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -673,7 +677,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Add all values in range [min, max) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00402">402</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00420">420</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a0f06fc10964f5683ad634af54a2dad98">roaring_bitmap_add_range_closed()</a>.</p>
 
@@ -1525,9 +1529,11 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00086">86</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00101">101</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19">roaring_bitmap_s::high_low_container</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write()</a>.</p>
 
 </div>
 </div>
@@ -2760,7 +2766,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Remove all values in range [min, max) </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00424">424</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00442">442</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a89e082a93608a752f763e8aee5df8082">roaring_bitmap_remove_range_closed()</a>.</p>
 
@@ -2964,9 +2970,9 @@ Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00089">89</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l00104">104</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
-<p class="reference">References <a class="el" href="../../dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19">roaring_bitmap_s::high_low_container</a>.</p>
+<p class="reference">References <a class="el" href="../../dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19">roaring_bitmap_s::high_low_container</a>, <a class="el" href="../../dc/d56/roaring_8h.html#a491b63c05555f770b04b1dc81d6523c1">roaring_bitmap_get_copy_on_write()</a>, and <a class="el" href="../../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2">roaring_unshare_all()</a>.</p>
 
 </div>
 </div>
@@ -3214,6 +3220,25 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab2f81f9c14d0582f861fe77bea913552" name="ab2f81f9c14d0582f861fe77bea913552"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2f81f9c14d0582f861fe77bea913552">&#9670;&#160;</a></span>roaring_contains_shared()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool roaring_contains_shared </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Check if the bitmap contains any shared containers. </p>
+
+</div>
+</div>
 <a id="a9eec22321550dda4bef9fb8617add445" name="a9eec22321550dda4bef9fb8617add445"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9eec22321550dda4bef9fb8617add445">&#9670;&#160;</a></span>roaring_copy_uint32_iterator()</h2>
 
@@ -3239,7 +3264,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_copy</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01160">1160</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01178">1178</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a4b5f51c2a3c015ca56bdeb477d0e84c6">roaring_uint32_iterator_copy()</a>.</p>
 
@@ -3270,7 +3295,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_create</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01098">1098</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01116">1116</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create()</a>.</p>
 
@@ -3301,7 +3326,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_free</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01170">1170</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01188">1188</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free()</a>.</p>
 
@@ -3342,7 +3367,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01067">1067</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01085">1085</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>.</p>
 
@@ -3383,7 +3408,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init_last</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01081">1081</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01099">1099</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>.</p>
 
@@ -3586,7 +3611,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_move_equalorlarger</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01146">1146</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01164">1164</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger()</a>.</p>
 
@@ -3617,7 +3642,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_previous</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01131">1131</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01149">1149</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -3664,7 +3689,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_read</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01190">1190</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01208">1208</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read()</a>.</p>
 
@@ -3820,6 +3845,27 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#aa0807109ab8df7168855f61e985170fc">roaring_read_uint32_iterator()</a>.</p>
+
+</div>
+</div>
+<a id="a273c78a958942b3ebaa38110823fb5b2" name="a273c78a958942b3ebaa38110823fb5b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a273c78a958942b3ebaa38110823fb5b2">&#9670;&#160;</a></span>roaring_unshare_all()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool roaring_unshare_all </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Unshare all shared containers. Returns true if any unsharing was performed, false if there were no shared containers. </p>
+
+<p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write()</a>.</p>
 
 </div>
 </div>
