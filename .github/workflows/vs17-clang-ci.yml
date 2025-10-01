@@ -13,7 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 17 2022, arch: Win32}
           - {gen: Visual Studio 17 2022, arch: x64}
     steps:
       - name: checkout
