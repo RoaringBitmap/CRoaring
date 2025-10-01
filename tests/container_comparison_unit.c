@@ -27,7 +27,7 @@ static inline void container_checked_add(container_t *container, uint16_t val,
     container_t *new_container =
         container_add(container, val, typecode, &new_type);
     assert_int_equal(typecode, new_type);
-    assert_true(container == new_container);
+    assert_ptr_equal(container, new_container);
 }
 
 static inline void delegated_add(container_t *container, uint8_t typecode,
@@ -214,6 +214,108 @@ DEFINE_TEST(subset_run_bitset_test) {
     generic_subset_test(RUN_CONTAINER_TYPE, BITSET_CONTAINER_TYPE);
 }
 
+static void generic_iterator_skip(uint8_t type) {
+    container_t *container = container_create(type);
+    for (int i = 0; i < 100; i++) {
+        container_checked_add(container, i * 11, type);
+    }
+    for (int i = 0; i < 100; i++) {
+        if (i % 7 == 0 || i % 11 == 0) continue;
+        container_checked_add(container, i * 5, type);
+    }
+    container_checked_add(container, 0xFFFF, type);
+
+    for (int i = 1; i < 200; i++) {
+        uint16_t value1 = 0;
+        roaring_container_iterator_t it1 =
+            container_init_iterator(container, type, &value1);
+        uint16_t value2 = 0;
+        roaring_container_iterator_t it2 =
+            container_init_iterator(container, type, &value2);
+
+        bool has_value1 = true;
+        for (int j = 0; j < i; j++) {
+            has_value1 =
+                container_iterator_next(container, type, &it1, &value1);
+            if (!has_value1) break;
+        }
+        uint32_t consumed = 0;
+        bool has_value2 = container_iterator_skip(container, type, &it2, i,
+                                                  &consumed, &value2);
+
+        assert_int_equal(has_value1, has_value2);
+        if (has_value1) {
+            assert_int_equal(it1.index, it2.index);
+            assert_int_equal(value1, value2);
+        }
+    }
+
+    container_free(container, type);
+}
+
+DEFINE_TEST(iterator_skip_array_test) {
+    generic_iterator_skip(ARRAY_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(iterator_skip_bitset_test) {
+    generic_iterator_skip(BITSET_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(iterator_skip_run_test) {
+    generic_iterator_skip(RUN_CONTAINER_TYPE);
+}
+
+static void generic_iterator_skip_backward(uint8_t type) {
+    container_t *container = container_create(type);
+    for (int i = 0; i < 100; i++) {
+        container_checked_add(container, i * 11, type);
+    }
+    for (int i = 0; i < 100; i++) {
+        if (i % 7 == 0 || i % 11 == 0) continue;
+        container_checked_add(container, i * 5, type);
+    }
+    container_checked_add(container, 0xFFFF, type);
+
+    for (int i = 1; i < 200; i++) {
+        uint16_t value1 = 0;
+        roaring_container_iterator_t it1 =
+            container_init_iterator_last(container, type, &value1);
+        uint16_t value2 = 0;
+        roaring_container_iterator_t it2 =
+            container_init_iterator_last(container, type, &value2);
+
+        bool has_value1 = true;
+        for (int j = 0; j < i; j++) {
+            has_value1 =
+                container_iterator_prev(container, type, &it1, &value1);
+            if (!has_value1) break;
+        }
+        uint32_t consumed = 0;
+        bool has_value2 = container_iterator_skip_backward(
+            container, type, &it2, i, &consumed, &value2);
+
+        assert_int_equal(has_value1, has_value2);
+        if (has_value1) {
+            assert_int_equal(it1.index, it2.index);
+            assert_int_equal(value1, value2);
+        }
+    }
+
+    container_free(container, type);
+}
+
+DEFINE_TEST(iterator_skip_backward_array_test) {
+    generic_iterator_skip_backward(ARRAY_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(iterator_skip_backward_bitset_test) {
+    generic_iterator_skip_backward(BITSET_CONTAINER_TYPE);
+}
+
+DEFINE_TEST(iterator_skip_backward_run_test) {
+    generic_iterator_skip_backward(RUN_CONTAINER_TYPE);
+}
+
 int main() {
     tellmeall();
     const struct CMUnitTest tests[] = {
@@ -234,6 +336,12 @@ int main() {
         cmocka_unit_test(subset_run_array_test),
         cmocka_unit_test(subset_bitset_run_test),
         cmocka_unit_test(subset_run_bitset_test),
+        cmocka_unit_test(iterator_skip_array_test),
+        cmocka_unit_test(iterator_skip_bitset_test),
+        cmocka_unit_test(iterator_skip_run_test),
+        cmocka_unit_test(iterator_skip_backward_array_test),
+        cmocka_unit_test(iterator_skip_backward_bitset_test),
+        cmocka_unit_test(iterator_skip_backward_run_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
