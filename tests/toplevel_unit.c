@@ -4320,7 +4320,8 @@ static void test_uint32_iterator_skip_backward(uint8_t type) {
 
     // Test skip way beyond start
     roaring_iterator_init_last(r, &iter_skip);
-    uint32_t skipped = roaring_uint32_iterator_skip_backward(&iter_skip, UINT32_MAX);
+    uint32_t skipped =
+        roaring_uint32_iterator_skip_backward(&iter_skip, UINT32_MAX);
     assert_int_equal(skipped, ref_count);
     assert_false(iter_skip.has_value);
 
