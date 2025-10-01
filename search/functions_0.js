@@ -191,5 +191,7 @@ var searchData=
   ['roaring_5fuint32_5fiterator_5fmove_5fequalorlarger_188',['roaring_uint32_iterator_move_equalorlarger',['../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602',1,'roaring.h']]],
   ['roaring_5fuint32_5fiterator_5fprevious_189',['roaring_uint32_iterator_previous',['../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a',1,'roaring.h']]],
   ['roaring_5fuint32_5fiterator_5fread_190',['roaring_uint32_iterator_read',['../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55',1,'roaring.h']]],
-  ['roaring_5funshare_5fall_191',['roaring_unshare_all',['../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2',1,'roaring.h']]]
+  ['roaring_5fuint32_5fiterator_5fskip_191',['roaring_uint32_iterator_skip',['../dc/d56/roaring_8h.html#a7fb90d54192fc62b1be24364c0dba04f',1,'roaring.h']]],
+  ['roaring_5fuint32_5fiterator_5fskip_5fbackward_192',['roaring_uint32_iterator_skip_backward',['../dc/d56/roaring_8h.html#a77fbe33b81a3beed37a63f4011ebb6f6',1,'roaring.h']]],
+  ['roaring_5funshare_5fall_193',['roaring_unshare_all',['../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2',1,'roaring.h']]]
 ];

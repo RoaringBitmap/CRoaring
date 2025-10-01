@@ -215,8 +215,10 @@ var searchData=
   ['roaring_5fuint32_5fiterator_5fprevious_212',['roaring_uint32_iterator_previous',['../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a',1,'roaring.h']]],
   ['roaring_5fuint32_5fiterator_5fread_213',['roaring_uint32_iterator_read',['../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55',1,'roaring.h']]],
   ['roaring_5fuint32_5fiterator_5fs_214',['roaring_uint32_iterator_s',['../da/d27/structroaring__uint32__iterator__s.html',1,'']]],
-  ['roaring_5fuint32_5fiterator_5ft_215',['roaring_uint32_iterator_t',['../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce',1,'roaring.h']]],
-  ['roaring_5funshare_5fall_216',['roaring_unshare_all',['../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2',1,'roaring.h']]],
-  ['running_20microbenchmarks_217',['Running microbenchmarks',['../index.html#autotoc_md29',1,'']]],
-  ['rust_218',['Rust',['../index.html#autotoc_md49',1,'']]]
+  ['roaring_5fuint32_5fiterator_5fskip_215',['roaring_uint32_iterator_skip',['../dc/d56/roaring_8h.html#a7fb90d54192fc62b1be24364c0dba04f',1,'roaring.h']]],
+  ['roaring_5fuint32_5fiterator_5fskip_5fbackward_216',['roaring_uint32_iterator_skip_backward',['../dc/d56/roaring_8h.html#a77fbe33b81a3beed37a63f4011ebb6f6',1,'roaring.h']]],
+  ['roaring_5fuint32_5fiterator_5ft_217',['roaring_uint32_iterator_t',['../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce',1,'roaring.h']]],
+  ['roaring_5funshare_5fall_218',['roaring_unshare_all',['../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2',1,'roaring.h']]],
+  ['running_20microbenchmarks_219',['Running microbenchmarks',['../index.html#autotoc_md29',1,'']]],
+  ['rust_220',['Rust',['../index.html#autotoc_md49',1,'']]]
 ];

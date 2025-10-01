@@ -120,5 +120,7 @@ var roaring_8h =
     [ "roaring_uint32_iterator_move_equalorlarger", "dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602", null ],
     [ "roaring_uint32_iterator_previous", "dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a", null ],
     [ "roaring_uint32_iterator_read", "dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55", null ],
+    [ "roaring_uint32_iterator_skip", "dc/d56/roaring_8h.html#a7fb90d54192fc62b1be24364c0dba04f", null ],
+    [ "roaring_uint32_iterator_skip_backward", "dc/d56/roaring_8h.html#a77fbe33b81a3beed37a63f4011ebb6f6", null ],
     [ "roaring_unshare_all", "dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2", null ]
 ];

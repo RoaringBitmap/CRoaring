@@ -366,6 +366,10 @@ Functions</h2></td></tr>
 <tr class="separator:aa7d6e6919e46905bf7e5ddd824f3eb55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0807109ab8df7168855f61e985170fc" id="r_aa0807109ab8df7168855f61e985170fc"><td class="memItemLeft" align="right" valign="top">static CROARING_DEPRECATED uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#aa0807109ab8df7168855f61e985170fc">roaring_read_uint32_iterator</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t *buf, uint32_t count)</td></tr>
 <tr class="separator:aa0807109ab8df7168855f61e985170fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7fb90d54192fc62b1be24364c0dba04f" id="r_a7fb90d54192fc62b1be24364c0dba04f"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a7fb90d54192fc62b1be24364c0dba04f">roaring_uint32_iterator_skip</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t count)</td></tr>
+<tr class="separator:a7fb90d54192fc62b1be24364c0dba04f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77fbe33b81a3beed37a63f4011ebb6f6" id="r_a77fbe33b81a3beed37a63f4011ebb6f6"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a77fbe33b81a3beed37a63f4011ebb6f6">roaring_uint32_iterator_skip_backward</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t count)</td></tr>
+<tr class="separator:a77fbe33b81a3beed37a63f4011ebb6f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="adfb882359d1d5219449bdb40ef5e67e4" name="adfb882359d1d5219449bdb40ef5e67e4"></a>
@@ -469,7 +473,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_advance</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01132">1132</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01136">1136</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -2556,7 +2560,8 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Convert the bitmap to a sorted array from <code>offset</code> by <code>limit</code>, output in <code>ans</code>.</p>
 <p>Caller is responsible to ensure that there is enough memory allocated, e.g. </p><pre class="fragment">ans = malloc(roaring_bitmap_get_cardinality(limit) * sizeof(uint32_t));
-</pre><p> Return false in case of failure (e.g., insufficient memory) </p>
+</pre><p> This function always returns <code>true</code></p>
+<p>For more control, see <code>roaring_uint32_iterator_skip</code> and <code>roaring_uint32_iterator_read</code>, which can be used to e.g. tell how many values were actually read. </p>
 
 </div>
 </div>
@@ -3264,7 +3269,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_copy</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01178">1178</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01182">1182</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a4b5f51c2a3c015ca56bdeb477d0e84c6">roaring_uint32_iterator_copy()</a>.</p>
 
@@ -3295,7 +3300,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_create</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01116">1116</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01120">1120</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create()</a>.</p>
 
@@ -3326,7 +3331,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_free</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01188">1188</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01192">1192</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free()</a>.</p>
 
@@ -3367,7 +3372,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01085">1085</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01089">1089</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>.</p>
 
@@ -3408,7 +3413,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init_last</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01099">1099</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01103">1103</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>.</p>
 
@@ -3611,7 +3616,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_move_equalorlarger</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01164">1164</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01168">1168</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger()</a>.</p>
 
@@ -3642,7 +3647,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_previous</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01149">1149</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01153">1153</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -3689,7 +3694,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_read</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01208">1208</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01212">1212</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read()</a>.</p>
 
@@ -3843,8 +3848,73 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Reads next ${count} values from iterator into user-supplied ${buf}. Returns the number of read elements. This number can be smaller than ${count}, which means that iterator is drained.</p>
+<p>This function satisfies semantics of iteration and can be used together with other iterator functions.</p><ul>
+<li>first value is copied from ${it}-&gt;current_value</li>
+<li>after function returns, iterator is positioned at the next element </li>
+</ul>
 
 <p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#aa0807109ab8df7168855f61e985170fc">roaring_read_uint32_iterator()</a>.</p>
+
+</div>
+</div>
+<a id="a7fb90d54192fc62b1be24364c0dba04f" name="a7fb90d54192fc62b1be24364c0dba04f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7fb90d54192fc62b1be24364c0dba04f">&#9670;&#160;</a></span>roaring_uint32_iterator_skip()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t roaring_uint32_iterator_skip </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *&#160;</td>
+          <td class="paramname"><em>it</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Skip the next ${count} values from iterator. Returns the number of values actually skipped. The number can be smaller than ${count}, which means that iterator is drained.</p>
+<p>This function is equivalent to calling <code><a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a></code> ${count} times but is much more efficient. </p>
+
+</div>
+</div>
+<a id="a77fbe33b81a3beed37a63f4011ebb6f6" name="a77fbe33b81a3beed37a63f4011ebb6f6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77fbe33b81a3beed37a63f4011ebb6f6">&#9670;&#160;</a></span>roaring_uint32_iterator_skip_backward()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t roaring_uint32_iterator_skip_backward </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *&#160;</td>
+          <td class="paramname"><em>it</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Skip the previous ${count} values from iterator (move backwards). Returns the number of values actually skipped backwards. The number can be smaller than ${count}, which means that iterator reached the beginning.</p>
+<p>This function is equivalent to calling <code><a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a></code> ${count} times but is much more efficient. </p>
 
 </div>
 </div>
