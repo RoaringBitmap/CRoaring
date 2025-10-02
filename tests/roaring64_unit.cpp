@@ -647,6 +647,22 @@ DEFINE_TEST(test_remove_many) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_remove_many_issue_742) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(123ULL, 124ULL);
+    uint64_t vals[3] = {123ULL, 124ULL, 125ULL};
+    roaring64_bitmap_remove_many(r, 3, vals);
+    assert_true(roaring64_bitmap_is_empty(r));
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_remove_many_issue_742B) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(123ULL, 124ULL);
+    uint64_t vals[3] = {123ULL, 124ULL, 124ULL};
+    roaring64_bitmap_remove_many(r, 3, vals);
+    assert_true(roaring64_bitmap_is_empty(r));
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_remove_range_closed) {
     {
         // Entire range within one container.
@@ -2004,6 +2020,8 @@ DEFINE_TEST(test_iterator_read_past_end_can_go_previous) {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_remove_many_issue_742),
+        cmocka_unit_test(test_remove_many_issue_742B),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(test_copy),
         cmocka_unit_test(test_from_range),
