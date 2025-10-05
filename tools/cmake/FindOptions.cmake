@@ -38,10 +38,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXXSTD_FLAGS} ${OPT_FLAGS} ${INCLUDE_F
 
 if(MSVC)
 add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4267 /wd4244  /wd4113 /nologo")
-endif()
 if(MSVC_VERSION GREATER 1910)
   add_definitions("/permissive-")
 endif()
+endif()
+
 if(ROARING_LINK_STATIC)
   if(NOT MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "-static")
