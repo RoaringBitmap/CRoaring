@@ -634,17 +634,47 @@ DEFINE_TEST(test_remove_bulk) {
 }
 
 DEFINE_TEST(test_remove_many) {
-    roaring64_bitmap_t* r = roaring64_bitmap_create();
-    std::array<uint64_t, 1000> vals;
-    std::iota(vals.begin(), vals.end(), 0);
+    {
+        // Remove all values until empty, across multiple containers.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        std::array<uint64_t, 1000> vals;
+        std::iota(vals.begin(), vals.end(), 0);
 
-    roaring64_bitmap_add_many(r, vals.size(), vals.data());
-    roaring64_bitmap_remove_many(r, vals.size(), vals.data());
-    assert_r64_valid(r);
-    for (uint64_t i = 0; i < 1000; ++i) {
-        assert_false(roaring64_bitmap_contains(r, vals[i]));
+        roaring64_bitmap_add_many(r, vals.size(), vals.data());
+        roaring64_bitmap_remove_many(r, vals.size(), vals.data());
+        assert_r64_valid(r);
+        for (uint64_t i = 0; i < 1000; ++i) {
+            assert_false(roaring64_bitmap_contains(r, vals[i]));
+        }
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
     }
-    roaring64_bitmap_free(r);
+    {
+        // Remove values not present.
+        roaring64_bitmap_t* r = roaring64_bitmap_from(123, 124);
+        std::array<uint64_t, 1> vals = {125};
+        roaring64_bitmap_remove_many(r, 1, vals.data());
+        assert_r64_valid(r);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Remove all values in a container.
+        roaring64_bitmap_t* r = roaring64_bitmap_from(123, 124);
+        std::array<uint64_t, 3> vals = {123, 124, 125};
+        roaring64_bitmap_remove_many(r, 3, vals.data());
+        assert_true(roaring64_bitmap_is_empty(r));
+        assert_r64_valid(r);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Remove a value multiple times.
+        roaring64_bitmap_t* r = roaring64_bitmap_from(123, 124);
+        std::array<uint64_t, 3> vals = {123, 124, 124};
+        roaring64_bitmap_remove_many(r, 3, vals.data());
+        assert_true(roaring64_bitmap_is_empty(r));
+        assert_r64_valid(r);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_remove_many_issue_742) {
