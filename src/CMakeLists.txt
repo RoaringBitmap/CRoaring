@@ -91,7 +91,7 @@ foreach(tree_type BUILD INSTALL)
     "${build_location}/roaring-config-version.cmake"
     VERSION ${ROARING_LIB_VERSION}
     COMPATIBILITY SameMajorVersion)
-  configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.cmake.in"
+  configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/config.cmake.in"
                                 "${build_location}/roaring-config.cmake"
                                 INSTALL_DESTINATION "${install_location}")
 
