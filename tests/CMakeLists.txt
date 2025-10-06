@@ -70,8 +70,8 @@ if(BASH_EXECUTABLE)
 
   add_custom_command(
     OUTPUT "${AMALGAMATION_DIR}/roaring.c" "${AMALGAMATION_DIR}/roaring.h" "${AMALGAMATION_DIR}/roaring.hh"
-    COMMAND "${BASH_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/amalgamation.sh" "${AMALGAMATION_DIR}"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMAND "${BASH_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/amalgamation.sh" "${AMALGAMATION_DIR}"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     COMMENT "Running amalgamation.sh to generate amalgamated files"
     VERBATIM
   )
