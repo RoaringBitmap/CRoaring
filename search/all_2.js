@@ -2,7 +2,7 @@ var searchData=
 [
   ['a_20cmake_20dependency_20with_20fetchcontent_0',['Using as a CMake dependency with FetchContent',['../index.html#autotoc_md8',1,'']]],
   ['a_20cpm_20dependency_1',['Using Roaring as a CPM dependency',['../index.html#autotoc_md7',1,'']]],
-  ['about_20roaring_2',['References about Roaring',['../index.html#autotoc_md55',1,'']]],
+  ['about_20roaring_2',['References about Roaring',['../index.html#autotoc_md56',1,'']]],
   ['adding_20and_20removing_20values_3',['Adding and Removing Values',['../index.html#autotoc_md13',1,'']]],
   ['aggregate_20bitmaps_4',['How to best aggregate bitmaps?',['../index.html#autotoc_md42',1,'']]],
   ['allocators_5',['Custom memory allocators',['../index.html#autotoc_md30',1,'']]],

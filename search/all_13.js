@@ -2,11 +2,11 @@ var searchData=
 [
   ['readme_2emd_0',['README.md',['../da/ddd/README_8md.html',1,'']]],
   ['redis_20module_1',['Redis Module',['../index.html#autotoc_md51',1,'']]],
-  ['references_20about_20roaring_2',['References about Roaring',['../index.html#autotoc_md55',1,'']]],
+  ['references_20about_20roaring_2',['References about Roaring',['../index.html#autotoc_md56',1,'']]],
   ['related_20throttling_3',['SIMD-related throttling',['../index.html#autotoc_md40',1,'']]],
   ['removing_20values_4',['Adding and Removing Values',['../index.html#autotoc_md13',1,'']]],
   ['requirements_5',['Requirements',['../index.html#autotoc_md4',1,'']]],
-  ['roaring_6',['References about Roaring',['../index.html#autotoc_md55',1,'']]],
+  ['roaring_6',['References about Roaring',['../index.html#autotoc_md56',1,'']]],
   ['roaring_20as_20a_20cpm_20dependency_7',['Using Roaring as a CPM dependency',['../index.html#autotoc_md7',1,'']]],
   ['roaring_20bitmaps_8',['Wrappers for Roaring Bitmaps',['../index.html#autotoc_md43',1,'']]],
   ['roaring_20bitmaps_20c_9',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md32',1,'']]],

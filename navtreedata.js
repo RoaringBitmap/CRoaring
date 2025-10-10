@@ -84,7 +84,8 @@ var NAVTREE =
     ] ],
     [ "Mailing list/discussion group", "index.html#autotoc_md53", null ],
     [ "Contributing", "index.html#autotoc_md54", null ],
-    [ "References about Roaring", "index.html#autotoc_md55", null ],
+    [ "Stars", "index.html#autotoc_md55", null ],
+    [ "References about Roaring", "index.html#autotoc_md56", null ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],

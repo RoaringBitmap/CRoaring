@@ -6,8 +6,9 @@ var searchData=
   ['set_20operations_3',['set operations',['../index.html#autotoc_md16',1,'Set Operations'],['../index.html#autotoc_md23',1,'Set Operations']]],
   ['should_20see_20below_4',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md35',1,'']]],
   ['simd_20related_20throttling_5',['SIMD-related throttling',['../index.html#autotoc_md40',1,'']]],
-  ['start_6',['Quick Start',['../index.html#autotoc_md5',1,'']]],
-  ['studio_20or_20openharmony_20users_20should_20see_20below_7',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md35',1,'']]],
-  ['studio_20under_20windows_8',['Building (Visual Studio under Windows)',['../index.html#autotoc_md36',1,'']]],
-  ['swift_9',['Swift',['../index.html#autotoc_md46',1,'']]]
+  ['stars_6',['Stars',['../index.html#autotoc_md55',1,'']]],
+  ['start_7',['Quick Start',['../index.html#autotoc_md5',1,'']]],
+  ['studio_20or_20openharmony_20users_20should_20see_20below_8',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md35',1,'']]],
+  ['studio_20under_20windows_9',['Building (Visual Studio under Windows)',['../index.html#autotoc_md36',1,'']]],
+  ['swift_10',['Swift',['../index.html#autotoc_md46',1,'']]]
 ];
