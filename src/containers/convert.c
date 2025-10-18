@@ -122,13 +122,12 @@ container_t *convert_to_bitset_or_array_container(run_container_t *rc,
         array_container_t *answer = array_container_create_given_capacity(card);
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
-            uint16_t run_start = rc->runs[rlepos].value;
-            uint16_t run_end = run_start + rc->runs[rlepos].length;
-            for (uint16_t run_value = run_start; run_value < run_end;
+            int run_start = rc->runs[rlepos].value;
+            int run_end = run_start + rc->runs[rlepos].length;
+            for (int run_value = run_start; run_value <= run_end;
                  ++run_value) {
-                answer->array[answer->cardinality++] = run_value;
+                answer->array[answer->cardinality++] = (uint16_t)run_value;
             }
-            answer->array[answer->cardinality++] = run_end;
         }
         assert(card == answer->cardinality);
         *resulttype = ARRAY_CONTAINER_TYPE;
