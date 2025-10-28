@@ -3,6 +3,7 @@ project(RoaringBitmap
   DESCRIPTION "Roaring bitmaps in C (and C++)"
   LANGUAGES CXX C
 )
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 11)
 
