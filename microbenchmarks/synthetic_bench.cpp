@@ -417,9 +417,9 @@ static void cppFrozenSerialize(benchmark::State& state) {
         r.add(val);
     }
     size_t size = r.getFrozenSizeInBytes();
-    // TODO: there seems to be a bug in writeFrozen that causes writes beyond
-    // getFrozenSizeInBytes()
-    std::vector<char> buf(size * 2);
+    // writeFrozen requires a 32-byte aligned buffer. It is inconvenient to
+    // enforce that here, so we just overallocate.
+    std::vector<char> buf(size * 2 + 32);
     for (auto _ : state) {
         r.writeFrozen(buf.data());
         benchmark::DoNotOptimize(buf);
@@ -504,9 +504,9 @@ static void cppFrozenDeserialize(benchmark::State& state) {
         r1.add(val);
     }
     size_t size = r1.getFrozenSizeInBytes();
-    // TODO: there seems to be a bug in writeFrozen that causes writes beyond
-    // getFrozenSizeInBytes()
-    std::vector<char> buf(size * 2);
+    // writeFrozen requires a 32-byte aligned buffer. It is inconvenient to
+    // enforce that here, so we just overallocate.
+    std::vector<char> buf(size * 2 + 32);
     r1.writeFrozen(buf.data());
     for (auto _ : state) {
         auto r2 = Roaring64Map::frozenView(buf.data());
