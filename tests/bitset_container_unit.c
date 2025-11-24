@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <roaring/bitset_util.h>
 #include <roaring/containers/bitset.h>

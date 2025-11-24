@@ -79,27 +79,28 @@
  * test, repeat is the number of times we should repeat and size is the
  * number of operations represented by test.
  */
-#define BEST_TIME(test, answer, repeat, size)                   \
-    do {                                                        \
-        printf("%s: ", #test);                                  \
-        fflush(NULL);                                           \
-        uint64_t cycles_start, cycles_final, cycles_diff;       \
-        uint64_t min_diff = (uint64_t)-1;                       \
-        int wrong_answer = 0;                                   \
-        for (int i = 0; i < repeat; i++) {                      \
-            CLOBBER_MEMORY;                                     \
-            RDTSC_START(cycles_start);                          \
-            if (test != answer) wrong_answer = 1;               \
-            RDTSC_FINAL(cycles_final);                          \
-            cycles_diff = (cycles_final - cycles_start);        \
-            if (cycles_diff < min_diff) min_diff = cycles_diff; \
-        }                                                       \
-        uint64_t S = (uint64_t)size;                            \
-        float cycle_per_op = (min_diff) / (float)S;             \
-        printf(" %.2f cycles per operation", cycle_per_op);     \
-        if (wrong_answer) printf(" [ERROR]");                   \
-        printf("\n");                                           \
-        fflush(NULL);                                           \
+#define BEST_TIME(test, answer, repeat, size)                                 \
+    do {                                                                      \
+        printf("%s: ", #test);                                                \
+        fflush(NULL);                                                         \
+        uint64_t cycles_start, cycles_final, cycles_diff;                     \
+        uint64_t min_diff = (uint64_t)-1;                                     \
+        int wrong_answer = 0;                                                 \
+        for (int i = 0; i < repeat; i++) {                                    \
+            CLOBBER_MEMORY;                                                   \
+            RDTSC_START(cycles_start);                                        \
+            if (test != answer) wrong_answer = 1;                             \
+            RDTSC_FINAL(cycles_final);                                        \
+            cycles_diff = (cycles_final - cycles_start);                      \
+            if (cycles_diff < min_diff) min_diff = cycles_diff;               \
+        }                                                                     \
+        uint64_t S = (uint64_t)size;                                          \
+        float cycle_per_op = (min_diff) / (float)S;                           \
+        printf(" %.2f cycles per operation (total %lu cycles)", cycle_per_op, \
+               min_diff);                                                     \
+        if (wrong_answer) printf(" [ERROR]");                                 \
+        printf("\n");                                                         \
+        fflush(NULL);                                                         \
     } while (0)
 
 /*
@@ -107,26 +108,49 @@
  * first parameter "base" and various parameters from "testvalues" (there
  * are nbrtestvalues), calling pre on base between tests
  */
-#define BEST_TIME_PRE_ARRAY(base, test, pre, testvalues, nbrtestvalues) \
-    do {                                                                \
-        printf("%s %s: ", #test, #pre);                                 \
-        fflush(NULL);                                                   \
-        uint64_t cycles_start, cycles_final, cycles_diff;               \
-        int sum = 0;                                                    \
-        for (size_t j = 0; j < nbrtestvalues; j++) {                    \
-            pre(base);                                                  \
-            CLOBBER_MEMORY;                                             \
-            RDTSC_START(cycles_start);                                  \
-            test(base, testvalues[j]);                                  \
-            RDTSC_FINAL(cycles_final);                                  \
-            cycles_diff = (cycles_final - cycles_start);                \
-            sum += cycles_diff;                                         \
-        }                                                               \
-        uint64_t S = (uint64_t)nbrtestvalues;                           \
-        float cycle_per_op = sum / (float)S;                            \
-        printf(" %.2f cycles per operation", cycle_per_op);             \
-        printf("\n");                                                   \
-        fflush(NULL);                                                   \
+#define BEST_TIME_PRE_ARRAY(base, test, pre, testvalues, nbrtestvalues)      \
+    do {                                                                     \
+        printf("%s %s: ", #test, #pre);                                      \
+        fflush(NULL);                                                        \
+        uint64_t cycles_start, cycles_final, cycles_diff;                    \
+        int sum = 0;                                                         \
+        for (size_t j = 0; j < nbrtestvalues; j++) {                         \
+            pre(base);                                                       \
+            CLOBBER_MEMORY;                                                  \
+            RDTSC_START(cycles_start);                                       \
+            test(base, testvalues[j]);                                       \
+            RDTSC_FINAL(cycles_final);                                       \
+            cycles_diff = (cycles_final - cycles_start);                     \
+            sum += cycles_diff;                                              \
+        }                                                                    \
+        uint64_t S = (uint64_t)nbrtestvalues;                                \
+        float cycle_per_op = sum / (float)S;                                 \
+        printf(" %.2f cycles per operation (total %d cycles)", cycle_per_op, \
+               sum);                                                         \
+        printf("\n");                                                        \
+        fflush(NULL);                                                        \
+    } while (0)
+
+/*
+ * This is like BEST_TIME, but output the total number of cycles instead of
+ * cycles per operation. This macro does not check the answer.
+ */
+#define BEST_TOTAL_TIME(test, repeat)                           \
+    do {                                                        \
+        printf("%s: ", #test);                                  \
+        fflush(NULL);                                           \
+        uint64_t cycles_start, cycles_final, cycles_diff;       \
+        uint64_t min_diff = (uint64_t)-1;                       \
+        for (int i = 0; i < repeat; i++) {                      \
+            CLOBBER_MEMORY;                                     \
+            RDTSC_START(cycles_start);                          \
+            test;                                               \
+            RDTSC_FINAL(cycles_final);                          \
+            cycles_diff = (cycles_final - cycles_start);        \
+            if (cycles_diff < min_diff) min_diff = cycles_diff; \
+        }                                                       \
+        printf(" total %lu cycles\n", min_diff);                \
+        fflush(NULL);                                           \
     } while (0)
 
 #endif /* BENCHMARKS_INCLUDE_BENCHMARK_H_ */

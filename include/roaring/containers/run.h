@@ -46,7 +46,7 @@ typedef struct rle16_s rle16_t;
 
 #ifdef __cplusplus
 #define CROARING_MAKE_RLE16(val, len) \
-    {(uint16_t)(val), (uint16_t)(len)}  // no tagged structs until c++20
+    { (uint16_t)(val), (uint16_t)(len) }  // no tagged structs until c++20
 #else
 #define CROARING_MAKE_RLE16(val, len) \
     (rle16_t) { .value = (uint16_t)(val), .length = (uint16_t)(len) }

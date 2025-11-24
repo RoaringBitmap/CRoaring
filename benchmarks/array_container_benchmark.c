@@ -100,6 +100,12 @@ int main() {
         BEST_TIME(array_container_to_uint32_array(out, Bt, 1234), card, repeat,
                   card);
         free(out);
+
+        uint32_t max_value = array_container_maximum(Bt);
+        bool* out_bool = malloc(max_value + 1);
+        BEST_TOTAL_TIME(array_container_to_bool_array(out_bool, Bt), repeat);
+        free(out_bool);
+
         BEST_TIME_PRE_ARRAY(Bt, array_container_contains, array_cache_prefetch,
                             testvalues, nbrtestvalues);
         BEST_TIME_PRE_ARRAY(Bt, array_container_contains, array_cache_flush,
