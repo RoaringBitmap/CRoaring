@@ -142,6 +142,14 @@ void array_container_intersection_inplace(array_container_t *src_1,
 int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base);
 
+/*
+ * Write out the 16-bit integers contained in this container as a list of
+ * 8-bit booleans using base as the starting value (it might be expected that
+ * base has zeros in its 16 least significant bits). The caller is responsible
+ * for allocating enough memory in out.
+ */
+void array_container_to_bool_array(void *vout, const array_container_t *cont);
+
 /* Compute the number of runs */
 int32_t array_container_number_of_runs(const array_container_t *ac);
 

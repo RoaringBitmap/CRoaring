@@ -3483,6 +3483,14 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset) {
     return true;
 }
 
+bool roaring_bitmap_to_bool_array(const roaring_bitmap_t *r, bool *ans) {
+    if (roaring_bitmap_is_empty(r)) {
+        return true;
+    }
+    ra_to_bool_array(&r->high_low_container, ans);
+    return true;
+}
+
 #ifdef __cplusplus
 }
 }

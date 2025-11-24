@@ -424,6 +424,17 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
     return outpos;
 }
 
+CROARING_ALLOW_UNALIGNED
+void array_container_to_bool_array(void *vout, const array_container_t *cont) {
+    // TODO: optimize by SIMD
+    bool *out = (bool *)vout;
+    size_t i = 0;
+    for (; i < (size_t)cont->cardinality; ++i) {
+        const uint32_t val = cont->array[i];
+        out[val] = true;
+    }
+}
+
 void array_container_printf(const array_container_t *v) {
     if (v->cardinality == 0) {
         printf("{}");

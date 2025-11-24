@@ -469,6 +469,28 @@ static inline int container_to_uint32_array(uint32_t *output,
 }
 
 /**
+ * Convert a container to an array of boolean values, requires a typecode as
+ * well as a "base" (most significant values) Returns number of ints added.
+ */
+static inline void container_to_bool_array(bool *output, const container_t *c,
+                                           uint8_t typecode) {
+    c = container_unwrap_shared(c, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE:
+            bitset_container_to_bool_array(output, const_CAST_bitset(c));
+            return;
+        case ARRAY_CONTAINER_TYPE:
+            array_container_to_bool_array(output, const_CAST_array(c));
+            return;
+        case RUN_CONTAINER_TYPE:
+            run_container_to_bool_array(output, const_CAST_run(c));
+            return;
+    }
+    assert(false);
+    roaring_unreachable;
+}
+
+/**
  * Add a value to a container, requires a  typecode, fills in new_typecode and
  * return (possibly different) container.
  * This function may allocate a new container, and caller is responsible for

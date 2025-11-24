@@ -237,6 +237,19 @@ struct to_array64 {
 auto ToArray64 = BasicBench<to_array64>;
 BENCHMARK(ToArray64);
 
+struct to_array_bool {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < count; ++i) {
+            roaring_bitmap_to_bool_array(bitmaps[i], array_buffer_bool);
+            marker += array_buffer_bool[0];
+        }
+        return marker;
+    }
+};
+auto ToArrayBool = BasicBench<to_array_bool>;
+BENCHMARK(ToArrayBool);
+
 struct iterate_all {
     static uint64_t run() {
         uint64_t marker = 0;

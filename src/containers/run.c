@@ -1127,6 +1127,17 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
 
 #endif
 
+CROARING_ALLOW_UNALIGNED
+void run_container_to_bool_array(void *vout, const run_container_t *cont) {
+    // TODO: optimize by SIMD
+    bool *out = (bool *)vout;
+    for (int i = 0; i < cont->n_runs; ++i) {
+        uint32_t run_start = cont->runs[i].value;
+        uint16_t le = cont->runs[i].length;
+        memset(out + run_start, true, le + 1);
+    }
+}
+
 #ifdef __cplusplus
 }
 }

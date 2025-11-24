@@ -556,6 +556,20 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
 bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset);
 
 /**
+ * Like `roaring_bitmap_to_bitset`, but store each bit in a single byte
+ * and output a array of `bool` in `ans` until `max_value`. For index `i` of
+ * `ans`, its value is true if `i` is set in roaring bitmap `r`, and false
+ * otherwise.
+ *
+ * Caller is responsible to ensure that there is enough memory allocated,
+ * e.g.
+ *     ans = malloc(roaring_bitmap_maximum(bitmap) * sizeof(bool));
+ *
+ * This function always returns `true`
+ */
+bool roaring_bitmap_to_bool_array(const roaring_bitmap_t *r, bool *ans);
+
+/**
  * Convert the bitmap to a sorted array from `offset` by `limit`, output in
  * `ans`.
  *
