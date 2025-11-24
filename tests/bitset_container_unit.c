@@ -292,6 +292,30 @@ DEFINE_TEST(to_uint32_array_test) {
     }
 }
 
+DEFINE_TEST(to_bool_array_test) {
+    for (size_t offset = 1; offset < 128; offset *= 2) {
+        bitset_container_t* B = bitset_container_create();
+        assert_non_null(B);
+
+        bool* expected = (bool*)malloc((1 << 16) + 1);
+        memset(expected, false, (1 << 16) + 1);
+        for (size_t k = 0; k < (1 << 16); k += offset) {
+            bitset_container_set(B, k);
+            expected[k] = true;
+        }
+
+        bool* out = (bool*)malloc((1 << 16) + 1);
+        memset(out, false, (1 << 16) + 1);
+        assert_non_null(out);
+
+        bitset_container_to_bool_array(out, B);
+        assert_true(memcmp(expected, out, (1 << 16) + 1) == 0);
+        free(expected);
+        free(out);
+        bitset_container_free(B);
+    }
+}
+
 DEFINE_TEST(select_test) {
     bitset_container_t* B = bitset_container_create();
     assert_non_null(B);
@@ -324,6 +348,7 @@ int main() {
         cmocka_unit_test(xor_test),
         cmocka_unit_test(andnot_test),
         cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(to_bool_array_test),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_bitset_compute_cardinality),
     };

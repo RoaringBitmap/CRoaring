@@ -147,6 +147,29 @@ DEFINE_TEST(to_uint32_array_test) {
         run_container_free(B);
     }
 }
+DEFINE_TEST(to_bool_array_test) {
+    for (size_t offset = 1; offset < 128; offset *= 2) {
+        run_container_t* B = run_container_create();
+        assert_non_null(B);
+
+        bool* expected = (bool*)malloc((1 << 16) + 1);
+        memset(expected, false, (1 << 16) + 1);
+        for (size_t k = 0; k < (1 << 16); k += offset) {
+            run_container_add(B, k);
+            expected[k] = true;
+        }
+
+        bool* out = (bool*)malloc((1 << 16) + 1);
+        memset(out, false, (1 << 16) + 1);
+        assert_non_null(out);
+
+        run_container_to_bool_array(out, B);
+        assert_true(memcmp(expected, out, (1 << 16) + 1) == 0);
+        free(expected);
+        free(out);
+        run_container_free(B);
+    }
+}
 
 DEFINE_TEST(select_test) {
     run_container_t* B = run_container_create();
@@ -220,9 +243,13 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
-        cmocka_unit_test(select_test), cmocka_unit_test(remove_range_test),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(add_contains_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(to_bool_array_test),
+        cmocka_unit_test(select_test),
+        cmocka_unit_test(remove_range_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
