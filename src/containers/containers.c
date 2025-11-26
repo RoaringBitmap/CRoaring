@@ -1,5 +1,6 @@
 #include <roaring/containers/containers.h>
 #include <roaring/memory.h>
+
 #include "roaring_internal_inline.h"
 
 #ifdef __cplusplus

@@ -19,7 +19,6 @@
 
 #include "roaring_internal_inline.h"
 
-
 #define CROARING_ALIGN_BUF(buf, alignment)          \
     (char *)(((uintptr_t)(buf) + ((alignment)-1)) & \
              (ptrdiff_t)(~((alignment)-1)))
@@ -2611,8 +2610,9 @@ bool roaring64_iterator_advance(roaring64_iterator_t *it) {
     }
     leaf_t leaf = (leaf_t)*it->art_it.value;
     uint16_t low16 = (uint16_t)it->value;
-    if (container_iterator_next_inline(get_container(it->r, leaf), get_typecode(leaf),
-                                &it->container_it, &low16)) {
+    if (container_iterator_next_inline(get_container(it->r, leaf),
+                                       get_typecode(leaf), &it->container_it,
+                                       &low16)) {
         it->value = it->high48 | low16;
         return (it->has_value = true);
     }
@@ -2634,8 +2634,9 @@ bool roaring64_iterator_previous(roaring64_iterator_t *it) {
     }
     leaf_t leaf = (leaf_t)*it->art_it.value;
     uint16_t low16 = (uint16_t)it->value;
-    if (container_iterator_prev_inline(get_container(it->r, leaf), get_typecode(leaf),
-                                &it->container_it, &low16)) {
+    if (container_iterator_prev_inline(get_container(it->r, leaf),
+                                       get_typecode(leaf), &it->container_it,
+                                       &low16)) {
         it->value = it->high48 | low16;
         return (it->has_value = true);
     }

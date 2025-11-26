@@ -7,9 +7,9 @@ namespace roaring {
 namespace internal {
 #endif
 
-static inline bool container_iterator_next_inline(const container_t *c, uint8_t typecode,
-                             roaring_container_iterator_t *it,
-                             uint16_t *value) {
+static inline bool container_iterator_next_inline(
+    const container_t *c, uint8_t typecode, roaring_container_iterator_t *it,
+    uint16_t *value) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE: {
             const bitset_container_t *bc = const_CAST_bitset(c);
@@ -71,9 +71,9 @@ static inline bool container_iterator_next_inline(const container_t *c, uint8_t 
     }
 }
 
-static inline bool container_iterator_prev_inline(const container_t *c, uint8_t typecode,
-                             roaring_container_iterator_t *it,
-                             uint16_t *value) {
+static inline bool container_iterator_prev_inline(
+    const container_t *c, uint8_t typecode, roaring_container_iterator_t *it,
+    uint16_t *value) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE: {
             if (--it->index < 0) {
@@ -135,5 +135,4 @@ static inline bool container_iterator_prev_inline(const container_t *c, uint8_t 
 }  // extern "C" { namespace roaring { namespace internal {
 #endif
 
-
-#endif // ROARING_INTERNAL_H
+#endif  // ROARING_INTERNAL_H

@@ -16,7 +16,6 @@
 
 #include "roaring_internal_inline.h"
 
-
 #ifdef __cplusplus
 using namespace ::roaring::internal;
 
@@ -27,7 +26,8 @@ namespace api {
 
 #define CROARING_SERIALIZATION_ARRAY_UINT32 1
 #define CROARING_SERIALIZATION_CONTAINER 2
-extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
+extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
+                                           uint32_t val);
 extern inline int roaring_trailing_zeroes(unsigned long long input_num);
 extern inline int roaring_leading_zeroes(unsigned long long input_num);
 extern inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r);
@@ -1832,8 +1832,8 @@ bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it) {
         return (it->has_value = loadfirstvalue(it));
     }
     uint16_t low16 = (uint16_t)it->current_value;
-    if (container_iterator_next_inline(it->container, it->typecode, &it->container_it,
-                                &low16)) {
+    if (container_iterator_next_inline(it->container, it->typecode,
+                                       &it->container_it, &low16)) {
         it->current_value = it->highbits | low16;
         return (it->has_value = true);
     }
@@ -1850,8 +1850,8 @@ bool roaring_uint32_iterator_previous(roaring_uint32_iterator_t *it) {
         return (it->has_value = loadlastvalue(it));
     }
     uint16_t low16 = (uint16_t)it->current_value;
-    if (container_iterator_prev_inline(it->container, it->typecode, &it->container_it,
-                                &low16)) {
+    if (container_iterator_prev_inline(it->container, it->typecode,
+                                       &it->container_it, &low16)) {
         it->current_value = it->highbits | low16;
         return (it->has_value = true);
     }

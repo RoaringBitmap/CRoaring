@@ -13,14 +13,11 @@
 
 // Include other headers after roaring_types.h
 #include <roaring/bitset/bitset.h>
+#include <roaring/containers/containers.h>
 #include <roaring/memory.h>
 #include <roaring/portability.h>
-#include <roaring/roaring_version.h>
-
-
-
-#include <roaring/containers/containers.h>
 #include <roaring/roaring_array.h>
+#include <roaring/roaring_version.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -467,11 +464,12 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value is present
  */
-static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
+                                           uint32_t val) {
     // For performance reasons, this function is inline and uses internal
     // functions directly.
 #ifdef __cplusplus
-using namespace ::roaring::internal;
+    using namespace ::roaring::internal;
 #endif
     const uint16_t hb = val >> 16;
     /*
@@ -488,7 +486,6 @@ using namespace ::roaring::internal;
     // search
     return container_contains(container, val & 0xFFFF, typecode);
 }
-
 
 /**
  * Check whether a range of values from range_start (included)
