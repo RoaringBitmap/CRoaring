@@ -14,6 +14,8 @@
 #include <roaring/containers/containers.h>
 #include <roaring/roaring_array.h>
 
+#include "roaring_internal_inline.h"
+
 #ifdef __cplusplus
 using namespace ::roaring::internal;
 
@@ -24,6 +26,8 @@ namespace api {
 
 #define CROARING_SERIALIZATION_ARRAY_UINT32 1
 #define CROARING_SERIALIZATION_CONTAINER 2
+extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
+                                           uint32_t val);
 extern inline int roaring_trailing_zeroes(unsigned long long input_num);
 extern inline int roaring_leading_zeroes(unsigned long long input_num);
 extern inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r);
@@ -1828,8 +1832,8 @@ bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it) {
         return (it->has_value = loadfirstvalue(it));
     }
     uint16_t low16 = (uint16_t)it->current_value;
-    if (container_iterator_next(it->container, it->typecode, &it->container_it,
-                                &low16)) {
+    if (container_iterator_next_inline(it->container, it->typecode,
+                                       &it->container_it, &low16)) {
         it->current_value = it->highbits | low16;
         return (it->has_value = true);
     }
@@ -1846,8 +1850,8 @@ bool roaring_uint32_iterator_previous(roaring_uint32_iterator_t *it) {
         return (it->has_value = loadlastvalue(it));
     }
     uint16_t low16 = (uint16_t)it->current_value;
-    if (container_iterator_prev(it->container, it->typecode, &it->container_it,
-                                &low16)) {
+    if (container_iterator_prev_inline(it->container, it->typecode,
+                                       &it->container_it, &low16)) {
         it->current_value = it->highbits | low16;
         return (it->has_value = true);
     }
@@ -2913,23 +2917,6 @@ uint64_t roaring_bitmap_xor_cardinality(const roaring_bitmap_t *x1,
     const uint64_t c2 = roaring_bitmap_get_cardinality(x2);
     const uint64_t inter = roaring_bitmap_and_cardinality(x1, x2);
     return c1 + c2 - 2 * inter;
-}
-
-bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
-    const uint16_t hb = val >> 16;
-    /*
-     * the next function call involves a binary search and lots of branching.
-     */
-    int32_t i = ra_get_index(&r->high_low_container, hb);
-    if (i < 0) return false;
-
-    uint8_t typecode;
-    // next call ought to be cheap
-    container_t *container = ra_get_container_at_index(&r->high_low_container,
-                                                       (uint16_t)i, &typecode);
-    // rest might be a tad expensive, possibly involving another round of binary
-    // search
-    return container_contains(container, val & 0xFFFF, typecode);
 }
 
 /**
