@@ -89,7 +89,7 @@ $SCRIPTPATH/include/roaring/art/art.h
 ALL_PRIVATE_C=$( ( ( \
     [ -d $SCRIPTPATH/.git ] \
         && ( type git >/dev/null 2>&1 ) \
-        && ( git -C $SCRIPTPATH ls-files 'src/*.c' ) \
+        && ( git -C $SCRIPTPATH ls-files 'src/*.c') \
     ) || ( find $SCRIPTPATH/src -name '*.c' ) ) | sort )
 # Verify up-front that all the files exist
 #
@@ -162,7 +162,7 @@ echo "Creating ${AMAL_C}..."
 
     echo "#include \"roaring.h\"  /* include public API definitions */"
 
-    for h in ${ALL_PRIVATE_H} ${ALL_PRIVATE_C}; do
+    for h in ${ALL_PRIVATE_H} src/roaring_internal_inline.h ${ALL_PRIVATE_C}; do
         dofile $h
     done
 } > "${DESTINATION}/${AMAL_C}"
@@ -251,7 +251,6 @@ echo "Creating ${DEMOCPP}..."
     cat <<< '
 #include <iostream>
 #include "roaring.hh"
-//#include "roaring.c"
 
 int main() {
   roaring::Roaring r1;
