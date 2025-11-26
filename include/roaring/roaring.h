@@ -17,6 +17,11 @@
 #include <roaring/portability.h>
 #include <roaring/roaring_version.h>
 
+
+
+#include <roaring/containers/containers.h>
+#include <roaring/roaring_array.h>
+
 #ifdef __cplusplus
 extern "C" {
 namespace roaring {
@@ -462,7 +467,28 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value is present
  */
-bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
+static inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+    // For performance reasons, this function is inline and uses internal
+    // functions directly.
+#ifdef __cplusplus
+using namespace ::roaring::internal;
+#endif
+    const uint16_t hb = val >> 16;
+    /*
+     * the next function call involves a binary search and lots of branching.
+     */
+    int32_t i = ra_get_index(&r->high_low_container, hb);
+    if (i < 0) return false;
+
+    uint8_t typecode;
+    // next call ought to be cheap
+    container_t *container = ra_get_container_at_index(&r->high_low_container,
+                                                       (uint16_t)i, &typecode);
+    // rest might be a tad expensive, possibly involving another round of binary
+    // search
+    return container_contains(container, val & 0xFFFF, typecode);
+}
+
 
 /**
  * Check whether a range of values from range_start (included)
