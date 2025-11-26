@@ -398,6 +398,16 @@ int bitset_container_to_uint32_array(uint32_t *out,
                                      uint32_t base);
 
 /*
+ * Write out the 16-bit integers contained in this container as a list of 8-bit
+ * booleans using base as the starting value (it might be expected that base has
+ * zeros in its 16 least significant bits). The function returns the number of
+ * values written. The caller is responsible for allocating enough memory in
+ * out. The out pointer should point to enough memory (the cardinality times 8
+ * bits).
+ */
+void bitset_container_to_bool_array(bool *out, const bitset_container_t *bc);
+
+/*
  * Print this container using printf (useful for debugging).
  */
 void bitset_container_printf(const bitset_container_t *v);

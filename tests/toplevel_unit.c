@@ -4868,6 +4868,36 @@ DEFINE_TEST(convert_to_bitset) {
     roaring_bitmap_free(r1);
 }
 
+DEFINE_TEST(convert_to_bool_array) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    uint32_t max_value = 600000;
+    bool *expected_bool_array = (bool *)malloc(max_value + 1);
+    memset(expected_bool_array, 0, max_value + 1);
+    for (uint32_t i = 100; i < 100000; i += 1 + (i % 5)) {
+        expected_bool_array[i] = 1;
+        roaring_bitmap_add(r1, i);
+    }
+    for (uint32_t i = 100000; i < 500000; i += 100) {
+        expected_bool_array[i] = 1;
+        roaring_bitmap_add(r1, i);
+    }
+    roaring_bitmap_add_range(r1, 500000, max_value + 1);
+    memset(expected_bool_array + 500000, 1, max_value - 500000 + 1);
+
+    assert_true(max_value == roaring_bitmap_maximum(r1));
+    bool *bool_array = (bool *)malloc(max_value + 1);
+    memset(bool_array, 0, max_value + 1);
+    bool success = roaring_bitmap_to_bool_array(r1, bool_array);
+    assert_true(success);  // could fail due to memory allocation.
+
+    // Verify specific values are set correctly
+    assert_true(memcmp(bool_array, expected_bool_array, max_value + 1) == 0);
+
+    free(expected_bool_array);
+    free(bool_array);
+    roaring_bitmap_free(r1);
+}
+
 // simple execution test
 DEFINE_TEST(simple_roaring_bitmap_or_many) {
     roaring_bitmap_t *roaring_bitmaps[2];
@@ -5025,6 +5055,7 @@ int main() {
         cmocka_unit_test(robust_deserialization),
         cmocka_unit_test(issue457),
         cmocka_unit_test(convert_to_bitset),
+        cmocka_unit_test(convert_to_bool_array),
         cmocka_unit_test(issue440),
         cmocka_unit_test(issue436),
         cmocka_unit_test(issue433),

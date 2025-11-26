@@ -805,6 +805,48 @@ You should be aware that a convention bitset (`bitset_t *`) may use much more
 memory than a Roaring bitmap in some cases. You should run benchmarks to determine
 whether the conversion to a bitset has performance benefits in your case.
 
+
+# Convert to boolean array (C)
+
+This example shows how to convert a Roaring bitmap to a boolean array using `roaring_bitmap_to_bool_array`:
+
+```c
+roaring_bitmap_t *r1 = roaring_bitmap_create();
+for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
+     roaring_bitmap_add(r1, i);
+}
+for (uint32_t i = 100000; i < 500000; i+= 100) {
+     roaring_bitmap_add(r1, i);
+}
+roaring_bitmap_add_range(r1, 500000, 600000);
+
+// Get the maximum value to determine array size
+uint32_t max_value = roaring_bitmap_maximum(r1);
+bool *bool_array = malloc((max_value + 1) * sizeof(bool));
+
+// Convert to boolean array
+bool success = roaring_bitmap_to_bool_array(r1, bool_array);
+assert(success); // always returns true
+
+// Verify the conversion
+for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
+    assert(bool_array[i]);
+}
+for (uint32_t i = 100000; i < 500000; i+= 100) {
+    assert(bool_array[i]);
+}
+
+// Check that non-set values are false
+assert(!bool_array[0]); // 0 should not be set
+assert(!bool_array[99]); // 99 should not be set
+
+// you must free the memory:
+free(bool_array);
+roaring_bitmap_free(r1);
+```
+
+This function stores each bit in a single byte as a boolean value, which can be useful when you need to work with boolean arrays directly. Note that this approach uses more memory than the Roaring bitmap itself, but provides fast random access to individual elements.
+
 # Example (C++)
 
 

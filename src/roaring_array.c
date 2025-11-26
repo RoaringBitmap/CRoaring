@@ -433,6 +433,14 @@ void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans) {
     }
 }
 
+void ra_to_bool_array(const roaring_array_t *ra, bool *ans) {
+    for (int32_t i = 0; i < ra->size; ++i) {
+        uint32_t base = ((uint32_t)ra->keys[i]) << 16;
+        container_to_bool_array(ans + base, ra->containers[i],
+                                ra->typecodes[i]);
+    }
+}
+
 bool ra_has_run_container(const roaring_array_t *ra) {
     for (int32_t k = 0; k < ra->size; ++k) {
         if (get_container_type(ra->containers[k], ra->typecodes[k]) ==

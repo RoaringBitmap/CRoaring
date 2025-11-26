@@ -954,6 +954,23 @@ int bitset_container_to_uint32_array(
 #endif
 }
 
+CROARING_ALLOW_UNALIGNED
+void bitset_container_to_bool_array(bool *out, const bitset_container_t *bc)
+{
+    // TODO: optimize by SIMD
+    uint32_t base = 0;
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+        uint64_t w = bc->words[i];
+        while (w != 0) {
+            int r =
+                roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
+            out[r + base] = true;
+            w &= (w - 1);
+        }
+        base += 64;
+    }
+}
+
 /*
  * Print this container using printf (useful for debugging).
  */
