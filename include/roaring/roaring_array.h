@@ -199,9 +199,6 @@ inline void ra_replace_key_and_container_at_index(roaring_array_t *ra,
 // write set bits to an array
 void ra_to_uint32_array(const roaring_array_t *ra, uint32_t *ans);
 
-// expand the compressed bits to a dense bool array
-void ra_to_bool_array(const roaring_array_t *ra, bool *ans);
-
 /**
  * write a bitmap to a buffer. This is meant to be compatible with
  * the

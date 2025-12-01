@@ -429,14 +429,6 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base);
 
 /*
- * Write out the 16-bit integers contained in this container as a list of
- * 8-bit booleans using base as the starting value (it might be expected that
- * base has zeros in its 16 least significant bits). The caller is responsible
- * for allocating enough memory in out.
- */
-void run_container_to_bool_array(void *vout, const run_container_t *cont);
-
-/*
  * Print this container using printf (useful for debugging).
  */
 void run_container_printf(const run_container_t *v);
@@ -716,6 +708,21 @@ static inline void run_container_remove_range(run_container_t *run,
                                  -(last - first + 1));
     }
 }
+
+/**
+ * Reads values from the run container into a boolean buffer.
+ *
+ * @param rc The run container to read from
+ * @param it Iterator state (index into the runs array)
+ * @param buf Boolean buffer to write to
+ * @param max_value Stop reading when reaching this value. If it is null, read
+ * the whole container.
+ * @param value_out Output parameter for the current/next value
+ * @return true if there are more values to read, false otherwise
+ */
+bool run_container_iterator_read_into_bool(
+    const run_container_t *rc, struct roaring_container_iterator_s *it,
+    bool *buf, const uint16_t *max_value, uint16_t *value_out);
 
 #ifdef __cplusplus
 }

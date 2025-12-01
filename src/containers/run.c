@@ -1128,14 +1128,43 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
 #endif
 
 CROARING_ALLOW_UNALIGNED
-void run_container_to_bool_array(void *vout, const run_container_t *cont) {
-    // TODO: optimize by SIMD
-    bool *out = (bool *)vout;
-    for (int i = 0; i < cont->n_runs; ++i) {
-        uint32_t run_start = cont->runs[i].value;
-        uint16_t le = cont->runs[i].length;
-        memset(out + run_start, true, le + 1);
+bool run_container_iterator_read_into_bool(const run_container_t *rc,
+                                           roaring_container_iterator_t *it,
+                                           bool *buf, const uint16_t *max_value,
+                                           uint16_t *value_out) {
+    uint16_t initial_value = *value_out;
+
+    // TODO: SIMD optimization
+    if (max_value == NULL) {
+        while (it->index < rc->n_runs) {
+            uint16_t run_start = rc->runs[it->index].value;
+            uint16_t run_end = run_start + rc->runs[it->index].length;
+            // Start from current value if we're in the middle of a run
+            run_start = (*value_out >= run_start) ? *value_out : run_start;
+            memset(buf + run_start - initial_value, true,
+                   run_end - run_start + 1);
+            it->index++;
+        }
+        return false;
     }
+
+    while (it->index < rc->n_runs) {
+        uint16_t run_start = rc->runs[it->index].value;
+        uint16_t run_end = run_start + rc->runs[it->index].length;
+
+        // Start from current value if we're in the middle of a run
+        uint16_t start = (*value_out >= run_start) ? *value_out : run_start;
+        if (*max_value < run_end + 1) {
+            memset(buf + start - initial_value, true, *max_value - start);
+            *value_out = *max_value;
+            return true;
+        } else {
+            memset(buf + start - initial_value, true, run_end - start + 1);
+        }
+        *value_out = run_end;
+        it->index++;
+    }
+    return false;
 }
 
 #ifdef __cplusplus

@@ -405,7 +405,6 @@ int bitset_container_to_uint32_array(uint32_t *out,
  * out. The out pointer should point to enough memory (the cardinality times 8
  * bits).
  */
-void bitset_container_to_bool_array(bool *out, const bitset_container_t *bc);
 
 /*
  * Print this container using printf (useful for debugging).
@@ -514,6 +513,21 @@ int bitset_container_get_index(const bitset_container_t *container, uint16_t x);
 /* Returns the index of the first value equal or larger than x, or -1 */
 int bitset_container_index_equalorlarger(const bitset_container_t *container,
                                          uint16_t x);
+
+/**
+ * Reads values from the bitset container into a boolean buffer.
+ *
+ * @param bc The bitset container to read from
+ * @param it Iterator state (index into the bitset)
+ * @param buf Boolean buffer to write to
+ * @param max_value Stop reading when reaching this value. If it is null, read
+ * the whole container.
+ * @param value_out Output parameter for the next value
+ * @return true if there are more values to read, false otherwise
+ */
+bool bitset_container_iterator_read_into_bool(
+    const bitset_container_t *bc, struct roaring_container_iterator_s *it,
+    bool *buf, const uint16_t *max_value, uint16_t *value_out);
 
 #ifdef __cplusplus
 }

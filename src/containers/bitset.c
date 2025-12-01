@@ -245,6 +245,53 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
     return false;
 }
 
+CROARING_ALLOW_UNALIGNED
+bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
+                                              roaring_container_iterator_t *it,
+                                              bool *buf,
+                                              const uint16_t *max_value,
+                                              uint16_t *value_out) {
+    uint32_t max_wordindex = BITSET_CONTAINER_SIZE_IN_WORDS;
+    // If max_value is not NULL, get the wordindex of the max_value.
+    if (max_value != NULL) {
+        max_wordindex = *max_value / 64;
+        if (max_wordindex > BITSET_CONTAINER_SIZE_IN_WORDS) {
+            max_wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
+        }
+    }
+    uint32_t wordindex = it->index / 64;
+    uint64_t word = bc->words[wordindex] & (UINT64_MAX << (it->index % 64));
+    uint16_t initial_value = it->index;
+    if (max_wordindex > 0) {
+        while (wordindex < max_wordindex) {
+            // TODO: SIMD optimization
+            while (word != 0) {
+                uint16_t value = wordindex * 64 + roaring_trailing_zeroes(word);
+                buf[value - initial_value] = true;
+                word = word & (word - 1);
+            }
+            wordindex++;
+            if (wordindex < BITSET_CONTAINER_SIZE_IN_WORDS) {
+                word = bc->words[wordindex];
+            }
+        }
+    }
+    // All the words are processed.
+    if (max_value == NULL) return false;
+    // Process the last word (which is at max_wordindex)
+    while (word != 0) {
+        uint16_t value = wordindex * 64 + roaring_trailing_zeroes(word);
+        if (value >= *max_value) {
+            it->index = value;
+            *value_out = value;
+            return true;
+        }
+        buf[value - initial_value] = true;
+        word = word & (word - 1);
+    }
+    return false;
+}
+
 #if CROARING_IS_X64
 #ifndef CROARING_WORDS_IN_AVX2_REG
 #define CROARING_WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)
@@ -952,23 +999,6 @@ int bitset_container_to_uint32_array(
 	return (int) bitset_extract_setbits(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, base);
 #endif
-}
-
-CROARING_ALLOW_UNALIGNED
-void bitset_container_to_bool_array(bool *out, const bitset_container_t *bc)
-{
-    // TODO: optimize by SIMD
-    uint32_t base = 0;
-    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
-        uint64_t w = bc->words[i];
-        while (w != 0) {
-            int r =
-                roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
-            out[r + base] = true;
-            w &= (w - 1);
-        }
-        base += 64;
-    }
 }
 
 /*

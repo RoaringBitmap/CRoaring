@@ -469,28 +469,6 @@ static inline int container_to_uint32_array(uint32_t *output,
 }
 
 /**
- * Convert a container to an array of boolean values, requires a typecode as
- * well as a "base" (most significant values) Returns number of ints added.
- */
-static inline void container_to_bool_array(bool *output, const container_t *c,
-                                           uint8_t typecode) {
-    c = container_unwrap_shared(c, &typecode);
-    switch (typecode) {
-        case BITSET_CONTAINER_TYPE:
-            bitset_container_to_bool_array(output, const_CAST_bitset(c));
-            return;
-        case ARRAY_CONTAINER_TYPE:
-            array_container_to_bool_array(output, const_CAST_array(c));
-            return;
-        case RUN_CONTAINER_TYPE:
-            run_container_to_bool_array(output, const_CAST_run(c));
-            return;
-    }
-    assert(false);
-    roaring_unreachable;
-}
-
-/**
  * Add a value to a container, requires a  typecode, fills in new_typecode and
  * return (possibly different) container.
  * This function may allocate a new container, and caller is responsible for
@@ -2498,6 +2476,22 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          uint64_t high48, uint64_t *buf,
                                          uint32_t count, uint32_t *consumed,
                                          uint16_t *value_out);
+
+/**
+ * Reads entries until the the first entry whose value is greater than or equal
+ * to `*max_value` from the container, and sets corresponding positions in `buf`
+ * to true. If `max_value` is null, then all entries are read.
+ * The `buf` array is filled starting from index 0, which corresponds
+ * to the current iterator position `it`. For subsequent iterator positions
+ * `it_new`, set `buf[it_new->current_value - it->current_value]` to true.
+ * Returns true and sets `value_out` if a value is present after reading the
+ * entries.
+ * The initial `it` should has value.
+ */
+bool container_iterator_read_into_bool(const container_t *c, uint8_t typecode,
+                                       roaring_container_iterator_t *it,
+                                       bool *buf, const uint16_t *max_value,
+                                       uint16_t *value_out);
 
 /**
  * Skips the next `skip_count` entries in the container iterator. Returns true

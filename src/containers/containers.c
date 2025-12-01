@@ -706,6 +706,28 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
     }
 }
 
+bool container_iterator_read_into_bool(const container_t *c, uint8_t typecode,
+                                       roaring_container_iterator_t *it,
+                                       bool *buf, const uint16_t *max_value,
+                                       uint16_t *value_out) {
+    c = container_unwrap_shared(c, &typecode);
+    switch (typecode) {
+        case BITSET_CONTAINER_TYPE:
+            return bitset_container_iterator_read_into_bool(
+                const_CAST_bitset(c), it, buf, max_value, value_out);
+        case ARRAY_CONTAINER_TYPE:
+            return array_container_iterator_read_into_bool(
+                const_CAST_array(c), it, buf, max_value, value_out);
+        case RUN_CONTAINER_TYPE:
+            return run_container_iterator_read_into_bool(
+                const_CAST_run(c), it, buf, max_value, value_out);
+        default:
+            assert(false);
+            roaring_unreachable;
+            return false;
+    }
+}
+
 bool container_iterator_skip(const container_t *c, uint8_t typecode,
                              roaring_container_iterator_t *it,
                              uint32_t skip_count, uint32_t *consumed_count,

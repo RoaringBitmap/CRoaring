@@ -424,17 +424,6 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
     return outpos;
 }
 
-CROARING_ALLOW_UNALIGNED
-void array_container_to_bool_array(void *vout, const array_container_t *cont) {
-    // TODO: optimize by SIMD
-    bool *out = (bool *)vout;
-    size_t i = 0;
-    for (; i < (size_t)cont->cardinality; ++i) {
-        const uint32_t val = cont->array[i];
-        out[val] = true;
-    }
-}
-
 void array_container_printf(const array_container_t *v) {
     if (v->cardinality == 0) {
         printf("{}");
@@ -571,6 +560,34 @@ bool array_container_iterate64(const array_container_t *cont, uint32_t base,
         if (!iterator(high_bits | (uint64_t)(cont->array[i] + base), ptr))
             return false;
     return true;
+}
+
+CROARING_ALLOW_UNALIGNED
+bool array_container_iterator_read_into_bool(const array_container_t *ac,
+                                             roaring_container_iterator_t *it,
+                                             bool *buf,
+                                             const uint16_t *max_value,
+                                             uint16_t *value_out) {
+    int32_t initial_index = it->index;
+
+    if (max_value == NULL) {
+        // TODO: SIMD optimization
+        while (it->index < ac->cardinality) {
+            buf[ac->array[it->index] - ac->array[initial_index]] = true;
+            it->index++;
+        }
+        return false;
+    }
+
+    while (it->index < ac->cardinality && ac->array[it->index] < *max_value) {
+        buf[ac->array[it->index] - ac->array[initial_index]] = true;
+        it->index++;
+    }
+    if (it->index < ac->cardinality) {
+        *value_out = ac->array[it->index];
+        return true;
+    }
+    return false;
 }
 
 #ifdef __cplusplus
