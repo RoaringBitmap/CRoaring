@@ -1055,6 +1055,7 @@ while(i.has_value) {
   printf("value = %d\n", i.current_value);
   roaring_uint32_iterator_advance(&i);
 }
+roaring_uint32_iterator_free(&i);
 
 Obviously, if you modify the underlying bitmap, the iterator
 becomes invalid. So don't.
@@ -1107,7 +1108,7 @@ CROARING_DEPRECATED static inline void roaring_init_iterator_last(
 
 /**
  * Create an iterator object that can be used to iterate through the values.
- * Caller is responsible for calling `roaring_free_iterator()`.
+ * Caller is responsible for calling `roaring_uint32_iterator_free()`.
  *
  * The iterator is initialized (this function calls `roaring_iterator_init()`)
  * If there is a value, then this iterator points to the first value and
