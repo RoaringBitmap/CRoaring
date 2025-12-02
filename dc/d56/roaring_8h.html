@@ -442,7 +442,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>What follows is code use to iterate through values in a roaring bitmap</p>
-<p>roaring_bitmap_t *r =... roaring_uint32_iterator_t i; roaring_iterator_create(r, &amp;i); while(i.has_value) { printf("value = %d\n", i.current_value); roaring_uint32_iterator_advance(&amp;i); }</p>
+<p>roaring_bitmap_t *r =... roaring_uint32_iterator_t i; roaring_iterator_create(r, &amp;i); while(i.has_value) { printf("value = %d\n", i.current_value); roaring_uint32_iterator_advance(&amp;i); } roaring_uint32_iterator_free(&amp;i);</p>
 <p>Obviously, if you modify the underlying bitmap, the iterator becomes invalid. So don't. A struct used to keep iterator state. Users should only access <code>current_value</code> and <code>has_value</code>, the rest of the type should be treated as opaque. </p>
 
 </div>
@@ -473,7 +473,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_advance</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01136">1136</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01137">1137</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance()</a>.</p>
 
@@ -3269,7 +3269,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_copy</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01182">1182</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01183">1183</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a4b5f51c2a3c015ca56bdeb477d0e84c6">roaring_uint32_iterator_copy()</a>.</p>
 
@@ -3300,7 +3300,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_create</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01120">1120</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01121">1121</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create()</a>.</p>
 
@@ -3331,7 +3331,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_free</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01192">1192</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01193">1193</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free()</a>.</p>
 
@@ -3372,7 +3372,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01089">1089</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01090">1090</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a>.</p>
 
@@ -3413,7 +3413,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_iterator_init_last</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01103">1103</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01104">1104</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a1c2a6c8c7381614389c12406aea38f34">roaring_iterator_init_last()</a>.</p>
 
@@ -3512,7 +3512,7 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Create an iterator object that can be used to iterate through the values. Caller is responsible for calling <code>roaring_free_iterator()</code>.</p>
+<p>Create an iterator object that can be used to iterate through the values. Caller is responsible for calling <code><a class="el" href="../../dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free()</a></code>.</p>
 <p>The iterator is initialized (this function calls <code><a class="el" href="../../dc/d56/roaring_8h.html#a45b84c4acc0a65ebf4fa529ee35b3c70">roaring_iterator_init()</a></code>) If there is a value, then this iterator points to the first value and <code>it-&gt;has_value</code> is true. The value is in <code>it-&gt;current_value</code>. </p>
 
 <p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#a301acc7aeeab4c7da4ff47bd98a5c884">roaring_create_iterator()</a>.</p>
@@ -3616,7 +3616,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_move_equalorlarger</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01168">1168</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01169">1169</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a523be4d9d334d99a54385cf1b8492602">roaring_uint32_iterator_move_equalorlarger()</a>.</p>
 
@@ -3647,7 +3647,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_previous</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01153">1153</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01154">1154</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#a5843d31058d4671164e719c1676a5a2a">roaring_uint32_iterator_previous()</a>.</p>
 
@@ -3694,7 +3694,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>DEPRECATED, use <code>roaring_uint32_iterator_read</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01212">1212</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01213">1213</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read()</a>.</p>
 

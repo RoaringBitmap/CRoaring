@@ -123,10 +123,10 @@ Public Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>What follows is code use to iterate through values in a roaring bitmap</p>
-<p>roaring_bitmap_t *r =... roaring_uint32_iterator_t i; roaring_iterator_create(r, &amp;i); while(i.has_value) { printf("value = %d\n", i.current_value); roaring_uint32_iterator_advance(&amp;i); }</p>
+<p>roaring_bitmap_t *r =... roaring_uint32_iterator_t i; roaring_iterator_create(r, &amp;i); while(i.has_value) { printf("value = %d\n", i.current_value); roaring_uint32_iterator_advance(&amp;i); } roaring_uint32_iterator_free(&amp;i);</p>
 <p>Obviously, if you modify the underlying bitmap, the iterator becomes invalid. So don't. A struct used to keep iterator state. Users should only access <code>current_value</code> and <code>has_value</code>, the rest of the type should be treated as opaque. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01068">1068</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01069">1069</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="a43c864a1f20b9d55ad38f8b404446650" name="a43c864a1f20b9d55ad38f8b404446650"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a43c864a1f20b9d55ad38f8b404446650">&#9670;&#160;</a></span>container</h2>
@@ -140,7 +140,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01070">1070</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01071">1071</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -156,7 +156,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01072">1072</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01073">1073</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -172,7 +172,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01074">1074</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01075">1075</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -188,7 +188,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01076">1076</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01077">1077</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -204,7 +204,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01077">1077</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01078">1078</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -220,7 +220,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01073">1073</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01074">1074</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -236,7 +236,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01069">1069</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01070">1070</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
@@ -252,7 +252,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01071">1071</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../dc/d56/roaring_8h_source.html#l01072">1072</a> of file <a class="el" href="../../dc/d56/roaring_8h_source.html">roaring.h</a>.</p>
 
 </div>
 </div>
