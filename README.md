@@ -829,7 +829,7 @@ bool *bool_array = malloc((range_end - range_start) * sizeof(bool));
 roaring_bitmap_range_bool_array(r1, range_start, range_end, bool_array);
 
 // The bool_array now contains true/false for elements at positions [range_start, range_end)
-// bool_array[i] is true if the (range_start+i)-th element exists in the bitmap
+// bool_array[i] is true if the (range_start+i) exists in the bitmap
 
 // you must free the memory:
 free(bool_array);

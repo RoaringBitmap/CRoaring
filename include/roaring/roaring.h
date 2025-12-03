@@ -567,9 +567,8 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset);
  *
  *     ans = malloc((range_end - range_start) * sizeof(bool));
  *
- * For more control, see `roaring_uint32_iterator_skip` and
- * `roaring_uint32_iterator_read_to_bool`, which can be used to e.g. tell how
- * many values were actually read.
+ * For more control, see `roaring_uint32_iterator_move_equalorlarger` and
+ * `roaring_uint32_iterator_read_into_bool`.
  */
 void roaring_bitmap_range_bool_array(const roaring_bitmap_t *r,
                                      uint32_t range_start, uint32_t range_end,
@@ -1228,14 +1227,14 @@ uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count);
 
 /**
- * Reads until the first value that is greater than or equal to ${max_value} and
+ * Reads until the last value that is strictly smaller than `max_value`  and
  * fill the bool array `buf`.
  *
  * This function satisfies semantics of iteration and can be used together with
  * other iterator functions.
- *  - buf[0] will be set to true.
- *  - let `it1` be the initial iterator, and for every iterated `it`,
- * buf[it1.current_value - it.current_value] will be set to true; other
+ *
+ * Let `it1` be the initial iterator and it has value, then for every iterated
+ * `it`, buf[it1.current_value - it.current_value] will be set to true; other
  * positions will remain to be false.
  *  - after function returns, iterator is positioned at the next element
  */
