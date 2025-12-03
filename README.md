@@ -821,8 +821,8 @@ for (uint32_t i = 100000; i < 500000; i+= 100) {
 roaring_bitmap_add_range(r1, 500000, 600000);
 
 // Convert a range to boolean array
-size_t range_start = 50;  // Start from the 50th element
-size_t range_end = 1000; // End at the 1000th element (not included)
+uint32_t range_start = 50;  // Start from the 50th element
+uint32_t range_end = 1000; // End at the 1000th element (not included)
 bool *bool_array = malloc((range_end - range_start) * sizeof(bool));
 
 // Convert range to boolean array

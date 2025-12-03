@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <roaring/containers/containers.h>
 #include <roaring/containers/run.h>
 #include <roaring/misc/configreport.h>
 
@@ -216,13 +217,82 @@ DEFINE_TEST(remove_range_test) {
     run_container_free(run);
 }
 
+DEFINE_TEST(iterator_read_into_bool_test) {
+    run_container_t* R = run_container_create();
+    assert_non_null(R);
+
+    // Variables to use.
+    uint16_t initial_value = 0;
+    uint16_t value_out = 0;
+    uint16_t max_value = 0;
+    roaring_container_iterator_t it;
+    const uint16_t max_elements = 600;
+    bool* ans_array = (bool*)calloc(max_elements, sizeof(bool));
+    bool* bool_array;
+
+    // Add runs with gaps
+    for (uint16_t i = 100; i < 200; i++) {
+        run_container_add(R, i);
+        ans_array[i] = true;
+    }
+    for (uint16_t i = 500; i < max_elements; i++) {
+        run_container_add(R, i);
+        ans_array[i] = true;
+    }
+
+    // Test 1: Read without max_value (read all)
+    it = container_init_iterator(R, RUN_CONTAINER_TYPE, &initial_value);
+    bool_array = (bool*)calloc(max_elements - initial_value, sizeof(bool));
+    value_out = initial_value;
+    bool has_more = run_container_iterator_read_into_bool(R, &it, bool_array,
+                                                          NULL, &value_out);
+    assert_false(has_more);  // Should read all values
+    assert_true(memcmp(ans_array + initial_value, bool_array,
+                       max_elements - initial_value) == 0);
+    free(bool_array);
+
+    // Test 2: Read with max_value
+    it = container_init_iterator(R, RUN_CONTAINER_TYPE, &initial_value);
+    max_value = 300;
+    bool_array = (bool*)calloc(max_value - initial_value, sizeof(bool));
+    value_out = initial_value;
+    has_more = run_container_iterator_read_into_bool(R, &it, bool_array,
+                                                     &max_value, &value_out);
+    assert_true(has_more);
+    assert_true(memcmp(ans_array + initial_value, bool_array,
+                       max_value - initial_value) == 0);
+    free(bool_array);
+
+    // Test 3: Read from middle with max_value
+    uint32_t consumed;
+    it = container_init_iterator(R, RUN_CONTAINER_TYPE, &initial_value);
+    container_iterator_skip(R, RUN_CONTAINER_TYPE, &it, 10, &consumed,
+                            &initial_value);
+    max_value = 550;
+    bool_array = (bool*)calloc(max_value - initial_value, sizeof(bool));
+    value_out = initial_value;
+    has_more = run_container_iterator_read_into_bool(R, &it, bool_array,
+                                                     &max_value, &value_out);
+    assert_true(has_more);
+    assert_true(memcmp(ans_array + initial_value, bool_array,
+                       max_value - initial_value) == 0);
+    free(bool_array);
+
+    run_container_free(R);
+    free(ans_array);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
-        cmocka_unit_test(select_test), cmocka_unit_test(remove_range_test),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(add_contains_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(select_test),
+        cmocka_unit_test(remove_range_test),
+        cmocka_unit_test(iterator_read_into_bool_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

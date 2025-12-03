@@ -1154,13 +1154,19 @@ bool run_container_iterator_read_into_bool(const run_container_t *rc,
 
         // Start from current value if we're in the middle of a run
         uint16_t start = (*value_out >= run_start) ? *value_out : run_start;
-        if (*max_value < run_end + 1) {
+        // max_value .. [start .. run_end]
+        if (*max_value <= start) {
+            *value_out = start;
+            return true;
+        }
+        // [start .. max_value .. run_end]
+        if (*max_value <= run_end) {
             memset(buf + start - initial_value, true, *max_value - start);
             *value_out = *max_value;
             return true;
-        } else {
-            memset(buf + start - initial_value, true, run_end - start + 1);
         }
+        // [start .. run_end] .. max_value
+        memset(buf + start - initial_value, true, run_end - start + 1);
         *value_out = run_end;
         it->index++;
     }

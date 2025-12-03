@@ -255,9 +255,7 @@ bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
     // If max_value is not NULL, get the wordindex of the max_value.
     if (max_value != NULL) {
         max_wordindex = *max_value / 64;
-        if (max_wordindex > BITSET_CONTAINER_SIZE_IN_WORDS) {
-            max_wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
-        }
+        assert(max_wordindex < BITSET_CONTAINER_SIZE_IN_WORDS);
     }
     uint32_t wordindex = it->index / 64;
     uint64_t word = bc->words[wordindex] & (UINT64_MAX << (it->index % 64));
@@ -266,8 +264,8 @@ bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
         while (wordindex < max_wordindex) {
             // TODO: SIMD optimization
             while (word != 0) {
-                uint16_t value = wordindex * 64 + roaring_trailing_zeroes(word);
-                buf[value - initial_value] = true;
+                *value_out = wordindex * 64 + roaring_trailing_zeroes(word);
+                buf[*value_out - initial_value] = true;
                 word = word & (word - 1);
             }
             wordindex++;
@@ -280,15 +278,17 @@ bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
     if (max_value == NULL) return false;
     // Process the last word (which is at max_wordindex)
     while (word != 0) {
-        uint16_t value = wordindex * 64 + roaring_trailing_zeroes(word);
-        if (value >= *max_value) {
-            it->index = value;
-            *value_out = value;
+        *value_out = wordindex * 64 + roaring_trailing_zeroes(word);
+        if (*value_out >= *max_value) {
+            it->index = *value_out;
             return true;
         }
-        buf[value - initial_value] = true;
+        buf[*value_out - initial_value] = true;
         word = word & (word - 1);
     }
+    // If max_value is not NULL, its wordindex must be less than
+    // BITSET_CONTAINER_SIZE_IN_WORDS. So if reach this line, the bitset must be
+    // drained.
     return false;
 }
 

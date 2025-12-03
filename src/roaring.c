@@ -1883,7 +1883,7 @@ uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
 void roaring_uint32_iterator_read_into_bool(roaring_uint32_iterator_t *it,
                                             bool *buf, uint32_t max_value) {
     uint32_t initial_value = it->current_value;
-    uint32_t highbits_of_max_value = (max_value >> 16);
+    uint32_t highbits_of_max_value = (max_value & 0xFFFF0000);
     uint16_t lowbits_of_max_value = (uint16_t)max_value;
     while (it->has_value && it->current_value < max_value) {
         buf += (it->current_value - initial_value);
@@ -3510,12 +3510,13 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset) {
 }
 
 void roaring_bitmap_range_bool_array(const roaring_bitmap_t *r,
-                                     size_t range_start, size_t range_end,
+                                     uint32_t range_start, uint32_t range_end,
                                      bool *ans) {
     roaring_uint32_iterator_t it;
     roaring_iterator_init(r, &it);
-    roaring_uint32_iterator_skip(&it, range_start);
-    roaring_uint32_iterator_read_into_bool(&it, ans, range_end);
+    if (!roaring_uint32_iterator_move_equalorlarger(&it, range_start)) return;
+    roaring_uint32_iterator_read_into_bool(
+        &it, ans + it.current_value - range_start, range_end);
 }
 
 #ifdef __cplusplus

@@ -572,7 +572,7 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset);
  * many values were actually read.
  */
 void roaring_bitmap_range_bool_array(const roaring_bitmap_t *r,
-                                     size_t range_start, size_t range_end,
+                                     uint32_t range_start, uint32_t range_end,
                                      bool *ans);
 /**
  * Convert the bitmap to a sorted array from `offset` by `limit`, output in
