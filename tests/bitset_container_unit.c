@@ -344,8 +344,8 @@ DEFINE_TEST(iterator_read_into_bool_test) {
     it = container_init_iterator(B, BITSET_CONTAINER_TYPE, &initial_value);
     value_out = initial_value;
     bool_array = (bool*)calloc(500, sizeof(bool));
-    bool has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
-                                                             NULL, &value_out);
+    bool has_more = bitset_container_iterator_read_into_bool(
+        B, &it, bool_array, UINT16_MAX + 1, &value_out);
     assert_false(has_more);  // Should read all values
     assert_true(memcmp(ans_array + initial_value, bool_array,
                        max_elements - initial_value) == 0);
@@ -357,10 +357,19 @@ DEFINE_TEST(iterator_read_into_bool_test) {
     bool_array = (bool*)calloc(max_value - initial_value, sizeof(bool));
     value_out = initial_value;
     has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
-                                                        &max_value, &value_out);
+                                                        max_value, &value_out);
     assert_true(has_more);
     assert_true(memcmp(ans_array + initial_value, bool_array,
                        (max_value - initial_value) * sizeof(bool)) == 0);
+    free(bool_array);
+    // Continue to read to the end.
+    initial_value = value_out;
+    bool_array = (bool*)calloc(max_elements - initial_value, sizeof(bool));
+    has_more = bitset_container_iterator_read_into_bool(
+        B, &it, bool_array, UINT16_MAX + 1, &value_out);
+    assert_false(has_more);
+    assert_true(memcmp(ans_array + initial_value, bool_array,
+                       (max_elements - initial_value) * sizeof(bool)) == 0);
     free(bool_array);
 
     // Test 3: Read from middle with max_value
@@ -372,7 +381,7 @@ DEFINE_TEST(iterator_read_into_bool_test) {
     bool_array = (bool*)calloc(max_value - initial_value, sizeof(bool));
     value_out = initial_value;
     has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
-                                                        &max_value, &value_out);
+                                                        max_value, &value_out);
     assert_true(has_more);
     assert_true(memcmp(ans_array + initial_value, bool_array,
                        (max_value - initial_value) * sizeof(bool)) == 0);

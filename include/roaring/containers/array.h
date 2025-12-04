@@ -472,14 +472,13 @@ inline int array_container_index_equalorlarger(const array_container_t *arr,
  * @param ac The array container to read from
  * @param it Iterator state (index into the array)
  * @param buf Boolean buffer to write to
- * @param max_value Stop reading when reaching this value. If it is null, read
- * the whole container.
+ * @param max_value Stop reading when it->current_value >= this value.
  * @param value_out Output parameter for the next value
  * @return true if there are more values to read, false otherwise
  */
 bool array_container_iterator_read_into_bool(
     const array_container_t *ac, struct roaring_container_iterator_s *it,
-    bool *buf, const uint16_t *max_value, uint16_t *value_out);
+    bool *buf, uint32_t max_value, uint16_t *value_out);
 
 /*
  * Adds all values in range [min,max] using hint:

@@ -248,47 +248,49 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 CROARING_ALLOW_UNALIGNED
 bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
                                               roaring_container_iterator_t *it,
-                                              bool *buf,
-                                              const uint16_t *max_value,
+                                              bool *buf, uint32_t max_value,
                                               uint16_t *value_out) {
-    uint32_t max_wordindex = BITSET_CONTAINER_SIZE_IN_WORDS;
-    // If max_value is not NULL, get the wordindex of the max_value.
-    if (max_value != NULL) {
-        max_wordindex = *max_value / 64;
-        assert(max_wordindex < BITSET_CONTAINER_SIZE_IN_WORDS);
+    uint32_t max_wordindex = max_value / 64;
+    if (max_wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) {
+        max_wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
     }
     uint32_t wordindex = it->index / 64;
     uint64_t word = bc->words[wordindex] & (UINT64_MAX << (it->index % 64));
     uint16_t initial_value = it->index;
-    if (max_wordindex > 0) {
-        while (wordindex < max_wordindex) {
-            // TODO: SIMD optimization
-            while (word != 0) {
-                *value_out = wordindex * 64 + roaring_trailing_zeroes(word);
-                buf[*value_out - initial_value] = true;
-                word = word & (word - 1);
-            }
-            wordindex++;
-            if (wordindex < BITSET_CONTAINER_SIZE_IN_WORDS) {
-                word = bc->words[wordindex];
-            }
+    // Remain the last word to process out of loop for reducing `if` branches
+    while (wordindex < max_wordindex) {
+        // TODO: SIMD optimization
+        while (word != 0) {
+            it->index = wordindex * 64 + roaring_trailing_zeroes(word);
+            buf[it->index - initial_value] = true;
+            word = word & (word - 1);
+        }
+        wordindex++;
+        if (wordindex < BITSET_CONTAINER_SIZE_IN_WORDS) {
+            word = bc->words[wordindex];
         }
     }
-    // All the words are processed.
-    if (max_value == NULL) return false;
     // Process the last word (which is at max_wordindex)
     while (word != 0) {
-        *value_out = wordindex * 64 + roaring_trailing_zeroes(word);
-        if (*value_out >= *max_value) {
-            it->index = *value_out;
+        it->index = wordindex * 64 + roaring_trailing_zeroes(word);
+        if ((uint32_t)it->index >= max_value) {
+            *value_out = it->index;
             return true;
         }
-        buf[*value_out - initial_value] = true;
+        buf[it->index - initial_value] = true;
         word = word & (word - 1);
     }
-    // If max_value is not NULL, its wordindex must be less than
-    // BITSET_CONTAINER_SIZE_IN_WORDS. So if reach this line, the bitset must be
-    // drained.
+
+    /// If the bitset is not drained, iterate to the next set bit.
+    while (word == 0 && (wordindex + 1 < BITSET_CONTAINER_SIZE_IN_WORDS)) {
+        wordindex++;
+        word = bc->words[wordindex];
+    }
+    if (word != 0) {
+        it->index = wordindex * 64 + roaring_trailing_zeroes(word);
+        *value_out = it->index;
+        return true;
+    }
     return false;
 }
 

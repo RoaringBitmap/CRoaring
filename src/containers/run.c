@@ -1130,12 +1130,12 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
 CROARING_ALLOW_UNALIGNED
 bool run_container_iterator_read_into_bool(const run_container_t *rc,
                                            roaring_container_iterator_t *it,
-                                           bool *buf, const uint16_t *max_value,
+                                           bool *buf, uint32_t max_value,
                                            uint16_t *value_out) {
     uint16_t initial_value = *value_out;
 
     // TODO: SIMD optimization
-    if (max_value == NULL) {
+    if (max_value > UINT16_MAX) {
         while (it->index < rc->n_runs) {
             uint16_t run_start = rc->runs[it->index].value;
             uint16_t run_end = run_start + rc->runs[it->index].length;
@@ -1155,14 +1155,14 @@ bool run_container_iterator_read_into_bool(const run_container_t *rc,
         // Start from current value if we're in the middle of a run
         uint16_t start = (*value_out >= run_start) ? *value_out : run_start;
         // max_value .. [start .. run_end]
-        if (*max_value <= start) {
+        if (max_value <= start) {
             *value_out = start;
             return true;
         }
         // [start .. max_value .. run_end]
-        if (*max_value <= run_end) {
-            memset(buf + start - initial_value, true, *max_value - start);
-            *value_out = *max_value;
+        if (max_value <= run_end) {
+            memset(buf + start - initial_value, true, max_value - start);
+            *value_out = max_value;
             return true;
         }
         // [start .. run_end] .. max_value

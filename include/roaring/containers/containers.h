@@ -2478,10 +2478,8 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          uint16_t *value_out);
 
 /**
- * Reads entries until the the last entry whose value is strictly smaller than
- * `*max_value` from the container (*max_value is excluded), and sets
- * corresponding positions in `buf` to true. If `max_value` is null, then all
- * entries are read.
+ * Iterate all entries within [it->current_value, max_value), and sets
+ * corresponding positions in `buf` to true.
  *
  * The `buf` array is filled starting from index 0, which corresponds to the
  * initial iterator position `it`. For subsequent iterator positions `it_new`,
@@ -2494,7 +2492,7 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
  */
 bool container_iterator_read_into_bool(const container_t *c, uint8_t typecode,
                                        roaring_container_iterator_t *it,
-                                       bool *buf, const uint16_t *max_value,
+                                       bool *buf, uint32_t max_value,
                                        uint16_t *value_out);
 
 /**

@@ -1227,16 +1227,30 @@ uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count);
 
 /**
- * Reads until the last value that is strictly smaller than `max_value`  and
- * fill the bool array `buf`.
+ * Iterate over `it` in range [it->current_value, max_value) and fill bool array
+ * `buf` from its beginning.
  *
  * This function satisfies semantics of iteration and can be used together with
  * other iterator functions.
  *
- * Let `it1` be the initial iterator and it has value, then for every iterated
- * `it`, buf[it1.current_value - it.current_value] will be set to true; other
- * positions will remain to be false.
- *  - after function returns, iterator is positioned at the next element
+ * Let `init_it` be the initial iterator and it has value, then for every
+ * iterated `it`, buf[init_it.current_value - it.current_value] will be set to
+ * true; other positions will remain to be false. The final `it` will be invalid
+ * or point to the first value >= max_value.
+ *
+ * User should ensure that `buf` has enough space for holding the bool values.
+ *
+ * Here is an example:
+ *                                     final_it(8)
+ *                         init_it(4)  max_value(8)
+ *                              │       │
+ *                              ▼       ▼
+ *              Values:   1 2 3 4 5 6 7 8 9
+ *              Roaring:    x   x     x x x
+ * The result bool array:      [1 0 0 1]
+ * Size of the bool array: 4    ▲
+ *                              │
+ *                 Beginning of the bool array
  */
 void roaring_uint32_iterator_read_into_bool(roaring_uint32_iterator_t *it,
                                             bool *buf, uint32_t max_value);

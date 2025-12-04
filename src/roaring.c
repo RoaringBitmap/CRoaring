@@ -1888,12 +1888,12 @@ void roaring_uint32_iterator_read_into_bool(roaring_uint32_iterator_t *it,
     while (it->has_value && it->current_value < max_value) {
         buf += (it->current_value - initial_value);
         uint16_t low16 = (uint16_t)it->current_value;
-        uint16_t *max_value_ptr = it->highbits == highbits_of_max_value
-                                      ? &lowbits_of_max_value
-                                      : NULL;
+        uint32_t max_value_for_container = it->highbits == highbits_of_max_value
+                                               ? lowbits_of_max_value
+                                               : UINT16_MAX + 1;
         bool has_value = container_iterator_read_into_bool(
-            it->container, it->typecode, &it->container_it, buf, max_value_ptr,
-            &low16);
+            it->container, it->typecode, &it->container_it, buf,
+            max_value_for_container, &low16);
         if (has_value) {
             it->has_value = true;
             it->current_value = it->highbits | low16;

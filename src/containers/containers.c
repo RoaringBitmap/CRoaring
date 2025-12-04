@@ -708,7 +708,7 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
 
 bool container_iterator_read_into_bool(const container_t *c, uint8_t typecode,
                                        roaring_container_iterator_t *it,
-                                       bool *buf, const uint16_t *max_value,
+                                       bool *buf, uint32_t max_value,
                                        uint16_t *value_out) {
     c = container_unwrap_shared(c, &typecode);
     switch (typecode) {
