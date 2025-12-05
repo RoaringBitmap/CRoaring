@@ -37,8 +37,25 @@ DEMOCPP="amalgamation_demo.cpp"
 ALL_PUBLIC_H="
 $SCRIPTPATH/include/roaring/roaring_version.h
 $SCRIPTPATH/include/roaring/portability.h
+$SCRIPTPATH/include/roaring/isadetection.h
 $SCRIPTPATH/include/roaring/roaring_types.h
 $SCRIPTPATH/include/roaring/bitset/bitset.h
+$SCRIPTPATH/include/roaring/containers/container_defs.h
+$SCRIPTPATH/include/roaring/array_util.h
+$SCRIPTPATH/include/roaring/bitset_util.h
+$SCRIPTPATH/include/roaring/containers/array.h
+$SCRIPTPATH/include/roaring/containers/bitset.h
+$SCRIPTPATH/include/roaring/containers/run.h
+$SCRIPTPATH/include/roaring/containers/convert.h
+$SCRIPTPATH/include/roaring/containers/mixed_equal.h
+$SCRIPTPATH/include/roaring/containers/mixed_subset.h
+$SCRIPTPATH/include/roaring/containers/mixed_andnot.h
+$SCRIPTPATH/include/roaring/containers/mixed_intersection.h
+$SCRIPTPATH/include/roaring/containers/mixed_negation.h
+$SCRIPTPATH/include/roaring/containers/mixed_union.h
+$SCRIPTPATH/include/roaring/containers/mixed_xor.h
+$SCRIPTPATH/include/roaring/containers/containers.h
+$SCRIPTPATH/include/roaring/roaring_array.h
 $SCRIPTPATH/include/roaring/roaring.h
 $SCRIPTPATH/include/roaring/memory.h
 $SCRIPTPATH/include/roaring/roaring64.h
@@ -56,25 +73,8 @@ $SCRIPTPATH/cpp/roaring/roaring64map.hh
 # need to be in this order.
 #
 ALL_PRIVATE_H="
-$SCRIPTPATH/include/roaring/isadetection.h
 $SCRIPTPATH/include/roaring/containers/perfparameters.h
-$SCRIPTPATH/include/roaring/containers/container_defs.h
-$SCRIPTPATH/include/roaring/array_util.h
 $SCRIPTPATH/include/roaring/utilasm.h
-$SCRIPTPATH/include/roaring/bitset_util.h
-$SCRIPTPATH/include/roaring/containers/array.h
-$SCRIPTPATH/include/roaring/containers/bitset.h
-$SCRIPTPATH/include/roaring/containers/run.h
-$SCRIPTPATH/include/roaring/containers/convert.h
-$SCRIPTPATH/include/roaring/containers/mixed_equal.h
-$SCRIPTPATH/include/roaring/containers/mixed_subset.h
-$SCRIPTPATH/include/roaring/containers/mixed_andnot.h
-$SCRIPTPATH/include/roaring/containers/mixed_intersection.h
-$SCRIPTPATH/include/roaring/containers/mixed_negation.h
-$SCRIPTPATH/include/roaring/containers/mixed_union.h
-$SCRIPTPATH/include/roaring/containers/mixed_xor.h
-$SCRIPTPATH/include/roaring/containers/containers.h
-$SCRIPTPATH/include/roaring/roaring_array.h
 $SCRIPTPATH/include/roaring/art/art.h
 "
 
@@ -89,7 +89,7 @@ $SCRIPTPATH/include/roaring/art/art.h
 ALL_PRIVATE_C=$( ( ( \
     [ -d $SCRIPTPATH/.git ] \
         && ( type git >/dev/null 2>&1 ) \
-        && ( git -C $SCRIPTPATH ls-files 'src/*.c' ) \
+        && ( git -C $SCRIPTPATH ls-files 'src/*.c') \
     ) || ( find $SCRIPTPATH/src -name '*.c' ) ) | sort )
 # Verify up-front that all the files exist
 #
@@ -251,7 +251,6 @@ echo "Creating ${DEMOCPP}..."
     cat <<< '
 #include <iostream>
 #include "roaring.hh"
-//#include "roaring.c"
 
 int main() {
   roaring::Roaring r1;

@@ -62,6 +62,8 @@ endif(ROARING_DISABLE_NEON)
 target_link_libraries(roaring PUBLIC "$<BUILD_INTERFACE:roaring-headers>")
 target_link_libraries(roaring PUBLIC "$<BUILD_INTERFACE:roaring-headers-cpp>")
 
+target_include_directories(roaring PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 #
 #install(TARGETS roaring DESTINATION lib)
 #
