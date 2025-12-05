@@ -1,8 +1,6 @@
 #include <roaring/containers/containers.h>
 #include <roaring/memory.h>
 
-#include "roaring_internal_inline.h"
-
 #ifdef __cplusplus
 extern "C" {
 // In Windows MSVC C++ compiler, (type){init} does not compile,
@@ -44,6 +42,14 @@ extern inline container_t *container_iandnot(container_t *c1, uint8_t type1,
                                              const container_t *c2,
                                              uint8_t type2,
                                              uint8_t *result_type);
+
+extern bool container_iterator_next(const container_t *c, uint8_t typecode,
+                                    roaring_container_iterator_t *it,
+                                    uint16_t *value);
+
+extern bool container_iterator_prev(const container_t *c, uint8_t typecode,
+                                    roaring_container_iterator_t *it,
+                                    uint16_t *value);
 
 void container_free(container_t *c, uint8_t type) {
     switch (type) {
@@ -369,18 +375,6 @@ roaring_container_iterator_t container_init_iterator_last(const container_t *c,
             roaring_unreachable;
             return ROARING_INIT_ROARING_CONTAINER_ITERATOR_T{0};
     }
-}
-
-bool container_iterator_next(const container_t *c, uint8_t typecode,
-                             roaring_container_iterator_t *it,
-                             uint16_t *value) {
-    return container_iterator_next_inline(c, typecode, it, value);
-}
-
-bool container_iterator_prev(const container_t *c, uint8_t typecode,
-                             roaring_container_iterator_t *it,
-                             uint16_t *value) {
-    return container_iterator_prev_inline(c, typecode, it, value);
 }
 
 bool container_iterator_lower_bound(const container_t *c, uint8_t typecode,
