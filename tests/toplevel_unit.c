@@ -5050,6 +5050,7 @@ DEFINE_TEST(test_roaring_bitmap_range_bool_array) {
         }
     }
 
+    free(ans_array);
     roaring_bitmap_free(r);
 }
 
@@ -5100,6 +5101,7 @@ DEFINE_TEST(test_roaring_uint32_iterator_read_into_bool) {
         free(bool_array);
     }
 
+    free(ans_array);
     roaring_bitmap_free(r);
 }
 
