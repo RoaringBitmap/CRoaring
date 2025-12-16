@@ -935,7 +935,7 @@ Example (C++)</h1>
 <div class="line">    <span class="keyword">const</span> uint32_t manyvalues[] = {2, 3, 4, 7, 8};</div>
 <div class="line">    Roaring rogue(5, manyvalues);</div>
 <div class="line">    Roaring::const_iterator j = rogue.begin();</div>
-<div class="line">    j.equalorlarger(4);  <span class="comment">// *j == 4</span></div>
+<div class="line">    j.move_equalorlarger(4);  <span class="comment">// *j == 4</span></div>
 <div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md35"></a>
