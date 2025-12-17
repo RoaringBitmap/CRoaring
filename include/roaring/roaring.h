@@ -578,6 +578,24 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
 bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset);
 
 /**
+ * Convert the bitmap within the range [range_start, range_end) to a dense bool
+ * array and output in `ans`.
+ *
+ * For each value at position `i` (where i ranges from 0 to
+ * range_end-range_start) in the output array, `ans[i]` is set to true if the
+ * (range_start + i)-th element in the bitmap exists, and false otherwise.
+ *
+ * Caller is responsible to ensure that there is enough memory allocated, e.g.
+ *
+ *     ans = malloc((range_end - range_start) * sizeof(bool));
+ *
+ * For more control, see `roaring_uint32_iterator_move_equalorlarger` and
+ * `roaring_uint32_iterator_read_into_bool`.
+ */
+void roaring_bitmap_range_bool_array(const roaring_bitmap_t *r,
+                                     uint32_t range_start, uint32_t range_end,
+                                     bool *ans);
+/**
  * Convert the bitmap to a sorted array from `offset` by `limit`, output in
  * `ans`.
  *
@@ -1230,6 +1248,35 @@ CROARING_DEPRECATED static inline void roaring_free_uint32_iterator(
  */
 uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
                                       uint32_t *buf, uint32_t count);
+
+/**
+ * Iterate over `it` in range [it->current_value, max_value) and fill bool array
+ * `buf` from its beginning.
+ *
+ * This function satisfies semantics of iteration and can be used together with
+ * other iterator functions.
+ *
+ * Let `init_it` be the initial iterator and it has value, then for every
+ * iterated `it`, buf[init_it.current_value - it.current_value] will be set to
+ * true; other positions will remain to be false. The final `it` will be invalid
+ * or point to the first value >= max_value.
+ *
+ * User should ensure that `buf` has enough space for holding the bool values.
+ *
+ * Here is an example:
+ *                                     final_it(8)
+ *                         init_it(4)  max_value(8)
+ *                              │       │
+ *                              ▼       ▼
+ *              Values:   1 2 3 4 5 6 7 8 9
+ *              Roaring:    x   x     x x x
+ * The result bool array:      [1 0 0 1]
+ * Size of the bool array: 4    ▲
+ *                              │
+ *                 Beginning of the bool array
+ */
+void roaring_uint32_iterator_read_into_bool(roaring_uint32_iterator_t *it,
+                                            bool *buf, uint32_t max_value);
 
 /** DEPRECATED, use `roaring_uint32_iterator_read`. */
 CROARING_DEPRECATED static inline uint32_t roaring_read_uint32_iterator(
