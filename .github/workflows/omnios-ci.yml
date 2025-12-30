@@ -1,0 +1,55 @@
+name: OmniOS
+
+'on':
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Build and Test on OmniOS
+        uses: vmactions/omnios-vm@v1
+        with:
+          release: r151050
+          usesh: true
+          prepare: |
+            set -e
+            pkg install developer/cmake developer/gcc13 developer/build/gnu-make developer/versioning/git
+          run: |
+            set -e
+            SRCDIR=$(pwd)
+
+            # Build and Test
+            mkdir build
+            cd build
+            cmake -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
+            cmake --build . 
+            ctest . --output-on-failure
+            cmake --install . 
+            cd ../tests/installation/find && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. && cmake --build .
+            cd $SRCDIR
+
+            # Build and Test Shared
+            cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=destinationshared -DENABLE_ROARING_TESTS=ON -B buildshared
+            cmake --build buildshared
+            cmake --install buildshared
+            cd tests/installation/find
+            cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../destinationshared -B buildshared
+            cmake --build buildshared
+            ./buildshared/repro
+            cd $SRCDIR
+
+            # Build and Test Debug
+            mkdir builddebug
+            cd builddebug
+            cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON ..
+            cmake --build .
+            ctest . --output-on-failure
+            cmake --install .
+            cd ../tests/installation/find && mkdir builddebug && cd builddebug && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. && cmake --build .
+            cd $SRCDIR
