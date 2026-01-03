@@ -6,7 +6,7 @@
 #include "benchmark.h"
 #include "random.h"
 
-#define DIV_CEIL_64K(denom) (((1 << 16) + ((denom) - 1)) / (denom))
+#define DIV_CEIL_64K(denom) (((1 << 16) + ((denom)-1)) / (denom))
 
 const int repeat = 500;
 

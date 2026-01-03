@@ -805,39 +805,6 @@ You should be aware that a convention bitset (`bitset_t *`) may use much more
 memory than a Roaring bitmap in some cases. You should run benchmarks to determine
 whether the conversion to a bitset has performance benefits in your case.
 
-
-# Convert to boolean array (C)
-
-This example shows how to convert a range of a Roaring bitmap to a boolean array using `roaring_bitmap_range_bool_array`:
-
-```c
-roaring_bitmap_t *r1 = roaring_bitmap_create();
-for (uint32_t i = 100; i < 100000; i+= 1 + (i%5)) {
-     roaring_bitmap_add(r1, i);
-}
-for (uint32_t i = 100000; i < 500000; i+= 100) {
-     roaring_bitmap_add(r1, i);
-}
-roaring_bitmap_add_range(r1, 500000, 600000);
-
-// Convert a range to boolean array
-uint32_t range_start = 50;  // Start from the 50th element
-uint32_t range_end = 1000; // End at the 1000th element (not included)
-bool *bool_array = malloc((range_end - range_start) * sizeof(bool));
-
-// Convert range to boolean array
-roaring_bitmap_range_bool_array(r1, range_start, range_end, bool_array);
-
-// The bool_array now contains true/false for elements at positions [range_start, range_end)
-// bool_array[i] is true if the (range_start+i) exists in the bitmap
-
-// you must free the memory:
-free(bool_array);
-roaring_bitmap_free(r1);
-```
-
-This function stores each element's presence in a single byte as a boolean value, which can be useful when you need to work with boolean arrays directly for a specific range of the bitmap.
-
 # Example (C++)
 
 
