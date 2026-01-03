@@ -248,13 +248,10 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 CROARING_ALLOW_UNALIGNED
 bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
                                               roaring_container_iterator_t *it,
-                                              bool *buf, uint32_t max_value,
+                                              bool *buf, uint16_t max_value,
                                               uint16_t *value_out) {
-    uint32_t max_wordindex = max_value / 64;
-    if (max_wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) {
-        max_wordindex = BITSET_CONTAINER_SIZE_IN_WORDS - 1;
-    }
-    uint32_t wordindex = it->index / 64;
+    uint16_t max_wordindex = max_value / 64;
+    uint16_t wordindex = it->index / 64;
     uint64_t word = bc->words[wordindex] & (UINT64_MAX << (it->index % 64));
     uint16_t initial_value = it->index;
     // Remain the last word to process out of loop for reducing `if` branches
@@ -273,19 +270,21 @@ bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
     // Process the last word (which is at max_wordindex)
     while (word != 0) {
         it->index = wordindex * 64 + roaring_trailing_zeroes(word);
-        if ((uint32_t)it->index >= max_value) {
+        if ((uint16_t)it->index > max_value) {
             *value_out = it->index;
             return true;
         }
         buf[it->index - initial_value] = true;
         word = word & (word - 1);
     }
-
+    wordindex++;
     /// If the bitset is not drained, iterate to the next set bit.
-    while (word == 0 && (wordindex + 1 < BITSET_CONTAINER_SIZE_IN_WORDS)) {
+    while (wordindex < BITSET_CONTAINER_SIZE_IN_WORDS &&
+           bc->words[wordindex] == 0) {
         wordindex++;
-        word = bc->words[wordindex];
     }
+    if (wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) return false;
+    word = bc->words[wordindex];
     if (word != 0) {
         it->index = wordindex * 64 + roaring_trailing_zeroes(word);
         *value_out = it->index;

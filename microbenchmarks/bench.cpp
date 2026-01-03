@@ -242,8 +242,8 @@ struct to_array_bool {
         uint64_t marker = 0;
         for (size_t i = 0; i < count; ++i) {
             uint64_t card = roaring_bitmap_get_cardinality(bitmaps[i]);
-            roaring_bitmap_range_bool_array(bitmaps[i], 0, card,
-                                            array_buffer_bool);
+            roaring_bitmap_to_bool_array_range(bitmaps[i], 0, card,
+                                               array_buffer_bool);
             marker += array_buffer_bool[0];
         }
         return marker;

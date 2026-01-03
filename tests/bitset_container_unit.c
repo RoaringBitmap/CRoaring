@@ -343,33 +343,34 @@ DEFINE_TEST(iterator_read_into_bool_test) {
     // Test 1: Read without max_value (read all)
     it = container_init_iterator(B, BITSET_CONTAINER_TYPE, &initial_value);
     value_out = initial_value;
-    bool_array = (bool*)calloc(500, sizeof(bool));
+    size_t res_size = max_elements - initial_value;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
     bool has_more = bitset_container_iterator_read_into_bool(
-        B, &it, bool_array, UINT16_MAX + 1, &value_out);
+        B, &it, bool_array, UINT16_MAX, &value_out);
     assert_false(has_more);  // Should read all values
-    assert_true(memcmp(ans_array + initial_value, bool_array,
-                       max_elements - initial_value) == 0);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
     free(bool_array);
 
     // Test 2: Read with max_value
     it = container_init_iterator(B, BITSET_CONTAINER_TYPE, &initial_value);
     max_value = 300;
-    bool_array = (bool*)calloc(max_value - initial_value, sizeof(bool));
+    res_size = max_value - initial_value + 1;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
     value_out = initial_value;
     has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
                                                         max_value, &value_out);
     assert_true(has_more);
-    assert_true(memcmp(ans_array + initial_value, bool_array,
-                       (max_value - initial_value) * sizeof(bool)) == 0);
+    assert_true(value_out == 500);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
     free(bool_array);
     // Continue to read to the end.
     initial_value = value_out;
-    bool_array = (bool*)calloc(max_elements - initial_value, sizeof(bool));
-    has_more = bitset_container_iterator_read_into_bool(
-        B, &it, bool_array, UINT16_MAX + 1, &value_out);
+    res_size = max_elements - initial_value;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
+    has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
+                                                        UINT16_MAX, &value_out);
     assert_false(has_more);
-    assert_true(memcmp(ans_array + initial_value, bool_array,
-                       (max_elements - initial_value) * sizeof(bool)) == 0);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
     free(bool_array);
 
     // Test 3: Read from middle with max_value
@@ -378,13 +379,14 @@ DEFINE_TEST(iterator_read_into_bool_test) {
     container_iterator_skip(B, BITSET_CONTAINER_TYPE, &it, 10, &consumed,
                             &initial_value);
     max_value = 550;
-    bool_array = (bool*)calloc(max_value - initial_value, sizeof(bool));
+    res_size = max_value - initial_value + 1;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
     value_out = initial_value;
     has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
                                                         max_value, &value_out);
     assert_true(has_more);
-    assert_true(memcmp(ans_array + initial_value, bool_array,
-                       (max_value - initial_value) * sizeof(bool)) == 0);
+    assert_true(value_out == 552);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
     free(bool_array);
 
     bitset_container_free(B);

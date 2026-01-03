@@ -2478,7 +2478,7 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          uint16_t *value_out);
 
 /**
- * Iterate all entries within [it->current_value, max_value), and sets
+ * Iterate all entries within [it->current_value, max_value], and sets
  * corresponding positions in `buf` to true.
  *
  * The `buf` array is filled starting from index 0, which corresponds to the
@@ -2492,7 +2492,7 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
  */
 bool container_iterator_read_into_bool(const container_t *c, uint8_t typecode,
                                        roaring_container_iterator_t *it,
-                                       bool *buf, uint32_t max_value,
+                                       bool *buf, uint16_t max_value,
                                        uint16_t *value_out);
 
 /**

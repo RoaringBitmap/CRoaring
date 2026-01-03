@@ -5016,7 +5016,7 @@ DEFINE_TEST(test_roaring_bitmap_range_bool_array) {
     uint32_t range_start = 100;
     uint32_t range_end = 300;
     bool *bool_array = (bool *)calloc(range_end - range_start, sizeof(bool));
-    roaring_bitmap_range_bool_array(r, range_start, range_end, bool_array);
+    roaring_bitmap_to_bool_array_range(r, range_start, range_end, bool_array);
 
     // Verify the bool array
     assert_true(memcmp(ans_array + range_start, bool_array,
@@ -5027,7 +5027,7 @@ DEFINE_TEST(test_roaring_bitmap_range_bool_array) {
     range_start = 300;
     range_end = 400;
     bool_array = (bool *)calloc(range_end - range_start, sizeof(bool));
-    roaring_bitmap_range_bool_array(r, range_start, range_end, bool_array);
+    roaring_bitmap_to_bool_array_range(r, range_start, range_end, bool_array);
 
     for (size_t i = 0; i < range_end - range_start; i++) {
         assert_false(bool_array[i]);
@@ -5042,10 +5042,24 @@ DEFINE_TEST(test_roaring_bitmap_range_bool_array) {
              num_values += 100) {
             range_end = range_start + num_values;
             bool_array = (bool *)calloc(range_end - range_start, sizeof(bool));
-            roaring_bitmap_range_bool_array(r, range_start, range_end,
-                                            bool_array);
+            roaring_bitmap_to_bool_array_range(r, range_start, range_end,
+                                               bool_array);
             assert_true(memcmp(ans_array + range_start, bool_array,
                                range_end - range_start) == 0);
+            free(bool_array);
+        }
+    }
+
+    for (range_start = 0; range_start < max_elements; range_start += 100) {
+        for (uint32_t num_values = 100; range_start + num_values < max_elements;
+             num_values += 100) {
+            range_end = range_start + num_values;
+            bool_array =
+                (bool *)calloc(range_end - range_start + 1, sizeof(bool));
+            roaring_bitmap_to_bool_array_range_closed(r, range_start, range_end,
+                                                      bool_array);
+            assert_true(memcmp(ans_array + range_start, bool_array,
+                               range_end - range_start + 1) == 0);
             free(bool_array);
         }
     }
@@ -5081,11 +5095,11 @@ DEFINE_TEST(test_roaring_uint32_iterator_read_into_bool) {
     uint32_t initial_value = it.current_value;
 
     uint32_t max_value = 150;
-    bool *bool_array = (bool *)calloc(max_value - initial_value, sizeof(bool));
+    size_t res_size = max_value - initial_value + 1;
+    bool *bool_array = (bool *)calloc(res_size, sizeof(bool));
     roaring_uint32_iterator_read_into_bool(&it, bool_array, max_value);
-    assert_true(it.has_value && it.current_value == 150);
-    assert_true(memcmp(ans_array + initial_value, bool_array,
-                       max_value - initial_value) == 0);
+    assert_true(it.has_value && it.current_value == 155);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
     free(bool_array);
 
     // Test 2: Read all remaining values
@@ -5093,11 +5107,12 @@ DEFINE_TEST(test_roaring_uint32_iterator_read_into_bool) {
         /// Check 200 values each time.
         initial_value = it.current_value;
         max_value = initial_value + 200;
-        if (max_value > max_elements) max_value = max_elements;
-        bool_array = (bool *)calloc(max_value - initial_value, sizeof(bool));
+        if (max_value >= max_elements) max_value = max_elements - 1;
+        res_size = max_value - initial_value + 1;
+        bool_array = (bool *)calloc(res_size, sizeof(bool));
         roaring_uint32_iterator_read_into_bool(&it, bool_array, max_value);
-        assert_true(memcmp(ans_array + initial_value, bool_array,
-                           max_value - initial_value) == 0);
+        assert_true(memcmp(ans_array + initial_value, bool_array, res_size) ==
+                    0);
         free(bool_array);
     }
 
