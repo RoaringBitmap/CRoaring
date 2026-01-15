@@ -1204,7 +1204,7 @@ class Roaring64Map {
             ROARING_TERMINATE("ran out of bytes");
         }
         Roaring64Map result;
-        if(maxbytes < sizeof(uint64_t)) {
+        if (maxbytes < sizeof(uint64_t)) {
             ROARING_TERMINATE("ran out of bytes");
         }
         uint64_t map_size;

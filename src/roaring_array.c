@@ -561,13 +561,13 @@ size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes) {
         bytestotal += s;
         if (bytestotal > maxbytes) return 0;
         bool has_one_bitmap = false;
-        for(size_t i = 0; i < s; ++i) {
-            if(buf[i] != 0) {
+        for (size_t i = 0; i < s; ++i) {
+            if (buf[i] != 0) {
                 has_one_bitmap = true;
                 break;
             }
         }
-        if(!has_one_bitmap) {
+        if (!has_one_bitmap) {
             return 0;
         }
         bitmapOfRunContainers = (char *)buf;
@@ -675,13 +675,13 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf,
             return false;
         }
         bool has_one_bitmap = false;
-        for(size_t i = 0; i < s; ++i) {
-            if(buf[i] != 0) {
+        for (size_t i = 0; i < s; ++i) {
+            if (buf[i] != 0) {
                 has_one_bitmap = true;
                 break;
             }
         }
-        if(!has_one_bitmap) {
+        if (!has_one_bitmap) {
             return 0;
         }
         bitmapOfRunContainers = buf;

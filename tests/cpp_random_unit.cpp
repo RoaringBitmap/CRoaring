@@ -353,19 +353,17 @@ DEFINE_TEST(random_doublecheck_test) {
     }
 }
 
-
 // credit: Oleg Lazari
 DEFINE_TEST(safe_test_lazari) {
-    unsigned char payload[] = {
-        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-        0x3b, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x6a, 0x6a, 0xd4
-    };
+    unsigned char payload[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x3b, 0x30,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x6a, 0x6a, 0xd4};
     try {
-        roaring::Roaring64Map::readSafe((const char*)payload, sizeof(payload));
-        assert_false(true); // it should not reach here
-    } catch (...) {}
+        roaring::Roaring64Map::readSafe((const char *)payload, sizeof(payload));
+        assert_false(true);  // it should not reach here
+    } catch (...) {
+    }
 }
 
 DEFINE_TEST(random_doublecheck_test_64) {
