@@ -1204,6 +1204,9 @@ class Roaring64Map {
             ROARING_TERMINATE("ran out of bytes");
         }
         Roaring64Map result;
+        if(maxbytes < sizeof(uint64_t)) {
+            ROARING_TERMINATE("ran out of bytes");
+        }
         uint64_t map_size;
         std::memcpy(&map_size, buf, sizeof(uint64_t));
         buf += sizeof(uint64_t);
