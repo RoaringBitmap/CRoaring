@@ -560,16 +560,6 @@ size_t ra_portable_deserialize_size(const char *buf, const size_t maxbytes) {
         int32_t s = (size + 7) / 8;
         bytestotal += s;
         if (bytestotal > maxbytes) return 0;
-        bool has_one_bitmap = false;
-        for (int32_t i = 0; i < s; ++i) {
-            if (buf[i] != 0) {
-                has_one_bitmap = true;
-                break;
-            }
-        }
-        if (!has_one_bitmap) {
-            return 0;
-        }
         bitmapOfRunContainers = (char *)buf;
         buf += s;
     }
@@ -673,16 +663,6 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf,
         if (*readbytes > maxbytes) {  // data is corrupted?
             // Ran out of bytes while reading run bitmap.
             return false;
-        }
-        bool has_one_bitmap = false;
-        for (int32_t i = 0; i < s; ++i) {
-            if (buf[i] != 0) {
-                has_one_bitmap = true;
-                break;
-            }
-        }
-        if (!has_one_bitmap) {
-            return 0;
         }
         bitmapOfRunContainers = buf;
         buf += s;
