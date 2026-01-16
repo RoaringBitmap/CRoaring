@@ -1882,6 +1882,33 @@ uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
     return ret;
 }
 
+void roaring_uint32_iterator_read_into_bool(roaring_uint32_iterator_t *it,
+                                            bool *buf, uint32_t max_value) {
+    uint32_t initial_value = it->current_value;
+    uint32_t highbits_of_max_value = (max_value & 0xFFFF0000);
+    uint16_t lowbits_of_max_value = (uint16_t)max_value;
+    bool *pos = buf;
+    while (it->has_value && it->current_value <= max_value) {
+        pos = buf + it->current_value - initial_value;
+        uint16_t low16 = (uint16_t)it->current_value;
+        uint16_t max_value_for_container = it->highbits == highbits_of_max_value
+                                               ? lowbits_of_max_value
+                                               : UINT16_MAX;
+        bool has_value = container_iterator_read_into_bool(
+            it->container, it->typecode, &it->container_it, pos,
+            max_value_for_container, &low16);
+        if (has_value) {
+            it->has_value = true;
+            it->current_value = it->highbits | low16;
+            // If the container still has values, we must have stopped because
+            // we read enough values.
+            return;
+        }
+        it->container_index++;
+        it->has_value = loadfirstvalue(it);
+    }
+}
+
 uint32_t roaring_uint32_iterator_skip(roaring_uint32_iterator_t *it,
                                       uint32_t count) {
     uint32_t ret = 0;
@@ -3466,6 +3493,26 @@ bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset) {
         }
     }
     return true;
+}
+
+void roaring_bitmap_to_bool_array_range_closed(const roaring_bitmap_t *r,
+                                               uint32_t range_start,
+                                               uint32_t range_end, bool *ans) {
+    if (range_start > range_end) return;
+    roaring_uint32_iterator_t it;
+    roaring_iterator_init(r, &it);
+    if (!roaring_uint32_iterator_move_equalorlarger(&it, range_start)) return;
+    roaring_uint32_iterator_read_into_bool(
+        &it, ans + it.current_value - range_start, range_end);
+}
+
+void roaring_bitmap_to_bool_array_range(const roaring_bitmap_t *r,
+                                        uint64_t range_start,
+                                        uint64_t range_end, bool *ans) {
+    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1)
+        return;
+    roaring_bitmap_to_bool_array_range_closed(r, (uint32_t)range_start,
+                                              (uint32_t)(range_end - 1), ans);
 }
 
 #ifdef __cplusplus

@@ -6,9 +6,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <roaring/bitset_util.h>
 #include <roaring/containers/bitset.h>
+#include <roaring/containers/containers.h>
 #include <roaring/misc/configreport.h>
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
@@ -314,6 +316,83 @@ DEFINE_TEST(select_test) {
     bitset_container_free(B);
 }
 
+DEFINE_TEST(iterator_read_into_bool_test) {
+    bitset_container_t* B = bitset_container_create();
+    assert_non_null(B);
+
+    // Variables to use.
+    uint16_t initial_value = 0;
+    uint16_t value_out = 0;
+    uint16_t max_value = 0;
+    roaring_container_iterator_t it;
+    const uint16_t max_elements = 600;
+    bool* ans_array = (bool*)calloc(max_elements, sizeof(bool));
+    bool* bool_array;
+
+    // Add values with gaps
+    for (uint16_t i = 100; i < 200; i += 3) {
+        bitset_container_set(B, i);
+        ans_array[i] = true;
+    }
+    for (uint16_t i = 500; i < max_elements; i += 2) {
+        bitset_container_set(B, i);
+        ans_array[i] = true;
+    }
+    B->cardinality = bitset_container_compute_cardinality(B);
+
+    // Test 1: Read without max_value (read all)
+    it = container_init_iterator(B, BITSET_CONTAINER_TYPE, &initial_value);
+    value_out = initial_value;
+    size_t res_size = max_elements - initial_value;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
+    bool has_more = bitset_container_iterator_read_into_bool(
+        B, &it, bool_array, UINT16_MAX, &value_out);
+    assert_false(has_more);  // Should read all values
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
+    free(bool_array);
+
+    // Test 2: Read with max_value
+    it = container_init_iterator(B, BITSET_CONTAINER_TYPE, &initial_value);
+    max_value = 300;
+    res_size = max_value - initial_value + 1;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
+    value_out = initial_value;
+    has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
+                                                        max_value, &value_out);
+    assert_true(has_more);
+    assert_true(value_out == 500);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
+    free(bool_array);
+    // Continue to read to the end.
+    initial_value = value_out;
+    res_size = max_elements - initial_value;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
+    has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
+                                                        UINT16_MAX, &value_out);
+    assert_false(has_more);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
+    free(bool_array);
+
+    // Test 3: Read from middle with max_value
+    uint32_t consumed;
+    it = container_init_iterator(B, BITSET_CONTAINER_TYPE, &initial_value);
+    container_iterator_skip(B, BITSET_CONTAINER_TYPE, &it, 10, &consumed,
+                            &initial_value);
+    max_value = 550;
+    res_size = max_value - initial_value + 1;
+    bool_array = (bool*)calloc(res_size, sizeof(bool));
+    value_out = initial_value;
+    has_more = bitset_container_iterator_read_into_bool(B, &it, bool_array,
+                                                        max_value, &value_out);
+    assert_true(has_more);
+    assert_true(value_out == 552);
+    assert_true(memcmp(ans_array + initial_value, bool_array, res_size) == 0);
+    free(bool_array);
+
+    bitset_container_free(B);
+    free(ans_array);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(hamming_test),
@@ -326,6 +405,7 @@ int main() {
         cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_bitset_compute_cardinality),
+        cmocka_unit_test(iterator_read_into_bool_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
