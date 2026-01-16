@@ -353,6 +353,21 @@ DEFINE_TEST(random_doublecheck_test) {
     }
 }
 
+#if ROARING_EXCEPTIONS
+// credit: Oleg Lazari
+DEFINE_TEST(safe_test_lazari) {
+    unsigned char payload[] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x3b, 0x30,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x6a, 0x6a, 0xd4};
+    try {
+        roaring::Roaring64Map::readSafe((const char *)payload, sizeof(payload));
+        assert_false(true);  // it should not reach here
+    } catch (...) {
+    }
+}
+#endif
+
 DEFINE_TEST(random_doublecheck_test_64) {
     //
     // Make a group of bitsets to choose from when performing operations.
@@ -487,6 +502,9 @@ int main() {
     gravity64 = (static_cast<uint64_t>(rand()) << 32) + rand() % 20000 - 10000;
 
     const struct CMUnitTest tests[] = {
+#if ROARING_EXCEPTIONS
+        cmocka_unit_test(safe_test_lazari),
+#endif
         cmocka_unit_test(sanity_check_doublechecking),
         cmocka_unit_test(sanity_check_doublechecking_64),
         cmocka_unit_test(random_doublecheck_test),
