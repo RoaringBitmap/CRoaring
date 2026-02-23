@@ -172,7 +172,7 @@ Quick Start</h1>
 <ol type="1">
 <li>Pull the library in a directory <code> wget <a href="https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.c">https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.c</a> wget <a href="https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.h">https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.h</a> wget <a href="https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.hh">https://github.com/RoaringBitmap/CRoaring/releases/download/v2.1.0/roaring.hh</a> </code></li>
 <li><p class="startli">Create a new file named <code>demo.c</code> with this content: ```C #include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #include "roaring.c" int main() { roaring_bitmap_t *r1 = <a class="el" href="dc/d56/roaring_8h.html#a02f5d67a889993b158e55d0eb79b340b">roaring_bitmap_create()</a>; for (uint32_t i = 100; i &lt; 1000; i++) roaring_bitmap_add(r1, i); printf("cardinality = %d\n", (int) roaring_bitmap_get_cardinality(r1)); roaring_bitmap_free(r1);</p>
-<p class="startli">bitset_t *b = bitset_create(); for (int k = 0; k &lt; 1000; ++k) { bitset_set(b, 3 * k); } printf("%zu \n", bitset_count(b)); bitset_free(b); return EXIT_SUCCESS; } <code></code></p>
+<p class="startli">bitset_t *b = bitset_create(); for (int k = 0; k &lt; 1000; ++k) { bitset_set(b, 3 * k); } printf("%zu \n", bitset_count(b)); bitset_free(b); return EXIT_SUCCESS; } <code> [You can try it out on Godbolt](<a href="https://godbolt.org/z/Y6oMGEo97">https://godbolt.org/z/Y6oMGEo97</a>).</code></p>
 </li>
 </ol>
 <ol type="1">
