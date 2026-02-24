@@ -245,6 +245,54 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
     return false;
 }
 
+CROARING_ALLOW_UNALIGNED
+bool bitset_container_iterator_read_into_bool(const bitset_container_t *bc,
+                                              roaring_container_iterator_t *it,
+                                              bool *buf, uint16_t max_value,
+                                              uint16_t *value_out) {
+    uint16_t max_wordindex = max_value / 64;
+    uint16_t wordindex = it->index / 64;
+    uint64_t word = bc->words[wordindex] & (UINT64_MAX << (it->index % 64));
+    uint16_t initial_value = it->index;
+    // Remain the last word to process out of loop for reducing `if` branches
+    while (wordindex < max_wordindex) {
+        // TODO: SIMD optimization
+        while (word != 0) {
+            it->index = wordindex * 64 + roaring_trailing_zeroes(word);
+            buf[it->index - initial_value] = true;
+            word = word & (word - 1);
+        }
+        wordindex++;
+        if (wordindex < BITSET_CONTAINER_SIZE_IN_WORDS) {
+            word = bc->words[wordindex];
+        }
+    }
+    // Process the last word (which is at max_wordindex)
+    while (word != 0) {
+        it->index = wordindex * 64 + roaring_trailing_zeroes(word);
+        if ((uint16_t)it->index > max_value) {
+            *value_out = it->index;
+            return true;
+        }
+        buf[it->index - initial_value] = true;
+        word = word & (word - 1);
+    }
+    wordindex++;
+    /// If the bitset is not drained, iterate to the next set bit.
+    while (wordindex < BITSET_CONTAINER_SIZE_IN_WORDS &&
+           bc->words[wordindex] == 0) {
+        wordindex++;
+    }
+    if (wordindex >= BITSET_CONTAINER_SIZE_IN_WORDS) return false;
+    word = bc->words[wordindex];
+    if (word != 0) {
+        it->index = wordindex * 64 + roaring_trailing_zeroes(word);
+        *value_out = it->index;
+        return true;
+    }
+    return false;
+}
+
 #if CROARING_IS_X64
 #ifndef CROARING_WORDS_IN_AVX2_REG
 #define CROARING_WORDS_IN_AVX2_REG sizeof(__m256i) / sizeof(uint64_t)

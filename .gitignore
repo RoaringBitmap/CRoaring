@@ -40,6 +40,8 @@ tests/config.h
 # CMake
 build
 
+# clangd
+.cache/clangd/
 
 
 #############BEGIN VISUAL STUDIO############

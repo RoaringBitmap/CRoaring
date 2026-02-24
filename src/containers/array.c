@@ -562,6 +562,33 @@ bool array_container_iterate64(const array_container_t *cont, uint32_t base,
     return true;
 }
 
+CROARING_ALLOW_UNALIGNED
+bool array_container_iterator_read_into_bool(const array_container_t *ac,
+                                             roaring_container_iterator_t *it,
+                                             bool *buf, uint16_t max_value,
+                                             uint16_t *value_out) {
+    int32_t initial_index = it->index;
+
+    if (max_value == UINT16_MAX) {
+        // TODO: SIMD optimization
+        while (it->index < ac->cardinality) {
+            buf[ac->array[it->index] - ac->array[initial_index]] = true;
+            it->index++;
+        }
+        return false;
+    }
+
+    while (it->index < ac->cardinality && ac->array[it->index] <= max_value) {
+        buf[ac->array[it->index] - ac->array[initial_index]] = true;
+        it->index++;
+    }
+    if (it->index < ac->cardinality) {
+        *value_out = ac->array[it->index];
+        return true;
+    }
+    return false;
+}
+
 #ifdef __cplusplus
 }
 }

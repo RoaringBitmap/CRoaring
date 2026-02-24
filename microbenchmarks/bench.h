@@ -42,6 +42,7 @@ roaring64_bitmap_t **bitmaps64 = NULL;
 Roaring64Map **bitmaps64cpp = NULL;
 uint32_t *array_buffer;
 uint64_t *array_buffer64;
+bool *array_buffer_bool;
 uint32_t maxvalue = 0;
 uint32_t maxcard = 0;
 
@@ -200,6 +201,7 @@ static roaring_bitmap_t **create_all_bitmaps(size_t *howmany,
     }
     array_buffer = (uint32_t *)malloc(maxcard * sizeof(uint32_t));
     array_buffer64 = (uint64_t *)malloc(maxcard * sizeof(uint64_t));
+    array_buffer_bool = (bool *)calloc(maxvalue + 1, sizeof(bool));
     return answer;
 }
 
