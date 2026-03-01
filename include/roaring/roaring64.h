@@ -506,6 +506,16 @@ void roaring64_bitmap_flip_inplace(roaring64_bitmap_t *r, uint64_t min,
  */
 void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
                                           uint64_t max);
+
+/**
+ * Return a copy of the bitmap with all values shifted by offset. If negative
+ * is true the shift is subtracted, otherwise added. Values that overflow or
+ * underflow uint64_t are dropped. The caller is responsible for freeing the
+ * returned bitmap.
+ */
+roaring64_bitmap_t *roaring64_bitmap_add_offset(const roaring64_bitmap_t *r,
+                                                bool negative, uint64_t offset);
+
 /**
  * How many bytes are required to serialize this bitmap.
  *

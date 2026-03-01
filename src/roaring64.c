@@ -1899,6 +1899,125 @@ void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
     }
 }
 
+roaring64_bitmap_t *roaring64_bitmap_add_offset(const roaring64_bitmap_t *bm,
+                                                bool negative,
+                                                uint64_t offset) {
+    if (offset == 0) {
+        return roaring64_bitmap_copy(bm);
+    }
+
+    roaring64_bitmap_t *answer = roaring64_bitmap_create();
+
+    // Decompose the offset into a signed container-level shift and an
+    // intra-container shift. For negative offsets the low 16 bits wrap: e.g.
+    // -1 = container_offset(-1) + in_offset(0xffff), because shifting by -1
+    // container is a shift of -0x1_0000, so we need to shift up within
+    // containers to get back to -1
+    uint16_t low16 = (uint16_t)offset;
+    int64_t container_offset;
+    uint16_t in_offset;
+    if (!negative) {
+        container_offset = (int64_t)(offset >> 16);
+        in_offset = low16;
+    } else if (low16 == 0) {
+        container_offset = -(int64_t)(offset >> 16);
+        in_offset = 0;
+    } else {
+        container_offset = -(int64_t)(offset >> 16) - 1;
+        in_offset = (uint16_t)-low16;
+    }
+
+    art_iterator_t it = art_init_iterator((art_t *)&bm->art, /*first=*/true);
+
+    if (in_offset == 0) {
+        while (it.value != NULL) {
+            leaf_t leaf = (leaf_t)*it.value;
+            int64_t k =
+                (int64_t)(combine_key(it.key, 0) >> 16) + container_offset;
+            if ((uint64_t)k < (uint64_t)1 << 48) {
+                uint8_t new_high48[ART_KEY_BYTES];
+                split_key((uint64_t)k << 16, new_high48);
+                uint8_t typecode = get_typecode(leaf);
+                container_t *container =
+                    get_copy_of_container(get_container(bm, leaf), &typecode,
+                                          /*copy_on_write=*/false);
+                leaf_t new_leaf = add_container(answer, container, typecode);
+                art_insert(&answer->art, new_high48, (art_val_t)new_leaf);
+            }
+            art_iterator_next(&it);
+        }
+        return answer;
+    }
+
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        int64_t k = (int64_t)(combine_key(it.key, 0) >> 16) + container_offset;
+
+        container_t *lo = NULL, *hi = NULL;
+        container_t **lo_ptr = NULL, **hi_ptr = NULL;
+
+        if ((uint64_t)k < (uint64_t)1 << 48) {
+            lo_ptr = &lo;
+        }
+        if ((uint64_t)(k + 1) < (uint64_t)1 << 48) {
+            hi_ptr = &hi;
+        }
+        if (lo_ptr == NULL && hi_ptr == NULL) {
+            art_iterator_next(&it);
+            continue;
+        }
+
+        uint8_t typecode = get_typecode(leaf);
+        const container_t *c =
+            container_unwrap_shared(get_container(bm, leaf), &typecode);
+        container_add_offset(c, typecode, lo_ptr, hi_ptr, in_offset);
+
+        if (lo != NULL) {
+            uint8_t lo_high48[ART_KEY_BYTES];
+            split_key((uint64_t)k << 16, lo_high48);
+            leaf_t *existing_leaf = (leaf_t *)art_find(&answer->art, lo_high48);
+            if (existing_leaf != NULL) {
+                uint8_t existing_type = get_typecode(*existing_leaf);
+                container_t *existing_c = get_container(answer, *existing_leaf);
+                uint8_t merged_type;
+                container_t *merged_c = container_ior(
+                    existing_c, existing_type, lo, typecode, &merged_type);
+                if (merged_c != existing_c) {
+                    container_free(existing_c, existing_type);
+                }
+                replace_container(answer, existing_leaf, merged_c, merged_type);
+                container_free(lo, typecode);
+            } else {
+                leaf_t new_leaf = add_container(answer, lo, typecode);
+                art_insert(&answer->art, lo_high48, (art_val_t)new_leaf);
+            }
+        }
+
+        if (hi != NULL) {
+            uint8_t hi_high48[ART_KEY_BYTES];
+            split_key((uint64_t)(k + 1) << 16, hi_high48);
+            leaf_t new_leaf = add_container(answer, hi, typecode);
+            art_insert(&answer->art, hi_high48, (art_val_t)new_leaf);
+        }
+
+        art_iterator_next(&it);
+    }
+
+    // Repair containers (e.g., convert low-cardinality bitset containers to
+    // array containers after lazy union operations).
+    art_iterator_t repair_it = art_init_iterator(&answer->art, /*first=*/true);
+    while (repair_it.value != NULL) {
+        leaf_t *leaf_ptr = (leaf_t *)repair_it.value;
+        uint8_t typecode = get_typecode(*leaf_ptr);
+        container_t *repaired = container_repair_after_lazy(
+            get_container(answer, *leaf_ptr), &typecode);
+        replace_container(answer, leaf_ptr, repaired, typecode);
+        art_iterator_next(&repair_it);
+    }
+
+    return answer;
+}
+
 // Returns the number of distinct high 32-bit entries in the bitmap.
 static inline uint64_t count_high32(const roaring64_bitmap_t *r) {
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
