@@ -941,6 +941,26 @@ uint64_t roaring64_bitmap_maximum(const roaring64_bitmap_t *r) {
         it.key, container_maximum(get_container(r, leaf), get_typecode(leaf)));
 }
 
+bool roaring64_bitmap_remove_run_compression(roaring64_bitmap_t *r) {
+    art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
+    bool removed = false;
+    while (it.value != NULL) {
+        leaf_t *leaf = (leaf_t *)it.value;
+        if (get_typecode(*leaf) == RUN_CONTAINER_TYPE) {
+            run_container_t *run = CAST_run(get_container(r, *leaf));
+            int32_t card = run_container_cardinality(run);
+            uint8_t new_typecode;
+            container_t *new_container =
+                convert_to_bitset_or_array_container(run, card, &new_typecode);
+            run_container_free(run);
+            replace_container(r, leaf, new_container, new_typecode);
+            removed = true;
+        }
+        art_iterator_next(&it);
+    }
+    return removed;
+}
+
 bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     bool has_run_container = false;

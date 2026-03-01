@@ -931,6 +931,27 @@ DEFINE_TEST(test_maximum) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_remove_run_compression) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+
+    for (uint64_t i = 0; i < 30000; ++i) {
+        roaring64_bitmap_add(r, i);
+    }
+    assert_true(roaring64_bitmap_run_optimize(r));
+    assert_r64_valid(r);
+
+    assert_true(roaring64_bitmap_remove_run_compression(r));
+    assert_r64_valid(r);
+
+    assert_false(roaring64_bitmap_remove_run_compression(r));
+    assert_r64_valid(r);
+
+    assert_true(roaring64_bitmap_run_optimize(r));
+    assert_r64_valid(r);
+
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_run_optimize) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
@@ -2078,6 +2099,7 @@ int main() {
         cmocka_unit_test(test_is_empty),
         cmocka_unit_test(test_minimum),
         cmocka_unit_test(test_maximum),
+        cmocka_unit_test(test_remove_run_compression),
         cmocka_unit_test(test_run_optimize),
         cmocka_unit_test(test_equals),
         cmocka_unit_test(test_is_subset),
