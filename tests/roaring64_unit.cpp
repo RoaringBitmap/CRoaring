@@ -1549,7 +1549,7 @@ DEFINE_TEST(test_flip_inplace) {
 
 void assert_add_offset(const roaring64_bitmap_t* in,
                        const roaring64_bitmap_t* out, uint64_t offset,
-                       bool negative) {
+                       bool positive) {
     assert_non_null(out);
     assert_r64_valid(out);
 
@@ -1557,7 +1557,7 @@ void assert_add_offset(const roaring64_bitmap_t* in,
     uint64_t expected_card = 0;
     while (roaring64_iterator_has_value(it)) {
         uint64_t val = roaring64_iterator_value(it);
-        if (!negative) {
+        if (positive) {
             if (val <= UINT64_MAX - offset) {
                 expected_card++;
                 assert_true(roaring64_bitmap_contains(out, val + offset));
@@ -1578,7 +1578,7 @@ DEFINE_TEST(test_add_offset) {
     {
         // Zero offset returns an equal copy.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 100, 200000);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 0);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 0);
         assert_r64_valid(r2);
         assert_true(roaring64_bitmap_equals(r1, r2));
         roaring64_bitmap_free(r1);
@@ -1587,8 +1587,8 @@ DEFINE_TEST(test_add_offset) {
     {
         // Simple positive offset within a container.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(0, 5, 100);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 10);
-        assert_add_offset(r1, r2, 10, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 10);
+        assert_add_offset(r1, r2, 10, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1596,24 +1596,24 @@ DEFINE_TEST(test_add_offset) {
         // Positive offset crossing a container boundary (lo16 split).
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(0xFFF0, 0x10000, 0x10010);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 0x20);
-        assert_add_offset(r1, r2, 0x20, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 0x20);
+        assert_add_offset(r1, r2, 0x20, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
     {
         // Negative offset.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(100, 200, 300);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, true, 50);
-        assert_add_offset(r1, r2, 50, true);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_sub_offset(r1, 50);
+        assert_add_offset(r1, r2, 50, false);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
     {
         // Negative offset that drops some values (below 0).
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(0, 5, 100, 200);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, true, 10);
-        assert_add_offset(r1, r2, 10, true);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_sub_offset(r1, 10);
+        assert_add_offset(r1, r2, 10, false);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1623,9 +1623,8 @@ DEFINE_TEST(test_add_offset) {
         uint64_t base = (uint64_t)1 << 32;
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(base - 1, base, base + 1);
-        roaring64_bitmap_t* r2 =
-            roaring64_bitmap_add_offset(r1, false, 0x10000);
-        assert_add_offset(r1, r2, 0x10000, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 0x10000);
+        assert_add_offset(r1, r2, 0x10000, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1634,8 +1633,8 @@ DEFINE_TEST(test_add_offset) {
         // UINT64_MAX).
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(0, UINT64_MAX - 10, UINT64_MAX);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 5);
-        assert_add_offset(r1, r2, 5, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 5);
+        assert_add_offset(r1, r2, 5, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1643,8 +1642,8 @@ DEFINE_TEST(test_add_offset) {
         // Dense bitmap with consecutive containers; tests the lo/hi merge.
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from_range(0xFFF0, 0x10020, 1);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 0x10);
-        assert_add_offset(r1, r2, 0x10, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 0x10);
+        assert_add_offset(r1, r2, 0x10, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1653,11 +1652,11 @@ DEFINE_TEST(test_add_offset) {
         uint64_t offset = 0x1234567;
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(0, 100, 0x10000, 0x1FFFF, 0x20000);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, offset);
-        roaring64_bitmap_t* r3 = roaring64_bitmap_add_offset(r2, true, offset);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, offset);
+        roaring64_bitmap_t* r3 = roaring64_bitmap_sub_offset(r2, offset);
         assert_r64_valid(r2);
         assert_r64_valid(r3);
-        assert_add_offset(r1, r2, offset, false);
+        assert_add_offset(r1, r2, offset, true);
         assert_true(roaring64_bitmap_equals(r1, r3));
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
@@ -1668,8 +1667,8 @@ DEFINE_TEST(test_add_offset) {
         // Only the value at 0 survives; the others overflow.
         uint64_t offset = (uint64_t)INT64_MAX;
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(0, 1, 100, 0x10000);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, offset);
-        assert_add_offset(r1, r2, offset, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, offset);
+        assert_add_offset(r1, r2, offset, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1679,8 +1678,8 @@ DEFINE_TEST(test_add_offset) {
         uint64_t offset = (uint64_t)1 << 63;  // 2^63
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(0, 100, UINT64_MAX - 1, UINT64_MAX);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, true, offset);
-        assert_add_offset(r1, r2, offset, true);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_sub_offset(r1, offset);
+        assert_add_offset(r1, r2, offset, false);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1691,8 +1690,8 @@ DEFINE_TEST(test_add_offset) {
         uint64_t big = (uint64_t)INT64_MAX + 2;  // 2^63 + 1
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(big, big + 100, UINT64_MAX);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, offset);
-        assert_add_offset(r1, r2, offset, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, offset);
+        assert_add_offset(r1, r2, offset, true);
         assert_true(roaring64_bitmap_is_empty(r2));
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
@@ -1702,8 +1701,8 @@ DEFINE_TEST(test_add_offset) {
         // Values < 2^63 all underflow with offset 2^63.
         uint64_t offset = (uint64_t)1 << 63;
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(0, 1, 0xFFFF, 0x10000);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, true, offset);
-        assert_add_offset(r1, r2, offset, true);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_sub_offset(r1, offset);
+        assert_add_offset(r1, r2, offset, false);
         assert_true(roaring64_bitmap_is_empty(r2));
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
@@ -1715,8 +1714,8 @@ DEFINE_TEST(test_add_offset) {
         uint64_t offset = (uint64_t)1 << 32;
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(base - 1, base, base + 0xFFFF);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, true, offset);
-        assert_add_offset(r1, r2, offset, true);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_sub_offset(r1, offset);
+        assert_add_offset(r1, r2, offset, false);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1726,11 +1725,11 @@ DEFINE_TEST(test_add_offset) {
         uint64_t base = (uint64_t)1 << 32;
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from(base, base + 1, base + 0x10000);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, offset);
-        roaring64_bitmap_t* r3 = roaring64_bitmap_add_offset(r2, true, offset);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, offset);
+        roaring64_bitmap_t* r3 = roaring64_bitmap_sub_offset(r2, offset);
         assert_r64_valid(r2);
         assert_r64_valid(r3);
-        assert_add_offset(r1, r2, offset, false);
+        assert_add_offset(r1, r2, offset, true);
         assert_true(roaring64_bitmap_equals(r1, r3));
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
@@ -1739,7 +1738,7 @@ DEFINE_TEST(test_add_offset) {
     {
         // Empty bitmap.
         roaring64_bitmap_t* r1 = roaring64_bitmap_create();
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 42);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 42);
         assert_r64_valid(r2);
         assert_true(roaring64_bitmap_is_empty(r2));
         roaring64_bitmap_free(r1);
@@ -1749,9 +1748,9 @@ DEFINE_TEST(test_add_offset) {
         // Bitset container (>4096 values): exercises the bitset path in
         // container_add_offset and the post-loop repair pass.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(0, 5000, 1);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 7);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 7);
         assert_r64_valid(r2);
-        assert_add_offset(r1, r2, 7, false);
+        assert_add_offset(r1, r2, 7, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1759,9 +1758,9 @@ DEFINE_TEST(test_add_offset) {
         // Bitset container crossing a container boundary, testing the lo/hi
         // merge with dense data and the repair pass on the merged result.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(0, 0x20000, 1);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 7);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 7);
         assert_r64_valid(r2);
-        assert_add_offset(r1, r2, 7, false);
+        assert_add_offset(r1, r2, 7, true);
         assert_int_equal(roaring64_bitmap_get_cardinality(r1),
                          roaring64_bitmap_get_cardinality(r2));
         roaring64_bitmap_free(r1);
@@ -1772,9 +1771,9 @@ DEFINE_TEST(test_add_offset) {
         roaring64_bitmap_t* r1 =
             roaring64_bitmap_from_range(0xFF00, 0x10100, 1);
         roaring64_bitmap_run_optimize(r1);
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, 0x80);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, 0x80);
         assert_r64_valid(r2);
-        assert_add_offset(r1, r2, 0x80, false);
+        assert_add_offset(r1, r2, 0x80, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
@@ -1783,9 +1782,9 @@ DEFINE_TEST(test_add_offset) {
         // containers; verifies no values are dropped during the shift.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(0, 0x30000, 1);
         uint64_t offset = 0x50000;
-        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, false, offset);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, offset);
         assert_r64_valid(r2);
-        assert_add_offset(r1, r2, offset, false);
+        assert_add_offset(r1, r2, offset, true);
         assert_int_equal(roaring64_bitmap_get_cardinality(r1),
                          roaring64_bitmap_get_cardinality(r2));
         roaring64_bitmap_free(r1);
@@ -1794,18 +1793,16 @@ DEFINE_TEST(test_add_offset) {
     {
         // Maximum possible offset: only value 0 survives the shift up.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(0, 1, 100, UINT64_MAX);
-        roaring64_bitmap_t* r2 =
-            roaring64_bitmap_add_offset(r1, false, UINT64_MAX);
-        assert_add_offset(r1, r2, UINT64_MAX, false);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_add_offset(r1, UINT64_MAX);
+        assert_add_offset(r1, r2, UINT64_MAX, true);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }
     {
         // Maximum possible negative offset: only value UINT64_MAX survives.
         roaring64_bitmap_t* r1 = roaring64_bitmap_from(0, 1, 100, UINT64_MAX);
-        roaring64_bitmap_t* r2 =
-            roaring64_bitmap_add_offset(r1, true, UINT64_MAX);
-        assert_add_offset(r1, r2, UINT64_MAX, true);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_sub_offset(r1, UINT64_MAX);
+        assert_add_offset(r1, r2, UINT64_MAX, false);
         roaring64_bitmap_free(r1);
         roaring64_bitmap_free(r2);
     }

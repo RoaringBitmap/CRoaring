@@ -1899,9 +1899,8 @@ void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
     }
 }
 
-roaring64_bitmap_t *roaring64_bitmap_add_offset(const roaring64_bitmap_t *bm,
-                                                bool negative,
-                                                uint64_t offset) {
+roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
+    const roaring64_bitmap_t *bm, bool positive, uint64_t offset) {
     if (offset == 0) {
         return roaring64_bitmap_copy(bm);
     }
@@ -1916,7 +1915,7 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset(const roaring64_bitmap_t *bm,
     uint16_t low16 = (uint16_t)offset;
     int64_t container_offset;
     uint16_t in_offset;
-    if (!negative) {
+    if (positive) {
         container_offset = (int64_t)(offset >> 16);
         in_offset = low16;
     } else if (low16 == 0) {
