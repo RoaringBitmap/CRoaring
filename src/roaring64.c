@@ -1948,6 +1948,11 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
         return answer;
     }
 
+    // Track the most recently inserted hi container so that the next
+    // iteration's lo can merge with it without re-searching the ART.
+    leaf_t *prev_hi_leaf = NULL;
+    int64_t prev_hi_k = -1;
+
     while (it.value != NULL) {
         leaf_t leaf = (leaf_t)*it.value;
         int64_t k = (int64_t)(combine_key(it.key, 0) >> 16) + container_offset;
@@ -1972,31 +1977,33 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
         container_add_offset(c, typecode, lo_ptr, hi_ptr, in_offset);
 
         if (lo != NULL) {
-            uint8_t lo_high48[ART_KEY_BYTES];
-            split_key((uint64_t)k << 16, lo_high48);
-            leaf_t *existing_leaf = (leaf_t *)art_find(&answer->art, lo_high48);
-            if (existing_leaf != NULL) {
-                uint8_t existing_type = get_typecode(*existing_leaf);
-                container_t *existing_c = get_container(answer, *existing_leaf);
+            if (prev_hi_leaf != NULL && prev_hi_k == k) {
+                uint8_t existing_type = get_typecode(*prev_hi_leaf);
+                container_t *existing_c = get_container(answer, *prev_hi_leaf);
                 uint8_t merged_type;
                 container_t *merged_c = container_ior(
                     existing_c, existing_type, lo, typecode, &merged_type);
                 if (merged_c != existing_c) {
                     container_free(existing_c, existing_type);
                 }
-                replace_container(answer, existing_leaf, merged_c, merged_type);
+                replace_container(answer, prev_hi_leaf, merged_c, merged_type);
                 container_free(lo, typecode);
             } else {
+                uint8_t lo_high48[ART_KEY_BYTES];
+                split_key((uint64_t)k << 16, lo_high48);
                 leaf_t new_leaf = add_container(answer, lo, typecode);
                 art_insert(&answer->art, lo_high48, (art_val_t)new_leaf);
             }
         }
 
+        prev_hi_leaf = NULL;
         if (hi != NULL) {
             uint8_t hi_high48[ART_KEY_BYTES];
             split_key((uint64_t)(k + 1) << 16, hi_high48);
             leaf_t new_leaf = add_container(answer, hi, typecode);
-            art_insert(&answer->art, hi_high48, (art_val_t)new_leaf);
+            prev_hi_leaf = (leaf_t *)art_insert(&answer->art, hi_high48,
+                                                (art_val_t)new_leaf);
+            prev_hi_k = k + 1;
         }
 
         art_iterator_next(&it);
