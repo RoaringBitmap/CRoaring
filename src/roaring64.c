@@ -1900,9 +1900,9 @@ void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
 }
 
 roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
-    const roaring64_bitmap_t *bm, bool positive, uint64_t offset) {
+    const roaring64_bitmap_t *r, bool positive, uint64_t offset) {
     if (offset == 0) {
-        return roaring64_bitmap_copy(bm);
+        return roaring64_bitmap_copy(r);
     }
 
     roaring64_bitmap_t *answer = roaring64_bitmap_create();
@@ -1926,7 +1926,7 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
         in_offset = (uint16_t)-low16;
     }
 
-    art_iterator_t it = art_init_iterator((art_t *)&bm->art, /*first=*/true);
+    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
 
     if (in_offset == 0) {
         while (it.value != NULL) {
@@ -1938,7 +1938,7 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
                 split_key((uint64_t)k << 16, new_high48);
                 uint8_t typecode = get_typecode(leaf);
                 container_t *container =
-                    get_copy_of_container(get_container(bm, leaf), &typecode,
+                    get_copy_of_container(get_container(r, leaf), &typecode,
                                           /*copy_on_write=*/false);
                 leaf_t new_leaf = add_container(answer, container, typecode);
                 art_insert(&answer->art, new_high48, (art_val_t)new_leaf);
@@ -1968,7 +1968,7 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
 
         uint8_t typecode = get_typecode(leaf);
         const container_t *c =
-            container_unwrap_shared(get_container(bm, leaf), &typecode);
+            container_unwrap_shared(get_container(r, leaf), &typecode);
         container_add_offset(c, typecode, lo_ptr, hi_ptr, in_offset);
 
         if (lo != NULL) {
