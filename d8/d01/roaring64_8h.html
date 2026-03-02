@@ -250,6 +250,12 @@ Functions</h2></td></tr>
 <tr class="separator:a6eb2be6b61f9a26237f67903993fdf95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a479f81c01fddf5a8304192fd42c150ea" id="r_a479f81c01fddf5a8304192fd42c150ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a479f81c01fddf5a8304192fd42c150ea">roaring64_bitmap_flip_closed_inplace</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
 <tr class="separator:a479f81c01fddf5a8304192fd42c150ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2da0db060d3518ad8ba8554416978a85" id="r_a2da0db060d3518ad8ba8554416978a85"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, bool positive, uint64_t offset)</td></tr>
+<tr class="separator:a2da0db060d3518ad8ba8554416978a85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87d19cf2606a82d4e38d22dc86515426" id="r_a87d19cf2606a82d4e38d22dc86515426"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a87d19cf2606a82d4e38d22dc86515426">roaring64_bitmap_add_offset</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t offset)</td></tr>
+<tr class="separator:a87d19cf2606a82d4e38d22dc86515426"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbee660425ed14a85f23cdf9bf2fc415" id="r_adbee660425ed14a85f23cdf9bf2fc415"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#adbee660425ed14a85f23cdf9bf2fc415">roaring64_bitmap_sub_offset</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t offset)</td></tr>
+<tr class="separator:adbee660425ed14a85f23cdf9bf2fc415"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cfc07eb94b1bff0df81dd0a2ff01090" id="r_a4cfc07eb94b1bff0df81dd0a2ff01090"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a4cfc07eb94b1bff0df81dd0a2ff01090">roaring64_bitmap_portable_size_in_bytes</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
 <tr class="separator:a4cfc07eb94b1bff0df81dd0a2ff01090"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a984d439666b29ff9474f89d712307d2d" id="r_a984d439666b29ff9474f89d712307d2d"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a984d439666b29ff9474f89d712307d2d">roaring64_bitmap_portable_serialize</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, char *buf)</td></tr>
@@ -516,6 +522,86 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Add <code>n_args</code> values from <code>vals</code>, faster than repeatedly calling <code><a class="el" href="../../d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add()</a></code></p>
 <p>In order to exploit this optimization, the caller should attempt to keep values with the same high 48 bits of the value as consecutive elements in <code>vals</code>. </p>
+
+</div>
+</div>
+<a id="a87d19cf2606a82d4e38d22dc86515426" name="a87d19cf2606a82d4e38d22dc86515426"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87d19cf2606a82d4e38d22dc86515426">&#9670;&#160;</a></span>roaring64_bitmap_add_offset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> * roaring64_bitmap_add_offset </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>offset</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Return a copy of the bitmap with all values shifted up by offset.</p>
+<p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00531">531</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+
+<p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
+
+</div>
+</div>
+<a id="a2da0db060d3518ad8ba8554416978a85" name="a2da0db060d3518ad8ba8554416978a85"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2da0db060d3518ad8ba8554416978a85">&#9670;&#160;</a></span>roaring64_bitmap_add_offset_signed()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> * roaring64_bitmap_add_offset_signed </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>positive</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>offset</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Return a copy of the bitmap with all values shifted by offset.</p>
+<p>If <code>positive</code> is true, the shift is added, otherwise subtracted. Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
+
+<p class="reference">Referenced by <a class="el" href="../../d8/d01/roaring64_8h.html#a87d19cf2606a82d4e38d22dc86515426">roaring64_bitmap_add_offset()</a>, and <a class="el" href="../../d8/d01/roaring64_8h.html#adbee660425ed14a85f23cdf9bf2fc415">roaring64_bitmap_sub_offset()</a>.</p>
 
 </div>
 </div>
@@ -2238,6 +2324,48 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>(For advanced users.) Collect statistics about the bitmap </p>
+
+</div>
+</div>
+<a id="adbee660425ed14a85f23cdf9bf2fc415" name="adbee660425ed14a85f23cdf9bf2fc415"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbee660425ed14a85f23cdf9bf2fc415">&#9670;&#160;</a></span>roaring64_bitmap_sub_offset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> * roaring64_bitmap_sub_offset </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>offset</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Return a copy of the bitmap with all values shifted down by offset.</p>
+<p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00542">542</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+
+<p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
 </div>
 </div>
