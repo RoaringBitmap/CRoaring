@@ -196,6 +196,8 @@ Functions</h2></td></tr>
 <tr class="separator:ae5ea73443856e75c00fc6085356b910a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa88e1e355f93c7850e201aba984c6741" id="r_aa88e1e355f93c7850e201aba984c6741"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#aa88e1e355f93c7850e201aba984c6741">roaring64_bitmap_maximum</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
 <tr class="separator:aa88e1e355f93c7850e201aba984c6741"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab05ea4797302b7b14592b3103a8af0c5" id="r_ab05ea4797302b7b14592b3103a8af0c5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#ab05ea4797302b7b14592b3103a8af0c5">roaring64_bitmap_remove_run_compression</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
+<tr class="separator:ab05ea4797302b7b14592b3103a8af0c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dc3d368d1280967ecd16373e0d08bdf" id="r_a4dc3d368d1280967ecd16373e0d08bdf"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a4dc3d368d1280967ecd16373e0d08bdf">roaring64_bitmap_run_optimize</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
 <tr class="separator:a4dc3d368d1280967ecd16373e0d08bdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab42f695edf07af26bebca1caaeea5a6c" id="r_ab42f695edf07af26bebca1caaeea5a6c"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#ab42f695edf07af26bebca1caaeea5a6c">roaring64_bitmap_shrink_to_fit</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
@@ -2115,6 +2117,25 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Remove all values in range [min, max]. </p>
+
+</div>
+</div>
+<a id="ab05ea4797302b7b14592b3103a8af0c5" name="ab05ea4797302b7b14592b3103a8af0c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab05ea4797302b7b14592b3103a8af0c5">&#9670;&#160;</a></span>roaring64_bitmap_remove_run_compression()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool roaring64_bitmap_remove_run_compression </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Remove run-length encoding even when it is more space efficient. Return whether a change was applied. </p>
 
 </div>
 </div>
