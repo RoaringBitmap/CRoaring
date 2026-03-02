@@ -311,6 +311,12 @@ uint64_t roaring64_bitmap_minimum(const roaring64_bitmap_t *r);
 uint64_t roaring64_bitmap_maximum(const roaring64_bitmap_t *r);
 
 /**
+ * Remove run-length encoding even when it is more space efficient.
+ * Return whether a change was applied.
+ */
+bool roaring64_bitmap_remove_run_compression(roaring64_bitmap_t *r);
+
+/**
  * Returns true if the result has at least one run container.
  */
 bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r);
