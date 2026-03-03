@@ -140,6 +140,8 @@ Functions</h2></td></tr>
 <tr class="separator:aef1d257f0919f000eee69813b5484986"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a595fe6436f7cb31357c10a706c1babbe" id="r_a595fe6436f7cb31357c10a706c1babbe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a595fe6436f7cb31357c10a706c1babbe">roaring64_bitmap_copy</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
 <tr class="separator:a595fe6436f7cb31357c10a706c1babbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a043115369ea2e4fa2ac4d87ee1adc369" id="r_a043115369ea2e4fa2ac4d87ee1adc369"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a043115369ea2e4fa2ac4d87ee1adc369">roaring64_bitmap_overwrite</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *dest, const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *src)</td></tr>
+<tr class="separator:a043115369ea2e4fa2ac4d87ee1adc369"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f2b8aa23f214993951c3d1b71c2b6d6" id="r_a0f2b8aa23f214993951c3d1b71c2b6d6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a0f2b8aa23f214993951c3d1b71c2b6d6">roaring64_bitmap_of_ptr</a> (size_t n_args, const uint64_t *vals)</td></tr>
 <tr class="separator:a0f2b8aa23f214993951c3d1b71c2b6d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a099c0a0f708b48ecfd0327053e813e72" id="r_a099c0a0f708b48ecfd0327053e813e72"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a099c0a0f708b48ecfd0327053e813e72">roaring64_bitmap_move_from_roaring32</a> (<a class="el" href="../../dc/d56/roaring_8h.html#a946b719adc4b8027b3d4aeeb63c64fbc">roaring_bitmap_t</a> *r)</td></tr>
@@ -322,7 +324,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Creates a new bitmap which contains all values passed in as arguments.</p>
 <p>To create a bitmap from a variable number of arguments, use the <code>roaring64_bitmap_of_ptr</code> function instead. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00092">92</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00104">104</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -561,7 +563,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted up by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00531">531</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00543">543</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
@@ -1786,6 +1788,36 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a043115369ea2e4fa2ac4d87ee1adc369" name="a043115369ea2e4fa2ac4d87ee1adc369"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a043115369ea2e4fa2ac4d87ee1adc369">&#9670;&#160;</a></span>roaring64_bitmap_overwrite()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void roaring64_bitmap_overwrite </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>dest</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>src</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Copies a bitmap from src to dest. It is assumed that the pointer dest is to an already allocated bitmap. The content of the dest bitmap is freed/deleted.</p>
+<p>It might be preferable and simpler to call roaring64_bitmap_copy except that roaring64_bitmap_overwrite can save on memory allocations. </p>
+
+</div>
+</div>
 <a id="a12df0f6d0c223b5e6e8655d4f0bd5f58" name="a12df0f6d0c223b5e6e8655d4f0bd5f58"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a12df0f6d0c223b5e6e8655d4f0bd5f58">&#9670;&#160;</a></span>roaring64_bitmap_portable_deserialize_safe()</h2>
 
@@ -2363,7 +2395,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted down by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00542">542</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00554">554</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
