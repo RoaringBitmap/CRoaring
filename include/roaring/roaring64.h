@@ -51,6 +51,18 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r);
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r);
 
 /**
+ * Copies a bitmap from src to dest. It is assumed that the pointer dest
+ * is to an already allocated bitmap. The content of the dest bitmap is
+ * freed/deleted.
+ *
+ * It might be preferable and simpler to call roaring64_bitmap_copy except
+ * that roaring64_bitmap_overwrite can save on memory allocations.
+ *
+ */
+void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
+                                const roaring64_bitmap_t *src);
+
+/**
  * Creates a new bitmap of a pointer to N 64-bit integers.
  */
 roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,

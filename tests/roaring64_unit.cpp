@@ -114,6 +114,45 @@ DEFINE_TEST(test_copy) {
     roaring64_bitmap_free(r2);
 }
 
+DEFINE_TEST(test_overwrite) {
+    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+    roaring64_bitmap_add(r1, 0);
+    roaring64_bitmap_add(r1, 10000);
+    roaring64_bitmap_add(r1, 200000);
+
+    roaring64_bitmap_t* r2 = roaring64_bitmap_create();
+    roaring64_bitmap_add(r2, 123);
+
+    roaring64_bitmap_overwrite(r2, r1);
+    assert_r64_valid(r2);
+    assert_true(roaring64_bitmap_contains(r2, 0));
+    assert_true(roaring64_bitmap_contains(r2, 10000));
+    assert_true(roaring64_bitmap_contains(r2, 200000));
+    assert_false(roaring64_bitmap_contains(r2, 123));
+
+    // Modifying src after overwrite does not affect dest.
+    roaring64_bitmap_remove(r1, 200000);
+    roaring64_bitmap_add(r1, 300000);
+    assert_r64_valid(r1);
+    assert_true(roaring64_bitmap_contains(r2, 200000));
+    assert_false(roaring64_bitmap_contains(r2, 300000));
+
+    // Overwriting with an empty bitmap clears dest.
+    roaring64_bitmap_t* empty = roaring64_bitmap_create();
+    roaring64_bitmap_overwrite(r2, empty);
+    assert_r64_valid(r2);
+    assert_true(roaring64_bitmap_is_empty(r2));
+
+    // Self-overwrite is a no-op.
+    roaring64_bitmap_overwrite(r1, r1);
+    assert_r64_valid(r1);
+    assert_true(roaring64_bitmap_contains(r1, 300000));
+
+    roaring64_bitmap_free(empty);
+    roaring64_bitmap_free(r1);
+    roaring64_bitmap_free(r2);
+}
+
 DEFINE_TEST(test_move_from_roaring32) {
     {
         // Empty bitmap
@@ -2336,6 +2375,7 @@ int main() {
         cmocka_unit_test(test_remove_many_issue_742B),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(test_copy),
+        cmocka_unit_test(test_overwrite),
         cmocka_unit_test(test_from_range),
         cmocka_unit_test(test_move_from_roaring32),
         cmocka_unit_test(test_of_ptr),

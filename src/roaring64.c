@@ -273,6 +273,43 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
     return result;
 }
 
+void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
+                                const roaring64_bitmap_t *src) {
+    if (dest == src) {
+        return;
+    }
+
+    // Free dest's containers.
+    art_iterator_t it = art_init_iterator(&dest->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        container_free(get_container(dest, leaf), get_typecode(leaf));
+        art_iterator_next(&it);
+    }
+    art_free(&dest->art);
+
+    // Reinitialize dest.
+    art_init_cleared(&dest->art);
+    dest->flags = 0;
+    dest->first_free = 0;
+    if (dest->capacity > 0) {
+        memset(dest->containers, 0,
+               sizeof(dest->containers[0]) * dest->capacity);
+    }
+
+    // Copy src's containers into dest.
+    it = art_init_iterator((art_t *)&src->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint8_t typecode = get_typecode(leaf);
+        container_t *container = get_copy_of_container(
+            get_container(src, leaf), &typecode, /*copy_on_write=*/false);
+        leaf_t dest_leaf = add_container(dest, container, typecode);
+        art_insert(&dest->art, it.key, (art_val_t)dest_leaf);
+        art_iterator_next(&it);
+    }
+}
+
 /**
  * Steal the containers from a 32-bit bitmap and insert them into a 64-bit
  * bitmap (with an offset)
