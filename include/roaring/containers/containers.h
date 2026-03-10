@@ -2594,6 +2594,24 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          uint16_t *value_out);
 
 /**
+ * Iterate all entries within [it->current_value, max_value], and sets
+ * corresponding positions in `buf` to true.
+ *
+ * The `buf` array is filled starting from index 0, which corresponds to the
+ * initial iterator position `it`. For subsequent iterator positions `it_new`,
+ * set `buf[it_new->current_value - it->current_value]` to true.
+ *
+ * Returns true and sets `value_out` if a value is present after reading the
+ * entries.
+ *
+ * The initial `it` should have a value.
+ */
+bool container_iterator_read_into_bool(const container_t *c, uint8_t typecode,
+                                       roaring_container_iterator_t *it,
+                                       bool *buf, uint16_t max_value,
+                                       uint16_t *value_out);
+
+/**
  * Skips the next `skip_count` entries in the container iterator. Returns true
  * and sets `value_out` if a value is present after skipping. Returns false if
  * the end of the container is reached during the skip operation. Sets
