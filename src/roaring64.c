@@ -789,7 +789,7 @@ void roaring64_bitmap_remove_bulk(roaring64_bitmap_t *r,
         }
         if (!container_nonzero_cardinality(container2, typecode2)) {
             container_free(container2, typecode2);
-            leaf_t leaf;
+            leaf_t leaf = 0;
             bool erased = art_erase(art, high48, (art_val_t *)&leaf);
             assert(erased);
             (void)erased;
@@ -1801,6 +1801,9 @@ static void roaring64_flip_leaf(const roaring64_bitmap_t *r1,
             container_not_range(get_container(r1, *leaf1), get_typecode(*leaf1),
                                 min, max, &typecode2);
     }
+    if (container2 == NULL) {
+        return;
+    }
     if (container_nonzero_cardinality(container2, typecode2)) {
         leaf_t leaf2 = add_container(r2, container2, typecode2);
         art_insert(&r2->art, high48, (art_val_t)leaf2);
@@ -2408,7 +2411,7 @@ static inline size_t container_get_frozen_size(const container_t *c,
     }
 }
 
-uint64_t align_size(uint64_t size, uint64_t alignment) {
+static uint64_t align_size(uint64_t size, uint64_t alignment) {
     return (size + alignment - 1) & ~(alignment - 1);
 }
 

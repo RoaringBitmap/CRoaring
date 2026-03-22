@@ -176,6 +176,9 @@ void bitset_container_offset(const bitset_container_t *c, container_t **loc,
 
     if (loc != NULL) {
         bc = bitset_container_create();
+        if (bc == NULL) {
+            return;
+        }
         if (i == 0) {
             memcpy(bc->words + b, c->words, 8 * end);
         } else {
@@ -197,8 +200,7 @@ void bitset_container_offset(const bitset_container_t *c, container_t **loc,
     }
 
     if (hic == NULL) {
-        // Both hic and loc can't be NULL, so bc is never NULL here
-        if (bc->cardinality == 0) {
+        if (bc != NULL && bc->cardinality == 0) {
             bitset_container_free(bc);
         }
         return;
@@ -206,6 +208,9 @@ void bitset_container_offset(const bitset_container_t *c, container_t **loc,
 
     if (bc == NULL || bc->cardinality != 0) {
         bc = bitset_container_create();
+        if (bc == NULL) {
+            return;
+        }
     }
 
     if (i == 0) {

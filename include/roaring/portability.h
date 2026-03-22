@@ -584,7 +584,7 @@ static inline uint32_t croaring_refcount_get(const croaring_refcount_t *val) {
 
 // We want to initialize structs to zero portably (C and C++), without
 // warnings. We can do mystruct s = CROARING_ZERO_INITIALIZER;
-#if __cplusplus
+#if defined(__cplusplus) && __cplusplus
 #define CROARING_ZERO_INITIALIZER \
     {}
 #else

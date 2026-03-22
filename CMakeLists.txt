@@ -146,11 +146,22 @@ if(ENABLE_ROARING_TESTS AND BASH AND NOT EMSCRIPTEN)
 
   add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.c>)
   target_link_libraries(amalgamate_demo croaring-singleheader-include-source)
+  # The amalgamation compiles everything in a single translation unit, which
+  # gives GCC deeper interprocedural visibility and triggers false-positive
+  # null-dereference warnings through allocation-failure paths. Suppress
+  # this warning for amalgamation targets only; the library itself is still
+  # checked with -Wnull-dereference in separate compilation units.
+  if(NOT MSVC)
+    target_compile_options(amalgamate_demo PRIVATE -Wno-null-dereference)
+  endif()
   add_test(amalgamate_demo amalgamate_demo)
 
   add_library(croaring-singleheader-source-lib $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/roaring.c>)
   set_target_properties(croaring-singleheader-source-lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS YES)
   target_include_directories(croaring-singleheader-source-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+  if(NOT MSVC)
+    target_compile_options(croaring-singleheader-source-lib PRIVATE -Wno-null-dereference)
+  endif()
 
   add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.cpp>)
   target_link_libraries(amalgamate_demo_cpp croaring-singleheader-include-source croaring-singleheader-source-lib)

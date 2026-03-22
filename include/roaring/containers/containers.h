@@ -90,7 +90,7 @@ container_t *shared_container_extract_copy(shared_container_t *container,
                                            uint8_t *typecode);
 
 /* access to container underneath */
-static inline const container_t *container_unwrap_shared(
+inline const container_t *container_unwrap_shared(
     const container_t *candidate_shared_container, uint8_t *type) {
     if (*type == SHARED_CONTAINER_TYPE) {
         *type = const_CAST_shared(candidate_shared_container)->typecode;
@@ -102,8 +102,8 @@ static inline const container_t *container_unwrap_shared(
 }
 
 /* access to container underneath */
-static inline container_t *container_mutable_unwrap_shared(container_t *c,
-                                                           uint8_t *type) {
+inline container_t *container_mutable_unwrap_shared(container_t *c,
+                                                    uint8_t *type) {
     if (*type == SHARED_CONTAINER_TYPE) {  // the passed in container is shared
         *type = CAST_shared(c)->typecode;
         assert(*type != SHARED_CONTAINER_TYPE);

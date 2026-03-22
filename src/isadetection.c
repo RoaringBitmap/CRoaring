@@ -54,7 +54,7 @@ POSSIBILITY OF SUCH DAMAGE.
 // on these systems. It seems that ClangCL is not affected.
 // https://github.com/RoaringBitmap/CRoaring/pull/603
 #ifndef __clang__
-#if _MSC_VER == 1938
+#if defined(_MSC_VER) && _MSC_VER == 1938
 #define ROARING_DISABLE_AVX 1
 #endif  // _MSC_VER == 1938
 #endif  // __clang__
