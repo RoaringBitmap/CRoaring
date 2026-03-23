@@ -24,11 +24,19 @@ endif()
 endif()
 
 if(NOT MSVC)
-set(WARNING_FLAGS "-Wall -Werror -Wnull-dereference -Wundef")
+set(WARNING_FLAGS "-Wall")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 set(WARNING_FLAGS "${WARNING_FLAGS} -Wmissing-braces -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 set(WARNING_FLAGS "${WARNING_FLAGS} -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wcast-align")
+endif()
+if(ROARING_WERROR)
+  set(WARNING_FLAGS "${WARNING_FLAGS} -Werror -Wundef -Wnull-dereference")
+  set(C_EXTRA_WARNING_FLAGS "-Wmissing-prototypes")
+  # The amalgamation compiles everything in a single translation unit, which
+  # gives GCC deeper interprocedural visibility and triggers false-positive
+  # null-dereference warnings through allocation-failure paths.
+  set(AMALG_EXTRA_WARNING_FLAGS -Wno-null-dereference)
 endif()
 endif()
 

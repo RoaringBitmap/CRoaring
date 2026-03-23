@@ -63,8 +63,8 @@ target_link_libraries(roaring PUBLIC "$<BUILD_INTERFACE:roaring-headers>")
 target_link_libraries(roaring PUBLIC "$<BUILD_INTERFACE:roaring-headers-cpp>")
 
 target_include_directories(roaring PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-if(NOT MSVC)
-  target_compile_options(roaring PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wmissing-prototypes>)
+if(C_EXTRA_WARNING_FLAGS)
+  target_compile_options(roaring PRIVATE $<$<COMPILE_LANGUAGE:C>:${C_EXTRA_WARNING_FLAGS}>)
 endif()
 
 #

@@ -4745,7 +4745,7 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
     frozen_serialization_compare(r);
 }
 
-#if defined(ROARING_UNSAFE_FROZEN_TESTS) && ROARING_UNSAFE_FROZEN_TESTS
+#if defined(ROARING_UNSAFE_FROZEN_TESTS)
 // This test is unsafe, as it may trigger unaligned memory access
 // It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_portable_deserialize_frozen) {
@@ -5177,7 +5177,7 @@ int main() {
 #if !CROARING_IS_BIG_ENDIAN
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
-#if defined(ROARING_UNSAFE_FROZEN_TESTS) && ROARING_UNSAFE_FROZEN_TESTS
+#if defined(ROARING_UNSAFE_FROZEN_TESTS)
         cmocka_unit_test(test_portable_deserialize_frozen),
 #endif  // ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(issue_15jan2024),

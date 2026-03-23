@@ -1476,7 +1476,7 @@ DEFINE_TEST(test_cpp_frozen_64) {
     roaring_aligned_free(buf);
 }
 
-#if defined(ROARING_UNSAFE_FROZEN_TESTS) && ROARING_UNSAFE_FROZEN_TESTS
+#if defined(ROARING_UNSAFE_FROZEN_TESTS)
 // This test is unsafe, as it may trigger unaligned memory access
 // It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_cpp_frozen_portable) {
@@ -1553,7 +1553,7 @@ DEFINE_TEST(test_cpp_frozen_portable) {
 }
 #endif  // ROARING_UNSAFE_FROZEN_TESTS
 
-#if defined(ROARING_UNSAFE_FROZEN_TESTS) && ROARING_UNSAFE_FROZEN_TESTS
+#if defined(ROARING_UNSAFE_FROZEN_TESTS)
 // This test is unsafe, as it may trigger unaligned memory access
 // It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_cpp_frozen_64_portable) {
@@ -2215,7 +2215,7 @@ int main() {
         cmocka_unit_test(test_cpp_bidirectional_iterator_64),
         cmocka_unit_test(test_cpp_frozen),
         cmocka_unit_test(test_cpp_frozen_64),
-#if defined(ROARING_UNSAFE_FROZEN_TESTS) && ROARING_UNSAFE_FROZEN_TESTS
+#if defined(ROARING_UNSAFE_FROZEN_TESTS)
         cmocka_unit_test(test_cpp_frozen_portable),
         cmocka_unit_test(test_cpp_frozen_64_portable),
 #endif  // ROARING_UNSAFE_FROZEN_TESTS

@@ -471,7 +471,7 @@ static inline int roaring_hamming(uint64_t x) {
    // We lack __has_include to check:
 #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
 #endif  //__has_include
-#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
 #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C
 #elif CROARING_REGULAR_VISUAL_STUDIO
    // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
@@ -584,7 +584,7 @@ static inline uint32_t croaring_refcount_get(const croaring_refcount_t *val) {
 
 // We want to initialize structs to zero portably (C and C++), without
 // warnings. We can do mystruct s = CROARING_ZERO_INITIALIZER;
-#if defined(__cplusplus) && __cplusplus
+#if defined(__cplusplus)
 #define CROARING_ZERO_INITIALIZER \
     {}
 #else

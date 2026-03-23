@@ -186,14 +186,14 @@ static inline void tellmeall() {
                (long unsigned int)sizeof(size_t),
                (long unsigned int)sizeof(int));
     }
-#if defined(__LITTLE_ENDIAN__) && __LITTLE_ENDIAN__
+#if defined(__LITTLE_ENDIAN__)
 // This is what we expect!
 // printf("you have little endian machine");
 #endif
-#if defined(__BIG_ENDIAN__) && __BIG_ENDIAN__
+#if defined(__BIG_ENDIAN__)
     printf("you have a big endian machine");
 #endif
-#if defined(__CHAR_BIT__) && __CHAR_BIT__
+#if defined(__CHAR_BIT__)
     if (__CHAR_BIT__ != 8) printf("on your machine, chars don't have 8bits???");
 #endif
     if (computecacheline() != 64)
@@ -217,14 +217,14 @@ static inline void tellmeall() {
                (long unsigned int)sizeof(size_t),
                (long unsigned int)sizeof(int));
     }
-#if defined(__LITTLE_ENDIAN__) && __LITTLE_ENDIAN__
+#if defined(__LITTLE_ENDIAN__)
 // This is what we expect!
 // printf("you have little endian machine");
 #endif
-#if defined(__BIG_ENDIAN__) && __BIG_ENDIAN__
+#if defined(__BIG_ENDIAN__)
     printf("you have a big endian machine");
 #endif
-#if defined(__CHAR_BIT__) && __CHAR_BIT__
+#if defined(__CHAR_BIT__)
     if (__CHAR_BIT__ != 8) printf("on your machine, chars don't have 8bits???");
 #endif
 }

@@ -45,6 +45,7 @@ option(ROARING_LINK_STATIC "Link executables (tests, benchmarks) statically" OFF
 option(ROARING_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(ROARING_BUILD_C_AS_CPP "Build library C files using C++ compilation" OFF)
 option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" OFF)
+option(ROARING_WERROR "Treat warnings as errors (developer only)" OFF)
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
 option(ROARING_SANITIZE_UNDEFINED "Sanitize undefined behaviors" OFF)
@@ -146,21 +147,16 @@ if(ENABLE_ROARING_TESTS AND BASH AND NOT EMSCRIPTEN)
 
   add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.c>)
   target_link_libraries(amalgamate_demo croaring-singleheader-include-source)
-  # The amalgamation compiles everything in a single translation unit, which
-  # gives GCC deeper interprocedural visibility and triggers false-positive
-  # null-dereference warnings through allocation-failure paths. Suppress
-  # this warning for amalgamation targets only; the library itself is still
-  # checked with -Wnull-dereference in separate compilation units.
-  if(NOT MSVC)
-    target_compile_options(amalgamate_demo PRIVATE -Wno-null-dereference)
+  if(AMALG_EXTRA_WARNING_FLAGS)
+    target_compile_options(amalgamate_demo PRIVATE ${AMALG_EXTRA_WARNING_FLAGS})
   endif()
   add_test(amalgamate_demo amalgamate_demo)
 
   add_library(croaring-singleheader-source-lib $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/roaring.c>)
   set_target_properties(croaring-singleheader-source-lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS YES)
   target_include_directories(croaring-singleheader-source-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
-  if(NOT MSVC)
-    target_compile_options(croaring-singleheader-source-lib PRIVATE -Wno-null-dereference)
+  if(AMALG_EXTRA_WARNING_FLAGS)
+    target_compile_options(croaring-singleheader-source-lib PRIVATE ${AMALG_EXTRA_WARNING_FLAGS})
   endif()
 
   add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.cpp>)

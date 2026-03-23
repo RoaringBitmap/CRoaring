@@ -52,7 +52,8 @@ extern bool container_iterator_prev(const container_t *c, uint8_t typecode,
                                     uint16_t *value);
 extern bool container_contains(
     const container_t *c, uint16_t val,
-    uint8_t typecode);
+    uint8_t typecode  // !!! should be second argument?
+);
 
 void container_free(container_t *c, uint8_t type) {
     switch (type) {
@@ -162,7 +163,7 @@ extern inline container_t *container_add(container_t *c, uint16_t val,
                                          uint8_t *new_typecode);
 
 extern inline bool container_contains(const container_t *c, uint16_t val,
-                                      uint8_t typecode);
+                                      uint8_t typecode);  // !!! 2nd arg?
 
 extern inline container_t *container_and(const container_t *c1, uint8_t type1,
                                          const container_t *c2, uint8_t type2,
