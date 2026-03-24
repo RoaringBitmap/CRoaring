@@ -709,6 +709,20 @@ static inline void run_container_remove_range(run_container_t *run,
     }
 }
 
+/**
+ * Reads values from the run container into a boolean buffer.
+ *
+ * @param rc The run container to read from
+ * @param it Iterator state (index into the runs array)
+ * @param buf Boolean buffer to write to
+ * @param max_value Stop reading when it->current_value > this value.
+ * @param value_out Output parameter for the current/next value
+ * @return true if there are more values to read, false otherwise
+ */
+bool run_container_iterator_read_into_bool(
+    const run_container_t *rc, struct roaring_container_iterator_s *it,
+    bool *buf, uint16_t max_value, uint16_t *value_out);
+
 #ifdef __cplusplus
 }
 }
