@@ -8,13 +8,72 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <roaring/memory.h>
 #include <roaring/misc/configreport.h>
 #include <roaring/roaring.h>
 
 #include "config.h"
 #include "test.h"
 
+#include <stdint.h>
+
 #define MAX_CONTAINERS (1 << 16)
+
+// Allocates with exactly the requested alignment, but guarantees the result
+// is NOT aligned to 2*alignment. This forces code to handle "minimal"
+// alignment rather than relying on over-aligned pointers from the system
+// allocator.
+static void *strict_aligned_malloc(size_t alignment, size_t size) {
+    size_t double_align = alignment * 2;
+    // Over-allocate so we can shift the pointer.
+    // We need room for: the original pointer, alignment padding, and the
+    // possibility of shifting by `alignment` to break double-alignment.
+    size_t extra = double_align + sizeof(void *);
+    void *raw = malloc(size + extra);
+    if (raw == NULL) return NULL;
+
+    uintptr_t raw_addr = (uintptr_t)raw + sizeof(void *);
+    // Align up to `alignment`
+    uintptr_t aligned = (raw_addr + alignment - 1) & ~(alignment - 1);
+    // If it's also aligned to double_align, shift by alignment
+    if ((aligned & (double_align - 1)) == 0) {
+        aligned += alignment;
+    }
+
+    // Store the original pointer just before the returned address
+    ((void **)aligned)[-1] = raw;
+    return (void *)aligned;
+}
+
+static void strict_aligned_free(void *p) {
+    if (p != NULL) {
+        free(((void **)p)[-1]);
+    }
+}
+
+static void *strict_malloc(size_t size) {
+    return strict_aligned_malloc(16, size);
+}
+
+static void *strict_calloc(size_t count, size_t size) {
+    size_t total = count * size;
+    void *p = strict_aligned_malloc(16, total);
+    if (p != NULL) memset(p, 0, total);
+    return p;
+}
+
+static void *strict_realloc(void *p, size_t size) {
+    void *new_p = strict_aligned_malloc(16, size);
+    if (new_p == NULL) return NULL;
+    if (p != NULL) {
+        // We don't know the old size, so copy `size` bytes. This is safe
+        // because realloc callers must not read beyond the new size anyway,
+        // and the old allocation was at least as large when shrinking.
+        memcpy(new_p, p, size);
+        strict_aligned_free(p);
+    }
+    return new_p;
+}
 
 long filesize(FILE* fp) {
     fseek(fp, 0L, SEEK_END);
@@ -387,6 +446,14 @@ DEFINE_TEST(deserialize_bitset_incorrect_cardinality) {
 }
 
 int main() {
+    roaring_init_memory_hook((roaring_memory_t){
+        .malloc = strict_malloc,
+        .realloc = strict_realloc,
+        .calloc = strict_calloc,
+        .free = strict_aligned_free,
+        .aligned_malloc = strict_aligned_malloc,
+        .aligned_free = strict_aligned_free,
+    });
     tellmeall();
 #if CROARING_IS_BIG_ENDIAN
     printf("Big-endian IO unsupported.\n");
