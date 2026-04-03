@@ -1,14 +1,14 @@
 #define _GNU_SOURCE
+#include <custom_parsers/sddl/sddl_profile.h>
+#include <openzl/zl_compress.h>
+#include <openzl/zl_compressor.h>
+#include <openzl/zl_decompress.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <roaring/roaring.h>
-#include <openzl/zl_compress.h>
-#include <openzl/zl_compressor.h>
-#include <openzl/zl_decompress.h>
-#include <custom_parsers/sddl/sddl_profile.h>
 
 #include "../../benchmarks/numbersfromtextfiles.h"
 #include "roaring_sddl.h"
@@ -39,8 +39,7 @@ static char *serialize_dataset(const char *basedir, const char *name,
 
     size_t count = 0;
     size_t *howmany = NULL;
-    uint32_t **numbers =
-        read_all_integer_files(path, ".txt", &howmany, &count);
+    uint32_t **numbers = read_all_integer_files(path, ".txt", &howmany, &count);
     if (numbers == NULL || count == 0) {
         *out_size = 0;
         return NULL;
@@ -88,10 +87,10 @@ static int bench_generic(const char *serialized, size_t serialized_size,
 
     ZL_CCtx *cctx = ZL_CCtx_create();
     (void)ZL_CCtx_setParameter(cctx, ZL_CParam_formatVersion,
-                                ZL_MAX_FORMAT_VERSION);
+                               ZL_MAX_FORMAT_VERSION);
 
-    ZL_Report r = ZL_CCtx_compress(
-        cctx, compressed, bound, serialized, serialized_size);
+    ZL_Report r =
+        ZL_CCtx_compress(cctx, compressed, bound, serialized, serialized_size);
     if (ZL_isError(r)) {
         fprintf(stderr, "generic compress failed: %s\n",
                 ZL_ErrorCode_toString(ZL_errorCode(r)));
@@ -103,7 +102,8 @@ static int bench_generic(const char *serialized, size_t serialized_size,
 
     /* Verify roundtrip. */
     char *decompressed = (char *)malloc(serialized_size);
-    ZL_Report dr = ZL_decompress(decompressed, serialized_size, compressed, csz);
+    ZL_Report dr =
+        ZL_decompress(decompressed, serialized_size, compressed, csz);
     if (ZL_isError(dr)) {
         fprintf(stderr, "generic roundtrip: decompress failed\n");
         free(decompressed);
@@ -126,8 +126,8 @@ static int bench_generic(const char *serialized, size_t serialized_size,
     double elapsed = 0;
     while (elapsed < MIN_TIME) {
         double t0 = now_seconds();
-        (void)ZL_CCtx_compress(
-            cctx, compressed, bound, serialized, serialized_size);
+        (void)ZL_CCtx_compress(cctx, compressed, bound, serialized,
+                               serialized_size);
         elapsed += now_seconds() - t0;
         iters++;
     }
@@ -161,13 +161,14 @@ static int bench_generic(const char *serialized, size_t serialized_size,
  * generic compression.
  */
 static int bench_sddl(const char *serialized, size_t serialized_size,
-                       bench_result_t *result) {
+                      bench_result_t *result) {
     size_t bound = ZL_compressBound(serialized_size);
     char *compressed = (char *)malloc(bound);
 
     ZL_Compressor *comp = ZL_Compressor_create();
-    ZL_RESULT_OF(ZL_GraphID) gr = ZL_SDDL_setupProfile(
-        comp, roaring_sddl_compiled, roaring_sddl_compiled_size);
+    ZL_RESULT_OF(ZL_GraphID)
+    gr = ZL_SDDL_setupProfile(comp, roaring_sddl_compiled,
+                              roaring_sddl_compiled_size);
     if (ZL_RES_isError(gr)) {
         fprintf(stderr, "SDDL setupProfile failed\n");
         ZL_Compressor_free(comp);
@@ -178,12 +179,12 @@ static int bench_sddl(const char *serialized, size_t serialized_size,
 
     ZL_CCtx *cctx = ZL_CCtx_create();
     (void)ZL_CCtx_setParameter(cctx, ZL_CParam_formatVersion,
-                                ZL_MAX_FORMAT_VERSION);
+                               ZL_MAX_FORMAT_VERSION);
     (void)ZL_CCtx_setParameter(cctx, ZL_CParam_permissiveCompression, 1);
     (void)ZL_CCtx_refCompressor(cctx, comp);
 
-    ZL_Report r = ZL_CCtx_compress(
-        cctx, compressed, bound, serialized, serialized_size);
+    ZL_Report r =
+        ZL_CCtx_compress(cctx, compressed, bound, serialized, serialized_size);
     if (ZL_isError(r)) {
         fprintf(stderr, "SDDL compress failed: %s\n",
                 ZL_ErrorCode_toString(ZL_errorCode(r)));
@@ -196,7 +197,8 @@ static int bench_sddl(const char *serialized, size_t serialized_size,
 
     /* Verify roundtrip. */
     char *decompressed = (char *)malloc(serialized_size);
-    ZL_Report dr = ZL_decompress(decompressed, serialized_size, compressed, csz);
+    ZL_Report dr =
+        ZL_decompress(decompressed, serialized_size, compressed, csz);
     if (ZL_isError(dr)) {
         fprintf(stderr, "SDDL roundtrip: decompress failed\n");
         free(decompressed);
@@ -221,8 +223,8 @@ static int bench_sddl(const char *serialized, size_t serialized_size,
     double elapsed = 0;
     while (elapsed < MIN_TIME) {
         double t0 = now_seconds();
-        (void)ZL_CCtx_compress(
-            cctx, compressed, bound, serialized, serialized_size);
+        (void)ZL_CCtx_compress(cctx, compressed, bound, serialized,
+                               serialized_size);
         elapsed += now_seconds() - t0;
         iters++;
     }
@@ -251,33 +253,31 @@ static int bench_sddl(const char *serialized, size_t serialized_size,
 }
 
 static void print_header(void) {
-    printf("  %-25s %10s %10s %10s %7s %7s %12s %12s %12s %12s\n",
-           "dataset", "serial", "generic", "sddl",
-           "g-ratio", "s-ratio",
-           "c:gen MB/s", "c:sddl MB/s", "d:gen MB/s", "d:sddl MB/s");
-    printf("  %-25s %10s %10s %10s %7s %7s %12s %12s %12s %12s\n",
-           "-------", "------", "-------", "----",
-           "-------", "-------",
-           "----------", "-----------", "----------", "-----------");
+    printf("  %-25s %10s %10s %10s %7s %7s %12s %12s %12s %12s\n", "dataset",
+           "serial", "generic", "sddl", "g-ratio", "s-ratio", "c:gen MB/s",
+           "c:sddl MB/s", "d:gen MB/s", "d:sddl MB/s");
+    printf("  %-25s %10s %10s %10s %7s %7s %12s %12s %12s %12s\n", "-------",
+           "------", "-------", "----", "-------", "-------", "----------",
+           "-----------", "----------", "-----------");
 }
 
 static void print_row(const char *name, size_t serialized_size,
                       bench_result_t *gen, bench_result_t *sddl) {
     double ratio_g = (double)gen->compressed_size / (double)serialized_size;
     if (sddl->compressed_size > 0) {
-        double ratio_s = (double)sddl->compressed_size / (double)serialized_size;
-        printf("  %-25s %10zu %10zu %10zu %7.3f %7.3f %10.1f  %11.1f  %10.1f  %11.1f\n",
-               name, serialized_size,
-               gen->compressed_size, sddl->compressed_size,
-               ratio_g, ratio_s,
-               gen->compress_speed_mbs, sddl->compress_speed_mbs,
-               gen->decompress_speed_mbs, sddl->decompress_speed_mbs);
+        double ratio_s =
+            (double)sddl->compressed_size / (double)serialized_size;
+        printf(
+            "  %-25s %10zu %10zu %10zu %7.3f %7.3f %10.1f  %11.1f  %10.1f  "
+            "%11.1f\n",
+            name, serialized_size, gen->compressed_size, sddl->compressed_size,
+            ratio_g, ratio_s, gen->compress_speed_mbs, sddl->compress_speed_mbs,
+            gen->decompress_speed_mbs, sddl->decompress_speed_mbs);
     } else {
-        printf("  %-25s %10zu %10zu %10s %7.3f %7s %10.1f  %11s  %10.1f  %11s\n",
-               name, serialized_size,
-               gen->compressed_size, "ERR", ratio_g, "ERR",
-               gen->compress_speed_mbs, "ERR",
-               gen->decompress_speed_mbs, "ERR");
+        printf(
+            "  %-25s %10zu %10zu %10s %7.3f %7s %10.1f  %11s  %10.1f  %11s\n",
+            name, serialized_size, gen->compressed_size, "ERR", ratio_g, "ERR",
+            gen->compress_speed_mbs, "ERR", gen->decompress_speed_mbs, "ERR");
     }
 }
 
@@ -292,7 +292,8 @@ int main(int argc, char **argv) {
 
         for (size_t d = 0; d < NUM_DATASETS; d++) {
             size_t sz = 0;
-            char *serialized = serialize_dataset(basedir, datadir[d], runopt, &sz);
+            char *serialized =
+                serialize_dataset(basedir, datadir[d], runopt, &sz);
             if (!serialized || sz == 0) {
                 fprintf(stderr, "  %-25s  (no data)\n", datadir[d]);
                 continue;

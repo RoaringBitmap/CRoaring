@@ -1,11 +1,11 @@
 #include <assert.h>
+#include <openzl/zl_compress.h>
+#include <openzl/zl_decompress.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <roaring/roaring.h>
-#include <openzl/zl_compress.h>
-#include <openzl/zl_decompress.h>
 
 /*
  * Serialize a roaring bitmap, compress it with OpenZL, decompress,
@@ -28,7 +28,8 @@ static int roundtrip(roaring_bitmap_t *bitmap, const char *label) {
         free(serialized);
         return 1;
     }
-    (void)ZL_CCtx_setParameter(cctx, ZL_CParam_formatVersion, ZL_MAX_FORMAT_VERSION);
+    (void)ZL_CCtx_setParameter(cctx, ZL_CParam_formatVersion,
+                               ZL_MAX_FORMAT_VERSION);
 
     size_t compress_bound = ZL_compressBound(serialized_size);
     char *compressed = (char *)malloc(compress_bound);
@@ -39,11 +40,11 @@ static int roundtrip(roaring_bitmap_t *bitmap, const char *label) {
         return 1;
     }
 
-    ZL_Report creport = ZL_CCtx_compress(
-        cctx, compressed, compress_bound, serialized, serialized_size);
+    ZL_Report creport = ZL_CCtx_compress(cctx, compressed, compress_bound,
+                                         serialized, serialized_size);
     if (ZL_isError(creport)) {
-        fprintf(stderr, "[%s] ZL_CCtx_compress failed: %s\n",
-                label, ZL_ErrorCode_toString(ZL_errorCode(creport)));
+        fprintf(stderr, "[%s] ZL_CCtx_compress failed: %s\n", label,
+                ZL_ErrorCode_toString(ZL_errorCode(creport)));
         free(compressed);
         ZL_CCtx_free(cctx);
         free(serialized);
@@ -51,17 +52,18 @@ static int roundtrip(roaring_bitmap_t *bitmap, const char *label) {
     }
     size_t compressed_size = ZL_validResult(creport);
 
-    printf("[%s] serialized %u bytes -> compressed %zu bytes (%.1f%%)\n",
-           label, serialized_size, compressed_size,
+    printf("[%s] serialized %u bytes -> compressed %zu bytes (%.1f%%)\n", label,
+           serialized_size, compressed_size,
            100.0 * (double)compressed_size / (double)serialized_size);
 
     ZL_CCtx_free(cctx);
 
     /* Decompress with OpenZL. */
-    ZL_Report dreport_size = ZL_getDecompressedSize(compressed, compressed_size);
+    ZL_Report dreport_size =
+        ZL_getDecompressedSize(compressed, compressed_size);
     if (ZL_isError(dreport_size)) {
-        fprintf(stderr, "[%s] ZL_getDecompressedSize failed: %s\n",
-                label, ZL_ErrorCode_toString(ZL_errorCode(dreport_size)));
+        fprintf(stderr, "[%s] ZL_getDecompressedSize failed: %s\n", label,
+                ZL_ErrorCode_toString(ZL_errorCode(dreport_size)));
         free(compressed);
         free(serialized);
         return 1;
@@ -76,11 +78,11 @@ static int roundtrip(roaring_bitmap_t *bitmap, const char *label) {
         return 1;
     }
 
-    ZL_Report dreport = ZL_decompress(
-        decompressed, decompressed_size, compressed, compressed_size);
+    ZL_Report dreport = ZL_decompress(decompressed, decompressed_size,
+                                      compressed, compressed_size);
     if (ZL_isError(dreport)) {
-        fprintf(stderr, "[%s] ZL_decompress failed: %s\n",
-                label, ZL_ErrorCode_toString(ZL_errorCode(dreport)));
+        fprintf(stderr, "[%s] ZL_decompress failed: %s\n", label,
+                ZL_ErrorCode_toString(ZL_errorCode(dreport)));
         free(decompressed);
         free(compressed);
         free(serialized);
@@ -91,27 +93,29 @@ static int roundtrip(roaring_bitmap_t *bitmap, const char *label) {
 
     /* Verify byte-for-byte equality. */
     if (decompressed_size != serialized_size) {
-        fprintf(stderr, "[%s] size mismatch: expected %u, got %zu\n",
-                label, serialized_size, decompressed_size);
+        fprintf(stderr, "[%s] size mismatch: expected %u, got %zu\n", label,
+                serialized_size, decompressed_size);
         free(decompressed);
         free(serialized);
         return 1;
     }
     if (memcmp(serialized, decompressed, serialized_size) != 0) {
-        fprintf(stderr, "[%s] decompressed data differs from original\n", label);
+        fprintf(stderr, "[%s] decompressed data differs from original\n",
+                label);
         free(decompressed);
         free(serialized);
         return 1;
     }
 
     /* Deserialize the round-tripped bytes and verify bitmap equality. */
-    roaring_bitmap_t *recovered =
-        roaring_bitmap_portable_deserialize_safe(decompressed, decompressed_size);
+    roaring_bitmap_t *recovered = roaring_bitmap_portable_deserialize_safe(
+        decompressed, decompressed_size);
     free(decompressed);
     free(serialized);
 
     if (!recovered) {
-        fprintf(stderr, "[%s] portable_deserialize_safe returned NULL\n", label);
+        fprintf(stderr, "[%s] portable_deserialize_safe returned NULL\n",
+                label);
         return 1;
     }
     if (!roaring_bitmap_equals(bitmap, recovered)) {
@@ -174,7 +178,8 @@ int main(void) {
             roaring_bitmap_add(bm, (1 << 16) + i);
         }
         /* Container 2 (high16 = 2): consecutive run */
-        roaring_bitmap_add_range_closed(bm, 2 * (1 << 16), 2 * (1 << 16) + 9999);
+        roaring_bitmap_add_range_closed(bm, 2 * (1 << 16),
+                                        2 * (1 << 16) + 9999);
         roaring_bitmap_run_optimize(bm);
         failures += roundtrip(bm, "mixed");
         roaring_bitmap_free(bm);
