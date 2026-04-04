@@ -1,11 +1,13 @@
 var roaring64_8h =
 [
     [ "roaring64_bulk_context_s", "df/dce/structroaring64__bulk__context__s.html", "df/dce/structroaring64__bulk__context__s" ],
+    [ "roaring64_range_closed_s", "d4/d9f/structroaring64__range__closed__s.html", "d4/d9f/structroaring64__range__closed__s" ],
     [ "roaring64_bitmap_from", "d8/d01/roaring64_8h.html#a976c28d08097779d3d5d82ba032667ac", null ],
     [ "roaring64_bitmap_t", "d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c", null ],
     [ "roaring64_bulk_context_t", "d8/d01/roaring64_8h.html#af222e7202ae9eca057f6b5cd869fefd5", null ],
     [ "roaring64_iterator_t", "d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698", null ],
     [ "roaring64_leaf_t", "d8/d01/roaring64_8h.html#ae2e459e0f9121b1f5703184653bf758d", null ],
+    [ "roaring64_range_closed_t", "d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf", null ],
     [ "roaring64_bitmap_add", "d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19", null ],
     [ "roaring64_bitmap_add_bulk", "d8/d01/roaring64_8h.html#a8f864bb05a653a036566a716fc480d73", null ],
     [ "roaring64_bitmap_add_checked", "d8/d01/roaring64_8h.html#a4f999e9ae284a6db2ec5d0c5c324dd64", null ],
@@ -86,6 +88,8 @@ var roaring64_8h =
     [ "roaring64_iterator_move_equalorlarger", "d8/d01/roaring64_8h.html#a9be82e49c331b4886a1ed847dd8c6dbe", null ],
     [ "roaring64_iterator_previous", "d8/d01/roaring64_8h.html#a9dec5ebaf5446170c61c3d22371a4cae", null ],
     [ "roaring64_iterator_read", "d8/d01/roaring64_8h.html#abe45e6c50cad5466a726183cdca8cf48", null ],
+    [ "roaring64_iterator_read_prev_ranges", "d8/d01/roaring64_8h.html#a907947bd076a801390b8e7c20f48c9a3", null ],
+    [ "roaring64_iterator_read_ranges", "d8/d01/roaring64_8h.html#aa78418be37944b146364fc5095d67864", null ],
     [ "roaring64_iterator_reinit", "d8/d01/roaring64_8h.html#aac4c1f5a10bac72cd528fc102e06ddc9", null ],
     [ "roaring64_iterator_reinit_last", "d8/d01/roaring64_8h.html#a4262f789d67a49708a5c90ea35bbc093", null ],
     [ "roaring64_iterator_value", "d8/d01/roaring64_8h.html#a3407daef6cf818a628ae387a2506a1fb", null ]

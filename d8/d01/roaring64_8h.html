@@ -115,6 +115,8 @@ $(document).ready(function(){initNavTree('d8/d01/roaring64_8h.html','../../'); i
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/dce/structroaring64__bulk__context__s.html">roaring64_bulk_context_s</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9f/structroaring64__range__closed__s.html">roaring64_range_closed_s</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
@@ -131,6 +133,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a67980556db783643a6ccf7d71e1ed698"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af222e7202ae9eca057f6b5cd869fefd5" id="r_af222e7202ae9eca057f6b5cd869fefd5"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../df/dce/structroaring64__bulk__context__s.html">roaring64_bulk_context_s</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#af222e7202ae9eca057f6b5cd869fefd5">roaring64_bulk_context_t</a></td></tr>
 <tr class="separator:af222e7202ae9eca057f6b5cd869fefd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70d9b9fb4c47c21e2485e32fa7c410cf" id="r_a70d9b9fb4c47c21e2485e32fa7c410cf"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d4/d9f/structroaring64__range__closed__s.html">roaring64_range_closed_s</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a></td></tr>
+<tr class="separator:a70d9b9fb4c47c21e2485e32fa7c410cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -300,6 +304,10 @@ Functions</h2></td></tr>
 <tr class="separator:a9be82e49c331b4886a1ed847dd8c6dbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe45e6c50cad5466a726183cdca8cf48" id="r_abe45e6c50cad5466a726183cdca8cf48"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#abe45e6c50cad5466a726183cdca8cf48">roaring64_iterator_read</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, uint64_t *buf, uint64_t count)</td></tr>
 <tr class="separator:abe45e6c50cad5466a726183cdca8cf48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa78418be37944b146364fc5095d67864" id="r_aa78418be37944b146364fc5095d67864"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#aa78418be37944b146364fc5095d67864">roaring64_iterator_read_ranges</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, <a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a> *buf, size_t count)</td></tr>
+<tr class="separator:aa78418be37944b146364fc5095d67864"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a907947bd076a801390b8e7c20f48c9a3" id="r_a907947bd076a801390b8e7c20f48c9a3"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a907947bd076a801390b8e7c20f48c9a3">roaring64_iterator_read_prev_ranges</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, <a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a> *buf, size_t count)</td></tr>
+<tr class="separator:a907947bd076a801390b8e7c20f48c9a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a976c28d08097779d3d5d82ba032667ac" name="a976c28d08097779d3d5d82ba032667ac"></a>
@@ -391,6 +399,20 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00020">20</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+
+</div>
+</div>
+<a id="a70d9b9fb4c47c21e2485e32fa7c410cf" name="a70d9b9fb4c47c21e2485e32fa7c410cf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70d9b9fb4c47c21e2485e32fa7c410cf">&#9670;&#160;</a></span>roaring64_range_closed_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="../../d4/d9f/structroaring64__range__closed__s.html">roaring64_range_closed_s</a> <a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -2718,6 +2740,87 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Reads up to <code>count</code> values from the iterator into the given <code>buf</code>. Returns the number of elements read. The number of elements read can be smaller than <code>count</code>, which means that there are no more elements in the bitmap.</p>
 <p>This function can be used together with other iterator functions. </p>
+
+</div>
+</div>
+<a id="a907947bd076a801390b8e7c20f48c9a3" name="a907947bd076a801390b8e7c20f48c9a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a907947bd076a801390b8e7c20f48c9a3">&#9670;&#160;</a></span>roaring64_iterator_read_prev_ranges()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t roaring64_iterator_read_prev_ranges </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *&#160;</td>
+          <td class="paramname"><em>it</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a> *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Reads previous ${count} ranges from iterator into user-supplied ${buf}. A range is defined as a maximal interval of consecutive values. For example, the set {1,2,3,5,6} contains two ranges: [1..3] and [5..6]. Each range is represented as a struct {min,max}, both endpoints included. Consecutive values that span internal container boundaries are merged into a single range.</p>
+<p>Returns the number of read ranges. This number can be smaller than ${count}, which means that the iterator is drained.</p>
+<p>Ranges are returned in reverse order, e.g. the first range returned is the highest range (ending at the current value).</p>
+<p>This function can be used together with other iterator functions.</p><ul>
+<li>first range will end with the current iterator value</li>
+<li>after the function returns, the iterator is positioned at the element before the beginning of the last returned range, or has_value is false if the bitmap is exhausted. </li>
+</ul>
+
+</div>
+</div>
+<a id="aa78418be37944b146364fc5095d67864" name="aa78418be37944b146364fc5095d67864"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa78418be37944b146364fc5095d67864">&#9670;&#160;</a></span>roaring64_iterator_read_ranges()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t roaring64_iterator_read_ranges </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *&#160;</td>
+          <td class="paramname"><em>it</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a> *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Reads next ${count} ranges from iterator into user-supplied ${buf}. A range is defined as a maximal interval of consecutive values. For example, the set {1,2,3,5,6} contains two ranges: [1..3] and [5..6]. Each range is represented as a struct {min,max}, both endpoints included. Consecutive values that span internal container boundaries are merged into a single range.</p>
+<p>Returns the number of read ranges. This number can be smaller than ${count}, which means that the iterator is drained.</p>
+<p>This function can be used together with other iterator functions.</p><ul>
+<li>first range will start with the current iterator value</li>
+<li>after the function returns, the iterator is positioned at the next element after the end of the last returned range, or has_value is false if the bitmap is exhausted. </li>
+</ul>
 
 </div>
 </div>
