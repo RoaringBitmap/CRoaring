@@ -338,6 +338,10 @@ inline bool array_container_contains(const array_container_t *arr,
     int32_t low = 0;
     const uint16_t *carr = (const uint16_t *)arr->array;
     int32_t high = arr->cardinality - 1;
+    if (high > pos) {
+        // since elements are unique, x can be located only at index <= x
+        high = pos;
+    }
     //    while (high - low >= 0) {
     while (high >= low + 16) {
         int32_t middleIndex = (low + high) >> 1;
@@ -351,12 +355,19 @@ inline bool array_container_contains(const array_container_t *arr,
         }
     }
 
+    while (high >= low + 3) {
+        if (carr[low + 3] >= pos) {
+            return (carr[low] == pos) || (carr[low + 1] == pos) ||
+                   (carr[low + 2] == pos) || (carr[low + 3] == pos);
+        }
+        low += 4;
+    }
+
     for (int i = low; i <= high; i++) {
         uint16_t v = carr[i];
-        if (v == pos) {
-            return true;
+        if (v >= pos) {
+            return (v == pos);  // compiles into SETE
         }
-        if (v > pos) return false;
     }
     return false;
 }
