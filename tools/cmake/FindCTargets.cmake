@@ -5,7 +5,7 @@ if (ENABLE_ROARING_TESTS AND NOT EMSCRIPTEN)
     CPMAddPackage(
       NAME cmocka
       GIT_REPOSITORY https://gitlab.com/cmocka/cmocka.git
-      GIT_TAG cmocka-1.1.8
+      GIT_TAG cmocka-2.0.0
       OPTIONS "UNIT_TESTING ON"
     )
   else()

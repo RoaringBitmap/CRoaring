@@ -554,7 +554,12 @@ inline bool container_contains(
     const container_t *c, uint16_t val,
     uint8_t typecode  // !!! should be second argument?
 ) {
-    c = container_unwrap_shared(c, &typecode);
+    if (typecode == SHARED_CONTAINER_TYPE) {
+        typecode = const_CAST_shared(c)->typecode;
+        assert(typecode != SHARED_CONTAINER_TYPE);
+        c =  const_CAST_shared(c)->container;
+    }
+
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
             return bitset_container_get(const_CAST_bitset(c), val);

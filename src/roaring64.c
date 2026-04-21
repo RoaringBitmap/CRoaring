@@ -789,7 +789,7 @@ void roaring64_bitmap_remove_bulk(roaring64_bitmap_t *r,
         }
         if (!container_nonzero_cardinality(container2, typecode2)) {
             container_free(container2, typecode2);
-            leaf_t leaf;
+            leaf_t leaf = 0;
             bool erased = art_erase(art, high48, (art_val_t *)&leaf);
             assert(erased);
             (void)erased;
@@ -875,7 +875,7 @@ void roaring64_bitmap_remove_range_closed(roaring64_bitmap_t *r, uint64_t min,
 
     art_iterator_t it = art_upper_bound(art, min_high48);
     while (it.value != NULL && art_compare_keys(it.key, max_high48) < 0) {
-        leaf_t leaf;
+        leaf_t leaf = 0;
         bool erased = art_iterator_erase(&it, (art_val_t *)&leaf);
         assert(erased);
         (void)erased;
@@ -1315,7 +1315,7 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
 
         if (!it2_present || compare_result < 0) {
             // Cases 1 and 3a: it1 is the only iterator or is before it2.
-            leaf_t leaf;
+            leaf_t leaf = 0;
             bool erased = art_iterator_erase(&it1, (art_val_t *)&leaf);
             assert(erased);
             (void)erased;

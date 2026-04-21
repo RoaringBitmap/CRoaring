@@ -155,7 +155,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #define CROARING_IS_E2K 1
 #endif
 
-#if !CROARING_REGULAR_VISUAL_STUDIO && !defined(CROARING_IS_E2K)
+#if !CROARING_REGULAR_VISUAL_STUDIO && !defined(CROARING_IS_E2K) && !__FILC__
 /* Non-Microsoft C/C++-compatible compiler, assumes that it supports inline
  * assembly */
 #define CROARING_INLINE_ASM 1

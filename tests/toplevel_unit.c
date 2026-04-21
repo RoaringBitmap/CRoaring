@@ -199,7 +199,7 @@ DEFINE_TEST(contains_bulk) {
             assert_int_equal(context.key, values[i] >> 16);
         }
         if (context.container != NULL) {
-            assert_in_range(context.idx, 0, bm->high_low_container.size - 1);
+            assert_uint_in_range(context.idx, 0, bm->high_low_container.size - 1);
             assert_ptr_equal(context.container,
                              bm->high_low_container.containers[context.idx]);
             assert_int_equal(context.key,
