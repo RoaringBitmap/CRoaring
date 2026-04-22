@@ -59,7 +59,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif  // _MSC_VER == 1938
 #endif  // __clang__
 
-
 #ifdef __FILC__
 #include <stdfil.h>
 #endif
@@ -69,7 +68,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <roaring/portability.h>
 #if CROARING_REGULAR_VISUAL_STUDIO
 #include <intrin.h>
-#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || defined(__FILC__)
+#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || \
+    defined(__FILC__)
 #include <cpuid.h>
 #endif  // CROARING_REGULAR_VISUAL_STUDIO
 #include <roaring/isadetection.h>
@@ -120,7 +120,8 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
     *ebx = cpu_info[1];
     *ecx = cpu_info[2];
     *edx = cpu_info[3];
-#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || defined(__FILC__)
+#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || \
+    defined(__FILC__)
     uint32_t level = *eax;
     __get_cpuid(level, eax, ebx, ecx, edx);
 #else
