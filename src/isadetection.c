@@ -59,12 +59,17 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif  // _MSC_VER == 1938
 #endif  // __clang__
 
+
+#ifdef __FILC__
+#include <stdfil.h>
+#endif
+
 // We need portability.h to be included first, see
 // https://github.com/RoaringBitmap/CRoaring/issues/394
 #include <roaring/portability.h>
 #if CROARING_REGULAR_VISUAL_STUDIO
 #include <intrin.h>
-#elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
+#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || defined(__FILC__)
 #include <cpuid.h>
 #endif  // CROARING_REGULAR_VISUAL_STUDIO
 #include <roaring/isadetection.h>
@@ -115,7 +120,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
     *ebx = cpu_info[1];
     *ecx = cpu_info[2];
     *edx = cpu_info[3];
-#elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
+#elif (defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)) || defined(__FILC__)
     uint32_t level = *eax;
     __get_cpuid(level, eax, ebx, ecx, edx);
 #else
@@ -131,6 +136,8 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 static inline uint64_t xgetbv(void) {
 #if defined(_MSC_VER)
     return _xgetbv(0);
+#elif defined(__FILC__)
+    return zxgetbv();
 #else
     uint32_t xcr0_lo, xcr0_hi;
     __asm__("xgetbv\n\t" : "=a"(xcr0_lo), "=d"(xcr0_hi) : "c"(0));
@@ -144,10 +151,6 @@ static inline uint64_t xgetbv(void) {
  * as one compilation unit.
  */
 static inline uint32_t dynamic_croaring_detect_supported_architectures(void) {
-#if __FILC__
-    return 0;  // we have no way to detect features on FILC, so we assume the
-               // worst.
-#endif
     uint32_t eax, ebx, ecx, edx;
     uint32_t host_isa = 0x0;
     // Can be found on Intel ISA Reference for CPUID
