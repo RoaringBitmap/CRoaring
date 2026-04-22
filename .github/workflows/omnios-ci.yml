@@ -15,7 +15,7 @@ jobs:
       - name: Build and Test on OmniOS
         uses: vmactions/omnios-vm@v1
         with:
-          release: r151050
+          release: r151056
           usesh: true
           prepare: |
             set -e
