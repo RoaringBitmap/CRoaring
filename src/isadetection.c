@@ -145,7 +145,8 @@ static inline uint64_t xgetbv(void) {
  */
 static inline uint32_t dynamic_croaring_detect_supported_architectures(void) {
 #if __FILC__
-    return 0;  // we have no way to detect features on FILC, so we assume the worst.
+    return 0;  // we have no way to detect features on FILC, so we assume the
+               // worst.
 #endif
     uint32_t eax, ebx, ecx, edx;
     uint32_t host_isa = 0x0;

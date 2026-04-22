@@ -28,10 +28,10 @@ static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
                    : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
                    : "0"(*eax), "2"(*ecx));
 #else
-    (void) eax;
-    (void) ebx;
-    (void) ecx;
-    (void) edx;
+    (void)eax;
+    (void)ebx;
+    (void)ecx;
+    (void)edx;
 #endif /* not sure what to do when inline assembly is unavailable*/
 }
 
@@ -48,11 +48,11 @@ static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
                      //:"%eax","%ebx","%ecx","%edx"// clobbered register
     );
 #else
-    (void) code;
-    (void) eax;
-    (void) ebx;
-    (void) ecx;
-    (void) edx;
+    (void)code;
+    (void)eax;
+    (void)ebx;
+    (void)ecx;
+    (void)edx;
 #endif /* not sure what to do when inline assembly is unavailable*/
 }
 

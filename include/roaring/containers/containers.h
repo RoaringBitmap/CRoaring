@@ -557,7 +557,7 @@ inline bool container_contains(
     if (typecode == SHARED_CONTAINER_TYPE) {
         typecode = const_CAST_shared(c)->typecode;
         assert(typecode != SHARED_CONTAINER_TYPE);
-        c =  const_CAST_shared(c)->container;
+        c = const_CAST_shared(c)->container;
     }
 
     switch (typecode) {
