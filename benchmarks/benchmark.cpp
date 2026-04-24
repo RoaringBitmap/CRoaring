@@ -1,6 +1,6 @@
 // Unified CRoaring benchmark. One binary, many named benchmarks, selectable
-// with --filter. Measurements use sea_counters
-// (https://github.com/lemire/sea_counters) for hardware performance counters
+// with --filter. Measurements use lemire/counters
+// (https://github.com/lemire/counters) for hardware performance counters
 // when available (Linux perf_event; Apple Silicon with kpc entitlement),
 // falling back to wall-clock timing otherwise.
 //
@@ -55,7 +55,7 @@
 #include <roaring/roaring64.h>
 #include <roaring/roaring64map.hh>
 
-#include "counters/bench.h"
+#include "counters/event_counter.h"
 #include "numbersfromtextfiles.h"
 #include "random.h"
 
@@ -114,29 +114,24 @@ void print_wrapped(const std::string &text, size_t width = 72,
 }
 
 struct RunResult {
-    counters_event_aggregate agg;
+    counters::event_aggregate agg;
     int64_t last_answer;
     bool answer_ok;
 };
 
 RunResult run_entry(const Entry &e, int min_iter, double min_ns, int max_iter,
                     bool use_counters) {
-    // On Apple Silicon, sea_counters' kpc setup grabs a process-wide
-    // counter lock via kpc_force_all_ctrs_set(1); a second
-    // counters_event_collector_init() from the same process fails with -1
-    // and disables counters for the rest of the run. Reuse one collector
-    // per thread so the lock is taken exactly once (on Linux the cost is
-    // just four perf_event_open fds we hold open for the thread's
-    // lifetime, which is fine). The collector is leaked at thread exit;
-    // the OS reclaims the fds.
-    static thread_local counters_event_collector coll;
-    static thread_local bool coll_ready = false;
-    if (use_counters && !coll_ready) {
-        counters_event_collector_init(&coll);
-        coll_ready = true;
-    }
-    counters_event_aggregate agg;
-    counters_event_aggregate_init(&agg);
+    // On Apple Silicon, the counters library's kpc setup grabs a
+    // process-wide counter lock via kpc_force_all_ctrs_set(1); the
+    // AppleEvents setup_performance_counters() is idempotent per
+    // instance (an `init` flag short-circuits the second call), so we
+    // reuse one thread-local collector per thread. That way the kpc
+    // grab happens exactly once per thread and every run_entry call
+    // skips the expensive kpep setup. On Linux the collector holds
+    // five perf_event_open fds for the thread's lifetime. The collector
+    // is intentionally leaked on thread exit — the OS reclaims the fds.
+    static thread_local counters::event_collector coll;
+    counters::event_aggregate agg;
 
     // For reusable_state benchmarks, build state once and share it.
     void *shared_state = nullptr;
@@ -163,30 +158,30 @@ RunResult run_entry(const Entry &e, int min_iter, double min_ns, int max_iter,
         } else if (e.setup) {
             state = e.setup();
         }
-        counters_event_count c;
+        counters::event_count c;
         int64_t r = 0;
         if (use_counters) {
-            counters_event_collector_start(&coll);
+            coll.start();
             for (int64_t j = 0; j < e.inner_reps; ++j) r = e.run(state);
-            counters_event_collector_end(&coll, &c);
+            c = coll.end();
         } else {
             // Parallel mode: counters are meaningless so we just time with
             // CLOCK_MONOTONIC directly and zero the rest of the aggregate.
-            c = counters_event_count_zero();
             struct timespec t0, t1;
             clock_gettime(CLOCK_MONOTONIC, &t0);
             for (int64_t j = 0; j < e.inner_reps; ++j) r = e.run(state);
             clock_gettime(CLOCK_MONOTONIC, &t1);
-            c.elapsed_ns =
+            double ns =
                 static_cast<double>(t1.tv_sec - t0.tv_sec) * 1e9 +
                 static_cast<double>(t1.tv_nsec - t0.tv_nsec);
+            c.elapsed = std::chrono::duration<double>(ns / 1e9);
         }
         if (!e.reusable_state && e.teardown) e.teardown(state);
 
-        counters_event_aggregate_add(&agg, &c);
+        agg << c;
         last_answer = r;
         if (e.check_expected && r != e.expected) answer_ok = false;
-        total_ns += c.elapsed_ns;
+        total_ns += c.elapsed_ns();
         ++iter;
     }
     if (e.reusable_state && e.teardown) e.teardown(shared_state);
@@ -194,8 +189,7 @@ RunResult run_entry(const Entry &e, int min_iter, double min_ns, int max_iter,
     // We intentionally do NOT destroy the thread-local collector here —
     // on Apple Silicon that would release the kpc lock and force the
     // next benchmark to pay the full kpep setup (which then fails).
-    agg.has_events =
-        use_counters ? counters_event_collector_has_events(&coll) : false;
+    agg.has_events = use_counters ? coll.has_events() : false;
     RunResult rr;
     rr.agg = agg;
     rr.last_answer = last_answer;
@@ -305,19 +299,16 @@ void print_row(const Entry &e, const RunResult &r, bool has_counters,
     double ops = static_cast<double>(e.ops_per_run) *
                  static_cast<double>(e.inner_reps);
     if (ops <= 0) ops = 1;
-    const auto *a = &r.agg;
-    double best_ns_total = counters_event_aggregate_fastest_elapsed_ns(a);
-    double best_cyc_total = counters_event_aggregate_fastest_cycles(a);
-    double best_ins_total =
-        counters_event_aggregate_fastest_instructions(a);
-    double best_brm_total =
-        counters_event_aggregate_fastest_branch_misses(a);
+    const auto &a = r.agg;
+    double best_ns_total = a.fastest_elapsed_ns();
+    double best_cyc_total = a.fastest_cycles();
+    double best_ins_total = a.fastest_instructions();
+    double best_brm_total = a.fastest_branch_misses();
     double ns = best_ns_total / ops;
     double cyc = best_cyc_total / ops;
     double ins = best_ins_total / ops;
     double brm = best_brm_total / ops;
-    double miss =
-        counters_event_aggregate_fastest_cache_misses(a) / ops;
+    double miss = a.fastest_cache_misses() / ops;
     // GHz and IPC are derived from the best-iteration totals.
     double ghz = (best_ns_total > 0.0) ? (best_cyc_total / best_ns_total) : 0.0;
     double ipc = (best_cyc_total > 0.0) ? (best_ins_total / best_cyc_total) : 0.0;
@@ -4115,7 +4106,7 @@ void usage(const char *prog) {
 }  // namespace
 
 int main(int argc, char **argv) {
-    bool has_counters = counters_has_performance_counters();
+    bool has_counters = counters::has_performance_counters();
     std::vector<Entry> benchmarks;
     register_array_container(benchmarks);
     register_bitset_container(benchmarks);
