@@ -6,7 +6,8 @@
 //
 // Each registered benchmark provides:
 //   - setup():    builds fresh state (called once per measured iteration)
-//   - run():      the workload; returns an answer for optional correctness check
+//   - run():      the workload; returns an answer for optional correctness
+//   check
 //   - teardown(): frees state
 //   - ops_per_run: operations performed in a single run() call
 //   - inner_reps:  how many back-to-back calls to run() fit in one timed
@@ -29,20 +30,19 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
+#include <fcntl.h>
 #include <functional>
 #include <memory>
 #include <numeric>
 #include <random>
 #include <set>
 #include <string>
-#include <thread>
-#include <vector>
-
-#include <dirent.h>
-#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <thread>
 #include <unistd.h>
+#include <vector>
 
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>
@@ -62,8 +62,8 @@
 // When the roaring headers are compiled as C++, the internal container
 // symbols live in roaring::internal.
 using namespace roaring::internal;
-using roaring::misc::tellmeall;
 using roaring::Roaring64Map;
+using roaring::misc::tellmeall;
 
 namespace {
 
@@ -102,8 +102,7 @@ void print_wrapped(const std::string &text, size_t width = 72,
         size_t end;
         if (i >= text.size()) {
             end = text.size();
-        } else if (last_space != std::string::npos &&
-                   last_space > start) {
+        } else if (last_space != std::string::npos && last_space > start) {
             end = last_space;
             i = last_space + 1;
         } else {
@@ -171,9 +170,8 @@ RunResult run_entry(const Entry &e, int min_iter, double min_ns, int max_iter,
             clock_gettime(CLOCK_MONOTONIC, &t0);
             for (int64_t j = 0; j < e.inner_reps; ++j) r = e.run(state);
             clock_gettime(CLOCK_MONOTONIC, &t1);
-            double ns =
-                static_cast<double>(t1.tv_sec - t0.tv_sec) * 1e9 +
-                static_cast<double>(t1.tv_nsec - t0.tv_nsec);
+            double ns = static_cast<double>(t1.tv_sec - t0.tv_sec) * 1e9 +
+                        static_cast<double>(t1.tv_nsec - t0.tv_nsec);
             c.elapsed = std::chrono::duration<double>(ns / 1e9);
         }
         if (!e.reusable_state && e.teardown) e.teardown(state);
@@ -231,8 +229,9 @@ std::string repeat(char c, int n) {
 void print_header(bool has_counters, OutputFormat fmt, const MdLayout &L) {
     if (fmt == OutputFormat::Csv) {
         if (has_counters) {
-            printf("benchmark,ns_per_op,cyc_per_op,ghz,ins_per_op,ins_per_cyc,"
-                   "brm_per_op,miss_per_op,answer_ok\n");
+            printf(
+                "benchmark,ns_per_op,cyc_per_op,ghz,ins_per_op,ins_per_cyc,"
+                "brm_per_op,miss_per_op,answer_ok\n");
         } else {
             printf("benchmark,ns_per_op,answer_ok\n");
         }
@@ -242,19 +241,14 @@ void print_header(bool has_counters, OutputFormat fmt, const MdLayout &L) {
     // numerics. The separator row uses a trailing colon to right-align the
     // numeric columns in renderers; raw-text readers see aligned columns.
     if (has_counters) {
-        printf("| %-*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s |\n",
-               L.name, "benchmark", L.ns, "ns/op", L.cyc, "cyc/op", L.ghz,
-               "GHz", L.ins, "ins/op", L.ipc, "ins/cyc", L.brm, "brm/op",
-               L.miss, "miss/op");
+        printf("| %-*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s |\n", L.name,
+               "benchmark", L.ns, "ns/op", L.cyc, "cyc/op", L.ghz, "GHz", L.ins,
+               "ins/op", L.ipc, "ins/cyc", L.brm, "brm/op", L.miss, "miss/op");
         printf("|%s|%s:|%s:|%s:|%s:|%s:|%s:|%s:|\n",
-               repeat('-', L.name + 2).c_str(),
-               repeat('-', L.ns + 1).c_str(),
-               repeat('-', L.cyc + 1).c_str(),
-               repeat('-', L.ghz + 1).c_str(),
-               repeat('-', L.ins + 1).c_str(),
-               repeat('-', L.ipc + 1).c_str(),
-               repeat('-', L.brm + 1).c_str(),
-               repeat('-', L.miss + 1).c_str());
+               repeat('-', L.name + 2).c_str(), repeat('-', L.ns + 1).c_str(),
+               repeat('-', L.cyc + 1).c_str(), repeat('-', L.ghz + 1).c_str(),
+               repeat('-', L.ins + 1).c_str(), repeat('-', L.ipc + 1).c_str(),
+               repeat('-', L.brm + 1).c_str(), repeat('-', L.miss + 1).c_str());
     } else {
         printf("| %-*s | %*s |\n", L.name, "benchmark", L.ns, "ns/op");
         printf("|%s|%s:|\n", repeat('-', L.name + 2).c_str(),
@@ -280,8 +274,7 @@ std::string md_escape(const std::string &s) {
 // contain commas, newlines, or quotes today, but be defensive: if any of
 // those appear, wrap the cell in quotes and double embedded quotes.
 std::string csv_escape(const std::string &s) {
-    bool needs_quote =
-        s.find_first_of(",\"\n\r") != std::string::npos;
+    bool needs_quote = s.find_first_of(",\"\n\r") != std::string::npos;
     if (!needs_quote) return s;
     std::string out;
     out.reserve(s.size() + 2);
@@ -296,8 +289,8 @@ std::string csv_escape(const std::string &s) {
 
 void print_row(const Entry &e, const RunResult &r, bool has_counters,
                OutputFormat fmt, const MdLayout &L) {
-    double ops = static_cast<double>(e.ops_per_run) *
-                 static_cast<double>(e.inner_reps);
+    double ops =
+        static_cast<double>(e.ops_per_run) * static_cast<double>(e.inner_reps);
     if (ops <= 0) ops = 1;
     const auto &a = r.agg;
     double best_ns_total = a.fastest_elapsed_ns();
@@ -311,7 +304,8 @@ void print_row(const Entry &e, const RunResult &r, bool has_counters,
     double miss = a.fastest_cache_misses() / ops;
     // GHz and IPC are derived from the best-iteration totals.
     double ghz = (best_ns_total > 0.0) ? (best_cyc_total / best_ns_total) : 0.0;
-    double ipc = (best_cyc_total > 0.0) ? (best_ins_total / best_cyc_total) : 0.0;
+    double ipc =
+        (best_cyc_total > 0.0) ? (best_ins_total / best_cyc_total) : 0.0;
 
     if (fmt == OutputFormat::Csv) {
         const char *ok = r.answer_ok ? "1" : "0";
@@ -331,14 +325,15 @@ void print_row(const Entry &e, const RunResult &r, bool has_counters,
     std::string name = md_escape(e.name);
     if (!r.answer_ok) name += " **[BAD ANSWER]**";
     if (has_counters) {
-        printf("| %-*s | %*.2f | %*.2f | %*.2f | %*.2f | %*.2f | %*.4f | %*.4f |\n",
-               L.name, name.c_str(), L.ns, ns, L.cyc, cyc, L.ghz, ghz, L.ins,
-               ins, L.ipc, ipc, L.brm, brm, L.miss, miss);
+        printf(
+            "| %-*s | %*.2f | %*.2f | %*.2f | %*.2f | %*.2f | %*.4f | %*.4f "
+            "|\n",
+            L.name, name.c_str(), L.ns, ns, L.cyc, cyc, L.ghz, ghz, L.ins, ins,
+            L.ipc, ipc, L.brm, brm, L.miss, miss);
     } else {
         printf("| %-*s | %*.2f |\n", L.name, name.c_str(), L.ns, ns);
     }
 }
-
 
 // ----------------------------------------------------------------- helpers
 
@@ -435,8 +430,8 @@ void register_array_container(std::vector<Entry> &out) {
             auto *s = static_cast<ArrayState *>(sv);
             int64_t card = 0;
             for (int x = 0; x < (1 << 16); ++x) {
-                card += array_container_contains(s->B,
-                                                 static_cast<uint16_t>(x));
+                card +=
+                    array_container_contains(s->B, static_cast<uint16_t>(x));
             }
             return card;
         };
@@ -504,8 +499,8 @@ void register_array_container(std::vector<Entry> &out) {
             auto *s = new S;
             s->B = array_container_create();
             populate_array_stride(s->B, kArrayStride);
-            s->out = static_cast<uint32_t *>(malloc(
-                sizeof(uint32_t) * array_container_cardinality(s->B)));
+            s->out = static_cast<uint32_t *>(
+                malloc(sizeof(uint32_t) * array_container_cardinality(s->B)));
             return s;
         };
         e.run = [](void *sv) -> int64_t {
@@ -597,8 +592,7 @@ void register_array_container(std::vector<Entry> &out) {
                 auto *s = static_cast<S *>(sv);
                 int64_t hits = 0;
                 for (uint16_t q : s->queries) {
-#if defined(CROARING_IS_X64) && \
-    !(defined(_MSC_VER) && !defined(__clang__))
+#if defined(CROARING_IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
                     for (int32_t k = 0; k < s->B->cardinality;
                          k += 64 / (int32_t)sizeof(uint16_t)) {
                         __builtin_ia32_clflush(s->B->array + k);
@@ -953,8 +947,7 @@ void register_bitset_container(std::vector<Entry> &out) {
                 auto *s = static_cast<S *>(sv);
                 int64_t hits = 0;
                 for (uint16_t q : s->queries) {
-#if defined(CROARING_IS_X64) && \
-    !(defined(_MSC_VER) && !defined(__clang__))
+#if defined(CROARING_IS_X64) && !(defined(_MSC_VER) && !defined(__clang__))
                     for (int32_t k = 0; k < BITSET_CONTAINER_SIZE_IN_WORDS;
                          k += 64 / (int32_t)sizeof(uint64_t)) {
                         __builtin_ia32_clflush(s->B->words + k);
@@ -1022,25 +1015,23 @@ void register_bitset_container(std::vector<Entry> &out) {
                 return bitset_container_and(s->B1, s->B2, s->BO);
             }),
             N);
-        add_bench(
-            "bitset_container/and_nocard",
-            "Same as bitset_container/and but calls the _nocard variant, "
-            "which skips the popcount over the output — useful when the "
-            "caller does not need the cardinality right away.",
-            Fn([](S *s) -> int64_t {
-                bitset_container_and_nocard(s->B1, s->B2, s->BO);
-                return 0;
-            }),
-            N);
-        add_bench(
-            "bitset_container/and_justcard",
-            "Computes only the cardinality of the AND of two bitsets via "
-            "bitset_container_and_justcard(), without materialising the "
-            "output container. Hot path for fast intersection-sizing.",
-            Fn([](S *s) -> int64_t {
-                return bitset_container_and_justcard(s->B1, s->B2);
-            }),
-            N);
+        add_bench("bitset_container/and_nocard",
+                  "Same as bitset_container/and but calls the _nocard variant, "
+                  "which skips the popcount over the output — useful when the "
+                  "caller does not need the cardinality right away.",
+                  Fn([](S *s) -> int64_t {
+                      bitset_container_and_nocard(s->B1, s->B2, s->BO);
+                      return 0;
+                  }),
+                  N);
+        add_bench("bitset_container/and_justcard",
+                  "Computes only the cardinality of the AND of two bitsets via "
+                  "bitset_container_and_justcard(), without materialising the "
+                  "output container. Hot path for fast intersection-sizing.",
+                  Fn([](S *s) -> int64_t {
+                      return bitset_container_and_justcard(s->B1, s->B2);
+                  }),
+                  N);
         add_bench(
             "bitset_container/or",
             "Pointwise OR of two 65536-bit bitsets into an output bitset, "
@@ -1059,15 +1050,14 @@ void register_bitset_container(std::vector<Entry> &out) {
                 return 0;
             }),
             N);
-        add_bench(
-            "bitset_container/or_justcard",
-            "Computes only the cardinality of the OR of two bitsets via "
-            "bitset_container_or_justcard(), without materialising the "
-            "output container. Hot path for fast union-sizing.",
-            Fn([](S *s) -> int64_t {
-                return bitset_container_or_justcard(s->B1, s->B2);
-            }),
-            N);
+        add_bench("bitset_container/or_justcard",
+                  "Computes only the cardinality of the OR of two bitsets via "
+                  "bitset_container_or_justcard(), without materialising the "
+                  "output container. Hot path for fast union-sizing.",
+                  Fn([](S *s) -> int64_t {
+                      return bitset_container_or_justcard(s->B1, s->B2);
+                  }),
+                  N);
     }
 
     // bitset → array conversion.
@@ -1170,8 +1160,7 @@ void register_run_container(std::vector<Entry> &out) {
             auto *s = static_cast<RunState *>(sv);
             int64_t card = 0;
             for (int x = 0; x < (1 << 16); ++x) {
-                card += run_container_contains(s->B,
-                                               static_cast<uint16_t>(x));
+                card += run_container_contains(s->B, static_cast<uint16_t>(x));
             }
             return card;
         };
@@ -1314,7 +1303,8 @@ Entry make(const char *name, const char *description, uint32_t n,
         s->c1 = create1();
         s->c2 = create2();
         std::vector<uint16_t> vals(0x10000);
-        for (uint32_t i = 0; i < 0x10000; ++i) vals[i] = static_cast<uint16_t>(i);
+        for (uint32_t i = 0; i < 0x10000; ++i)
+            vals[i] = static_cast<uint16_t>(i);
         shuffle_uint16(vals.data(), 0x10000);
         for (uint32_t i = 0; i < n; ++i) {
             add1(s->c1, vals[i]);
@@ -1381,8 +1371,8 @@ void register_equals(std::vector<Entry> &out) {
         "of cardinality 2 * DEFAULT_MAX_SIZE. Stresses the comparator "
         "when the container has grown past the normal conversion "
         "threshold.",
-        2 * DEFAULT_MAX_SIZE, a_create, a_create, a_free, a_free, a_add,
-        a_add, array_container_equals));
+        2 * DEFAULT_MAX_SIZE, a_create, a_create, a_free, a_free, a_add, a_add,
+        array_container_equals));
     out.push_back(make<bitset_container_t, bitset_container_t>(
         "equals/bitset_bitset_65535",
         "bitset_container_equals() on two equal bitsets with 65535 bits "
@@ -1403,8 +1393,8 @@ void register_equals(std::vector<Entry> &out) {
         "populated from the same shuffled prefix of size "
         "DEFAULT_MAX_SIZE/2; the resulting run arrays can vary in "
         "structure depending on which values happen to land adjacent.",
-        DEFAULT_MAX_SIZE / 2, r_create, r_create, r_free, r_free, r_add,
-        r_add, run_container_equals));
+        DEFAULT_MAX_SIZE / 2, r_create, r_create, r_free, r_free, r_add, r_add,
+        run_container_equals));
     out.push_back(make<run_container_t, run_container_t>(
         "equals/run_run_default",
         "run_container_equals() on two equal run_container_t values of "
@@ -1594,47 +1584,66 @@ void register_add_benchmarks(std::vector<Entry> &out) {
     const Order orders[] = {SHUFFLE, ASC};
     for (Order o : orders) {
         for (uint32_t iv : intvlens) {
-            register_variant(out, "add", [](S *s) {
-                for (uint32_t off : s->data.offsets) {
-                    for (uint32_t j = 0; j < s->data.intvlen; ++j) {
-                        roaring_bitmap_add(s->r, off + j);
+            register_variant(
+                out, "add",
+                [](S *s) {
+                    for (uint32_t off : s->data.offsets) {
+                        for (uint32_t j = 0; j < s->data.intvlen; ++j) {
+                            roaring_bitmap_add(s->r, off + j);
+                        }
                     }
-                }
-            }, iv, o, false);
-            register_variant(out, "add_many", [](S *s) {
-                size_t n = s->data.offsets.size();
-                for (size_t i = 0; i < n; ++i) {
-                    roaring_bitmap_add_many(s->r, s->data.intvlen,
-                                            s->values.data() +
-                                                i * s->data.intvlen);
-                }
-            }, iv, o, false);
-            register_variant(out, "add_bulk", [](S *s) {
-                roaring_bulk_context_t ctx = {0, 0, 0, 0};
-                for (uint32_t off : s->data.offsets) {
-                    for (uint32_t j = 0; j < s->data.intvlen; ++j) {
-                        roaring_bitmap_add_bulk(s->r, &ctx, off + j);
+                },
+                iv, o, false);
+            register_variant(
+                out, "add_many",
+                [](S *s) {
+                    size_t n = s->data.offsets.size();
+                    for (size_t i = 0; i < n; ++i) {
+                        roaring_bitmap_add_many(
+                            s->r, s->data.intvlen,
+                            s->values.data() + i * s->data.intvlen);
                     }
-                }
-            }, iv, o, false);
-            register_variant(out, "add_range", [](S *s) {
-                for (uint32_t off : s->data.offsets) {
-                    roaring_bitmap_add_range(s->r, off, off + s->data.intvlen);
-                }
-            }, iv, o, false);
-            register_variant(out, "remove", [](S *s) {
-                for (uint32_t off : s->data.offsets) {
-                    for (uint32_t j = 0; j < s->data.intvlen; ++j) {
-                        roaring_bitmap_remove(s->r, off + j);
+                },
+                iv, o, false);
+            register_variant(
+                out, "add_bulk",
+                [](S *s) {
+                    roaring_bulk_context_t ctx = {0, 0, 0, 0};
+                    for (uint32_t off : s->data.offsets) {
+                        for (uint32_t j = 0; j < s->data.intvlen; ++j) {
+                            roaring_bitmap_add_bulk(s->r, &ctx, off + j);
+                        }
                     }
-                }
-            }, iv, o, /*pre_populated=*/true);
-            register_variant(out, "remove_range", [](S *s) {
-                for (uint32_t off : s->data.offsets) {
-                    roaring_bitmap_remove_range(s->r, off,
-                                                off + s->data.intvlen);
-                }
-            }, iv, o, /*pre_populated=*/true);
+                },
+                iv, o, false);
+            register_variant(
+                out, "add_range",
+                [](S *s) {
+                    for (uint32_t off : s->data.offsets) {
+                        roaring_bitmap_add_range(s->r, off,
+                                                 off + s->data.intvlen);
+                    }
+                },
+                iv, o, false);
+            register_variant(
+                out, "remove",
+                [](S *s) {
+                    for (uint32_t off : s->data.offsets) {
+                        for (uint32_t j = 0; j < s->data.intvlen; ++j) {
+                            roaring_bitmap_remove(s->r, off + j);
+                        }
+                    }
+                },
+                iv, o, /*pre_populated=*/true);
+            register_variant(
+                out, "remove_range",
+                [](S *s) {
+                    for (uint32_t off : s->data.offsets) {
+                        roaring_bitmap_remove_range(s->r, off,
+                                                    off + s->data.intvlen);
+                    }
+                },
+                iv, o, /*pre_populated=*/true);
         }
     }
 }
@@ -1656,8 +1665,8 @@ Many *build(int stride_gap) {
     std::mt19937 rng(42);
     std::uniform_int_distribution<uint32_t> d(0, size - 1);
     for (size_t i = 0; i < bitmapcount; ++i) {
-        roaring_bitmap_t *b =
-            roaring_bitmap_from_range(0, size, stride_gap == 0 ? 1 : stride_gap);
+        roaring_bitmap_t *b = roaring_bitmap_from_range(
+            0, size, stride_gap == 0 ? 1 : stride_gap);
         for (size_t j = 0; j < size / 20; ++j) {
             roaring_bitmap_remove(b, d(rng));
         }
@@ -1675,8 +1684,7 @@ void free_many(void *sv) {
 
 void register_benchmarks(std::vector<Entry> &out) {
     using Fn = std::function<int64_t(Many *)>;
-    auto add = [&](const char *name, const char *descr, int stride_gap,
-                   Fn fn) {
+    auto add = [&](const char *name, const char *descr, int stride_gap, Fn fn) {
         Entry e;
         e.name = name;
         e.description = descr;
@@ -1927,9 +1935,9 @@ struct LoadedBitmaps {
     std::vector<uint64_t> cards;
     std::vector<std::vector<uint32_t>> raw;  // original integer inputs, kept
                                              // so we can shuffle & re-query
-    roaring_bitmap_t *merged;  // union of everything
-    uint32_t global_max = 0;   // max value across all bitmaps
-    uint32_t max_card = 0;     // max cardinality of any individual bitmap
+    roaring_bitmap_t *merged;                // union of everything
+    uint32_t global_max = 0;                 // max value across all bitmaps
+    uint32_t max_card = 0;  // max cardinality of any individual bitmap
     uint32_t *array_buffer = nullptr;    // sized to max_card (uint32_t)
     uint64_t *array_buffer64 = nullptr;  // sized to max_card (uint64_t)
 };
@@ -2018,8 +2026,8 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
         Entry e;
         e.name = "real_bitmaps/contains_quartiles" + suffix;
         e.description =
-            "For every bitmap in the \"" + dataset +
-            "\" dataset (" + N_bitmaps +
+            "For every bitmap in the \"" + dataset + "\" dataset (" +
+            N_bitmaps +
             " bitmaps total), issues three membership queries at 1/4, "
             "1/2, and 3/4 of THAT bitmap's own maximum value. The old "
             "real_bitmaps_contains benchmark computed a single global "
@@ -2046,7 +2054,8 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
         out.push_back(std::move(e));
     }
 
-    // Successive AND / OR between adjacent bitmaps (from real_bitmaps_benchmark).
+    // Successive AND / OR between adjacent bitmaps (from
+    // real_bitmaps_benchmark).
     {
         Entry e;
         e.name = "real_bitmaps/successive_and" + suffix;
@@ -2140,8 +2149,8 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
             return static_cast<int64_t>(sum);
         };
         e.teardown = [](void *sv) { delete static_cast<S *>(sv); };
-        e.ops_per_run =
-            static_cast<int64_t>(roaring_bitmap_get_cardinality(loaded->merged));
+        e.ops_per_run = static_cast<int64_t>(
+            roaring_bitmap_get_cardinality(loaded->merged));
         e.inner_reps = 20;
         out.push_back(std::move(e));
     }
@@ -2191,8 +2200,8 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
             return static_cast<int64_t>(sum);
         };
         e.teardown = [](void *sv) { delete static_cast<S *>(sv); };
-        e.ops_per_run =
-            static_cast<int64_t>(roaring_bitmap_get_cardinality(loaded->merged));
+        e.ops_per_run = static_cast<int64_t>(
+            roaring_bitmap_get_cardinality(loaded->merged));
         e.inner_reps = 20;
         out.push_back(std::move(e));
     }
@@ -2354,7 +2363,8 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
                 roaring_bitmap_portable_serialize(b, pbuf.data());
                 s->portable_bufs.push_back(std::move(pbuf));
                 size_t fsize = roaring_bitmap_frozen_size_in_bytes(b);
-                char *fbuf = static_cast<char *>(roaring_aligned_malloc(32, fsize));
+                char *fbuf =
+                    static_cast<char *>(roaring_aligned_malloc(32, fsize));
                 roaring_bitmap_frozen_serialize(b, fbuf);
                 s->frozen_bufs.emplace_back(fbuf, fsize);
             }
@@ -2627,8 +2637,8 @@ void register_all(std::vector<Entry> &out, LoadedBitmaps *loaded,
         [](LoadedBitmaps *lb) -> int64_t {
             uint64_t marker = 0;
             for (size_t i = 0; i + 1 < lb->bitmaps64.size(); ++i) {
-                roaring64_bitmap_t *t = roaring64_bitmap_or(
-                    lb->bitmaps64[i], lb->bitmaps64[i + 1]);
+                roaring64_bitmap_t *t =
+                    roaring64_bitmap_or(lb->bitmaps64[i], lb->bitmaps64[i + 1]);
                 marker += roaring64_bitmap_get_cardinality(t);
                 roaring64_bitmap_free(t);
             }
@@ -2658,8 +2668,8 @@ void register_all(std::vector<Entry> &out, LoadedBitmaps *loaded,
         [](LoadedBitmaps *lb) -> int64_t {
             uint64_t marker = 0;
             for (size_t i = 0; i + 1 < lb->bitmaps64.size(); ++i) {
-                marker += roaring64_bitmap_or_cardinality(
-                    lb->bitmaps64[i], lb->bitmaps64[i + 1]);
+                marker += roaring64_bitmap_or_cardinality(lb->bitmaps64[i],
+                                                          lb->bitmaps64[i + 1]);
             }
             return static_cast<int64_t>(marker);
         },
@@ -2673,8 +2683,8 @@ void register_all(std::vector<Entry> &out, LoadedBitmaps *loaded,
         [](LoadedBitmaps *lb) -> int64_t {
             uint64_t marker = 0;
             for (size_t i = 0; i + 1 < lb->bitmaps.size(); ++i) {
-                marker += roaring_bitmap_andnot_cardinality(
-                    lb->bitmaps[i], lb->bitmaps[i + 1]);
+                marker += roaring_bitmap_andnot_cardinality(lb->bitmaps[i],
+                                                            lb->bitmaps[i + 1]);
             }
             return static_cast<int64_t>(marker);
         },
@@ -2912,8 +2922,8 @@ void register_all(std::vector<Entry> &out, LoadedBitmaps *loaded,
         [](LoadedBitmaps *lb) -> int64_t {
             uint64_t marker = 0;
             uint32_t m = lb->global_max;
-            std::vector<uint32_t> input{m / 5, 2 * m / 5, 3 * m / 5,
-                                         4 * m / 5, m};
+            std::vector<uint32_t> input{m / 5, 2 * m / 5, 3 * m / 5, 4 * m / 5,
+                                        m};
             std::vector<uint64_t> ranks(5);
             for (size_t i = 0; i < lb->bitmaps.size(); ++i) {
                 roaring_bitmap_rank_many(lb->bitmaps[i], input.data(),
@@ -3042,9 +3052,11 @@ void register_benchmarks(std::vector<Entry> &out) {
         char dbuf[768];
         snprintf(dbuf, sizeof(dbuf),
                  "Inserts %zu uniformly random 64-bit values drawn from "
-                 "[0, %" PRIu64 "] into a fresh Roaring64Map. The "
+                 "[0, %" PRIu64
+                 "] into a fresh Roaring64Map. The "
                  "(batch, max) pair controls density and locality: with "
-                 "batch %zu vs max %" PRIu64 " the expected collision "
+                 "batch %zu vs max %" PRIu64
+                 " the expected collision "
                  "rate and number of distinct 32-bit high-words per "
                  "insert differ by orders of magnitude across the "
                  "sparse64 configurations, which exposes the cost of "
@@ -3103,9 +3115,9 @@ static const uint64_t kSteps[] = {
     256ULL,
     65536ULL,
     16777216ULL,
-    4294967296ULL,        // 2^32
-    1099511627776ULL,     // 2^40
-    281474976710656ULL,   // 2^48
+    4294967296ULL,       // 2^32
+    1099511627776ULL,    // 2^40
+    281474976710656ULL,  // 2^48
 };
 // The 10 bitmasks from synthetic_bench.cpp used for "random" variants.
 static constexpr uint64_t kBitmasks[] = {
@@ -3169,8 +3181,8 @@ static void register_contains_variants(std::vector<Entry> &out) {
                     "for a value guaranteed to be present, cycling "
                     "through the stored values.";
                 e.setup = [count, step]() -> void * {
-                    auto *s = new r64HitState{roaring64_bitmap_create(),
-                                              count, step, 0};
+                    auto *s = new r64HitState{roaring64_bitmap_create(), count,
+                                              step, 0};
                     for (size_t i = 0; i < count; ++i)
                         roaring64_bitmap_add(s->r, i * step);
                     return s;
@@ -3200,8 +3212,8 @@ static void register_contains_variants(std::vector<Entry> &out) {
                     "r64ContainsHit but through the Roaring64Map C++ "
                     "wrapper (one .contains(v) per measured call).";
                 e.setup = [count, step]() -> void * {
-                    auto *s = new cppHitState{new Roaring64Map(), count,
-                                               step, 0};
+                    auto *s =
+                        new cppHitState{new Roaring64Map(), count, step, 0};
                     for (size_t i = 0; i < count; ++i) s->r->add(i * step);
                     return s;
                 };
@@ -3230,8 +3242,8 @@ static void register_contains_variants(std::vector<Entry> &out) {
                     "baseline for the same count×step cycling-hit query "
                     "pattern. Each call is `set.find(v) != set.end()`.";
                 e.setup = [count, step]() -> void * {
-                    auto *s = new setHitState{new std::set<uint64_t>(),
-                                               count, step, 0};
+                    auto *s = new setHitState{new std::set<uint64_t>(), count,
+                                              step, 0};
                     for (size_t i = 0; i < count; ++i) s->s->insert(i * step);
                     return s;
                 };
@@ -3262,8 +3274,8 @@ static void register_contains_variants(std::vector<Entry> &out) {
                     "a value that is not in the bitmap. Measures the "
                     "negative-lookup path.";
                 e.setup = [count, step]() -> void * {
-                    auto *s = new r64HitState{roaring64_bitmap_create(),
-                                              count, step, 0};
+                    auto *s = new r64HitState{roaring64_bitmap_create(), count,
+                                              step, 0};
                     for (size_t i = 0; i < count; ++i)
                         roaring64_bitmap_add(s->r, i * step);
                     return s;
@@ -3291,8 +3303,8 @@ static void register_contains_variants(std::vector<Entry> &out) {
                     "synthetic_bench.cpp cppContainsMiss: miss pattern "
                     "via Roaring64Map::contains().";
                 e.setup = [count, step]() -> void * {
-                    auto *s = new cppHitState{new Roaring64Map(), count,
-                                               step, 0};
+                    auto *s =
+                        new cppHitState{new Roaring64Map(), count, step, 0};
                     for (size_t i = 0; i < count; ++i) s->r->add(i * step);
                     return s;
                 };
@@ -3319,8 +3331,8 @@ static void register_contains_variants(std::vector<Entry> &out) {
                     "synthetic_bench.cpp setContainsMiss: miss pattern "
                     "against std::set.";
                 e.setup = [count, step]() -> void * {
-                    auto *s = new setHitState{new std::set<uint64_t>(),
-                                               count, step, 0};
+                    auto *s = new setHitState{new std::set<uint64_t>(), count,
+                                              step, 0};
                     for (size_t i = 0; i < count; ++i) s->s->insert(i * step);
                     return s;
                 };
@@ -3379,8 +3391,9 @@ static void register_random_variants(std::vector<Entry> &out) {
                 "fresh random (& bitmask) values. The 10 bitmasks cover "
                 "20, 32, 48, and 64 bit spreads.";
             e.setup = [mask]() -> void * {
-                auto *s = new r64RandState{roaring64_bitmap_create(), mask,
-                                           std::mt19937_64(0xdeadbeefULL + mask)};
+                auto *s =
+                    new r64RandState{roaring64_bitmap_create(), mask,
+                                     std::mt19937_64(0xdeadbeefULL + mask)};
                 for (size_t i = 0; i < (1U << 20); ++i)
                     roaring64_bitmap_add(s->r, rand_u64(s->rng) & mask);
                 return s;
@@ -3408,8 +3421,9 @@ static void register_random_variants(std::vector<Entry> &out) {
                 "synthetic_bench.cpp cppContainsRandom: random-bitmask "
                 "contains through the Roaring64Map C++ wrapper.";
             e.setup = [mask]() -> void * {
-                auto *s = new cppRandState{new Roaring64Map(), mask,
-                                           std::mt19937_64(0xdeadbeefULL + mask)};
+                auto *s =
+                    new cppRandState{new Roaring64Map(), mask,
+                                     std::mt19937_64(0xdeadbeefULL + mask)};
                 for (size_t i = 0; i < (1U << 20); ++i)
                     s->r->add(rand_u64(s->rng) & mask);
                 return s;
@@ -3437,8 +3451,9 @@ static void register_random_variants(std::vector<Entry> &out) {
                 "synthetic_bench.cpp setContainsRandom: random-bitmask "
                 "contains against std::set<uint64_t>.";
             e.setup = [mask]() -> void * {
-                auto *s = new setRandState{new std::set<uint64_t>(), mask,
-                                            std::mt19937_64(0xdeadbeefULL + mask)};
+                auto *s =
+                    new setRandState{new std::set<uint64_t>(), mask,
+                                     std::mt19937_64(0xdeadbeefULL + mask)};
                 for (size_t i = 0; i < (1U << 20); ++i)
                     s->s->insert(rand_u64(s->rng) & mask);
                 return s;
@@ -3469,8 +3484,9 @@ static void register_random_variants(std::vector<Entry> &out) {
                 "then each call adds one fresh random value and removes "
                 "another. Reports per-pair cost (insert + remove).";
             e.setup = [mask]() -> void * {
-                auto *s = new r64RandState{roaring64_bitmap_create(), mask,
-                                           std::mt19937_64(0xdeadbeefULL + mask)};
+                auto *s =
+                    new r64RandState{roaring64_bitmap_create(), mask,
+                                     std::mt19937_64(0xdeadbeefULL + mask)};
                 for (size_t i = 0; i < (1U << 20); ++i)
                     roaring64_bitmap_add(s->r, rand_u64(s->rng) & mask);
                 return s;
@@ -3500,8 +3516,9 @@ static void register_random_variants(std::vector<Entry> &out) {
                 "synthetic_bench.cpp cppInsertRemoveRandom: paired "
                 "add/remove through Roaring64Map.";
             e.setup = [mask]() -> void * {
-                auto *s = new cppRandState{new Roaring64Map(), mask,
-                                           std::mt19937_64(0xdeadbeefULL + mask)};
+                auto *s =
+                    new cppRandState{new Roaring64Map(), mask,
+                                     std::mt19937_64(0xdeadbeefULL + mask)};
                 for (size_t i = 0; i < (1U << 20); ++i)
                     s->r->add(rand_u64(s->rng) & mask);
                 return s;
@@ -3531,8 +3548,9 @@ static void register_random_variants(std::vector<Entry> &out) {
                 "synthetic_bench.cpp setInsertRemoveRandom: paired "
                 "insert/erase against std::set.";
             e.setup = [mask]() -> void * {
-                auto *s = new setRandState{new std::set<uint64_t>(), mask,
-                                            std::mt19937_64(0xdeadbeefULL + mask)};
+                auto *s =
+                    new setRandState{new std::set<uint64_t>(), mask,
+                                     std::mt19937_64(0xdeadbeefULL + mask)};
                 for (size_t i = 0; i < (1U << 20); ++i)
                     s->s->insert(rand_u64(s->rng) & mask);
                 return s;
@@ -3588,8 +3606,8 @@ static void register_insert_remove(std::vector<Entry> &out) {
                     roaring64_bitmap_t *r = roaring64_bitmap_create();
                     for (size_t i = 0; i < p->count; ++i)
                         roaring64_bitmap_add(r, i * p->step);
-                    int64_t c =
-                        static_cast<int64_t>(roaring64_bitmap_get_cardinality(r));
+                    int64_t c = static_cast<int64_t>(
+                        roaring64_bitmap_get_cardinality(r));
                     roaring64_bitmap_free(r);
                     return c;
                 };
@@ -3828,8 +3846,7 @@ static void register_ser_deser(std::vector<Entry> &out) {
                     for (size_t i = 0; i < count; ++i)
                         roaring64_bitmap_add(s->r, i * step);
                     roaring64_bitmap_shrink_to_fit(s->r);
-                    s->buf.resize(
-                        roaring64_bitmap_frozen_size_in_bytes(s->r));
+                    s->buf.resize(roaring64_bitmap_frozen_size_in_bytes(s->r));
                     return s;
                 };
                 e.run = [](void *sv) -> int64_t {
@@ -3926,8 +3943,7 @@ static void register_ser_deser(std::vector<Entry> &out) {
                         roaring64_bitmap_add(s->r, i * step);
                     s->buf.resize(
                         roaring64_bitmap_portable_size_in_bytes(s->r));
-                    roaring64_bitmap_portable_serialize(s->r,
-                                                        s->buf.data());
+                    roaring64_bitmap_portable_serialize(s->r, s->buf.data());
                     return s;
                 };
                 e.run = [](void *sv) -> int64_t {
@@ -4009,8 +4025,8 @@ static void register_ser_deser(std::vector<Entry> &out) {
                 };
                 e.run = [](void *sv) -> int64_t {
                     auto *s = static_cast<serStateCpp *>(sv);
-                    Roaring64Map r2 = Roaring64Map::read(
-                        s->buf.data(), /*portable=*/true);
+                    Roaring64Map r2 =
+                        Roaring64Map::read(s->buf.data(), /*portable=*/true);
                     return static_cast<int64_t>(r2.cardinality());
                 };
                 e.teardown = [](void *sv) {
@@ -4042,8 +4058,7 @@ static void register_ser_deser(std::vector<Entry> &out) {
                 };
                 e.run = [](void *sv) -> int64_t {
                     auto *s = static_cast<serStateCppFrozen *>(sv);
-                    Roaring64Map r2 =
-                        Roaring64Map::frozenView(s->buf.data());
+                    Roaring64Map r2 = Roaring64Map::frozenView(s->buf.data());
                     return static_cast<int64_t>(r2.cardinality());
                 };
                 e.teardown = [](void *sv) {
@@ -4074,31 +4089,51 @@ static void register_all(std::vector<Entry> &out) {
 void usage(const char *prog) {
     printf(
         "usage: %s [options]\n"
-        "  --filter <substr>     run only benchmarks whose name contains substr\n"
-        "                        (can be repeated to match any of the given substrings)\n"
-        "  --datadir <path>      override auto-discovery with a single dataset directory\n"
-        "                        (e.g. benchmarks/realdata/census-income). When omitted,\n"
-        "                        every subdirectory of the build-time realdata/ copy is\n"
+        "  --filter <substr>     run only benchmarks whose name contains "
+        "substr\n"
+        "                        (can be repeated to match any of the given "
+        "substrings)\n"
+        "  --datadir <path>      override auto-discovery with a single dataset "
+        "directory\n"
+        "                        (e.g. benchmarks/realdata/census-income). "
+        "When omitted,\n"
+        "                        every subdirectory of the build-time "
+        "realdata/ copy is\n"
         "                        loaded as its own dataset.\n"
-        "  --ext <ext>           extension used when scanning datasets (default: .txt)\n"
-        "  --list                list registered benchmark names (one per line) and exit\n"
-        "  --list-description    list each benchmark name followed by a paragraph\n"
-        "                        describing what the benchmark measures, then exit\n"
+        "  --ext <ext>           extension used when scanning datasets "
+        "(default: .txt)\n"
+        "  --list                list registered benchmark names (one per "
+        "line) and exit\n"
+        "  --list-description    list each benchmark name followed by a "
+        "paragraph\n"
+        "                        describing what the benchmark measures, then "
+        "exit\n"
         "  --markdown            format results as a Markdown table (default)\n"
-        "  --csv                 format results as CSV (no header note, machine-readable)\n"
-        "  --min-iter <n>        minimum measured iterations per benchmark (default 10)\n"
-        "  --min-ms <n>          minimum measured wall time per benchmark in ms (default 200)\n"
-        "  -j, --jobs <n>        run benchmarks n-at-a-time on n threads (default 1).\n"
-        "                        Each batch of n finishes before the next batch starts\n"
-        "                        and rows are printed in input order. Hardware counters\n"
-        "                        (cyc/op, ins/op, GHz, ins/cyc, brm/op, miss/op) are\n"
-        "                        DISABLED under -j > 1 because shared caches and SMT\n"
-        "                        contention make per-iteration counts meaningless.\n"
+        "  --csv                 format results as CSV (no header note, "
+        "machine-readable)\n"
+        "  --min-iter <n>        minimum measured iterations per benchmark "
+        "(default 10)\n"
+        "  --min-ms <n>          minimum measured wall time per benchmark in "
+        "ms (default 200)\n"
+        "  -j, --jobs <n>        run benchmarks n-at-a-time on n threads "
+        "(default 1).\n"
+        "                        Each batch of n finishes before the next "
+        "batch starts\n"
+        "                        and rows are printed in input order. Hardware "
+        "counters\n"
+        "                        (cyc/op, ins/op, GHz, ins/cyc, brm/op, "
+        "miss/op) are\n"
+        "                        DISABLED under -j > 1 because shared caches "
+        "and SMT\n"
+        "                        contention make per-iteration counts "
+        "meaningless.\n"
         "  --sysinfo             print system information\n"
         "  --help                this message\n"
         "\n"
-        "Benchmarks whose names contain real_bitmaps/, iteration/, contains_multi/, or\n"
-        "frozen/ are registered once per discovered dataset (suffixed with the dataset\n"
+        "Benchmarks whose names contain real_bitmaps/, iteration/, "
+        "contains_multi/, or\n"
+        "frozen/ are registered once per discovered dataset (suffixed with the "
+        "dataset\n"
         "name, e.g. real_bitmaps/contains_quartiles/census-income).\n",
         prog);
 }
@@ -4160,8 +4195,7 @@ int main(int argc, char **argv) {
         else if (a == "-j" || a == "--jobs") {
             jobs = std::atoi(need_value("-j"));
             if (jobs < 1) jobs = 1;
-        }
-        else if (a == "--sysinfo")
+        } else if (a == "--sysinfo")
             tellmeall();
         else if (a == "--help" || a == "-h") {
             usage(argv[0]);
@@ -4204,11 +4238,9 @@ int main(int argc, char **argv) {
         // default. The CMake build copies benchmarks/realdata/ into the
         // build tree and sets BENCHMARK_DATA_DIR to the copy.
         const char *default_dir = BENCHMARK_DATA_DIR;
-        std::vector<std::string> datasets =
-            discover_datasets(default_dir, ext);
+        std::vector<std::string> datasets = discover_datasets(default_dir, ext);
         for (const std::string &name : datasets) {
-            std::string path =
-                std::string(default_dir) + "/" + name;
+            std::string path = std::string(default_dir) + "/" + name;
             LoadedBitmaps *loaded = load_directory(path.c_str(), ext);
             if (!loaded) continue;
             all_loaded.push_back(loaded);
@@ -4307,9 +4339,8 @@ int main(int argc, char **argv) {
     print_header(has_counters, fmt, layout);
     if (jobs <= 1) {
         for (const Entry *ep : selected) {
-            RunResult r =
-                run_entry(*ep, min_iter, min_ms * 1e6, /*max_iter=*/1000000,
-                          use_counters);
+            RunResult r = run_entry(*ep, min_iter, min_ms * 1e6,
+                                    /*max_iter=*/1000000, use_counters);
             print_row(*ep, r, has_counters, fmt, layout);
         }
     } else {
@@ -4318,9 +4349,10 @@ int main(int argc, char **argv) {
         // This means per-measurement numbers reflect a loaded machine —
         // threads contend for caches, memory bandwidth, and SMT lanes — so
         // results differ from -j 1 and are NOT directly comparable to it.
-        for (size_t i = 0; i < selected.size(); i += static_cast<size_t>(jobs)) {
-            size_t end = std::min(selected.size(),
-                                  i + static_cast<size_t>(jobs));
+        for (size_t i = 0; i < selected.size();
+             i += static_cast<size_t>(jobs)) {
+            size_t end =
+                std::min(selected.size(), i + static_cast<size_t>(jobs));
             size_t batch = end - i;
             std::vector<RunResult> results(batch);
             std::vector<std::thread> threads;
@@ -4328,10 +4360,11 @@ int main(int argc, char **argv) {
             for (size_t k = 0; k < batch; ++k) {
                 const Entry *ep = selected[i + k];
                 RunResult *slot = &results[k];
-                threads.emplace_back([ep, slot, min_iter, min_ms, use_counters]() {
-                    *slot = run_entry(*ep, min_iter, min_ms * 1e6,
-                                      /*max_iter=*/1000000, use_counters);
-                });
+                threads.emplace_back(
+                    [ep, slot, min_iter, min_ms, use_counters]() {
+                        *slot = run_entry(*ep, min_iter, min_ms * 1e6,
+                                          /*max_iter=*/1000000, use_counters);
+                    });
             }
             for (auto &t : threads) t.join();
             for (size_t k = 0; k < batch; ++k) {

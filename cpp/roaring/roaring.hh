@@ -13,10 +13,8 @@ A C++ header for Roaring Bitmaps.
 #include <string>
 
 #if !defined(ROARING_EXCEPTIONS)
-// __cpp_exceptions is required by C++98 and we require C++11 or better.
-#ifndef __cpp_exceptions
-#error "__cpp_exceptions should be defined"
-#endif
+// We assume that if __cpp_exceptions is given a positive integer
+// value, then exceptions are enabled.
 #if __cpp_exceptions
 #define ROARING_EXCEPTIONS 1
 #else

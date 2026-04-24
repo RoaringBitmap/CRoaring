@@ -250,7 +250,7 @@ static inline void tellmeall() {
     printf("# compiler: unknown\n");
 #endif /* compiler detection */
 
-#if defined(__OPTIMIZE__) 
+#if defined(__OPTIMIZE__)
     printf("# optimization: on\n");
 #elif defined(__OPTIMIZE_SIZE__)
     printf("# size optimization: on\n");
@@ -268,7 +268,8 @@ static inline void tellmeall() {
     printf("# you have a big endian machine\n");
 #endif /* __BIG_ENDIAN__ */
 #if __CHAR_BIT__
-    if (__CHAR_BIT__ != 8) printf("# on your machine, chars don't have 8bits???\n");
+    if (__CHAR_BIT__ != 8)
+        printf("# on your machine, chars don't have 8bits???\n");
 #endif /* __CHAR_BIT__ */
 }
 
