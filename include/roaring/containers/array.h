@@ -345,7 +345,7 @@ static croaring_really_inline bool array_container_contains(const array_containe
     int32_t cardinality = arr->cardinality;
     if (cardinality < gap) {
       for (int32_t j = 0; j < cardinality; j++) {
-          if (carr[j] == pos) return true;
+          if (carr[j] >= pos) return carr[j] == pos;
         }
         return false;
     }
