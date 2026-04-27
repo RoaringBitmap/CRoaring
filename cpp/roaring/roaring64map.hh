@@ -1287,8 +1287,8 @@ class Roaring64Map {
             buf += sizeof(uint32_t);
 
             // read map value Roaring
-            const Roaring read = Roaring::frozenView(buf, len);
-            result.emplaceOrInsert(key, read);
+            Roaring read = Roaring::frozenView(buf, len);
+            result.emplaceOrInsert(key, std::move(read));
 
             // forward buffer past the last Roaring Bitmap
             buf += len;
