@@ -77,7 +77,20 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #ifndef __restrict__
 #define __restrict__ __restrict
 #endif  // __restrict__
+#ifndef croaring_really_inline 
+#define  __forceinline
+#endif  // croaring_really_inline
 #endif  // CROARING_REGULAR_VISUAL_STUDIO
+
+#if defined(__GNUC__) || defined(__clang__)
+#ifndef croaring_really_inline
+#define croaring_really_inline __attribute__((always_inline)) inline
+#endif  // croaring_really_inline
+#endif // defined(__GNUC__) || defined(__clang__)
+
+#ifndef croaring_really_inline
+#define croaring_really_inline inline
+#endif  // croaring_really_inline
 
 #if defined(__x86_64__) || defined(_M_X64)
 // we have an x64 processor

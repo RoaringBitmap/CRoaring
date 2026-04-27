@@ -90,7 +90,7 @@ void ra_clear_containers(roaring_array_t *ra);
 /**
  * Get the index corresponding to a 16-bit key
  */
-inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
+croaring_really_inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
     if ((ra->size == 0) || ra->keys[ra->size - 1] == x) return ra->size - 1;
     return binarySearch(ra->keys, (int32_t)ra->size, x);
 }
@@ -98,7 +98,7 @@ inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x) {
 /**
  * Retrieves the container at index i, filling in the typecode
  */
-inline container_t *ra_get_container_at_index(const roaring_array_t *ra,
+croaring_really_inline container_t *ra_get_container_at_index(const roaring_array_t *ra,
                                               uint16_t i, uint8_t *typecode) {
     *typecode = ra->typecodes[i];
     return ra->containers[i];
@@ -107,7 +107,7 @@ inline container_t *ra_get_container_at_index(const roaring_array_t *ra,
 /**
  * Retrieves the key at index i
  */
-inline uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
+croaring_really_inline uint16_t ra_get_key_at_index(const roaring_array_t *ra, uint16_t i) {
     return ra->keys[i];
 }
 

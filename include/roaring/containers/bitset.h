@@ -189,7 +189,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 }
 
 /* Get the value of the ith bit.  */
-inline bool bitset_container_get(const bitset_container_t *bitset,
+croaring_really_inline bool bitset_container_get(const bitset_container_t *bitset,
                                  uint16_t pos) {
     const uint64_t word = bitset->words[pos >> 6];
     return (word >> (pos & 63)) & 1;
@@ -228,7 +228,7 @@ static inline bool bitset_container_get_range(const bitset_container_t *bitset,
 }
 
 /* Check whether `bitset' is present in `array'.  Calls bitset_container_get. */
-inline bool bitset_container_contains(const bitset_container_t *bitset,
+croaring_really_inline bool bitset_container_contains(const bitset_container_t *bitset,
                                       uint16_t pos) {
     return bitset_container_get(bitset, pos);
 }

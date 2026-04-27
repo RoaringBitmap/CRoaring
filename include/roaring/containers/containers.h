@@ -562,7 +562,7 @@ static inline container_t *container_remove(
 /**
  * Check whether a value is in a container, requires a typecode
  */
-inline bool container_contains(
+croaring_really_inline bool container_contains(
     const container_t *c, uint16_t val,
     uint8_t typecode  // !!! should be second argument?
 ) {
