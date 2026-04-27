@@ -475,7 +475,8 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t x);
 /**
  * Check if value is present
  */
-croaring_really_inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
+croaring_really_inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
+                                                    uint32_t val) {
     // For performance reasons, this function is inline and uses internal
     // functions directly.
 #ifdef __cplusplus

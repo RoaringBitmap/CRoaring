@@ -339,13 +339,14 @@ static inline bool array_container_remove(array_container_t *arr,
 }
 
 /* Check whether x is present.  */
-static croaring_really_inline bool array_container_contains(const array_container_t *arr, uint16_t pos) {
+croaring_really_inline bool array_container_contains(
+    const array_container_t *arr, uint16_t pos) {
     const int32_t gap = 16;
     const uint16_t *carr = arr->array;
     int32_t cardinality = arr->cardinality;
     if (cardinality < gap) {
-      for (int32_t j = 0; j < cardinality; j++) {
-          if (carr[j] >= pos) return carr[j] == pos;
+        for (int32_t j = 0; j < cardinality; j++) {
+            if (carr[j] >= pos) return carr[j] == pos;
         }
         return false;
     }
@@ -365,7 +366,8 @@ static croaring_really_inline bool array_container_contains(const array_containe
         uint16x8_t needle = vdupq_n_u16(pos);
         uint16x8_t v0 = vld1q_u16(blk);
         uint16x8_t v1 = vld1q_u16(blk + 8);
-        uint16x8_t hit = vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
+        uint16x8_t hit =
+            vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
         return vmaxvq_u16(hit) != 0;
 #elif defined(CROARING_IS_X64)
         __m128i needle = _mm_set1_epi16((short)pos);
@@ -375,15 +377,16 @@ static croaring_really_inline bool array_container_contains(const array_containe
                                    _mm_cmpeq_epi16(v1, needle));
         return _mm_movemask_epi8(hit) != 0;
 #else
-        // SWAR fallback: compare 16 values in parallel using bitwise operations.
+        // SWAR fallback: compare 16 values in parallel using bitwise
+        // operations.
         uint64_t broadcast = 0x0001000100010001ULL * pos;
-        const uint64_t ones  = 0x0001000100010001ULL;
+        const uint64_t ones = 0x0001000100010001ULL;
         const uint64_t highs = 0x8000800080008000ULL;
 
         uint64_t w0, w1, w2, w3;
-        memcpy(&w0, blk,      sizeof(uint64_t));
-        memcpy(&w1, blk + 4,  sizeof(uint64_t));
-        memcpy(&w2, blk + 8,  sizeof(uint64_t));
+        memcpy(&w0, blk, sizeof(uint64_t));
+        memcpy(&w1, blk + 4, sizeof(uint64_t));
+        memcpy(&w2, blk + 8, sizeof(uint64_t));
         memcpy(&w3, blk + 12, sizeof(uint64_t));
 
         // XOR: a lane is zero iff that element equals x

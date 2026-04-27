@@ -42,8 +42,8 @@ namespace internal {
  *     if ( x<0 ) then inserting ikey at position -x-1 in array (insuring that
  * array[-x-1]=ikey) keys the array sorted.
  */
-croaring_really_inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
-                            uint16_t ikey) {
+croaring_really_inline int32_t binarySearch(const uint16_t *array,
+                                            int32_t lenarray, uint16_t ikey) {
     int32_t low = 0;
     int32_t high = lenarray - 1;
     while (low <= high) {
