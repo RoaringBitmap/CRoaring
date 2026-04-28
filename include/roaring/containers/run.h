@@ -108,7 +108,7 @@ static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 /**
  * Good old binary search through rle data
  */
-croaring_really_inline int32_t interleavedBinarySearch(const rle16_t *array,
+inline int32_t interleavedBinarySearch(const rle16_t *array,
                                                        int32_t lenarray,
                                                        uint16_t ikey) {
     int32_t low = 0;
@@ -258,7 +258,7 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
 }
 
 /* Check whether `pos' is present in `run'.  */
-croaring_really_inline bool run_container_contains(const run_container_t *run,
+inline bool run_container_contains(const run_container_t *run,
                                                    uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
     if (index >= 0) return true;
