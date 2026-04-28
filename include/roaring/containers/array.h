@@ -341,12 +341,18 @@ static inline bool array_container_remove(array_container_t *arr,
 /* Check whether x is present.  */
 inline bool array_container_contains(const array_container_t *arr,
                                      uint16_t pos) {
+    /**
+     * SIMD Quad algorithm
+     * Daniel Lemire, "You can beat the binary search," in Daniel Lemire's blog,
+     *  April 27, 2026,
+     * https://lemire.me/blog/2026/04/27/you-can-beat-the-binary-search/.
+     */
     const int32_t gap = 16;
     const uint16_t *carr = arr->array;
     int32_t cardinality = arr->cardinality;
     if (cardinality < gap) {
-      for (int32_t j = 0; j < cardinality; j++) {
-          if (carr[j] >= pos) return carr[j] == pos;
+        for (int32_t j = 0; j < cardinality; j++) {
+            if (carr[j] >= pos) return carr[j] == pos;
         }
         return false;
     }
@@ -354,18 +360,18 @@ inline bool array_container_contains(const array_container_t *arr,
     int32_t base = 0;
     int32_t n = num_blocks;
     while (n > 3) {
-      int32_t quarter = n >> 2;
+        int32_t quarter = n >> 2;
 
-      int32_t k1 = carr[(base + quarter + 1) * gap - 1];
-      int32_t k2 = carr[(base + 2 * quarter + 1) * gap - 1];
-      int32_t k3 = carr[(base + 3 * quarter + 1) * gap - 1];
+        int32_t k1 = carr[(base + quarter + 1) * gap - 1];
+        int32_t k2 = carr[(base + 2 * quarter + 1) * gap - 1];
+        int32_t k3 = carr[(base + 3 * quarter + 1) * gap - 1];
 
-      int32_t c1 = (k1 < pos);
-      int32_t c2 = (k2 < pos);
-      int32_t c3 = (k3 < pos);
+        int32_t c1 = (k1 < pos);
+        int32_t c2 = (k2 < pos);
+        int32_t c3 = (k3 < pos);
 
-      base += (c1 + c2 + c3) * quarter;
-      n -= 3 * quarter;
+        base += (c1 + c2 + c3) * quarter;
+        n -= 3 * quarter;
     }
     while (n > 1) {
         int32_t half = n >> 1;
@@ -380,7 +386,8 @@ inline bool array_container_contains(const array_container_t *arr,
         uint16x8_t needle = vdupq_n_u16(pos);
         uint16x8_t v0 = vld1q_u16(blk);
         uint16x8_t v1 = vld1q_u16(blk + 8);
-        uint16x8_t hit = vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
+        uint16x8_t hit =
+            vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
         return vmaxvq_u16(hit) != 0;
 #elif defined(CROARING_IS_X64)
         __m128i needle = _mm_set1_epi16((short)pos);
