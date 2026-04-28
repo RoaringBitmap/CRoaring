@@ -530,7 +530,8 @@ Running microbenchmarks</h1>
 <div class="fragment"><div class="line">cmake -B buildnoavx -D ROARING_DISABLE_AVX=ON -D ENABLE_ROARING_MICROBENCHMARKS=ON</div>
 <div class="line">cmake --build buildnoavx</div>
 <div class="line">./buildnoavx/microbenchmarks/bench</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md30"></a>
+</div><!-- fragment --><p>Please see <code>microbenchmarks/README.md</code> for more details.</p>
+<h1><a class="anchor" id="autotoc_md30"></a>
 Custom memory allocators</h1>
 <p>For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example: </p><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring.h</a>&gt;</span></div>
 <div class="line"> </div>
