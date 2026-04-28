@@ -1,6 +1,87 @@
 #include "bench.h"
 
+#include <random>
 #include <vector>
+
+// Synthetic dataset for cold vs. warm contains() benchmarks.
+// 10,000 bitmaps over the universe [0, 2^18). Each bitmap is built by
+// splitting the universe into 4 blocks of 2^16, drawing the per-block
+// cardinality from a Poisson distribution with mean = density * 2^16,
+// then placing the values uniformly within each block.
+static constexpr size_t kSyntheticCount = 10000;
+static constexpr uint32_t kSyntheticUniverse = 1u << 18;
+static constexpr uint32_t kSyntheticBlockSize = 1u << 16;
+static constexpr uint32_t kSyntheticBlockCount =
+    kSyntheticUniverse / kSyntheticBlockSize;
+static constexpr size_t kWarmRepeats = 1000;
+// Warm probes the same kWarmBitmaps bitmaps kWarmRepeats times each, so the
+// total contains() count matches the cold benchmark (kSyntheticCount probes).
+static constexpr size_t kWarmBitmaps = kSyntheticCount / kWarmRepeats;
+
+static roaring_bitmap_t **synth_bitmaps_low = nullptr;
+static roaring_bitmap_t **synth_bitmaps_mod = nullptr;
+static roaring_bitmap_t **synth_bitmaps_high = nullptr;
+static uint32_t *synth_queries_cold = nullptr;
+static uint32_t *synth_queries_warm = nullptr;
+
+static roaring_bitmap_t **build_synthetic_bitmaps(double density,
+                                                  uint64_t seed) {
+    std::mt19937_64 rng(seed);
+    std::poisson_distribution<int> poisson(density * kSyntheticBlockSize);
+    std::uniform_int_distribution<uint32_t> within_block(
+        0, kSyntheticBlockSize - 1);
+    auto **out = (roaring_bitmap_t **)malloc(sizeof(roaring_bitmap_t *) *
+                                             kSyntheticCount);
+    for (size_t i = 0; i < kSyntheticCount; ++i) {
+        out[i] = roaring_bitmap_create();
+        for (uint32_t b = 0; b < kSyntheticBlockCount; ++b) {
+            int n = poisson(rng);
+            if (n < 0) n = 0;
+            if (n > (int)kSyntheticBlockSize) n = (int)kSyntheticBlockSize;
+            uint32_t base = b * kSyntheticBlockSize;
+            for (int k = 0; k < n; ++k) {
+                roaring_bitmap_add(out[i], base + within_block(rng));
+            }
+        }
+        roaring_bitmap_run_optimize(out[i]);
+        roaring_bitmap_shrink_to_fit(out[i]);
+    }
+    return out;
+}
+
+static void load_synthetic() {
+    synth_bitmaps_low = build_synthetic_bitmaps(0.001, 0xC0FFEE0001ULL);
+    synth_bitmaps_mod = build_synthetic_bitmaps(0.01, 0xC0FFEE0002ULL);
+    synth_bitmaps_high = build_synthetic_bitmaps(0.1, 0xC0FFEE0003ULL);
+
+    std::mt19937_64 rng(0xDEADBEEFULL);
+    std::uniform_int_distribution<uint32_t> dist(0, kSyntheticUniverse - 1);
+    synth_queries_cold =
+        (uint32_t *)malloc(sizeof(uint32_t) * kSyntheticCount);
+    for (size_t i = 0; i < kSyntheticCount; ++i) {
+        synth_queries_cold[i] = dist(rng);
+    }
+    // Single small pool reused for every bitmap in the warm benchmarks: keeps
+    // the query array in L1 so we measure bitmap-cache residency, not the
+    // bandwidth of streaming a large query buffer.
+    synth_queries_warm = (uint32_t *)malloc(sizeof(uint32_t) * kWarmRepeats);
+    for (size_t i = 0; i < kWarmRepeats; ++i) {
+        synth_queries_warm[i] = dist(rng);
+    }
+}
+
+static void free_synthetic() {
+    for (size_t i = 0; i < kSyntheticCount; ++i) {
+        roaring_bitmap_free(synth_bitmaps_low[i]);
+        roaring_bitmap_free(synth_bitmaps_mod[i]);
+        roaring_bitmap_free(synth_bitmaps_high[i]);
+    }
+    free(synth_bitmaps_low);
+    free(synth_bitmaps_mod);
+    free(synth_bitmaps_high);
+    free(synth_queries_cold);
+    free(synth_queries_warm);
+}
 
 struct successive_intersection {
     static uint64_t run() {
@@ -331,6 +412,109 @@ struct rank_many {
 auto RankMany = BasicBench<rank_many>;
 BENCHMARK(RankMany);
 
+// Wraps BasicBench and reports an "ns/query" column normalized by the
+// number of contains() calls each iteration performs.
+template <class func, size_t QueriesPerIter>
+static void BasicBenchPerQuery(benchmark::State &state) {
+    BasicBench<func>(state);
+    state.counters["ns/query"] = benchmark::Counter(
+        double(QueriesPerIter),
+        benchmark::Counter::kIsIterationInvariantRate |
+            benchmark::Counter::kInvert,
+        benchmark::Counter::OneK::kIs1000);
+}
+
+// Cold contains: walk all kSyntheticCount bitmaps, one random query each.
+// Each new bitmap evicts the previous from cache.
+struct contains_cold_low {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < kSyntheticCount; ++i) {
+            marker += roaring_bitmap_contains(synth_bitmaps_low[i],
+                                              synth_queries_cold[i]);
+        }
+        return marker;
+    }
+};
+auto ContainsColdLow = BasicBenchPerQuery<contains_cold_low, kSyntheticCount>;
+BENCHMARK(ContainsColdLow);
+
+struct contains_cold_mod {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < kSyntheticCount; ++i) {
+            marker += roaring_bitmap_contains(synth_bitmaps_mod[i],
+                                              synth_queries_cold[i]);
+        }
+        return marker;
+    }
+};
+auto ContainsColdMod = BasicBenchPerQuery<contains_cold_mod, kSyntheticCount>;
+BENCHMARK(ContainsColdMod);
+
+struct contains_cold_high {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < kSyntheticCount; ++i) {
+            marker += roaring_bitmap_contains(synth_bitmaps_high[i],
+                                              synth_queries_cold[i]);
+        }
+        return marker;
+    }
+};
+auto ContainsColdHigh = BasicBenchPerQuery<contains_cold_high, kSyntheticCount>;
+BENCHMARK(ContainsColdHigh);
+
+// Warm contains: kWarmRepeats random queries against the same bitmap before
+// moving on, so the bitmap is cache-resident for all but the first probe.
+struct contains_warm_low {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < kWarmBitmaps; ++i) {
+            roaring_bitmap_t *b = synth_bitmaps_low[i];
+            for (size_t r = 0; r < kWarmRepeats; ++r) {
+                marker += roaring_bitmap_contains(b, synth_queries_warm[r]);
+            }
+        }
+        return marker;
+    }
+};
+auto ContainsWarmLow =
+    BasicBenchPerQuery<contains_warm_low, kWarmBitmaps * kWarmRepeats>;
+BENCHMARK(ContainsWarmLow);
+
+struct contains_warm_mod {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < kWarmBitmaps; ++i) {
+            roaring_bitmap_t *b = synth_bitmaps_mod[i];
+            for (size_t r = 0; r < kWarmRepeats; ++r) {
+                marker += roaring_bitmap_contains(b, synth_queries_warm[r]);
+            }
+        }
+        return marker;
+    }
+};
+auto ContainsWarmMod =
+    BasicBenchPerQuery<contains_warm_mod, kWarmBitmaps * kWarmRepeats>;
+BENCHMARK(ContainsWarmMod);
+
+struct contains_warm_high {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < kWarmBitmaps; ++i) {
+            roaring_bitmap_t *b = synth_bitmaps_high[i];
+            for (size_t r = 0; r < kWarmRepeats; ++r) {
+                marker += roaring_bitmap_contains(b, synth_queries_warm[r]);
+            }
+        }
+        return marker;
+    }
+};
+auto ContainsWarmHigh =
+    BasicBenchPerQuery<contains_warm_high, kWarmBitmaps * kWarmRepeats>;
+BENCHMARK(ContainsWarmHigh);
+
 int main(int argc, char **argv) {
     const char *dir_name;
     if ((argc == 1) || (argc > 1 && argv[1][0] == '-')) {
@@ -342,6 +526,7 @@ int main(int argc, char **argv) {
         dir_name = argv[1];
     }
     int number_loaded = load(dir_name);
+    load_synthetic();
 #if (__APPLE__ && __aarch64__) || defined(__linux__)
     if (!collector.has_events()) {
         benchmark::AddCustomContext("performance counters",
@@ -384,4 +569,5 @@ int main(int argc, char **argv) {
         roaring_bitmap_free(bitmaps[i]);
     }
     free(array_buffer);
+    free_synthetic();
 }
