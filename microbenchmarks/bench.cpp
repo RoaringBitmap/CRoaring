@@ -56,8 +56,7 @@ static void load_synthetic() {
 
     std::mt19937_64 rng(0xDEADBEEFULL);
     std::uniform_int_distribution<uint32_t> dist(0, kSyntheticUniverse - 1);
-    synth_queries_cold =
-        (uint32_t *)malloc(sizeof(uint32_t) * kSyntheticCount);
+    synth_queries_cold = (uint32_t *)malloc(sizeof(uint32_t) * kSyntheticCount);
     for (size_t i = 0; i < kSyntheticCount; ++i) {
         synth_queries_cold[i] = dist(rng);
     }
@@ -417,11 +416,11 @@ BENCHMARK(RankMany);
 template <class func, size_t QueriesPerIter>
 static void BasicBenchPerQuery(benchmark::State &state) {
     BasicBench<func>(state);
-    state.counters["ns/query"] = benchmark::Counter(
-        double(QueriesPerIter),
-        benchmark::Counter::kIsIterationInvariantRate |
-            benchmark::Counter::kInvert,
-        benchmark::Counter::OneK::kIs1000);
+    state.counters["ns/query"] =
+        benchmark::Counter(double(QueriesPerIter),
+                           benchmark::Counter::kIsIterationInvariantRate |
+                               benchmark::Counter::kInvert,
+                           benchmark::Counter::OneK::kIs1000);
 }
 
 // Cold contains: walk all kSyntheticCount bitmaps, one random query each.
