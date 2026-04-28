@@ -19,8 +19,8 @@ if(ROARING_USE_CPM AND NOT WIN32)
        DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
   set(BENCHMARK_DATA_DIR "${CMAKE_CURRENT_BINARY_DIR}/realdata")
 
-  add_executable(benchmark benchmark.cpp)
-  target_link_libraries(benchmark PRIVATE roaring counters::counters)
-  target_compile_definitions(benchmark PRIVATE
+  add_executable(roaring_benchmark benchmark.cpp)
+  target_link_libraries(roaring_benchmark PRIVATE roaring counters::counters)
+  target_compile_definitions(roaring_benchmark PRIVATE
     BENCHMARK_DATA_DIR="${BENCHMARK_DATA_DIR}")
 endif()
