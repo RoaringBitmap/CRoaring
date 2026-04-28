@@ -339,73 +339,76 @@ static inline bool array_container_remove(array_container_t *arr,
 }
 
 /* Check whether x is present.  */
-static croaring_really_inline bool array_container_contains(const array_container_t *arr, uint16_t pos) {
-    const int32_t gap = 16;
-    const uint16_t *carr = arr->array;
-    int32_t cardinality = arr->cardinality;
-    if (cardinality < gap) {
-      for (int32_t j = 0; j < cardinality; j++) {
-          if (carr[j] >= pos) return carr[j] == pos;
+croaring_really_inline bool array_container_contains(const array_container_t *arr, uint16_t pos) {
+
+    int32_t low = 0;
+    const uint16_t *carr = (const uint16_t *)arr->array;
+    int32_t high = arr->cardinality - 1;
+    if(arr->cardinality < 8) {
+        // for very small arrays, linear search is faster than binary search
+        for (int i = 0; i <= high; i++) {
+            uint16_t v = carr[i];
+            if (v >= pos) {
+                return (v == pos);  // compiles into SETE
+            }
         }
         return false;
     }
-    int32_t num_blocks = cardinality / gap;
-    int32_t base = 0;
-    int32_t n = num_blocks;
-    while (n > 1) {
-        int32_t half = n >> 1;
-        base = (carr[(base + half + 1) * gap - 1] < pos) ? base + half : base;
-        n -= half;
+    if (high > pos) {
+        // since elements are unique, x can be located only at index <= x
+        high = pos;
     }
-    int32_t lo = (carr[(base + 1) * gap - 1] < pos) ? base + 1 : base;
 
-    if (lo < num_blocks) {
-        const uint16_t *blk = carr + lo * gap;
+    while (high >= low + 16) {
+        int32_t middleIndex = (low + high) >> 1;
+        uint16_t middleValue = carr[middleIndex];
+        if (middleValue < pos) {
+            low = middleIndex + 1;
+        } else if (middleValue > pos) {
+            high = middleIndex - 1;
+        } else {
+            return true;
+        }
+    }
+    size_t remaining = high - low + 1;
+    if(remaining >= 8) {
+        const uint16_t *blk = carr + low;
 #ifdef CROARING_USENEON
         uint16x8_t needle = vdupq_n_u16(pos);
         uint16x8_t v0 = vld1q_u16(blk);
-        uint16x8_t v1 = vld1q_u16(blk + 8);
-        uint16x8_t hit = vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
+        uint16x8_t v1 = vld1q_u16(blk + remaining - 8);
+        uint16x8_t hit =
+            vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
         return vmaxvq_u16(hit) != 0;
 #elif defined(CROARING_IS_X64)
         __m128i needle = _mm_set1_epi16((short)pos);
         __m128i v0 = _mm_loadu_si128((const __m128i *)blk);
-        __m128i v1 = _mm_loadu_si128((const __m128i *)(blk + 8));
+        __m128i v1 = _mm_loadu_si128((const __m128i *)(blk + remaining - 8));
         __m128i hit = _mm_or_si128(_mm_cmpeq_epi16(v0, needle),
                                    _mm_cmpeq_epi16(v1, needle));
         return _mm_movemask_epi8(hit) != 0;
-#else
-        // SWAR fallback: compare 16 values in parallel using bitwise operations.
-        uint64_t broadcast = 0x0001000100010001ULL * pos;
-        const uint64_t ones  = 0x0001000100010001ULL;
-        const uint64_t highs = 0x8000800080008000ULL;
-
-        uint64_t w0, w1, w2, w3;
-        memcpy(&w0, blk,      sizeof(uint64_t));
-        memcpy(&w1, blk + 4,  sizeof(uint64_t));
-        memcpy(&w2, blk + 8,  sizeof(uint64_t));
-        memcpy(&w3, blk + 12, sizeof(uint64_t));
-
-        // XOR: a lane is zero iff that element equals x
-        uint64_t x0 = w0 ^ broadcast;
-        uint64_t x1 = w1 ^ broadcast;
-        uint64_t x2 = w2 ^ broadcast;
-        uint64_t x3 = w3 ^ broadcast;
-
-        // Per-lane "is this lane zero?" detector:
-        //   (lane - 1) & ~lane & 0x8000  is non-zero iff lane == 0
-        uint64_t z0 = (x0 - ones) & ~x0 & highs;
-        uint64_t z1 = (x1 - ones) & ~x1 & highs;
-        uint64_t z2 = (x2 - ones) & ~x2 & highs;
-        uint64_t z3 = (x3 - ones) & ~x3 & highs;
-
-        return (z0 | z1 | z2 | z3) != 0;
 #endif
     }
-
-    for (int32_t j = num_blocks * gap; j < cardinality; j++) {
-        uint16_t v = carr[j];
-        if (v >= pos) return (v == pos);
+   // if(arr->cardinality >= 8) {
+   {
+        const uint16_t *blk = low + 8 <= arr->cardinality ? carr + low : carr + arr->cardinality - 8;
+#ifdef CROARING_USENEON
+        uint16x8_t needle = vdupq_n_u16(pos);
+        uint16x8_t v0 = vld1q_u16(blk);
+        uint16x8_t hit = vceqq_u16(v0, needle);
+        return vmaxvq_u16(hit) != 0;
+#elif defined(CROARING_IS_X64)
+        __m128i needle = _mm_set1_epi16((short)pos);
+        __m128i v0 = _mm_loadu_si128((const __m128i *)blk);
+        __m128i hit = _mm_cmpeq_epi16(v0, needle);
+        return _mm_movemask_epi8(hit) != 0;
+#endif
+    }
+    for (int i = low; i <= high; i++) {
+        uint16_t v = carr[i];
+        if (v >= pos) {
+            return (v == pos);  // compiles into SETE
+        }
     }
     return false;
 }
