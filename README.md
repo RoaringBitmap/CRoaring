@@ -507,6 +507,8 @@ cmake --build buildnoavx
 ./buildnoavx/microbenchmarks/bench
 ```
 
+Please see `microbenchmarks/README.md` for more details.
+
 # Custom memory allocators
 For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example:
 ```C
