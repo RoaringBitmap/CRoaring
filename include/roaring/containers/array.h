@@ -396,6 +396,11 @@ inline bool array_container_contains(const array_container_t *arr,
         __m128i hit = _mm_or_si128(_mm_cmpeq_epi16(v0, needle),
                                    _mm_cmpeq_epi16(v1, needle));
         return _mm_movemask_epi8(hit) != 0;
+#else
+        for (int32_t j = 0; j < gap; j++) {
+            if (blk[j] >= pos) return blk[j] == pos;
+        }
+        return false;
 #endif
     }
 
