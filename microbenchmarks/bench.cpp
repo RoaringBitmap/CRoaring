@@ -514,6 +514,32 @@ auto ContainsWarmHigh =
     BasicBenchPerQuery<contains_warm_high, kWarmBitmaps * kWarmRepeats>;
 BENCHMARK(ContainsWarmHigh);
 
+// Note that input data matters: census1881 produces mostly array containers.
+template <uint64_t offset>
+struct add_offset {
+    static uint64_t run() {
+        uint64_t marker = 0;
+        for (size_t i = 0; i < count; ++i) {
+            roaring_bitmap_t *tmp =
+                roaring_bitmap_add_offset(bitmaps[i], offset);
+            marker += roaring_bitmap_get_cardinality(tmp);
+            roaring_bitmap_free(tmp);
+        }
+        return marker;
+    }
+};
+auto AddOffset1 = BasicBench<add_offset<1>>;
+BENCHMARK(AddOffset1);
+
+// prime number close to the half of the container capacity:
+// inhibits fast code paths and also stresses OR
+auto AddOffset32771 = BasicBench<add_offset<32771>>;
+BENCHMARK(AddOffset32771);
+
+// containers are cpoied verbatim, without tearing
+auto AddOffset65536 = BasicBench<add_offset<65536>>;
+BENCHMARK(AddOffset65536);
+
 int main(int argc, char **argv) {
     const char *dir_name;
     if ((argc == 1) || (argc > 1 && argv[1][0] == '-')) {
