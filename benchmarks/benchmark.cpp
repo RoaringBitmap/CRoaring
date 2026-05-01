@@ -683,8 +683,7 @@ void register_array_container(std::vector<Entry> &out) {
             }
             delete s;
         };
-        e.ops_per_run =
-            static_cast<int64_t>(kManyArrays) * kManyRounds * 2;
+        e.ops_per_run = static_cast<int64_t>(kManyArrays) * kManyRounds * 2;
         e.expected = 0;
         e.check_expected = true;
         out.push_back(std::move(e));
@@ -4140,9 +4139,7 @@ static void add_cold(std::vector<Entry> &out, const char *name,
     Entry e;
     e.name = name;
     e.description =
-        std::string(
-            "10,000 bitmaps over [0, 2^18) at ") +
-        density_label +
+        std::string("10,000 bitmaps over [0, 2^18) at ") + density_label +
         " density (per-block cardinality drawn from Poisson(density*2^16), "
         "values placed uniformly within each 2^16 block). Cold variant: "
         "issues one uniformly-random membership query against each of the "
@@ -4171,9 +4168,7 @@ static void add_warm(std::vector<Entry> &out, const char *name,
     Entry e;
     e.name = name;
     e.description =
-        std::string(
-            "10,000 bitmaps over [0, 2^18) at ") +
-        density_label +
+        std::string("10,000 bitmaps over [0, 2^18) at ") + density_label +
         " density (per-block cardinality drawn from Poisson(density*2^16), "
         "values placed uniformly within each 2^16 block). Warm variant: "
         "probes the first 10 bitmaps 1,000 random times each, so every "
