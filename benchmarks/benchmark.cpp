@@ -623,6 +623,72 @@ void register_array_container(std::vector<Entry> &out) {
         "sparse with a tiny output, exercising the short-input code paths "
         "and boundary handling.",
         16, 0, true);
+
+    {
+        struct ManyState {
+            std::vector<array_container_t *> arrays;
+        };
+        constexpr int kManyArrays = 2000;
+        constexpr int kManyRounds = 1000;
+        constexpr uint64_t kManySeed = 0xC0FFEEULL;
+
+        Entry e;
+        e.name = "array_container/random_fill_drain";
+        e.description =
+            "Fills 2000 array_container_t objects (initially empty) with "
+            "random 16-bit values, then drains them back to empty. The "
+            "outer loop runs 1000 rounds: in each round, one pcg-seeded "
+            "mt19937 draw is appended to every array, so the workload "
+            "interleaves inserts across all 2000 containers (each touch "
+            "lands at a random position, exercising the binary-search + "
+            "shift hot path of array_container_add). After 1000 rounds "
+            "every array holds ~1000 distinct values (a handful of "
+            "duplicates are swallowed by add). The RNG is then re-seeded "
+            "with the same seed and the exact same sequence is replayed "
+            "through array_container_remove, so by the end of run() every "
+            "container is back to cardinality 0. Reported ops_per_run "
+            "counts every add and remove call (2 * 2000 * 1000).";
+        e.setup = []() -> void * {
+            auto *s = new ManyState;
+            s->arrays.reserve(kManyArrays);
+            for (int i = 0; i < kManyArrays; ++i) {
+                s->arrays.push_back(array_container_create());
+            }
+            return s;
+        };
+        e.run = [](void *sv) -> int64_t {
+            auto *s = static_cast<ManyState *>(sv);
+            std::mt19937 rng(kManySeed);
+            for (int round = 0; round < kManyRounds; ++round) {
+                for (array_container_t *arr : s->arrays) {
+                    array_container_add(arr, static_cast<uint16_t>(rng()));
+                }
+            }
+            rng.seed(kManySeed);
+            for (int round = 0; round < kManyRounds; ++round) {
+                for (array_container_t *arr : s->arrays) {
+                    array_container_remove(arr, static_cast<uint16_t>(rng()));
+                }
+            }
+            int64_t total = 0;
+            for (array_container_t *arr : s->arrays) {
+                total += array_container_cardinality(arr);
+            }
+            return total;
+        };
+        e.teardown = [](void *sv) {
+            auto *s = static_cast<ManyState *>(sv);
+            for (array_container_t *arr : s->arrays) {
+                array_container_free(arr);
+            }
+            delete s;
+        };
+        e.ops_per_run =
+            static_cast<int64_t>(kManyArrays) * kManyRounds * 2;
+        e.expected = 0;
+        e.check_expected = true;
+        out.push_back(std::move(e));
+    }
 }
 
 // --------------------------------------------- bitset_container benches
