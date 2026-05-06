@@ -2130,6 +2130,45 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
         e.inner_reps = 20;
         out.push_back(std::move(e));
     }
+    {
+        struct S {
+            roaring_bitmap_t *bm;
+            uint64_t card;
+        };
+        Entry e;
+        e.name = "iteration/previous" + suffix;
+        e.description =
+            "Iterates backward over every value in the union (merged bitmap) "
+            "of all bitmaps in the \"" +
+            dataset +
+            "\" dataset using roaring_uint32_iterator_previous() — the "
+            "one-value-at-a-time backward API. Accumulates a sum of visited "
+            "values so the compiler cannot elide the loop. Reported cost "
+            "is per iterated value." +
+            in_dataset;
+        e.setup = [loaded]() -> void * {
+            auto *s = new S;
+            s->bm = loaded->merged;
+            s->card = roaring_bitmap_get_cardinality(loaded->merged);
+            return s;
+        };
+        e.run = [](void *sv) -> int64_t {
+            auto *s = static_cast<S *>(sv);
+            roaring_uint32_iterator_t it;
+            roaring_iterator_init_last(s->bm, &it);
+            uint64_t sum = 0;
+            while (it.has_value) {
+                sum += it.current_value;
+                roaring_uint32_iterator_previous(&it);
+            }
+            return static_cast<int64_t>(sum);
+        };
+        e.teardown = [](void *sv) { delete static_cast<S *>(sv); };
+        e.ops_per_run = static_cast<int64_t>(
+            roaring_bitmap_get_cardinality(loaded->merged));
+        e.inner_reps = 20;
+        out.push_back(std::move(e));
+    }
     const uint32_t bufsizes[] = {1, 4, 16, 128, 1024};
     for (uint32_t bs : bufsizes) {
         struct S {
@@ -2170,6 +2209,57 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
             while (true) {
                 uint32_t got = roaring_uint32_iterator_read(&it, buffer.data(),
                                                             s->bufsize);
+                for (uint32_t i = 0; i < got; ++i) sum += buffer[i];
+                if (got < s->bufsize) break;
+            }
+            return static_cast<int64_t>(sum);
+        };
+        e.teardown = [](void *sv) { delete static_cast<S *>(sv); };
+        e.ops_per_run = static_cast<int64_t>(
+            roaring_bitmap_get_cardinality(loaded->merged));
+        e.inner_reps = 20;
+        out.push_back(std::move(e));
+    }
+
+    for (uint32_t bs : bufsizes) {
+        struct S {
+            roaring_bitmap_t *bm;
+            uint32_t bufsize;
+        };
+        Entry e;
+        char buf[96];
+        snprintf(buf, sizeof(buf), "iteration/read_backward/bufsize=%u/%s", bs,
+                 dataset.c_str());
+        e.name = buf;
+        char dbuf[768];
+        snprintf(dbuf, sizeof(dbuf),
+                 "Iterates backward over every value in the merged bitmap "
+                 "(union of all bitmaps in the \"%s\" dataset) using "
+                 "roaring_uint32_iterator_read_backward() with a %u-element "
+                 "buffer. Each call drains up to %u values, amortising "
+                 "the iterator state machine over multiple values. "
+                 "Comparing the bufsize=1 variant against "
+                 "iteration/previous shows the per-call overhead of "
+                 "previous(); comparing larger bufsizes shows where the "
+                 "amortisation plateaus. Reported cost is per iterated "
+                 "value.%s",
+                 dataset.c_str(), bs, bs, in_dataset.c_str());
+        e.description = dbuf;
+        e.setup = [loaded, bs]() -> void * {
+            auto *s = new S;
+            s->bm = loaded->merged;
+            s->bufsize = bs;
+            return s;
+        };
+        e.run = [](void *sv) -> int64_t {
+            auto *s = static_cast<S *>(sv);
+            std::vector<uint32_t> buffer(s->bufsize);
+            roaring_uint32_iterator_t it;
+            roaring_iterator_init_last(s->bm, &it);
+            uint64_t sum = 0;
+            while (true) {
+                uint32_t got = roaring_uint32_iterator_read_backward(
+                    &it, buffer.data(), s->bufsize);
                 for (uint32_t i = 0; i < got; ++i) sum += buffer[i];
                 if (got < s->bufsize) break;
             }

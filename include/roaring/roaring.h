@@ -1258,6 +1258,23 @@ CROARING_DEPRECATED static inline uint32_t roaring_read_uint32_iterator(
 }
 
 /**
+ * Reads previous ${count} values from iterator into user-supplied ${buf}.
+ * Returns the number of read elements.
+ * This number can be smaller than ${count}, which means that iterator is
+ * drained.
+ *
+ * Values are written in descending order: buf[0] is the highest (current)
+ * value, buf[ret-1] is the lowest value read.
+ *
+ * This function satisfies semantics of reverse iteration and can be used
+ * together with other iterator functions.
+ *  - first value is copied from ${it}->current_value
+ *  - after function returns, iterator is positioned at the previous element
+ */
+uint32_t roaring_uint32_iterator_read_backward(roaring_uint32_iterator_t *it,
+                                               uint32_t *buf, uint32_t count);
+
+/**
  * Skip the next ${count} values from iterator.
  * Returns the number of values actually skipped.
  * The number can be smaller than ${count}, which means that iterator is

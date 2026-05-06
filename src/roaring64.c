@@ -2897,6 +2897,38 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
     return consumed;
 }
 
+uint64_t roaring64_iterator_read_backward(roaring64_iterator_t *it,
+                                          uint64_t *buf, uint64_t count) {
+    uint64_t consumed = 0;
+    while (it->has_value && consumed < count) {
+        uint32_t container_consumed;
+        leaf_t leaf = *it->art_it.value;
+        uint16_t low16 = (uint16_t)it->value;
+        uint32_t container_count = UINT32_MAX;
+        if (count - consumed < (uint64_t)UINT32_MAX) {
+            container_count = count - consumed;
+        }
+        bool has_value = container_iterator_read_backward_into_uint64(
+            get_container(it->r, leaf), get_typecode(leaf), &it->container_it,
+            it->high48, buf, container_count, &container_consumed, &low16);
+        consumed += container_consumed;
+        buf += container_consumed;
+        if (has_value) {
+            it->has_value = true;
+            it->value = it->high48 | low16;
+            assert(consumed == count);
+            return consumed;
+        }
+        it->has_value = art_iterator_prev(&it->art_it);
+        if (it->has_value) {
+            roaring64_iterator_init_at_leaf_last(it);
+        } else {
+            it->saturated_forward = false;
+        }
+    }
+    return consumed;
+}
+
 size_t roaring64_iterator_read_ranges(roaring64_iterator_t *it,
                                       roaring64_range_closed_t *buf,
                                       size_t count) {

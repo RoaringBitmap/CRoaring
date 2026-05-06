@@ -2611,6 +2611,32 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          uint16_t *value_out);
 
 /**
+ * Reads up to `count` entries backward from the container, writing them into
+ * `buf` as `high16 | entry` in descending order. Returns true and sets
+ * `value_out` if a value is present before the entries read. Sets `consumed`
+ * to the number of values read. `count` should be greater than zero.
+ *
+ * `value_out` must be initialized to the current value yielded by the iterator.
+ */
+bool container_iterator_read_backward_into_uint32(
+    const container_t *c, uint8_t typecode, roaring_container_iterator_t *it,
+    uint32_t high16, uint32_t *buf, uint32_t count, uint32_t *consumed,
+    uint16_t *value_out);
+
+/**
+ * Reads up to `count` entries backward from the container, writing them into
+ * `buf` as `high48 | entry` in descending order. Returns true and sets
+ * `value_out` if a value is present before the entries read. Sets `consumed`
+ * to the number of values read. `count` should be greater than zero.
+ *
+ * `value_out` must be initialized to the current value yielded by the iterator.
+ */
+bool container_iterator_read_backward_into_uint64(
+    const container_t *c, uint8_t typecode, roaring_container_iterator_t *it,
+    uint64_t high48, uint64_t *buf, uint32_t count, uint32_t *consumed,
+    uint16_t *value_out);
+
+/**
  * Skips the next `skip_count` entries in the container iterator. Returns true
  * and sets `value_out` if a value is present after skipping. Returns false if
  * the end of the container is reached during the skip operation. Sets

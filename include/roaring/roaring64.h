@@ -813,6 +813,23 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
 uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
                                  uint64_t count);
 
+/**
+ * Reads previous ${count} values from iterator into user-supplied ${buf}.
+ * Returns the number of read elements.
+ * This number can be smaller than ${count}, which means that iterator is
+ * drained.
+ *
+ * Values are written in descending order: buf[0] is the highest (current)
+ * value, buf[ret-1] is the lowest value read.
+ *
+ * This function satisfies semantics of reverse iteration and can be used
+ * together with other iterator functions.
+ *  - first value is copied from the current iterator value
+ *  - after function returns, iterator is positioned at the previous element
+ */
+uint64_t roaring64_iterator_read_backward(roaring64_iterator_t *it,
+                                          uint64_t *buf, uint64_t count);
+
 typedef struct roaring64_range_closed_s {
     uint64_t min;
     uint64_t max;
