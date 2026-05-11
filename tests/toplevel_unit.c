@@ -4059,6 +4059,102 @@ DEFINE_TEST(test_read_uint32_iterator_native) {
     test_read_uint32_iterator(UINT8_MAX);  // special value
 }
 
+/*
+ * Read bitmap backward in steps of given size, compare with reference values.
+ * If step is UINT32_MAX (special value), then read single non-empty container
+ * at a time.
+ */
+void read_backward_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
+                           uint32_t ref_count, uint32_t step) {
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(r);
+    roaring_iterator_init_last(r, iter);
+    uint32_t *buffer =
+        malloc(sizeof(uint32_t) * (step == UINT32_MAX ? 65536 : step));
+    uint32_t remaining = ref_count;
+    while (remaining > 0) {
+        assert_true(iter->has_value == true);
+        assert_true(iter->current_value == ref_values[remaining - 1]);
+
+        uint32_t num_ask = step;
+        if (step == UINT32_MAX) {
+            num_ask = 0;
+            for (uint32_t i = remaining; i > 0; i--) {
+                if ((ref_values[i - 1] >> 16) ==
+                    (ref_values[remaining - 1] >> 16)) {
+                    num_ask++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        uint32_t num_got =
+            roaring_uint32_iterator_read_backward(iter, buffer, num_ask);
+        assert_true(num_got == minimum_uint32(num_ask, remaining));
+        for (uint32_t i = 0; i < num_got; i++) {
+            assert_true(ref_values[remaining - 1 - i] == buffer[i]);
+        }
+        remaining -= num_got;
+    }
+
+    assert_true(iter->has_value == false);
+    assert_true(iter->current_value == UINT32_MAX);
+
+    assert_true(roaring_uint32_iterator_read_backward(iter, buffer, step) == 0);
+    assert_true(iter->has_value == false);
+    assert_true(iter->current_value == UINT32_MAX);
+
+    free(buffer);
+    roaring_uint32_iterator_free(iter);
+}
+
+void test_read_backward_uint32_iterator(uint8_t type) {
+    uint32_t *ref_values;
+    uint32_t ref_count;
+    test_iterator_generate_data(&ref_values, &ref_count);
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 0; i < ref_count; i++) {
+        roaring_bitmap_add(r, ref_values[i]);
+    }
+    if (type != UINT8_MAX) {
+        convert_all_containers(r, type);
+    }
+
+    roaring_uint32_iterator_t *iter = roaring_iterator_create(r);
+    roaring_iterator_init_last(r, iter);
+    uint32_t buffer[1];
+    uint32_t got = roaring_uint32_iterator_read_backward(iter, buffer, 0);
+    assert_true(got == 0);
+    assert_true(iter->has_value);
+    assert_true(iter->current_value == ref_values[ref_count - 1]);
+    roaring_uint32_iterator_free(iter);
+
+    read_backward_compare(r, ref_values, ref_count, 1);
+    read_backward_compare(r, ref_values, ref_count, 2);
+    read_backward_compare(r, ref_values, ref_count, 7);
+    read_backward_compare(r, ref_values, ref_count, ref_count - 1);
+    read_backward_compare(r, ref_values, ref_count, ref_count);
+    read_backward_compare(r, ref_values, ref_count,
+                          UINT32_MAX);  // special value
+
+    roaring_bitmap_free(r);
+    free(ref_values);
+}
+
+DEFINE_TEST(test_read_backward_uint32_iterator_array) {
+    test_read_backward_uint32_iterator(ARRAY_CONTAINER_TYPE);
+}
+DEFINE_TEST(test_read_backward_uint32_iterator_bitset) {
+    test_read_backward_uint32_iterator(BITSET_CONTAINER_TYPE);
+}
+DEFINE_TEST(test_read_backward_uint32_iterator_run) {
+    test_read_backward_uint32_iterator(RUN_CONTAINER_TYPE);
+}
+DEFINE_TEST(test_read_backward_uint32_iterator_native) {
+    test_read_backward_uint32_iterator(UINT8_MAX);  // special value
+}
+
 void test_previous_iterator(uint8_t type) {
     uint32_t *ref_values;
     uint32_t ref_count;
@@ -5543,6 +5639,10 @@ int main() {
         cmocka_unit_test(test_read_uint32_iterator_bitset),
         cmocka_unit_test(test_read_uint32_iterator_run),
         cmocka_unit_test(test_read_uint32_iterator_native),
+        cmocka_unit_test(test_read_backward_uint32_iterator_array),
+        cmocka_unit_test(test_read_backward_uint32_iterator_bitset),
+        cmocka_unit_test(test_read_backward_uint32_iterator_run),
+        cmocka_unit_test(test_read_backward_uint32_iterator_native),
         cmocka_unit_test(test_previous_iterator_array),
         cmocka_unit_test(test_previous_iterator_bitset),
         cmocka_unit_test(test_previous_iterator_run),

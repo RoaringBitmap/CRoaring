@@ -34,6 +34,18 @@ void assert_vector_equal(const std::vector<uint64_t>& lhs,
     }
 }
 
+// Checks that lhs equals rhs in reverse order.
+void assert_vector_reversed(const std::vector<uint64_t>& lhs,
+                            const std::vector<uint64_t>& rhs) {
+    assert_int_equal(lhs.size(), rhs.size());
+    for (size_t i = 0; i < lhs.size(); ++i) {
+        if (lhs[i] != rhs[rhs.size() - 1 - i]) {
+            printf("Mismatch at %zu\n", i);
+            assert_int_equal(lhs[i], rhs[rhs.size() - 1 - i]);
+        }
+    }
+}
+
 void assert_r32_valid(const roaring_bitmap_t* b) {
     const char* reason = nullptr;
     if (!roaring_bitmap_internal_validate(b, &reason)) {
@@ -2320,6 +2332,75 @@ DEFINE_TEST(test_iterator_read) {
     roaring64_bitmap_free(r);
 }
 
+// Reads all elements from the iterator backward, `step` values at a time, and
+// compares the elements with `values` in reverse order.
+void readBackwardCompare(const std::vector<uint64_t>& values,
+                         const roaring64_bitmap_t* r, uint64_t step) {
+    roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+    std::vector<uint64_t> buffer(step == UINT64_MAX ? values.size() : step, 0);
+    uint64_t read = 0;
+    while (read < values.size()) {
+        assert_true(roaring64_iterator_has_value(it));
+        uint64_t step_read =
+            roaring64_iterator_read_backward(it, buffer.data(), step);
+        assert_int_equal(step_read, std::min(step, values.size() - read));
+        for (size_t i = 0; i < step_read; ++i) {
+            assert_int_equal(values[values.size() - 1 - read - i], buffer[i]);
+        }
+        read += step_read;
+    }
+    assert_false(roaring64_iterator_has_value(it));
+    roaring64_iterator_free(it);
+}
+
+DEFINE_TEST(test_iterator_read_backward) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    std::vector<uint64_t> values;
+    values.reserve(1000);
+    roaring64_bulk_context_t context{};
+    for (uint64_t i = 0; i < 1000; ++i) {
+        uint64_t v = i * 10000;
+        values.push_back(v);
+        roaring64_bitmap_add_bulk(r, &context, v);
+    }
+
+    {
+        // Check that a zero count results in zero elements read.
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        uint64_t buf[1];
+        assert_int_equal(roaring64_iterator_read_backward(it, buf, 0), 0);
+        roaring64_iterator_free(it);
+    }
+
+    readBackwardCompare(values, r, 1);
+    readBackwardCompare(values, r, 2);
+    readBackwardCompare(values, r, values.size() - 1);
+    readBackwardCompare(values, r, values.size());
+    readBackwardCompare(values, r, values.size() + 1);
+
+    {
+        // A count of UINT64_MAX.
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        std::vector<uint64_t> buf(values.size(), 0);
+        assert_int_equal(
+            roaring64_iterator_read_backward(it, buf.data(), UINT64_MAX), 1000);
+        assert_vector_reversed(buf, values);
+        roaring64_iterator_free(it);
+    }
+    {
+        // A count that becomes zero if cast to uint32.
+        roaring64_iterator_t* it = roaring64_iterator_create_last(r);
+        std::vector<uint64_t> buf(values.size(), 0);
+        assert_int_equal(roaring64_iterator_read_backward(it, buf.data(),
+                                                          0xFFFFFFFF00000000),
+                         1000);
+        assert_vector_reversed(buf, values);
+        roaring64_iterator_free(it);
+    }
+
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_iterator_read_ranges) {
     roaring64_bitmap_t* r = roaring64_bitmap_create();
 
@@ -2791,6 +2872,7 @@ int main() {
         cmocka_unit_test(test_iterator_previous),
         cmocka_unit_test(test_iterator_move_equalorlarger),
         cmocka_unit_test(test_iterator_read),
+        cmocka_unit_test(test_iterator_read_backward),
         cmocka_unit_test(test_iterator_read_ranges),
         cmocka_unit_test(test_iterator_read_prev_ranges),
         cmocka_unit_test(test_iterator_read_ranges_mid_range),

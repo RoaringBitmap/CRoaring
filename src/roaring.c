@@ -1872,12 +1872,37 @@ uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it,
             it->has_value = true;
             it->current_value = it->highbits | low16;
             // If the container still has values, we must have stopped because
-            // we skipped enough values.
+            // we read enough values.
             assert(ret == count);
             return ret;
         }
         it->container_index++;
         it->has_value = loadfirstvalue(it);
+    }
+    return ret;
+}
+
+uint32_t roaring_uint32_iterator_read_backward(roaring_uint32_iterator_t *it,
+                                               uint32_t *buf, uint32_t count) {
+    uint32_t ret = 0;
+    while (it->has_value && ret < count) {
+        uint32_t consumed;
+        uint16_t low16 = (uint16_t)it->current_value;
+        bool has_value = container_iterator_read_backward_into_uint32(
+            it->container, it->typecode, &it->container_it, it->highbits, buf,
+            count - ret, &consumed, &low16);
+        ret += consumed;
+        buf += consumed;
+        if (has_value) {
+            it->has_value = true;
+            it->current_value = it->highbits | low16;
+            // If the container still has values, we must have stopped because
+            // we read enough values.
+            assert(ret == count);
+            return ret;
+        }
+        it->container_index--;
+        it->has_value = loadlastvalue(it);
     }
     return ret;
 }
