@@ -372,6 +372,8 @@ Functions</h2></td></tr>
 <tr class="separator:aa7d6e6919e46905bf7e5ddd824f3eb55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0807109ab8df7168855f61e985170fc" id="r_aa0807109ab8df7168855f61e985170fc"><td class="memItemLeft" align="right" valign="top">static CROARING_DEPRECATED uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#aa0807109ab8df7168855f61e985170fc">roaring_read_uint32_iterator</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t *buf, uint32_t count)</td></tr>
 <tr class="separator:aa0807109ab8df7168855f61e985170fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57bb1194c17314fd25bd52b24d9fe1a4" id="r_a57bb1194c17314fd25bd52b24d9fe1a4"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a57bb1194c17314fd25bd52b24d9fe1a4">roaring_uint32_iterator_read_backward</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t *buf, uint32_t count)</td></tr>
+<tr class="separator:a57bb1194c17314fd25bd52b24d9fe1a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7fb90d54192fc62b1be24364c0dba04f" id="r_a7fb90d54192fc62b1be24364c0dba04f"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a7fb90d54192fc62b1be24364c0dba04f">roaring_uint32_iterator_skip</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t count)</td></tr>
 <tr class="separator:a7fb90d54192fc62b1be24364c0dba04f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a77fbe33b81a3beed37a63f4011ebb6f6" id="r_a77fbe33b81a3beed37a63f4011ebb6f6"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dc/d56/roaring_8h.html#a77fbe33b81a3beed37a63f4011ebb6f6">roaring_uint32_iterator_skip_backward</a> (<a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *it, uint32_t count)</td></tr>
@@ -3892,6 +3894,46 @@ Functions</h2></td></tr>
 </ul>
 
 <p class="reference">Referenced by <a class="el" href="../../dc/d56/roaring_8h.html#aa0807109ab8df7168855f61e985170fc">roaring_read_uint32_iterator()</a>.</p>
+
+</div>
+</div>
+<a id="a57bb1194c17314fd25bd52b24d9fe1a4" name="a57bb1194c17314fd25bd52b24d9fe1a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a57bb1194c17314fd25bd52b24d9fe1a4">&#9670;&#160;</a></span>roaring_uint32_iterator_read_backward()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t roaring_uint32_iterator_read_backward </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../dc/d56/roaring_8h.html#ad94c4b740cc310341e4c0dcd30e718ce">roaring_uint32_iterator_t</a> *&#160;</td>
+          <td class="paramname"><em>it</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Reads previous ${count} values from iterator into user-supplied ${buf}. Returns the number of read elements. This number can be smaller than ${count}, which means that iterator is drained.</p>
+<p>Values are written in descending order: buf[0] is the highest (current) value, buf[ret-1] is the lowest value read.</p>
+<p>This function satisfies semantics of reverse iteration and can be used together with other iterator functions.</p><ul>
+<li>first value is copied from ${it}-&gt;current_value</li>
+<li>after function returns, iterator is positioned at the previous element </li>
+</ul>
 
 </div>
 </div>

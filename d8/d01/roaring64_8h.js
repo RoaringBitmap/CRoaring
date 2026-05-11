@@ -88,6 +88,7 @@ var roaring64_8h =
     [ "roaring64_iterator_move_equalorlarger", "d8/d01/roaring64_8h.html#a9be82e49c331b4886a1ed847dd8c6dbe", null ],
     [ "roaring64_iterator_previous", "d8/d01/roaring64_8h.html#a9dec5ebaf5446170c61c3d22371a4cae", null ],
     [ "roaring64_iterator_read", "d8/d01/roaring64_8h.html#abe45e6c50cad5466a726183cdca8cf48", null ],
+    [ "roaring64_iterator_read_backward", "d8/d01/roaring64_8h.html#a70282f6e58486c872924bfa0cb011e01", null ],
     [ "roaring64_iterator_read_prev_ranges", "d8/d01/roaring64_8h.html#a907947bd076a801390b8e7c20f48c9a3", null ],
     [ "roaring64_iterator_read_ranges", "d8/d01/roaring64_8h.html#aa78418be37944b146364fc5095d67864", null ],
     [ "roaring64_iterator_reinit", "d8/d01/roaring64_8h.html#aac4c1f5a10bac72cd528fc102e06ddc9", null ],

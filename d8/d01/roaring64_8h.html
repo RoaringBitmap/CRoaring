@@ -304,6 +304,8 @@ Functions</h2></td></tr>
 <tr class="separator:a9be82e49c331b4886a1ed847dd8c6dbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe45e6c50cad5466a726183cdca8cf48" id="r_abe45e6c50cad5466a726183cdca8cf48"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#abe45e6c50cad5466a726183cdca8cf48">roaring64_iterator_read</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, uint64_t *buf, uint64_t count)</td></tr>
 <tr class="separator:abe45e6c50cad5466a726183cdca8cf48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70282f6e58486c872924bfa0cb011e01" id="r_a70282f6e58486c872924bfa0cb011e01"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a70282f6e58486c872924bfa0cb011e01">roaring64_iterator_read_backward</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, uint64_t *buf, uint64_t count)</td></tr>
+<tr class="separator:a70282f6e58486c872924bfa0cb011e01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa78418be37944b146364fc5095d67864" id="r_aa78418be37944b146364fc5095d67864"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#aa78418be37944b146364fc5095d67864">roaring64_iterator_read_ranges</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, <a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a> *buf, size_t count)</td></tr>
 <tr class="separator:aa78418be37944b146364fc5095d67864"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a907947bd076a801390b8e7c20f48c9a3" id="r_a907947bd076a801390b8e7c20f48c9a3"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a907947bd076a801390b8e7c20f48c9a3">roaring64_iterator_read_prev_ranges</a> (<a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *it, <a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a> *buf, size_t count)</td></tr>
@@ -2740,6 +2742,46 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Reads up to <code>count</code> values from the iterator into the given <code>buf</code>. Returns the number of elements read. The number of elements read can be smaller than <code>count</code>, which means that there are no more elements in the bitmap.</p>
 <p>This function can be used together with other iterator functions. </p>
+
+</div>
+</div>
+<a id="a70282f6e58486c872924bfa0cb011e01" name="a70282f6e58486c872924bfa0cb011e01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a70282f6e58486c872924bfa0cb011e01">&#9670;&#160;</a></span>roaring64_iterator_read_backward()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint64_t roaring64_iterator_read_backward </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a> *&#160;</td>
+          <td class="paramname"><em>it</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>count</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Reads previous ${count} values from iterator into user-supplied ${buf}. Returns the number of read elements. This number can be smaller than ${count}, which means that iterator is drained.</p>
+<p>Values are written in descending order: buf[0] is the highest (current) value, buf[ret-1] is the lowest value read.</p>
+<p>This function satisfies semantics of reverse iteration and can be used together with other iterator functions.</p><ul>
+<li>first value is copied from the current iterator value</li>
+<li>after function returns, iterator is positioned at the previous element </li>
+</ul>
 
 </div>
 </div>
