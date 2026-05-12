@@ -15,11 +15,13 @@ A compiler or static-analyzer warning is not a bug. It is possible with tools su
 
 We are committed to providing good documentation. We accept the lack of documentation or a misleading documentation as a bug (a 'documentation bug').
 
-An unexpected poor software performance can be accepted as a bug (a 'performance bug').
+An unexpected poor software performance can be accepted as a bug (a 'performance bug'). We also accept criticism of our documentation as bugs.
 
 We accept the identification of an issue by a sanitizer or some checker tool (e.g., valgrind) as a bug, but you must first ensure that it is not a false positive.
 
 Before reporting a bug, please ensure that you have read our documentation.
+
+**If you are using AI or automated tools (fuzzer) to find bugs, you are still required to make sure that you follow our documentation. Blind reporting is rejected. We do not appreciate lazy bug reports, it consumes our time and it is exploitative.** You must make a reasonable effort to ensure that you are actually reporting a bug. This is especially important for *security researchers*.
 
 **To Reproduce**
 Steps to reproduce the behaviour: provide a code sample if possible. Please provide a complete test with data. Remember that a bug is either a failure to build or an unexpected result when running the code.
@@ -27,6 +29,8 @@ Steps to reproduce the behaviour: provide a code sample if possible. Please prov
 If we cannot reproduce the issue, then we cannot address it. Note that a stack trace from your own program is not enough. A sample of your source code is insufficient: please provide a complete test for us to reproduce the issue. Please reduce the issue: use as small and as simple an example of the bug as possible.
 
 It should be possible to trigger the bug by using solely CRoaring with our default build setup. If you can only observe the bug within some specific context, with some other software, please reduce the issue first.
+
+As part of the reproduction, you should demonstrate that the result differs from what is expected from our documentation. Thus you are encouraged to quote our documentation or to at least show awareness of it.
 
 **CRoaring release**
 
