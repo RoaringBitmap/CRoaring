@@ -1,4 +1,4 @@
-name: VS17-CLANG-CI
+name: VS18-CLANG-CI
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
-      - '.github/workflows/!(vs17-clang-ci).yml'
+      - '.github/workflows/!(vs18-clang-ci).yml'
   pull_request:
     paths-ignore:
       - '**.md'
@@ -22,8 +22,8 @@ concurrency:
 
 jobs:
   ci:
-    name: windows-vs17 (${{ matrix.arch }}, ${{ matrix.build_type }})
-    runs-on: windows-latest
+    name: windows-vs18 (${{ matrix.arch }}, ${{ matrix.build_type }})
+    runs-on: windows-2025-vs2026
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -31,7 +31,7 @@ jobs:
         arch: [x64]
         build_type: [Release, Debug]
         include:
-          - gen: "Visual Studio 17 2022"
+          - gen: "Visual Studio 18 2026"
 
     steps:
       - name: Checkout

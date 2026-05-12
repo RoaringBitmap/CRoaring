@@ -1,4 +1,4 @@
-name: VS17-ARM-CI
+name: VS18-ARM-CI
 
 on: [push, pull_request]
 
@@ -7,8 +7,8 @@ permissions:
 
 jobs:
   ci:
-    name: windows-vs17
-    runs-on: windows-latest
+    name: windows-vs18
+    runs-on: windows-2025-vs2026
     strategy:
       fail-fast: false
       matrix:
