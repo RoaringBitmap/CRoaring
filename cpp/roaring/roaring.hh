@@ -713,7 +713,7 @@ class Roaring {
      * For advanced users.
      * This function may throw std::runtime_error.
      */
-    static const Roaring frozenView(const char *buf, size_t length) {
+    static Roaring frozenView(const char *buf, size_t length) {
         const roaring_bitmap_t *s =
             api::roaring_bitmap_frozen_view(buf, length);
         if (s == NULL) {
@@ -728,7 +728,7 @@ class Roaring {
      * For advanced users; see roaring_bitmap_portable_deserialize_frozen.
      * This function may throw std::runtime_error.
      */
-    static const Roaring portableDeserializeFrozen(const char *buf) {
+    static Roaring portableDeserializeFrozen(const char *buf) {
         const roaring_bitmap_t *s =
             api::roaring_bitmap_portable_deserialize_frozen(buf);
         if (s == NULL) {
