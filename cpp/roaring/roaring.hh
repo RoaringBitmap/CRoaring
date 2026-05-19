@@ -282,6 +282,28 @@ class Roaring {
         return api::roaring_bitmap_remove_range_closed(&roaring, min, max);
     }
 
+        /**
+     * Keep only values in the half-open interval [min, max).
+     * Equivalent to two consecutive removeRange calls.
+     */
+    void mask(uint64_t min, uint64_t max) noexcept {
+        removeRange(0, min);
+        if (!isEmpty()) {
+            removeRange(max, (uint64_t)maximum() + 1);
+        }
+    }
+
+    /**
+     * Keep only values in the closed interval [min, max].
+     * Equivalent to two consecutive removeRangeClosed calls.
+     */
+    void maskClosed(uint32_t min, uint32_t max) noexcept {
+        if (min > 0) removeRangeClosed(0, min - 1);
+        if (!isEmpty() && max < maximum()) {
+            removeRangeClosed(max + 1, maximum());
+        }
+    }
+
     /**
      * Clears the bitmap.
      */

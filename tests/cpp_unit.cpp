@@ -843,6 +843,62 @@ DEFINE_TEST(test_cpp_remove_range) {
     }
 }
 
+DEFINE_TEST(test_cpp_mask) {
+    {
+        // mask: keep only values in [min, max), values outside are removed
+        Roaring r1 = Roaring::bitmapOf(5, 1, 3, 5, 7, 9);
+        r1.mask(3, 8);
+        Roaring r2 = Roaring::bitmapOf(3, 3, 5, 7);
+        assert_true(r1 == r2);
+    }
+    {
+        // mask: min == max, result should be empty
+        Roaring r1 = Roaring::bitmapOf(3, 1, 2, 3);
+        r1.mask(2, 2);
+        assert_true(r1.isEmpty());
+    }
+    {
+        // mask: range covers all elements, nothing removed
+        Roaring r1 = Roaring::bitmapOf(3, 1, 2, 3);
+        r1.mask(0, 10);
+        Roaring r2 = Roaring::bitmapOf(3, 1, 2, 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // mask: empty bitmap, no effect
+        Roaring r1;
+        r1.mask(2, 5);
+        assert_true(r1.isEmpty());
+    }
+    {
+        // maskClosed: keep only values in [min, max], max is included
+        Roaring r1 = Roaring::bitmapOf(5, 1, 3, 5, 7, 9);
+        r1.maskClosed(3, 7);
+        Roaring r2 = Roaring::bitmapOf(3, 3, 5, 7);
+        assert_true(r1 == r2);
+    }
+    {
+        // maskClosed: min == max, only that element remains if present
+        Roaring r1 = Roaring::bitmapOf(3, 1, 2, 3);
+        r1.maskClosed(2, 2);
+        Roaring r2 = Roaring::bitmapOf(1, 2);
+        assert_true(r1 == r2);
+    }
+    {
+        // maskClosed: range covers all elements, nothing removed
+        Roaring r1 = Roaring::bitmapOf(3, 1, 2, 3);
+        r1.maskClosed(0, 10);
+        Roaring r2 = Roaring::bitmapOf(3, 1, 2, 3);
+        assert_true(r1 == r2);
+    }
+    {
+        // maskClosed: empty bitmap, no effect
+        Roaring r1;
+        r1.maskClosed(2, 5);
+        assert_true(r1.isEmpty());
+    }
+}
+
 DEFINE_TEST(test_cpp_add_range_closed_64) {
     {
         // 32-bit integers
@@ -2187,6 +2243,7 @@ int main() {
         cmocka_unit_test(test_cpp_add_remove_checked_64),
         cmocka_unit_test(test_cpp_add_range),
         cmocka_unit_test(test_cpp_remove_range),
+        cmocka_unit_test(test_cpp_mask),
         cmocka_unit_test(test_cpp_add_range_closed_64),
         cmocka_unit_test(test_cpp_add_range_open_64),
         cmocka_unit_test(test_cpp_add_range_closed_large_64),
