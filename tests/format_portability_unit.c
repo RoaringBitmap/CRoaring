@@ -72,9 +72,7 @@ static inline void test_deserialize(char* filename) {
     free(input_buffer);
     roaring_bitmap_free(bitmap);
 }
-#if CROARING_IS_BIG_ENDIAN
-// port the test below.
-#else
+
 DEFINE_TEST(test_deserialize_portable_norun) {
     char filename[1024];
 
@@ -92,18 +90,12 @@ DEFINE_TEST(test_deserialize_portable_wrun) {
 
     test_deserialize(filename);
 }
-#endif
 
 int main() {
     tellmeall();
-#if CROARING_IS_BIG_ENDIAN
-    printf("Big-endian IO unsupported.\n");
-    return EXIT_SUCCESS;
-#else
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_deserialize_portable_norun),
         cmocka_unit_test(test_deserialize_portable_wrun),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
-#endif
 }
