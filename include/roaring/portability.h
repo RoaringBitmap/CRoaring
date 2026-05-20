@@ -526,13 +526,13 @@ static inline uint64_t croaring_bswap64(uint64_t x) {
 #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
 #endif  //__has_include(<atomic>)
 #else
-   // We lack __has_include to check:
+// We lack __has_include to check:
 #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_CPP
 #endif  //__has_include
 #elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
 #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C
 #elif CROARING_REGULAR_VISUAL_STUDIO
-   // https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
+// https://www.technetworkhub.com/c11-atomics-in-visual-studio-2022-version-17/
 #define CROARING_ATOMIC_IMPL CROARING_ATOMIC_IMPL_C_WINDOWS
 #endif
 #endif  // !defined(CROARING_ATOMIC_IMPL)

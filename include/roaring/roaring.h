@@ -749,7 +749,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf,
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems. It is not a bug, it is by design, 
+ * compatible with little-endian systems. It is not a bug, it is by design,
  * since the format imitates C memory layout of roaring_bitmap_t.
  *
  * The returned pointer may be NULL in case of errors.
@@ -820,7 +820,7 @@ size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *r);
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems. This is not a bug, it is by design, 
+ * compatible with little-endian systems. This is not a bug, it is by design,
  *since the format imitates C memory layout
  *
  * When serializing data to a file, we recommend that you also use
@@ -842,7 +842,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *r, char *buf);
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems. This is not a bug, it is by design, 
+ * compatible with little-endian systems. This is not a bug, it is by design,
  *since the format imitates C memory layout of roaring_bitmap_t.
  */
 const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,

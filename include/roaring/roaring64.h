@@ -655,7 +655,7 @@ size_t roaring64_bitmap_frozen_size_in_bytes(const roaring64_bitmap_t *r);
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems. This is not a bug, it is by design, 
+ * compatible with little-endian systems. This is not a bug, it is by design,
  * since the format imitates C memory layout of roaring64_bitmap_t.
  */
 size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
@@ -674,7 +674,7 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems. This is not a bug, it is by design, 
+ * compatible with little-endian systems. This is not a bug, it is by design,
  * since the format imitates C memory layout of roaring64_bitmap_t.
  */
 roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
