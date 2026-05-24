@@ -1078,11 +1078,11 @@ int bitset_container_to_uint32_array(
 		return (int) bitset_extract_setbits(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, base);
 #elif defined(CROARING_WASM_SIMD)
-   /* SIMD table decode (`bitset_extract_setbits_wasm_simd`) still diverges from
-    * TZCNT peeling for some inputs vs this scalar path (wasm_diff meta checks).
-    * Base vectors were fixed (`croaring_wasm_v128_broadcast_u32`) but mismatch
-    * remains; keep canonical extract until the decoder is audited byte-for-byte.
-    */
+   if (bc->cardinality >= 8192) {
+       return (int)bitset_extract_setbits_wasm_simd(
+           bc->words, BITSET_CONTAINER_SIZE_IN_WORDS, out, bc->cardinality,
+           base);
+   }
 	return (int)bitset_extract_setbits(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, base);
 #elif defined(CROARING_USENEON)
