@@ -11,9 +11,16 @@ jobs:
       - uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
       - name: Verify
         run: emcc -v
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v3.6.0
       - name: Configure
         run: emcmake cmake -B build
-      - name: Build # We build but do not test 
+      - name: Build
         run: cmake --build build
+      - name: Wasm differential digest (native vs wasm scalar vs wasm simd128)
+        run: |
+          set -euo pipefail
+          if [[ -n "${EMSDK:-}" && -d "${EMSDK}/upstream/bin" ]]; then
+            export PATH="${EMSDK}/upstream/bin:${PATH}"
+          fi
+          sudo apt-get update -qq
+          sudo apt-get install -y wabt >/dev/null
+          bash tools/run_wasm_differential_test.sh
