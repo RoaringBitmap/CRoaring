@@ -12,6 +12,8 @@
 #
 # Local dev (macOS/Linux): from repo root,
 #   bash tools/run_wasm_differential_test.sh
+#
+# Docker (no local Emscripten/WABT): bash tools/run-wasm-diff-docker.sh
 
 set -euo pipefail
 
