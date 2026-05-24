@@ -3812,6 +3812,56 @@ DEFINE_TEST(test_intersect_small_run_bitset) {
     roaring_bitmap_free(rb2);
 }
 
+DEFINE_TEST(issue819) {
+    /*
+     * Dense range 0 .. n-1 lives in one bitset-backed container once it grows past
+     * the array cutoff. roaring_bitmap_to_uint32_array must match iterator bulk
+     * reads (wasm32-wasi regression: mismatched duplicates / missing values).
+     */
+    const uint32_t n = 50000;
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 0; i < n; ++i) {
+        roaring_bitmap_add(r, i);
+    }
+    uint64_t card = roaring_bitmap_get_cardinality(r);
+    assert_true(card == (uint64_t)n);
+    assert_bitmap_validate(r);
+
+    uint32_t *from_to_array =
+        (uint32_t *)malloc((size_t)card * sizeof(uint32_t));
+    assert_true(from_to_array != NULL);
+    roaring_bitmap_to_uint32_array(r, from_to_array);
+
+    uint32_t *from_iterator =
+        (uint32_t *)malloc((size_t)card * sizeof(uint32_t));
+    assert_true(from_iterator != NULL);
+    roaring_uint32_iterator_t iter;
+    roaring_iterator_init(r, &iter);
+    size_t filled = 0;
+    while (filled < card) {
+        uint64_t remaining64 = card - filled;
+        uint32_t chunk = remaining64 > UINT32_MAX ? UINT32_MAX
+                                                  : (uint32_t)remaining64;
+        uint32_t got = roaring_uint32_iterator_read(&iter, from_iterator + filled,
+                                                     chunk);
+        assert_true(got > 0);
+        filled += got;
+    }
+    assert_true(filled == (size_t)card);
+
+    for (uint32_t k = 0; k < n; ++k) {
+        assert_int_equal(from_to_array[k], (int)k);
+        assert_int_equal(from_iterator[k], (int)k);
+        assert_true(from_to_array[k] == from_iterator[k]);
+    }
+
+    roaring_bitmap_remove_range(r, 0, n);
+    assert_true(roaring_bitmap_is_empty(r));
+    roaring_bitmap_free(r);
+    free(from_to_array);
+    free(from_iterator);
+}
+
 DEFINE_TEST(issue316) {
     roaring_bitmap_t *rb1 = roaring_bitmap_create();
     roaring_bitmap_set_copy_on_write(rb1, true);
@@ -5515,6 +5565,7 @@ int main() {
         cmocka_unit_test(issue429),
         cmocka_unit_test(issue431),
         cmocka_unit_test(test_contains_range_PyRoaringBitMap_issue81),
+        cmocka_unit_test(issue819),
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
 #if !CROARING_IS_BIG_ENDIAN
