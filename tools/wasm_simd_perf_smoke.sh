@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Optional wall-clock smoke: wasm scalar vs wasm -msimd128 running tests/wasm_diff_harness.c
 # (same amalgamation build pipeline as tools/run_wasm_differential_test.sh).
+# Use it to quantify SIMD benefit for paths like intersect_vector16 (correctness stays
+# on the differential test; this script is only throughput signal, noise-prone).
 #
 # Requirements: bash, python3 (>= 3.6), emcc, amalgamation.sh artifacts.
 #

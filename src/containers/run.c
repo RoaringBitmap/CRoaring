@@ -1095,7 +1095,7 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
 
 #elif defined(CROARING_WASM_SIMD)
 
-static inline int _wasm_simd_run_container_cardinality(
+static inline int croaring_wasm_run_container_cardinality(
     const run_container_t *run) {
     const int32_t n_runs = run->n_runs;
     const rle16_t *runs = run->runs;
@@ -1122,9 +1122,8 @@ static inline int _wasm_simd_run_container_cardinality(
     return sum;
 }
 
-static int _wasm_simd_run_container_to_uint32_array(void *vout,
-                                                    const run_container_t *cont,
-                                                    uint32_t base) {
+static int croaring_wasm_run_container_to_uint32_array(
+    void *vout, const run_container_t *cont, uint32_t base) {
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
 
@@ -1162,12 +1161,12 @@ static int _wasm_simd_run_container_to_uint32_array(void *vout,
 }
 
 int run_container_cardinality(const run_container_t *run) {
-    return _wasm_simd_run_container_cardinality(run);
+    return croaring_wasm_run_container_cardinality(run);
 }
 
 int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
-    return _wasm_simd_run_container_to_uint32_array(vout, cont, base);
+    return croaring_wasm_run_container_to_uint32_array(vout, cont, base);
 }
 
 #else

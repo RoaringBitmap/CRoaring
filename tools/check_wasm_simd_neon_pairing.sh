@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Cheap structural heuristic: in each src/**/*.c file that uses Neon, require
-# the same count of '#elif defined(CROARING_USENEON)' and
-# '#elif defined(CROARING_WASM_SIMD)', and pair them by ascending line numbers
-# (each WASM line must be strictly above its paired NEON line).
+# Cheap structural heuristic for src/**/*.c that use Wasm SIMD128 and/or Neon SIMD.
 #
-# This does NOT parse preprocessor nesting. It cannot prove two branches belong
-# to the same #if/#elif chain or implement the same algorithm. Passing here does
-# not imply semantic NEON/WASM parity — use code review plus
-# tools/run_wasm_differential_test.sh digest parity for that.
+# Rules (does NOT parse preprocessor nesting; cannot prove semantic parity):
 #
-# Example: bitset_container_to_uint32_array (bitset.c) may use WASM SIMD fast
-# path while the NEON #elif deliberately calls the scalar extractor; the script
-# can still pass whenever counts and ordering match.
+# - Files that only have #elif CROARING_USENEON (no CROARING_WASM_SIMD lines): PASS.
+#   Extra Neon-only optimizations are allowed without dummy Wasm branches.
+# - Files that only have #elif CROARING_WASM_SIMD (no NEON): PASS.
+# - Files that declare BOTH: fail if Wasm #elif blocks outnumber NEON (each Wasm path
+#   should have Neon consideration downstream). Accept extra Neon-only branches.
+#
+# Greedy pairing: each Wasm line ascends paired with some unused NEON strictly below
+# the next Wasm (smallest NEON strictly after this Wasm consumes that branch). This
+# enforces Wasm-before-NEON order for overlapping paths while allowing trailing Neon-only.
+
+# Passing here does not imply NEON/WASM algorithmic equivalence — use review plus
+# tools/run_wasm_differential_test.sh digest parity for semantics.
 #
 # Usage: bash tools/check_wasm_simd_neon_pairing.sh
 # Exit 0 OK, 1 on violation.
@@ -27,7 +30,7 @@ while IFS= read -r -d '' f; do
 done < <(
   find "$ROOT/src" -name '*.c' -type f -print0 \
     | while IFS= read -r -d '' f; do
-        grep -q '#elif defined(CROARING_USENEON)' "$f" && printf '%s\0' "$f"
+        grep -qE '#elif defined\(CROARING_USENEON\)|#elif defined\(CROARING_WASM_SIMD\)' "$f" && printf '%s\0' "$f"
       done
 )
 
@@ -45,6 +48,14 @@ check_file_pairing() {
   neon_a=()
   wasm_a=()
   local line
+
+  local has_neon=false
+  local has_wasm=false
+  if grep -q '#elif defined(CROARING_USENEON)' "$file"; then has_neon=true; fi
+  if grep -q '#elif defined(CROARING_WASM_SIMD)' "$file"; then has_wasm=true; fi
+
+  [[ "$has_neon" == false ]] && [[ "$has_wasm" == false ]] && return 0
+
   while IFS= read -r line; do
     neon_a+=("$line")
   done < <(grep -n '#elif defined(CROARING_USENEON)' "$file" | cut -d: -f1 | sort -n || true)
@@ -55,25 +66,32 @@ check_file_pairing() {
   local nneon=${#neon_a[@]}
   local nwasm=${#wasm_a[@]}
 
-  if (( nneon == 0 )); then
-    return 0
-  fi
-  if (( nwasm != nneon )); then
-    echo "check_wasm_simd_neon_pairing.sh: mismatch in $file: #elif NEON count=${nneon} vs #elif WASM_SIMD count=${nwasm}. Add matching CROARING_WASM_SIMD chains." >&2
+  [[ "$nwasm" -eq 0 ]] && return 0
+  [[ "$nneon" -eq 0 ]] && return 0
+
+  if (( nwasm > nneon )); then
+    echo "check_wasm_simd_neon_pairing.sh: in $file, #elif WASM_SIMD (${nwasm}) exceeds #elif NEON (${nneon}). Add Neon branches where Wasm paths exist." >&2
     FAIL=1
     return 0
   fi
-  local i
-  for ((i = 0; i < nneon; i++)); do
-    if (( wasm_a[i] >= neon_a[i] )); then
-      echo "check_wasm_simd_neon_pairing.sh: WASM SIMD must precede NEON at pair index $((i + 1)) in $file (wasm line ${wasm_a[i]}, neon line ${neon_a[i]})." >&2
+
+  local j i
+  j=0
+  for ((i = 0; i < nwasm; i++)); do
+    while (( j < nneon && neon_a[j] <= wasm_a[i] )); do
+      ((++j))
+    done
+    if (( j >= nneon )); then
+      echo "check_wasm_simd_neon_pairing.sh: in $file, #elif WASM_SIMD at line ${wasm_a[i]} has no strictly later #elif NEON to pair with." >&2
       FAIL=1
+      return 0
     fi
+    ((++j))
   done
 }
 
 if [[ ${#uniq_files[@]} -eq 0 ]]; then
-  echo "check_wasm_simd_neon_pairing.sh: no #elif NEON in src/**/*.c — expected at least bitset.c." >&2
+  echo "check_wasm_simd_neon_pairing.sh: no #elif CROARING_USENEON or CROARING_WASM_SIMD under src/**/*.c — expected SIMD paths (e.g. bitset)." >&2
   exit 1
 fi
 
@@ -84,4 +102,5 @@ done
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1
 fi
-echo "OK: structural NEON / WASM SIMD #elif pairing check passed (${#uniq_files[@]} file(s))."
+
+echo "OK: structural NEON / WASM SIMD heuristic passed (${#uniq_files[@]} file(s))."

@@ -224,8 +224,10 @@ int32_t intersect_vector16_inplace(uint16_t *A, size_t s_a, const uint16_t *B,
 int array_container_to_uint32_array_vector16(void *vout, const uint16_t *array,
                                              size_t cardinality, uint32_t base);
 #if defined(CROARING_WASM_SIMD)
-int wasm_array_container_to_uint32_array(void *vout, const uint16_t *array,
-                                         size_t cardinality, uint32_t base);
+int croaring_wasm_array_container_to_uint32_array(void *vout,
+                                                  const uint16_t *array,
+                                                  size_t cardinality,
+                                                  uint32_t base);
 #endif
 #if CROARING_COMPILER_SUPPORTS_AVX512
 int avx512_array_container_to_uint32_array(void *vout, const uint16_t *array,

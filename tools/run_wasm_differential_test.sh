@@ -2,6 +2,11 @@
 # WASM differential test: same harness + amalgamated roaring.c built natively and
 # with emcc (scalar wasm + -msimd128 wasm). Compares deterministic stdout digests.
 #
+# Exit codes (non-debug mode): 0 success (digests agree), 1 digest mismatch / compare failure,
+#   2 missing toolchain (no emcc or node), 3 missing wasm output next to emitted .js,
+#   4 missing wasm-objdump for SIMD artifact guard, 5 SIMD uplift gate failure,
+#   6 LLVM IR amalgamation SIMD trace missing, 7 CI forbids SIMD/llvm skip env overrides.
+#
 # Requirements: bash, cc (or $CC), emcc (or $EMCC), node (or $NODE), wasm-objdump
 #   (from WABT or $EMSDK/upstream/bin when using Emscripten).
 #

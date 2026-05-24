@@ -793,10 +793,11 @@ CROARING_UNTARGET_AVX2
 
 #if defined(CROARING_WASM_SIMD)
 
-/* Vector Wasm port of intersect_vector16: matches the portable/x64 control flow so
- * reviews can compare structure easily. Semantic correctness relies on behaving like
- * the portable and x64 intersections (validated by tools/run_wasm_differential_test.sh),
- * not on reproducing SIMD micro-ops verbatim. */
+/* Vector Wasm port of intersect_vector16: matches the portable/x64 control flow
+ * so reviews can compare structure easily. Semantic correctness relies on
+ * behaving like the portable and x64 intersections (validated by
+ * tools/run_wasm_differential_test.sh), not on reproducing SIMD micro-ops
+ * verbatim. */
 
 /* Emulate _mm_movemask_epi8(_mm_packs_epi16(eq, 0)) on the low 8 i16 lanes. */
 static inline unsigned croaring_wasm_movemask_packs_cmpeq16_first8(v128_t eq) {
@@ -805,10 +806,14 @@ static inline unsigned croaring_wasm_movemask_packs_cmpeq16_first8(v128_t eq) {
     return (unsigned)wasm_i8x16_bitmask(packed);
 }
 
-/* Approximate SSE PCMPESTRM-style CMP_EQUAL_ANY over 8×u16 lanes (low 8 mask bits).
- * Uses per-lane splat/equality + wasm_v128_any_true—not a bitwise or microarchitectural
- * substitute for PCMPESTR*. Trust differential tests vs native scalar/x64 builds for
- * logical equivalence with the SIMD intersection paths elsewhere in this TU. */
+/* Approximate SSE PCMPESTRM-style CMP_EQUAL_ANY over 8×u16 lanes (low 8 mask
+ * bits). Uses per-lane splat/equality + wasm_v128_any_true—not a bitwise or
+ * microarchitectural substitute for PCMPESTR*. Trust differential tests vs
+ * native scalar/x64 builds for logical equivalence with the SIMD intersection
+ * paths elsewhere in this TU. This eight-iteration form is straightforward, not
+ * latency-tuned versus the portable intersect_uint16 loop; correctness is
+ * guarded by differential tests, while wall-clock SIMD benefit is informational
+ * (tools/wasm_simd_perf_smoke.sh). */
 
 static inline int croaring_wasm_cmpequal_any_bitmask_u16(v128_t vb, v128_t va) {
     uint16_t a_lanes[8];
@@ -1044,8 +1049,10 @@ int32_t intersect_vector16_cardinality(const uint16_t *A, size_t s_a,
     return (int32_t)count;
 }
 
-int wasm_array_container_to_uint32_array(void *vout, const uint16_t *array,
-                                         size_t cardinality, uint32_t base) {
+int croaring_wasm_array_container_to_uint32_array(void *vout,
+                                                  const uint16_t *array,
+                                                  size_t cardinality,
+                                                  uint32_t base) {
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
     size_t i = 0;
@@ -2185,8 +2192,9 @@ CROARING_UNTARGET_AVX2
     wasm_i8x16_shuffle((o), (n), 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, \
                        23, 24, 25, 26, 27)
 
-static inline void wasm_merge(const v128_t *vInput1, const v128_t *vInput2,
-                              v128_t *vecMin, v128_t *vecMax) {
+static inline void croaring_wasm_merge(const v128_t *vInput1,
+                                       const v128_t *vInput2, v128_t *vecMin,
+                                       v128_t *vecMax) {
     v128_t vecTmp;
     vecTmp = wasm_u16x8_min(*vInput1, *vInput2);
     *vecMax = wasm_u16x8_max(*vInput1, *vInput2);
@@ -2214,8 +2222,8 @@ static inline void wasm_merge(const v128_t *vInput1, const v128_t *vInput2,
     *vecMin = WASM_ROTLBYTES2(*vecMin);
 }
 
-static inline int wasm_store_unique(v128_t old, v128_t newval,
-                                    uint16_t *output) {
+static inline int croaring_wasm_store_unique(v128_t old, v128_t newval,
+                                             uint16_t *output) {
     v128_t vecTmp = WASM_PALGN_14_NEW_OLD(newval, old);
     v128_t eq = wasm_i16x8_eq(vecTmp, newval);
     unsigned int M = croaring_wasm_movemask_packs_cmpeq16_first8(eq) & 0xFFFFu;
@@ -2226,8 +2234,8 @@ static inline int wasm_store_unique(v128_t old, v128_t newval,
     return numberofnewvalues;
 }
 
-static inline int wasm_store_unique_xor(v128_t old, v128_t newval,
-                                        uint16_t *output) {
+static inline int croaring_wasm_store_unique_xor(v128_t old, v128_t newval,
+                                                 uint16_t *output) {
     v128_t vecTmp1 = WASM_PALGN_12_NEW_OLD(newval, old);
     v128_t vecTmp2 = WASM_PALGN_14_NEW_OLD(newval, old);
     v128_t equalleft = wasm_i16x8_eq(vecTmp2, vecTmp1);
@@ -2259,9 +2267,9 @@ uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
     pos1++;
     vB = wasm_v128_load((const void *)(array2 + pos2 * 8));
     pos2++;
-    wasm_merge(&vA, &vB, &vecMin, &vecMax);
+    croaring_wasm_merge(&vA, &vB, &vecMin, &vecMax);
     laststore = wasm_i16x8_splat(-1);
-    output += (uint32_t)wasm_store_unique(laststore, vecMin, output);
+    output += (uint32_t)croaring_wasm_store_unique(laststore, vecMin, output);
     laststore = vecMin;
     if ((pos1 < len1) && (pos2 < len2)) {
         uint16_t curA, curB;
@@ -2285,18 +2293,20 @@ uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
                     break;
                 }
             }
-            wasm_merge(&V, &vecMax, &vecMin, &vecMax);
-            output += (uint32_t)wasm_store_unique(laststore, vecMin, output);
+            croaring_wasm_merge(&V, &vecMax, &vecMin, &vecMax);
+            output +=
+                (uint32_t)croaring_wasm_store_unique(laststore, vecMin, output);
             laststore = vecMin;
         }
-        wasm_merge(&V, &vecMax, &vecMin, &vecMax);
-        output += (uint32_t)wasm_store_unique(laststore, vecMin, output);
+        croaring_wasm_merge(&V, &vecMax, &vecMin, &vecMax);
+        output +=
+            (uint32_t)croaring_wasm_store_unique(laststore, vecMin, output);
         laststore = vecMin;
     }
     uint32_t len = (uint32_t)(output - initoutput);
     uint16_t buffer[16];
     uint32_t leftoversize =
-        (uint32_t)wasm_store_unique(laststore, vecMax, buffer);
+        (uint32_t)croaring_wasm_store_unique(laststore, vecMax, buffer);
     if (pos1 == len1) {
         memcpy(buffer + leftoversize, array1 + 8 * pos1,
                (length1 - 8 * len1) * sizeof(uint16_t));
@@ -2334,10 +2344,11 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
     pos1++;
     vB = wasm_v128_load((const void *)(array2 + pos2 * 8));
     pos2++;
-    wasm_merge(&vA, &vB, &vecMin, &vecMax);
+    croaring_wasm_merge(&vA, &vB, &vecMin, &vecMax);
     laststore = wasm_i16x8_splat(-1);
     uint16_t buffer[17];
-    output += (uint32_t)wasm_store_unique_xor(laststore, vecMin, output);
+    output +=
+        (uint32_t)croaring_wasm_store_unique_xor(laststore, vecMin, output);
     laststore = vecMin;
     if ((pos1 < len1) && (pos2 < len2)) {
         uint16_t curA, curB;
@@ -2361,17 +2372,19 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
                     break;
                 }
             }
-            wasm_merge(&V, &vecMax, &vecMin, &vecMax);
-            output +=
-                (uint32_t)wasm_store_unique_xor(laststore, vecMin, output);
+            croaring_wasm_merge(&V, &vecMax, &vecMin, &vecMax);
+            output += (uint32_t)croaring_wasm_store_unique_xor(laststore,
+                                                               vecMin, output);
             laststore = vecMin;
         }
-        wasm_merge(&V, &vecMax, &vecMin, &vecMax);
-        output += (uint32_t)wasm_store_unique_xor(laststore, vecMin, output);
+        croaring_wasm_merge(&V, &vecMax, &vecMin, &vecMax);
+        output +=
+            (uint32_t)croaring_wasm_store_unique_xor(laststore, vecMin, output);
         laststore = vecMin;
     }
     uint32_t len = (uint32_t)(output - initoutput);
-    int leftoversize = wasm_store_unique_xor(laststore, vecMax, buffer);
+    int leftoversize =
+        croaring_wasm_store_unique_xor(laststore, vecMax, buffer);
     uint16_t vec7 = wasm_u16x8_extract_lane(vecMax, 7);
     uint16_t vec6 = wasm_u16x8_extract_lane(vecMax, 6);
     if (vec7 != vec6) buffer[leftoversize++] = vec7;
@@ -2646,8 +2659,8 @@ CROARING_UNTARGET_AVX2
 #endif
 
 #if defined(CROARING_WASM_SIMD)
-static inline bool _wasm_simd_memequals(const void *s1, const void *s2,
-                                        size_t n) {
+static inline bool croaring_wasm_memequals(const void *s1, const void *s2,
+                                           size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
     const uint8_t *ptr2 = (const uint8_t *)s2;
     const uint8_t *end1 = ptr1 + n;
@@ -2705,7 +2718,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
             return memcmp(s1, s2, n) == 0;
         }
 #elif defined(CROARING_WASM_SIMD)
-    return _wasm_simd_memequals(s1, s2, n);
+    return croaring_wasm_memequals(s1, s2, n);
 #else
     return memcmp(s1, s2, n) == 0;
 #endif

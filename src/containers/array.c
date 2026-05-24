@@ -428,7 +428,7 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
             vout, cont->array, cont->cardinality, base);
     }
 #elif defined(CROARING_WASM_SIMD)
-    return wasm_array_container_to_uint32_array(
+    return croaring_wasm_array_container_to_uint32_array(
         vout, cont->array, (size_t)cont->cardinality, base);
 #endif
     int outpos = 0;
