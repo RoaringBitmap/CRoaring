@@ -1,7 +1,8 @@
 /*
  * Metamorphic "phantom member" defenses for roaring_bitmap_t bitwise ops:
- * exports and iterators respect set-theoretic oracles derived only from operands
- * (covers wrong-but-non-crashing SIMD/scalar divergence, not only deep OR folds).
+ * exports and iterators respect set-theoretic oracles derived only from
+ * operands (covers wrong-but-non-crashing SIMD/scalar divergence, not only deep
+ * OR folds).
  */
 
 #include <stdbool.h>
@@ -40,8 +41,8 @@ static uint32_t rng_below(splitmix_rng_t *rng, uint32_t exclusive_max) {
 }
 
 /** Fills bitmap; bumps *glob_operand_max to highest value inserted anywhere. */
-static void bounded_rand_fill(roaring_bitmap_t *bmp, uint32_t doc_cap, uint32_t pat,
-                              splitmix_rng_t *rng,
+static void bounded_rand_fill(roaring_bitmap_t *bmp, uint32_t doc_cap,
+                              uint32_t pat, splitmix_rng_t *rng,
                               uint32_t *glob_operand_max) {
     uint32_t local_max = 0;
 
@@ -68,7 +69,8 @@ static void bounded_rand_fill(roaring_bitmap_t *bmp, uint32_t doc_cap, uint32_t 
         if (span >= doc_cap) {
             span = 100U;
         }
-        uint32_t base = doc_cap > span ? rng_below(rng, doc_cap - span + 1U) : 0U;
+        uint32_t base =
+            doc_cap > span ? rng_below(rng, doc_cap - span + 1U) : 0U;
         roaring_bitmap_add_range(bmp, base, base + span);
         local_max = base + span - 1U;
     } else if ((pat % 5U) == 3U) {
@@ -129,20 +131,17 @@ typedef struct pair_ctx {
 
 static bool pred_or(uint32_t x, void *v) {
     pair_ctx *p = (pair_ctx *)v;
-    return roaring_bitmap_contains(p->a, x) ||
-           roaring_bitmap_contains(p->b, x);
+    return roaring_bitmap_contains(p->a, x) || roaring_bitmap_contains(p->b, x);
 }
 
 static bool pred_and(uint32_t x, void *v) {
     pair_ctx *p = (pair_ctx *)v;
-    return roaring_bitmap_contains(p->a, x) &&
-           roaring_bitmap_contains(p->b, x);
+    return roaring_bitmap_contains(p->a, x) && roaring_bitmap_contains(p->b, x);
 }
 
 static bool pred_xor(uint32_t x, void *v) {
     pair_ctx *p = (pair_ctx *)v;
-    return roaring_bitmap_contains(p->a, x) !=
-           roaring_bitmap_contains(p->b, x);
+    return roaring_bitmap_contains(p->a, x) != roaring_bitmap_contains(p->b, x);
 }
 
 static bool pred_andnot(uint32_t x, void *v) {
@@ -175,10 +174,11 @@ static bool iter_equals_export_cb(uint32_t x, void *raw) {
     return true;
 }
 
-/** Every exported value obeys x < doc_cap and ok(x); iterator order matches export. */
-static void assert_membership_via_export_iterate(roaring_bitmap_t *rb, uint32_t doc_cap,
-                                                 bool (*ok)(uint32_t x, void *ctx),
-                                                 void *ctx) {
+/** Every exported value obeys x < doc_cap and ok(x); iterator order matches
+ * export. */
+static void assert_membership_via_export_iterate(
+    roaring_bitmap_t *rb, uint32_t doc_cap, bool (*ok)(uint32_t x, void *ctx),
+    void *ctx) {
     const uint64_t n = roaring_bitmap_get_cardinality(rb);
     assert_true(n <= (uint64_t)SIZE_MAX / sizeof(uint32_t));
     if (n == 0U) {
@@ -246,7 +246,8 @@ static bool workspace_build_leaves_bounded(bounded_leaf_workspace_t *ws,
         }
         ws->buf[ws->n++] = leaf;
 
-        bounded_rand_fill(leaf, doc_cap, rng_u32(&rng_val), &rng_val, &operand_max);
+        bounded_rand_fill(leaf, doc_cap, rng_u32(&rng_val), &rng_val,
+                          &operand_max);
 
         if (roaring_bitmap_is_empty(leaf)) {
             uint32_t v = rng_below(&rng_val, doc_cap);
@@ -263,7 +264,7 @@ static bool workspace_build_leaves_bounded(bounded_leaf_workspace_t *ws,
 }
 
 static roaring_bitmap_t *or_fold_balanced(const roaring_bitmap_t **leaf_ptrs,
-                                            int lo, int hi) {
+                                          int lo, int hi) {
     if (lo > hi) {
         return NULL;
     }
@@ -295,8 +296,8 @@ static roaring_bitmap_t *or_fold_left_linear(const roaring_bitmap_t **leaf_ptrs,
     return acc;
 }
 
-static roaring_bitmap_t *or_fold_right_linear(const roaring_bitmap_t **leaf_ptrs,
-                                              int n) {
+static roaring_bitmap_t *or_fold_right_linear(
+    const roaring_bitmap_t **leaf_ptrs, int n) {
     roaring_bitmap_t *acc = roaring_bitmap_copy(leaf_ptrs[n - 1]);
     if (acc == NULL) {
         return NULL;
@@ -310,7 +311,8 @@ static roaring_bitmap_t *or_fold_right_linear(const roaring_bitmap_t **leaf_ptrs
 static void assert_operand_ceiling(roaring_bitmap_t *rb, uint32_t doc_cap,
                                    uint32_t operand_max_seen) {
     operand_ceiling_ctx ctx = {doc_cap, operand_max_seen};
-    assert_membership_via_export_iterate(rb, doc_cap, pred_operand_ceiling, &ctx);
+    assert_membership_via_export_iterate(rb, doc_cap, pred_operand_ceiling,
+                                         &ctx);
 }
 
 static void run_deep_or_fold_case(uint64_t rng_seed, uint32_t doc_cap,
@@ -400,12 +402,14 @@ DEFINE_TEST(bitwise_membership_and_cardinality_metamorphism) {
         assert_membership_via_export_iterate(out_or, 18000U, pred_or, &pc);
         assert_membership_via_export_iterate(out_and, 18000U, pred_and, &pc);
         assert_membership_via_export_iterate(out_xor, 18000U, pred_xor, &pc);
-        assert_membership_via_export_iterate(out_anotb, 18000U, pred_andnot, &pc);
+        assert_membership_via_export_iterate(out_anotb, 18000U, pred_andnot,
+                                             &pc);
 
         pair_ctx ba;
         ba.a = b;
         ba.b = a;
-        assert_membership_via_export_iterate(out_bnota, 18000U, pred_andnot, &ba);
+        assert_membership_via_export_iterate(out_bnota, 18000U, pred_andnot,
+                                             &ba);
 
         const uint64_t ca = roaring_bitmap_get_cardinality(a);
         const uint64_t cb = roaring_bitmap_get_cardinality(b);
@@ -429,8 +433,8 @@ DEFINE_TEST(bitwise_inplace_matches_alloc_bitmap) {
     DESCRIBE_TEST;
     splitmix_rng_t rng_a, rng_b;
     for (int k = 0; k < 12; k++) {
-        const uint64_t rs = UINT64_C(0x501e55afe000033) +
-                            ((uint64_t)k << UINT64_C(12));
+        const uint64_t rs =
+            UINT64_C(0x501e55afe000033) + ((uint64_t)k << UINT64_C(12));
 
         roaring_bitmap_t *a = roaring_bitmap_create();
         roaring_bitmap_t *b = roaring_bitmap_create();
@@ -510,7 +514,8 @@ int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(bitwise_inplace_matches_alloc_bitmap),
         cmocka_unit_test(bitwise_membership_and_cardinality_metamorphism),
-        cmocka_unit_test(portable_roundtrip_equals_and_matches_or_membership_oracle),
+        cmocka_unit_test(
+            portable_roundtrip_equals_and_matches_or_membership_oracle),
         cmocka_unit_test(shallow_deep_or_fold),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);

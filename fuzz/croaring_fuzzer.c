@@ -148,26 +148,17 @@ static int metamorphic_or_chain_fuzz(const uint8_t *data, size_t size) {
     }
 
     size_t pos = 0;
-    const uint32_t nb0 =
-        (uint32_t)fuzz_pull8(data, size, &pos);
-    const uint32_t nb1 =
-        (uint32_t)fuzz_pull8(data, size, &pos);
-    const uint32_t nb2 =
-        (uint32_t)fuzz_pull8(data, size, &pos);
+    const uint32_t nb0 = (uint32_t)fuzz_pull8(data, size, &pos);
+    const uint32_t nb1 = (uint32_t)fuzz_pull8(data, size, &pos);
+    const uint32_t nb2 = (uint32_t)fuzz_pull8(data, size, &pos);
 
-    uint32_t n_leaves =
-        2u + (nb0 + nb1 * 13u + nb2 * 7u) % 279u;
+    uint32_t n_leaves = 2u + (nb0 + nb1 * 13u + nb2 * 7u) % 279u;
 
-    const uint32_t qb0 =
-        (uint32_t)fuzz_pull8(data, size, &pos);
-    const uint32_t qb1 =
-        (uint32_t)fuzz_pull8(data, size, &pos);
-    const uint32_t qb2 =
-        (uint32_t)fuzz_pull8(data, size, &pos);
+    const uint32_t qb0 = (uint32_t)fuzz_pull8(data, size, &pos);
+    const uint32_t qb1 = (uint32_t)fuzz_pull8(data, size, &pos);
+    const uint32_t qb2 = (uint32_t)fuzz_pull8(data, size, &pos);
 
-    uint32_t doc_cap =
-        500u +
-        (((qb0 << 16u) | (qb1 << 8u) | qb2) % 49300u);
+    uint32_t doc_cap = 500u + (((qb0 << 16u) | (qb1 << 8u) | qb2) % 49300u);
     if (doc_cap < 100u) {
         doc_cap = 100u;
     }
