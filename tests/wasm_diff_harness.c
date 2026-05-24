@@ -109,6 +109,36 @@ int main(void) {
     digest_u64("xor_card_ab", roaring_bitmap_xor_cardinality(a, b));
     digest_u64("andnot_card_ab", roaring_bitmap_andnot_cardinality(a, b));
 
+    {
+        double jac = roaring_bitmap_jaccard_index(a, b);
+        uint64_t jac_q = (uint64_t)(jac * 1e12);
+        digest_u64("jaccard_ab_q12", jac_q);
+    }
+
+    digest_u64("intersect_ab", roaring_bitmap_intersect(a, b) ? UINT64_C(1) : UINT64_C(0));
+    digest_u64("subset_ab", roaring_bitmap_is_subset(a, b) ? UINT64_C(1) : UINT64_C(0));
+    digest_u64("contains_b_anchor", roaring_bitmap_contains(b, UINT32_C(200000))
+                                       ? UINT64_C(1)
+                                       : UINT64_C(0));
+    digest_u64("contains_range_b",
+               roaring_bitmap_contains_range(b, UINT64_C(100000), UINT64_C(150000))
+                   ? UINT64_C(1)
+                   : UINT64_C(0));
+
+    {
+        roaring_bitmap_t *acopy = roaring_bitmap_copy(a);
+        roaring_bitmap_remove_range(acopy, UINT64_C(100000), UINT64_C(250000));
+        digest_u64("card_a_trim", roaring_bitmap_get_cardinality(acopy));
+        roaring_bitmap_free(acopy);
+    }
+
+    {
+        roaring_bitmap_t *bcopy = roaring_bitmap_copy(b);
+        (void)roaring_bitmap_run_optimize(bcopy);
+        digest_u64("portable_sz_b_runopt",
+                   (uint64_t)roaring_bitmap_portable_size_in_bytes(bcopy));
+        roaring_bitmap_free(bcopy);
+    }
     digest_u64("portable_sz_a", (uint64_t)roaring_bitmap_portable_size_in_bytes(a));
     digest_u64("portable_sz_w", (uint64_t)roaring_bitmap_portable_size_in_bytes(w));
 
@@ -118,6 +148,7 @@ int main(void) {
     roaring_bitmap_t *t = roaring_bitmap_copy(a);
     roaring_bitmap_and_inplace(t, b);
     digest_u64("card_inplace_and", roaring_bitmap_get_cardinality(t));
+    digest_u64("eq_and_inplace", roaring_bitmap_equals(andab, t) ? UINT64_C(1) : UINT64_C(0));
 
     roaring_bitmap_free(t);
     roaring_bitmap_free(a);

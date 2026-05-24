@@ -15,10 +15,9 @@ jobs:
         run: emcmake cmake -B build
       - name: Build
         run: cmake --build build
+      - name: NEON vs Wasm SIMD preprocessor pairing
+        run: bash tools/check_wasm_simd_neon_pairing.sh
       - name: Wasm differential digest (native vs wasm scalar vs wasm simd128)
-        env:
-          # GH-801: remove when amalgamation uses wasm SIMD builtins that emit @llvm.wasm.* IR.
-          WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD: "1"
         run: |
           set -euo pipefail
           if [[ -n "${EMSDK:-}" && -d "${EMSDK}/upstream/bin" ]]; then

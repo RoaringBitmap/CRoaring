@@ -7,17 +7,16 @@
 #
 # Optional env:
 #   WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD=1 — skip wasm-objdump bytecode uplift checks below.
-#   WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD=1 — skip IR scan for @llvm.wasm.* intrinsics.
+#   WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD=1 — skip amalgamation LLVM IR SIMD proof below.
 #
 # Mandatory (unless skipped per env):
 #
 # wasm-objdump artifact proof (still heuristic on opcodes): linked + roaring-only wasm objects
 #   must show SIMD uplift for -msimd128 vs scalar, so digest legs aren’t bitwise-identical stubs.
 #
-# LLVM IR intrinsic proof (explicit hand-written SIMD builtins vs generic vectors):
-#   Emit amalgamation roaring.ll with -emit-llvm -S -O2 -msimd128 and require ≥1 distinct
-#   @llvm.wasm.* name. Clang maps headers like wasm_simd128.h builtins (e.g. wasm_i8x16_swizzle)
-#   to those intrinsics across -O2; generic insertelement SIMD widening typically does not.
+# LLVM IR intrinsic proof (wasm_simd128.h builtins leave a trace in roaring.ll at -O2 -msimd128):
+#   Accept either legacy @llvm.wasm.* intrinsic names OR @llvm.ctpop.v16i8 (Clang 20 lowers
+#   wasm_i8x16_popcnt to LLVM's vector ctpop IR). Plain scalar wasm amalgamation emits no ctpop.v16i8 hits.
 #
 # Local dev (macOS/Linux): from repo root,
 #   bash tools/run_wasm_differential_test.sh
@@ -126,31 +125,62 @@ count_distinct_llvm_wasm_intrinsic_names() {
     echo "0"
     return 0
   fi
-  grep -oE '@llvm\.wasm[a-zA-Z0-9._]*' "$ll" | sort -u | wc -l | tr -d ' '
+  # Subshell uses set +e so a no-match grep exit status does not abort before the sort stage (set -e).
+  (
+    set +e
+    grep -oE '@llvm\.wasm[a-zA-Z0-9._]*' "$ll"
+    :
+  ) | sort -u | wc -l | tr -d ' '
+}
+
+count_llvm_amalgamation_ctpop_v16i8() {
+  local ll="$1"
+  if [[ ! -f "$ll" ]]; then
+    echo "0"
+    return 0
+  fi
+  (
+    set +e
+    grep -F '@llvm.ctpop.v16i8' "$ll"
+    :
+  ) | wc -l | tr -d ' '
 }
 
 verify_llvm_wasm_intrinsics_in_roaring_ir() {
   if [[ "${WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD:-0}" != "0" ]]; then
-    echo "== LLVM @llvm.wasm.* intrinsic guard: skipped (WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD) ==" >&2
+    echo "== LLVM amalgamation SIMD IR guard: skipped (WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD) ==" >&2
     return 0
   fi
 
-  echo "== LLVM IR: @llvm.wasm.* intrinsics in amalgamation roaring.ll (-O2 -msimd128) =="
+  echo "== LLVM IR: wasm SIMD builtins in amalgamation roaring.ll (-O2 -msimd128) =="
   local ll="$WORK/ro.ll"
   "$EMCC" -std=c11 -O2 -msimd128 -emit-llvm -S -DCROARING_AMALGAMATED=1 -I"$AMALG" "$ROARING_C" -o "$ll"
 
-  local n
-  n="$(count_distinct_llvm_wasm_intrinsic_names "$ll")"
-  echo "distinct @llvm.wasm.* names in roaring IR: ${n:-0}"
-  grep -oE '@llvm\.wasm[a-zA-Z0-9._]*' "$ll" 2>/dev/null | sort -u | head -n 32 || true
+  local n_legacy n_pop16
+  n_legacy="$(count_distinct_llvm_wasm_intrinsic_names "$ll")"
+  n_pop16="$(count_llvm_amalgamation_ctpop_v16i8 "$ll")"
 
-  if [[ "${n:-0}" -eq 0 ]]; then
-    echo "run_wasm_differential_test.sh: amalgamation IR contains no @llvm.wasm.* intrinsics at O2." >&2
-    echo "  Implement wasm SIMD with builtins that Clang lowers to @llvm.wasm.* (wasm_simd128.h / builtins)." >&2
-    echo "  Generic SIMD vector IR alone is not sufficient for this gate." >&2
-    exit 6
+  echo "distinct @llvm.wasm.* names in roaring IR (legacyClang): ${n_legacy:-0}"
+  echo "@llvm.ctpop.v16i8 occurrences (wasm_i8x16_popcnt path, newerClang): ${n_pop16:-0}"
+
+  (
+    set +e
+    grep -oE '@llvm\.wasm[a-zA-Z0-9._]*' "$ll" 2>/dev/null
+    :
+  ) | sort -u | sed -n '1,32p' || true
+
+  if [[ "${n_legacy:-0}" -gt 0 ]]; then
+    echo "OK: roaring amalgamation uses @llvm.wasm.* (legacy Clang wasm builtin IR)."
+    return 0
   fi
-  echo "OK: roaring amalgamation uses explicit Wasm LLVM intrinsics (@llvm.wasm.*)."
+  if [[ "${n_pop16:-0}" -gt 0 ]]; then
+    echo "OK: roaring amalgamation uses vector byte popcount IR (@llvm.ctpop.v16i8)."
+    return 0
+  fi
+
+  echo "run_wasm_differential_test.sh: amalgamation IR shows no wasm_simd128.h SIMD trace at O2." >&2
+  echo "  Expected either @llvm.wasm.* (older Clang) or @llvm.ctpop.v16i8 from wasm_i8x16_popcnt (Clang 20+)." >&2
+  exit 6
 }
 
 echo "== Native ($CC) =="
@@ -205,7 +235,7 @@ compare_digests() {
   fi
   echo "run_wasm_differential_test.sh: digest mismatch: $label" >&2
   echo "diff -u (first 80 lines):" >&2
-  diff -u "$a" "$b" | head -n 80 >&2 || true
+  (diff -u "$a" "$b" || true) | sed -n '1,80p' >&2
   exit 1
 }
 

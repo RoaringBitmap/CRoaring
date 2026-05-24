@@ -284,6 +284,30 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
         }
 }
 
+#elif defined(CROARING_WASM_SIMD)
+
+static inline int croaring_v128_popcount_lane(v128_t w) {
+    v128_t c = wasm_i8x16_popcnt(w);
+    /* Lane indices must be compile-time constants for wasm_simd128.h builtins. */
+    return (int)(wasm_u8x16_extract_lane(c, 0) + wasm_u8x16_extract_lane(c, 1) +
+                 wasm_u8x16_extract_lane(c, 2) + wasm_u8x16_extract_lane(c, 3) +
+                 wasm_u8x16_extract_lane(c, 4) + wasm_u8x16_extract_lane(c, 5) +
+                 wasm_u8x16_extract_lane(c, 6) + wasm_u8x16_extract_lane(c, 7) +
+                 wasm_u8x16_extract_lane(c, 8) + wasm_u8x16_extract_lane(c, 9) +
+                 wasm_u8x16_extract_lane(c, 10) + wasm_u8x16_extract_lane(c, 11) +
+                 wasm_u8x16_extract_lane(c, 12) + wasm_u8x16_extract_lane(c, 13) +
+                 wasm_u8x16_extract_lane(c, 14) + wasm_u8x16_extract_lane(c, 15));
+}
+
+int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
+    int sum = 0;
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 2) {
+        v128_t w = wasm_v128_load((const void *)&bitset->words[i]);
+        sum += croaring_v128_popcount_lane(w);
+    }
+    return sum;
+}
+
 #elif defined(CROARING_USENEON)
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     uint16x8_t n0 = vdupq_n_u16(0);
@@ -777,6 +801,105 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
   }
 
 #endif //  CROARING_COMPILER_SUPPORTS_AVX512
+
+#elif defined(CROARING_WASM_SIMD)
+
+static inline void croaring_wasm_v128_store_u64_pair(uint64_t *words, v128_t v) {
+    wasm_v128_store((void *)words, v);
+}
+
+#define CROARING_WASM_COMBINE_or(a, b) wasm_v128_or((a), (b))
+#define CROARING_WASM_COMBINE_union(a, b) wasm_v128_or((a), (b))
+#define CROARING_WASM_COMBINE_and(a, b) wasm_v128_and((a), (b))
+#define CROARING_WASM_COMBINE_intersection(a, b) wasm_v128_and((a), (b))
+#define CROARING_WASM_COMBINE_xor(a, b) wasm_v128_xor((a), (b))
+#define CROARING_WASM_COMBINE_andnot(a, b) wasm_v128_andnot((a), (b))
+
+#define CROARING_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)                \
+int bitset_container_##opname(const bitset_container_t *src_1,                                          \
+                              const bitset_container_t *src_2,                                          \
+                              bitset_container_t *dst) {                                                \
+    const uint64_t *__restrict words_1 = src_1->words;                                                   \
+    const uint64_t *__restrict words_2 = src_2->words;                                                   \
+    uint64_t *__restrict out = dst->words;                                                              \
+    int sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0;                                                         \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {                                  \
+        v128_t x0 = wasm_v128_load((const void *)&words_1[i + 0]);                                       \
+        v128_t y0 = wasm_v128_load((const void *)&words_2[i + 0]);                                       \
+        v128_t c0 = CROARING_WASM_COMBINE_##opname(x0, y0);                                              \
+        croaring_wasm_v128_store_u64_pair(&out[i + 0], c0);                                             \
+        sum0 += croaring_v128_popcount_lane(c0);                                                        \
+        v128_t x1 = wasm_v128_load((const void *)&words_1[i + 2]);                                       \
+        v128_t y1 = wasm_v128_load((const void *)&words_2[i + 2]);                                       \
+        v128_t c1 = CROARING_WASM_COMBINE_##opname(x1, y1);                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 2], c1);                                               \
+        sum1 += croaring_v128_popcount_lane(c1);                                                        \
+        v128_t x2 = wasm_v128_load((const void *)&words_1[i + 4]);                                       \
+        v128_t y2 = wasm_v128_load((const void *)&words_2[i + 4]);                                       \
+        v128_t c2 = CROARING_WASM_COMBINE_##opname(x2, y2);                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 4], c2);                                               \
+        sum2 += croaring_v128_popcount_lane(c2);                                                        \
+        v128_t x3 = wasm_v128_load((const void *)&words_1[i + 6]);                                       \
+        v128_t y3 = wasm_v128_load((const void *)&words_2[i + 6]);                                       \
+        v128_t c3 = CROARING_WASM_COMBINE_##opname(x3, y3);                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 6], c3);                                               \
+        sum3 += croaring_v128_popcount_lane(c3);                                                        \
+    }                                                                                                   \
+    dst->cardinality = sum0 + sum1 + sum2 + sum3;                                                        \
+    return dst->cardinality;                                                                             \
+}                                                                                                        \
+int bitset_container_##opname##_nocard(const bitset_container_t *src_1,                                 \
+                                       const bitset_container_t *src_2,                                  \
+                                       bitset_container_t *dst) {                                        \
+    const uint64_t *__restrict words_1 = src_1->words;                                                   \
+    const uint64_t *__restrict words_2 = src_2->words;                                                   \
+    uint64_t *__restrict out = dst->words;                                                               \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {                                    \
+        v128_t c0 = CROARING_WASM_COMBINE_##opname(                                                       \
+            wasm_v128_load((const void *)&words_1[i + 0]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 0]));                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 0], c0);                                              \
+        v128_t c1 = CROARING_WASM_COMBINE_##opname(                                                      \
+            wasm_v128_load((const void *)&words_1[i + 2]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 2]));                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 2], c1);                                               \
+        v128_t c2 = CROARING_WASM_COMBINE_##opname(                                                      \
+            wasm_v128_load((const void *)&words_1[i + 4]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 4]));                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 4], c2);                                               \
+        v128_t c3 = CROARING_WASM_COMBINE_##opname(                                                      \
+            wasm_v128_load((const void *)&words_1[i + 6]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 6]));                                               \
+        croaring_wasm_v128_store_u64_pair(&out[i + 6], c3);                                              \
+    }                                                                                                    \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                                                        \
+    return dst->cardinality;                                                                              \
+}                                                                                                        \
+int bitset_container_##opname##_justcard(const bitset_container_t *src_1,                               \
+                                         const bitset_container_t *src_2) {                             \
+    const uint64_t *__restrict words_1 = src_1->words;                                                   \
+    const uint64_t *__restrict words_2 = src_2->words;                                                   \
+    int sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0;                                                         \
+    for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {                                    \
+        v128_t c0 = CROARING_WASM_COMBINE_##opname(                                                       \
+            wasm_v128_load((const void *)&words_1[i + 0]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 0]));                                               \
+        sum0 += croaring_v128_popcount_lane(c0);                                                          \
+        v128_t c1 = CROARING_WASM_COMBINE_##opname(                                                      \
+            wasm_v128_load((const void *)&words_1[i + 2]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 2]));                                               \
+        sum1 += croaring_v128_popcount_lane(c1);                                                          \
+        v128_t c2 = CROARING_WASM_COMBINE_##opname(                                                      \
+            wasm_v128_load((const void *)&words_1[i + 4]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 4]));                                               \
+        sum2 += croaring_v128_popcount_lane(c2);                                                          \
+        v128_t c3 = CROARING_WASM_COMBINE_##opname(                                                      \
+            wasm_v128_load((const void *)&words_1[i + 6]),                                                \
+            wasm_v128_load((const void *)&words_2[i + 6]));                                               \
+        sum3 += croaring_v128_popcount_lane(c3);                                                          \
+    }                                                                                                    \
+    return sum0 + sum1 + sum2 + sum3;                                                                     \
+}
 
 #elif defined(CROARING_USENEON)
 

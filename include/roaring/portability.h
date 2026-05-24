@@ -159,6 +159,13 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #include <arm_neon.h>
 #endif
 
+#if defined(__wasm_simd128__)
+#ifndef CROARING_WASM_SIMD
+#define CROARING_WASM_SIMD 1
+#endif
+#include <wasm_simd128.h>
+#endif /* __wasm_simd128__ */
+
 #if defined(__e2k__)
 // we have an e2k (Elbrus-2000) processor
 #define CROARING_IS_E2K 1
