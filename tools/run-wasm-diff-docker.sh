@@ -8,6 +8,7 @@
 # Env:
 #   CROARING_WASM_DIFF_IMAGE — image tag (default croaring/wasm-diff:local)
 #   DOCKER_PLATFORM          — default linux/amd64 (emsdk official image)
+#   WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD, WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD — forwarded when non-empty.
 
 set -euo pipefail
 
@@ -36,12 +37,19 @@ if [ -t 0 ]; then
 fi
 
 echo "Running wasm differential test in container..."
+DOCKER_ENV=(
+  -e CC=gcc
+  -e TMPDIR=/tmp
+)
+# Forward optional SIMD attestation env into the container.
+[[ -n "${WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD-}" ]] && DOCKER_ENV+=(-e "WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD=$WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD")
+[[ -n "${WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD-}" ]] && DOCKER_ENV+=(-e "WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD=$WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD")
+
 docker run "${DOCKER_OPTS[@]}" \
   --platform="$DOCKER_PLATFORM" \
   -v "$ROOT":"$ROOT":Z \
   -w "$ROOT" \
   -u "$(id -u):$(id -g)" \
-  -e CC=gcc \
-  -e TMPDIR=/tmp \
+  "${DOCKER_ENV[@]}" \
   "$IMAGE" \
   bash "$ROOT/tools/run_wasm_differential_test.sh"

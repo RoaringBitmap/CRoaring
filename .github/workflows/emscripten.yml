@@ -16,6 +16,9 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Wasm differential digest (native vs wasm scalar vs wasm simd128)
+        env:
+          # GH-801: remove when amalgamation uses wasm SIMD builtins that emit @llvm.wasm.* IR.
+          WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD: "1"
         run: |
           set -euo pipefail
           if [[ -n "${EMSDK:-}" && -d "${EMSDK}/upstream/bin" ]]; then
