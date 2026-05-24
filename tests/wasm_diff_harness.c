@@ -3,6 +3,10 @@
  * Fixed PRNG seed; no POSIX; only <roaring/roaring.h> when built via CMake —
  * amalgamation builds use #include "roaring.h" via -include or same directory.
  *
+ * Includes a capped left-associated roaring_bitmap_or fold (facetsearch-style
+ * foldBitmaps): operands only use ids in [0,DOC_CAP), so union/export must stay
+ * in-bounds versus per-leaf max (or_fold_* digest lines fingerprint this).
+ *
  * Seed: s0 = 0x853c49e6748fea9bULL (splitmix next)
  */
 #include <inttypes.h>
@@ -222,6 +226,176 @@ int main(void) {
     digest_u64("card_inplace_and", roaring_bitmap_get_cardinality(t));
     digest_u64("eq_and_inplace",
                roaring_bitmap_equals(andab, t) ? UINT64_C(1) : UINT64_C(0));
+
+    /*
+     * Left-associated roaring_bitmap_or fold (facetsearch foldBitmaps order).
+     * Operands draw only from [0, OR_DOC_CAP); union cannot introduce ids above
+     * the max observed in operands. phantom high ids imply broken OR state.
+     */
+    enum {
+        OR_DOC_CAP = 50000
+    }; /* facetsearch-ish doc id universe (exclusive bound) */
+    enum { OR_N_LEAVES = 285 };
+    roaring_bitmap_t *leafbm[OR_N_LEAVES];
+    uint32_t or_max_operand = UINT32_C(0);
+    for (int li = 0; li < OR_N_LEAVES; li++) {
+        leafbm[li] = roaring_bitmap_create();
+        const uint32_t pat = rng_u32() % UINT32_C(5);
+        if (pat == UINT32_C(0)) {
+            const int reps = (int)(UINT32_C(12) + rng_range_u32(UINT32_C(220)));
+            for (int jr = 0; jr < reps; jr++) {
+                const uint32_t v = (uint32_t)rng_range_u32(OR_DOC_CAP);
+                roaring_bitmap_add(leafbm[li], v);
+                if (v > or_max_operand) {
+                    or_max_operand = v;
+                }
+            }
+        } else if (pat == UINT32_C(1)) {
+            uint32_t run_len =
+                UINT32_C(3) + (uint32_t)rng_range_u32(UINT32_C(650));
+            if (run_len >= OR_DOC_CAP) {
+                run_len = UINT32_C(10);
+            }
+            uint32_t base = OR_DOC_CAP > run_len
+                                ? (uint32_t)rng_range_u32(OR_DOC_CAP - run_len +
+                                                          UINT32_C(1))
+                                : UINT32_C(0);
+            roaring_bitmap_add_range(leafbm[li], base, base + run_len);
+            const uint32_t hi = base + run_len - UINT32_C(1);
+            if (hi > or_max_operand) {
+                or_max_operand = hi;
+            }
+        } else if (pat == UINT32_C(2)) {
+            uint32_t span =
+                UINT32_C(900) + (uint32_t)rng_range_u32(UINT32_C(3500));
+            if (span >= OR_DOC_CAP) {
+                span = UINT32_C(100);
+            }
+            uint32_t base =
+                OR_DOC_CAP > span
+                    ? (uint32_t)rng_range_u32(OR_DOC_CAP - span + UINT32_C(1))
+                    : UINT32_C(0);
+            roaring_bitmap_add_range(leafbm[li], base, base + span);
+            const uint32_t hi = base + span - UINT32_C(1);
+            if (hi > or_max_operand) {
+                or_max_operand = hi;
+            }
+        } else if (pat == UINT32_C(3)) {
+            roaring_bitmap_add_range(
+                leafbm[li], UINT32_C(0),
+                UINT32_C(1)); /* sentinel: leaf non-empty */
+            const int blobs = (int)(UINT32_C(2) + rng_range_u32(UINT32_C(6)));
+            for (int jb = 0; jb < blobs; jb++) {
+                uint32_t blen =
+                    UINT32_C(40) + (uint32_t)rng_range_u32(UINT32_C(800));
+                if (blen >= OR_DOC_CAP) {
+                    blen = UINT32_C(41);
+                }
+                uint32_t bbase = OR_DOC_CAP > blen
+                                     ? (uint32_t)rng_range_u32(
+                                           OR_DOC_CAP - blen + UINT32_C(1))
+                                     : UINT32_C(0);
+                roaring_bitmap_add_range(leafbm[li], bbase, bbase + blen);
+                const uint32_t hi = bbase + blen - UINT32_C(1);
+                if (hi > or_max_operand) {
+                    or_max_operand = hi;
+                }
+            }
+        } else {
+            /* Wide slice tending toward dense / bitset-like containers after OR
+             */
+            uint32_t span =
+                UINT32_C(3200) + (uint32_t)rng_range_u32(UINT32_C(39800));
+            if (span >= OR_DOC_CAP) {
+                span = OR_DOC_CAP - UINT32_C(1);
+            }
+            uint32_t base_cap = OR_DOC_CAP - span + UINT32_C(1);
+            if (base_cap == UINT32_C(0)) {
+                base_cap = UINT32_C(1);
+            }
+            uint32_t base = (uint32_t)rng_range_u32(base_cap);
+            roaring_bitmap_add_range(leafbm[li], base, base + span);
+            const uint32_t hi = base + span - UINT32_C(1);
+            if (hi > or_max_operand) {
+                or_max_operand = hi;
+            }
+        }
+    }
+
+    roaring_bitmap_t *or_acc = roaring_bitmap_copy(leafbm[0]);
+    uint64_t or_invalid_mid = UINT64_C(0);
+    for (int ki = 1; ki < OR_N_LEAVES; ki++) {
+        roaring_bitmap_or_inplace(or_acc, leafbm[ki]);
+        if (!roaring_bitmap_internal_validate(or_acc, NULL)) {
+            or_invalid_mid++;
+        }
+    }
+
+    digest_u64("or_fold_operand_max_seen", (uint64_t)or_max_operand);
+    digest_u64("or_fold_union_card", roaring_bitmap_get_cardinality(or_acc));
+    digest_u64("or_fold_validate_final_ok",
+               roaring_bitmap_internal_validate(or_acc, NULL) ? UINT64_C(1)
+                                                              : UINT64_C(0));
+    digest_u64("or_fold_invalid_after_or_inplace", or_invalid_mid);
+
+    {
+        uint64_t n = roaring_bitmap_get_cardinality(or_acc);
+        uint64_t vmax = UINT64_C(0);
+        uint64_t over_univ = UINT64_C(0);
+        uint64_t over_operand_cap = UINT64_C(0);
+        uint64_t export_ok =
+            UINT64_C(1); /* 0 iff buffer failure or impossible sizing */
+        if (n == UINT64_C(0)) {
+            vmax = UINT64_C(0);
+        } else if (n > SIZE_MAX / sizeof(uint32_t)) {
+            export_ok = UINT64_C(0);
+        } else {
+            size_t nb = (size_t)n * sizeof(uint32_t);
+            uint32_t *obuf = (uint32_t *)malloc(nb);
+            if (obuf == NULL) {
+                export_ok = UINT64_C(0);
+            } else {
+                roaring_bitmap_to_uint32_array(or_acc, obuf);
+                for (size_t i = 0; i < (size_t)n; i++) {
+                    uint32_t vx = obuf[i];
+                    if ((uint64_t)vx > vmax) {
+                        vmax = vx;
+                    }
+                    if (vx >= OR_DOC_CAP) {
+                        over_univ++;
+                    }
+                    if (vx > or_max_operand) {
+                        over_operand_cap++;
+                    }
+                }
+                free(obuf);
+            }
+        }
+
+        digest_u64("or_fold_export_max", vmax);
+        digest_u64("or_fold_export_over_univ", over_univ);
+        digest_u64("or_fold_export_over_operand_max", over_operand_cap);
+        digest_u64(
+            "or_fold_export_rb_max_matches",
+            (n == UINT64_C(0) ||
+             (export_ok && vmax == (uint64_t)roaring_bitmap_maximum(or_acc)))
+                ? UINT64_C(1)
+                : UINT64_C(0));
+        digest_u64("or_fold_export_membership_ok",
+                   (export_ok && over_univ == UINT64_C(0) &&
+                    over_operand_cap == UINT64_C(0))
+                       ? UINT64_C(1)
+                       : UINT64_C(0));
+        digest_u64("or_fold_export_buffer_ok", export_ok);
+    }
+
+    digest_u64("or_fold_export_digest",
+               digest_uint32_export(or_acc, "or_fold"));
+
+    for (int li = 0; li < OR_N_LEAVES; li++) {
+        roaring_bitmap_free(leafbm[li]);
+    }
+    roaring_bitmap_free(or_acc);
 
     roaring_bitmap_free(t);
     roaring_bitmap_free(a);
