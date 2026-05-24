@@ -72,8 +72,18 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
             bits->words, BITSET_CONTAINER_SIZE_IN_WORDS, result->array, 0);
     }
 #elif defined(CROARING_WASM_SIMD)
-    bitset_extract_setbits_uint16(
-        bits->words, BITSET_CONTAINER_SIZE_IN_WORDS, result->array, 0);
+    /* SIMD path matches SSE layout; needs slack (see numberofbytes*8 guard in
+     * bitset_extract_setbits_wasm_uint16). Use array capacity like AVX-512 uses
+     * explicit max output bound. */
+    if (result->array != NULL && result->capacity >= bits->cardinality &&
+        (size_t)result->capacity >= 16u) {
+        bitset_extract_setbits_wasm_uint16(
+            bits->words, BITSET_CONTAINER_SIZE_IN_WORDS, result->array,
+            (size_t)result->capacity, 0);
+    } else {
+        bitset_extract_setbits_uint16(bits->words, BITSET_CONTAINER_SIZE_IN_WORDS,
+                                      result->array, 0);
+    }
 #else
     bitset_extract_setbits_uint16(bits->words, BITSET_CONTAINER_SIZE_IN_WORDS,
                                   result->array, 0);
