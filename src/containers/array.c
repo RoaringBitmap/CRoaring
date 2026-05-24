@@ -241,10 +241,9 @@ void array_container_andnot(const array_container_t *array_1,
     }
 #elif defined(CROARING_WASM_SIMD)
     if ((out != array_1) && (out != array_2)) {
-        out->cardinality =
-            difference_vector16(array_1->array, (size_t)array_1->cardinality,
-                                array_2->array, (size_t)array_2->cardinality,
-                                out->array);
+        out->cardinality = difference_vector16(
+            array_1->array, (size_t)array_1->cardinality, array_2->array,
+            (size_t)array_2->cardinality, out->array);
     } else {
         out->cardinality =
             difference_uint16(array_1->array, array_1->cardinality,
@@ -387,15 +386,15 @@ bool array_container_intersect(const array_container_t *array1,
     } else {
 #if CROARING_IS_X64
         if (croaring_hardware_support() & ROARING_SUPPORTS_AVX2) {
-            return intersect_vector16_nonempty(
-                array1->array, (size_t)card_1, array2->array, (size_t)card_2);
+            return intersect_vector16_nonempty(array1->array, (size_t)card_1,
+                                               array2->array, (size_t)card_2);
         }
 #elif defined(CROARING_WASM_SIMD)
-        return intersect_vector16_nonempty(
-            array1->array, (size_t)card_1, array2->array, (size_t)card_2);
+        return intersect_vector16_nonempty(array1->array, (size_t)card_1,
+                                           array2->array, (size_t)card_2);
 #endif
         return intersect_uint16_nonempty(array1->array, card_1, array2->array,
-                                           card_2);
+                                         card_2);
     }
 }
 

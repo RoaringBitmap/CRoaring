@@ -239,7 +239,8 @@ int avx512_array_container_to_uint32_array(void *vout, const uint16_t *array,
 int32_t intersect_vector16_cardinality(const uint16_t *A, size_t s_a,
                                        const uint16_t *B, size_t s_b);
 
-/** Nonempty predicate for balanced Schlegel/Lemire SIMD path (AVX2 / wasm SIMD). */
+/** Nonempty predicate for balanced Schlegel/Lemire SIMD path (AVX2 / wasm
+ * SIMD). */
 bool intersect_vector16_nonempty(const uint16_t *A, size_t lenA,
                                  const uint16_t *B, size_t lenB);
 

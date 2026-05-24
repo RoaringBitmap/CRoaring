@@ -166,7 +166,8 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #include <wasm_simd128.h>
 /* SIMD i32x4 run_container_to_uint32_array chunking (-msimd128). Default off:
  * amalgamation SIMD builds meant for wasm digest parity enable it with
- * -DCROARING_WASM_SIMD_RUN_CONTAINER_EXPAND=1 (run_wasm_differential_test.sh). */
+ * -DCROARING_WASM_SIMD_RUN_CONTAINER_EXPAND=1 (run_wasm_differential_test.sh).
+ */
 #ifndef CROARING_WASM_SIMD_RUN_CONTAINER_EXPAND
 #define CROARING_WASM_SIMD_RUN_CONTAINER_EXPAND 0
 #endif

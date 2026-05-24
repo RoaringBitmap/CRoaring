@@ -766,9 +766,10 @@ size_t bitset_extract_setbits_wasm_simd(const uint64_t *words, size_t length,
                     wasm_v128_load((const void *)&vecDecodeTable[byteB][4]);
                 uint8_t advanceA = lengthTable[byteA];
                 uint8_t advanceB = lengthTable[byteB];
-                /* Match AVX2: one baseVec applies to all 8 i32 lanes of vecA, then
-                 * baseVec += 8 once; same for vecB. Do not bump baseVec between the
-                 * two v128 halves of the same 256-bit vecA/vecB row. */
+                /* Match AVX2: one baseVec applies to all 8 i32 lanes of vecA,
+                 * then baseVec += 8 once; same for vecB. Do not bump baseVec
+                 * between the two v128 halves of the same 256-bit vecA/vecB
+                 * row. */
                 vecA_lo = wasm_i32x4_add(baseVec, vecA_lo);
                 vecA_hi = wasm_i32x4_add(baseVec, vecA_hi);
                 baseVec = wasm_i32x4_add(baseVec, add8);

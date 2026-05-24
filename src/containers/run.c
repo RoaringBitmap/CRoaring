@@ -1115,8 +1115,8 @@ CROARING_ALLOW_UNALIGNED
  * Bit-identical to the scalar loop; wasm differential digest asserts parity vs
  * native and wasm scalar (tools/run_wasm_differential_test.sh). */
 static int _wasm128_run_container_to_uint32_array(void *vout,
-                                                   const run_container_t *cont,
-                                                   uint32_t base) {
+                                                  const run_container_t *cont,
+                                                  uint32_t base) {
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
 

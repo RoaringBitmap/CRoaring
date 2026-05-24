@@ -851,30 +851,39 @@ CROARING_UNTARGET_AVX2
 #if defined(CROARING_WASM_SIMD)
 
 /* Wasm128 stand-in for _mm_cmpestrm / _mm_cmpistrm(_SIDD_UWORD_OPS|
- * _SIDD_CMP_EQUAL_ANY |_SIDD_BIT_MASK): low 8 bits of r match _mm_extract_epi32(,0).
- * pcmpestrm(...,len=8) always scans 8 lanes. After the roaring leading-zero SIMD
- * loop, operands are nonzero (sorted uniqueness), so implicit-length pcmp behaves
- * like full 8-word compare and this mask matches the x86 path (wasm-diff digests).
+ * _SIDD_CMP_EQUAL_ANY |_SIDD_BIT_MASK): low 8 bits of r match
+ * _mm_extract_epi32(,0). pcmpestrm(...,len=8) always scans 8 lanes. After the
+ * roaring leading-zero SIMD loop, operands are nonzero (sorted uniqueness), so
+ * implicit-length pcmp behaves like full 8-word compare and this mask matches
+ * the x86 path (wasm-diff digests).
  */
 static inline uint8_t croaring_wasm_equal_any_u16_mask8(v128_t vb, v128_t va) {
     /* Lane indices must be constexpr for wasm_u16x8_extract_lane. */
     v128_t acc = wasm_i64x2_const(0, 0);
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 0))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 1))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 2))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 3))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 4))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 5))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 6))));
-    acc =
-        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 7))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 0))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 1))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 2))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 3))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 4))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 5))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 6))));
+    acc = wasm_v128_or(
+        acc, wasm_i16x8_eq(va, wasm_i16x8_splat(
+                                   (int16_t)wasm_u16x8_extract_lane(vb, 7))));
     ALIGNED(16) uint16_t acc_lanes[8];
     wasm_v128_store((void *)acc_lanes, acc);
     uint8_t mask8 = 0;
@@ -888,9 +897,7 @@ static inline uint8_t croaring_wasm_equal_any_u16_mask8(v128_t vb, v128_t va) {
 
 static inline void croaring_wasm_load_shuffle_mask16(uint32_t bitmask,
                                                      v128_t *out_sm16) {
-    memcpy(out_sm16,
-           shuffle_mask16 + (size_t)bitmask * 16u,
-           sizeof(v128_t));
+    memcpy(out_sm16, shuffle_mask16 + (size_t)bitmask * 16u, sizeof(v128_t));
 }
 
 /**
@@ -978,7 +985,8 @@ int32_t intersect_vector16_inplace(uint16_t *A, size_t s_a, const uint16_t *B,
     const size_t st_a = (s_a / (size_t)vectorlength) * (size_t)vectorlength;
     const size_t st_b = (s_b / (size_t)vectorlength) * (size_t)vectorlength;
     v128_t v_a, v_b;
-    ALIGNED(16) uint16_t tmp_accum_storage[16];  /* scratch: two XMM words like x86 tmp[2] */
+    ALIGNED(16)
+    uint16_t tmp_accum_storage[16]; /* scratch: two XMM words like x86 tmp[2] */
     v128_t zero = wasm_i64x2_const(0, 0);
     if ((i_a < st_a) && (i_b < st_b)) {
         v_a = wasm_v128_load((const void *)&A[i_a]);
@@ -1232,8 +1240,8 @@ int32_t difference_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                     (uint32_t)bitmask_belongs_to_difference, &sm16);
                 v128_t p = wasm_i8x16_swizzle(v_a, sm16);
                 wasm_v128_store((void *)&C[count], p);
-                count += __builtin_popcount((unsigned)bitmask_belongs_to_difference &
-                                            0xffu);
+                count += __builtin_popcount(
+                    (unsigned)bitmask_belongs_to_difference & 0xffu);
                 i_a += vectorlength;
                 if (i_a == st_a) break;
                 running_mask8_found_in_b = 0;
@@ -1260,8 +1268,8 @@ int32_t difference_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                 (uint32_t)bitmask_belongs_to_difference, &sm16);
             v128_t p = wasm_i8x16_swizzle(v_a, sm16);
             wasm_v128_store((void *)&C[count], p);
-            count += __builtin_popcount((unsigned)bitmask_belongs_to_difference &
-                                        0xffu);
+            count += __builtin_popcount(
+                (unsigned)bitmask_belongs_to_difference & 0xffu);
             i_a += vectorlength;
         }
     }
@@ -1307,8 +1315,7 @@ int croaring_wasm_array_container_to_uint32_array(void *vout,
         v128_t vin = wasm_v128_load((const void *)(array + i));
         v128_t lo32 = wasm_u32x4_extend_low_u16x8(vin);
         v128_t hi32 = wasm_u32x4_extend_high_u16x8(vin);
-        wasm_v128_store((void *)(out + outpos),
-                        wasm_i32x4_add(lo32, basev));
+        wasm_v128_store((void *)(out + outpos), wasm_i32x4_add(lo32, basev));
         wasm_v128_store((void *)(out + outpos + 4),
                         wasm_i32x4_add(hi32, basev));
     }
@@ -2425,7 +2432,8 @@ CROARING_UNTARGET_AVX2
 // Port of SSE merge / union / xor from the CROARING_IS_X64 block above, using
 // wasm128 intrinsics. Matches union_uint16 / xor_uint16 for differential tests.
 
-static inline v128_t croaring_wasm_alignr_epi8(v128_t a, v128_t b, int imm_bytes) {
+static inline v128_t croaring_wasm_alignr_epi8(v128_t a, v128_t b,
+                                               int imm_bytes) {
     ALIGNED(16) uint8_t tmp[32];
     wasm_v128_store((void *)tmp, b);
     wasm_v128_store((void *)(tmp + 16), a);
@@ -2434,8 +2442,7 @@ static inline v128_t croaring_wasm_alignr_epi8(v128_t a, v128_t b, int imm_bytes
 
 static inline void croaring_wasm_merge_u16x8(const v128_t *vInput1,
                                              const v128_t *vInput2,
-                                             v128_t *vecMin,
-                                             v128_t *vecMax) {
+                                             v128_t *vecMin, v128_t *vecMax) {
     v128_t vecTmp;
     vecTmp = wasm_u16x8_min(*vInput1, *vInput2);
     *vecMax = wasm_u16x8_max(*vInput1, *vInput2);
@@ -2471,8 +2478,7 @@ static inline int croaring_wasm_store_unique(v128_t old, v128_t newval,
                                              uint16_t *output) {
     const v128_t z = wasm_i64x2_const(0, 0);
     v128_t vecTmp = croaring_wasm_alignr_epi8(newval, old, 16 - 2);
-    v128_t packed =
-        wasm_i8x16_narrow_i16x8(wasm_i16x8_eq(vecTmp, newval), z);
+    v128_t packed = wasm_i8x16_narrow_i16x8(wasm_i16x8_eq(vecTmp, newval), z);
     int M = (int)wasm_i8x16_bitmask(packed);
     int numberofnewvalues = 8 - __builtin_popcount((unsigned)M & 0xffffu);
     v128_t key;
@@ -2624,13 +2630,11 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
                 }
             }
             croaring_wasm_merge_u16x8(&V, &vecMax, &vecMin, &vecMax);
-            output +=
-                croaring_wasm_store_unique_xor(laststore, vecMin, output);
+            output += croaring_wasm_store_unique_xor(laststore, vecMin, output);
             laststore = vecMin;
         }
         croaring_wasm_merge_u16x8(&V, &vecMax, &vecMin, &vecMax);
-        output +=
-            croaring_wasm_store_unique_xor(laststore, vecMin, output);
+        output += croaring_wasm_store_unique_xor(laststore, vecMin, output);
         laststore = vecMin;
     }
     uint32_t len = (uint32_t)(output - initoutput);
@@ -2651,8 +2655,7 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
         } else {
             qsort(buffer, (size_t)leftoversize, sizeof(uint16_t),
                   uint16_compare);
-            leftoversize =
-                (int)unique_xor(buffer, (uint32_t)leftoversize);
+            leftoversize = (int)unique_xor(buffer, (uint32_t)leftoversize);
             len += (uint32_t)xor_uint16(buffer, leftoversize, array2 + 8 * pos2,
                                         (int32_t)(length2 - 8 * pos2), output);
         }
@@ -2667,8 +2670,7 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
         } else {
             qsort(buffer, (size_t)leftoversize, sizeof(uint16_t),
                   uint16_compare);
-            leftoversize =
-                (int)unique_xor(buffer, (uint32_t)leftoversize);
+            leftoversize = (int)unique_xor(buffer, (uint32_t)leftoversize);
             len += (uint32_t)xor_uint16(buffer, leftoversize, array1 + 8 * pos1,
                                         (int32_t)(length1 - 8 * pos1), output);
         }
