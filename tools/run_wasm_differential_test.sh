@@ -2,6 +2,10 @@
 # WASM differential test: same harness + amalgamated roaring.c built natively and
 # with emcc (scalar wasm + -msimd128 wasm). Compares deterministic stdout digests.
 #
+# The harness (tests/wasm_diff_harness.c) includes meta_* lines: bounded-universe
+# pairwise OR/AND/XOR/ANDNOT membership oracles, iterator-vs-export checks, inplace
+# parity, cardinality laws, portable round-trip OR oracle — all exercised on every leg.
+#
 # Exit codes (non-debug mode): 0 success (digests agree), 1 digest mismatch / compare failure,
 #   2 missing toolchain (no emcc or node), 3 missing wasm output next to emitted .js,
 #   4 missing wasm-objdump for SIMD artifact guard, 5 SIMD uplift gate failure,
@@ -208,6 +212,8 @@ echo "== WebAssembly scalar (emcc, no -msimd128) =="
 "$EMCC" -std=c11 -O2 -DCROARING_AMALGAMATED=1 -I"$AMALG" \
   "$ROARING_C" "$HARNESS" \
   -sALLOW_MEMORY_GROWTH=1 \
+  -sSTACK_SIZE=8388608 \
+  -sINITIAL_MEMORY=67108864 \
   -o "$SCALAR_JS"
 scalar_wasm_file="${SCALAR_JS%.js}.wasm"
 if [[ ! -f "$scalar_wasm_file" ]]; then
@@ -228,6 +234,8 @@ EOF
 "$EMCC" -std=c11 -O2 -msimd128 -DCROARING_AMALGAMATED=1 -I"$AMALG" \
   "$ROARING_C" "$HARNESS" \
   -sALLOW_MEMORY_GROWTH=1 \
+  -sSTACK_SIZE=8388608 \
+  -sINITIAL_MEMORY=67108864 \
   -o "$SIMD_JS"
 simd_wasm_file="${SIMD_JS%.js}.wasm"
 if [[ ! -f "$simd_wasm_file" ]]; then

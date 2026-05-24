@@ -41,10 +41,16 @@ SCALAR_JS="$WORK/wasm_perf_scalar.js"
 SIMD_JS="$WORK/wasm_perf_simd.js"
 
 "${EMCC:-emcc}" -std=c11 -O2 -DCROARING_AMALGAMATED=1 -I"$AMALG" "$ROARING_C" "$HARNESS" \
-  -sALLOW_MEMORY_GROWTH=1 -o "$SCALAR_JS"
+  -sALLOW_MEMORY_GROWTH=1 \
+  -sSTACK_SIZE=8388608 \
+  -sINITIAL_MEMORY=67108864 \
+  -o "$SCALAR_JS"
 
 "${EMCC:-emcc}" -std=c11 -O2 -msimd128 -DCROARING_AMALGAMATED=1 -I"$AMALG" "$ROARING_C" "$HARNESS" \
-  -sALLOW_MEMORY_GROWTH=1 -o "$SIMD_JS"
+  -sALLOW_MEMORY_GROWTH=1 \
+  -sSTACK_SIZE=8388608 \
+  -sINITIAL_MEMORY=67108864 \
+  -o "$SIMD_JS"
 
 "${NODE:-node}" --version >/dev/null
 
