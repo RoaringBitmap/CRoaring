@@ -3814,9 +3814,10 @@ DEFINE_TEST(test_intersect_small_run_bitset) {
 
 DEFINE_TEST(issue819) {
     /*
-     * Dense range 0 .. n-1 lives in one bitset-backed container once it grows past
-     * the array cutoff. roaring_bitmap_to_uint32_array must match iterator bulk
-     * reads (wasm32-wasi regression: mismatched duplicates / missing values).
+     * Dense range 0 .. n-1 lives in one bitset-backed container once it grows
+     * past the array cutoff. roaring_bitmap_to_uint32_array must match iterator
+     * bulk reads (wasm32-wasi regression: mismatched duplicates / missing
+     * values).
      */
     const uint32_t n = 50000;
     roaring_bitmap_t *r = roaring_bitmap_create();
@@ -3840,10 +3841,10 @@ DEFINE_TEST(issue819) {
     size_t filled = 0;
     while (filled < card) {
         uint64_t remaining64 = card - filled;
-        uint32_t chunk = remaining64 > UINT32_MAX ? UINT32_MAX
-                                                  : (uint32_t)remaining64;
-        uint32_t got = roaring_uint32_iterator_read(&iter, from_iterator + filled,
-                                                     chunk);
+        uint32_t chunk =
+            remaining64 > UINT32_MAX ? UINT32_MAX : (uint32_t)remaining64;
+        uint32_t got =
+            roaring_uint32_iterator_read(&iter, from_iterator + filled, chunk);
         assert_true(got > 0);
         filled += got;
     }
