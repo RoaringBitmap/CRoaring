@@ -1003,10 +1003,7 @@ int _avx2_run_container_to_uint32_array(void *vout, const run_container_t *cont,
         uint16_t le = cont->runs[i].length;
         if (le < 8) {
             for (int j = 0; j <= le; ++j) {
-                uint32_t val = run_start + j;
-                memcpy(out + outpos, &val,
-                       sizeof(uint32_t));  // should be compiled as a MOV on x64
-                outpos++;
+                out[outpos++] = run_start + j;
             }
         } else {
             int j = 0;
@@ -1023,10 +1020,7 @@ int _avx2_run_container_to_uint32_array(void *vout, const run_container_t *cont,
                 outpos += 8;
             }
             for (; j <= le; ++j) {
-                uint32_t val = run_start + j;
-                memcpy(out + outpos, &val,
-                       sizeof(uint32_t));  // should be compiled as a MOV on x64
-                outpos++;
+                out[outpos++] = run_start + j;
             }
         }
     }
@@ -1074,10 +1068,7 @@ int _scalar_run_container_to_uint32_array(void *vout,
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
         for (int j = 0; j <= le; ++j) {
-            uint32_t val = run_start + j;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
+            out[outpos++] = run_start + j;
         }
     }
     return outpos;
@@ -1118,10 +1109,7 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
         for (int j = 0; j <= le; ++j) {
-            uint32_t val = run_start + j;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
+            out[outpos++] = run_start + j;
         }
     }
     return outpos;

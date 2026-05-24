@@ -418,10 +418,7 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
     uint32_t *out = (uint32_t *)vout;
     size_t i = 0;
     for (; i < (size_t)cont->cardinality; ++i) {
-        const uint32_t val = base + cont->array[i];
-        memcpy(out + outpos, &val,
-               sizeof(uint32_t));  // should be compiled as a MOV on x64
-        outpos++;
+        out[outpos++] = base + cont->array[i];
     }
     return outpos;
 }

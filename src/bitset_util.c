@@ -736,16 +736,13 @@ CROARING_UNTARGET_AVX2
 
 size_t bitset_extract_setbits(const uint64_t *words, size_t length,
                               uint32_t *out, uint32_t base) {
-    int outpos = 0;
+    size_t outpos = 0;
     for (size_t i = 0; i < length; ++i) {
         uint64_t w = words[i];
         while (w != 0) {
             int r =
                 roaring_trailing_zeroes(w);  // on x64, should compile to TZCNT
-            uint32_t val = r + base;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
+            out[outpos++] = (uint32_t)r + base;
             w &= (w - 1);
         }
         base += 64;
