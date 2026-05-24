@@ -18,11 +18,4 @@ jobs:
       - name: NEON vs Wasm SIMD preprocessor pairing
         run: bash tools/check_wasm_simd_neon_pairing.sh
       - name: Wasm differential digest (native vs wasm scalar vs wasm simd128)
-        run: |
-          set -euo pipefail
-          if [[ -n "${EMSDK:-}" && -d "${EMSDK}/upstream/bin" ]]; then
-            export PATH="${EMSDK}/upstream/bin:${PATH}"
-          fi
-          sudo apt-get update -qq
-          sudo apt-get install -y wabt >/dev/null
-          bash tools/run_wasm_differential_test.sh
+        run: bash tools/ci_wasm_differential_digest.sh
