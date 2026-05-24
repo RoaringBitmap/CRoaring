@@ -282,7 +282,7 @@ class Roaring {
         return api::roaring_bitmap_remove_range_closed(&roaring, min, max);
     }
 
-        /**
+    /**
      * Keep only values in the half-open interval [min, max).
      * Equivalent to two consecutive removeRange calls.
      */

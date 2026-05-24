@@ -288,15 +288,17 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 
 static inline int croaring_v128_popcount_lane(v128_t w) {
     v128_t c = wasm_i8x16_popcnt(w);
-    /* Lane indices must be compile-time constants for wasm_simd128.h builtins. */
-    return (int)(wasm_u8x16_extract_lane(c, 0) + wasm_u8x16_extract_lane(c, 1) +
-                 wasm_u8x16_extract_lane(c, 2) + wasm_u8x16_extract_lane(c, 3) +
-                 wasm_u8x16_extract_lane(c, 4) + wasm_u8x16_extract_lane(c, 5) +
-                 wasm_u8x16_extract_lane(c, 6) + wasm_u8x16_extract_lane(c, 7) +
-                 wasm_u8x16_extract_lane(c, 8) + wasm_u8x16_extract_lane(c, 9) +
-                 wasm_u8x16_extract_lane(c, 10) + wasm_u8x16_extract_lane(c, 11) +
-                 wasm_u8x16_extract_lane(c, 12) + wasm_u8x16_extract_lane(c, 13) +
-                 wasm_u8x16_extract_lane(c, 14) + wasm_u8x16_extract_lane(c, 15));
+    /* Lane indices must be compile-time constants for wasm_simd128.h builtins.
+     */
+    return (
+        int)(wasm_u8x16_extract_lane(c, 0) + wasm_u8x16_extract_lane(c, 1) +
+             wasm_u8x16_extract_lane(c, 2) + wasm_u8x16_extract_lane(c, 3) +
+             wasm_u8x16_extract_lane(c, 4) + wasm_u8x16_extract_lane(c, 5) +
+             wasm_u8x16_extract_lane(c, 6) + wasm_u8x16_extract_lane(c, 7) +
+             wasm_u8x16_extract_lane(c, 8) + wasm_u8x16_extract_lane(c, 9) +
+             wasm_u8x16_extract_lane(c, 10) + wasm_u8x16_extract_lane(c, 11) +
+             wasm_u8x16_extract_lane(c, 12) + wasm_u8x16_extract_lane(c, 13) +
+             wasm_u8x16_extract_lane(c, 14) + wasm_u8x16_extract_lane(c, 15));
 }
 
 int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
@@ -1071,6 +1073,18 @@ int bitset_container_to_uint32_array(
 	else
 		return (int) bitset_extract_setbits(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, base);
+#elif defined(CROARING_WASM_SIMD)
+   if (bc->cardinality >= 8192) // match x64 SIMD decode threshold heuristic
+       return (int)bitset_extract_setbits_wasm_simd(
+           bc->words, BITSET_CONTAINER_SIZE_IN_WORDS, out, bc->cardinality,
+           base);
+   else
+       return (int)bitset_extract_setbits(bc->words,
+                                          BITSET_CONTAINER_SIZE_IN_WORDS, out,
+                                          base);
+#elif defined(CROARING_USENEON)
+   return (int)bitset_extract_setbits(bc->words,
+           BITSET_CONTAINER_SIZE_IN_WORDS, out, base);
 #else
 	return (int) bitset_extract_setbits(bc->words,
                 BITSET_CONTAINER_SIZE_IN_WORDS, out, base);

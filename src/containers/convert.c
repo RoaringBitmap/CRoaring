@@ -71,8 +71,11 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
         bitset_extract_setbits_uint16(
             bits->words, BITSET_CONTAINER_SIZE_IN_WORDS, result->array, 0);
     }
+#elif defined(CROARING_WASM_SIMD)
+    bitset_extract_setbits_wasm_uint16(
+        bits->words, BITSET_CONTAINER_SIZE_IN_WORDS, result->array,
+        (size_t)bits->cardinality, 0);
 #else
-    // If the system is not x64, then we have no accelerated function.
     bitset_extract_setbits_uint16(bits->words, BITSET_CONTAINER_SIZE_IN_WORDS,
                                   result->array, 0);
 #endif

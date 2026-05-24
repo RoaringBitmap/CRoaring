@@ -270,6 +270,10 @@ void array_container_xor(const array_container_t *array_1,
             xor_uint16(array_1->array, array_1->cardinality, array_2->array,
                        array_2->cardinality, out->array);
     }
+#elif defined(CROARING_WASM_SIMD)
+    out->cardinality =
+        xor_vector16(array_1->array, array_1->cardinality, array_2->array,
+                     array_2->cardinality, out->array);
 #else
     out->cardinality =
         xor_uint16(array_1->array, array_1->cardinality, array_2->array,
@@ -291,9 +295,10 @@ void array_container_intersection(const array_container_t *array1,
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
             min_card = minimum_int32(card_1, card_2);
     const int threshold = 64;  // subject to tuning
-#if CROARING_IS_X64
+#if CROARING_IS_X64 || defined(CROARING_WASM_SIMD)
     if (out->capacity < min_card) {
-        array_container_grow(out, min_card + sizeof(__m128i) / sizeof(uint16_t),
+        /* v128 / __m128i group: 16 bytes of uint16 lanes */
+        array_container_grow(out, min_card + (int32_t)(16u / sizeof(uint16_t)),
                              false);
     }
 #else
@@ -317,6 +322,9 @@ void array_container_intersection(const array_container_t *array1,
             out->cardinality = intersect_uint16(
                 array1->array, card_1, array2->array, card_2, out->array);
         }
+#elif defined(CROARING_WASM_SIMD)
+        out->cardinality = intersect_vector16(
+            array1->array, card_1, array2->array, card_2, out->array);
 #else
         out->cardinality = intersect_uint16(array1->array, card_1,
                                             array2->array, card_2, out->array);
@@ -345,6 +353,9 @@ int array_container_intersection_cardinality(const array_container_t *array1,
             return intersect_uint16_cardinality(array1->array, card_1,
                                                 array2->array, card_2);
         }
+#elif defined(CROARING_WASM_SIMD)
+        return intersect_vector16_cardinality(array1->array, card_1,
+                                              array2->array, card_2);
 #else
         return intersect_uint16_cardinality(array1->array, card_1,
                                             array2->array, card_2);
@@ -391,6 +402,9 @@ void array_container_intersection_inplace(array_container_t *src_1,
             src_1->cardinality = intersect_uint16(
                 src_1->array, card_1, src_2->array, card_2, src_1->array);
         }
+#elif defined(CROARING_WASM_SIMD)
+        src_1->cardinality = intersect_vector16_inplace(src_1->array, card_1,
+                                                        src_2->array, card_2);
 #else
         src_1->cardinality = intersect_uint16(
             src_1->array, card_1, src_2->array, card_2, src_1->array);
@@ -413,7 +427,10 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
         return array_container_to_uint32_array_vector16(
             vout, cont->array, cont->cardinality, base);
     }
-#endif  // CROARING_IS_X64
+#elif defined(CROARING_WASM_SIMD)
+    return wasm_array_container_to_uint32_array(
+        vout, cont->array, (size_t)cont->cardinality, base);
+#endif
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
     size_t i = 0;

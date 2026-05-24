@@ -182,6 +182,15 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
 size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length,
                                      uint32_t *out, size_t outcapacity,
                                      uint32_t base);
+
+#if defined(CROARING_WASM_SIMD)
+size_t bitset_extract_setbits_wasm_simd(const uint64_t *words, size_t length,
+                                        uint32_t *out, size_t outcapacity,
+                                        uint32_t base);
+size_t bitset_extract_setbits_wasm_uint16(const uint64_t *words, size_t length,
+                                          uint16_t *out, size_t outcapacity,
+                                          uint16_t base);
+#endif
 /*
  * Given a bitset containing "length" 64-bit words, write out the position
  * of all the set bits to "out", values start at "base".

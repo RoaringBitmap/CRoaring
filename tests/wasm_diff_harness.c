@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef CROARING_AMALGAMATED
 #include "roaring.h"
@@ -40,13 +42,68 @@ static uint64_t rng_range_u32(uint32_t max_exclusive) {
     return (uint64_t)(rng_u32() % max_exclusive);
 }
 
-static void digest_u64(const char *key, uint64_t v) { printf("%s %" PRIu64 "\n", key, v); }
+static void digest_u64(const char *key, uint64_t v) {
+    printf("%s %" PRIu64 "\n", key, v);
+}
 
 static bool iter_fold(uint32_t val, void *p) {
     fold256_t *f = (fold256_t *)p;
     f->h = f->h * UINT64_C(6364136223846793005) + (uint64_t)val;
     f->n++;
     return true;
+}
+
+/* FNV-1a-ish fold over exported uint32s (SIMD vs scalar portability check). */
+static uint64_t digest_uint32_export(const roaring_bitmap_t *r,
+                                     const char *err_tag) {
+    uint64_t n = roaring_bitmap_get_cardinality(r);
+    if (n == UINT64_C(0)) {
+        return UINT64_C(0xcbf29ce484222325); /* empty fingerprint */
+    }
+    if (n > SIZE_MAX / sizeof(uint32_t)) {
+        fprintf(stderr, "%s: cardinality too large for digest buffer\n",
+                err_tag);
+        return UINT64_C(0);
+    }
+    size_t nb = (size_t)n * sizeof(uint32_t);
+    uint32_t *buf = (uint32_t *)malloc(nb);
+    if (buf == NULL) {
+        fprintf(stderr, "%s: malloc failed\n", err_tag);
+        return UINT64_C(0);
+    }
+    roaring_bitmap_to_uint32_array(r, buf);
+    uint64_t h = UINT64_C(1469598103934665603);
+    for (size_t i = 0; i < (size_t)n; i++) {
+        h ^= (uint64_t)buf[i];
+        h *= UINT64_C(1099511628211);
+    }
+    free(buf);
+    return h;
+}
+
+static void portable_roundtrip_eq_digest(const roaring_bitmap_t *r,
+                                         const char *key_prefix) {
+    size_t nbytes = roaring_bitmap_portable_size_in_bytes(r);
+    /* serialize writes exactly nbytes bytes */
+    char *serialized = (char *)malloc(nbytes ? nbytes : 1u);
+    if (serialized == NULL) {
+        char kbuf[128];
+        snprintf(kbuf, sizeof(kbuf), "%s_portable_roundtrip_ok", key_prefix);
+        digest_u64(kbuf, UINT64_C(0));
+        return;
+    }
+    (void)roaring_bitmap_portable_serialize(r, serialized);
+    roaring_bitmap_t *round =
+        roaring_bitmap_portable_deserialize_safe(serialized, nbytes);
+    free(serialized);
+
+    bool ok = (round != NULL) && roaring_bitmap_equals(r, round);
+    if (round != NULL) {
+        roaring_bitmap_free(round);
+    }
+    char kbuf[128];
+    snprintf(kbuf, sizeof(kbuf), "%s_portable_roundtrip_ok", key_prefix);
+    digest_u64(kbuf, ok ? UINT64_C(1) : UINT64_C(0));
 }
 
 static void fold_bitmap(const char *prefix, const roaring_bitmap_t *r) {
@@ -64,14 +121,16 @@ int main(void) {
     roaring_bitmap_t *a = roaring_bitmap_create();
     for (int i = 0; i < 5000; i++) {
         uint32_t base = (uint32_t)(100000u + (rng_u32() % 2000000u));
-        roaring_bitmap_add_range(a, base, base + 1 + (uint32_t)(rng_u32() % 120u));
+        roaring_bitmap_add_range(a, base,
+                                 base + 1 + (uint32_t)(rng_u32() % 120u));
     }
 
     /* Dense chunks -> bitset containers */
     roaring_bitmap_t *b = roaring_bitmap_create();
     for (uint32_t k = 0; k < 40; k++) {
         uint32_t base = k * 9973u + (uint32_t)rng_range_u32(1000u);
-        roaring_bitmap_add_range(b, base, base + 20000u); /* ~bitset per chunk */
+        roaring_bitmap_add_range(b, base,
+                                 base + 20000u); /* ~bitset per chunk */
     }
     for (uint32_t hi = 3; hi < 12; hi++) {
         uint32_t seg = hi * 0x100000u;
@@ -115,15 +174,17 @@ int main(void) {
         digest_u64("jaccard_ab_q12", jac_q);
     }
 
-    digest_u64("intersect_ab", roaring_bitmap_intersect(a, b) ? UINT64_C(1) : UINT64_C(0));
-    digest_u64("subset_ab", roaring_bitmap_is_subset(a, b) ? UINT64_C(1) : UINT64_C(0));
+    digest_u64("intersect_ab",
+               roaring_bitmap_intersect(a, b) ? UINT64_C(1) : UINT64_C(0));
+    digest_u64("subset_ab",
+               roaring_bitmap_is_subset(a, b) ? UINT64_C(1) : UINT64_C(0));
     digest_u64("contains_b_anchor", roaring_bitmap_contains(b, UINT32_C(200000))
+                                        ? UINT64_C(1)
+                                        : UINT64_C(0));
+    digest_u64("contains_range_b", roaring_bitmap_contains_range(
+                                       b, UINT64_C(100000), UINT64_C(150000))
                                        ? UINT64_C(1)
                                        : UINT64_C(0));
-    digest_u64("contains_range_b",
-               roaring_bitmap_contains_range(b, UINT64_C(100000), UINT64_C(150000))
-                   ? UINT64_C(1)
-                   : UINT64_C(0));
 
     {
         roaring_bitmap_t *acopy = roaring_bitmap_copy(a);
@@ -139,8 +200,17 @@ int main(void) {
                    (uint64_t)roaring_bitmap_portable_size_in_bytes(bcopy));
         roaring_bitmap_free(bcopy);
     }
-    digest_u64("portable_sz_a", (uint64_t)roaring_bitmap_portable_size_in_bytes(a));
-    digest_u64("portable_sz_w", (uint64_t)roaring_bitmap_portable_size_in_bytes(w));
+    digest_u64("portable_sz_a",
+               (uint64_t)roaring_bitmap_portable_size_in_bytes(a));
+    digest_u64("portable_sz_w",
+               (uint64_t)roaring_bitmap_portable_size_in_bytes(w));
+
+    /* Serialize path + roaring_bitmap_equals (memequals on container bytes) */
+    portable_roundtrip_eq_digest(w, "w");
+    portable_roundtrip_eq_digest(b, "dense_b");
+
+    digest_u64("export_w_u32_fold", digest_uint32_export(w, "w"));
+    digest_u64("export_b_u32_fold", digest_uint32_export(b, "b"));
 
     fold_bitmap("w", w);
 
@@ -148,7 +218,8 @@ int main(void) {
     roaring_bitmap_t *t = roaring_bitmap_copy(a);
     roaring_bitmap_and_inplace(t, b);
     digest_u64("card_inplace_and", roaring_bitmap_get_cardinality(t));
-    digest_u64("eq_and_inplace", roaring_bitmap_equals(andab, t) ? UINT64_C(1) : UINT64_C(0));
+    digest_u64("eq_and_inplace",
+               roaring_bitmap_equals(andab, t) ? UINT64_C(1) : UINT64_C(0));
 
     roaring_bitmap_free(t);
     roaring_bitmap_free(a);

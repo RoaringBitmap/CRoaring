@@ -23,7 +23,7 @@ namespace roaring {
 namespace api {
 #endif
 
-#if CROARING_IS_X64
+#if CROARING_IS_X64 || defined(CROARING_WASM_SIMD)
 static uint8_t lengthTable[256] = {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4,
     2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -38,7 +38,7 @@ static uint8_t lengthTable[256] = {
     4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 #endif
 
-#if CROARING_IS_X64
+#if CROARING_IS_X64 || defined(CROARING_WASM_SIMD)
 ALIGNED(32)
 static uint32_t vecDecodeTable[256][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, /* 0x00 (00000000) */
@@ -301,7 +301,7 @@ static uint32_t vecDecodeTable[256][8] = {
 
 #endif  // #if CROARING_IS_X64
 
-#if CROARING_IS_X64
+#if CROARING_IS_X64 || defined(CROARING_WASM_SIMD)
 // same as vecDecodeTable but in 16 bits
 ALIGNED(32)
 static uint16_t vecDecodeTable_uint16[256][8] = {
@@ -733,6 +733,120 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
 }
 CROARING_UNTARGET_AVX2
 #endif  // CROARING_IS_X64
+
+#if defined(CROARING_WASM_SIMD)
+
+size_t bitset_extract_setbits_wasm_simd(const uint64_t *words, size_t length,
+                                        uint32_t *out, size_t outcapacity,
+                                        uint32_t base) {
+    uint32_t *initout = out;
+    v128_t baseVec = wasm_i32x4_splat((int32_t)(base - 1));
+    v128_t incVec = wasm_i32x4_splat(64);
+    v128_t add8 = wasm_i32x4_splat(8);
+    uint32_t *safeout = out + outcapacity;
+    size_t i = 0;
+    for (; (i < length) && (out + 64 <= safeout); ++i) {
+        uint64_t w = words[i];
+        if (w == 0) {
+            baseVec = wasm_i32x4_add(baseVec, incVec);
+        } else {
+            for (int k = 0; k < 4; ++k) {
+                uint8_t byteA = (uint8_t)w;
+                uint8_t byteB = (uint8_t)(w >> 8);
+                w >>= 16;
+                v128_t vecA_lo =
+                    wasm_v128_load((const void *)&vecDecodeTable[byteA][0]);
+                v128_t vecA_hi =
+                    wasm_v128_load((const void *)&vecDecodeTable[byteA][4]);
+                v128_t vecB_lo =
+                    wasm_v128_load((const void *)&vecDecodeTable[byteB][0]);
+                v128_t vecB_hi =
+                    wasm_v128_load((const void *)&vecDecodeTable[byteB][4]);
+                uint8_t advanceA = lengthTable[byteA];
+                uint8_t advanceB = lengthTable[byteB];
+                vecA_lo = wasm_i32x4_add(baseVec, vecA_lo);
+                baseVec = wasm_i32x4_add(baseVec, add8);
+                vecA_hi = wasm_i32x4_add(baseVec, vecA_hi);
+                baseVec = wasm_i32x4_add(baseVec, add8);
+                vecB_lo = wasm_i32x4_add(baseVec, vecB_lo);
+                baseVec = wasm_i32x4_add(baseVec, add8);
+                vecB_hi = wasm_i32x4_add(baseVec, vecB_hi);
+                baseVec = wasm_i32x4_add(baseVec, add8);
+                wasm_v128_store((void *)out, vecA_lo);
+                wasm_v128_store((void *)(out + 4), vecA_hi);
+                out += advanceA;
+                wasm_v128_store((void *)out, vecB_lo);
+                wasm_v128_store((void *)(out + 4), vecB_hi);
+                out += advanceB;
+            }
+        }
+    }
+    base += (uint32_t)(i * 64);
+    for (; (i < length) && (out < safeout); ++i) {
+        uint64_t w = words[i];
+        while ((w != 0) && (out < safeout)) {
+            int r = roaring_trailing_zeroes(w);
+            uint32_t val = (uint32_t)r + base;
+            memcpy(out, &val, sizeof(uint32_t));
+            out++;
+            w &= (w - 1);
+        }
+        base += 64;
+    }
+    return out - initout;
+}
+
+size_t bitset_extract_setbits_wasm_uint16(const uint64_t *words, size_t length,
+                                          uint16_t *out, size_t outcapacity,
+                                          uint16_t base) {
+    uint16_t *initout = out;
+    v128_t baseVec = wasm_i16x8_splat((int16_t)(base - 1));
+    v128_t incVec = wasm_i16x8_splat(64);
+    v128_t add8 = wasm_i16x8_splat(8);
+    uint16_t *safeout = out + outcapacity;
+    const int numberofbytes = 2;
+    size_t i = 0;
+    for (; (i < length) && (out + numberofbytes * 8 <= safeout); ++i) {
+        uint64_t w = words[i];
+        if (w == 0) {
+            baseVec = wasm_i16x8_add(baseVec, incVec);
+        } else {
+            for (int k = 0; k < 4; ++k) {
+                uint8_t byteA = (uint8_t)w;
+                uint8_t byteB = (uint8_t)(w >> 8);
+                w >>= 16;
+                v128_t vecA = wasm_v128_load(
+                    (const void *)&vecDecodeTable_uint16[byteA][0]);
+                v128_t vecB = wasm_v128_load(
+                    (const void *)&vecDecodeTable_uint16[byteB][0]);
+                uint8_t advanceA = lengthTable[byteA];
+                uint8_t advanceB = lengthTable[byteB];
+                vecA = wasm_i16x8_add(baseVec, vecA);
+                baseVec = wasm_i16x8_add(baseVec, add8);
+                vecB = wasm_i16x8_add(baseVec, vecB);
+                baseVec = wasm_i16x8_add(baseVec, add8);
+                wasm_v128_store((void *)out, vecA);
+                out += advanceA;
+                wasm_v128_store((void *)out, vecB);
+                out += advanceB;
+            }
+        }
+    }
+    base += (uint16_t)(i * 64);
+    for (; (i < length) && (out < safeout); ++i) {
+        uint64_t w = words[i];
+        while ((w != 0) && (out < safeout)) {
+            int r = roaring_trailing_zeroes(w);
+            *out = (uint16_t)(r + base);
+            out++;
+            w &= (w - 1);
+        }
+        base += 64;
+    }
+    return out - initout;
+}
+
+#endif /* defined(CROARING_WASM_SIMD) */
 
 size_t bitset_extract_setbits(const uint64_t *words, size_t length,
                               uint32_t *out, uint32_t base) {
