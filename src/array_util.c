@@ -793,47 +793,395 @@ CROARING_UNTARGET_AVX2
 
 #if defined(CROARING_WASM_SIMD)
 
-/* Wasm SIMD intersect_vector16 was an approximate port of the x86 PCMPESTR path.
- * Differential digests vs native show it is not equivalent to intersect_uint16
- * on all inputs. Delegate to the portable implementation (same as non-simd wasm)
- * so wasm32+simd128 matches native digests; other SIMD (export, bitset) remains. */
+/* Wasm128 stand-in for _mm_cmpestrm / _mm_cmpistrm(_SIDD_UWORD_OPS|
+ * _SIDD_CMP_EQUAL_ANY |_SIDD_BIT_MASK): low 8 bits of r match _mm_extract_epi32(,0).
+ * pcmpestrm(...,len=8) always scans 8 lanes. After the roaring leading-zero SIMD
+ * loop, operands are nonzero (sorted uniqueness), so implicit-length pcmp behaves
+ * like full 8-word compare and this mask matches the x86 path (wasm-diff digests).
+ */
+static inline uint8_t croaring_wasm_equal_any_u16_mask8(v128_t vb, v128_t va) {
+    /* Lane indices must be constexpr for wasm_u16x8_extract_lane. */
+    v128_t acc = wasm_i64x2_const(0, 0);
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 0))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 1))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 2))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 3))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 4))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 5))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 6))));
+    acc =
+        wasm_v128_or(acc, wasm_i16x8_eq(va, wasm_i16x8_splat((int16_t)wasm_u16x8_extract_lane(vb, 7))));
+    ALIGNED(16) uint16_t acc_lanes[8];
+    wasm_v128_store((void *)acc_lanes, acc);
+    uint8_t mask8 = 0;
+    for (int i = 0; i < 8; i++) {
+        if (acc_lanes[i]) {
+            mask8 |= (uint8_t)(1u << i);
+        }
+    }
+    return mask8;
+}
+
+static inline void croaring_wasm_load_shuffle_mask16(uint32_t bitmask,
+                                                     v128_t *out_sm16) {
+    memcpy(out_sm16,
+           shuffle_mask16 + (size_t)bitmask * 16u,
+           sizeof(v128_t));
+}
+
+/**
+ * From Schlegel et al. / Lemire SIMD intersection — wasm mirror of x64 kernels.
+ */
 
 int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                            size_t s_b, uint16_t *C) {
-    return intersect_uint16(A, s_a, B, s_b, C);
+    size_t count = 0;
+    size_t i_a = 0, i_b = 0;
+    const int vectorlength = (int)(sizeof(v128_t) / sizeof(uint16_t));
+    const size_t st_a = (s_a / (size_t)vectorlength) * (size_t)vectorlength;
+    const size_t st_b = (s_b / (size_t)vectorlength) * (size_t)vectorlength;
+    v128_t v_a, v_b;
+    if ((i_a < st_a) && (i_b < st_b)) {
+        v_a = wasm_v128_load((const void *)&A[i_a]);
+        v_b = wasm_v128_load((const void *)&B[i_b]);
+        while ((A[i_a] == 0) || (B[i_b] == 0)) {
+            const unsigned rmask =
+                (unsigned)croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+            v128_t sm16;
+            croaring_wasm_load_shuffle_mask16(rmask & 0xffu, &sm16);
+            v128_t p = wasm_i8x16_swizzle(v_a, sm16);
+            wasm_v128_store((void *)&C[count], p);
+            count += __builtin_popcount(rmask & 0xffu);
+            const uint16_t a_max = A[i_a + vectorlength - 1];
+            const uint16_t b_max = B[i_b + vectorlength - 1];
+            if (a_max <= b_max) {
+                i_a += vectorlength;
+                if (i_a == st_a) break;
+                v_a = wasm_v128_load((const void *)&A[i_a]);
+            }
+            if (b_max <= a_max) {
+                i_b += vectorlength;
+                if (i_b == st_b) break;
+                v_b = wasm_v128_load((const void *)&B[i_b]);
+            }
+        }
+        if ((i_a < st_a) && (i_b < st_b)) {
+            while (true) {
+                const unsigned rmask =
+                    (unsigned)croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+                v128_t sm16;
+                croaring_wasm_load_shuffle_mask16(rmask & 0xffu, &sm16);
+                v128_t p = wasm_i8x16_swizzle(v_a, sm16);
+                wasm_v128_store((void *)&C[count], p);
+                count += __builtin_popcount(rmask & 0xffu);
+                const uint16_t a_max = A[i_a + vectorlength - 1];
+                const uint16_t b_max = B[i_b + vectorlength - 1];
+                if (a_max <= b_max) {
+                    i_a += vectorlength;
+                    if (i_a == st_a) break;
+                    v_a = wasm_v128_load((const void *)&A[i_a]);
+                }
+                if (b_max <= a_max) {
+                    i_b += vectorlength;
+                    if (i_b == st_b) break;
+                    v_b = wasm_v128_load((const void *)&B[i_b]);
+                }
+            }
+        }
+    }
+    while (i_a < s_a && i_b < s_b) {
+        uint16_t a = A[i_a];
+        uint16_t b = B[i_b];
+        if (a < b) {
+            i_a++;
+        } else if (b < a) {
+            i_b++;
+        } else {
+            C[count] = a;
+            count++;
+            i_a++;
+            i_b++;
+        }
+    }
+    return (int32_t)count;
 }
 
 int32_t intersect_vector16_inplace(uint16_t *A, size_t s_a, const uint16_t *B,
                                    size_t s_b) {
-    const size_t cap = (s_a < s_b) ? s_a : s_b;
-    if (cap == 0) {
-        return 0;
-    }
-    /* Intersection size is bounded by min(s_a, s_b). Array containers use ≤4096;
-     * use a small stack buffer in the normal case. */
-    if (cap <= 4096) {
-        uint16_t buffer[4096];
-        int32_t n = intersect_uint16(A, s_a, B, s_b, buffer);
-        if (n > 0) {
-            memmove(A, buffer, (size_t)n * sizeof(uint16_t));
+    size_t count = 0;
+    size_t i_a = 0, i_b = 0;
+    const int vectorlength = (int)(sizeof(v128_t) / sizeof(uint16_t));
+    const size_t st_a = (s_a / (size_t)vectorlength) * (size_t)vectorlength;
+    const size_t st_b = (s_b / (size_t)vectorlength) * (size_t)vectorlength;
+    v128_t v_a, v_b;
+    ALIGNED(16) uint16_t tmp_accum_storage[16];  /* scratch: two XMM words like x86 tmp[2] */
+    v128_t zero = wasm_i64x2_const(0, 0);
+    if ((i_a < st_a) && (i_b < st_b)) {
+        v_a = wasm_v128_load((const void *)&A[i_a]);
+        v_b = wasm_v128_load((const void *)&B[i_b]);
+        wasm_v128_store((void *)&tmp_accum_storage[0], zero);
+        wasm_v128_store((void *)&tmp_accum_storage[8], zero);
+        size_t tmp_count = 0;
+        while ((A[i_a] == 0) || (B[i_b] == 0)) {
+            const unsigned rmask =
+                (unsigned)croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+            v128_t sm16;
+            croaring_wasm_load_shuffle_mask16(rmask & 0xffu, &sm16);
+            v128_t p = wasm_i8x16_swizzle(v_a, sm16);
+            wasm_v128_store((void *)(tmp_accum_storage + tmp_count), p);
+            tmp_count += (size_t)__builtin_popcount(rmask & 0xffu);
+            const uint16_t a_max = A[i_a + vectorlength - 1];
+            const uint16_t b_max = B[i_b + vectorlength - 1];
+            if (a_max <= b_max) {
+                wasm_v128_store(
+                    (void *)&A[count],
+                    wasm_v128_load((const void *)&tmp_accum_storage[0]));
+                wasm_v128_store((void *)&tmp_accum_storage[0], zero);
+                count += tmp_count;
+                tmp_count = 0;
+                i_a += vectorlength;
+                if (i_a == st_a) break;
+                v_a = wasm_v128_load((const void *)&A[i_a]);
+            }
+            if (b_max <= a_max) {
+                i_b += vectorlength;
+                if (i_b == st_b) break;
+                v_b = wasm_v128_load((const void *)&B[i_b]);
+            }
         }
-        return n;
+        if ((i_a < st_a) && (i_b < st_b)) {
+            while (true) {
+                const unsigned rmask =
+                    (unsigned)croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+                v128_t sm16;
+                croaring_wasm_load_shuffle_mask16(rmask & 0xffu, &sm16);
+                v128_t p = wasm_i8x16_swizzle(v_a, sm16);
+                wasm_v128_store((void *)(tmp_accum_storage + tmp_count), p);
+                tmp_count += (size_t)__builtin_popcount(rmask & 0xffu);
+                const uint16_t a_max = A[i_a + vectorlength - 1];
+                const uint16_t b_max = B[i_b + vectorlength - 1];
+                if (a_max <= b_max) {
+                    wasm_v128_store(
+                        (void *)&A[count],
+                        wasm_v128_load((const void *)&tmp_accum_storage[0]));
+                    wasm_v128_store((void *)&tmp_accum_storage[0], zero);
+                    count += tmp_count;
+                    tmp_count = 0;
+                    i_a += vectorlength;
+                    if (i_a == st_a) break;
+                    v_a = wasm_v128_load((const void *)&A[i_a]);
+                }
+                if (b_max <= a_max) {
+                    i_b += vectorlength;
+                    if (i_b == st_b) break;
+                    v_b = wasm_v128_load((const void *)&B[i_b]);
+                }
+            }
+        }
+        for (size_t i = 0; i < tmp_count; i++) {
+            A[count] = tmp_accum_storage[i];
+            count++;
+        }
+        i_a += tmp_count;
     }
-    uint16_t *buffer = (uint16_t *)malloc(cap * sizeof(uint16_t));
-    if (buffer == NULL) {
-        return 0;
+    while (i_a < s_a && i_b < s_b) {
+        uint16_t a = A[i_a];
+        uint16_t b = B[i_b];
+        if (a < b) {
+            i_a++;
+        } else if (b < a) {
+            i_b++;
+        } else {
+            A[count] = a;
+            count++;
+            i_a++;
+            i_b++;
+        }
     }
-    int32_t n = intersect_uint16(A, s_a, B, s_b, buffer);
-    if (n > 0) {
-        memmove(A, buffer, (size_t)n * sizeof(uint16_t));
-    }
-    free(buffer);
-    return n;
+    return (int32_t)count;
 }
 
 int32_t intersect_vector16_cardinality(const uint16_t *A, size_t s_a,
                                        const uint16_t *B, size_t s_b) {
-    return intersect_uint16_cardinality(A, s_a, B, s_b);
+    size_t count = 0;
+    size_t i_a = 0, i_b = 0;
+    const int vectorlength = (int)(sizeof(v128_t) / sizeof(uint16_t));
+    const size_t st_a = (s_a / (size_t)vectorlength) * (size_t)vectorlength;
+    const size_t st_b = (s_b / (size_t)vectorlength) * (size_t)vectorlength;
+    v128_t v_a, v_b;
+    if ((i_a < st_a) && (i_b < st_b)) {
+        v_a = wasm_v128_load((const void *)&A[i_a]);
+        v_b = wasm_v128_load((const void *)&B[i_b]);
+        while ((A[i_a] == 0) || (B[i_b] == 0)) {
+            const unsigned rmask =
+                (unsigned)croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+            count += __builtin_popcount(rmask & 0xffu);
+            const uint16_t a_max = A[i_a + vectorlength - 1];
+            const uint16_t b_max = B[i_b + vectorlength - 1];
+            if (a_max <= b_max) {
+                i_a += vectorlength;
+                if (i_a == st_a) break;
+                v_a = wasm_v128_load((const void *)&A[i_a]);
+            }
+            if (b_max <= a_max) {
+                i_b += vectorlength;
+                if (i_b == st_b) break;
+                v_b = wasm_v128_load((const void *)&B[i_b]);
+            }
+        }
+        if ((i_a < st_a) && (i_b < st_b)) {
+            while (true) {
+                const unsigned rmask =
+                    (unsigned)croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+                count += __builtin_popcount(rmask & 0xffu);
+                const uint16_t a_max = A[i_a + vectorlength - 1];
+                const uint16_t b_max = B[i_b + vectorlength - 1];
+                if (a_max <= b_max) {
+                    i_a += vectorlength;
+                    if (i_a == st_a) break;
+                    v_a = wasm_v128_load((const void *)&A[i_a]);
+                }
+                if (b_max <= a_max) {
+                    i_b += vectorlength;
+                    if (i_b == st_b) break;
+                    v_b = wasm_v128_load((const void *)&B[i_b]);
+                }
+            }
+        }
+    }
+    while (i_a < s_a && i_b < s_b) {
+        uint16_t a = A[i_a];
+        uint16_t b = B[i_b];
+        if (a < b) {
+            i_a++;
+        } else if (b < a) {
+            i_b++;
+        } else {
+            count++;
+            i_a++;
+            i_b++;
+        }
+    }
+    return (int32_t)count;
+}
+
+/////////
+// Warning:
+// This function may not be safe if A == C or B == C.
+/////////
+int32_t difference_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
+                            size_t s_b, uint16_t *C) {
+    if (s_a == 0) return 0;
+    if (s_b == 0) {
+        if (A != C) memcpy(C, A, sizeof(uint16_t) * s_a);
+        return (int32_t)s_a;
+    }
+    int32_t count = 0;
+    if ((A[0] == 0) || (B[0] == 0)) {
+        if ((A[0] == 0) && (B[0] == 0)) {
+            A++;
+            s_a--;
+            B++;
+            s_b--;
+        } else if (A[0] == 0) {
+            C[count++] = 0;
+            A++;
+            s_a--;
+        } else {
+            B++;
+            s_b--;
+        }
+    }
+    size_t i_a = 0, i_b = 0;
+    const size_t vectorlength = sizeof(v128_t) / sizeof(uint16_t);
+    const size_t st_a = (s_a / vectorlength) * vectorlength;
+    const size_t st_b = (s_b / vectorlength) * vectorlength;
+    if ((i_a < st_a) && (i_b < st_b)) {
+        v128_t v_a = wasm_v128_load((const void *)&A[i_a]);
+        v128_t v_b = wasm_v128_load((const void *)&B[i_b]);
+        uint32_t running_mask8_found_in_b = 0;
+        while (true) {
+            const uint8_t found_here =
+                croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+            running_mask8_found_in_b |= (uint32_t)found_here;
+            const uint16_t a_max = A[i_a + vectorlength - 1];
+            const uint16_t b_max = B[i_b + vectorlength - 1];
+            if (a_max <= b_max) {
+                const int bitmask_belongs_to_difference =
+                    (int)(running_mask8_found_in_b ^ 0xffu);
+                v128_t sm16;
+                croaring_wasm_load_shuffle_mask16(
+                    (uint32_t)bitmask_belongs_to_difference, &sm16);
+                v128_t p = wasm_i8x16_swizzle(v_a, sm16);
+                wasm_v128_store((void *)&C[count], p);
+                count += __builtin_popcount((unsigned)bitmask_belongs_to_difference &
+                                            0xffu);
+                i_a += vectorlength;
+                if (i_a == st_a) break;
+                running_mask8_found_in_b = 0;
+                v_a = wasm_v128_load((const void *)&A[i_a]);
+            }
+            if (b_max <= a_max) {
+                i_b += vectorlength;
+                if (i_b == st_b) break;
+                v_b = wasm_v128_load((const void *)&B[i_b]);
+            }
+        }
+        if (i_a < st_a) {
+            uint16_t buffer[8];
+            memset(buffer, 0, 8 * sizeof(uint16_t));
+            memcpy(buffer, B + i_b, (s_b - i_b) * sizeof(uint16_t));
+            v_b = wasm_v128_load((const void *)buffer);
+            const uint8_t found_here =
+                croaring_wasm_equal_any_u16_mask8(v_b, v_a);
+            running_mask8_found_in_b |= (uint32_t)found_here;
+            const int bitmask_belongs_to_difference =
+                (int)(running_mask8_found_in_b ^ 0xffu);
+            v128_t sm16;
+            croaring_wasm_load_shuffle_mask16(
+                (uint32_t)bitmask_belongs_to_difference, &sm16);
+            v128_t p = wasm_i8x16_swizzle(v_a, sm16);
+            wasm_v128_store((void *)&C[count], p);
+            count += __builtin_popcount((unsigned)bitmask_belongs_to_difference &
+                                        0xffu);
+            i_a += vectorlength;
+        }
+    }
+    while (i_a < s_a && i_b < s_b) {
+        uint16_t a = A[i_a];
+        uint16_t b = B[i_b];
+        if (b < a) {
+            i_b++;
+        } else if (a < b) {
+            C[count] = a;
+            count++;
+            i_a++;
+        } else {
+            i_a++;
+            i_b++;
+        }
+    }
+    if (i_a < s_a) {
+        if (C == A) {
+            assert((size_t)count <= i_a);
+            if ((size_t)count < i_a) {
+                memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
+            }
+        } else {
+            for (size_t i = 0; i < (s_a - i_a); i++) {
+                C[count + i] = A[i + i_a];
+            }
+        }
+        count += (int32_t)(s_a - i_a);
+    }
+    return count;
 }
 
 int croaring_wasm_array_container_to_uint32_array(void *vout,
@@ -1963,23 +2311,258 @@ CROARING_UNTARGET_AVX2
 
 #if defined(CROARING_WASM_SIMD)
 
-/* The prior wasm merge/store_union path (mirroring sse_merge + store_unique) did
- * not match canonical union_uint16/xor_uint16 in all cases—the wasm amalgamation
- * digest checks caught membership drift. Delegate to portable kernels; other
- * wasm SIMD (intersect_vector16, bitset extract, array export) retains SIMD use. */
+// Port of SSE merge / union / xor from the CROARING_IS_X64 block above, using
+// wasm128 intrinsics. Matches union_uint16 / xor_uint16 for differential tests.
+
+static inline v128_t croaring_wasm_alignr_epi8(v128_t a, v128_t b, int imm_bytes) {
+    ALIGNED(16) uint8_t tmp[32];
+    wasm_v128_store((void *)tmp, b);
+    wasm_v128_store((void *)(tmp + 16), a);
+    return wasm_v128_load((const void *)(tmp + (unsigned)imm_bytes));
+}
+
+static inline void croaring_wasm_merge_u16x8(const v128_t *vInput1,
+                                             const v128_t *vInput2,
+                                             v128_t *vecMin,
+                                             v128_t *vecMax) {
+    v128_t vecTmp;
+    vecTmp = wasm_u16x8_min(*vInput1, *vInput2);
+    *vecMax = wasm_u16x8_max(*vInput1, *vInput2);
+    vecTmp = croaring_wasm_alignr_epi8(vecTmp, vecTmp, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    vecTmp = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    vecTmp = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    vecTmp = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    vecTmp = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    vecTmp = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    vecTmp = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+    *vecMin = wasm_u16x8_min(vecTmp, *vecMax);
+    *vecMax = wasm_u16x8_max(vecTmp, *vecMax);
+    *vecMin = croaring_wasm_alignr_epi8(*vecMin, *vecMin, 2);
+}
+
+static inline void croaring_wasm_load_uniqshuf_key(int M, v128_t *key) {
+    memcpy(key, uniqshuf + (size_t)(unsigned)M * 16u, sizeof(v128_t));
+}
+
+static inline int croaring_wasm_store_unique(v128_t old, v128_t newval,
+                                             uint16_t *output) {
+    const v128_t z = wasm_i64x2_const(0, 0);
+    v128_t vecTmp = croaring_wasm_alignr_epi8(newval, old, 16 - 2);
+    v128_t packed =
+        wasm_i8x16_narrow_i16x8(wasm_i16x8_eq(vecTmp, newval), z);
+    int M = (int)wasm_i8x16_bitmask(packed);
+    int numberofnewvalues = 8 - __builtin_popcount((unsigned)M & 0xffffu);
+    v128_t key;
+    croaring_wasm_load_uniqshuf_key(M, &key);
+    v128_t val = wasm_i8x16_swizzle(newval, key);
+    wasm_v128_store((void *)output, val);
+    return numberofnewvalues;
+}
+
+static inline int croaring_wasm_store_unique_xor(v128_t old, v128_t newval,
+                                                 uint16_t *output) {
+    v128_t vecTmp1 = croaring_wasm_alignr_epi8(newval, old, 16 - 4);
+    v128_t vecTmp2 = croaring_wasm_alignr_epi8(newval, old, 16 - 2);
+    v128_t equalleft = wasm_i16x8_eq(vecTmp2, vecTmp1);
+    v128_t equalright = wasm_i16x8_eq(vecTmp2, newval);
+    v128_t equalleftoright = wasm_v128_or(equalleft, equalright);
+    const v128_t z = wasm_i64x2_const(0, 0);
+    v128_t packed = wasm_i8x16_narrow_i16x8(equalleftoright, z);
+    int M = (int)wasm_i8x16_bitmask(packed);
+    int numberofnewvalues = 8 - __builtin_popcount((unsigned)M & 0xffffu);
+    v128_t key;
+    croaring_wasm_load_uniqshuf_key(M, &key);
+    v128_t val = wasm_i8x16_swizzle(vecTmp2, key);
+    wasm_v128_store((void *)output, val);
+    return numberofnewvalues;
+}
 
 uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
                         const uint16_t *array2, uint32_t length2,
                         uint16_t *output) {
-    return (uint32_t)union_uint16(array1, (size_t)length1, array2,
-                                  (size_t)length2, output);
+    if ((length1 < 8) || (length2 < 8)) {
+        return (uint32_t)union_uint16(array1, (size_t)length1, array2,
+                                      (size_t)length2, output);
+    }
+    v128_t vA, vB, V, vecMin, vecMax;
+    v128_t laststore;
+    uint16_t *initoutput = output;
+    uint32_t len1 = length1 / 8;
+    uint32_t len2 = length2 / 8;
+    uint32_t pos1 = 0;
+    uint32_t pos2 = 0;
+    vA = wasm_v128_load((const void *)(array1 + 8 * pos1));
+    pos1++;
+    vB = wasm_v128_load((const void *)(array2 + 8 * pos2));
+    pos2++;
+    croaring_wasm_merge_u16x8(&vA, &vB, &vecMin, &vecMax);
+    laststore = wasm_i16x8_splat(-1);
+    output += croaring_wasm_store_unique(laststore, vecMin, output);
+    laststore = vecMin;
+    if ((pos1 < len1) && (pos2 < len2)) {
+        uint16_t curA, curB;
+        curA = array1[8 * pos1];
+        curB = array2[8 * pos2];
+        while (true) {
+            if (curA <= curB) {
+                V = wasm_v128_load((const void *)(array1 + 8 * pos1));
+                pos1++;
+                if (pos1 < len1) {
+                    curA = array1[8 * pos1];
+                } else {
+                    break;
+                }
+            } else {
+                V = wasm_v128_load((const void *)(array2 + 8 * pos2));
+                pos2++;
+                if (pos2 < len2) {
+                    curB = array2[8 * pos2];
+                } else {
+                    break;
+                }
+            }
+            croaring_wasm_merge_u16x8(&V, &vecMax, &vecMin, &vecMax);
+            output += croaring_wasm_store_unique(laststore, vecMin, output);
+            laststore = vecMin;
+        }
+        croaring_wasm_merge_u16x8(&V, &vecMax, &vecMin, &vecMax);
+        output += croaring_wasm_store_unique(laststore, vecMin, output);
+        laststore = vecMin;
+    }
+    uint32_t len = (uint32_t)(output - initoutput);
+    uint16_t buffer[16];
+    uint32_t leftoversize =
+        (uint32_t)croaring_wasm_store_unique(laststore, vecMax, buffer);
+    if (pos1 == len1) {
+        memcpy(buffer + leftoversize, array1 + 8 * pos1,
+               (length1 - 8 * len1) * sizeof(uint16_t));
+        leftoversize += length1 - 8 * len1;
+        qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+
+        leftoversize = unique(buffer, leftoversize);
+        len += (uint32_t)union_uint16(buffer, leftoversize, array2 + 8 * pos2,
+                                      length2 - 8 * pos2, output);
+    } else {
+        memcpy(buffer + leftoversize, array2 + 8 * pos2,
+               (length2 - 8 * len2) * sizeof(uint16_t));
+        leftoversize += length2 - 8 * len2;
+        qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+        leftoversize = unique(buffer, leftoversize);
+        len += (uint32_t)union_uint16(buffer, leftoversize, array1 + 8 * pos1,
+                                      length1 - 8 * pos1, output);
+    }
+    return len;
 }
 
 uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
                       const uint16_t *array2, uint32_t length2,
                       uint16_t *output) {
-    return xor_uint16(array1, (int32_t)length1, array2, (int32_t)length2,
-                      output);
+    if ((length1 < 8) || (length2 < 8)) {
+        return (uint32_t)xor_uint16(array1, (int32_t)length1, array2,
+                                    (int32_t)length2, output);
+    }
+    v128_t vA, vB, V, vecMin, vecMax;
+    v128_t laststore;
+    uint16_t *initoutput = output;
+    uint32_t len1 = length1 / 8;
+    uint32_t len2 = length2 / 8;
+    uint32_t pos1 = 0;
+    uint32_t pos2 = 0;
+    vA = wasm_v128_load((const void *)(array1 + 8 * pos1));
+    pos1++;
+    vB = wasm_v128_load((const void *)(array2 + 8 * pos2));
+    pos2++;
+    croaring_wasm_merge_u16x8(&vA, &vB, &vecMin, &vecMax);
+    laststore = wasm_i16x8_splat(-1);
+    uint16_t buffer[17];
+    output += croaring_wasm_store_unique_xor(laststore, vecMin, output);
+
+    laststore = vecMin;
+    if ((pos1 < len1) && (pos2 < len2)) {
+        uint16_t curA, curB;
+        curA = array1[8 * pos1];
+        curB = array2[8 * pos2];
+        while (true) {
+            if (curA <= curB) {
+                V = wasm_v128_load((const void *)(array1 + 8 * pos1));
+                pos1++;
+                if (pos1 < len1) {
+                    curA = array1[8 * pos1];
+                } else {
+                    break;
+                }
+            } else {
+                V = wasm_v128_load((const void *)(array2 + 8 * pos2));
+                pos2++;
+                if (pos2 < len2) {
+                    curB = array2[8 * pos2];
+                } else {
+                    break;
+                }
+            }
+            croaring_wasm_merge_u16x8(&V, &vecMax, &vecMin, &vecMax);
+            output +=
+                croaring_wasm_store_unique_xor(laststore, vecMin, output);
+            laststore = vecMin;
+        }
+        croaring_wasm_merge_u16x8(&V, &vecMax, &vecMin, &vecMax);
+        output +=
+            croaring_wasm_store_unique_xor(laststore, vecMin, output);
+        laststore = vecMin;
+    }
+    uint32_t len = (uint32_t)(output - initoutput);
+
+    int leftoversize =
+        croaring_wasm_store_unique_xor(laststore, vecMax, buffer);
+    uint16_t vec7 = (uint16_t)wasm_u16x8_extract_lane(vecMax, 7);
+    uint16_t vec6 = (uint16_t)wasm_u16x8_extract_lane(vecMax, 6);
+    if (vec7 != vec6) buffer[leftoversize++] = vec7;
+    if (pos1 == len1) {
+        memcpy(buffer + leftoversize, array1 + 8 * pos1,
+               (length1 - 8 * len1) * sizeof(uint16_t));
+        leftoversize += (int)(length1 - 8 * len1);
+        if (leftoversize == 0) {  // trivial case
+            memcpy(output, array2 + 8 * pos2,
+                   (length2 - 8 * pos2) * sizeof(uint16_t));
+            len += (length2 - 8 * pos2);
+        } else {
+            qsort(buffer, (size_t)leftoversize, sizeof(uint16_t),
+                  uint16_compare);
+            leftoversize =
+                (int)unique_xor(buffer, (uint32_t)leftoversize);
+            len += (uint32_t)xor_uint16(buffer, leftoversize, array2 + 8 * pos2,
+                                        (int32_t)(length2 - 8 * pos2), output);
+        }
+    } else {
+        memcpy(buffer + leftoversize, array2 + 8 * pos2,
+               (length2 - 8 * len2) * sizeof(uint16_t));
+        leftoversize += (int)(length2 - 8 * len2);
+        if (leftoversize == 0) {  // trivial case
+            memcpy(output, array1 + 8 * pos1,
+                   (length1 - 8 * pos1) * sizeof(uint16_t));
+            len += (length1 - 8 * pos1);
+        } else {
+            qsort(buffer, (size_t)leftoversize, sizeof(uint16_t),
+                  uint16_compare);
+            leftoversize =
+                (int)unique_xor(buffer, (uint32_t)leftoversize);
+            len += (uint32_t)xor_uint16(buffer, leftoversize, array1 + 8 * pos1,
+                                        (int32_t)(length1 - 8 * pos1), output);
+        }
+    }
+    return len;
 }
 
 #endif  // defined(CROARING_WASM_SIMD)

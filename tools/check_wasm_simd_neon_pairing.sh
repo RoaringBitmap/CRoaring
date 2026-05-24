@@ -1,25 +1,57 @@
 #!/usr/bin/env bash
-# Cheap structural heuristic for src/**/*.c that use Wasm SIMD128 and/or Neon SIMD.
 #
-# Rules (does NOT parse preprocessor nesting; cannot prove semantic parity):
+# NEON vs WebAssembly SIMD128 — structural preprocessor pairing heuristic
 #
-# - Files that only have #elif CROARING_USENEON (no CROARING_WASM_SIMD lines): PASS.
-#   Extra Neon-only optimizations are allowed without dummy Wasm branches.
-# - Files that only have #elif CROARING_WASM_SIMD (no NEON): PASS.
-# - Files that declare BOTH: fail if Wasm #elif blocks outnumber NEON (each Wasm path
-#   should have Neon consideration downstream). Accept extra Neon-only branches.
+# Many portable SIMD forks use chains like:
+#   #if CROARING_IS_X64 ... #elif defined(CROARING_WASM_SIMD) ... #elif defined(CROARING_USENEON)
 #
-# Greedy pairing: each Wasm line ascends paired with some unused NEON strictly below
-# the next Wasm (smallest NEON strictly after this Wasm consumes that branch). This
-# enforces Wasm-before-NEON order for overlapping paths while allowing trailing Neon-only.
-
-# Passing here does not imply NEON/WASM algorithmic equivalence — use review plus
-# tools/run_wasm_differential_test.sh digest parity for semantics.
+# Goal: discourage "orphaned" blocks where Wasm gets a specialized #elif but Neon has
+# fewer corresponding #elif branches in the same file (risk of drifting ARM-only regressions).
+# This script does NOT parse #if nesting; it only compares line-number lists of directives.
 #
-# Usage: bash tools/check_wasm_simd_neon_pairing.sh
+# Rules (cheap grep over src/**/*.c; cannot prove semantic parity):
+#
+# - Files that only use #elif CROARING_USENEON (no CROARING_WASM_SIMD lines): PASS.
+#   Neon-only optimizations are OK without dummy Wasm branches.
+# - Files that only use #elif CROARING_WASM_SIMD (no NEON): PASS.
+#   Wasm-only SIMD paths need no NEON twin in that file (e.g. array-only kernels).
+# - Files that use BOTH directives: PASS only if NEON #elif count >= Wasm #elif count, and each
+#   Wasm line can be paired with a strictly later NEON line (greedy: enforce Wasm-before-NEON order
+#   for overlapping SIMD paths while allowing trailing Neon-only code).
+#
+# CI: `.github/workflows/emscripten.yml` runs this script before wasm differential digest.
+# Semantics remain for `tools/run_wasm_differential_test.sh` digest parity vs native/gcc.
+#
+# Usage:
+#   bash tools/check_wasm_simd_neon_pairing.sh [--help|-h]
 # Exit 0 OK, 1 on violation.
 
 set -euo pipefail
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    cat <<'EOF'
+Structural NEON vs WebAssembly SIMD pairing check for src/**/*.c.
+
+Counts #elif defined(CROARING_USENEON) vs #elif defined(CROARING_WASM_SIMD).
+Flags files where both macros appear but Neon has fewer #elif branches than Wasm,
+or a Wasm branch has no Neon #elif strictly below it in source order — helps catch
+orphaned Wasm-only blocks when ARM Neon should mirror the fork.
+
+Does not parse #if nesting. Does not imply algorithmic NEON≡WASM parity; use review
+plus tools/run_wasm_differential_test.sh for behavior.
+
+Runs in CI: .github/workflows/emscripten.yml (before wasm differential digest).
+
+Usage:
+  bash tools/check_wasm_simd_neon_pairing.sh
+EOF
+    exit 0
+fi
+
+if [[ -n "${1:-}" ]]; then
+    echo "check_wasm_simd_neon_pairing.sh: unexpected argument \"$1\"; use --help" >&2
+    exit 1
+fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FAIL=0

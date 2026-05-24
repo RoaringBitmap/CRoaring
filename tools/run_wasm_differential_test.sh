@@ -34,6 +34,9 @@
 # Local dev (macOS/Linux): from repo root,
 #   bash tools/run_wasm_differential_test.sh
 #
+# Related (structural preprocessor hygiene, CI emscripten workflow):
+#   bash tools/check_wasm_simd_neon_pairing.sh
+#
 # Docker (no local Emscripten/WABT): bash tools/run-wasm-diff-docker.sh
 
 set -euo pipefail
