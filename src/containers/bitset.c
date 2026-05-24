@@ -285,7 +285,13 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 }
 
 #elif defined(CROARING_WASM_SIMD)
-/** Two u64 lanes; popcount matches portable roaring_hamming per word. */
+/* Bitset cardinality: v128-wide loads chunk memory, then two roaring_hamming
+ * (i64 popcnt) calls per lane. We avoid wasm_i8x16_popcnt + byte-lane tally:
+ * Wasm engines commonly lower native-width popcnt to one fast instruction while
+ * byte-vector horizontal sums can be poorer. Naming / PR “SIMD” here means
+ * -msimd128 builtins for loads and lane extract, not SIMD popcount kernels. */
+
+/** Two packed u64 words from one v128; popcounts match roaring_hamming. */
 static inline int32_t croaring_wasm_popcount_packed_u64_pair(v128_t v) {
     uint64_t a = wasm_u64x2_extract_lane(v, 0);
     uint64_t b = wasm_u64x2_extract_lane(v, 1);
@@ -803,7 +809,7 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
 
 #elif defined(CROARING_WASM_SIMD)
 
-/** Popcount both uint64 lanes in parallel (same totals as roaring_hamming). */
+/** Sum of bit counts in two u64 lanes of v (roaring_hamming per lane). */
 static inline int32_t croaring_wasm_v128_carrying_popcnt_pair(v128_t v) {
     uint64_t a = wasm_u64x2_extract_lane(v, 0);
     uint64_t b = wasm_u64x2_extract_lane(v, 1);
@@ -883,8 +889,8 @@ int bitset_container_##opname##_nocard(const bitset_container_t *src_1,   \
 }                                                                         \
 int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
                               const bitset_container_t *src_2) {          \
-    const uint64_t *__restrict words_1 = src_1->words;                     \
-    const uint64_t *__restrict words_2 = src_2->words;                    \
+    const uint64_t *__restrict__ words_1 = src_1->words;                    \
+    const uint64_t *__restrict__ words_2 = src_2->words;                    \
     int32_t sum = 0;                                                       \
     for (size_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {       \
         v128_t ax0 = wasm_v128_load((const void *)(words_1 + i));          \

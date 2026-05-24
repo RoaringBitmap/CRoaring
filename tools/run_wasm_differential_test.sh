@@ -178,7 +178,7 @@ verify_llvm_wasm_intrinsics_in_roaring_ir() {
   echo "== LLVM IR: wasm SIMD builtins in amalgamation roaring.ll (-O2 -msimd128) =="
   local ll="$WORK/ro.ll"
   "$EMCC" -std=c11 -O2 -msimd128 -emit-llvm -S -DCROARING_AMALGAMATED=1 \
-    -DCROARING_WASM_SIMD_RUN_CONTAINER_EXPAND=1 -I"$AMALG" "$ROARING_C" -o "$ll"
+    -I"$AMALG" "$ROARING_C" -o "$ll"
 
   local n_legacy n_pop16
   n_legacy="$(count_distinct_llvm_wasm_intrinsic_names "$ll")"
@@ -226,12 +226,6 @@ if [[ ! -f "$scalar_wasm_file" ]]; then
 fi
 "$NODE" "$SCALAR_JS" >"$SCALAR_TXT"
 
-# Amalgamation -msimd128 builds that exercise SIMD run-container export parity
-# (digest vs native scalar / AVX paths and wasm scalar) must compile with:
-#   -DCROARING_WASM_SIMD_RUN_CONTAINER_EXPAND=1
-# (croaring portability.h defaults off so ad-hoc SIMD wasm avoids unvetted SIMD
-# until callers opt in.)
-
 echo "== WebAssembly SIMD (emcc -msimd128) =="
 cat >"$WORK/simd_preproc.c" <<'EOF'
 #if !defined(__wasm_simd128__)
@@ -241,8 +235,7 @@ int main(void) { return 0; }
 EOF
 "$EMCC" -msimd128 -c "$WORK/simd_preproc.c" -o "$WORK/simd_preproc.o"
 
-"$EMCC" -std=c11 -O2 -msimd128 -DCROARING_AMALGAMATED=1 \
-  -DCROARING_WASM_SIMD_RUN_CONTAINER_EXPAND=1 -I"$AMALG" \
+"$EMCC" -std=c11 -O2 -msimd128 -DCROARING_AMALGAMATED=1 -I"$AMALG" \
   "$ROARING_C" "$HARNESS" \
   -sALLOW_MEMORY_GROWTH=1 \
   -sSTACK_SIZE=8388608 \
@@ -257,9 +250,8 @@ fi
 
 echo "== Roaring.c wasm objects (isolate library SIMD uplift) =="
 "$EMCC" -std=c11 -O2 -c -DCROARING_AMALGAMATED=1 -I"$AMALG" "$ROARING_C" -o "$WORK/roaring_lib.scalar.o"
-"$EMCC" -std=c11 -O2 -msimd128 -c -DCROARING_AMALGAMATED=1 \
-  -DCROARING_WASM_SIMD_RUN_CONTAINER_EXPAND=1 -I"$AMALG" "$ROARING_C" \
-  -o "$WORK/roaring_lib.simd.o"
+"$EMCC" -std=c11 -O2 -msimd128 -c -DCROARING_AMALGAMATED=1 -I"$AMALG" \
+  "$ROARING_C" -o "$WORK/roaring_lib.simd.o"
 verify_wasm_simd_artifacts "$scalar_wasm_file" "$simd_wasm_file" "$WORK/roaring_lib.scalar.o" "$WORK/roaring_lib.simd.o"
 verify_llvm_wasm_intrinsics_in_roaring_ir
 

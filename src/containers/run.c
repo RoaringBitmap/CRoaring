@@ -1111,9 +1111,8 @@ int run_container_cardinality(const run_container_t *run) {
 }
 
 CROARING_ALLOW_UNALIGNED
-/* i32x4 chunked export mirrored from AVX2 (same algorithm, 4-wide lanes).
- * Bit-identical to the scalar loop; wasm differential digest asserts parity vs
- * native and wasm scalar (tools/run_wasm_differential_test.sh). */
+/* i32x4 chunked export (always under CROARING_WASM_SIMD); mirrors AVX2.
+ * Wasm differential digest checks parity vs native and wasm scalar. */
 static int _wasm128_run_container_to_uint32_array(void *vout,
                                                   const run_container_t *cont,
                                                   uint32_t base) {
@@ -1153,23 +1152,7 @@ static int _wasm128_run_container_to_uint32_array(void *vout,
 CROARING_ALLOW_UNALIGNED
 int run_container_to_uint32_array(void *vout, const run_container_t *cont,
                                   uint32_t base) {
-#if CROARING_WASM_SIMD_RUN_CONTAINER_EXPAND
     return _wasm128_run_container_to_uint32_array(vout, cont, base);
-#else
-    int outpos = 0;
-    uint32_t *out = (uint32_t *)vout;
-    for (int i = 0; i < cont->n_runs; ++i) {
-        uint32_t run_start = base + cont->runs[i].value;
-        uint16_t le = cont->runs[i].length;
-        for (int j = 0; j <= le; ++j) {
-            uint32_t val = run_start + j;
-            memcpy(out + outpos, &val,
-                   sizeof(uint32_t));  // should be compiled as a MOV on x64
-            outpos++;
-        }
-    }
-    return outpos;
-#endif /* CROARING_WASM_SIMD_RUN_CONTAINER_EXPAND */
 }
 
 #else

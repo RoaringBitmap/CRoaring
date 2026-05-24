@@ -158,10 +158,8 @@ static int metamorphic_or_chain_fuzz(const uint8_t *data, size_t size) {
     const uint32_t qb1 = (uint32_t)fuzz_pull8(data, size, &pos);
     const uint32_t qb2 = (uint32_t)fuzz_pull8(data, size, &pos);
 
+    /* Bounded doc universe: 500 … 49799 inclusive (always nonzero). */
     uint32_t doc_cap = 500u + (((qb0 << 16u) | (qb1 << 8u) | qb2) % 49300u);
-    if (doc_cap < 100u) {
-        doc_cap = 100u;
-    }
 
     roaring_bitmap_t **leaves =
         (roaring_bitmap_t **)calloc((size_t)n_leaves, sizeof(*leaves));
@@ -182,8 +180,7 @@ static int metamorphic_or_chain_fuzz(const uint8_t *data, size_t size) {
         nadds += 5;
 
         for (uint32_t j = 0; j < nadds; j++) {
-            uint32_t v = fuzz_pull_le32(data, size, &pos) %
-                         (doc_cap == 0u ? 1u : doc_cap);
+            uint32_t v = fuzz_pull_le32(data, size, &pos) % doc_cap;
             roaring_bitmap_add(leaves[i], v);
             if (v > operand_max_seen) {
                 operand_max_seen = v;
