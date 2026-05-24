@@ -815,6 +815,8 @@ static inline void croaring_wasm_v128_store_u64_pair(uint64_t *words, v128_t v) 
 #define CROARING_WASM_COMBINE_and(a, b) wasm_v128_and((a), (b))
 #define CROARING_WASM_COMBINE_intersection(a, b) wasm_v128_and((a), (b))
 #define CROARING_WASM_COMBINE_xor(a, b) wasm_v128_xor((a), (b))
+/* wasm_v128_andnot(a,b) is a & ~b. x86 _mm_andnot_si128(a,b) is ~a & b. Scalar
+ * bitset ops use src_1 & ~src_2, so WASM (a,b) maps directly—do not swap. */
 #define CROARING_WASM_COMBINE_andnot(a, b) wasm_v128_andnot((a), (b))
 
 #define CROARING_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)                \

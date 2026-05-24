@@ -1105,6 +1105,9 @@ static inline int _wasm_simd_run_container_cardinality(
     if (n_runs > step) {
         v128_t acc = wasm_i32x4_const(0, 0, 0, 0);
         for (; k + step <= n_runs; k += step) {
+            /* Assumes rle16_t is packed { value, length } with no padding and
+             * little-endian so loading 4 runs as i32 lanes and shifting right
+             * by 16 extracts the lengths. */
             v128_t w = wasm_v128_load((const void *)(runs + k));
             v128_t lens = wasm_u32x4_shr(w, 16);
             acc = wasm_i32x4_add(acc, lens);

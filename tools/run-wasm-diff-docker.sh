@@ -8,7 +8,9 @@
 # Env:
 #   CROARING_WASM_DIFF_IMAGE — image tag (default croaring/wasm-diff:local)
 #   DOCKER_PLATFORM          — default linux/amd64 (emsdk official image)
-#   WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD, WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD — forwarded when non-empty.
+#   WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD, WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD —
+#       forwarded into the container when set (local debugging only; forbidden in CI
+#       via GITHUB_ACTIONS check inside run_wasm_differential_test.sh).
 
 set -euo pipefail
 

@@ -152,7 +152,9 @@ int main(void) {
     roaring_bitmap_t *anba = roaring_bitmap_andnot(b, a);
 
     roaring_bitmap_or_inplace(w, orab);
-    roaring_bitmap_and_inplace(w, roaring_bitmap_or(andab, xorab));
+    roaring_bitmap_t *tmp_or = roaring_bitmap_or(andab, xorab);
+    roaring_bitmap_and_inplace(w, tmp_or);
+    roaring_bitmap_free(tmp_or);
     roaring_bitmap_xor_inplace(w, anab);
     roaring_bitmap_andnot_inplace(w, anba);
 

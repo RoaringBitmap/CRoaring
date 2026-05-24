@@ -5,7 +5,8 @@
 # Requirements: bash, cc (or $CC), emcc (or $EMCC), node (or $NODE), wasm-objdump
 #   (from WABT or $EMSDK/upstream/bin when using Emscripten).
 #
-# Optional env:
+# Optional env (local debugging / broken toolchains only — do not use to green CI;
+# forbidden when GITHUB_ACTIONS is set):
 #   WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD=1 — skip wasm-objdump bytecode uplift checks below.
 #   WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD=1 — skip amalgamation LLVM IR SIMD proof below.
 #
@@ -13,6 +14,9 @@
 #
 # wasm-objdump artifact proof (still heuristic on opcodes): linked + roaring-only wasm objects
 #   must show SIMD uplift for -msimd128 vs scalar, so digest legs aren’t bitwise-identical stubs.
+#   Regex patterns and wasm-objdump formatting can change with newer Emscripten/LLVM codegen.
+#   The roaring.c-only comparison reduces false negatives from SIMD-looking glue in linked
+#   scalar builds, but it is still not a formal proof—only intent + regression signal.
 #
 # LLVM IR intrinsic proof (wasm_simd128.h builtins leave a trace in roaring.ll at -O2 -msimd128):
 #   Accept either legacy @llvm.wasm.* intrinsic names OR @llvm.ctpop.v16i8 (Clang 20 lowers
@@ -24,6 +28,13 @@
 # Docker (no local Emscripten/WABT): bash tools/run-wasm-diff-docker.sh
 
 set -euo pipefail
+
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+  if [[ "${WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD:-0}" != "0" ]] || [[ "${WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD:-0}" != "0" ]]; then
+    echo "run_wasm_differential_test.sh: skip env WASM_DIFF_SKIP_SIMD_ARTIFACT_GUARD / WASM_DIFF_SKIP_LLVM_WASM_INTRINSIC_GUARD must not be set in CI (GITHUB_ACTIONS)." >&2
+    exit 7
+  fi
+fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CC="${CC:-cc}"

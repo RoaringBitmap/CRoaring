@@ -793,6 +793,11 @@ CROARING_UNTARGET_AVX2
 
 #if defined(CROARING_WASM_SIMD)
 
+/* Vector Wasm port of intersect_vector16: matches the portable/x64 control flow so
+ * reviews can compare structure easily. Semantic correctness relies on behaving like
+ * the portable and x64 intersections (validated by tools/run_wasm_differential_test.sh),
+ * not on reproducing SIMD micro-ops verbatim. */
+
 /* Emulate _mm_movemask_epi8(_mm_packs_epi16(eq, 0)) on the low 8 i16 lanes. */
 static inline unsigned croaring_wasm_movemask_packs_cmpeq16_first8(v128_t eq) {
     v128_t z = wasm_i64x2_const(0, 0);
@@ -800,8 +805,11 @@ static inline unsigned croaring_wasm_movemask_packs_cmpeq16_first8(v128_t eq) {
     return (unsigned)wasm_i8x16_bitmask(packed);
 }
 
-/* Emulate PCMPESTRM-style CMP_EQUAL_ANY bit mask over 8×u16 lanes (low 8 bits).
- */
+/* Approximate SSE PCMPESTRM-style CMP_EQUAL_ANY over 8×u16 lanes (low 8 mask bits).
+ * Uses per-lane splat/equality + wasm_v128_any_true—not a bitwise or microarchitectural
+ * substitute for PCMPESTR*. Trust differential tests vs native scalar/x64 builds for
+ * logical equivalence with the SIMD intersection paths elsewhere in this TU. */
+
 static inline int croaring_wasm_cmpequal_any_bitmask_u16(v128_t vb, v128_t va) {
     uint16_t a_lanes[8];
     wasm_v128_store((void *)a_lanes, va);
@@ -2168,7 +2176,8 @@ CROARING_UNTARGET_AVX2
                        12, 13)
 
 /* PALIGNR with high = newval, low = old (matches _mm_alignr_epi8(new, old,
- * imm)). */
+ * imm)). wasm_i8x16_shuffle selects lanes 0-15 from the first operand and 16-31
+ * from the second, hence the indices below. */
 #define WASM_PALGN_14_NEW_OLD(n, o)                                          \
     wasm_i8x16_shuffle((o), (n), 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, \
                        25, 26, 27, 28, 29)

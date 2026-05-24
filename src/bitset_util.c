@@ -832,6 +832,9 @@ size_t bitset_extract_setbits_wasm_uint16(const uint64_t *words, size_t length,
             }
         }
     }
+    /* base is uint16_t: wraps when i*64 exceeds representable range. Roaring
+     * bitset containers use length <= 1024 words; callers must not rely on
+     * non-wrapping base beyond that. */
     base += (uint16_t)(i * 64);
     for (; (i < length) && (out < safeout); ++i) {
         uint64_t w = words[i];

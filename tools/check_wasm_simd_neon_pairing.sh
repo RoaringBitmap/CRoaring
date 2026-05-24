@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
-# Ensure every #elif defined(CROARING_USENEON) in src/**/*.c keeps a sibling
-# #elif defined(CROARING_WASM_SIMD) pairing (matching count; each WASM line
-# number strictly precedes the corresponding NEON line number when sorted).
+# Cheap structural heuristic: in each src/**/*.c file that uses Neon, require
+# the same count of '#elif defined(CROARING_USENEON)' and
+# '#elif defined(CROARING_WASM_SIMD)', and pair them by ascending line numbers
+# (each WASM line must be strictly above its paired NEON line).
+#
+# This does NOT parse preprocessor nesting. It cannot prove two branches belong
+# to the same #if/#elif chain or implement the same algorithm. Passing here does
+# not imply semantic NEON/WASM parity — use code review plus
+# tools/run_wasm_differential_test.sh digest parity for that.
+#
+# Example: bitset_container_to_uint32_array (bitset.c) may use WASM SIMD fast
+# path while the NEON #elif deliberately calls the scalar extractor; the script
+# can still pass whenever counts and ordering match.
 #
 # Usage: bash tools/check_wasm_simd_neon_pairing.sh
 # Exit 0 OK, 1 on violation.
@@ -74,4 +84,4 @@ done
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1
 fi
-echo "OK: NEON / WASM SIMD #elif pairing check passed (${#uniq_files[@]} file(s))."
+echo "OK: structural NEON / WASM SIMD #elif pairing check passed (${#uniq_files[@]} file(s))."
