@@ -251,6 +251,14 @@ inline int roaring_leading_zeroes(unsigned long long input_num) {
 #define ALIGNED(x)
 #endif
 
+#if defined(__wasm_simd128__)
+/* wasm_i32x4_splat((int32_t)x) corrupts lanes when x exceeds INT32_MAX. */
+static inline v128_t croaring_wasm_v128_broadcast_u32(uint32_t x) {
+    ALIGNED(16) uint32_t lanes[4] = {x, x, x, x};
+    return wasm_v128_load((const void *)&lanes);
+}
+#endif /* defined(__wasm_simd128__) */
+
 #if defined(__GNUC__) || defined(__clang__)
 #define CROARING_WARN_UNUSED __attribute__((warn_unused_result))
 #else

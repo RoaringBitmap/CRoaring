@@ -740,9 +740,11 @@ size_t bitset_extract_setbits_wasm_simd(const uint64_t *words, size_t length,
                                         uint32_t *out, size_t outcapacity,
                                         uint32_t base) {
     uint32_t *initout = out;
-    v128_t baseVec = wasm_i32x4_splat((int32_t)(base - 1));
-    v128_t incVec = wasm_i32x4_splat(64);
-    v128_t add8 = wasm_i32x4_splat(8);
+    uint32_t base_m1 =
+        base - (uint32_t)1; /* wrap at 0, matches portable uint32_t semantics */
+    v128_t baseVec = croaring_wasm_v128_broadcast_u32(base_m1);
+    v128_t incVec = croaring_wasm_v128_broadcast_u32(64);
+    v128_t add8 = croaring_wasm_v128_broadcast_u32(8);
     uint32_t *safeout = out + outcapacity;
     size_t i = 0;
     for (; (i < length) && (out + 64 <= safeout); ++i) {

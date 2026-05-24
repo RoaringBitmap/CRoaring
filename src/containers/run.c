@@ -1095,78 +1095,37 @@ int run_container_to_uint32_array(void *vout, const run_container_t *cont,
 
 #elif defined(CROARING_WASM_SIMD)
 
-static inline int croaring_wasm_run_container_cardinality(
-    const run_container_t *run) {
+/* Wasm SIMD cardinality/export mirrored the AVX kernels; differential tests
+ * against native/portable wasm showed drift. Match the scalar branch below. */
+int run_container_cardinality(const run_container_t *run) {
     const int32_t n_runs = run->n_runs;
     const rle16_t *runs = run->runs;
+
+    /* by initializing with n_runs, we omit counting the +1 for each pair. */
     int sum = n_runs;
-    int32_t k = 0;
-    const int32_t step = 4;
-    if (n_runs > step) {
-        v128_t acc = wasm_i32x4_const(0, 0, 0, 0);
-        for (; k + step <= n_runs; k += step) {
-            /* Assumes rle16_t is packed { value, length } with no padding and
-             * little-endian so loading 4 runs as i32 lanes and shifting right
-             * by 16 extracts the lengths. */
-            v128_t w = wasm_v128_load((const void *)(runs + k));
-            v128_t lens = wasm_u32x4_shr(w, 16);
-            acc = wasm_i32x4_add(acc, lens);
-        }
-        sum +=
-            wasm_i32x4_extract_lane(acc, 0) + wasm_i32x4_extract_lane(acc, 1) +
-            wasm_i32x4_extract_lane(acc, 2) + wasm_i32x4_extract_lane(acc, 3);
-    }
-    for (; k < n_runs; ++k) {
+    for (int k = 0; k < n_runs; ++k) {
         sum += runs[k].length;
     }
+
     return sum;
 }
 
-static int croaring_wasm_run_container_to_uint32_array(
-    void *vout, const run_container_t *cont, uint32_t base) {
+CROARING_ALLOW_UNALIGNED
+int run_container_to_uint32_array(void *vout, const run_container_t *cont,
+                                  uint32_t base) {
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
-
     for (int i = 0; i < cont->n_runs; ++i) {
         uint32_t run_start = base + cont->runs[i].value;
         uint16_t le = cont->runs[i].length;
-        if (le < 8) {
-            for (int j = 0; j <= le; ++j) {
-                uint32_t val = run_start + j;
-                memcpy(out + outpos, &val, sizeof(uint32_t));
-                outpos++;
-            }
-        } else {
-            int j = 0;
-            v128_t run_start_v = wasm_i32x4_splat((int32_t)run_start);
-            v128_t inc = wasm_i32x4_splat(8);
-            v128_t delta_lo = wasm_i32x4_make(0, 1, 2, 3);
-            for (j = 0; j + 8 <= le; j += 8) {
-                v128_t val_lo = wasm_i32x4_add(run_start_v, delta_lo);
-                v128_t delta_hi = wasm_i32x4_add(delta_lo, wasm_i32x4_splat(4));
-                v128_t val_hi = wasm_i32x4_add(run_start_v, delta_hi);
-                wasm_v128_store((void *)(out + outpos), val_lo);
-                wasm_v128_store((void *)(out + outpos + 4), val_hi);
-                delta_lo = wasm_i32x4_add(inc, delta_lo);
-                outpos += 8;
-            }
-            for (; j <= le; ++j) {
-                uint32_t val = run_start + j;
-                memcpy(out + outpos, &val, sizeof(uint32_t));
-                outpos++;
-            }
+        for (int j = 0; j <= le; ++j) {
+            uint32_t val = run_start + j;
+            memcpy(out + outpos, &val,
+                   sizeof(uint32_t));  // should be compiled as a MOV on x64
+            outpos++;
         }
     }
     return outpos;
-}
-
-int run_container_cardinality(const run_container_t *run) {
-    return croaring_wasm_run_container_cardinality(run);
-}
-
-int run_container_to_uint32_array(void *vout, const run_container_t *cont,
-                                  uint32_t base) {
-    return croaring_wasm_run_container_to_uint32_array(vout, cont, base);
 }
 
 #else
