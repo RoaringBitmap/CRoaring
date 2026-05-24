@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run tools/run_wasm_differential_test.sh inside Docker (Emscripten + gcc + Node + wasm-objdump).
-# Requires Docker only — no local emcc / wabt.
+# Requires Docker only — no local emcc / wabt. Builds a small ephemeral image layout (pinned
+# emscripten/emsdk + apt wabt) here — there is no Dockerfile checked into the repo.
 #
 # From repo root (or via path below):
 #   bash tools/run-wasm-diff-docker.sh
@@ -18,7 +19,6 @@ SCRIPTPATH="$(cd "$(dirname "$0")" && pwd -P)"
 ROOT="$(cd "$SCRIPTPATH/.." && pwd)"
 
 IMAGE="${CROARING_WASM_DIFF_IMAGE:-croaring/wasm-diff:local}"
-DOCKERFILE="$SCRIPTPATH/docker/wasm-diff/Dockerfile"
 DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 
 command -v docker >/dev/null 2>&1 || {
@@ -30,8 +30,23 @@ docker info >/dev/null 2>&1 || {
   exit 1
 }
 
-echo "Building $IMAGE ($(basename "$DOCKERFILE"))..."
-docker build --platform="$DOCKER_PLATFORM" -t "$IMAGE" -f "$DOCKERFILE" "$SCRIPTPATH/docker/wasm-diff"
+BUILD_CTX="$(mktemp -d "${TMPDIR:-/tmp}/croaring-wasm-diff-docker-ctx.XXXXXX")"
+trap 'rm -rf "${BUILD_CTX}"' EXIT
+
+# Ephemeral Dockerfile: keep emscripten + wabt pin out of-tree (official image lacks wabt on PATH reliably).
+cat >"${BUILD_CTX}/Dockerfile" <<'DOCKER_EOF'
+FROM emscripten/emsdk:3.1.74
+
+USER root
+RUN apt-get update -qq \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wabt \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+DOCKER_EOF
+
+echo "Building $IMAGE (pinned emscripten/emsdk:3.1.74 + wabt)..."
+docker build --platform="$DOCKER_PLATFORM" -t "$IMAGE" "${BUILD_CTX}"
 
 DOCKER_OPTS=(--rm)
 if [ -t 0 ]; then
