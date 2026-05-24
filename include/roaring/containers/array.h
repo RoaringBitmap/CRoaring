@@ -381,24 +381,24 @@ inline bool array_container_contains(const array_container_t *arr,
     int32_t lo = (carr[(base + 1) * gap - 1] < pos) ? base + 1 : base;
 
     if (lo < num_blocks) {
-        const uint16_t *blk = carr + lo * gap;
+        const uint16_t *quad_ptr = carr + lo * gap;
 #ifdef CROARING_USENEON
         uint16x8_t needle = vdupq_n_u16(pos);
-        uint16x8_t v0 = vld1q_u16(blk);
-        uint16x8_t v1 = vld1q_u16(blk + 8);
+        uint16x8_t v0 = vld1q_u16(quad_ptr);
+        uint16x8_t v1 = vld1q_u16(quad_ptr + 8);
         uint16x8_t hit =
             vorrq_u16(vceqq_u16(v0, needle), vceqq_u16(v1, needle));
         return vmaxvq_u16(hit) != 0;
 #elif defined(CROARING_IS_X64)
         __m128i needle = _mm_set1_epi16((short)pos);
-        __m128i v0 = _mm_loadu_si128((const __m128i *)blk);
-        __m128i v1 = _mm_loadu_si128((const __m128i *)(blk + 8));
+        __m128i v0 = _mm_loadu_si128((const __m128i *)quad_ptr);
+        __m128i v1 = _mm_loadu_si128((const __m128i *)(quad_ptr + 8));
         __m128i hit = _mm_or_si128(_mm_cmpeq_epi16(v0, needle),
                                    _mm_cmpeq_epi16(v1, needle));
         return _mm_movemask_epi8(hit) != 0;
 #else
         for (int32_t j = 0; j < gap; j++) {
-            if (blk[j] >= pos) return blk[j] == pos;
+            if (quad_ptr[j] >= pos) return quad_ptr[j] == pos;
         }
         return false;
 #endif
