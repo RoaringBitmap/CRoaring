@@ -15,7 +15,7 @@
 /**
  * All macros should be prefixed with either CROARING or ROARING.
  * The library uses both ROARING_...
- * as well as CROAIRING_ as prefixes. The ROARING_ prefix is for
+ * as well as CROARING_ as prefixes. The ROARING_ prefix is for
  * macros that are provided by the build system or that are closely
  * related to the format. The header macros may also use ROARING_.
  * The CROARING_ prefix is for internal macros that a user is unlikely
@@ -63,6 +63,12 @@
 #include <stdlib.h>  // will provide posix_memalign with _POSIX_C_SOURCE as defined above
 #ifdef __GLIBC__
 #include <malloc.h>  // this should never be needed but there are some reports that it is needed.
+#endif
+// alignas/alignof are keywords in C++ and in C23+, where <stdalign.h> is deprecated.
+// Only include it for C11..C17.
+#if !defined(__cplusplus) && \
+    (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L)
+#include <stdalign.h>
 #endif
 
 #ifdef __cplusplus
