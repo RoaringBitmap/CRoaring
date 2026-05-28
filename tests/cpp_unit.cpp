@@ -1015,6 +1015,106 @@ DEFINE_TEST(test_cpp_add_range_open_large_64) {
     }
 }
 
+DEFINE_TEST(test_cpp_contains_range_closed_64) {
+    {
+        // Empty bitmap.
+        Roaring64Map r;
+        assert_false(r.containsRangeClosed(uint64_t(1), uint64_t(10)));
+        assert_true(r.containsRangeClosed(uint64_t(10), uint64_t(1)));
+    }
+    {
+        // 32-bit overload (fast path for high=0 bucket)
+        Roaring64Map r;
+        r.addRangeClosed(uint32_t(1), uint32_t(10));
+        assert_true(r.containsRangeClosed(uint32_t(1), uint32_t(10)));
+        assert_false(r.containsRangeClosed(uint32_t(1), uint32_t(11)));
+        assert_true(r.containsRangeClosed(uint32_t(5), uint32_t(4)));
+        // No high=0 bucket
+        Roaring64Map empty;
+        assert_false(empty.containsRangeClosed(uint32_t(0), uint32_t(0)));
+        assert_true(empty.containsRangeClosed(uint32_t(5), uint32_t(4)));
+    }
+    {
+        // Single-bucket range with non-zero high.
+        auto b1 = uint64_t(1) << 32;
+        Roaring64Map r;
+        r.addRangeClosed(b1 + 1, b1 + 10);
+        assert_true(r.containsRangeClosed(b1 + 1, b1 + 10));
+        assert_false(r.containsRangeClosed(b1, b1 + 10));
+        assert_false(r.containsRangeClosed(b1 + 1, b1 + 11));
+    }
+    {
+        // Range spanning two inner bitmaps.
+        auto b1 = uint64_t(1) << 32;
+        Roaring64Map r;
+        r.addRangeClosed(b1 - 10, b1 + 10);
+        assert_true(r.containsRangeClosed(b1 - 10, b1 + 10));
+        assert_false(r.containsRangeClosed(b1 - 11, b1 + 10));
+        assert_false(r.containsRangeClosed(b1 - 10, b1 + 11));
+    }
+    {
+        // Range spanning three inner bitmaps.
+        auto b1 = uint64_t(1) << 32;
+        auto b2 = uint64_t(2) << 32;
+        Roaring64Map r;
+        r.addRangeClosed(b1 - 1, b2 + 1);
+        assert_true(r.containsRangeClosed(b1 - 1, b2 + 1));
+        // Remove a value from the middle bucket.
+        r.remove(b1 + 42);
+        assert_false(r.containsRangeClosed(b1 - 1, b2 + 1));
+    }
+    {
+        // Start bucket full, one full bucket missing in the middle, end
+        // bucket partial.
+        auto b0 = uint64_t(0);
+        auto b2 = uint64_t(2) << 32;
+        auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+        Roaring64Map r;
+        r.addRangeClosed(b0, b0 + uint32_max);
+        r.addRangeClosed(b2, b2 + 5);
+        assert_false(r.containsRangeClosed(b0, b2 + 5));
+    }
+    {
+        // Start bucket full; query extends one value past it into an absent
+        // bucket.
+        auto b0 = uint64_t(0);
+        auto b1 = uint64_t(1) << 32;
+        auto uint32_max = (std::numeric_limits<uint32_t>::max)();
+        Roaring64Map r;
+        r.addRangeClosed(b0, b0 + uint32_max);
+        assert_false(r.containsRangeClosed(b0, b1));
+    }
+    {
+        // Range with max == UINT64_MAX.
+        Roaring64Map r;
+        r.add(UINT64_MAX - 2);
+        r.add(UINT64_MAX - 1);
+        r.add(UINT64_MAX);
+        assert_true(r.containsRangeClosed(UINT64_MAX - 2, UINT64_MAX));
+        r.remove(UINT64_MAX);
+        assert_false(r.containsRangeClosed(UINT64_MAX - 2, UINT64_MAX));
+    }
+}
+
+DEFINE_TEST(test_cpp_contains_range_64) {
+    {
+        // Empty range.
+        Roaring64Map r;
+        assert_true(r.containsRange(uint64_t(5), uint64_t(5)));
+        assert_true(r.containsRange(uint64_t(10), uint64_t(1)));
+        assert_false(r.containsRange(uint64_t(1), uint64_t(10)));
+    }
+    {
+        // Half-open range spanning two inner bitmaps.
+        auto b1 = uint64_t(1) << 32;
+        Roaring64Map r;
+        r.addRange(b1 - 10, b1 + 10);
+        assert_true(r.containsRange(b1 - 10, b1 + 10));
+        assert_false(r.containsRange(b1 - 10, b1 + 11));
+        assert_false(r.containsRange(b1 - 11, b1 + 10));
+    }
+}
+
 DEFINE_TEST(test_cpp_add_many) {
     std::vector<uint32_t> values = {9999, 123, 0xFFFFFFFF, 0xFFFFFFF7, 9999};
     Roaring r1;
@@ -2201,13 +2301,22 @@ DEFINE_TEST(test_cpp_deserialize_64_key_too_small) {
 #endif
 
 DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
+    {
     Roaring roaring;
-    // Range from last position in first container up to second position in 3rd
-    // container.
+        // Range from last position in first container up to second position in
+        // 3rd container.
     roaring.addRange(0xFFFF, 0x1FFFF + 2);
-    // Query from last position in 2nd container up to second position in 4th
-    // container. There is no 4th container in the bitmap.
-    roaring.containsRange(0x1FFFF, 0x2FFFF + 2);
+        // Query from last position in 2nd container up to second position in
+        // 4th container. There is no 4th container in the bitmap.
+        assert_false(roaring.containsRange(0x1FFFF, 0x2FFFF + 2));
+    }
+    {
+        // 64-bit version through Roaring64Map.
+        auto b1 = uint64_t(1) << 32;
+        Roaring64Map r;
+        r.addRange(b1 + 0xFFFF, b1 + 0x1FFFF + 2);
+        assert_false(r.containsRange(b1 + 0x1FFFF, b1 + 0x2FFFF + 2));
+    }
 }
 
 // Test that it is pointed to the new map, see
@@ -2248,6 +2357,8 @@ int main() {
         cmocka_unit_test(test_cpp_add_range_open_64),
         cmocka_unit_test(test_cpp_add_range_closed_large_64),
         cmocka_unit_test(test_cpp_add_range_open_large_64),
+        cmocka_unit_test(test_cpp_contains_range_closed_64),
+        cmocka_unit_test(test_cpp_contains_range_64),
         cmocka_unit_test(test_cpp_add_many),
         cmocka_unit_test(test_cpp_add_many_64),
         cmocka_unit_test(test_cpp_add_range_closed_combinatoric_64),
