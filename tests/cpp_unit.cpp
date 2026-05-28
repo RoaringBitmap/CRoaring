@@ -2302,10 +2302,10 @@ DEFINE_TEST(test_cpp_deserialize_64_key_too_small) {
 
 DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
     {
-    Roaring roaring;
+        Roaring roaring;
         // Range from last position in first container up to second position in
         // 3rd container.
-    roaring.addRange(0xFFFF, 0x1FFFF + 2);
+        roaring.addRange(0xFFFF, 0x1FFFF + 2);
         // Query from last position in 2nd container up to second position in
         // 4th container. There is no 4th container in the bitmap.
         assert_false(roaring.containsRange(0x1FFFF, 0x2FFFF + 2));

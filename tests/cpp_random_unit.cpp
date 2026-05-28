@@ -344,8 +344,7 @@ DEFINE_TEST(random_doublecheck_test) {
         for (int i = -50; i < 50; ++i) {
             out.contains(gravity + i);
             out.containsRange(gravity + i, gravity + i + (rand() % 25));
-            out.containsRangeClosed(gravity + i,
-                                    gravity + i + (rand() % 25));
+            out.containsRangeClosed(gravity + i, gravity + i + (rand() % 25));
         }
 
         // When doing random intersections, the tendency is that sets will
