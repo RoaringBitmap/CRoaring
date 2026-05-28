@@ -252,6 +252,12 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
                                      uint64_t max);
 
 /**
+ * Returns true if all values in the range [min, max] are present.
+ */
+bool roaring64_bitmap_contains_range_closed(const roaring64_bitmap_t *r,
+                                            uint64_t min, uint64_t max);
+
+/**
  * Check if an item is present using context from a previous insert or search
  * for faster search.
  *
