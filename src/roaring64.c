@@ -2182,7 +2182,8 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
     // Write as uint64 the distinct number of "buckets", where a bucket is
     // defined as the most significant 32 bits of an element.
     uint64_t high32_count = count_high32(r);
-    memcpy(buf, &high32_count, sizeof(high32_count));
+    uint64_t high32_count_le = croaring_htole64(high32_count);
+    memcpy(buf, &high32_count_le, sizeof(high32_count_le));
     buf += sizeof(high32_count);
 
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
@@ -2197,7 +2198,8 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
             if (bitmap32 != NULL) {
                 // Write as uint32 the most significant 32 bits of the
                 // bucket.
-                memcpy(buf, &prev_high32, sizeof(prev_high32));
+                uint32_t prev_high32_le = croaring_htole32(prev_high32);
+                memcpy(buf, &prev_high32_le, sizeof(prev_high32_le));
                 buf += sizeof(prev_high32);
 
                 // Write the 32-bit Roaring bitmaps representing the least
@@ -2228,7 +2230,8 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
 
     if (bitmap32 != NULL) {
         // Write as uint32 the most significant 32 bits of the bucket.
-        memcpy(buf, &prev_high32, sizeof(prev_high32));
+        uint32_t prev_high32_le = croaring_htole32(prev_high32);
+        memcpy(buf, &prev_high32_le, sizeof(prev_high32_le));
         buf += sizeof(prev_high32);
 
         // Write the 32-bit Roaring bitmaps representing the least
@@ -2255,6 +2258,7 @@ size_t roaring64_bitmap_portable_deserialize_size(const char *buf,
         return 0;
     }
     memcpy(&buckets, buf, sizeof(buckets));
+    buckets = croaring_letoh64(buckets);
     buf += sizeof(buckets);
     read_bytes += sizeof(buckets);
 
@@ -2301,6 +2305,7 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         return NULL;
     }
     memcpy(&buckets, buf, sizeof(buckets));
+    buckets = croaring_letoh64(buckets);
     buf += sizeof(buckets);
     read_bytes += sizeof(buckets);
 
@@ -2320,6 +2325,7 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
             return NULL;
         }
         memcpy(&high32, buf, sizeof(high32));
+        high32 = croaring_letoh32(high32);
         buf += sizeof(high32);
         read_bytes += sizeof(high32);
         // High 32 bits must be strictly increasing.

@@ -1216,13 +1216,15 @@ class Roaring64Map {
         const char *orig = buf;
         // push map size
         uint64_t map_size = roarings.size();
-        std::memcpy(buf, &map_size, sizeof(uint64_t));
+        uint64_t map_size_le = croaring_htole64(map_size);
+        std::memcpy(buf, &map_size_le, sizeof(uint64_t));
         buf += sizeof(uint64_t);
         std::for_each(roarings.cbegin(), roarings.cend(),
                       [&buf, portable](
                           const std::pair<const uint32_t, Roaring> &map_entry) {
                           // push map key
-                          std::memcpy(buf, &map_entry.first, sizeof(uint32_t));
+                          uint32_t key_le = croaring_htole32(map_entry.first);
+                          std::memcpy(buf, &key_le, sizeof(uint32_t));
                           // ^-- Note: `*((uint32_t*)buf) = map_entry.first;` is
                           // undefined
 
@@ -1250,11 +1252,13 @@ class Roaring64Map {
         // get map size
         uint64_t map_size;
         std::memcpy(&map_size, buf, sizeof(uint64_t));
+        map_size = croaring_letoh64(map_size);
         buf += sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
             uint32_t key;
             std::memcpy(&key, buf, sizeof(uint32_t));
+            key = croaring_letoh32(key);
             // ^-- Note: `uint32_t key = *((uint32_t*)buf);` is undefined
 
             buf += sizeof(uint32_t);
@@ -1284,6 +1288,7 @@ class Roaring64Map {
         }
         uint64_t map_size;
         std::memcpy(&map_size, buf, sizeof(uint64_t));
+        map_size = croaring_letoh64(map_size);
         buf += sizeof(uint64_t);
         maxbytes -= sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
@@ -1292,6 +1297,7 @@ class Roaring64Map {
             }
             uint32_t key;
             std::memcpy(&key, buf, sizeof(uint32_t));
+            key = croaring_letoh32(key);
             // ^-- Note: `uint32_t key = *((uint32_t*)buf);` is undefined
 
             buf += sizeof(uint32_t);

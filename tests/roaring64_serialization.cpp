@@ -178,10 +178,6 @@ DEFINE_TEST(test_64deseroverlappingupper32) {
 }  // namespace
 
 int main() {
-#if CROARING_IS_BIG_ENDIAN
-    printf("Big-endian IO is unsupported.\n");
-    return 0;
-#else
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_64map32bitvals),
         cmocka_unit_test(test_64mapempty),
@@ -195,5 +191,4 @@ int main() {
         cmocka_unit_test(test_64deseroverlappingupper32),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
-#endif  // CROARING_IS_BIG_ENDIAN
 }

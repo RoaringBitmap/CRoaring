@@ -88,15 +88,12 @@ of the latest hardware. Roaring bitmaps are already available on a variety of pl
 # Requirements
 
 - Linux, macOS, FreeBSD, Windows (MSYS2 and Microsoft Visual studio).
-- We test the library with ARM, x64/x86 and POWER processors. We only support little endian systems (big endian systems are vanishingly rare).
+- We test the library with ARM, x64/x86 and POWER processors. We support big endian systems.
 - Recent C compiler supporting the C11 standard (GCC 7 or better, LLVM 8 or better (clang), Xcode 11 or better, Microsoft Visual Studio 2022 or better, Intel oneAPI Compiler 2023.2 or better), there is also an optional C++ class that requires a C++ compiler supporting the C++11 standard. We support [Fil-C, the memory-safe C/C++ compiler](https://fil-c.org).
 - CMake (to contribute to the project, users can rely on amalgamation/unity builds if they do not wish to use CMake).
 - The CMake system assumes that git is available.
 - Under x64 systems, the library provides runtime dispatch so that optimized functions are called based on the detected CPU features. It works with GCC, clang (version 9 and up) and Visual Studio (2017 and up). Other systems (e.g., ARM) do not need runtime dispatch.
 
-Hardly anyone has access to an actual big-endian system. Nevertheless,
-We support big-endian systems such as IBM s390x through emulators---except for
-IO serialization which is only supported on little-endian systems (see [issue 423](https://github.com/RoaringBitmap/CRoaring/issues/423)).
 
 
 # Quick Start

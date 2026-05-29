@@ -636,10 +636,6 @@ size_t roaring_bitmap_shrink_to_fit(roaring_bitmap_t *r);
  *
  * Returns how many bytes written, should be `roaring_bitmap_size_in_bytes(r)`.
  *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
- *
  * When serializing data to a file, we recommend that you also use
  * checksums so that, at deserialization, you can be confident
  * that you are recovering the correct data.
@@ -652,10 +648,6 @@ size_t roaring_bitmap_serialize(const roaring_bitmap_t *r, char *buf);
  * (See `roaring_bitmap_portable_deserialize()` if you want a format that's
  * compatible with Java and Go implementations).
  *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
- *
  * The returned pointer may be NULL in case of errors.
  */
 roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf);
@@ -665,10 +657,6 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf);
  *
  * (See `roaring_bitmap_portable_deserialize_safe()` if you want a format that's
  * compatible with Java and Go implementations).
- *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
  *
  * The difference with `roaring_bitmap_deserialize()` is that this function
  * checks that the input buffer is a valid bitmap.  If the buffer is too small,
@@ -705,10 +693,6 @@ size_t roaring_bitmap_size_in_bytes(const roaring_bitmap_t *r);
  * This is meant to be compatible with the Java and Go versions:
  * https://github.com/RoaringBitmap/RoaringFormatSpec
  *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
- *
  * The returned pointer may be NULL in case of errors.
  */
 roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
@@ -742,10 +726,6 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);
  * corresponds to the serialized bitmap. The CRoaring library does not provide
  * checksumming.
  *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
- *
  * The returned pointer may be NULL in case of errors.
  */
 roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf,
@@ -769,7 +749,8 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf,
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
+ * compatible with little-endian systems. It is not a bug, it is by design,
+ * since the format imitates C memory layout of roaring_bitmap_t.
  *
  * The returned pointer may be NULL in case of errors.
  */
@@ -802,10 +783,6 @@ size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *r);
  *
  * This is meant to be compatible with the Java and Go versions:
  * https://github.com/RoaringBitmap/RoaringFormatSpec
- *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
  *
  * When serializing data to a file, we recommend that you also use
  * checksums so that, at deserialization, you can be confident
@@ -843,7 +820,8 @@ size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *r);
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
+ * compatible with little-endian systems. This is not a bug, it is by design,
+ *since the format imitates C memory layout
  *
  * When serializing data to a file, we recommend that you also use
  * checksums so that, at deserialization, you can be confident
@@ -864,7 +842,8 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *r, char *buf);
  *
  * This function is endian-sensitive. If you have a big-endian system (e.g., a
  * mainframe IBM s390x), the data format is going to be big-endian and not
- * compatible with little-endian systems.
+ * compatible with little-endian systems. This is not a bug, it is by design,
+ *since the format imitates C memory layout of roaring_bitmap_t.
  */
 const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,
                                                    size_t length);
