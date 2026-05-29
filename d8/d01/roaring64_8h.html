@@ -182,6 +182,8 @@ Functions</h2></td></tr>
 <tr class="separator:a9936db4cd41d8ff0797cbb08f8441e15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd79ff6e789543ea7354492c322603f3" id="r_abd79ff6e789543ea7354492c322603f3"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#abd79ff6e789543ea7354492c322603f3">roaring64_bitmap_contains_range</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
 <tr class="separator:abd79ff6e789543ea7354492c322603f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a980e8ce45a56934d1d5cd5d3065d626a" id="r_a980e8ce45a56934d1d5cd5d3065d626a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a980e8ce45a56934d1d5cd5d3065d626a">roaring64_bitmap_contains_range_closed</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t min, uint64_t max)</td></tr>
+<tr class="separator:a980e8ce45a56934d1d5cd5d3065d626a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a606e5ac26d81f470a63212d155291099" id="r_a606e5ac26d81f470a63212d155291099"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a606e5ac26d81f470a63212d155291099">roaring64_bitmap_contains_bulk</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, <a class="el" href="../../d8/d01/roaring64_8h.html#af222e7202ae9eca057f6b5cd869fefd5">roaring64_bulk_context_t</a> *context, uint64_t val)</td></tr>
 <tr class="separator:a606e5ac26d81f470a63212d155291099"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accac104f4234d6420b72a0528c12f14d" id="r_accac104f4234d6420b72a0528c12f14d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#accac104f4234d6420b72a0528c12f14d">roaring64_bitmap_select</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, uint64_t rank, uint64_t *element)</td></tr>
@@ -587,7 +589,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted up by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00552">552</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00558">558</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
@@ -996,6 +998,41 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Returns true if all values in the range [min, max) are present. </p>
+
+</div>
+</div>
+<a id="a980e8ce45a56934d1d5cd5d3065d626a" name="a980e8ce45a56934d1d5cd5d3065d626a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a980e8ce45a56934d1d5cd5d3065d626a">&#9670;&#160;</a></span>roaring64_bitmap_contains_range_closed()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool roaring64_bitmap_contains_range_closed </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td>
+          <td class="paramname"><em>r</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint64_t&#160;</td>
+          <td class="paramname"><em>max</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Returns true if all values in the range [min, max] are present. </p>
 
 </div>
 </div>
@@ -2419,7 +2456,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted down by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00563">563</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00569">569</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 

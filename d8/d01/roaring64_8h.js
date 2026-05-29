@@ -26,6 +26,7 @@ var roaring64_8h =
     [ "roaring64_bitmap_contains", "d8/d01/roaring64_8h.html#a9936db4cd41d8ff0797cbb08f8441e15", null ],
     [ "roaring64_bitmap_contains_bulk", "d8/d01/roaring64_8h.html#a606e5ac26d81f470a63212d155291099", null ],
     [ "roaring64_bitmap_contains_range", "d8/d01/roaring64_8h.html#abd79ff6e789543ea7354492c322603f3", null ],
+    [ "roaring64_bitmap_contains_range_closed", "d8/d01/roaring64_8h.html#a980e8ce45a56934d1d5cd5d3065d626a", null ],
     [ "roaring64_bitmap_copy", "d8/d01/roaring64_8h.html#a595fe6436f7cb31357c10a706c1babbe", null ],
     [ "roaring64_bitmap_create", "d8/d01/roaring64_8h.html#abbf6b14f6f80caa5496dcc839a33b94f", null ],
     [ "roaring64_bitmap_equals", "d8/d01/roaring64_8h.html#a48a3c6cff2fca809ba1948cf782040f8", null ],
