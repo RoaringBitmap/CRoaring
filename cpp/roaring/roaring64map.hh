@@ -494,7 +494,82 @@ class Roaring64Map {
         return iter->second.contains(lowBytes(x));
     }
 
-    // TODO: implement `containsRange`
+    /**
+     * Returns true if all values in the half-open interval [min, max) are
+     * present.
+     */
+    bool containsRange(uint64_t min, uint64_t max) const {
+        if (min >= max) {
+            return true;
+        }
+        return containsRangeClosed(min, max - 1);
+    }
+
+    /**
+     * Returns true if all values in the closed interval [min, max] are present.
+     */
+    bool containsRangeClosed(uint32_t min, uint32_t max) const {
+        auto iter = roarings.find(0);
+        if (iter == roarings.end()) {
+            return min > max;
+        }
+        return iter->second.containsRangeClosed(min, max);
+    }
+
+    /**
+     * Returns true if all values in the closed interval [min, max] are present.
+     */
+    bool containsRangeClosed(uint64_t min, uint64_t max) const {
+        if (min > max) {
+            return true;
+        }
+        uint32_t start_high = highBytes(min);
+        uint32_t start_low = lowBytes(min);
+        uint32_t end_high = highBytes(max);
+        uint32_t end_low = lowBytes(max);
+
+        // We put std::numeric_limits<>::max in parentheses to avoid a
+        // clash with the Windows.h header under Windows.
+        const uint32_t uint32_max = (std::numeric_limits<uint32_t>::max)();
+
+        // If start == end, check it in one call.
+        if (start_high == end_high) {
+            auto iter = roarings.find(start_high);
+            if (iter == roarings.end()) {
+                return false;
+            }
+            return iter->second.containsRangeClosed(start_low, end_low);
+        }
+
+        // Otherwise the range spans multiple bitmaps.
+        auto iter = roarings.find(start_high);
+        if (iter == roarings.end()) {
+            return false;
+        }
+
+        // 1. The first bitmap must contain [start_low, uint32_max].
+        if (!iter->second.containsRangeClosed(start_low, uint32_max)) {
+            return false;
+        }
+
+        // 2. Every intermediate bitmap must contain [0, uint32_max] (full).
+        for (uint32_t high = start_high + 1; high != end_high; ++high) {
+            ++iter;
+            if (iter == roarings.end() || iter->first != high) {
+                return false;
+            }
+            if (!iter->second.containsRangeClosed(0, uint32_max)) {
+                return false;
+            }
+        }
+
+        // 3. The last bitmap must contain [0, end_low].
+        ++iter;
+        if (iter == roarings.end() || iter->first != end_high) {
+            return false;
+        }
+        return iter->second.containsRangeClosed(0, end_low);
+    }
 
     /**
      * Compute the intersection of the current bitmap and the provided bitmap,

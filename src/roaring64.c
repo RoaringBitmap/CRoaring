@@ -561,12 +561,20 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
     if (min >= max) {
         return true;
     }
+    return roaring64_bitmap_contains_range_closed(r, min, max - 1);
+}
+
+bool roaring64_bitmap_contains_range_closed(const roaring64_bitmap_t *r,
+                                            uint64_t min, uint64_t max) {
+    if (min > max) {
+        return true;
+    }
 
     uint8_t min_high48[ART_KEY_BYTES];
     uint16_t min_low16 = split_key(min, min_high48);
     uint8_t max_high48[ART_KEY_BYTES];
     uint16_t max_low16 = split_key(max, max_high48);
-    uint64_t max_high48_bits = (max - 1) & 0xFFFFFFFFFFFF0000;  // Inclusive
+    uint64_t max_high48_bits = max & 0xFFFFFFFFFFFF0000;
 
     art_iterator_t it = art_lower_bound((art_t *)&r->art, min_high48);
     if (it.value == NULL || combine_key(it.key, 0) > min) {
@@ -592,7 +600,7 @@ bool roaring64_bitmap_contains_range(const roaring64_bitmap_t *r, uint64_t min,
         }
         uint32_t container_max = 0xFFFF + 1;  // Exclusive
         if (compare_high48(it.key, max_high48) == 0) {
-            container_max = max_low16;
+            container_max = (uint32_t)max_low16 + 1;
         }
 
         // For the first and last containers we use container_contains_range,

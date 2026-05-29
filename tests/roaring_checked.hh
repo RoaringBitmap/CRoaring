@@ -192,6 +192,25 @@ class Roaring {
         return ans;
     }
 
+    bool containsRangeClosed(uint32_t min, uint32_t max) const {
+        bool ans = plain.containsRangeClosed(min, max);
+
+        auto it = check.find(min);
+        if (min > max)
+            assert_true(ans == true);
+        else if (it == check.end())
+            assert_true(ans == false);
+        else {
+            uint64_t last = min;
+            uint64_t max64 = max;
+            while (++it != check.end() && last + 1 == *it && *it <= max64)
+                last = *it;
+            assert_true(ans == (last == max64));
+        }
+
+        return ans;
+    }
+
     // This method is exclusive to `doublechecked::Roaring`
     //
     bool does_std_set_match_roaring() const {

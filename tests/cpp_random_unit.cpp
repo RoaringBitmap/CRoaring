@@ -340,9 +340,11 @@ DEFINE_TEST(random_doublecheck_test) {
         out.maximum();
         out.contains(rand());
         out.containsRange(rand(), rand());
+        out.containsRangeClosed(rand(), rand());
         for (int i = -50; i < 50; ++i) {
             out.contains(gravity + i);
-            out.containsRange(gravity + i, rand() % 25);
+            out.containsRange(gravity + i, gravity + i + (rand() % 25));
+            out.containsRangeClosed(gravity + i, gravity + i + (rand() % 25));
         }
 
         // When doing random intersections, the tendency is that sets will
@@ -478,8 +480,14 @@ DEFINE_TEST(random_doublecheck_test_64) {
         out.isEmpty();
         out.minimum();
         out.maximum();
+        out.contains(uint64_t(rand()));
+        out.containsRange(uint64_t(rand()), uint64_t(rand()));
+        out.containsRangeClosed(uint64_t(rand()), uint64_t(rand()));
         for (int i = -50; i < 50; ++i) {
             out.contains(gravity64 + i);
+            out.containsRange(gravity64 + i, gravity64 + i + (rand() % 25));
+            out.containsRangeClosed(gravity64 + i,
+                                    gravity64 + i + (rand() % 25));
         }
 
         // When doing random intersections, the tendency is that sets will
