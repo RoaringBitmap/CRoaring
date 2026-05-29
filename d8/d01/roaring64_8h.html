@@ -1325,7 +1325,7 @@ Functions</h2></td></tr>
 <p><code><a class="el" href="../../d8/d01/roaring64_8h.html#ab42f695edf07af26bebca1caaeea5a6c">roaring64_bitmap_shrink_to_fit()</a></code> must be called before this method.</p>
 <p>The frozen format is optimized for speed of (de)serialization, as well as allowing the user to create a bitmap based on a memory mapped file, which is possible because the format mimics the memory layout of the bitmap.</p>
 <p>Because the format mimics the memory layout of the bitmap, the format is not fixed across releases of Roaring Bitmaps, and may change in future releases.</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. This is not a bug, it is by design, since the format imitates C memory layout of roaring64_bitmap_t. </p>
 
 </div>
 </div>
@@ -1377,7 +1377,7 @@ Functions</h2></td></tr>
 <p>Creates a readonly bitmap that is a view of the given buffer. The buffer must be created with <code><a class="el" href="../../d8/d01/roaring64_8h.html#a9ab1ba20d1f5de72ddf8af5dec288a99">roaring64_bitmap_frozen_serialize()</a></code>, and must be aligned by 64 bytes.</p>
 <p>Returns NULL if deserialization fails.</p>
 <p>The returned bitmap must only be used in a readonly manner. The bitmap must be freed using <code><a class="el" href="../../d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free()</a></code> as normal. The backing buffer must only be freed after the bitmap.</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. This is not a bug, it is by design, since the format imitates C memory layout of roaring64_bitmap_t. </p>
 
 </div>
 </div>
@@ -1909,8 +1909,7 @@ Functions</h2></td></tr>
 <p>The function itself is safe in the sense that it will not cause buffer overflows: it will not read beyond the scope of the provided buffer (buf,maxbytes).</p>
 <p>However, for correct operations, it is assumed that the bitmap read was once serialized from a valid bitmap (i.e., it follows the format specification). If you provided an incorrect input (garbage), then the bitmap read may not be in a valid state and following operations may not lead to sensible results. In particular, the serialized array containers need to be in sorted order, and the run containers should be in sorted non-overlapping order. This is is guaranteed to happen when serializing an existing bitmap, but not for random inputs.</p>
 <p>If the source is untrusted, you should call roaring64_bitmap_internal_validate to check the validity of the bitmap prior to using it. Only after calling roaring64_bitmap_internal_validate is the bitmap considered safe for use.</p>
-<p>We also recommend that you use checksums to check that serialized data corresponds to the serialized bitmap. The CRoaring library does not provide checksumming.</p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems. </p>
+<p>We also recommend that you use checksums to check that serialized data corresponds to the serialized bitmap. The CRoaring library does not provide checksumming. </p>
 
 </div>
 </div>
@@ -1972,7 +1971,6 @@ Functions</h2></td></tr>
 <p>Write a bitmap to a buffer. The output buffer should refer to at least <code>roaring64_bitmap_portable_size_in_bytes(r)</code> bytes of allocated memory.</p>
 <p>Returns how many bytes were written, which should match <code>roaring64_bitmap_portable_size_in_bytes(r)</code>.</p>
 <p>This is meant to be compatible with other languages: <a href="https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations">https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations</a></p>
-<p>This function is endian-sensitive. If you have a big-endian system (e.g., a mainframe IBM s390x), the data format is going to be big-endian and not compatible with little-endian systems.</p>
 <p>When serializing data to a file, we recommend that you also use checksums so that, at deserialization, you can be confident that you are recovering the correct data. </p>
 
 </div>
