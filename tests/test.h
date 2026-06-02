@@ -57,6 +57,11 @@ extern "C" {
 //
 #ifdef __cplusplus
 #define DEFINE_TEST(name) static void name(void **)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+// In C23, `void name()` declares a function taking no arguments, which is
+// incompatible with cmocka's `void (*)(void **)`. C23 lets us name the
+// parameter and mark it unused to keep the cmocka-compatible signature.
+#define DEFINE_TEST(name) static void name([[maybe_unused]] void **state)
 #else
 #define DEFINE_TEST(name) static void name()
 #endif
