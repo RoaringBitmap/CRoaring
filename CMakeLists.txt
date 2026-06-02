@@ -3,8 +3,12 @@ project(RoaringBitmap
   DESCRIPTION "Roaring bitmaps in C (and C++)"
   LANGUAGES CXX C
 )
-set (CMAKE_C_STANDARD 11)
-set (CMAKE_CXX_STANDARD 11)
+if (NOT DEFINED CMAKE_C_STANDARD)
+  set (CMAKE_C_STANDARD 11)
+endif()
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set (CMAKE_CXX_STANDARD 11)
+endif()
 
 include(GNUInstallDirs)
 

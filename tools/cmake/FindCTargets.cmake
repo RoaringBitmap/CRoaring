@@ -9,7 +9,7 @@ if (ENABLE_ROARING_TESTS AND NOT EMSCRIPTEN)
       OPTIONS "UNIT_TESTING ON"
     )
   else()
-    find_package(cmocka REQUIRED)
+    find_package(cmocka 2.0.0 REQUIRED)
   endif()
 endif()
 
