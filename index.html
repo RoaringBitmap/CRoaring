@@ -106,6 +106,11 @@ Table of Contents</h1>
 <li>Objective</li>
 <li>Requirements</li>
 <li>Quick Start</li>
+<li>How to use the library?<ul>
+<li>The C API</li>
+<li>The C++ API</li>
+</ul>
+</li>
 <li>Packages</li>
 <li>Using Roaring as a CPM dependency</li>
 <li>Using as a CMake dependency with FetchContent</li>
@@ -184,10 +189,139 @@ Quick Start</h1>
 <li><code>`./demo` </code> cardinality = 900 1000 <code></code></li>
 <li><code>`./demopp` </code> cardinality = 900 cardinality = 900 ```</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md6"></a>
+<h1><a class="anchor" id="autotoc_md6"></a>
+How to use the library?</h1>
+<p>The library offers both a C API (<code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code> for 32-bit bitmaps, <code><a class="el" href="d8/d01/roaring64_8h.html">roaring64.h</a></code> for 64-bit bitmaps) and a C++ API (<code>roaring.hh</code> and <code>roaring64map.hh</code>). The two short programs below cover the most common operations: creating a bitmap, adding values, querying it, combining bitmaps with set operations, and iterating over the values. Both programs are part of our test suite, so they are guaranteed to compile and run.</p>
+<h2><a class="anchor" id="autotoc_md7"></a>
+The C API</h2>
+<p>Each bitmap you create with <code><a class="el" href="dc/d56/roaring_8h.html#a02f5d67a889993b158e55d0eb79b340b">roaring_bitmap_create()</a></code> (or that is returned by a set operation such as <code><a class="el" href="dc/d56/roaring_8h.html#ab898269e29fa615e7e55439b19d91dc5">roaring_bitmap_and()</a></code>) must be released with <code><a class="el" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free()</a></code>.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;<a class="code" href="d8/d01/roaring64_8h.html">roaring/roaring64.h</a>&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="preprocessor">#include &lt;assert.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span> main(<span class="keywordtype">void</span>) {</div>
+<div class="line">    <span class="comment">// --- 32-bit bitmaps ---</span></div>
+<div class="line">    <span class="comment">// Create an empty bitmap and add a few values.</span></div>
+<div class="line">    <a class="code hl_struct" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *bitmap = <a class="code hl_function" href="dc/d56/roaring_8h.html#a02f5d67a889993b158e55d0eb79b340b">roaring_bitmap_create</a>();</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(bitmap, 1);</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(bitmap, 100);</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a>(bitmap, 1000);</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range</a>(bitmap, 10, 20);  <span class="comment">// adds the half-open range [10, 20)</span></div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Query the bitmap.</span></div>
+<div class="line">    assert(<a class="code hl_function" href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains</a>(bitmap, 100));</div>
+<div class="line">    assert(!<a class="code hl_function" href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains</a>(bitmap, 50));</div>
+<div class="line">    printf(<span class="stringliteral">&quot;32-bit cardinality = %d\n&quot;</span>,</div>
+<div class="line">           (<span class="keywordtype">int</span>)<a class="code hl_function" href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a>(bitmap));</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Optionally compress runs of consecutive values for a smaller footprint.</span></div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#a3a71a1bef6c0233c93caabfd8db22c2a">roaring_bitmap_run_optimize</a>(bitmap);</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Set operations return a new bitmap that you own and must free.</span></div>
+<div class="line">    <a class="code hl_struct" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *other = <a class="code hl_define" href="dc/d56/roaring_8h.html#adfb882359d1d5219449bdb40ef5e67e4">roaring_bitmap_from</a>(100, 1000, 5000);</div>
+<div class="line">    <a class="code hl_struct" href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_t</a> *intersection = <a class="code hl_function" href="dc/d56/roaring_8h.html#ab898269e29fa615e7e55439b19d91dc5">roaring_bitmap_and</a>(bitmap, other);</div>
+<div class="line">    assert(<a class="code hl_function" href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a>(intersection) == 2);  <span class="comment">// {100, 1000}</span></div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Iterate over the values in sorted (increasing) order.</span></div>
+<div class="line">    <a class="code hl_struct" href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_t</a> *it = <a class="code hl_function" href="dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create</a>(bitmap);</div>
+<div class="line">    <span class="keywordflow">while</span> (it-&gt;<a class="code hl_variable" href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">has_value</a>) {</div>
+<div class="line">        <span class="comment">// do something with it-&gt;current_value</span></div>
+<div class="line">        <a class="code hl_function" href="dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a>(it);</div>
+<div class="line">    }</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free</a>(it);</div>
+<div class="line"> </div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(intersection);</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(other);</div>
+<div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(bitmap);</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// --- 64-bit bitmaps (same ideas, but with 64-bit values) ---</span></div>
+<div class="line">    <a class="code hl_typedef" href="d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *big = <a class="code hl_function" href="d8/d01/roaring64_8h.html#abbf6b14f6f80caa5496dcc839a33b94f">roaring64_bitmap_create</a>();</div>
+<div class="line">    <a class="code hl_function" href="d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add</a>(big, 1);</div>
+<div class="line">    <a class="code hl_function" href="d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add</a>(big, 0xFFFFFFFFFFULL);  <span class="comment">// a value beyond 32 bits</span></div>
+<div class="line">    assert(<a class="code hl_function" href="d8/d01/roaring64_8h.html#a9936db4cd41d8ff0797cbb08f8441e15">roaring64_bitmap_contains</a>(big, 0xFFFFFFFFFFULL));</div>
+<div class="line">    printf(<span class="stringliteral">&quot;64-bit cardinality = %d\n&quot;</span>,</div>
+<div class="line">           (<span class="keywordtype">int</span>)<a class="code hl_function" href="d8/d01/roaring64_8h.html#af1c9e7991db9341d1b3da6989395e444">roaring64_bitmap_get_cardinality</a>(big));</div>
+<div class="line">    <a class="code hl_function" href="d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free</a>(big);</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
+<div class="line">}</div>
+<div class="ttc" id="aroaring64_8h_html"><div class="ttname"><a href="d8/d01/roaring64_8h.html">roaring64.h</a></div></div>
+<div class="ttc" id="aroaring64_8h_html_a511b38d167a3c0f4ddfbd5c8ca7b6f19"><div class="ttname"><a href="d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add</a></div><div class="ttdeci">void roaring64_bitmap_add(roaring64_bitmap_t *r, uint64_t val)</div></div>
+<div class="ttc" id="aroaring64_8h_html_a8c5f0692fea8689552a0c13013fbac8c"><div class="ttname"><a href="d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a></div><div class="ttdeci">struct roaring64_bitmap_s roaring64_bitmap_t</div><div class="ttdef"><b>Definition</b> <a href="d8/d01/roaring64_8h_source.html#l00030">roaring64.h:30</a></div></div>
+<div class="ttc" id="aroaring64_8h_html_a9936db4cd41d8ff0797cbb08f8441e15"><div class="ttname"><a href="d8/d01/roaring64_8h.html#a9936db4cd41d8ff0797cbb08f8441e15">roaring64_bitmap_contains</a></div><div class="ttdeci">bool roaring64_bitmap_contains(const roaring64_bitmap_t *r, uint64_t val)</div></div>
+<div class="ttc" id="aroaring64_8h_html_abbf6b14f6f80caa5496dcc839a33b94f"><div class="ttname"><a href="d8/d01/roaring64_8h.html#abbf6b14f6f80caa5496dcc839a33b94f">roaring64_bitmap_create</a></div><div class="ttdeci">roaring64_bitmap_t * roaring64_bitmap_create(void)</div></div>
+<div class="ttc" id="aroaring64_8h_html_aef1d257f0919f000eee69813b5484986"><div class="ttname"><a href="d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free</a></div><div class="ttdeci">void roaring64_bitmap_free(roaring64_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring64_8h_html_af1c9e7991db9341d1b3da6989395e444"><div class="ttname"><a href="d8/d01/roaring64_8h.html#af1c9e7991db9341d1b3da6989395e444">roaring64_bitmap_get_cardinality</a></div><div class="ttdeci">uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html"><div class="ttname"><a href="dc/d56/roaring_8h.html">roaring.h</a></div></div>
+<div class="ttc" id="aroaring_8h_html_a02f5d67a889993b158e55d0eb79b340b"><div class="ttname"><a href="dc/d56/roaring_8h.html#a02f5d67a889993b158e55d0eb79b340b">roaring_bitmap_create</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_create(void)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00056">roaring.h:56</a></div></div>
+<div class="ttc" id="aroaring_8h_html_a3a71a1bef6c0233c93caabfd8db22c2a"><div class="ttname"><a href="dc/d56/roaring_8h.html#a3a71a1bef6c0233c93caabfd8db22c2a">roaring_bitmap_run_optimize</a></div><div class="ttdeci">bool roaring_bitmap_run_optimize(roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a6411fc557537acffd5d584b29f76e5ab"><div class="ttname"><a href="dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create</a></div><div class="ttdeci">roaring_uint32_iterator_t * roaring_iterator_create(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a77dba28e5abf41cbd2502b0fffc5eeeb"><div class="ttname"><a href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a></div><div class="ttdeci">void roaring_bitmap_free(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_a7c1d6efba899e68a68d436cb9db62964"><div class="ttname"><a href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains</a></div><div class="ttdeci">bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00478">roaring.h:478</a></div></div>
+<div class="ttc" id="aroaring_8h_html_aa879e686552e794ad36d33a9eedece3c"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free</a></div><div class="ttdeci">void roaring_uint32_iterator_free(roaring_uint32_iterator_t *it)</div></div>
+<div class="ttc" id="aroaring_8h_html_ab3a666ebfe5de619bd334b9ebe059d73"><div class="ttname"><a href="dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range</a></div><div class="ttdeci">void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min, uint64_t max)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00433">roaring.h:433</a></div></div>
+<div class="ttc" id="aroaring_8h_html_ab898269e29fa615e7e55439b19d91dc5"><div class="ttname"><a href="dc/d56/roaring_8h.html#ab898269e29fa615e7e55439b19d91dc5">roaring_bitmap_and</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_and(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
+<div class="ttc" id="aroaring_8h_html_abf071a021966c2eb8da4473a9dabaad6"><div class="ttname"><a href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a></div><div class="ttdeci">uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r)</div></div>
+<div class="ttc" id="aroaring_8h_html_adfb882359d1d5219449bdb40ef5e67e4"><div class="ttname"><a href="dc/d56/roaring_8h.html#adfb882359d1d5219449bdb40ef5e67e4">roaring_bitmap_from</a></div><div class="ttdeci">#define roaring_bitmap_from(...)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00182">roaring.h:182</a></div></div>
+<div class="ttc" id="aroaring_8h_html_aec401e111190871fb95faaa0e4d66757"><div class="ttname"><a href="dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a></div><div class="ttdeci">bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it)</div></div>
+<div class="ttc" id="aroaring_8h_html_af85d814ca8a6cd369905f629922c1c98"><div class="ttname"><a href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a></div><div class="ttdeci">void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x)</div></div>
+<div class="ttc" id="astructroaring__bitmap__s_html"><div class="ttname"><a href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_s</a></div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00039">roaring.h:39</a></div></div>
+<div class="ttc" id="astructroaring__uint32__iterator__s_html"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_s</a></div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l01115">roaring.h:1115</a></div></div>
+<div class="ttc" id="astructroaring__uint32__iterator__s_html_a99e95f8cbd08320c6ac27b1569ca6bb4"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">roaring_uint32_iterator_s::has_value</a></div><div class="ttdeci">bool has_value</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l01124">roaring.h:1124</a></div></div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md8"></a>
+The C++ API</h2>
+<p>The C++ classes (<code>roaring::Roaring</code> and <code>roaring::Roaring64Map</code>) wrap the C API and manage memory for you: the destructor frees the bitmap, and set operations are exposed as operators (<code>&amp;</code>, <code>|</code>, <code>^</code>, <code>-</code>). No explicit <code>free</code> is required.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;roaring/roaring.hh&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;roaring/roaring64map.hh&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="preprocessor">#include &lt;cassert&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">using namespace </span>roaring;</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span> main() {</div>
+<div class="line">    <span class="comment">// --- 32-bit bitmaps ---</span></div>
+<div class="line">    Roaring r;</div>
+<div class="line">    r.add(1);</div>
+<div class="line">    r.add(100);</div>
+<div class="line">    r.add(1000);</div>
+<div class="line">    r.addRange(10, 20);  <span class="comment">// adds the half-open range [10, 20)</span></div>
+<div class="line"> </div>
+<div class="line">    assert(r.contains(100));</div>
+<div class="line">    assert(!r.contains(50));</div>
+<div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;32-bit cardinality = &quot;</span> &lt;&lt; r.cardinality() &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Construct a bitmap directly from a list of values.</span></div>
+<div class="line">    Roaring other = Roaring::bitmapOfList({100, 1000, 5000});</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Operators return new bitmaps; their memory is managed for you.</span></div>
+<div class="line">    Roaring intersection = r &amp; other;</div>
+<div class="line">    assert(intersection.cardinality() == 2);  <span class="comment">// {100, 1000}</span></div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// Range-based iteration visits the values in sorted (increasing) order.</span></div>
+<div class="line">    uint64_t sum = 0;</div>
+<div class="line">    <span class="keywordflow">for</span> (uint32_t value : r) {</div>
+<div class="line">        sum += value;</div>
+<div class="line">    }</div>
+<div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;sum of values = &quot;</span> &lt;&lt; sum &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    <span class="comment">// --- 64-bit bitmaps ---</span></div>
+<div class="line">    Roaring64Map big;</div>
+<div class="line">    big.add(uint64_t(1));</div>
+<div class="line">    big.add(uint64_t(0xFFFFFFFFFFULL));  <span class="comment">// a value beyond 32 bits</span></div>
+<div class="line">    assert(big.contains(uint64_t(0xFFFFFFFFFFULL)));</div>
+<div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;64-bit cardinality = &quot;</span> &lt;&lt; big.cardinality() &lt;&lt; std::endl;</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>For more extensive, fully commented examples (serialization, bulk operations, copy-on-write, aggregating many bitmaps, etc.), see the Example (C) and Example (C++) sections below.</p>
+<h2><a class="anchor" id="autotoc_md9"></a>
 Packages</h2>
 <p><a href="https://repology.org/project/croaring/versions"><img src="https://repology.org/badge/vertical-allrepos/croaring.svg" alt="Packaging status" style="pointer-events: none;" class="inline"/></a></p>
-<h1><a class="anchor" id="autotoc_md7"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
 Using Roaring as a CPM dependency</h1>
 <p>If you like CMake and CPM, you can add just a few lines in your <code>CMakeLists.txt</code> file to grab a <code>CRoaring</code> release. <a href="https://github.com/RoaringBitmap/CPMdemo">See our CPM demonstration for further details</a>.</p>
 <div class="fragment"><div class="line">cmake_minimum_required(VERSION 3.10)</div>
@@ -210,7 +344,7 @@ Using Roaring as a CPM dependency</h1>
 <div class="line">)</div>
 <div class="line"> </div>
 <div class="line">target_link_libraries(hello roaring::roaring)</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md8"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md11"></a>
 Using as a CMake dependency with FetchContent</h1>
 <p>If you like CMake, you can add just a few lines in your <code>CMakeLists.txt</code> file to grab a <code>CRoaring</code> release. <a href="https://github.com/RoaringBitmap/croaring_cmake_demo_single_file">See our demonstration for further details</a>.</p>
 <p>If you installed the CRoaring library locally, you may use it with CMake's <code>find_package</code> function as in this example:</p>
@@ -241,7 +375,7 @@ Using as a CMake dependency with FetchContent</h1>
 <div class="line"> </div>
 <div class="line">add_executable(repro main.cpp)</div>
 <div class="line">target_link_libraries(repro PUBLIC roaring::roaring)</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md9"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md12"></a>
 Amalgamating</h1>
 <p>To generate the amalgamated files yourself, you can invoke a bash script...</p>
 <div class="fragment"><div class="line">./amalgamation.sh</div>
@@ -250,7 +384,7 @@ Amalgamating</h1>
 </div><!-- fragment --><p>(Bash shells are standard under Linux and macOS. Bash shells are available under Windows as part of the  <a href="https://desktop.github.com/">GitHub Desktop</a> under the name <code>Git Shell</code>. So if you have cloned the <code>CRoaring</code> GitHub repository from within the GitHub Desktop, you can right-click on <code>CRoaring</code>, select <code>Git Shell</code> and then enter the above commands.)</p>
 <p>It is not necessary to invoke the script in the CRoaring directory. You can invoke it from any directory where you want the amalgamation files to be written.</p>
 <p>It will generate three files for C users: <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code>, <code>roaring.c</code> and <code>amalgamation_demo.c</code>... as well as some brief instructions. The <code>amalgamation_demo.c</code> file is a short example, whereas <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code> and <code>roaring.c</code> are "amalgamated" files (including all source and header files for the project). This means that you can simply copy the files <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code> and <code>roaring.c</code> into your project and be ready to go! No need to produce a library! See the <code>amalgamation_demo.c</code> file.</p>
-<h1><a class="anchor" id="autotoc_md10"></a>
+<h1><a class="anchor" id="autotoc_md13"></a>
 API</h1>
 <p>The C interface is found in the files</p>
 <ul>
@@ -262,10 +396,10 @@ API</h1>
 <li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring.hh">roaring.hh</a>,</li>
 <li><a href="https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring64map.hh">roaring64map.hh</a>.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md11"></a>
+<h1><a class="anchor" id="autotoc_md14"></a>
 Main API functions</h1>
 <p>Below is an overview of the main functions provided by CRoaring in C, covering both 32-bit (<code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code>) and 64-bit (<code><a class="el" href="d8/d01/roaring64_8h.html">roaring64.h</a></code>) bitmaps. For more details, see the header files in <code>include/roaring/</code> or the Doxygen documentation.</p>
-<h2><a class="anchor" id="autotoc_md12"></a>
+<h2><a class="anchor" id="autotoc_md15"></a>
 Creation and Destruction</h2>
 <ul>
 <li><code>roaring_bitmap_t *roaring_bitmap_create(void);</code> <br  />
@@ -277,7 +411,7 @@ Creation and Destruction</h2>
 <li><code>void <a class="el" href="d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free(roaring64_bitmap_t *r)</a>;</code> <br  />
  Free a 64-bit bitmap.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md13"></a>
+<h2><a class="anchor" id="autotoc_md16"></a>
 Adding and Removing Values</h2>
 <ul>
 <li><code>void <a class="el" href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x)</a>;</code> <br  />
@@ -289,7 +423,7 @@ Adding and Removing Values</h2>
 <li><code>void <a class="el" href="d8/d01/roaring64_8h.html#a101086533f5a251a64e596b97fea1ea0">roaring64_bitmap_remove(roaring64_bitmap_t *r, uint64_t x)</a>;</code> <br  />
  Remove value <code>x</code> from a 64-bit bitmap.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md14"></a>
+<h2><a class="anchor" id="autotoc_md17"></a>
 Queries and Cardinality</h2>
 <ul>
 <li><code>bool <a class="el" href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t x)</a>;</code> <br  />
@@ -301,15 +435,15 @@ Queries and Cardinality</h2>
 <li><code>uint64_t <a class="el" href="d8/d01/roaring64_8h.html#af1c9e7991db9341d1b3da6989395e444">roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r)</a>;</code> <br  />
  Get the number of elements in a 64-bit bitmap.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md15"></a>
+<h2><a class="anchor" id="autotoc_md18"></a>
 Iteration</h2>
 <ul>
 <li><code>bool <a class="el" href="dc/d56/roaring_8h.html#a5ea3f16e31066414ae7f3d0526030781">roaring_iterate(const roaring_bitmap_t *r, roaring_iterator iterator, void *param)</a>;</code> <br  />
  Iterate over all values in a 32-bit bitmap, calling <code>iterator</code> for each value.</li>
-<li><code>bool roaring64_iterate(const roaring64_bitmap_t *r, roaring_iterator64 iterator, void *param);</code> <br  />
+<li><code>bool <a class="el" href="d8/d01/roaring64_8h.html#a5f7c492e6206a56a062a1c8a05be4018">roaring64_bitmap_iterate(const roaring64_bitmap_t *r, roaring_iterator64 iterator, void *param)</a>;</code> <br  />
  Iterate over all values in a 64-bit bitmap.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md16"></a>
+<h2><a class="anchor" id="autotoc_md19"></a>
 Set Operations</h2>
 <ul>
 <li><code>roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2);</code> <br  />
@@ -329,7 +463,7 @@ Set Operations</h2>
 <li><code>roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2);</code> <br  />
  Difference (r1 \ r2) for 64-bit bitmaps.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md17"></a>
+<h2><a class="anchor" id="autotoc_md20"></a>
 Serialization and Deserialization</h2>
 <ul>
 <li><code>size_t <a class="el" href="dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *r)</a>;</code> <br  />
@@ -341,19 +475,18 @@ Serialization and Deserialization</h2>
 <li><code>size_t <a class="el" href="d8/d01/roaring64_8h.html#a984d439666b29ff9474f89d712307d2d">roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r, char *buf)</a>;</code> <br  />
  Serialize a 64-bit bitmap to a buffer (portable format).</li>
 <li><code>roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);</code> <br  />
- Deserialize a 32-bit bitmap from a buffer.</li>
-<li><code>roaring64_bitmap_t *roaring64_bitmap_portable_deserialize(const char *buf);</code> <br  />
- Deserialize a 64-bit bitmap from a buffer.</li>
+ Deserialize a 32-bit bitmap from a buffer. This is unsafe: it assumes <code>buf</code> points to a valid serialized bitmap and may read out of bounds otherwise. Prefer the safe variant below for untrusted input.</li>
+<li>The 64-bit API does not provide an unsafe deserializer; use <code>roaring64_bitmap_portable_deserialize_safe</code> (below) instead.</li>
 <li><code>roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes);</code> <br  />
- Safe deserialization of a 32-bit bitmap (will not read past <code>maxbytes</code>).</li>
+ Safe deserialization of a 32-bit bitmap (will not read past <code>maxbytes</code>). If you are loading data from an untrusted source, you should call <code>roaring_bitmap_internal_validate</code> prior to using the <code>roaring_bitmap_t</code>.</li>
 <li><code>roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes);</code> <br  />
- Safe deserialization of a 64-bit bitmap.</li>
+ Safe deserialization of a 64-bit bitmap (will not read past <code>maxbytes</code>). If you are loading data from an untrusted source, you should call <code>roaring64_bitmap_internal_validate</code> prior to using the <code>roaring64_bitmap_t</code>.</li>
 <li><code>size_t <a class="el" href="dc/d56/roaring_8h.html#a1136ca5cea06c428356cd24a8c423a74">roaring_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes)</a>;</code> <br  />
  Get the size of a serialized 32-bit bitmap (returns 0 if invalid).</li>
 <li><code>size_t <a class="el" href="d8/d01/roaring64_8h.html#a9a5113340fea367d4f4b265843faaf75">roaring64_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes)</a>;</code> <br  />
  Get the size of a serialized 64-bit bitmap (returns 0 if invalid).</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md18"></a>
+<h2><a class="anchor" id="autotoc_md21"></a>
 Validation</h2>
 <ul>
 <li><code>bool <a class="el" href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **reason)</a>;</code> <br  />
@@ -361,23 +494,23 @@ Validation</h2>
 <li><code>bool <a class="el" href="d8/d01/roaring64_8h.html#a7f02299fe0d771e770b81dc8e936ba77">roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r, const char **reason)</a>;</code> <br  />
  Validate the internal structure of a 64-bit bitmap.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md19"></a>
+<h2><a class="anchor" id="autotoc_md22"></a>
 Notes</h2>
 <ul>
 <li>All memory allocated by the library must be freed using the corresponding <code>free</code> function.</li>
 <li>The portable serialization format is cross-platform and can be shared between different languages and architectures.</li>
 <li>Always validate bitmaps deserialized from untrusted sources before using them.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md20"></a>
+<h1><a class="anchor" id="autotoc_md23"></a>
 C++ API functions</h1>
 <p>The C++ interface is provided via the <code>roaring.hh</code> (32-bit) and <code>roaring64map.hh</code> (64-bit) headers. These offer a modern, type-safe, and convenient API for manipulating Roaring bitmaps in C++.</p>
-<h2><a class="anchor" id="autotoc_md21"></a>
+<h2><a class="anchor" id="autotoc_md24"></a>
 Main Classes</h2>
 <ul>
 <li><code>roaring::Roaring</code> — 32-bit Roaring bitmap</li>
 <li><code>roaring::Roaring64Map</code> — 64-bit Roaring bitmap</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md22"></a>
+<h2><a class="anchor" id="autotoc_md25"></a>
 Common Methods (32-bit and 64-bit)</h2>
 <ul>
 <li><code>Roaring()</code> / <code>Roaring64Map()</code><ul>
@@ -429,7 +562,7 @@ Common Methods (32-bit and 64-bit)</h2>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md23"></a>
+<h2><a class="anchor" id="autotoc_md26"></a>
 Set Operations</h2>
 <ul>
 <li><code>Roaring operator|(const Roaring&amp;) const</code> / <code>Roaring64Map operator|(const Roaring64Map&amp;) const</code><ul>
@@ -450,7 +583,7 @@ Set Operations</h2>
 </li>
 <li>In-place versions: <code>operator|=</code>, <code>operator&amp;=</code>, <code>operator^=</code>, <code>operator-=</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md24"></a>
+<h2><a class="anchor" id="autotoc_md27"></a>
 Iteration</h2>
 <ul>
 <li><code>Roaring::const_iterator</code> / <code>Roaring64Map::const_iterator</code><ul>
@@ -462,7 +595,7 @@ Iteration</h2>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md25"></a>
+<h2><a class="anchor" id="autotoc_md28"></a>
 Serialization and Deserialization</h2>
 <ul>
 <li><code>size_t getSizeInBytes() const</code><ul>
@@ -482,7 +615,7 @@ Serialization and Deserialization</h2>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md26"></a>
+<h2><a class="anchor" id="autotoc_md29"></a>
 Bulk Operations</h2>
 <ul>
 <li><code>void addMany(size_t n, const uint32_t* values)</code> / <code>void addMany(size_t n, const uint64_t* values)</code><ul>
@@ -494,7 +627,7 @@ Bulk Operations</h2>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md27"></a>
+<h2><a class="anchor" id="autotoc_md30"></a>
 Example Usage</h2>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;roaring/roaring.hh&quot;</span></div>
 <div class="line"><span class="keyword">using namespace </span>roaring;</div>
@@ -510,10 +643,10 @@ Example Usage</h2>
 <div class="line">    <span class="comment">// iterate over values</span></div>
 <div class="line">}</div>
 </div><!-- fragment --><p>For 64-bit values, use <code>#include "roaring64map.hh"</code> and the <code>Roaring64Map</code> class, which has a similar API.</p>
-<h1><a class="anchor" id="autotoc_md28"></a>
+<h1><a class="anchor" id="autotoc_md31"></a>
 Dealing with large volumes of data</h1>
 <p>Some users have to deal with large volumes of data. It may be important for these users to be aware of the <code>addMany</code> (C++) <code>roaring_bitmap_or_many</code> (C) functions as it is much faster and economical to add values in batches when possible. Furthermore, calling periodically the <code>runOptimize</code> (C++) or <code>roaring_bitmap_run_optimize</code> (C) functions may help.</p>
-<h1><a class="anchor" id="autotoc_md29"></a>
+<h1><a class="anchor" id="autotoc_md32"></a>
 Running microbenchmarks</h1>
 <p>We have microbenchmarks constructed with the Google Benchmarks. Under Linux or macOS, you may run them as follows:</p>
 <div class="fragment"><div class="line">cmake -B build -D ENABLE_ROARING_MICROBENCHMARKS=ON</div>
@@ -530,7 +663,7 @@ Running microbenchmarks</h1>
 <div class="line">cmake --build buildnoavx</div>
 <div class="line">./buildnoavx/microbenchmarks/bench</div>
 </div><!-- fragment --><p>Please see <code>microbenchmarks/README.md</code> for more details.</p>
-<h1><a class="anchor" id="autotoc_md30"></a>
+<h1><a class="anchor" id="autotoc_md33"></a>
 Custom memory allocators</h1>
 <p>For general users, CRoaring would apply default allocator without extra codes. But global memory hook is also provided for those who want a custom memory allocator. Here is an example: </p><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring.h</a>&gt;</span></div>
 <div class="line"> </div>
@@ -542,7 +675,6 @@ Custom memory allocators</h1>
 <div class="line">    <span class="comment">// write you code here</span></div>
 <div class="line">    ...</div>
 <div class="line">}</div>
-<div class="ttc" id="aroaring_8h_html"><div class="ttname"><a href="dc/d56/roaring_8h.html">roaring.h</a></div></div>
 </div><!-- fragment --><p>By default we use: </p><div class="fragment"><div class="line"><span class="keyword">static</span> roaring_memory_t global_memory_hook = {</div>
 <div class="line">    .malloc = malloc,</div>
 <div class="line">    .realloc = realloc,</div>
@@ -552,7 +684,7 @@ Custom memory allocators</h1>
 <div class="line">    .aligned_free = roaring_bitmap_aligned_free,</div>
 <div class="line">};</div>
 </div><!-- fragment --><p>We require that the <code>free</code>/<code>aligned_free</code> functions follow the C convention where <code>free(NULL)</code>/<code>aligned_free(NULL)</code> have no effect.</p>
-<h1><a class="anchor" id="autotoc_md31"></a>
+<h1><a class="anchor" id="autotoc_md34"></a>
 Example (C)</h1>
 <p>This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a <code>roaring</code> directory. If you are working from the amalgamation script, you may add the line <code>#include "roaring.c"</code> if you are not linking against a prebuilt CRoaring library and replace <code>#include &lt;<a class="el" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</code> by <code>#include "roaring.h"</code>.</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</span></div>
@@ -729,38 +861,24 @@ Example (C)</h1>
 <div class="line">    <a class="code hl_function" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r3);</div>
 <div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
-<div class="ttc" id="aroaring_8h_html_a02f5d67a889993b158e55d0eb79b340b"><div class="ttname"><a href="dc/d56/roaring_8h.html#a02f5d67a889993b158e55d0eb79b340b">roaring_bitmap_create</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_create(void)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00056">roaring.h:56</a></div></div>
 <div class="ttc" id="aroaring_8h_html_a1136ca5cea06c428356cd24a8c423a74"><div class="ttname"><a href="dc/d56/roaring_8h.html#a1136ca5cea06c428356cd24a8c423a74">roaring_bitmap_portable_deserialize_size</a></div><div class="ttdeci">size_t roaring_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes)</div></div>
 <div class="ttc" id="aroaring_8h_html_a14ca6fb130b35a5497f2b1e463bda66d"><div class="ttname"><a href="dc/d56/roaring_8h.html#a14ca6fb130b35a5497f2b1e463bda66d">roaring_bitmap_portable_serialize</a></div><div class="ttdeci">size_t roaring_bitmap_portable_serialize(const roaring_bitmap_t *r, char *buf)</div></div>
 <div class="ttc" id="aroaring_8h_html_a14d2c72b7b3d0fe2b8dde0764ebff7fd"><div class="ttname"><a href="dc/d56/roaring_8h.html#a14d2c72b7b3d0fe2b8dde0764ebff7fd">roaring_bitmap_equals</a></div><div class="ttdeci">bool roaring_bitmap_equals(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
 <div class="ttc" id="aroaring_8h_html_a2b6a2da78ef1345086afe070f6831db3"><div class="ttname"><a href="dc/d56/roaring_8h.html#a2b6a2da78ef1345086afe070f6831db3">roaring_bitmap_internal_validate</a></div><div class="ttdeci">bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r, const char **reason)</div></div>
 <div class="ttc" id="aroaring_8h_html_a30850dcaa92db1490643ccdf89856b27"><div class="ttname"><a href="dc/d56/roaring_8h.html#a30850dcaa92db1490643ccdf89856b27">roaring_bitmap_copy</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_copy(const roaring_bitmap_t *r)</div></div>
-<div class="ttc" id="aroaring_8h_html_a3a71a1bef6c0233c93caabfd8db22c2a"><div class="ttname"><a href="dc/d56/roaring_8h.html#a3a71a1bef6c0233c93caabfd8db22c2a">roaring_bitmap_run_optimize</a></div><div class="ttdeci">bool roaring_bitmap_run_optimize(roaring_bitmap_t *r)</div></div>
 <div class="ttc" id="aroaring_8h_html_a44fa6bb2413242b37966a40856db20c2"><div class="ttname"><a href="dc/d56/roaring_8h.html#a44fa6bb2413242b37966a40856db20c2">roaring_bitmap_or_many_heap</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or_many_heap(uint32_t number, const roaring_bitmap_t **rs)</div></div>
 <div class="ttc" id="aroaring_8h_html_a48b73721e801bee831cb7b2872cf0a29"><div class="ttname"><a href="dc/d56/roaring_8h.html#a48b73721e801bee831cb7b2872cf0a29">roaring_bitmap_range_uint32_array</a></div><div class="ttdeci">bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *r, size_t offset, size_t limit, uint32_t *ans)</div></div>
 <div class="ttc" id="aroaring_8h_html_a4b15efab08a78a20645a96d9a69ad587"><div class="ttname"><a href="dc/d56/roaring_8h.html#a4b15efab08a78a20645a96d9a69ad587">roaring_bitmap_to_uint32_array</a></div><div class="ttdeci">void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans)</div></div>
 <div class="ttc" id="aroaring_8h_html_a4b90ef055bd16fc8d5851d96190f4e99"><div class="ttname"><a href="dc/d56/roaring_8h.html#a4b90ef055bd16fc8d5851d96190f4e99">roaring_bitmap_or_many</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or_many(size_t number, const roaring_bitmap_t **rs)</div></div>
 <div class="ttc" id="aroaring_8h_html_a5ea3f16e31066414ae7f3d0526030781"><div class="ttname"><a href="dc/d56/roaring_8h.html#a5ea3f16e31066414ae7f3d0526030781">roaring_iterate</a></div><div class="ttdeci">bool roaring_iterate(const roaring_bitmap_t *r, roaring_iterator iterator, void *ptr)</div></div>
-<div class="ttc" id="aroaring_8h_html_a6411fc557537acffd5d584b29f76e5ab"><div class="ttname"><a href="dc/d56/roaring_8h.html#a6411fc557537acffd5d584b29f76e5ab">roaring_iterator_create</a></div><div class="ttdeci">roaring_uint32_iterator_t * roaring_iterator_create(const roaring_bitmap_t *r)</div></div>
 <div class="ttc" id="aroaring_8h_html_a728aebc73dd5010e4041ea40d8c7faf8"><div class="ttname"><a href="dc/d56/roaring_8h.html#a728aebc73dd5010e4041ea40d8c7faf8">roaring_bitmap_portable_deserialize_safe</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes)</div></div>
 <div class="ttc" id="aroaring_8h_html_a773dbf96c1baedeba4d2c073e3e33ebe"><div class="ttname"><a href="dc/d56/roaring_8h.html#a773dbf96c1baedeba4d2c073e3e33ebe">roaring_bitmap_or</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_or(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
-<div class="ttc" id="aroaring_8h_html_a77dba28e5abf41cbd2502b0fffc5eeeb"><div class="ttname"><a href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a></div><div class="ttdeci">void roaring_bitmap_free(const roaring_bitmap_t *r)</div></div>
-<div class="ttc" id="aroaring_8h_html_a7c1d6efba899e68a68d436cb9db62964"><div class="ttname"><a href="dc/d56/roaring_8h.html#a7c1d6efba899e68a68d436cb9db62964">roaring_bitmap_contains</a></div><div class="ttdeci">bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00478">roaring.h:478</a></div></div>
 <div class="ttc" id="aroaring_8h_html_a9e01791b047756c2e31f27b58531968c"><div class="ttname"><a href="dc/d56/roaring_8h.html#a9e01791b047756c2e31f27b58531968c">roaring_bitmap_portable_size_in_bytes</a></div><div class="ttdeci">size_t roaring_bitmap_portable_size_in_bytes(const roaring_bitmap_t *r)</div></div>
 <div class="ttc" id="aroaring_8h_html_aa76a1e1fb5d1dcf88931aa7cd3961d1f"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa76a1e1fb5d1dcf88931aa7cd3961d1f">roaring_bitmap_or_inplace</a></div><div class="ttdeci">void roaring_bitmap_or_inplace(roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
 <div class="ttc" id="aroaring_8h_html_aa7d6e6919e46905bf7e5ddd824f3eb55"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read</a></div><div class="ttdeci">uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it, uint32_t *buf, uint32_t count)</div></div>
-<div class="ttc" id="aroaring_8h_html_aa879e686552e794ad36d33a9eedece3c"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa879e686552e794ad36d33a9eedece3c">roaring_uint32_iterator_free</a></div><div class="ttdeci">void roaring_uint32_iterator_free(roaring_uint32_iterator_t *it)</div></div>
-<div class="ttc" id="aroaring_8h_html_ab898269e29fa615e7e55439b19d91dc5"><div class="ttname"><a href="dc/d56/roaring_8h.html#ab898269e29fa615e7e55439b19d91dc5">roaring_bitmap_and</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_and(const roaring_bitmap_t *r1, const roaring_bitmap_t *r2)</div></div>
-<div class="ttc" id="aroaring_8h_html_abf071a021966c2eb8da4473a9dabaad6"><div class="ttname"><a href="dc/d56/roaring_8h.html#abf071a021966c2eb8da4473a9dabaad6">roaring_bitmap_get_cardinality</a></div><div class="ttdeci">uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r)</div></div>
-<div class="ttc" id="aroaring_8h_html_adfb882359d1d5219449bdb40ef5e67e4"><div class="ttname"><a href="dc/d56/roaring_8h.html#adfb882359d1d5219449bdb40ef5e67e4">roaring_bitmap_from</a></div><div class="ttdeci">#define roaring_bitmap_from(...)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00182">roaring.h:182</a></div></div>
 <div class="ttc" id="aroaring_8h_html_aeb2bce70178e0d7ba0096eb96beed660"><div class="ttname"><a href="dc/d56/roaring_8h.html#aeb2bce70178e0d7ba0096eb96beed660">roaring_bitmap_printf</a></div><div class="ttdeci">void roaring_bitmap_printf(const roaring_bitmap_t *r)</div></div>
-<div class="ttc" id="aroaring_8h_html_aec401e111190871fb95faaa0e4d66757"><div class="ttname"><a href="dc/d56/roaring_8h.html#aec401e111190871fb95faaa0e4d66757">roaring_uint32_iterator_advance</a></div><div class="ttdeci">bool roaring_uint32_iterator_advance(roaring_uint32_iterator_t *it)</div></div>
 <div class="ttc" id="aroaring_8h_html_af6611d4a7cb36e597353ce944104e3f6"><div class="ttname"><a href="dc/d56/roaring_8h.html#af6611d4a7cb36e597353ce944104e3f6">roaring_bitmap_of_ptr</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals)</div></div>
-<div class="ttc" id="aroaring_8h_html_af85d814ca8a6cd369905f629922c1c98"><div class="ttname"><a href="dc/d56/roaring_8h.html#af85d814ca8a6cd369905f629922c1c98">roaring_bitmap_add</a></div><div class="ttdeci">void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t x)</div></div>
-<div class="ttc" id="astructroaring__bitmap__s_html"><div class="ttname"><a href="dd/d7a/structroaring__bitmap__s.html">roaring_bitmap_s</a></div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00039">roaring.h:39</a></div></div>
-<div class="ttc" id="astructroaring__uint32__iterator__s_html"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html">roaring_uint32_iterator_s</a></div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l01090">roaring.h:1090</a></div></div>
-<div class="ttc" id="astructroaring__uint32__iterator__s_html_a99e95f8cbd08320c6ac27b1569ca6bb4"><div class="ttname"><a href="da/d27/structroaring__uint32__iterator__s.html#a99e95f8cbd08320c6ac27b1569ca6bb4">roaring_uint32_iterator_s::has_value</a></div><div class="ttdeci">bool has_value</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l01099">roaring.h:1099</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md32"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md35"></a>
 Compressed 64-bit Roaring bitmaps (C)</h1>
 <p>We also support efficient 64-bit compressed bitmaps in C:</p>
 <div class="fragment"><div class="line">++</div>
@@ -768,13 +886,8 @@ Compressed 64-bit Roaring bitmaps (C)</h1>
 <div class="line"> <span class="keywordflow">for</span> (uint64_t i = 100; i &lt; 1000; i++) <a class="code hl_function" href="d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add</a>(r2, i);</div>
 <div class="line"> printf(<span class="stringliteral">&quot;cardinality (64-bit) = %d\n&quot;</span>, (<span class="keywordtype">int</span>) <a class="code hl_function" href="d8/d01/roaring64_8h.html#af1c9e7991db9341d1b3da6989395e444">roaring64_bitmap_get_cardinality</a>(r2));</div>
 <div class="line"> <a class="code hl_function" href="d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free</a>(r2);</div>
-<div class="ttc" id="aroaring64_8h_html_a511b38d167a3c0f4ddfbd5c8ca7b6f19"><div class="ttname"><a href="d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19">roaring64_bitmap_add</a></div><div class="ttdeci">void roaring64_bitmap_add(roaring64_bitmap_t *r, uint64_t val)</div></div>
-<div class="ttc" id="aroaring64_8h_html_a8c5f0692fea8689552a0c13013fbac8c"><div class="ttname"><a href="d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a></div><div class="ttdeci">struct roaring64_bitmap_s roaring64_bitmap_t</div><div class="ttdef"><b>Definition</b> <a href="d8/d01/roaring64_8h_source.html#l00028">roaring64.h:28</a></div></div>
-<div class="ttc" id="aroaring64_8h_html_abbf6b14f6f80caa5496dcc839a33b94f"><div class="ttname"><a href="d8/d01/roaring64_8h.html#abbf6b14f6f80caa5496dcc839a33b94f">roaring64_bitmap_create</a></div><div class="ttdeci">roaring64_bitmap_t * roaring64_bitmap_create(void)</div></div>
-<div class="ttc" id="aroaring64_8h_html_aef1d257f0919f000eee69813b5484986"><div class="ttname"><a href="d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free</a></div><div class="ttdeci">void roaring64_bitmap_free(roaring64_bitmap_t *r)</div></div>
-<div class="ttc" id="aroaring64_8h_html_af1c9e7991db9341d1b3da6989395e444"><div class="ttname"><a href="d8/d01/roaring64_8h.html#af1c9e7991db9341d1b3da6989395e444">roaring64_bitmap_get_cardinality</a></div><div class="ttdeci">uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r)</div></div>
 </div><!-- fragment --><p>The API is similar to the conventional 32-bit bitmaps. Please see the header file <code><a class="el" href="d8/d01/roaring64_8h.html">roaring64.h</a></code> (compare with <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code>).</p>
-<h1><a class="anchor" id="autotoc_md33"></a>
+<h1><a class="anchor" id="autotoc_md36"></a>
 Conventional bitsets (C)</h1>
 <p>We support convention bitsets (uncompressed) as part of the library.</p>
 <p>Simple example:</p>
@@ -827,9 +940,8 @@ Conventional bitsets (C)</h1>
 <div class="line">bitset_free(bitset);</div>
 <div class="line"><a class="code hl_function" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r1);</div>
 <div class="ttc" id="aroaring_8h_html_a981ceddb33269e47cc3c61b9bf71a450"><div class="ttname"><a href="dc/d56/roaring_8h.html#a981ceddb33269e47cc3c61b9bf71a450">roaring_bitmap_to_bitset</a></div><div class="ttdeci">bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset)</div></div>
-<div class="ttc" id="aroaring_8h_html_ab3a666ebfe5de619bd334b9ebe059d73"><div class="ttname"><a href="dc/d56/roaring_8h.html#ab3a666ebfe5de619bd334b9ebe059d73">roaring_bitmap_add_range</a></div><div class="ttdeci">void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min, uint64_t max)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00433">roaring.h:433</a></div></div>
 </div><!-- fragment --><p>You should be aware that a convention bitset (<code>bitset_t *</code>) may use much more memory than a Roaring bitmap in some cases. You should run benchmarks to determine whether the conversion to a bitset has performance benefits in your case.</p>
-<h1><a class="anchor" id="autotoc_md34"></a>
+<h1><a class="anchor" id="autotoc_md37"></a>
 Example (C++)</h1>
 <p>This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a <code>roaring</code> directory so you may need to replace <code>#include "roaring.hh"</code> by <code>#include &lt;roaring/roaring.hh&gt;</code>. If you are working from the amalgamation script, you may add the line <code>#include "roaring.c"</code> if you are not linking against a CRoaring prebuilt library.</p>
 <div class="fragment"><div class="line"> ++</div>
@@ -938,7 +1050,7 @@ Example (C++)</h1>
 <div class="line">    j.move_equalorlarger(4);  <span class="comment">// *j == 4</span></div>
 <div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md35"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md38"></a>
 Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)</h1>
 <p>CRoaring follows the standard cmake workflow. Starting from the root directory of the project (CRoaring), you can do:</p>
 <div class="fragment"><div class="line">mkdir -p build</div>
@@ -965,7 +1077,7 @@ Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should 
 <div class="fragment"><div class="line">./tools/clang-format-check.sh</div>
 </div><!-- fragment --><p>To reformat your code according to the style convention (make sure that <code>clang-format</code> is installed):</p>
 <div class="fragment"><div class="line">./tools/clang-format.sh</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md36"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md39"></a>
 Building (Visual Studio under Windows)</h1>
 <p>We are assuming that you have a common Windows PC with at least Visual Studio 2015, and an x64 processor.</p>
 <p>To build with at least Visual Studio 2015 from the command line:</p><ul>
@@ -984,13 +1096,13 @@ Building (Visual Studio under Windows)</h1>
 <li>For testing, in the Standard toolbar, drop the <code>Select Startup Item...</code> menu and choose one of the tests. Run the test by pressing the button to the left of the dropdown.</li>
 </ul>
 <p>We have optimizations specific to AVX2 and AVX-512 in the code, and they are turned dynamically based on the detected hardware at runtime.</p>
-<h2><a class="anchor" id="autotoc_md37"></a>
+<h2><a class="anchor" id="autotoc_md40"></a>
 Usage (Using &lt;tt&gt;conan&lt;/tt&gt;)</h2>
 <p>You can install pre-built binaries for <code>roaring</code> or build it from source using <a href="https://conan.io/">Conan</a>. Use the following command to install latest version:</p>
 <div class="fragment"><div class="line">conan install --requires=&quot;roaring/[*]&quot; --build=missing</div>
 </div><!-- fragment --><p>For detailed instructions on how to use Conan, please refer to the <a href="https://docs.conan.io/2/">Conan documentation</a>.</p>
 <p>The <code>roaring</code> Conan recipe is kept up to date by Conan maintainers and community contributors. If the version is out of date, please <a href="https://github.com/conan-io/conan-center-index">create an issue or pull request</a> on the ConanCenterIndex repository.</p>
-<h2><a class="anchor" id="autotoc_md38"></a>
+<h2><a class="anchor" id="autotoc_md41"></a>
 Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 <p><a href="https://github.com/Microsoft/vcpkg">vcpkg</a> users on Windows, Linux and macOS can download and install <code>roaring</code> with one single command from their favorite shell.</p>
 <p>On Linux and macOS:</p>
@@ -1003,14 +1115,14 @@ Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 </div><!-- fragment --><p>will build and install <code>roaring</code> as a static library.</p>
 <p>These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.</p>
 <p>If you find the version of <code>roaring</code> shipped with <code>vcpkg</code> is out-of-date, feel free to report it to <code>vcpkg</code> community either by submiting an issue or by creating a PR.</p>
-<h1><a class="anchor" id="autotoc_md39"></a>
+<h1><a class="anchor" id="autotoc_md42"></a>
 Building (OpenHarmony)</h1>
 <p>To build with OpenHarmony SDK please see the <a href="https://gitcode.com/openharmony-sig/tpc_c_cplusplus/blob/master/Cross-Compilation Guide for Open-Source Third-Party Libraries in OpenHarmony_en.md">OpenHarmony Cross Compile Guide</a></p>
-<h1><a class="anchor" id="autotoc_md40"></a>
+<h1><a class="anchor" id="autotoc_md43"></a>
 SIMD-related throttling</h1>
 <p>Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.</p>
 <p>Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.</p>
-<h1><a class="anchor" id="autotoc_md41"></a>
+<h1><a class="anchor" id="autotoc_md44"></a>
 Thread safety</h1>
 <p>Like, for example, STL containers, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. However, you can safely copy a bitmap and use both copies in concurrently.</p>
 <p>If you use "copy-on-write" (default to disabled), then you should pass copies to the different threads. They will create shared containers, and for shared containers, we use reference counting with an atomic counter.</p>
@@ -1037,7 +1149,7 @@ Thread safety</h1>
 <div class="line">std::thread thread1(run, rarray1);</div>
 <div class="line">std::thread thread2(run, rarray2);</div>
 <div class="ttc" id="aroaring_8h_html_a84bd77c991d7520ab336433b3dff4cf5"><div class="ttname"><a href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a></div><div class="ttdeci">void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r, bool cow)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00117">roaring.h:117</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md42"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md45"></a>
 How to best aggregate bitmaps?</h1>
 <p>Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many different strategies.</p>
 <p>You can use <code>roaring_bitmap_or_many(bitmapcount, bitmaps)</code> or <code>roaring_bitmap_or_many_heap(bitmapcount, bitmaps)</code> or you may even roll your own aggregation:</p>
@@ -1049,54 +1161,54 @@ How to best aggregate bitmaps?</h1>
 <p>The <code>roaring_bitmap_or_many</code> is meant as a good default. It works by trying to delay work as much as possible. However, because it delays computations, it also does not optimize the format as the computation runs. It might thus fail to see some useful pattern in the data such as long consecutive values.</p>
 <p>The approach based on repeated calls to <code>roaring_bitmap_or_inplace</code> is also fine, and might even be faster in some cases. You can expect it to be faster if, after a few calls, you get long sequences of consecutive values in the answer. That is, if the final answer is all integers in the range [0,1000000), and this is apparent quickly, then the later <code>roaring_bitmap_or_inplace</code> will be very fast.</p>
 <p>You should benchmark these alternatives on your own data to decide what is best.</p>
-<h1><a class="anchor" id="autotoc_md43"></a>
+<h1><a class="anchor" id="autotoc_md46"></a>
 Wrappers for Roaring Bitmaps</h1>
 <p>This page lists several community-contributed wrappers for the Roaring Bitmap library, enabling its use in various programming languages and environments.</p>
-<h2><a class="anchor" id="autotoc_md44"></a>
+<h2><a class="anchor" id="autotoc_md47"></a>
 Python</h2>
 <p>Tom Cornebize developed a Python wrapper, <b>PyRoaringBitMap</b>, which can be found at <a href="https://github.com/Ezibenroc/PyRoaringBitMap">https://github.com/Ezibenroc/PyRoaringBitMap</a>.</p>
 <p>Installation is straightforward using pip:</p>
 <div class="fragment"><div class="line">pip install pyroaring</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md45"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md48"></a>
 JavaScript (Node.js)</h2>
 <p>Salvatore Previti created a Node.js wrapper, <b>roaring-node</b>, available at <a href="https://github.com/SalvatorePreviti/roaring-node">https://github.com/SalvatorePreviti/roaring-node</a>.</p>
 <p>You can install it via npm with the following command:</p>
 <div class="fragment"><div class="line">npm install roaring</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md46"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md49"></a>
 Swift</h2>
 <p>Jérémie Piotte authored the <a href="https://github.com/RoaringBitmap/SwiftRoaring">Swift wrapper</a>.</p>
-<h2><a class="anchor" id="autotoc_md47"></a>
+<h2><a class="anchor" id="autotoc_md50"></a>
 C</h2>
 <p>There is a C# wrapper, <b>CRoaring.Net</b>, located at <a href="https://github.com/k-wojcik/Roaring.Net">https://github.com/k-wojcik/Roaring.Net</a>. This wrapper is compatible with Windows and Linux on x64 processors.</p>
-<h2><a class="anchor" id="autotoc_md48"></a>
+<h2><a class="anchor" id="autotoc_md51"></a>
 Go (Golang)</h2>
 <p>A Go wrapper is available at the official RoaringBitmap GitHub organization: <a href="https://github.com/RoaringBitmap/gocroaring">https://github.com/RoaringBitmap/gocroaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md49"></a>
+<h2><a class="anchor" id="autotoc_md52"></a>
 Rust</h2>
 <p>Saulius Grigaliunas developed a Rust wrapper, <b>croaring-rs</b>, which can be found at <a href="https://github.com/saulius/croaring-rs">https://github.com/saulius/croaring-rs</a>.</p>
-<h2><a class="anchor" id="autotoc_md50"></a>
+<h2><a class="anchor" id="autotoc_md53"></a>
 D</h2>
 <p>Yuce Tekol created a D wrapper, <b>droaring</b>, available at <a href="https://github.com/yuce/droaring">https://github.com/yuce/droaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md51"></a>
+<h2><a class="anchor" id="autotoc_md54"></a>
 Redis Module</h2>
 <p>Antonio Guilherme Ferreira Viggiano wrote a Redis Module integrating Roaring Bitmaps, available at <a href="https://github.com/aviggiano/redis-roaring">https://github.com/aviggiano/redis-roaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md52"></a>
+<h2><a class="anchor" id="autotoc_md55"></a>
 Zig</h2>
 <p>Justin Whear contributed a Zig wrapper, located at <a href="https://github.com/jwhear/roaring-zig">https://github.com/jwhear/roaring-zig</a>.</p>
-<h1><a class="anchor" id="autotoc_md53"></a>
+<h1><a class="anchor" id="autotoc_md56"></a>
 Mailing list/discussion group</h1>
 <p><a href="https://groups.google.com/forum/#!forum/roaring-bitmaps">https://groups.google.com/forum/#!forum/roaring-bitmaps</a></p>
-<h1><a class="anchor" id="autotoc_md54"></a>
+<h1><a class="anchor" id="autotoc_md57"></a>
 Contributing</h1>
 <p>When contributing a change to the project, please run <code>tools/run-clangcldocker.sh</code> after making any changes if you have docker and bash. A github action runs on all PRs to ensure formatting is consistent with this.</p>
 <p>If you are using AI, please review our AI usage policy.</p>
 <p>For large PRs, prefer smaller incremental PRs or request staged review.</p>
 <p>Contributions are licensed under the project’s license. Ensure your work complies and does not infringe on third-party rights.</p>
 <p>A compiler or static-analyzer warning is not a bug. Do not report such cases as bugs. We do accept pull requests if you want to silence warnings issued by code analyzers, however.</p>
-<h1><a class="anchor" id="autotoc_md55"></a>
+<h1><a class="anchor" id="autotoc_md58"></a>
 Stars</h1>
 <p><a href="https://www.star-history.com/#RoaringBitmap/CRoaring&amp;Date"><img src="https://api.star-history.com/svg?repos=RoaringBitmap/CRoaring&amp;type=Date" alt="Star History Chart" class="inline"/></a></p>
-<h1><a class="anchor" id="autotoc_md56"></a>
+<h1><a class="anchor" id="autotoc_md59"></a>
 References about Roaring</h1>
 <ul>
 <li>Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience Volume 48, Issue 4 April 2018 Pages 867-895 <a href="https://arxiv.org/abs/1709.07821">arXiv:1709.07821</a></li>
