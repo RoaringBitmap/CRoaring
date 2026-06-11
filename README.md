@@ -15,6 +15,9 @@ Portable Roaring bitmaps in C (and C++) with full support for your favorite comp
 - [Objective](#objective)
 - [Requirements](#requirements)
 - [Quick Start](#quick-start)
+- [How to use the library?](#how-to-use-the-library)
+  - [The C API](#the-c-api)
+  - [The C++ API](#the-c-api-1)
 - [Packages](#packages)
 - [Using Roaring as a CPM dependency](#using-roaring-as-a-cpm-dependency)
 - [Using as a CMake dependency with FetchContent](#using-as-a-cmake-dependency-with-fetchcontent)
@@ -175,6 +178,133 @@ Linux or macOS users might follow the following instructions if they have a rece
 
 
 
+# How to use the library?
+
+The library offers both a C API (`roaring.h` for 32-bit bitmaps, `roaring64.h`
+for 64-bit bitmaps) and a C++ API (`roaring.hh` and `roaring64map.hh`). The two
+short programs below cover the most common operations: creating a bitmap, adding
+values, querying it, combining bitmaps with set operations, and iterating over
+the values. Both programs are part of our test suite, so they are guaranteed to
+compile and run.
+
+## The C API
+
+Each bitmap you create with `roaring_bitmap_create()` (or that is returned by a
+set operation such as `roaring_bitmap_and()`) must be released with
+`roaring_bitmap_free()`.
+
+```c
+#include <roaring/roaring.h>
+#include <roaring/roaring64.h>
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    // --- 32-bit bitmaps ---
+    // Create an empty bitmap and add a few values.
+    roaring_bitmap_t *bitmap = roaring_bitmap_create();
+    roaring_bitmap_add(bitmap, 1);
+    roaring_bitmap_add(bitmap, 100);
+    roaring_bitmap_add(bitmap, 1000);
+    roaring_bitmap_add_range(bitmap, 10, 20);  // adds the half-open range [10, 20)
+
+    // Query the bitmap.
+    assert(roaring_bitmap_contains(bitmap, 100));
+    assert(!roaring_bitmap_contains(bitmap, 50));
+    printf("32-bit cardinality = %d\n",
+           (int)roaring_bitmap_get_cardinality(bitmap));
+
+    // Optionally compress runs of consecutive values for a smaller footprint.
+    roaring_bitmap_run_optimize(bitmap);
+
+    // Set operations return a new bitmap that you own and must free.
+    roaring_bitmap_t *other = roaring_bitmap_from(100, 1000, 5000);
+    roaring_bitmap_t *intersection = roaring_bitmap_and(bitmap, other);
+    assert(roaring_bitmap_get_cardinality(intersection) == 2);  // {100, 1000}
+
+    // Iterate over the values in sorted (increasing) order.
+    roaring_uint32_iterator_t *it = roaring_iterator_create(bitmap);
+    while (it->has_value) {
+        // do something with it->current_value
+        roaring_uint32_iterator_advance(it);
+    }
+    roaring_uint32_iterator_free(it);
+
+    roaring_bitmap_free(intersection);
+    roaring_bitmap_free(other);
+    roaring_bitmap_free(bitmap);
+
+    // --- 64-bit bitmaps (same ideas, but with 64-bit values) ---
+    roaring64_bitmap_t *big = roaring64_bitmap_create();
+    roaring64_bitmap_add(big, 1);
+    roaring64_bitmap_add(big, 0xFFFFFFFFFFULL);  // a value beyond 32 bits
+    assert(roaring64_bitmap_contains(big, 0xFFFFFFFFFFULL));
+    printf("64-bit cardinality = %d\n",
+           (int)roaring64_bitmap_get_cardinality(big));
+    roaring64_bitmap_free(big);
+
+    return EXIT_SUCCESS;
+}
+```
+
+## The C++ API
+
+The C++ classes (`roaring::Roaring` and `roaring::Roaring64Map`) wrap the C API
+and manage memory for you: the destructor frees the bitmap, and set operations
+are exposed as operators (`&`, `|`, `^`, `-`). No explicit `free` is required.
+
+```cpp
+#include <roaring/roaring.hh>
+#include <roaring/roaring64map.hh>
+
+#include <cassert>
+#include <iostream>
+
+using namespace roaring;
+
+int main() {
+    // --- 32-bit bitmaps ---
+    Roaring r;
+    r.add(1);
+    r.add(100);
+    r.add(1000);
+    r.addRange(10, 20);  // adds the half-open range [10, 20)
+
+    assert(r.contains(100));
+    assert(!r.contains(50));
+    std::cout << "32-bit cardinality = " << r.cardinality() << std::endl;
+
+    // Construct a bitmap directly from a list of values.
+    Roaring other = Roaring::bitmapOfList({100, 1000, 5000});
+
+    // Operators return new bitmaps; their memory is managed for you.
+    Roaring intersection = r & other;
+    assert(intersection.cardinality() == 2);  // {100, 1000}
+
+    // Range-based iteration visits the values in sorted (increasing) order.
+    uint64_t sum = 0;
+    for (uint32_t value : r) {
+        sum += value;
+    }
+    std::cout << "sum of values = " << sum << std::endl;
+
+    // --- 64-bit bitmaps ---
+    Roaring64Map big;
+    big.add(uint64_t(1));
+    big.add(uint64_t(0xFFFFFFFFFFULL));  // a value beyond 32 bits
+    assert(big.contains(uint64_t(0xFFFFFFFFFFULL)));
+    std::cout << "64-bit cardinality = " << big.cardinality() << std::endl;
+
+    return EXIT_SUCCESS;
+}
+```
+
+For more extensive, fully commented examples (serialization, bulk operations,
+copy-on-write, aggregating many bitmaps, etc.), see the [Example (C)](#example-c)
+and [Example (C++)](#example-c-1) sections below.
+
 Packages
 ------
 
@@ -320,7 +450,7 @@ Below is an overview of the main functions provided by CRoaring in C, covering b
 ## Iteration
 - `bool roaring_iterate(const roaring_bitmap_t *r, roaring_iterator iterator, void *param);`  
   Iterate over all values in a 32-bit bitmap, calling `iterator` for each value.
-- `bool roaring64_iterate(const roaring64_bitmap_t *r, roaring_iterator64 iterator, void *param);`  
+- `bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r, roaring_iterator64 iterator, void *param);`  
   Iterate over all values in a 64-bit bitmap.
 
 ## Set Operations
@@ -351,13 +481,12 @@ Below is an overview of the main functions provided by CRoaring in C, covering b
 - `size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r, char *buf);`  
   Serialize a 64-bit bitmap to a buffer (portable format).
 - `roaring_bitmap_t *roaring_bitmap_portable_deserialize(const char *buf);`  
-  Deserialize a 32-bit bitmap from a buffer.
-- `roaring64_bitmap_t *roaring64_bitmap_portable_deserialize(const char *buf);`  
-  Deserialize a 64-bit bitmap from a buffer.
+  Deserialize a 32-bit bitmap from a buffer. This is unsafe: it assumes `buf` points to a valid serialized bitmap and may read out of bounds otherwise. Prefer the safe variant below for untrusted input.
+- The 64-bit API does not provide an unsafe deserializer; use `roaring64_bitmap_portable_deserialize_safe` (below) instead.
 - `roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes);`  
-  Safe deserialization of a 32-bit bitmap (will not read past `maxbytes`).
+  Safe deserialization of a 32-bit bitmap (will not read past `maxbytes`). If you are loading data from an untrusted source, you should call `roaring_bitmap_internal_validate` prior to using the `roaring_bitmap_t`.
 - `roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes);`  
-  Safe deserialization of a 64-bit bitmap.
+  Safe deserialization of a 64-bit bitmap (will not read past `maxbytes`).  If you are loading data from an untrusted source, you should call `roaring64_bitmap_internal_validate` prior to using the `roaring64_bitmap_t`.
 - `size_t roaring_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes);`  
   Get the size of a serialized 32-bit bitmap (returns 0 if invalid).
 - `size_t roaring64_bitmap_portable_deserialize_size(const char *buf, size_t maxbytes);`  

@@ -337,6 +337,9 @@ class Roaring {
         return api::roaring_bitmap_contains_range(&roaring, x, y);
     }
 
+    /**
+     * Check if all values from x (included) to y (included) are present.
+     */
     bool containsRangeClosed(const uint32_t x,
                              const uint32_t y) const noexcept {
         return api::roaring_bitmap_contains_range_closed(&roaring, x, y);
@@ -439,7 +442,10 @@ class Roaring {
         api::roaring_bitmap_to_uint32_array(&roaring, ans);
     }
     /**
-     * To int array with pagination
+     * Write to "ans" a sorted slice of the bitmap's values: skip the first
+     * "offset" values and copy up to "limit" of the values that follow. This
+     * is the paginated form of toUint32Array(). The caller must ensure that
+     * "ans" has room for at least "limit" values.
      */
     void rangeUint32Array(uint32_t *ans, size_t offset,
                           size_t limit) const noexcept {
@@ -660,7 +666,7 @@ class Roaring {
      * many, many bytes could be read. See also readSafe.
      *
      * The function may throw std::runtime_error if a bitmap could not be read.
-     * Not that even if it does not throw, the bitmap could still be unusable if
+     * Note that even if it does not throw, the bitmap could still be unusable if
      * the loaded data does not match the portable Roaring specification: you
      * should ensure that the data you load come from a serialized bitmap.
      */
@@ -693,7 +699,7 @@ class Roaring {
      * method).
      *
      * The function may throw std::runtime_error if a bitmap could not be read.
-     * Not that even if it does not throw, the bitmap could still be unusable if
+     * Note that even if it does not throw, the bitmap could still be unusable if
      * the loaded data does not match the portable Roaring specification: you
      * should ensure that the data you load come from a serialized bitmap.
      */

@@ -907,10 +907,9 @@ class Roaring64Map {
     }
 
     /**
-     * Convert the bitmap to an array. Write the output to "ans",
-     * caller is responsible to ensure that there is enough memory
-     * allocated
-     * (e.g., ans = new uint32[mybitmap.cardinality()];)
+     * Convert the bitmap to a sorted array. Write the output to "ans", the
+     * caller is responsible to ensure that there is enough memory allocated
+     * (e.g., ans = new uint64_t[mybitmap.cardinality()];)
      */
     void toUint64Array(uint64_t *ans) const {
         // Annoyingly, VS 2017 marks std::accumulate() as [[nodiscard]]

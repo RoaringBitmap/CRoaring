@@ -25,8 +25,14 @@ namespace roaring {
 namespace api {
 #endif
 
+/** An opaque 64-bit Roaring bitmap. Create one with `roaring64_bitmap_create()`
+ * and release it with `roaring64_bitmap_free()`. */
 typedef struct roaring64_bitmap_s roaring64_bitmap_t;
+/** Internal leaf type, exposed only for use inside `roaring64_bulk_context_t`.
+ * Callers should treat it as opaque. */
 typedef uint64_t roaring64_leaf_t;
+/** An opaque iterator over a 64-bit bitmap. See `roaring64_iterator_create()`.
+ */
 typedef struct roaring64_iterator_s roaring64_iterator_t;
 
 /**
