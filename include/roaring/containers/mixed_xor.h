@@ -111,9 +111,10 @@ bool array_array_container_lazy_xor(const array_container_t *src_1,
  * smaller.
  */
 
-void array_run_container_lazy_xor(const array_container_t *src_1,
-                                  const run_container_t *src_2,
-                                  run_container_t *dst);
+CROARING_NODISCARD
+bool array_run_container_lazy_xor(const array_container_t *src_1,
+                                 const run_container_t *src_2,
+                                 run_container_t *dst);
 
 /* dst does not indicate a valid container initially.  Eventually it
  * can become any kind of container.

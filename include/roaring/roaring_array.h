@@ -42,13 +42,13 @@ enum {
 /**
  * Create a new roaring array
  */
-roaring_array_t *ra_create(void);
+CROARING_NODISCARD roaring_array_t *ra_create(void);
 
 /**
  * Initialize an existing roaring array with the specified capacity (in number
  * of containers)
  */
-bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap);
+CROARING_NODISCARD bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap);
 
 /**
  * Initialize with zero capacity
@@ -58,7 +58,7 @@ void ra_init(roaring_array_t *t);
 /**
  * Copies this roaring array, we assume that dest is not initialized
  */
-bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
+CROARING_NODISCARD bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
              bool copy_on_write);
 
 /*
@@ -69,7 +69,7 @@ int ra_shrink_to_fit(roaring_array_t *ra);
 /**
  * Copies this roaring array, we assume that dest is initialized
  */
-bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
+CROARING_NODISCARD bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                   bool copy_on_write);
 
 /**
@@ -118,7 +118,9 @@ void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
                                 container_t *c, uint8_t typecode);
 
 /**
- * Append a new key-value pair
+ * Append a new key-value pair. The caller is responsible for ensuring there is
+ * sufficient capacity (otherwise the container may be dropped on a failed
+ * grow). Callers that cannot guarantee capacity should pre-reserve it.
  */
 void ra_append(roaring_array_t *ra, uint16_t key, container_t *c,
                uint8_t typecode);
@@ -135,7 +137,10 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
  * at indexes
  * [start_index, end_index)
  */
-void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
+// Returns false if an allocation failed partway through (the destination is
+// left holding only the successfully copied prefix).
+CROARING_NODISCARD
+bool ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
                           int32_t start_index, int32_t end_index,
                           bool copy_on_write);
 
@@ -149,7 +154,9 @@ void ra_append_copies_until(roaring_array_t *ra, const roaring_array_t *sa,
  * is strictly greater than before_start
  */
 
-void ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
+// Returns false on allocation failure (partial copy left in ra).
+CROARING_NODISCARD
+bool ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
                             uint16_t before_start, bool copy_on_write);
 
 /**
@@ -157,7 +164,10 @@ void ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
  * [start_index, end_index), old array should not be freed
  * (use ra_clear_without_containers)
  **/
-void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+// Returns false if growing the destination failed (nothing is moved in that
+// case; the source still owns the containers).
+CROARING_NODISCARD
+bool ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
                           int32_t start_index, int32_t end_index);
 /**
  * Append new key-value pairs to ra,  from sa at indexes
@@ -229,7 +239,7 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf);
  * and *readbytes indicates how many bytes were read. In all cases, if the
  * function returns true, then maxbytes >= *readbytes.
  */
-bool ra_portable_deserialize(roaring_array_t *ra, const char *buf,
+CROARING_NODISCARD bool ra_portable_deserialize(roaring_array_t *ra, const char *buf,
                              const size_t maxbytes, size_t *readbytes);
 
 /**

@@ -24,6 +24,10 @@ bool array_bitset_container_xor(const array_container_t *src_1,
                                 const bitset_container_t *src_2,
                                 container_t **dst) {
     bitset_container_t *result = bitset_container_create();
+    if (result == NULL) {  // allocation failure
+        *dst = NULL;
+        return false;
+    }
     bitset_container_copy(src_2, result);
     result->cardinality = (int32_t)bitset_flip_list_withcard(
         result->words, result->cardinality, src_1->array, src_1->cardinality);
@@ -62,6 +66,10 @@ bool run_bitset_container_xor(const run_container_t *src_1,
                               const bitset_container_t *src_2,
                               container_t **dst) {
     bitset_container_t *result = bitset_container_create();
+    if (result == NULL) {  // allocation failure
+        *dst = NULL;
+        return false;
+    }
 
     bitset_container_copy(src_2, result);
     for (int32_t rlepos = 0; rlepos < src_1->n_runs; ++rlepos) {
@@ -112,7 +120,12 @@ int array_run_container_xor(const array_container_t *src_1,
     const int arbitrary_threshold = 32;
     if (src_1->cardinality < arbitrary_threshold) {
         run_container_t *ans = run_container_create();
-        array_run_container_lazy_xor(src_1, src_2, ans);  // keeps runs.
+        if (ans == NULL || !array_run_container_lazy_xor(src_1, src_2,
+                                                         ans)) {  // keeps runs.
+            run_container_free(ans);
+            *dst = NULL;
+            return 0;
+        }
         uint8_t typecode_after;
         *dst =
             convert_run_to_efficient_container_and_free(ans, &typecode_after);
@@ -142,10 +155,12 @@ int array_run_container_xor(const array_container_t *src_1,
  * smaller.
  */
 
-void array_run_container_lazy_xor(const array_container_t *src_1,
+bool array_run_container_lazy_xor(const array_container_t *src_1,
                                   const run_container_t *src_2,
                                   run_container_t *dst) {
-    run_container_grow(dst, src_1->cardinality + src_2->n_runs, false);
+    if (!run_container_grow(dst, src_1->cardinality + src_2->n_runs, false)) {
+        return false;
+    }
     int32_t rlepos = 0;
     int32_t arraypos = 0;
     dst->n_runs = 0;
@@ -170,6 +185,7 @@ void array_run_container_lazy_xor(const array_container_t *src_1,
                                              src_2->runs[rlepos].length);
         rlepos++;
     }
+    return true;
 }
 
 /* dst does not indicate a valid container initially.  Eventually it
@@ -179,7 +195,12 @@ void array_run_container_lazy_xor(const array_container_t *src_1,
 int run_run_container_xor(const run_container_t *src_1,
                           const run_container_t *src_2, container_t **dst) {
     run_container_t *ans = run_container_create();
-    run_container_xor(src_1, src_2, ans);
+    if (ans == NULL || !run_container_xor(src_1, src_2, ans)) {
+        // Allocation failure: report no container.
+        run_container_free(ans);
+        *dst = NULL;
+        return 0;
+    }
     uint8_t typecode_after;
     *dst = convert_run_to_efficient_container_and_free(ans, &typecode_after);
     return typecode_after;
@@ -200,10 +221,15 @@ bool array_array_container_xor(const array_container_t *src_1,
         src_1->cardinality + src_2->cardinality;  // upper bound
     if (totalCardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        array_container_xor(src_1, src_2, CAST_array(*dst));
+        if (*dst == NULL) return false;  // allocation failure
+        if (!array_container_xor(src_1, src_2, CAST_array(*dst))) {
+            container_free(*dst, ARRAY_CONTAINER_TYPE);
+            *dst = NULL;
+        }
         return false;  // not a bitset
     }
     *dst = bitset_container_from_array(src_1);
+    if (*dst == NULL) return false;  // allocation failure
     bool returnval = true;  // expect a bitset
     bitset_container_t *ourbitset = CAST_bitset(*dst);
     ourbitset->cardinality = (uint32_t)bitset_flip_list_withcard(
@@ -239,7 +265,11 @@ bool array_array_container_lazy_xor(const array_container_t *src_1,
     //
     if (totalCardinality <= ARRAY_LAZY_LOWERBOUND) {
         *dst = array_container_create_given_capacity(totalCardinality);
-        if (*dst != NULL) array_container_xor(src_1, src_2, CAST_array(*dst));
+        if (*dst != NULL &&
+            !array_container_xor(src_1, src_2, CAST_array(*dst))) {
+            container_free(*dst, ARRAY_CONTAINER_TYPE);
+            *dst = NULL;
+        }
         return false;  // not a bitset
     }
     *dst = bitset_container_from_array(src_1);
@@ -261,6 +291,10 @@ bool bitset_bitset_container_xor(const bitset_container_t *src_1,
                                  const bitset_container_t *src_2,
                                  container_t **dst) {
     bitset_container_t *ans = bitset_container_create();
+    if (ans == NULL) {  // allocation failure
+        *dst = NULL;
+        return false;
+    }
     int card = bitset_container_xor(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);

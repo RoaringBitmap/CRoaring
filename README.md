@@ -665,6 +665,25 @@ static roaring_memory_t global_memory_hook = {
 We require that the `free`/`aligned_free` functions follow the C
 convention where `free(NULL)`/`aligned_free(NULL)` have no effect.
 
+## Memory allocation policy
+
+Throughout CRoaring, a non-NULL pointer from `roaring_malloc`, `roaring_realloc`,
+`roaring_calloc`, or `roaring_aligned_malloc` (or from the functions you install
+with `roaring_init_memory_hook`) is treated as usable memory: the library reads and
+writes the full requested size without further checks, as if the storage were
+committed.
+
+**This is a simplifying assumption, not a correct model on every platform.** On
+systems with overcommit, demand paging, lazy commit, or similar behavior, a
+non-NULL return value does not necessarily mean that every byte is backed by
+physical storage or that access cannot fail later (for example with `SIGBUS` or
+the OOM killer). CRoaring does not probe or fault-in memory after allocation.
+
+Custom allocators should return `NULL` on failure. If they return non-NULL, they
+should provide memory that is safe to use immediately for the requested size;
+otherwise library behavior is undefined. See `include/roaring/memory.h` for the
+full statement of this policy.
+
 
 # Example (C)
 

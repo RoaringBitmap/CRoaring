@@ -121,6 +121,10 @@ bool array_container_negation_range(const array_container_t *src,
 
     if (new_cardinality > DEFAULT_MAX_SIZE) {
         bitset_container_t *temp = bitset_container_from_array(src);
+        if (temp == NULL) {  // allocation failure
+            *dst = NULL;
+            return true;
+        }
         bitset_flip_range(temp->words, (uint32_t)range_start,
                           (uint32_t)range_end);
         temp->cardinality = new_cardinality;
@@ -131,6 +135,9 @@ bool array_container_negation_range(const array_container_t *src,
     array_container_t *arr =
         array_container_create_given_capacity(new_cardinality);
     *dst = (container_t *)arr;
+    if (arr == NULL) {  // allocation failure
+        return false;
+    }
     if (new_cardinality == 0) {
         arr->cardinality = new_cardinality;
         return false;  // we are done.
@@ -189,6 +196,10 @@ bool bitset_container_negation_range(const bitset_container_t *src,
 
     // keep computation using bitsets as long as possible.
     bitset_container_t *t = bitset_container_clone(src);
+    if (t == NULL) {  // allocation failure
+        *dst = NULL;
+        return true;
+    }
     bitset_flip_range(t->words, (uint32_t)range_start, (uint32_t)range_end);
     t->cardinality = bitset_container_compute_cardinality(t);
 
@@ -196,6 +207,8 @@ bool bitset_container_negation_range(const bitset_container_t *src,
         *dst = t;
         return true;
     } else {
+        // array_container_from_bitset may fail (*dst becomes NULL), which the
+        // caller treats as an allocation failure.
         *dst = array_container_from_bitset(t);
         bitset_container_free(t);
         return false;
@@ -245,6 +258,11 @@ int run_container_negation_range(const run_container_t *src,
 
     run_container_t *ans = run_container_create_given_capacity(
         src->n_runs + 1);  // src->n_runs + 1);
+    if (ans == NULL) {
+        // Allocation failure: report no container (per the contract above).
+        *dst = NULL;
+        return RUN_CONTAINER_TYPE;
+    }
     int k = 0;
     for (; k < src->n_runs && src->runs[k].value < range_start; ++k) {
         ans->runs[k] = src->runs[k];

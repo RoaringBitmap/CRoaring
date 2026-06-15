@@ -21,12 +21,12 @@ namespace internal {
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/
-void array_bitset_container_andnot(const array_container_t *src_1,
+bool array_bitset_container_andnot(const array_container_t *src_1,
                                    const bitset_container_t *src_2,
                                    array_container_t *dst) {
     // follows Java implementation as of June 2016
     if (dst->capacity < src_1->cardinality) {
-        array_container_grow(dst, src_1->cardinality, false);
+        if (!array_container_grow(dst, src_1->cardinality, false)) return false;
     }
     int32_t newcard = 0;
     const int32_t origcard = src_1->cardinality;
@@ -36,14 +36,15 @@ void array_bitset_container_andnot(const array_container_t *src_1,
         newcard += 1 - bitset_container_contains(src_2, key);
     }
     dst->cardinality = newcard;
+    return true;
 }
 
 /* Compute the andnot of src_1 and src_2 and write the result to
  * src_1 */
 
-void array_bitset_container_iandnot(array_container_t *src_1,
+bool array_bitset_container_iandnot(array_container_t *src_1,
                                     const bitset_container_t *src_2) {
-    array_bitset_container_andnot(src_1, src_2, src_1);
+    return array_bitset_container_andnot(src_1, src_2, src_1);
 }
 
 /* Compute the andnot of src_1 and src_2 and write the result to
@@ -56,6 +57,10 @@ bool bitset_array_container_andnot(const bitset_container_t *src_1,
                                    container_t **dst) {
     // Java did this directly, but we have option of asm or avx
     bitset_container_t *result = bitset_container_create();
+    if (result == NULL) {  // allocation failure
+        *dst = NULL;
+        return false;
+    }
     bitset_container_copy(src_1, result);
     result->cardinality =
         (int32_t)bitset_clear_list(result->words, (uint64_t)result->cardinality,
@@ -177,6 +182,10 @@ bool bitset_run_container_andnot(const bitset_container_t *src_1,
                                  container_t **dst) {
     // follows Java implementation
     bitset_container_t *result = bitset_container_create();
+    if (result == NULL) {  // allocation failure
+        *dst = NULL;
+        return false;
+    }
 
     bitset_container_copy(src_1, result);
     for (int32_t rlepos = 0; rlepos < src_2->n_runs; ++rlepos) {
@@ -378,19 +387,19 @@ int run_array_container_iandnot(run_container_t *src_1,
 
 /* dst must be a valid array container, allowed to be src_1 */
 
-void array_run_container_andnot(const array_container_t *src_1,
+bool array_run_container_andnot(const array_container_t *src_1,
                                 const run_container_t *src_2,
                                 array_container_t *dst) {
     // basically following Java impl as of June 2016
     if (src_1->cardinality > dst->capacity) {
-        array_container_grow(dst, src_1->cardinality, false);
+        if (!array_container_grow(dst, src_1->cardinality, false)) return false;
     }
 
     if (src_2->n_runs == 0) {
         memmove(dst->array, src_1->array,
                 sizeof(uint16_t) * src_1->cardinality);
         dst->cardinality = src_1->cardinality;
-        return;
+        return true;
     }
     int32_t run_start = src_2->runs[0].value;
     int32_t run_end = run_start + src_2->runs[0].length;
@@ -418,15 +427,16 @@ void array_run_container_andnot(const array_container_t *src_1,
         }
     }
     dst->cardinality = dest_card;
+    return true;
 }
 
 /* dst does not indicate a valid container initially.  Eventually it
  * can become any kind of container.
  */
 
-void array_run_container_iandnot(array_container_t *src_1,
+bool array_run_container_iandnot(array_container_t *src_1,
                                  const run_container_t *src_2) {
-    array_run_container_andnot(src_1, src_2, src_1);
+    return array_run_container_andnot(src_1, src_2, src_1);
 }
 
 /* dst does not indicate a valid container initially.  Eventually it
@@ -436,7 +446,12 @@ void array_run_container_iandnot(array_container_t *src_1,
 int run_run_container_andnot(const run_container_t *src_1,
                              const run_container_t *src_2, container_t **dst) {
     run_container_t *ans = run_container_create();
-    run_container_andnot(src_1, src_2, ans);
+    if (ans == NULL || !run_container_andnot(src_1, src_2, ans)) {
+        // Allocation failure: report no container.
+        run_container_free(ans);
+        *dst = NULL;
+        return 0;
+    }
     uint8_t typecode_after;
     *dst = convert_run_to_efficient_container_and_free(ans, &typecode_after);
     return typecode_after;
@@ -461,17 +476,17 @@ int run_run_container_iandnot(run_container_t *src_1,
  * dst is a valid array container and may be the same as src_1
  */
 
-void array_array_container_andnot(const array_container_t *src_1,
+bool array_array_container_andnot(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst) {
-    array_container_andnot(src_1, src_2, dst);
+    return array_container_andnot(src_1, src_2, dst);
 }
 
 /* inplace array-array andnot will always be able to reuse the space of
  * src_1 */
-void array_array_container_iandnot(array_container_t *src_1,
+bool array_array_container_iandnot(array_container_t *src_1,
                                    const array_container_t *src_2) {
-    array_container_andnot(src_1, src_2, src_1);
+    return array_container_andnot(src_1, src_2, src_1);
 }
 
 /* Compute the andnot of src_1 and src_2 and write the result to
@@ -483,6 +498,10 @@ bool bitset_bitset_container_andnot(const bitset_container_t *src_1,
                                     const bitset_container_t *src_2,
                                     container_t **dst) {
     bitset_container_t *ans = bitset_container_create();
+    if (ans == NULL) {  // allocation failure
+        *dst = NULL;
+        return false;
+    }
     int card = bitset_container_andnot(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);

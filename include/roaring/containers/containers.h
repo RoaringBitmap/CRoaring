@@ -87,7 +87,7 @@ typedef struct shared_container_s shared_container_t;
  * If copy_on_write = false, then clone.
  * Return NULL in case of failure.
  **/
-container_t *get_copy_of_container(container_t *container, uint8_t *typecode,
+CROARING_NODISCARD container_t *get_copy_of_container(container_t *container, uint8_t *typecode,
                                    bool copy_on_write);
 
 /* Frees a shared container (actually decrement its counter and only frees when
@@ -139,7 +139,7 @@ static inline uint8_t get_container_type(const container_t *c, uint8_t type) {
  * is responsible for deallocation. If the container is not shared, then it is
  * physically cloned. Sharable containers are not cloneable.
  */
-container_t *container_clone(const container_t *container, uint8_t typecode);
+CROARING_NODISCARD container_t *container_clone(const container_t *container, uint8_t typecode);
 
 /* access to container underneath, cloning it if needed */
 static inline container_t *get_writable_copy_if_shared(container_t *c,
@@ -326,14 +326,26 @@ static inline container_t *container_from_range(uint8_t *type, uint32_t min,
     if (size <= DEFAULT_MAX_SIZE) {  // array container
         *type = ARRAY_CONTAINER_TYPE;
         array_container_t *array = array_container_create_given_capacity(size);
+        if (array == NULL) {
+            return NULL;
+        }
         array_container_add_from_range(array, min, max, step);
-        assert(array->cardinality == size);
+        if (array->cardinality != size) {
+            array_container_free(array);
+            return NULL;
+        }
         return array;
     } else {  // bitset container
         *type = BITSET_CONTAINER_TYPE;
         bitset_container_t *bitset = bitset_container_create();
+        if (bitset == NULL) {
+            return NULL;
+        }
         bitset_container_add_from_range(bitset, min, max, step);
-        assert(bitset->cardinality == size);
+        if (bitset->cardinality != size) {
+            bitset_container_free(bitset);
+            return NULL;
+        }
         return bitset;
     }
 }
@@ -351,6 +363,9 @@ static inline container_t *container_repair_after_lazy(container_t *c,
             bc->cardinality = bitset_container_compute_cardinality(bc);
             if (bc->cardinality <= DEFAULT_MAX_SIZE) {
                 result = array_container_from_bitset(bc);
+                if (result == NULL) {
+                    return c;
+                }
                 bitset_container_free(bc);
                 *type = ARRAY_CONTAINER_TYPE;
                 return result;
@@ -435,6 +450,9 @@ bool container_internal_validate(const container_t *container, uint8_t typecode,
  */
 static inline bool container_nonzero_cardinality(const container_t *c,
                                                  uint8_t typecode) {
+    if (c == NULL) {
+        return false;
+    }
     c = container_unwrap_shared(c, &typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE:
@@ -501,8 +519,21 @@ static inline container_t *container_add(
             if (array_container_try_add(ac, val, DEFAULT_MAX_SIZE) != -1) {
                 *new_typecode = ARRAY_CONTAINER_TYPE;
                 return ac;
+            } else if (ac->cardinality < DEFAULT_MAX_SIZE) {
+                // try_add returned -1 even though the array is not full: this
+                // is an allocation failure during growth, not a genuine
+                // overflow.  Leave the array container unchanged and valid
+                // rather than converting it into an undersized bitset.
+                *new_typecode = ARRAY_CONTAINER_TYPE;
+                return ac;
             } else {
                 bitset_container_t *bitset = bitset_container_from_array(ac);
+                if (bitset == NULL) {
+                    // Allocation failed: keep the original array container and
+                    // report its true type.
+                    *new_typecode = ARRAY_CONTAINER_TYPE;
+                    return c;
+                }
                 bitset_container_add(bitset, val);
                 *new_typecode = BITSET_CONTAINER_TYPE;
                 return bitset;
@@ -740,32 +771,50 @@ static inline container_t *container_and(const container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, ARRAY):
             result = array_container_create();
-            array_container_intersection(
-                const_CAST_array(c1), const_CAST_array(c2), CAST_array(result));
+            if (result == NULL) return NULL;
+            if (!array_container_intersection(const_CAST_array(c1),
+                                              const_CAST_array(c2),
+                                              CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
         case CONTAINER_PAIR(RUN, RUN):
             result = run_container_create();
-            run_container_intersection(const_CAST_run(c1), const_CAST_run(c2),
-                                       CAST_run(result));
+            if (result == NULL) return NULL;
+            if (!run_container_intersection(const_CAST_run(c1),
+                                            const_CAST_run(c2),
+                                            CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             return convert_run_to_efficient_container_and_free(CAST_run(result),
                                                                result_type);
 
         case CONTAINER_PAIR(BITSET, ARRAY):
             result = array_container_create();
-            array_bitset_container_intersection(const_CAST_array(c2),
-                                                const_CAST_bitset(c1),
-                                                CAST_array(result));
+            if (result == NULL) return NULL;
+            if (!array_bitset_container_intersection(const_CAST_array(c2),
+                                                     const_CAST_bitset(c1),
+                                                     CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             result = array_container_create();
+            if (result == NULL) return NULL;
+            if (!array_bitset_container_intersection(const_CAST_array(c1),
+                                                     const_CAST_bitset(c2),
+                                                     CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            array_bitset_container_intersection(const_CAST_array(c1),
-                                                const_CAST_bitset(c2),
-                                                CAST_array(result));
             return result;
 
         case CONTAINER_PAIR(BITSET, RUN):
@@ -786,16 +835,26 @@ static inline container_t *container_and(const container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = array_container_create();
+            if (result == NULL) return NULL;
+            if (!array_run_container_intersection(
+                    const_CAST_array(c1), const_CAST_run(c2),
+                    CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            array_run_container_intersection(
-                const_CAST_array(c1), const_CAST_run(c2), CAST_array(result));
             return result;
 
         case CONTAINER_PAIR(RUN, ARRAY):
             result = array_container_create();
+            if (result == NULL) return NULL;
+            if (!array_run_container_intersection(
+                    const_CAST_array(c2), const_CAST_run(c1),
+                    CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            array_run_container_intersection(
-                const_CAST_array(c2), const_CAST_run(c1), CAST_array(result));
             return result;
 
         default:
@@ -940,25 +999,37 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(RUN, RUN):
             result = run_container_create();
-            run_container_intersection(const_CAST_run(c1), const_CAST_run(c2),
-                                       CAST_run(result));
+            if (result == NULL) return NULL;
             // as of January 2016, Java code used non-in-place intersection for
             // two runcontainers
+            if (!run_container_intersection(const_CAST_run(c1),
+                                            const_CAST_run(c2),
+                                            CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             return convert_run_to_efficient_container_and_free(CAST_run(result),
                                                                result_type);
 
         case CONTAINER_PAIR(BITSET, ARRAY):
             // c1 is a bitmap so no inplace possible
             result = array_container_create();
-            array_bitset_container_intersection(const_CAST_array(c2),
-                                                const_CAST_bitset(c1),
-                                                CAST_array(result));
+            if (result == NULL) {  // OOM: keep c1 (a bitset) unchanged
+                *result_type = BITSET_CONTAINER_TYPE;
+                return c1;
+            }
+            // On OOM the result is left as a valid empty array container.
+            (void)array_bitset_container_intersection(const_CAST_array(c2),
+                                                      const_CAST_bitset(c1),
+                                                      CAST_array(result));
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            array_bitset_container_intersection(
+            // In-place: c1 already has capacity for its own cardinality, so the
+            // intersection cannot need to grow and thus cannot fail.
+            (void)array_bitset_container_intersection(
                 const_CAST_array(c1), const_CAST_bitset(c2),
                 CAST_array(c1));  // result is allowed to be same as c1
             return c1;
@@ -981,16 +1052,26 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = array_container_create();
-            *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            array_run_container_intersection(
+            if (result == NULL) {  // OOM: keep c1 (an array) unchanged
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
+            // On OOM the result is left as a valid empty array container.
+            (void)array_run_container_intersection(
                 const_CAST_array(c1), const_CAST_run(c2), CAST_array(result));
+            *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
         case CONTAINER_PAIR(RUN, ARRAY):
             result = array_container_create();
-            *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            array_run_container_intersection(
+            if (result == NULL) {  // OOM: keep c1 (a run) unchanged
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
+            // On OOM the result is left as a valid empty array container.
+            (void)array_run_container_intersection(
                 const_CAST_array(c2), const_CAST_run(c1), CAST_array(result));
+            *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
         default:
@@ -1005,6 +1086,29 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
  * result_type), requires a typecode. This allocates new memory, caller
  * is responsible for deallocation.
  */
+static inline container_t *container_or_finish_bitset(container_t *result,
+                                                      uint8_t *result_type) {
+    if (result == NULL) {
+        return NULL;
+    }
+    bitset_container_t *bc = CAST_bitset(result);
+    if (bc->cardinality == BITSET_UNKNOWN_CARDINALITY) {
+        bc->cardinality = bitset_container_compute_cardinality(bc);
+    }
+    if (bc->cardinality <= DEFAULT_MAX_SIZE) {
+        container_t *array = array_container_from_bitset(bc);
+        if (array == NULL) {
+            bitset_container_free(bc);
+            return NULL;
+        }
+        bitset_container_free(bc);
+        *result_type = ARRAY_CONTAINER_TYPE;
+        return array;
+    }
+    *result_type = BITSET_CONTAINER_TYPE;
+    return result;
+}
+
 static inline container_t *container_or(const container_t *c1, uint8_t type1,
                                         const container_t *c2, uint8_t type2,
                                         uint8_t *result_type) {
@@ -1014,10 +1118,12 @@ static inline container_t *container_or(const container_t *c1, uint8_t type1,
     switch (PAIR_CONTAINER_TYPES(type1, type2)) {
         case CONTAINER_PAIR(BITSET, BITSET):
             result = bitset_container_create();
+            if (result == NULL) {
+                return NULL;
+            }
             bitset_container_or(const_CAST_bitset(c1), const_CAST_bitset(c2),
                                 CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return container_or_finish_bitset(result, result_type);
 
         case CONTAINER_PAIR(ARRAY, ARRAY):
             *result_type =
@@ -1025,12 +1131,21 @@ static inline container_t *container_or(const container_t *c1, uint8_t type1,
                                             const_CAST_array(c2), &result)
                     ? BITSET_CONTAINER_TYPE
                     : ARRAY_CONTAINER_TYPE;
+            if (*result_type == BITSET_CONTAINER_TYPE && result != NULL) {
+                return container_or_finish_bitset(result, result_type);
+            }
             return result;
 
         case CONTAINER_PAIR(RUN, RUN):
             result = run_container_create();
-            run_container_union(const_CAST_run(c1), const_CAST_run(c2),
-                                CAST_run(result));
+            if (result == NULL) {
+                return NULL;
+            }
+            if (!run_container_union(const_CAST_run(c1), const_CAST_run(c2),
+                                     CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // todo: could be optimized since will never convert to array
             result = convert_run_to_efficient_container_and_free(
@@ -1039,58 +1154,92 @@ static inline container_t *container_or(const container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(BITSET, ARRAY):
             result = bitset_container_create();
+            if (result == NULL) {
+                return NULL;
+            }
             array_bitset_container_union(const_CAST_array(c2),
                                          const_CAST_bitset(c1),
                                          CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return container_or_finish_bitset(result, result_type);
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             result = bitset_container_create();
+            if (result == NULL) {
+                return NULL;
+            }
             array_bitset_container_union(const_CAST_array(c1),
                                          const_CAST_bitset(c2),
                                          CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return container_or_finish_bitset(result, result_type);
 
         case CONTAINER_PAIR(BITSET, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = run_container_create();
+                if (result == NULL) {
+                    return NULL;
+                }
+                if (!run_container_copy(const_CAST_run(c2), CAST_run(result))) {
+                    run_container_free(CAST_run(result));
+                    return NULL;
+                }
                 *result_type = RUN_CONTAINER_TYPE;
-                run_container_copy(const_CAST_run(c2), CAST_run(result));
                 return result;
             }
             result = bitset_container_create();
+            if (result == NULL) {
+                return NULL;
+            }
             run_bitset_container_union(
                 const_CAST_run(c2), const_CAST_bitset(c1), CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return container_or_finish_bitset(result, result_type);
 
         case CONTAINER_PAIR(RUN, BITSET):
             if (run_container_is_full(const_CAST_run(c1))) {
                 result = run_container_create();
+                if (result == NULL) {
+                    return NULL;
+                }
+                if (!run_container_copy(const_CAST_run(c1), CAST_run(result))) {
+                    run_container_free(CAST_run(result));
+                    return NULL;
+                }
                 *result_type = RUN_CONTAINER_TYPE;
-                run_container_copy(const_CAST_run(c1), CAST_run(result));
                 return result;
             }
             result = bitset_container_create();
+            if (result == NULL) {
+                return NULL;
+            }
             run_bitset_container_union(
                 const_CAST_run(c1), const_CAST_bitset(c2), CAST_bitset(result));
-            *result_type = BITSET_CONTAINER_TYPE;
-            return result;
+            return container_or_finish_bitset(result, result_type);
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = run_container_create();
-            array_run_container_union(const_CAST_array(c1), const_CAST_run(c2),
-                                      CAST_run(result));
+            if (result == NULL) {
+                return NULL;
+            }
+            if (!array_run_container_union(const_CAST_array(c1),
+                                           const_CAST_run(c2),
+                                           CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             result = convert_run_to_efficient_container_and_free(
                 CAST_run(result), result_type);
             return result;
 
         case CONTAINER_PAIR(RUN, ARRAY):
             result = run_container_create();
-            array_run_container_union(const_CAST_array(c2), const_CAST_run(c1),
-                                      CAST_run(result));
+            if (result == NULL) {
+                return NULL;
+            }
+            if (!array_run_container_union(const_CAST_array(c2),
+                                           const_CAST_run(c1),
+                                           CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             result = convert_run_to_efficient_container_and_free(
                 CAST_run(result), result_type);
             return result;
@@ -1121,6 +1270,7 @@ static inline container_t *container_lazy_or(const container_t *c1,
     switch (PAIR_CONTAINER_TYPES(type1, type2)) {
         case CONTAINER_PAIR(BITSET, BITSET):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             bitset_container_or_nocard(const_CAST_bitset(c1),
                                        const_CAST_bitset(c2),
                                        CAST_bitset(result));  // is lazy
@@ -1137,8 +1287,12 @@ static inline container_t *container_lazy_or(const container_t *c1,
 
         case CONTAINER_PAIR(RUN, RUN):
             result = run_container_create();
-            run_container_union(const_CAST_run(c1), const_CAST_run(c2),
-                                CAST_run(result));
+            if (result == NULL) return NULL;
+            if (!run_container_union(const_CAST_run(c1), const_CAST_run(c2),
+                                     CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // we are being lazy
             result = convert_run_to_efficient_container_and_free(
@@ -1147,6 +1301,7 @@ static inline container_t *container_lazy_or(const container_t *c1,
 
         case CONTAINER_PAIR(BITSET, ARRAY):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             array_bitset_container_lazy_union(const_CAST_array(c2),
                                               const_CAST_bitset(c1),
                                               CAST_bitset(result));  // is lazy
@@ -1155,6 +1310,7 @@ static inline container_t *container_lazy_or(const container_t *c1,
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             array_bitset_container_lazy_union(const_CAST_array(c1),
                                               const_CAST_bitset(c2),
                                               CAST_bitset(result));  // is lazy
@@ -1164,11 +1320,16 @@ static inline container_t *container_lazy_or(const container_t *c1,
         case CONTAINER_PAIR(BITSET, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = run_container_create();
+                if (result == NULL) return NULL;
+                if (!run_container_copy(const_CAST_run(c2), CAST_run(result))) {
+                    run_container_free(CAST_run(result));
+                    return NULL;
+                }
                 *result_type = RUN_CONTAINER_TYPE;
-                run_container_copy(const_CAST_run(c2), CAST_run(result));
                 return result;
             }
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             run_bitset_container_lazy_union(const_CAST_run(c2),
                                             const_CAST_bitset(c1),
                                             CAST_bitset(result));  // is lazy
@@ -1178,11 +1339,16 @@ static inline container_t *container_lazy_or(const container_t *c1,
         case CONTAINER_PAIR(RUN, BITSET):
             if (run_container_is_full(const_CAST_run(c1))) {
                 result = run_container_create();
+                if (result == NULL) return NULL;
+                if (!run_container_copy(const_CAST_run(c1), CAST_run(result))) {
+                    run_container_free(CAST_run(result));
+                    return NULL;
+                }
                 *result_type = RUN_CONTAINER_TYPE;
-                run_container_copy(const_CAST_run(c1), CAST_run(result));
                 return result;
             }
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             run_bitset_container_lazy_union(const_CAST_run(c1),
                                             const_CAST_bitset(c2),
                                             CAST_bitset(result));  // is lazy
@@ -1191,8 +1357,13 @@ static inline container_t *container_lazy_or(const container_t *c1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = run_container_create();
-            array_run_container_union(const_CAST_array(c1), const_CAST_run(c2),
-                                      CAST_run(result));
+            if (result == NULL) return NULL;
+            if (!array_run_container_union(const_CAST_array(c1),
+                                           const_CAST_run(c2),
+                                           CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container(result, result_type);
@@ -1200,8 +1371,13 @@ static inline container_t *container_lazy_or(const container_t *c1,
 
         case CONTAINER_PAIR(RUN, ARRAY):
             result = run_container_create();
-            array_run_container_union(const_CAST_array(c2), const_CAST_run(c1),
-                                      CAST_run(result));  // TODO make lazy
+            if (result == NULL) return NULL;
+            if (!array_run_container_union(const_CAST_array(c2),
+                                           const_CAST_run(c1),
+                                           CAST_run(result))) {  // TODO lazy
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container(result, result_type);
@@ -1254,7 +1430,12 @@ static inline container_t *container_ior(container_t *c1, uint8_t type1,
             return result;
 
         case CONTAINER_PAIR(RUN, RUN):
-            run_container_union_inplace(CAST_run(c1), const_CAST_run(c2));
+            if (!run_container_union_inplace(CAST_run(c1),
+                                             const_CAST_run(c2))) {
+                // Allocation failed: c1 is left unchanged and valid.
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             return convert_run_to_efficient_container(CAST_run(c1),
                                                       result_type);
 
@@ -1276,8 +1457,12 @@ static inline container_t *container_ior(container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(BITSET, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = run_container_create();
+                if (result == NULL) return NULL;
+                if (!run_container_copy(const_CAST_run(c2), CAST_run(result))) {
+                    run_container_free(CAST_run(result));
+                    return NULL;
+                }
                 *result_type = RUN_CONTAINER_TYPE;
-                run_container_copy(const_CAST_run(c2), CAST_run(result));
                 return result;
             }
             run_bitset_container_union(const_CAST_run(c2),
@@ -1299,15 +1484,29 @@ static inline container_t *container_ior(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = run_container_create();
-            array_run_container_union(const_CAST_array(c1), const_CAST_run(c2),
-                                      CAST_run(result));
+            if (result == NULL) {
+                // Allocation failed: c1 (an array) is left unchanged.
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
+            if (!array_run_container_union(const_CAST_array(c1),
+                                           const_CAST_run(c2),
+                                           CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             result = convert_run_to_efficient_container_and_free(
                 CAST_run(result), result_type);
             return result;
 
         case CONTAINER_PAIR(RUN, ARRAY):
-            array_run_container_inplace_union(const_CAST_array(c2),
-                                              CAST_run(c1));
+            if (!array_run_container_inplace_union(const_CAST_array(c2),
+                                                   CAST_run(c1))) {
+                // Allocation failed: c1 is left unchanged and valid.
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             c1 = convert_run_to_efficient_container(CAST_run(c1), result_type);
             return c1;
 
@@ -1369,7 +1568,12 @@ static inline container_t *container_lazy_ior(container_t *c1, uint8_t type1,
             return result;
 
         case CONTAINER_PAIR(RUN, RUN):
-            run_container_union_inplace(CAST_run(c1), const_CAST_run(c2));
+            if (!run_container_union_inplace(CAST_run(c1),
+                                             const_CAST_run(c2))) {
+                // Allocation failed: c1 is left unchanged and valid.
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             return convert_run_to_efficient_container(CAST_run(c1),
                                                       result_type);
@@ -1393,8 +1597,12 @@ static inline container_t *container_lazy_ior(container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(BITSET, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = run_container_create();
+                if (result == NULL) return NULL;
+                if (!run_container_copy(const_CAST_run(c2), CAST_run(result))) {
+                    run_container_free(CAST_run(result));
+                    return NULL;
+                }
                 *result_type = RUN_CONTAINER_TYPE;
-                run_container_copy(const_CAST_run(c2), CAST_run(result));
                 return result;
             }
             run_bitset_container_lazy_union(
@@ -1417,8 +1625,17 @@ static inline container_t *container_lazy_ior(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = run_container_create();
-            array_run_container_union(const_CAST_array(c1), const_CAST_run(c2),
-                                      CAST_run(result));
+            if (result == NULL) {
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
+            if (!array_run_container_union(const_CAST_array(c1),
+                                           const_CAST_run(c2),
+                                           CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container_and_free(result,
@@ -1426,8 +1643,12 @@ static inline container_t *container_lazy_ior(container_t *c1, uint8_t type1,
             return result;
 
         case CONTAINER_PAIR(RUN, ARRAY):
-            array_run_container_inplace_union(const_CAST_array(c2),
-                                              CAST_run(c1));
+            if (!array_run_container_inplace_union(const_CAST_array(c2),
+                                                   CAST_run(c1))) {
+                // Allocation failed: c1 is left unchanged and valid.
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container_and_free(result,
@@ -1630,8 +1851,13 @@ static inline container_t *container_lazy_xor(const container_t *c1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             result = run_container_create();
-            array_run_container_lazy_xor(const_CAST_array(c1),
-                                         const_CAST_run(c2), CAST_run(result));
+            if (result == NULL) return NULL;
+            if (!array_run_container_lazy_xor(const_CAST_array(c1),
+                                              const_CAST_run(c2),
+                                              CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container(result, result_type);
@@ -1639,8 +1865,13 @@ static inline container_t *container_lazy_xor(const container_t *c1,
 
         case CONTAINER_PAIR(RUN, ARRAY):
             result = run_container_create();
-            array_run_container_lazy_xor(const_CAST_array(c2),
-                                         const_CAST_run(c1), CAST_run(result));
+            if (result == NULL) return NULL;
+            if (!array_run_container_lazy_xor(const_CAST_array(c2),
+                                              const_CAST_run(c1),
+                                              CAST_run(result))) {
+                run_container_free(CAST_run(result));
+                return NULL;
+            }
             *result_type = RUN_CONTAINER_TYPE;
             // next line skipped since we are lazy
             // result = convert_run_to_efficient_container(result, result_type);
@@ -1799,14 +2030,20 @@ static inline container_t *container_andnot(const container_t *c1,
 
         case CONTAINER_PAIR(ARRAY, ARRAY):
             result = array_container_create();
-            array_array_container_andnot(
-                const_CAST_array(c1), const_CAST_array(c2), CAST_array(result));
+            if (result == NULL) return NULL;
+            if (!array_array_container_andnot(const_CAST_array(c1),
+                                              const_CAST_array(c2),
+                                              CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;
             return result;
 
         case CONTAINER_PAIR(RUN, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = array_container_create();
+                if (result == NULL) return NULL;
                 *result_type = ARRAY_CONTAINER_TYPE;
                 return result;
             }
@@ -1824,15 +2061,20 @@ static inline container_t *container_andnot(const container_t *c1,
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             result = array_container_create();
-            array_bitset_container_andnot(const_CAST_array(c1),
-                                          const_CAST_bitset(c2),
-                                          CAST_array(result));
+            if (result == NULL) return NULL;
+            if (!array_bitset_container_andnot(const_CAST_array(c1),
+                                               const_CAST_bitset(c2),
+                                               CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;
             return result;
 
         case CONTAINER_PAIR(BITSET, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = array_container_create();
+                if (result == NULL) return NULL;
                 *result_type = ARRAY_CONTAINER_TYPE;
                 return result;
             }
@@ -1854,12 +2096,18 @@ static inline container_t *container_andnot(const container_t *c1,
         case CONTAINER_PAIR(ARRAY, RUN):
             if (run_container_is_full(const_CAST_run(c2))) {
                 result = array_container_create();
+                if (result == NULL) return NULL;
                 *result_type = ARRAY_CONTAINER_TYPE;
                 return result;
             }
             result = array_container_create();
-            array_run_container_andnot(const_CAST_array(c1), const_CAST_run(c2),
-                                       CAST_array(result));
+            if (result == NULL) return NULL;
+            if (!array_run_container_andnot(const_CAST_array(c1),
+                                            const_CAST_run(c2),
+                                            CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                return NULL;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;
             return result;
 
@@ -1901,7 +2149,10 @@ static inline container_t *container_iandnot(container_t *c1, uint8_t type1,
             return result;
 
         case CONTAINER_PAIR(ARRAY, ARRAY):
-            array_array_container_iandnot(CAST_array(c1), const_CAST_array(c2));
+            // In-place difference shrinks c1, so it cannot need to grow and
+            // thus cannot fail.
+            (void)array_array_container_iandnot(CAST_array(c1),
+                                                const_CAST_array(c2));
             *result_type = ARRAY_CONTAINER_TYPE;
             return c1;
 
@@ -1919,8 +2170,9 @@ static inline container_t *container_iandnot(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             *result_type = ARRAY_CONTAINER_TYPE;
-            array_bitset_container_iandnot(CAST_array(c1),
-                                           const_CAST_bitset(c2));
+            // In-place difference shrinks c1, so it cannot fail.
+            (void)array_bitset_container_iandnot(CAST_array(c1),
+                                                 const_CAST_bitset(c2));
             return c1;
 
         case CONTAINER_PAIR(BITSET, RUN):
@@ -1939,7 +2191,9 @@ static inline container_t *container_iandnot(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             *result_type = ARRAY_CONTAINER_TYPE;
-            array_run_container_iandnot(CAST_array(c1), const_CAST_run(c2));
+            // In-place difference shrinks c1, so it cannot fail.
+            (void)array_run_container_iandnot(CAST_array(c1),
+                                              const_CAST_run(c2));
             return c1;
 
         case CONTAINER_PAIR(RUN, ARRAY):
@@ -2019,6 +2273,7 @@ static inline container_t *container_not(const container_t *c, uint8_t type,
             return result;
         case ARRAY_CONTAINER_TYPE:
             result = bitset_container_create();
+            if (result == NULL) return NULL;  // allocation failure
             *result_type = BITSET_CONTAINER_TYPE;
             array_container_negation(const_CAST_array(c), CAST_bitset(result));
             return result;
@@ -2293,13 +2548,18 @@ static inline container_t *container_add_range(container_t *c, uint8_t type,
 
             if (union_cardinality == INT32_C(0x10000)) {
                 *result_type = RUN_CONTAINER_TYPE;
+                // May return NULL on allocation failure; the caller treats a
+                // NULL result as "range not added" and keeps the bitmap valid.
                 return run_container_create_range(0, INT32_C(0x10000));
-            } else {
-                *result_type = BITSET_CONTAINER_TYPE;
-                bitset_set_lenrange(bitset->words, min, max - min);
-                bitset->cardinality = union_cardinality;
-                return bitset;
             }
+            // A bitset stays a bitset under add_range: the range can only grow
+            // the cardinality, so a valid bitset (cardinality > DEFAULT_MAX_SIZE)
+            // remains valid. (Downconverting here would break the documented
+            // type-stability of add_range.)
+            *result_type = BITSET_CONTAINER_TYPE;
+            bitset_set_lenrange(bitset->words, min, max - min);
+            bitset->cardinality = union_cardinality;
+            return bitset;
         }
         case ARRAY_CONTAINER_TYPE: {
             array_container_t *array = CAST_array(c);
@@ -2321,8 +2581,15 @@ static inline container_t *container_add_range(container_t *c, uint8_t type,
                                                 nvals_greater);
                 return array;
             } else {
-                *result_type = BITSET_CONTAINER_TYPE;
                 bitset_container_t *bitset = bitset_container_from_array(array);
+                if (bitset == NULL) {
+                    // Allocation failed: leave the original array container
+                    // unchanged and report its true type so callers do not
+                    // mislabel it as a bitset.
+                    *result_type = ARRAY_CONTAINER_TYPE;
+                    return c;
+                }
+                *result_type = BITSET_CONTAINER_TYPE;
                 bitset_set_lenrange(bitset->words, min, max - min);
                 bitset->cardinality = union_cardinality;
                 return bitset;

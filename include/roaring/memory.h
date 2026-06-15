@@ -9,6 +9,25 @@
  * This allows applications to integrate CRoaring with custom allocators,
  * memory trackers, arenas, or platform-specific aligned allocation policies
  * without changing the rest of the library code.
+ *
+ * ## Memory allocation policy
+ *
+ * Throughout the library, a non-NULL pointer returned by roaring_malloc,
+ * roaring_realloc, roaring_calloc, or roaring_aligned_malloc (or by the
+ * corresponding functions installed via roaring_init_memory_hook) is treated
+ * as usable memory: CRoaring will read and write the full requested size
+ * without further checks, as if the storage were committed.
+ *
+ * This is a simplifying assumption, not a guarantee of the underlying
+ * platform. On systems with overcommit, demand paging, lazy commit, or
+ * similar behavior, a non-NULL pointer does not necessarily mean that every
+ * byte is backed by physical storage or that access cannot fail later (for
+ * example with SIGBUS or the OOM killer). CRoaring does not probe or fault-in
+ * memory after allocation.
+ *
+ * Custom allocators hooked into this layer should return NULL on failure. If
+ * they return non-NULL, they should provide memory that is safe to use
+ * immediately for the requested size; otherwise library behavior is undefined.
  */
 #ifndef INCLUDE_ROARING_MEMORY_H_
 #define INCLUDE_ROARING_MEMORY_H_

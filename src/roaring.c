@@ -28,7 +28,7 @@ extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
                                            uint32_t val);
 extern inline int roaring_trailing_zeroes(unsigned long long input_num);
 extern inline int roaring_leading_zeroes(unsigned long long input_num);
-extern inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r);
+extern inline bool roaring_bitmap_init_cleared(roaring_bitmap_t *r);
 extern inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t *r);
 extern inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r,
                                                     bool cow);
@@ -74,9 +74,19 @@ static inline container_t *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
         }
     } else {
         array_container_t *new_ac = array_container_create();
+        if (new_ac == NULL) {
+            return NULL;
+        }
         container_t *c =
             container_add(new_ac, val & 0xFFFF, ARRAY_CONTAINER_TYPE, type);
-        // we could just assume that it stays an array container
+        if (c == NULL) {
+            return NULL;
+        }
+        if (*type == ARRAY_CONTAINER_TYPE &&
+            CAST_array(c)->cardinality == 0) {
+            container_free(c, *type);
+            return NULL;
+        }
         ra_insert_new_key_value_at(ra, -i - 1, hb, c, *type);
         *index = -i - 1;
         return c;
@@ -267,8 +277,12 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
     int32_t common_length = ra->size - prefix_length - suffix_length;
 
     if (num_required_containers > common_length) {
-        ra_shift_tail(ra, suffix_length,
-                      num_required_containers - common_length);
+        const int32_t old_size = ra->size;
+        const int32_t distance = num_required_containers - common_length;
+        ra_shift_tail(ra, suffix_length, distance);
+        if (ra->size != old_size + distance) {
+            return;
+        }
     }
 
     int32_t src = prefix_length + common_length - 1;
@@ -293,10 +307,51 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
             new_container = container_from_range(&new_type, container_min,
                                                  container_max + 1, 1);
         }
-        ra_replace_key_and_container_at_index(ra, dst, (uint16_t)key,
-                                              new_container, new_type);
+        if (dst >= 0 && new_container != NULL &&
+            container_nonzero_cardinality(new_container, new_type)) {
+            ra_replace_key_and_container_at_index(ra, dst, (uint16_t)key,
+                                                  new_container, new_type);
+        } else {
+            container_free(new_container, new_type);
+            // The destination slot is not receiving a container. Clear it so
+            // the compaction pass below does not read a stale pointer left
+            // behind by an already-consumed source slot (which would be a
+            // use-after-free or double-free).
+            if (dst >= 0) {
+                ra->keys[dst] = 0;
+                ra->containers[dst] = NULL;
+                ra->typecodes[dst] = 0;
+            }
+        }
         dst--;
     }
+
+    const int32_t middle_end = ra->size - suffix_length;
+    int32_t write = prefix_length;
+    for (int32_t read = prefix_length; read < middle_end; ++read) {
+        container_t *c = ra->containers[read];
+        uint8_t tc = ra->typecodes[read];
+        if (c != NULL && tc != 0 &&
+            container_nonzero_cardinality(c, tc)) {
+            if (write != read) {
+                ra->keys[write] = ra->keys[read];
+                ra->containers[write] = c;
+                ra->typecodes[write] = tc;
+            }
+            write++;
+        } else if (c != NULL && tc != 0) {
+            container_free(c, tc);
+        }
+    }
+    if (suffix_length > 0) {
+        memmove(&(ra->keys[write]), &(ra->keys[middle_end]),
+                sizeof(uint16_t) * (size_t)suffix_length);
+        memmove(&(ra->containers[write]), &(ra->containers[middle_end]),
+                sizeof(container_t *) * (size_t)suffix_length);
+        memmove(&(ra->typecodes[write]), &(ra->typecodes[middle_end]),
+                sizeof(uint8_t) * (size_t)suffix_length);
+    }
+    ra->size = write + suffix_length;
 }
 
 void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min,
@@ -583,9 +638,16 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
         }
     } else {
         array_container_t *newac = array_container_create();
+        if (newac == NULL) {
+            return;
+        }
         container_t *container =
             container_add(newac, val & 0xFFFF, ARRAY_CONTAINER_TYPE, &typecode);
-        // we could just assume that it stays an array container
+        if (container == NULL ||
+            !container_nonzero_cardinality(container, typecode)) {
+            container_free(container, typecode);
+            return;
+        }
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, typecode);
     }
@@ -620,9 +682,16 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t val) {
         }
     } else {
         array_container_t *newac = array_container_create();
+        if (newac == NULL) {
+            return false;
+        }
         container_t *container =
             container_add(newac, val & 0xFFFF, ARRAY_CONTAINER_TYPE, &typecode);
-        // we could just assume that it stays an array container
+        if (container == NULL ||
+            !container_nonzero_cardinality(container, typecode)) {
+            container_free(container, typecode);
+            return false;
+        }
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, typecode);
         result = true;
@@ -735,6 +804,9 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
               length2 = x2->high_low_container.size;
     uint32_t neededcap = length1 > length2 ? length2 : length1;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
+    if (answer == NULL) {
+        return NULL;
+    }
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
 
     int pos1 = 0, pos2 = 0;
@@ -752,7 +824,12 @@ roaring_bitmap_t *roaring_bitmap_and(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             container_t *c = container_and(c1, type1, c2, type2, &result_type);
-
+            // container_and returns NULL only on allocation failure (an empty
+            // intersection yields an empty, non-NULL container); abort.
+            if (c == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (container_nonzero_cardinality(c, result_type)) {
                 ra_append(&answer->high_low_container, s1, c, result_type);
             } else {
@@ -887,6 +964,9 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
+    if (answer == NULL) {
+        return NULL;
+    }
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
@@ -899,11 +979,17 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             container_t *c = container_or(c1, type1, c2, type2, &result_type);
-
-            // since we assume that the initial containers are non-empty, the
-            // result here
-            // can only be non-empty
-            ra_append(&answer->high_low_container, s1, c, result_type);
+            // On allocation failure we abort and return NULL rather than
+            // producing a bitmap missing some of the union.
+            if (c == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
+            if (container_nonzero_cardinality(c, result_type)) {
+                ra_append(&answer->high_low_container, s1, c, result_type);
+            } else {
+                container_free(c, result_type);
+            }
             ++pos1;
             ++pos2;
             if (pos1 == length1) break;
@@ -914,13 +1000,20 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
         } else if (s1 < s2) {  // s1 < s2
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
-            // c1 = container_clone(c1, type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
+            if (c1 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x1)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
             }
-            ra_append(&answer->high_low_container, s1, c1, type1);
+            if (container_nonzero_cardinality(c1, type1)) {
+                ra_append(&answer->high_low_container, s1, c1, type1);
+            } else {
+                container_free(c1, type1);
+            }
             pos1++;
             if (pos1 == length1) break;
             s1 = ra_get_key_at_index(&x1->high_low_container, (uint16_t)pos1);
@@ -928,26 +1021,39 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
         } else {  // s1 > s2
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
-            // c2 = container_clone(c2, type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
-            ra_append(&answer->high_low_container, s2, c2, type2);
+            if (container_nonzero_cardinality(c2, type2)) {
+                ra_append(&answer->high_low_container, s2, c2, type2);
+            } else {
+                container_free(c2, type2);
+            }
             pos2++;
             if (pos2 == length2) break;
             s2 = ra_get_key_at_index(&x2->high_low_container, (uint16_t)pos2);
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x2->high_low_container, pos2, length2,
-                             is_cow(x2));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     } else if (pos2 == length2) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1,
-                             is_cow(x1));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1,
+                                  is_cow(x1))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     }
     return answer;
 }
@@ -1020,8 +1126,12 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+        // In-place (void) operation: on allocation failure the bitmap is left
+        // valid but possibly missing some elements; there is no return channel
+        // to report the failure to the caller.
+        (void)ra_append_copy_range(&x1->high_low_container,
+                                   &x2->high_low_container, pos2, length2,
+                                   is_cow(x2));
     }
 }
 
@@ -1038,6 +1148,9 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
+    if (answer == NULL) {
+        return NULL;
+    }
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
@@ -1050,7 +1163,12 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             container_t *c = container_xor(c1, type1, c2, type2, &result_type);
-
+            // On allocation failure we abort and return NULL rather than
+            // producing a bitmap missing some of the symmetric difference.
+            if (c == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (container_nonzero_cardinality(c, result_type)) {
                 ra_append(&answer->high_low_container, s1, c, result_type);
             } else {
@@ -1067,6 +1185,10 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
+            if (c1 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x1)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
@@ -1080,6 +1202,10 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
@@ -1091,13 +1217,19 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x2->high_low_container, pos2, length2,
-                             is_cow(x2));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     } else if (pos2 == length2) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1,
-                             is_cow(x1));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1,
+                                  is_cow(x1))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     }
     return answer;
 }
@@ -1186,8 +1318,12 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+        // In-place (void) operation: on allocation failure the bitmap is left
+        // valid but possibly missing some elements; there is no return channel
+        // to report the failure to the caller.
+        (void)ra_append_copy_range(&x1->high_low_container,
+                                   &x2->high_low_container, pos2, length2,
+                                   is_cow(x2));
     }
 }
 
@@ -1206,6 +1342,9 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
         return roaring_bitmap_copy(x1);
     }
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(length1);
+    if (answer == NULL) {
+        return NULL;
+    }
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
 
     int pos1 = 0, pos2 = 0;
@@ -1223,7 +1362,11 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             container_t *c =
                 container_andnot(c1, type1, c2, type2, &result_type);
-
+            // container_andnot returns NULL only on allocation failure; abort.
+            if (c == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (container_nonzero_cardinality(c, result_type)) {
                 ra_append(&answer->high_low_container, s1, c, result_type);
             } else {
@@ -1236,9 +1379,12 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
         } else if (s1 < s2) {  // s1 < s2
             const int next_pos1 =
                 ra_advance_until(&x1->high_low_container, s2, pos1);
-            ra_append_copy_range(&answer->high_low_container,
-                                 &x1->high_low_container, pos1, next_pos1,
-                                 is_cow(x1));
+            if (!ra_append_copy_range(&answer->high_low_container,
+                                      &x1->high_low_container, pos1, next_pos1,
+                                      is_cow(x1))) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             // TODO : perhaps some of the copy_on_write should be based on
             // answer rather than x1 (more stringent?).  Many similar cases
             pos1 = next_pos1;
@@ -1249,9 +1395,12 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
         }
     }
     if (pos2 == length2) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1,
-                             is_cow(x1));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1,
+                                  is_cow(x1))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     }
     return answer;
 }
@@ -1694,7 +1843,7 @@ bool roaring_iterate64(const roaring_bitmap_t *r, roaring_iterator64 iterator,
  * 1. Invalid due to `has_value = false`, or
  * 2. At a container, with the high bits set, `has_value = true`.
  */
-CROARING_WARN_UNUSED static bool iter_new_container_partial_init(
+CROARING_NODISCARD static bool iter_new_container_partial_init(
     roaring_uint32_iterator_t *newit) {
     newit->current_value = 0;
     if (newit->container_index >= newit->parent->high_low_container.size ||
@@ -1724,7 +1873,7 @@ CROARING_WARN_UNUSED static bool iter_new_container_partial_init(
  * Positions the iterator at the first value of the current container that the
  * iterator points at, if available.
  */
-CROARING_WARN_UNUSED static bool loadfirstvalue(
+CROARING_NODISCARD static bool loadfirstvalue(
     roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
         uint16_t value = 0;
@@ -1739,7 +1888,7 @@ CROARING_WARN_UNUSED static bool loadfirstvalue(
  * Positions the iterator at the last value of the current container that the
  * iterator points at, if available.
  */
-CROARING_WARN_UNUSED static bool loadlastvalue(
+CROARING_NODISCARD static bool loadlastvalue(
     roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
         uint16_t value = 0;
@@ -1755,7 +1904,7 @@ CROARING_WARN_UNUSED static bool loadlastvalue(
  * `val` within the current container that the iterator points at. Assumes such
  * a value exists within the current container.
  */
-CROARING_WARN_UNUSED static bool loadfirstvalue_largeorequal(
+CROARING_NODISCARD static bool loadfirstvalue_largeorequal(
     roaring_uint32_iterator_t *newit, uint32_t val) {
     bool partial_init = iter_new_container_partial_init(newit);
     assert(partial_init);
@@ -1804,6 +1953,9 @@ roaring_uint32_iterator_t *roaring_uint32_iterator_copy(
     roaring_uint32_iterator_t *newit =
         (roaring_uint32_iterator_t *)roaring_malloc(
             sizeof(roaring_uint32_iterator_t));
+    if (newit == NULL) {
+        return NULL;
+    }
     memcpy(newit, it, sizeof(roaring_uint32_iterator_t));
     return newit;
 }
@@ -2262,8 +2414,11 @@ roaring_bitmap_t *roaring_bitmap_flip_closed(const roaring_bitmap_t *x1,
             ++hb_end;
         }
     }
-    ra_append_copies_after(&ans->high_low_container, &x1->high_low_container,
-                           hb_end, is_cow(x1));
+    if (!ra_append_copies_after(&ans->high_low_container,
+                                &x1->high_low_container, hb_end, is_cow(x1))) {
+        roaring_bitmap_free(ans);
+        return NULL;
+    }
     return ans;
 }
 
@@ -2439,6 +2594,9 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
+    if (answer == NULL) {
+        return NULL;
+    }
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
@@ -2450,25 +2608,36 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                                                         (uint16_t)pos1, &type1);
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
-            container_t *c;
+            container_t *c = NULL;
             if (bitsetconversion &&
                 (get_container_type(c1, type1) != BITSET_CONTAINER_TYPE) &&
                 (get_container_type(c2, type2) != BITSET_CONTAINER_TYPE)) {
                 container_t *newc1 =
                     container_mutable_unwrap_shared(c1, &type1);
-                newc1 = container_to_bitset(newc1, type1);
-                type1 = BITSET_CONTAINER_TYPE;
-                c = container_lazy_ior(newc1, type1, c2, type2, &result_type);
-                if (c != newc1) {  // should not happen
-                    container_free(newc1, type1);
+                container_t *asbitset = container_to_bitset(newc1, type1);
+                if (asbitset == NULL) {
+                    // Allocation failed during the bitset conversion. Fall
+                    // back to a plain lazy union so we still produce a valid
+                    // container when possible.
+                    c = container_lazy_or(c1, type1, c2, type2, &result_type);
+                } else {
+                    newc1 = asbitset;
+                    type1 = BITSET_CONTAINER_TYPE;
+                    c = container_lazy_ior(newc1, type1, c2, type2,
+                                           &result_type);
+                    if (c != newc1) {  // should not happen
+                        container_free(newc1, type1);
+                    }
                 }
             } else {
                 c = container_lazy_or(c1, type1, c2, type2, &result_type);
             }
-            // since we assume that the initial containers are non-empty,
-            // the
-            // result here
-            // can only be non-empty
+            // The union of two non-empty containers is non-empty; c is NULL
+            // only if an allocation failed, in which case we abort.
+            if (c == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             ra_append(&answer->high_low_container, s1, c, result_type);
             ++pos1;
             ++pos2;
@@ -2481,6 +2650,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
+            if (c1 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x1)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
@@ -2494,6 +2667,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
@@ -2505,13 +2682,19 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x2->high_low_container, pos2, length2,
-                             is_cow(x2));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     } else if (pos2 == length2) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1,
-                             is_cow(x1));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1,
+                                  is_cow(x1))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     }
     return answer;
 }
@@ -2595,8 +2778,12 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+        // In-place (void) operation: on allocation failure the bitmap is left
+        // valid but possibly missing some elements; there is no return channel
+        // to report the failure to the caller.
+        (void)ra_append_copy_range(&x1->high_low_container,
+                                   &x2->high_low_container, pos2, length2,
+                                   is_cow(x2));
     }
 }
 
@@ -2613,6 +2800,9 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
     }
     roaring_bitmap_t *answer =
         roaring_bitmap_create_with_capacity(length1 + length2);
+    if (answer == NULL) {
+        return NULL;
+    }
     roaring_bitmap_set_copy_on_write(answer, is_cow(x1) || is_cow(x2));
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
@@ -2626,7 +2816,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             container_t *c =
                 container_lazy_xor(c1, type1, c2, type2, &result_type);
-
+            if (c == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (container_nonzero_cardinality(c, result_type)) {
                 ra_append(&answer->high_low_container, s1, c, result_type);
             } else {
@@ -2644,6 +2837,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
+            if (c1 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x1)) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
@@ -2657,6 +2854,10 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                roaring_bitmap_free(answer);
+                return NULL;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
@@ -2668,13 +2869,19 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x2->high_low_container, pos2, length2,
-                             is_cow(x2));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     } else if (pos2 == length2) {
-        ra_append_copy_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1,
-                             is_cow(x1));
+        if (!ra_append_copy_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1,
+                                  is_cow(x1))) {
+            roaring_bitmap_free(answer);
+            return NULL;
+        }
     }
     return answer;
 }
@@ -2756,8 +2963,12 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+        // In-place (void) operation: on allocation failure the bitmap is left
+        // valid but possibly missing some elements; there is no return channel
+        // to report the failure to the caller.
+        (void)ra_append_copy_range(&x1->high_low_container,
+                                   &x2->high_low_container, pos2, length2,
+                                   is_cow(x2));
     }
 }
 

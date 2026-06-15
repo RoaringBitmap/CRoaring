@@ -229,6 +229,9 @@ static uint64_t art_allocate_index(art_t *art, art_typecode_t typecode);
 static art_ref_t art_leaf_create(art_t *art, const art_key_chunk_t key[],
                                  art_val_t val) {
     uint64_t index = art_allocate_index(art, CROARING_ART_LEAF_TYPE);
+    if (index == UINT64_MAX) {
+        return CROARING_ART_NULL_REF;
+    }
     art_leaf_t *leaf =
         ((art_leaf_t *)art->nodes[CROARING_ART_LEAF_TYPE]) + index;
     memcpy(leaf->key, key, ART_KEY_BYTES);
@@ -260,6 +263,9 @@ static art_ref_t art_node256_insert(art_t *art, art_node256_t *node,
 static art_node4_t *art_node4_create(art_t *art, const art_key_chunk_t prefix[],
                                      uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE4_TYPE);
+    if (index == UINT64_MAX) {
+        return NULL;
+    }
     art_node4_t *node =
         ((art_node4_t *)art->nodes[CROARING_ART_NODE4_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
@@ -300,6 +306,11 @@ static art_ref_t art_node4_insert(art_t *art, art_node4_t *node,
     }
     art_node16_t *new_node =
         art_node16_create(art, node->base.prefix, node->base.prefix_size);
+    if (new_node == NULL) {
+        // Allocation failed: leave the original node untouched and report
+        // failure to the caller.
+        return CROARING_ART_NULL_REF;
+    }
     // Instead of calling insert, this could be specialized to 2x memcpy and
     // setting the count.
     for (size_t i = 0; i < 4; ++i) {
@@ -462,6 +473,9 @@ static art_node16_t *art_node16_create(art_t *art,
                                        const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE16_TYPE);
+    if (index == UINT64_MAX) {
+        return NULL;
+    }
     art_node16_t *node =
         ((art_node16_t *)art->nodes[CROARING_ART_NODE16_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
@@ -502,6 +516,10 @@ static art_ref_t art_node16_insert(art_t *art, art_node16_t *node,
     }
     art_node48_t *new_node =
         art_node48_create(art, node->base.prefix, node->base.prefix_size);
+    if (new_node == NULL) {
+        // Allocation failed: leave the original node untouched.
+        return CROARING_ART_NULL_REF;
+    }
     for (size_t i = 0; i < 16; ++i) {
         art_node48_insert(art, new_node, node->children[i], node->keys[i]);
     }
@@ -642,6 +660,9 @@ static art_node48_t *art_node48_create(art_t *art,
                                        const art_key_chunk_t prefix[],
                                        uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE48_TYPE);
+    if (index == UINT64_MAX) {
+        return NULL;
+    }
     art_node48_t *node =
         ((art_node48_t *)art->nodes[CROARING_ART_NODE48_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
@@ -676,6 +697,10 @@ static art_ref_t art_node48_insert(art_t *art, art_node48_t *node,
     }
     art_node256_t *new_node =
         art_node256_create(art, node->base.prefix, node->base.prefix_size);
+    if (new_node == NULL) {
+        // Allocation failed: leave the original node untouched.
+        return CROARING_ART_NULL_REF;
+    }
     for (size_t i = 0; i < 256; ++i) {
         uint8_t val_idx = node->keys[i];
         if (val_idx != CROARING_ART_NODE48_EMPTY_VAL) {
@@ -846,6 +871,9 @@ static art_node256_t *art_node256_create(art_t *art,
                                          const art_key_chunk_t prefix[],
                                          uint8_t prefix_size) {
     uint64_t index = art_allocate_index(art, CROARING_ART_NODE256_TYPE);
+    if (index == UINT64_MAX) {
+        return NULL;
+    }
     art_node256_t *node =
         ((art_node256_t *)art->nodes[CROARING_ART_NODE256_TYPE]) + index;
     art_init_inner_node(&node->base, prefix, prefix_size);
@@ -1275,11 +1303,11 @@ static uint8_t art_common_prefix(const art_key_chunk_t key1[],
  * Extends the array of nodes of the given typecode. Invalidates pointers into
  * the array obtained by `art_deref`.
  */
-static void art_extend(art_t *art, art_typecode_t typecode) {
+CROARING_NODISCARD static bool art_extend(art_t *art, art_typecode_t typecode) {
     uint64_t size = art->first_free[typecode];
     uint64_t capacity = art->capacities[typecode];
     if (size < capacity) {
-        return;
+        return true;
     }
     uint64_t new_capacity;
     if (capacity == 0) {
@@ -1289,15 +1317,20 @@ static void art_extend(art_t *art, art_typecode_t typecode) {
     } else {
         new_capacity = 5 * capacity / 4;
     }
-    art->capacities[typecode] = new_capacity;
-    art->nodes[typecode] = roaring_realloc(
+    void *new_nodes = roaring_realloc(
         art->nodes[typecode], new_capacity * ART_NODE_SIZES[typecode]);
+    if (new_nodes == NULL) {
+        return false;
+    }
+    art->nodes[typecode] = new_nodes;
+    art->capacities[typecode] = new_capacity;
     uint64_t increase = new_capacity - capacity;
     memset(art_get_node(art, capacity, typecode), 0,
            increase * ART_NODE_SIZES[typecode]);
     for (uint64_t i = capacity; i < new_capacity; ++i) {
         art_node_set_next_free(art_get_node(art, i, typecode), typecode, i + 1);
     }
+    return true;
 }
 
 /**
@@ -1316,7 +1349,9 @@ static uint64_t art_next_free(const art_t *art, art_typecode_t typecode) {
 static uint64_t art_allocate_index(art_t *art, art_typecode_t typecode) {
     uint64_t first_free = art->first_free[typecode];
     if (first_free == art->capacities[typecode]) {
-        art_extend(art, typecode);
+        if (!art_extend(art, typecode)) {
+            return UINT64_MAX;
+        }
         art->first_free[typecode]++;
         return first_free;
     }
@@ -1338,6 +1373,11 @@ static art_ref_t art_insert_at(art_t *art, art_ref_t ref,
         // both the existing and new leaf to it.
         art_node_t *new_node =
             (art_node_t *)art_node4_create(art, key + depth, common_prefix);
+        if (new_node == NULL) {
+            // Allocation failed: leave the existing leaf in place and report
+            // failure to the caller.
+            return CROARING_ART_NULL_REF;
+        }
 
         art_ref_t new_ref = art_node_insert_leaf(
             art, (art_inner_node_t *)new_node, CROARING_ART_NODE4_TYPE,
@@ -1361,9 +1401,16 @@ static art_ref_t art_insert_at(art_t *art, art_ref_t ref,
         // node may invalidate the prefix pointer.
         art_key_chunk_t *prefix_copy = (art_key_chunk_t *)roaring_malloc(
             common_prefix * sizeof(art_key_chunk_t));
+        if (prefix_copy == NULL) {
+            return CROARING_ART_NULL_REF;
+        }
         memcpy(prefix_copy, inner_node->prefix,
                common_prefix * sizeof(art_key_chunk_t));
         art_node4_t *node4 = art_node4_create(art, prefix_copy, common_prefix);
+        if (node4 == NULL) {
+            roaring_free(prefix_copy);
+            return CROARING_ART_NULL_REF;
+        }
         roaring_free(prefix_copy);
 
         // Deref as a new node was created.
@@ -1397,6 +1444,11 @@ static art_ref_t art_insert_at(art_t *art, art_ref_t ref,
     if (child != CROARING_ART_NULL_REF) {
         art_ref_t new_child =
             art_insert_at(art, child, key, depth + common_prefix + 1, new_leaf);
+        if (new_child == CROARING_ART_NULL_REF) {
+            // Allocation failure deeper in the tree: propagate without
+            // modifying this node (the existing child is left untouched).
+            return CROARING_ART_NULL_REF;
+        }
         if (new_child != child) {
             // Deref again as a new node may have been created.
             inner_node = (art_inner_node_t *)art_deref(art, ref);
@@ -1673,11 +1725,17 @@ static art_ref_t art_move_node_to_shrink(art_t *art, art_ref_t ref) {
 /**
  * Sorts the free lists pointed to by art->first_free in ascending index order.
  */
-static void art_sort_free_lists(art_t *art) {
+// Returns false if an allocation failed (in which case some free lists may be
+// left unsorted, but the ART remains valid).
+CROARING_NODISCARD
+static bool art_sort_free_lists(art_t *art) {
     for (art_typecode_t type = CROARING_ART_LEAF_TYPE;
          type <= CROARING_ART_NODE256_TYPE; ++type) {
         bool *free_indices =
             (bool *)roaring_calloc(art->capacities[type], sizeof(bool));
+        if (free_indices == NULL) {
+            return false;
+        }
 
         for (uint64_t i = art->first_free[type]; i < art->capacities[type];
              i = art_node_get_next_free(art, art_to_ref(i, type))) {
@@ -1696,6 +1754,7 @@ static void art_sort_free_lists(art_t *art) {
         art->first_free[type] = first_free;
         roaring_free(free_indices);
     }
+    return true;
 }
 
 /**
@@ -1708,10 +1767,24 @@ static size_t art_shrink_node_arrays(art_t *art) {
          ++t) {
         if (art->first_free[t] < art->capacities[t]) {
             uint64_t new_capacity = art->first_free[t];
-            art->nodes[t] = roaring_realloc(art->nodes[t],
-                                            new_capacity * ART_NODE_SIZES[t]);
-            freed += (art->capacities[t] - new_capacity) * ART_NODE_SIZES[t];
-            art->capacities[t] = new_capacity;
+            if (new_capacity == 0) {
+                // realloc(ptr, 0) is implementation-defined (it may free ptr
+                // and return NULL, which we must not mistake for failure).
+                // Free explicitly instead.
+                roaring_free(art->nodes[t]);
+                art->nodes[t] = NULL;
+                freed += art->capacities[t] * ART_NODE_SIZES[t];
+                art->capacities[t] = 0;
+                continue;
+            }
+            void *new_nodes = roaring_realloc(art->nodes[t],
+                                              new_capacity * ART_NODE_SIZES[t]);
+            if (new_nodes != NULL) {
+                art->nodes[t] = new_nodes;
+                freed +=
+                    (art->capacities[t] - new_capacity) * ART_NODE_SIZES[t];
+                art->capacities[t] = new_capacity;
+            }
         }
     }
     return freed;
@@ -1784,7 +1857,14 @@ size_t art_shrink_to_fit(art_t *art) {
         return 0;
     }
     if (art->root != CROARING_ART_NULL_REF) {
-        art_sort_free_lists(art);
+        // Shrinking is only an optimization. If we cannot sort the free lists
+        // (allocation failure), abort without shrinking: art_shrink_node_arrays
+        // assumes everything after first_free is unused, which only holds after
+        // a successful sort + compaction. Shrinking on an inconsistent free
+        // list would discard live nodes.
+        if (!art_sort_free_lists(art)) {
+            return 0;
+        }
         art->root = art_move_node_to_shrink(art, art->root);
         art_shrink_at(art, art->root);
     }
@@ -1803,11 +1883,22 @@ bool art_is_shrunken(const art_t *art) {
 
 art_val_t *art_insert(art_t *art, const art_key_chunk_t *key, art_val_t val) {
     art_ref_t leaf = art_leaf_create(art, key, val);
+    if (leaf == CROARING_ART_NULL_REF) {
+        return NULL;
+    }
     if (art->root == CROARING_ART_NULL_REF) {
         art->root = leaf;
         return &((art_leaf_t *)art_deref(art, leaf))->val;
     }
-    art->root = art_insert_at(art, art->root, key, 0, leaf);
+    art_ref_t new_root = art_insert_at(art, art->root, key, 0, leaf);
+    if (new_root == CROARING_ART_NULL_REF) {
+        // Allocation failure: the tree is left unchanged. Free the orphaned
+        // leaf and report failure without clobbering the existing root.
+        art_node_free(art, (art_node_t *)art_deref(art, leaf),
+                      CROARING_ART_LEAF_TYPE);
+        return NULL;
+    }
+    art->root = new_root;
     return &((art_leaf_t *)art_deref(art, leaf))->val;
 }
 

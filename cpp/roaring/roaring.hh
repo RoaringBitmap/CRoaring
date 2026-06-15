@@ -76,7 +76,9 @@ class Roaring {
     Roaring() : roaring{} {
         // The empty constructor roaring{} silences warnings from pedantic
         // static analyzers.
-        api::roaring_bitmap_init_cleared(&roaring);
+        if (!api::roaring_bitmap_init_cleared(&roaring)) {
+            ROARING_TERMINATE("failed roaring_bitmap_init_cleared in constructor");
+        }
     }
 
     /**
@@ -127,7 +129,10 @@ class Roaring {
         // those bits were pointers into the structure memory itself.  If such
         // things were possible, a roaring_bitmap_move() API would be needed.
         //
-        api::roaring_bitmap_init_cleared(&r.roaring);
+        if (!api::roaring_bitmap_init_cleared(&r.roaring)) {
+            ROARING_TERMINATE(
+                "failed roaring_bitmap_init_cleared in move constructor");
+        }
     }
 
     /**
@@ -168,7 +173,10 @@ class Roaring {
         // !!! See notes in the Move Constructor regarding roaring_bitmap_move()
         //
         roaring = r.roaring;
-        api::roaring_bitmap_init_cleared(&r.roaring);
+        if (!api::roaring_bitmap_init_cleared(&r.roaring)) {
+            ROARING_TERMINATE(
+                "failed roaring_bitmap_init_cleared in move assignment");
+        }
 
         return *this;
     }
@@ -449,7 +457,8 @@ class Roaring {
      */
     void rangeUint32Array(uint32_t *ans, size_t offset,
                           size_t limit) const noexcept {
-        api::roaring_bitmap_range_uint32_array(&roaring, offset, limit, ans);
+        (void)api::roaring_bitmap_range_uint32_array(&roaring, offset, limit,
+                                                     ans);
     }
 
     /**

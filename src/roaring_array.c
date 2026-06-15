@@ -39,7 +39,8 @@ extern inline void ra_set_container_at_index(const roaring_array_t *ra,
                                              int32_t i, container_t *c,
                                              uint8_t typecode);
 
-static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
+CROARING_NODISCARD static bool realloc_array(roaring_array_t *ra,
+                                             int32_t new_capacity) {
     //
     // Note: not implemented using C's realloc(), because the memory layout is
     // Struct-of-Arrays vs. Array-of-Structs:
@@ -193,7 +194,7 @@ void ra_clear(roaring_array_t *ra) {
     ra_clear_without_containers(ra);
 }
 
-bool extend_array(roaring_array_t *ra, int32_t k) {
+CROARING_NODISCARD bool extend_array(roaring_array_t *ra, int32_t k) {
     int32_t desired_size = ra->size + k;
     const int32_t max_containers = 65536;
     assert(desired_size <= max_containers);
@@ -211,7 +212,13 @@ bool extend_array(roaring_array_t *ra, int32_t k) {
 
 void ra_append(roaring_array_t *ra, uint16_t key, container_t *c,
                uint8_t typecode) {
-    extend_array(ra, 1);
+    if (c == NULL) {
+        return;
+    }
+    if (!extend_array(ra, 1)) {
+        container_free(c, typecode);
+        return;
+    }
     const int32_t pos = ra->size;
 
     ra->keys[pos] = key;
@@ -222,20 +229,30 @@ void ra_append(roaring_array_t *ra, uint16_t key, container_t *c,
 
 void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
                     uint16_t index, bool copy_on_write) {
-    extend_array(ra, 1);
+    if (!extend_array(ra, 1)) {
+        return;
+    }
     const int32_t pos = ra->size;
 
     // old contents is junk that does not need freeing
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
     if (copy_on_write) {
-        sa->containers[index] = get_copy_of_container(
+        container_t *shared = get_copy_of_container(
             sa->containers[index], &sa->typecodes[index], copy_on_write);
-        ra->containers[pos] = sa->containers[index];
+        if (shared == NULL) {
+            return;
+        }
+        sa->containers[index] = shared;
+        ra->containers[pos] = shared;
         ra->typecodes[pos] = sa->typecodes[index];
     } else {
-        ra->containers[pos] =
+        container_t *cloned =
             container_clone(sa->containers[index], sa->typecodes[index]);
+        if (cloned == NULL) {
+            return;
+        }
+        ra->containers[pos] = cloned;
         ra->typecodes[pos] = sa->typecodes[index];
     }
     ra->size++;
@@ -249,40 +266,54 @@ void ra_append_copies_until(roaring_array_t *ra, const roaring_array_t *sa,
     }
 }
 
-void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
+bool ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
                           int32_t start_index, int32_t end_index,
                           bool copy_on_write) {
-    extend_array(ra, end_index - start_index);
+    if (!extend_array(ra, end_index - start_index)) {
+        return false;
+    }
     for (int32_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
-            sa->containers[i] = get_copy_of_container(
+            container_t *shared = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
-            ra->containers[pos] = sa->containers[i];
+            if (shared == NULL) {
+                return false;
+            }
+            sa->containers[i] = shared;
+            ra->containers[pos] = shared;
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
-            ra->containers[pos] =
+            container_t *cloned =
                 container_clone(sa->containers[i], sa->typecodes[i]);
+            if (cloned == NULL) {
+                return false;
+            }
+            ra->containers[pos] = cloned;
             ra->typecodes[pos] = sa->typecodes[i];
         }
         ra->size++;
     }
+    return true;
 }
 
-void ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
+bool ra_append_copies_after(roaring_array_t *ra, const roaring_array_t *sa,
                             uint16_t before_start, bool copy_on_write) {
     int start_location = ra_get_index(sa, before_start);
     if (start_location >= 0)
         ++start_location;
     else
         start_location = -start_location - 1;
-    ra_append_copy_range(ra, sa, start_location, sa->size, copy_on_write);
+    return ra_append_copy_range(ra, sa, start_location, sa->size,
+                                copy_on_write);
 }
 
-void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
+bool ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
                           int32_t start_index, int32_t end_index) {
-    extend_array(ra, end_index - start_index);
+    if (!extend_array(ra, end_index - start_index)) {
+        return false;
+    }
 
     for (int32_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
@@ -292,24 +323,35 @@ void ra_append_move_range(roaring_array_t *ra, roaring_array_t *sa,
         ra->typecodes[pos] = sa->typecodes[i];
         ra->size++;
     }
+    return true;
 }
 
 void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
                      int32_t start_index, int32_t end_index,
                      bool copy_on_write) {
-    extend_array(ra, end_index - start_index);
+    if (!extend_array(ra, end_index - start_index)) {
+        return;
+    }
 
     for (int32_t i = start_index; i < end_index; ++i) {
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
-            sa->containers[i] = get_copy_of_container(
+            container_t *shared = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
-            ra->containers[pos] = sa->containers[i];
+            if (shared == NULL) {
+                break;
+            }
+            sa->containers[i] = shared;
+            ra->containers[pos] = shared;
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
-            ra->containers[pos] =
+            container_t *cloned =
                 container_clone(sa->containers[i], sa->typecodes[i]);
+            if (cloned == NULL) {
+                break;
+            }
+            ra->containers[pos] = cloned;
             ra->typecodes[pos] = sa->typecodes[i];
         }
         ra->size++;
@@ -347,7 +389,10 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos) {
 
 void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
                                 container_t *c, uint8_t typecode) {
-    extend_array(ra, 1);
+    if (!extend_array(ra, 1)) {
+        container_free(c, typecode);
+        return;
+    }
     // May be an optimization opportunity with DIY memmove
     memmove(&(ra->keys[i + 1]), &(ra->keys[i]),
             sizeof(uint16_t) * (ra->size - i));
@@ -410,8 +455,8 @@ void ra_copy_range(roaring_array_t *ra, uint32_t begin, uint32_t end,
 }
 
 void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance) {
-    if (distance > 0) {
-        extend_array(ra, distance);
+    if (distance > 0 && !extend_array(ra, distance)) {
+        return;
     }
     int32_t srcpos = ra->size - count;
     int32_t dstpos = srcpos + distance;
@@ -420,6 +465,11 @@ void ra_shift_tail(roaring_array_t *ra, int32_t count, int32_t distance) {
             sizeof(container_t *) * count);
     memmove(&(ra->typecodes[dstpos]), &(ra->typecodes[srcpos]),
             sizeof(uint8_t) * count);
+    for (int32_t i = srcpos; i < dstpos; ++i) {
+        ra->keys[i] = 0;
+        ra->containers[i] = NULL;
+        ra->typecodes[i] = 0;
+    }
     ra->size += distance;
 }
 
@@ -773,7 +823,9 @@ bool ra_portable_deserialize(roaring_array_t *answer, const char *buf,
             }
             // it is now safe to read
 
-            run_container_t *c = run_container_create();
+            // Pre-size the container so run_container_read does not need to
+            // grow (and thus cannot fail) while reading.
+            run_container_t *c = run_container_create_given_capacity(n_runs);
             if (c == NULL) {  // memory allocation failure
                 // Failed to allocate memory for a run container.
                 ra_clear(answer);  // we need to clear the containers already
