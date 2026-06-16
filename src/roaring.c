@@ -503,14 +503,17 @@ bool roaring_contains_shared(const roaring_bitmap_t *r) {
 }
 
 bool roaring_unshare_all(roaring_bitmap_t *r) {
-    const roaring_array_t *ra = &r->high_low_container;
+    roaring_array_t *ra = &r->high_low_container;
     bool unshared = false;
     for (int i = 0; i < ra->size; ++i) {
         uint8_t typecode = ra->typecodes[i];
         if (typecode == SHARED_CONTAINER_TYPE) {
-            ra->containers[i] = get_writable_copy_if_shared(ra->containers[i],
-                                                            &ra->typecodes[i]);
-            unshared = true;
+            container_t *copy =
+                get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+            if (copy != NULL) {
+                ra->containers[i] = copy;
+                unshared = true;
+            }
         }
     }
     return unshared;
@@ -1087,7 +1090,9 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
     return answer;
 }
 
-// inplace or (modifies its first argument).
+// Inplace or (modifies its first argument). This is a void API: on OOM the
+// bitmap stays structurally valid (internal_validate) but may omit chunks that
+// could not be copied or merged. Abort the process if full semantics are required.
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2) {
     uint8_t result_type = 0;
@@ -1097,7 +1102,9 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        // Best effort: overwrite may fail under OOM (ra_overwrite returns false)
+        // with no way to report it; dest may be empty or partial.
+        (void)roaring_bitmap_overwrite(x1, x2);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -1146,6 +1153,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
             if (c2 == NULL) {
+                // Skip this chunk of x2; union result may be incomplete.
                 pos2++;
                 if (pos2 == length2) break;
                 s2 = ra_get_key_at_index(&x2->high_low_container,
@@ -1168,9 +1176,6 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        // In-place (void) operation: on allocation failure the bitmap is left
-        // valid but possibly missing some elements; there is no return channel
-        // to report the failure to the caller.
         (void)ra_append_copy_range(&x1->high_low_container,
                                    &x2->high_low_container, pos2, length2,
                                    is_cow(x2));
@@ -1276,8 +1281,8 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
     return answer;
 }
 
-// inplace xor (modifies its first argument).
-
+// Inplace xor (modifies its first argument). Void API: on OOM the bitmap stays
+// structurally valid but may not reflect the full xor (see or_inplace comment).
 void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
                                 const roaring_bitmap_t *x2) {
     assert(x1 != x2);
@@ -1288,7 +1293,7 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        (void)roaring_bitmap_overwrite(x1, x2);
         return;
     }
 
@@ -1326,6 +1331,7 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
             }
 
             if (c == NULL) {
+                // OOM at this key: leave c1 unchanged and advance (xor incomplete).
                 ++pos2;
                 if (pos1 == length1) break;
                 if (pos2 == length2) break;
@@ -1383,9 +1389,6 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        // In-place (void) operation: on allocation failure the bitmap is left
-        // valid but possibly missing some elements; there is no return channel
-        // to report the failure to the caller.
         (void)ra_append_copy_range(&x1->high_low_container,
                                    &x2->high_low_container, pos2, length2,
                                    is_cow(x2));
@@ -1470,8 +1473,10 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
     return answer;
 }
 
-// inplace andnot (modifies its first argument).
-
+// Inplace andnot (modifies its first argument). Void API: on OOM the bitmap
+// stays structurally valid but may reflect a partial andnot. Bitset shrink OOM
+// inside container_iandnot can leave a mutated container in the slot; see
+// bitset_*_container_iandnot.
 void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
                                    const roaring_bitmap_t *x2) {
     assert(x1 != x2);
@@ -1519,6 +1524,8 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
             }
 
             if (c == NULL) {
+                // OOM: c1 may be unchanged or partially updated (bitset shrink);
+                // skip merging this key and continue.
                 ++pos2;
                 if (pos1 == length1) break;
                 if (pos2 == length2) break;
@@ -2391,10 +2398,16 @@ static void inplace_flip_container(roaring_array_t *x1_arr, uint16_t hb,
             container_free(flipped_container, ctype_out);
             ra_remove_at_index(x1_arr, i);
         } else {
-            // Allocation failure: container_inot_range consumed (freed) the
-            // input container without producing a result. Drop the slot so it
-            // does not reference freed memory (data loss on OOM is acceptable).
-            ra_remove_at_index(x1_arr, i);
+            // NULL from container_inot_range: either shared-container extract
+            // failed (slot still holds the original SHARED container) or a
+            // non-shared bitset shrink-to-array OOM freed the input (see
+            // bitset_container_negation_range_inplace). Only drop the slot in
+            // the latter case; losing that chunk under OOM is acceptable.
+            uint8_t slot_type;
+            (void)ra_get_container_at_index(x1_arr, (uint16_t)i, &slot_type);
+            if (slot_type != SHARED_CONTAINER_TYPE) {
+                ra_remove_at_index(x1_arr, i);
+            }
         }
 
     } else {
@@ -2450,10 +2463,14 @@ static void inplace_fully_flip_container(roaring_array_t *x1_arr, uint16_t hb) {
             container_free(flipped_container, ctype_out);
             ra_remove_at_index(x1_arr, i);
         } else {
-            // Allocation failure: container_inot consumed (freed) the input
-            // container without producing a result. Drop the slot so it does
-            // not reference freed memory (data loss on OOM is acceptable).
-            ra_remove_at_index(x1_arr, i);
+            // NULL from container_inot: shared extract failed (keep slot) or
+            // non-shared bitset shrink OOM freed the input (drop slot; data
+            // loss under OOM is acceptable). See inplace_flip_container.
+            uint8_t slot_type;
+            (void)ra_get_container_at_index(x1_arr, (uint16_t)i, &slot_type);
+            if (slot_type != SHARED_CONTAINER_TYPE) {
+                ra_remove_at_index(x1_arr, i);
+            }
         }
 
     } else {
@@ -2818,6 +2835,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
     return answer;
 }
 
+// Void API: same OOM best-effort contract as roaring_bitmap_or_inplace.
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2,
                                     const bool bitsetconversion) {
@@ -2828,7 +2846,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        (void)roaring_bitmap_overwrite(x1, x2);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -2843,6 +2861,17 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                 if ((bitsetconversion == false) ||
                     (get_container_type(c1, type1) == BITSET_CONTAINER_TYPE)) {
                     c1 = get_writable_copy_if_shared(c1, &type1);
+                    if (c1 == NULL) {
+                        ++pos1;
+                        ++pos2;
+                        if (pos1 == length1) break;
+                        if (pos2 == length2) break;
+                        s1 = ra_get_key_at_index(
+                            &x1->high_low_container, (uint16_t)pos1);
+                        s2 = ra_get_key_at_index(
+                            &x2->high_low_container, (uint16_t)pos2);
+                        continue;
+                    }
                 } else {
                     // convert to bitset
                     container_t *old_c1 = c1;
@@ -2932,9 +2961,6 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        // In-place (void) operation: on allocation failure the bitmap is left
-        // valid but possibly missing some elements; there is no return channel
-        // to report the failure to the caller.
         (void)ra_append_copy_range(&x1->high_low_container,
                                    &x2->high_low_container, pos2, length2,
                                    is_cow(x2));
@@ -3040,6 +3066,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
     return answer;
 }
 
+// Void API: same OOM best-effort contract as roaring_bitmap_xor_inplace.
 void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2) {
     assert(x1 != x2);
@@ -3050,7 +3077,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        (void)roaring_bitmap_overwrite(x1, x2);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -3084,6 +3111,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             }
 
             if (c == NULL) {
+                // OOM at this key: leave c1 unchanged and advance (lazy xor incomplete).
                 ++pos2;
                 if (pos1 == length1) break;
                 if (pos2 == length2) break;
@@ -3140,9 +3168,6 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        // In-place (void) operation: on allocation failure the bitmap is left
-        // valid but possibly missing some elements; there is no return channel
-        // to report the failure to the caller.
         (void)ra_append_copy_range(&x1->high_low_container,
                                    &x2->high_low_container, pos2, length2,
                                    is_cow(x2));

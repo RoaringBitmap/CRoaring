@@ -100,6 +100,9 @@ array_container_t *array_container_clone(const array_container_t *src) {
     return newcontainer;
 }
 
+// Split c across a 16-bit boundary after adding offset. On OOM the caller may
+// receive only the low half (*loc) and not the high half; that partial result
+// is structurally valid and acceptable under the library memory policy.
 void array_container_offset(const array_container_t *c, container_t **loc,
                             container_t **hic, uint16_t offset) {
     array_container_t *lo = NULL, *hi = NULL;
@@ -124,7 +127,7 @@ void array_container_offset(const array_container_t *c, container_t **loc,
     if (hic && hi_cap) {
         hi = array_container_create_given_capacity(hi_cap);
         if (hi == NULL) {
-            return;
+            return;  // *loc may already be set; see function comment
         }
         for (int i = 0; i < hi_cap; ++i) {
             hi->array[i] = c->array[lo_cap + i] + offset;

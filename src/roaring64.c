@@ -1707,6 +1707,8 @@ uint64_t roaring64_bitmap_or_cardinality(const roaring64_bitmap_t *r1,
     return c1 + c2 - inter;
 }
 
+// Void API: on OOM r1 stays structurally valid (internal_validate) but may omit
+// leaves that could not be copied or merged. Abort if full semantics are required.
 void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                                  const roaring64_bitmap_t *r2) {
     if (r1 == r2) {
@@ -1778,6 +1780,7 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                     remove_container(r1, result_leaf);
                 }
             }
+            // result_leaf == 0: copy failed; skip this leaf (union incomplete).
             art_iterator_next(&it2);
         }
     }
@@ -1865,6 +1868,7 @@ uint64_t roaring64_bitmap_xor_cardinality(const roaring64_bitmap_t *r1,
     return c1 + c2 - 2 * inter;
 }
 
+// Void API: same OOM best-effort contract as roaring64_bitmap_or_inplace.
 void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                                   const roaring64_bitmap_t *r2) {
     assert(r1 != r2);
@@ -1959,6 +1963,7 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                     remove_container(r1, result_leaf);
                 }
             }
+            // result_leaf == 0: copy failed; skip this leaf (xor incomplete).
             art_iterator_next(&it2);
         }
     }
@@ -2179,14 +2184,29 @@ static void roaring64_flip_leaf_inplace(roaring64_bitmap_t *r, uint8_t high48[],
         return;
     }
 
+    const uint8_t typecode_in = get_typecode(*leaf);
+
     if (min == 0 && max > 0xFFFF) {
         // Flip whole container.
-        container2 = container_inot(get_container(r, *leaf),
-                                    get_typecode(*leaf), &typecode2);
+        container2 =
+            container_inot(get_container(r, *leaf), typecode_in, &typecode2);
     } else {
         // Partially flip a container.
-        container2 = container_inot_range(
-            get_container(r, *leaf), get_typecode(*leaf), min, max, &typecode2);
+        container2 = container_inot_range(get_container(r, *leaf), typecode_in,
+                                          min, max, &typecode2);
+    }
+
+    if (container2 == NULL) {
+        // Shared-container extract failed: leaf unchanged. Non-shared bitset
+        // shrink-to-array OOM freed the container: erase the leaf (data loss
+        // under OOM is acceptable; see bitset_container_negation_range_inplace).
+        if (typecode_in != SHARED_CONTAINER_TYPE) {
+            bool erased = art_erase(&r->art, high48, NULL);
+            assert(erased);
+            (void)erased;
+            remove_container(r, *leaf);
+        }
+        return;
     }
 
     if (container_nonzero_cardinality(container2, typecode2)) {

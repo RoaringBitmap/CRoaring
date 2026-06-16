@@ -280,8 +280,11 @@ uint32_t ra_portable_header_size(const roaring_array_t *ra);
 static inline void ra_unshare_container_at_index(roaring_array_t *ra,
                                                  uint16_t i) {
     assert(i < ra->size);
-    ra->containers[i] =
+    container_t *unshared =
         get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+    if (unshared != NULL) {
+        ra->containers[i] = unshared;
+    }
 }
 
 /**

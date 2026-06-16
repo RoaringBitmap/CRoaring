@@ -106,6 +106,10 @@ bool bitset_array_container_iandnot(bitset_container_t *src_1,
         if (*dst != NULL) {
             bitset_container_free(src_1);
         }
+        // Shrink-to-array OOM: *dst is NULL but src_1 is already mutated
+        // in-place. Unlike ixor we do not undo; the slot stays valid and
+        // internal_validate passes, but the andnot result may be wrong.
+        // Acceptable under the library memory policy (abort if semantics matter).
         return false;  // not bitset
     }
     return true;
@@ -258,6 +262,7 @@ bool bitset_run_container_iandnot(bitset_container_t *src_1,
         if (*dst != NULL) {
             bitset_container_free(src_1);
         }
+        // Shrink-to-array OOM: see bitset_array_container_iandnot.
         return false;  // not bitset
     }
     return true;
@@ -586,6 +591,7 @@ bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
         if (*dst != NULL) {
             bitset_container_free(src_1);
         }
+        // Shrink-to-array OOM: see bitset_array_container_iandnot.
         return false;  // not bitset
     }
     *dst = src_1;

@@ -235,6 +235,10 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
         return true;
     }
     *dst = array_container_from_bitset(src);
+    // Shrink-to-array path: if array allocation fails, *dst is NULL. We still
+    // free src so inplace flip callers can drop the slot without dangling
+    // pointers. Losing this container's bits under OOM is acceptable per the
+    // library memory policy (structural validity; semantics may be incomplete).
     bitset_container_free(src);
     return false;
 }

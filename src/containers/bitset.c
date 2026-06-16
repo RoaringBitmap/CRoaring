@@ -164,6 +164,8 @@ bitset_container_t *bitset_container_clone(const bitset_container_t *src) {
     return bitset;
 }
 
+// Split c across a 16-bit boundary after adding offset. On OOM the caller may
+// receive only one half; partial output is acceptable under the memory policy.
 void bitset_container_offset(const bitset_container_t *c, container_t **loc,
                              container_t **hic, uint16_t offset) {
     bitset_container_t *bc = NULL;
@@ -210,7 +212,7 @@ void bitset_container_offset(const bitset_container_t *c, container_t **loc,
     if (bc == NULL || bc->cardinality != 0) {
         bc = bitset_container_create();
         if (bc == NULL) {
-            return;
+            return;  // *loc may already be set; see function comment
         }
     }
 

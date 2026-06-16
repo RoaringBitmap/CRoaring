@@ -141,14 +141,24 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
     // we go through the containers, turning them into shared containers...
     if (copy_on_write) {
         for (int32_t i = 0; i < dest->size; ++i) {
-            source->containers[i] = get_copy_of_container(
-                source->containers[i], &source->typecodes[i], copy_on_write);
+            uint8_t typecode = source->typecodes[i];
+            container_t *shared = get_copy_of_container(
+                source->containers[i], &typecode, copy_on_write);
+            if (shared == NULL) {
+                for (int32_t j = 0; j < i; ++j) {
+                    container_free(dest->containers[j], dest->typecodes[j]);
+                }
+                ra_clear_without_containers(dest);
+                return false;
+            }
+            dest->containers[i] = shared;
+            dest->typecodes[i] = typecode;
         }
-        // we do a shallow copy to the other bitmap
-        memcpy(dest->containers, source->containers,
-               dest->size * sizeof(container_t *));
-        memcpy(dest->typecodes, source->typecodes,
-               dest->size * sizeof(uint8_t));
+        // Shallow share into source only after every container succeeded.
+        memcpy((void *)source->containers, dest->containers,
+               (size_t)dest->size * sizeof(container_t *));
+        memcpy((void *)source->typecodes, dest->typecodes,
+               (size_t)dest->size * sizeof(uint8_t));
     } else {
         memcpy(dest->typecodes, source->typecodes,
                dest->size * sizeof(uint8_t));
@@ -266,6 +276,10 @@ void ra_append_copies_until(roaring_array_t *ra, const roaring_array_t *sa,
     }
 }
 
+// Appends containers [start_index, end_index) from sa onto ra. On mid-loop OOM
+// ra holds a prefix of the range (valid structure, possibly incomplete vs the
+// intended merge). Void inplace bitmap APIs ignore the return value and treat
+// that as acceptable best effort.
 bool ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
                           int32_t start_index, int32_t end_index,
                           bool copy_on_write) {

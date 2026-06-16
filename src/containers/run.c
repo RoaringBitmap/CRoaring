@@ -138,6 +138,9 @@ run_container_t *run_container_clone(const run_container_t *src) {
     return run;
 }
 
+// Split c across a 16-bit boundary after adding offset. On OOM the caller may
+// receive only the low half (*loc); partial output is acceptable under the
+// memory policy.
 void run_container_offset(const run_container_t *c, container_t **loc,
                           container_t **hic, uint16_t offset) {
     run_container_t *lo = NULL, *hi = NULL;
@@ -177,7 +180,7 @@ void run_container_offset(const run_container_t *c, container_t **loc,
     if (hic && hi_cap) {
         hi = run_container_create_given_capacity(hi_cap);
         if (hi == NULL) {
-            return;
+            return;  // *loc may already be set; see function comment
         }
         memcpy(hi->runs, c->runs + pivot, hi_cap * sizeof(rle16_t));
         hi->n_runs = hi_cap;

@@ -1823,6 +1823,7 @@ static inline container_t *container_xor(const container_t *c1, uint8_t type1,
  * the resulting containers turns out to be empty, the pointed container will
  * remain 'NULL'.
  */
+// May leave only *lo or only *hi set on OOM; see *container_offset helpers.
 static inline void container_add_offset(const container_t *c, uint8_t type,
                                         container_t **lo, container_t **hi,
                                         uint16_t offset) {
