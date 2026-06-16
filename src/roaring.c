@@ -324,16 +324,20 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
          key--) {  // beware of min_key==0
         uint32_t container_min = (min_key == key) ? (min & 0xffff) : 0;
         uint32_t container_max = (max_key == key) ? (max & 0xffff) : 0xffff;
-        container_t *new_container;
-        uint8_t new_type;
+        container_t *new_container = NULL;
+        uint8_t new_type = 0;
 
         if (src >= 0 && ra->keys[src] == key) {
             ra_unshare_container_at_index(ra, (uint16_t)src);
-            new_container =
-                container_add_range(ra->containers[src], ra->typecodes[src],
-                                    container_min, container_max, &new_type);
-            if (new_container != ra->containers[src]) {
-                container_free(ra->containers[src], ra->typecodes[src]);
+            if (ra->typecodes[src] == SHARED_CONTAINER_TYPE) {
+                new_container = NULL;
+            } else {
+                new_container =
+                    container_add_range(ra->containers[src], ra->typecodes[src],
+                                        container_min, container_max, &new_type);
+                if (new_container != ra->containers[src]) {
+                    container_free(ra->containers[src], ra->typecodes[src]);
+                }
             }
             src--;
         } else {
@@ -345,7 +349,9 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
             ra_replace_key_and_container_at_index(ra, dst, (uint16_t)key,
                                                   new_container, new_type);
         } else {
-            container_free(new_container, new_type);
+            if (new_container != NULL) {
+                container_free(new_container, new_type);
+            }
             // The destination slot is not receiving a container. Clear it so
             // the compaction pass below does not read a stale pointer left
             // behind by an already-consumed source slot (which would be a
@@ -408,6 +414,10 @@ void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min,
         ra_unshare_container_at_index(ra, (uint16_t)src);
         container_t *new_container;
         uint8_t new_type;
+        if (ra->typecodes[src] == SHARED_CONTAINER_TYPE) {
+            src++;
+            continue;
+        }
         new_container =
             container_remove_range(ra->containers[src], ra->typecodes[src],
                                    container_min, container_max, &new_type);
@@ -742,7 +752,7 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t val) {
         }
         ra_insert_new_key_value_at(&r->high_low_container, -i - 1, hb,
                                    container, typecode);
-        result = true;
+        result = ra_get_index(&r->high_low_container, hb) >= 0;
     }
 
     return result;
@@ -1213,8 +1223,16 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
             }
 
             // container_t *c2_clone = container_clone(c2, type2);
+            const int32_t size_before = x1->high_low_container.size;
             ra_insert_new_key_value_at(&x1->high_low_container, pos1, s2, c2,
                                        type2);
+            if (x1->high_low_container.size != size_before + 1) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             pos1++;
             length1++;
             pos2++;
@@ -1426,8 +1444,16 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
                                           type2);
             }
 
+            const int32_t size_before = x1->high_low_container.size;
             ra_insert_new_key_value_at(&x1->high_low_container, pos1, s2, c2,
                                        type2);
+            if (x1->high_low_container.size != size_before + 1) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             pos1++;
             length1++;
             pos2++;
@@ -2998,8 +3024,16 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
+            const int32_t size_before = x1->high_low_container.size;
             ra_insert_new_key_value_at(&x1->high_low_container, pos1, s2, c2,
                                        type2);
+            if (x1->high_low_container.size != size_before + 1) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             pos1++;
             length1++;
             pos2++;
@@ -3205,8 +3239,16 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
+            const int32_t size_before = x1->high_low_container.size;
             ra_insert_new_key_value_at(&x1->high_low_container, pos1, s2, c2,
                                        type2);
+            if (x1->high_low_container.size != size_before + 1) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             pos1++;
             length1++;
             pos2++;

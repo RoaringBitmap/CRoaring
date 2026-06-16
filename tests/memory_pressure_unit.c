@@ -33,8 +33,8 @@ static uint32_t g_failalloc_modulo = FAIL_ALLOC_MODULO;
 #define MAX_LIVE_32 4
 #define MAX_LIVE_64 4
 #define ROUNDS_PER_SEED 120u
-#define NUM_OPS_32 28u
-#define NUM_OPS_64 24u
+#define NUM_OPS_32 29u
+#define NUM_OPS_64 25u
 #define MAX_RANGE_SPAN_32 48u
 #define MAX_RANGE_SPAN_64 48u
 #define MAX_FROM_RANGE_ELEMS 64u
@@ -673,6 +673,14 @@ static void exercise_bitmap32(uint64_t seed) {
                 }
                 break;
             }
+            case 27: {
+                roaring_bitmap_t *r = pool32_pick(&pool);
+                if (r != NULL) {
+                    const uint32_t vals[] = {7u, 13u, 21u, 40010u};
+                    roaring_bitmap_remove_many(r, 4, vals);
+                }
+                break;
+            }
             default:
                 pool32_remove_random(&pool);
                 break;
@@ -932,6 +940,16 @@ static void exercise_bitmap64(uint64_t seed) {
                         assert_bitmap64_valid(flipped);
                         pool64_add(&pool, flipped);
                     }
+                }
+                break;
+            }
+            case 23: {
+                roaring64_bitmap_t *r = pool64_pick(&pool);
+                if (r != NULL) {
+                    const uint64_t vals[] = {7u, 13u, 0x10001ULL};
+                    roaring64_bitmap_remove_many(r, 3, vals);
+                    (void)roaring64_bitmap_add_checked(r, 99u);
+                    (void)roaring64_bitmap_remove_checked(r, 7u);
                 }
                 break;
             }
@@ -1243,10 +1261,8 @@ static roaring_bitmap_t *make_cow_shared_parent_bitmap(void) {
 }
 
 /**
- * roaring_bitmap_remove_many does not call ra_unshare before container_remove,
- * so a COW copy with SHARED containers can hit a single failed
- * get_writable_copy_if_shared clone. The current code treats a NULL result as
- * a replacement container (container2 != container), which must not happen.
+ * Bulk remove on a COW copy with SHARED containers: each value calls
+ * ra_unshare then container_remove, with SHARED/NULL guards on OOM.
  */
 static void exercise_cow_shared_remove_many_oom(uint64_t fail_nth) {
     roaring_bitmap_t *parent = make_cow_shared_parent_bitmap();
@@ -1281,11 +1297,80 @@ DEFINE_TEST(test_cow_shared_remove_many_oom) {
     exercise_cow_shared_remove_many_oom(1);
 }
 
-/**
- * Broader COW add/remove stress with SHARED containers. remove_many is the
- * reliable single-extract path; add/remove call ra_unshare first (a failed
- * unshare clone is usually recovered by a second extract inside container_add).
- */
+static void exercise_cow_shared_range_oom(uint64_t fail_nth) {
+    roaring_bitmap_t *parent = make_cow_shared_parent_bitmap();
+
+    restore_default_allocator();
+    roaring_bitmap_t *cow = roaring_bitmap_copy(parent);
+    if (cow == NULL) {
+        roaring_bitmap_free(parent);
+        fail_msg("failed to copy COW shared bitmap for range test");
+    }
+    assert_bitmap32_valid(cow);
+
+    install_fail_nth_allocator(fail_nth);
+    roaring_bitmap_add_range_closed(cow, 10u, 60u);
+    roaring_bitmap_remove_range_closed(cow, 20u, 30u);
+    restore_default_allocator();
+
+    assert_bitmap32_valid(cow);
+    assert_bitmap32_valid(parent);
+    assert_true(g_failalloc.alloc_failures > 0);
+
+    roaring_bitmap_free(cow);
+    roaring_bitmap_free(parent);
+}
+
+DEFINE_TEST(test_cow_shared_range_oom) {
+    exercise_cow_shared_range_oom(1);
+}
+
+static void exercise_inplace_merge_insert_oom(void) {
+    restore_default_allocator();
+    roaring_bitmap_t *high_base = roaring_bitmap_from_range(40000u, 40100u, 1u);
+    roaring_bitmap_t *low_base = roaring_bitmap_from_range(1u, 100u, 1u);
+    if (high_base == NULL || low_base == NULL) {
+        roaring_bitmap_free(high_base);
+        roaring_bitmap_free(low_base);
+        fail_msg("failed to build inplace-merge test inputs");
+    }
+
+    bool saw_failure = false;
+    for (uint64_t fail_nth = 1; fail_nth <= 64; fail_nth++) {
+        restore_default_allocator();
+        roaring_bitmap_t *high = roaring_bitmap_copy(high_base);
+        roaring_bitmap_t *low = roaring_bitmap_copy(low_base);
+        if (high == NULL || low == NULL) {
+            roaring_bitmap_free(high);
+            roaring_bitmap_free(low);
+            roaring_bitmap_free(high_base);
+            roaring_bitmap_free(low_base);
+            fail_msg("failed to copy inplace-merge test inputs");
+        }
+
+        install_fail_nth_allocator(fail_nth);
+        roaring_bitmap_or_inplace(high, low);
+        restore_default_allocator();
+
+        assert_bitmap32_valid(high);
+        assert_bitmap32_valid(low);
+        if (g_failalloc.alloc_failures > 0) {
+            saw_failure = true;
+        }
+        roaring_bitmap_free(high);
+        roaring_bitmap_free(low);
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(high_base);
+    roaring_bitmap_free(low_base);
+    assert_true(saw_failure);
+}
+
+DEFINE_TEST(test_inplace_merge_insert_oom) {
+    exercise_inplace_merge_insert_oom();
+}
+
 static void exercise_cow_add_remove_oom_paths(uint64_t seed) {
     roaring_bitmap_t *parent = make_cow_shared_parent_bitmap();
 
@@ -1313,6 +1398,8 @@ static void exercise_cow_add_remove_oom_paths(uint64_t seed) {
         (void)roaring_bitmap_add_checked(cow, low_vals[(round + 1u) % 4u]);
         (void)roaring_bitmap_add_checked(cow, high_vals[(round + 2u) % 3u]);
         roaring_bitmap_add_many(cow, 3, mixed_vals);
+        roaring_bitmap_add_range_closed(cow, 15u, 25u);
+        roaring_bitmap_remove_range_closed(cow, 18u, 22u);
 
         roaring_bitmap_remove_many(cow, 4, remove_many_vals);
 
@@ -1364,6 +1451,8 @@ int main(void) {
         cmocka_unit_test(test_lazy_or_inplace_oom_paths),
         cmocka_unit_test(test_cow_inplace_oom_paths),
         cmocka_unit_test(test_cow_shared_remove_many_oom),
+        cmocka_unit_test(test_cow_shared_range_oom),
+        cmocka_unit_test(test_inplace_merge_insert_oom),
         cmocka_unit_test(test_cow_add_remove_oom_paths),
         cmocka_unit_test(test_memory_pressure_roaring32),
         cmocka_unit_test(test_memory_pressure_roaring64),

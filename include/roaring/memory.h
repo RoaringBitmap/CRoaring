@@ -38,7 +38,7 @@
  * However, allocation failures may leave the bitmap in a state that no longer matches
  * the intended mathematical result if the requested operations could not be
  * completed. For this reason, trying to continue running after running out of memory
- * is often worse than aborting the process
+ * is often worse than aborting the process.
  */
 #ifndef INCLUDE_ROARING_MEMORY_H_
 #define INCLUDE_ROARING_MEMORY_H_
