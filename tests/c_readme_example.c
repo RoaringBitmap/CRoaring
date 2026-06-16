@@ -6,12 +6,12 @@
 // even when the test suite is built in release mode.
 #undef NDEBUG
 
-#include <roaring/roaring.h>
-#include <roaring/roaring64.h>
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <roaring/roaring.h>
+#include <roaring/roaring64.h>
 
 int main(void) {
     // --- 32-bit bitmaps ---
@@ -20,7 +20,8 @@ int main(void) {
     roaring_bitmap_add(bitmap, 1);
     roaring_bitmap_add(bitmap, 100);
     roaring_bitmap_add(bitmap, 1000);
-    roaring_bitmap_add_range(bitmap, 10, 20);  // adds the half-open range [10, 20)
+    roaring_bitmap_add_range(bitmap, 10,
+                             20);  // adds the half-open range [10, 20)
 
     // Query the bitmap.
     assert(roaring_bitmap_contains(bitmap, 100));
