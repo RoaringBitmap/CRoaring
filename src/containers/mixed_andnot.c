@@ -19,6 +19,12 @@ namespace roaring {
 namespace internal {
 #endif
 
+static inline void bitset_free_on_failed_array_conversion(
+    bitset_container_t *bitset, container_t **dst) {
+    bitset_container_free(bitset);
+    *dst = NULL;
+}
+
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/
 bool array_bitset_container_andnot(const array_container_t *src_1,
@@ -69,7 +75,11 @@ bool bitset_array_container_andnot(const bitset_container_t *src_1,
     // do required type conversions.
     if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
-        bitset_container_free(result);
+        if (*dst != NULL) {
+            bitset_container_free(result);
+            return false;
+        }
+        bitset_free_on_failed_array_conversion(result, dst);
         return false;
     }
     *dst = result;
@@ -93,10 +103,12 @@ bool bitset_array_container_iandnot(bitset_container_t *src_1,
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
-        bitset_container_free(src_1);
+        if (*dst != NULL) {
+            bitset_container_free(src_1);
+        }
         return false;  // not bitset
-    } else
-        return true;
+    }
+    return true;
 }
 
 /* Compute the andnot of src_1 and src_2 and write the result to
@@ -146,8 +158,12 @@ bool run_bitset_container_andnot(const run_container_t *src_1,
 
         if (answer->cardinality <= DEFAULT_MAX_SIZE) {
             *dst = array_container_from_bitset(answer);
-            bitset_container_free(answer);
-            return false;  // not bitset
+            if (*dst != NULL) {
+                bitset_container_free(answer);
+                return false;  // not bitset
+            }
+            bitset_free_on_failed_array_conversion(answer, dst);
+            return false;
         }
         *dst = answer;
         return true;  // bitset
@@ -197,8 +213,12 @@ bool bitset_run_container_andnot(const bitset_container_t *src_1,
 
     if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
-        bitset_container_free(result);
-        return false;  // not bitset
+        if (*dst != NULL) {
+            bitset_container_free(result);
+            return false;  // not bitset
+        }
+        bitset_free_on_failed_array_conversion(result, dst);
+        return false;
     }
     *dst = result;
     return true;  // bitset
@@ -225,10 +245,12 @@ bool bitset_run_container_iandnot(bitset_container_t *src_1,
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
-        bitset_container_free(src_1);
+        if (*dst != NULL) {
+            bitset_container_free(src_1);
+        }
         return false;  // not bitset
-    } else
-        return true;
+    }
+    return true;
 }
 
 /* helper. a_out must be a valid array container with adequate capacity.
@@ -505,8 +527,12 @@ bool bitset_bitset_container_andnot(const bitset_container_t *src_1,
     int card = bitset_container_andnot(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);
-        bitset_container_free(ans);
-        return false;  // not bitset
+        if (*dst != NULL) {
+            bitset_container_free(ans);
+            return false;  // not bitset
+        }
+        bitset_free_on_failed_array_conversion(ans, dst);
+        return false;
     } else {
         *dst = ans;
         return true;
@@ -526,12 +552,13 @@ bool bitset_bitset_container_iandnot(bitset_container_t *src_1,
     int card = bitset_container_andnot(src_1, src_2, src_1);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
-        bitset_container_free(src_1);
+        if (*dst != NULL) {
+            bitset_container_free(src_1);
+        }
         return false;  // not bitset
-    } else {
-        *dst = src_1;
-        return true;
     }
+    *dst = src_1;
+    return true;
 }
 
 #ifdef __cplusplus

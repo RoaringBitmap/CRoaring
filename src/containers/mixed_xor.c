@@ -17,6 +17,12 @@ namespace roaring {
 namespace internal {
 #endif
 
+static inline void bitset_free_on_failed_array_conversion(
+    bitset_container_t *bitset, container_t **dst) {
+    bitset_container_free(bitset);
+    *dst = NULL;
+}
+
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst (which has no container initially).
  * Result is true iff dst is a bitset  */
@@ -35,8 +41,12 @@ bool array_bitset_container_xor(const array_container_t *src_1,
     // do required type conversions.
     if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
-        bitset_container_free(result);
-        return false;  // not bitset
+        if (*dst != NULL) {
+            bitset_container_free(result);
+            return false;  // not bitset
+        }
+        bitset_free_on_failed_array_conversion(result, dst);
+        return false;
     }
     *dst = result;
     return true;  // bitset
@@ -81,8 +91,12 @@ bool run_bitset_container_xor(const run_container_t *src_1,
 
     if (result->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(result);
-        bitset_container_free(result);
-        return false;  // not bitset
+        if (*dst != NULL) {
+            bitset_container_free(result);
+            return false;  // not bitset
+        }
+        bitset_free_on_failed_array_conversion(result, dst);
+        return false;
     }
     *dst = result;
     return true;  // bitset
@@ -237,8 +251,13 @@ bool array_array_container_xor(const array_container_t *src_1,
     if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
         // need to convert!
         *dst = array_container_from_bitset(ourbitset);
-        bitset_container_free(ourbitset);
-        returnval = false;  // not going to be a bitset
+        if (*dst != NULL) {
+            bitset_container_free(ourbitset);
+            returnval = false;  // not going to be a bitset
+        } else {
+            bitset_free_on_failed_array_conversion(ourbitset, dst);
+            returnval = false;
+        }
     }
 
     return returnval;
@@ -273,13 +292,13 @@ bool array_array_container_lazy_xor(const array_container_t *src_1,
         return false;  // not a bitset
     }
     *dst = bitset_container_from_array(src_1);
-    bool returnval = true;  // expect a bitset (maybe, for XOR??)
-    if (*dst != NULL) {
-        bitset_container_t *ourbitset = CAST_bitset(*dst);
-        bitset_flip_list(ourbitset->words, src_2->array, src_2->cardinality);
-        ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
+    if (*dst == NULL) {
+        return false;
     }
-    return returnval;
+    bitset_container_t *ourbitset = CAST_bitset(*dst);
+    bitset_flip_list(ourbitset->words, src_2->array, src_2->cardinality);
+    ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
+    return true;
 }
 
 /* Compute the xor of src_1 and src_2 and write the result to
@@ -298,8 +317,12 @@ bool bitset_bitset_container_xor(const bitset_container_t *src_1,
     int card = bitset_container_xor(src_1, src_2, ans);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(ans);
-        bitset_container_free(ans);
-        return false;  // not bitset
+        if (*dst != NULL) {
+            bitset_container_free(ans);
+            return false;  // not bitset
+        }
+        bitset_free_on_failed_array_conversion(ans, dst);
+        return false;
     } else {
         *dst = ans;
         return true;
@@ -322,10 +345,17 @@ bool bitset_array_container_ixor(bitset_container_t *src_1,
 
     if (src_1->cardinality <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
-        bitset_container_free(src_1);
-        return false;  // not bitset
-    } else
-        return true;
+        if (*dst != NULL) {
+            bitset_container_free(src_1);
+            return false;  // not bitset
+        }
+        // OOM: undo the in-place xor (xor is self-inverse).
+        src_1->cardinality = (uint32_t)bitset_flip_list_withcard(
+            src_1->words, src_1->cardinality, src_2->array, src_2->cardinality);
+        *dst = NULL;
+        return false;
+    }
+    return true;
 }
 
 /* a bunch of in-place, some of which may not *really* be inplace.
@@ -339,12 +369,17 @@ bool bitset_bitset_container_ixor(bitset_container_t *src_1,
     int card = bitset_container_xor(src_1, src_2, src_1);
     if (card <= DEFAULT_MAX_SIZE) {
         *dst = array_container_from_bitset(src_1);
-        bitset_container_free(src_1);
-        return false;  // not bitset
-    } else {
-        *dst = src_1;
-        return true;
+        if (*dst != NULL) {
+            bitset_container_free(src_1);
+            return false;  // not bitset
+        }
+        // OOM: undo the in-place xor (xor is self-inverse).
+        (void)bitset_container_xor(src_1, src_2, src_1);
+        *dst = NULL;
+        return false;
     }
+    *dst = src_1;
+    return true;
 }
 
 bool array_bitset_container_ixor(array_container_t *src_1,

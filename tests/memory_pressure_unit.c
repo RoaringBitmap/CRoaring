@@ -918,6 +918,72 @@ static void exercise_bitmap64(uint64_t seed) {
     assert_true(g_failalloc.alloc_failures > 0);
 }
 
+// Chunk-0 bitsets (>4096 values, step-2 so Roaring uses bitset not run).
+// Inplace xor/andnot with a partner shrinks cardinality enough to trigger
+// bitset-to-array conversion.
+#define BITSET_SHRINK_BASE_MIN 1u
+#define BITSET_SHRINK_BASE_MAX 16386u
+#define BITSET_SHRINK_BASE_STEP 2u
+#define BITSET_SHRINK_PARTNER_MIN 8193u
+#define BITSET_SHRINK_PARTNER_MAX 16386u
+#define BITSET_SHRINK_PARTNER_STEP 2u
+#define BITSET_SHRINK_ROUNDS 80u
+
+static roaring_bitmap_t *make_dense_bitset_chunk_bitmap(void) {
+    return roaring_bitmap_from_range(BITSET_SHRINK_BASE_MIN, BITSET_SHRINK_BASE_MAX,
+                                     BITSET_SHRINK_BASE_STEP);
+}
+
+static roaring_bitmap_t *make_bitset_shrink_partner_bitmap(void) {
+    return roaring_bitmap_from_range(BITSET_SHRINK_PARTNER_MIN,
+                                     BITSET_SHRINK_PARTNER_MAX,
+                                     BITSET_SHRINK_PARTNER_STEP);
+}
+
+static void exercise_bitset_shrink_oom_paths(uint64_t seed) {
+    // Build inputs with the default allocator so chunk containers are valid
+    // dense bitsets before we stress inplace shrink-to-array under the hook.
+    restore_default_allocator();
+    roaring_bitmap_t *base = make_dense_bitset_chunk_bitmap();
+    roaring_bitmap_t *partner = make_bitset_shrink_partner_bitmap();
+    if (base == NULL || partner == NULL) {
+        roaring_bitmap_free(base);
+        roaring_bitmap_free(partner);
+        fail_msg("failed to build bitset-shrink test inputs");
+    }
+    assert_bitmap32_valid(base);
+    assert_bitmap32_valid(partner);
+
+    install_failing_allocator(seed);
+
+    for (uint32_t round = 0; round < BITSET_SHRINK_ROUNDS; ++round) {
+        roaring_bitmap_t *xor_inplace_copy = roaring_bitmap_copy(base);
+        if (xor_inplace_copy != NULL) {
+            roaring_bitmap_xor_inplace(xor_inplace_copy, partner);
+            assert_bitmap32_valid(xor_inplace_copy);
+            roaring_bitmap_free(xor_inplace_copy);
+        }
+
+        roaring_bitmap_t *xor_alloc = roaring_bitmap_xor(base, partner);
+        if (xor_alloc != NULL) {
+            assert_bitmap32_valid(xor_alloc);
+            roaring_bitmap_free(xor_alloc);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(base);
+    roaring_bitmap_free(partner);
+    assert_true(g_failalloc.alloc_failures > 0);
+}
+
+DEFINE_TEST(test_bitset_shrink_oom_paths) {
+    static const uint64_t seeds[] = {0xBEEFu, 0xCAFEu, 0xDEADu};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_bitset_shrink_oom_paths(seeds[i]);
+    }
+}
+
 DEFINE_TEST(test_memory_pressure_roaring32) {
     static const uint64_t seeds[] = {1, 42};
     for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
@@ -935,6 +1001,7 @@ DEFINE_TEST(test_memory_pressure_roaring64) {
 int main(void) {
     tellmeall();
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_bitset_shrink_oom_paths),
         cmocka_unit_test(test_memory_pressure_roaring32),
         cmocka_unit_test(test_memory_pressure_roaring64),
     };

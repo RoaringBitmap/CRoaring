@@ -1494,9 +1494,25 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
             container_t *c;
             if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_andnot(c1, type1, c2, type2, &result_type);
-                shared_container_free(CAST_shared(c1));  // release
+                // Release our reference to the shared container only on
+                // success. On allocation failure (c == NULL) we keep c1 in
+                // place so the slot at pos1 is not left dangling.
+                if (c != NULL) {
+                    shared_container_free(CAST_shared(c1));  // release
+                }
             } else {
                 c = container_iandnot(c1, type1, c2, type2, &result_type);
+            }
+
+            if (c == NULL) {
+                ++pos2;
+                if (pos1 == length1) break;
+                if (pos2 == length2) break;
+                s1 = ra_get_key_at_index(&x1->high_low_container,
+                                         (uint16_t)pos1);
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
             }
 
             if (container_nonzero_cardinality(c, result_type)) {
@@ -2809,13 +2825,24 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                         container_mutable_unwrap_shared(c1, &type1);
                     newc1 = container_to_bitset(newc1, type1);
                     if (newc1 == NULL) {
-                        c1 = get_writable_copy_if_shared(old_c1, &old_type1);
+                        newc1 = get_writable_copy_if_shared(old_c1, &old_type1);
                         type1 = old_type1;
                     } else {
                         container_free(old_c1, old_type1);
-                        c1 = newc1;
                         type1 = BITSET_CONTAINER_TYPE;
                     }
+                    if (newc1 == NULL) {
+                        ++pos1;
+                        ++pos2;
+                        if (pos1 == length1) break;
+                        if (pos2 == length2) break;
+                        s1 = ra_get_key_at_index(
+                            &x1->high_low_container, (uint16_t)pos1);
+                        s2 = ra_get_key_at_index(
+                            &x2->high_low_container, (uint16_t)pos2);
+                        continue;
+                    }
+                    c1 = newc1;
                 }
 
                 container_t *c2 = ra_get_container_at_index(
@@ -2823,13 +2850,23 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                 container_t *c =
                     container_lazy_ior(c1, type1, c2, type2, &result_type);
 
-                if (c != c1) {  // in this instance a new container was created,
-                                // and we need to free the old one
-                    container_free(c1, type1);
+                if (c == NULL) {
+                    // OOM: container_lazy_ior leaves c1 valid. Store c1 back
+                    // into the slot. Unlike the plain or_inplace case, c1 may
+                    // differ from the slot's original contents (an earlier
+                    // writable-copy or bitset conversion replaced and released
+                    // the original), so the slot must be updated to point at
+                    // c1 to stay valid (best effort).
+                    ra_set_container_at_index(&x1->high_low_container, pos1, c1,
+                                              type1);
+                } else {
+                    if (c != c1) {  // a new container was created, and we need
+                                    // to free the old one
+                        container_free(c1, type1);
+                    }
+                    ra_set_container_at_index(&x1->high_low_container, pos1, c,
+                                              result_type);
                 }
-
-                ra_set_container_at_index(&x1->high_low_container, pos1, c,
-                                          result_type);
             }
             ++pos1;
             ++pos2;
@@ -3003,9 +3040,25 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             container_t *c;
             if (type1 == SHARED_CONTAINER_TYPE) {
                 c = container_lazy_xor(c1, type1, c2, type2, &result_type);
-                shared_container_free(CAST_shared(c1));  // release
+                // Release our reference to the shared container only on
+                // success. On allocation failure (c == NULL) we keep c1 in
+                // place so the slot at pos1 is not left dangling.
+                if (c != NULL) {
+                    shared_container_free(CAST_shared(c1));  // release
+                }
             } else {
                 c = container_lazy_ixor(c1, type1, c2, type2, &result_type);
+            }
+
+            if (c == NULL) {
+                ++pos2;
+                if (pos1 == length1) break;
+                if (pos2 == length2) break;
+                s1 = ra_get_key_at_index(&x1->high_low_container,
+                                         (uint16_t)pos1);
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
             }
 
             if (container_nonzero_cardinality(c, result_type)) {
