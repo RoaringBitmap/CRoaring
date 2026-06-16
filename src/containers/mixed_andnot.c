@@ -526,7 +526,9 @@ int run_run_container_iandnot(run_container_t *src_1,
                               const run_container_t *src_2, container_t **dst) {
     // following Java impl as of June 2016 (dummy)
     int ans = run_run_container_andnot(src_1, src_2, dst);
-    run_container_free(src_1);
+    if (*dst != NULL) {
+        run_container_free(src_1);
+    }
     return ans;
 }
 

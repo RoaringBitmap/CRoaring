@@ -23,8 +23,10 @@ extern int posix_memalign(void **memptr, size_t alignment, size_t size);
 
 #include "test.h"
 
-// Roughly one in FAIL_ALLOC_MODULO allocation attempts returns NULL.
+// Roughly one in g_failalloc_modulo allocation attempts returns NULL.
 #define FAIL_ALLOC_MODULO 6u
+
+static uint32_t g_failalloc_modulo = FAIL_ALLOC_MODULO;
 
 // Keep live bitmaps few and small so this test stays lightweight even when
 // allocations succeed under the seeded failing hook.
@@ -41,6 +43,7 @@ typedef struct {
     uint64_t prng_state;
     uint64_t alloc_calls;
     uint64_t alloc_failures;
+    uint64_t fail_nth;  // 0 = disabled; else fail this 1-based attempt
     roaring_memory_t baseline;
     bool baseline_initialized;
 } failalloc_state_t;
@@ -95,7 +98,13 @@ static uint64_t failalloc_rand(void) {
 
 static bool failalloc_should_fail(void) {
     g_failalloc.alloc_calls++;
-    if ((failalloc_rand() % FAIL_ALLOC_MODULO) == 0) {
+    if (g_failalloc.fail_nth != 0 &&
+        g_failalloc.alloc_calls == g_failalloc.fail_nth) {
+        g_failalloc.alloc_failures++;
+        return true;
+    }
+    if (g_failalloc.fail_nth == 0 &&
+        (failalloc_rand() % g_failalloc_modulo) == 0) {
         g_failalloc.alloc_failures++;
         return true;
     }
@@ -136,9 +145,31 @@ static void failalloc_aligned_free(void *p) {
     g_failalloc.baseline.aligned_free(p);
 }
 
-static void install_failing_allocator(uint64_t seed) {
+static void install_failing_allocator_modulo(uint64_t seed, uint32_t modulo) {
     init_baseline_hook();
+    g_failalloc_modulo = modulo;
+    g_failalloc.fail_nth = 0;
     g_failalloc.prng_state = seed;
+    g_failalloc.alloc_calls = 0;
+    g_failalloc.alloc_failures = 0;
+    roaring_memory_t hook = {.malloc = failalloc_malloc,
+                             .realloc = failalloc_realloc,
+                             .calloc = failalloc_calloc,
+                             .free = failalloc_free,
+                             .aligned_malloc = failalloc_aligned_malloc,
+                             .aligned_free = failalloc_aligned_free};
+    roaring_init_memory_hook(hook);
+}
+
+static void install_failing_allocator(uint64_t seed) {
+    install_failing_allocator_modulo(seed, FAIL_ALLOC_MODULO);
+}
+
+static void install_fail_nth_allocator(uint64_t fail_nth) {
+    init_baseline_hook();
+    g_failalloc_modulo = FAIL_ALLOC_MODULO;
+    g_failalloc.fail_nth = fail_nth;
+    g_failalloc.prng_state = 1;
     g_failalloc.alloc_calls = 0;
     g_failalloc.alloc_failures = 0;
     roaring_memory_t hook = {.malloc = failalloc_malloc,
@@ -1190,6 +1221,125 @@ DEFINE_TEST(test_cow_inplace_oom_paths) {
     }
 }
 
+#define COW_ADD_REMOVE_ROUNDS 80u
+// Fail often enough that shared-container extract reliably sees OOM.
+#define COW_ADD_REMOVE_FAIL_MODULO 3u
+
+// Parent must be COW before copy so ra_overwrite installs SHARED wrappers.
+static roaring_bitmap_t *make_cow_shared_parent_bitmap(void) {
+    restore_default_allocator();
+    roaring_bitmap_t *parent = roaring_bitmap_from_range(1u, 500u, 1u);
+    roaring_bitmap_t *high = roaring_bitmap_from_range(40000u, 40500u, 1u);
+    if (parent == NULL || high == NULL) {
+        roaring_bitmap_free(parent);
+        roaring_bitmap_free(high);
+        fail_msg("failed to build COW shared test inputs");
+    }
+    roaring_bitmap_or_inplace(parent, high);
+    roaring_bitmap_free(high);
+    roaring_bitmap_set_copy_on_write(parent, true);
+    assert_bitmap32_valid(parent);
+    return parent;
+}
+
+/**
+ * roaring_bitmap_remove_many does not call ra_unshare before container_remove,
+ * so a COW copy with SHARED containers can hit a single failed
+ * get_writable_copy_if_shared clone. The current code treats a NULL result as
+ * a replacement container (container2 != container), which must not happen.
+ */
+static void exercise_cow_shared_remove_many_oom(uint64_t fail_nth) {
+    roaring_bitmap_t *parent = make_cow_shared_parent_bitmap();
+
+    restore_default_allocator();
+    roaring_bitmap_t *cow = roaring_bitmap_copy(parent);
+    if (cow == NULL) {
+        roaring_bitmap_free(parent);
+        fail_msg("failed to copy COW shared bitmap");
+    }
+    assert_true(roaring_bitmap_get_copy_on_write(cow));
+    assert_bitmap32_valid(cow);
+
+    const uint32_t remove_vals[] = {50u, 75u, 100u, 40001u, 40100u};
+
+    install_fail_nth_allocator(fail_nth);
+    roaring_bitmap_remove_many(cow, 5, remove_vals);
+    restore_default_allocator();
+
+    assert_bitmap32_valid(cow);
+    assert_bitmap32_valid(parent);
+    assert_true(roaring_bitmap_contains(cow, 200u));
+    assert_true(roaring_bitmap_contains(cow, 40150u));
+
+    assert_true(g_failalloc.alloc_failures > 0);
+
+    roaring_bitmap_free(cow);
+    roaring_bitmap_free(parent);
+}
+
+DEFINE_TEST(test_cow_shared_remove_many_oom) {
+    exercise_cow_shared_remove_many_oom(1);
+}
+
+/**
+ * Broader COW add/remove stress with SHARED containers. remove_many is the
+ * reliable single-extract path; add/remove call ra_unshare first (a failed
+ * unshare clone is usually recovered by a second extract inside container_add).
+ */
+static void exercise_cow_add_remove_oom_paths(uint64_t seed) {
+    roaring_bitmap_t *parent = make_cow_shared_parent_bitmap();
+
+    uint64_t total_failures = 0;
+
+    for (uint32_t round = 0; round < COW_ADD_REMOVE_ROUNDS; ++round) {
+        restore_default_allocator();
+        roaring_bitmap_t *cow = roaring_bitmap_copy(parent);
+        if (cow == NULL) {
+            roaring_bitmap_free(parent);
+            fail_msg("failed to copy bitmap for COW add/remove test");
+        }
+        assert_bitmap32_valid(cow);
+
+        install_failing_allocator_modulo(seed + (uint64_t)round,
+                                         COW_ADD_REMOVE_FAIL_MODULO);
+
+        const uint32_t low_vals[] = {50u, 100u, 250u, 499u};
+        const uint32_t high_vals[] = {40001u, 40100u, 40499u};
+        const uint32_t mixed_vals[] = {75u, 40050u, 40200u};
+        const uint32_t remove_many_vals[] = {60u, 90u, 40010u, 40120u};
+
+        roaring_bitmap_add(cow, low_vals[round % 4u]);
+        roaring_bitmap_add(cow, high_vals[round % 3u]);
+        (void)roaring_bitmap_add_checked(cow, low_vals[(round + 1u) % 4u]);
+        (void)roaring_bitmap_add_checked(cow, high_vals[(round + 2u) % 3u]);
+        roaring_bitmap_add_many(cow, 3, mixed_vals);
+
+        roaring_bitmap_remove_many(cow, 4, remove_many_vals);
+
+        roaring_bitmap_remove(cow, low_vals[(round + 2u) % 4u]);
+        roaring_bitmap_remove(cow, high_vals[(round + 1u) % 3u]);
+        (void)roaring_bitmap_remove_checked(cow, low_vals[round % 4u]);
+        (void)roaring_bitmap_remove_checked(cow, high_vals[round % 3u]);
+
+        assert_bitmap32_valid(cow);
+        assert_bitmap32_valid(parent);
+
+        total_failures += g_failalloc.alloc_failures;
+        roaring_bitmap_free(cow);
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(parent);
+    assert_true(total_failures > 0);
+}
+
+DEFINE_TEST(test_cow_add_remove_oom_paths) {
+    static const uint64_t seeds[] = {0xADD1u, 0xADD2u, 0xADD3u};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_cow_add_remove_oom_paths(seeds[i]);
+    }
+}
+
 DEFINE_TEST(test_memory_pressure_roaring32) {
     static const uint64_t seeds[] = {1, 42};
     for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
@@ -1213,6 +1363,8 @@ int main(void) {
         cmocka_unit_test(test_flip_inplace_oom_paths),
         cmocka_unit_test(test_lazy_or_inplace_oom_paths),
         cmocka_unit_test(test_cow_inplace_oom_paths),
+        cmocka_unit_test(test_cow_shared_remove_many_oom),
+        cmocka_unit_test(test_cow_add_remove_oom_paths),
         cmocka_unit_test(test_memory_pressure_roaring32),
         cmocka_unit_test(test_memory_pressure_roaring64),
     };

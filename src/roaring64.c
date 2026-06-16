@@ -535,10 +535,16 @@ static inline leaf_t *containerptr_roaring64_bitmap_add(roaring64_bitmap_t *r,
                                                         leaf_t *leaf) {
     if (leaf != NULL) {
         uint8_t typecode = get_typecode(*leaf);
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            return leaf;
+        }
         container_t *container = get_container(r, *leaf);
         uint8_t typecode2;
         container_t *container2 =
             container_add(container, low16, typecode, &typecode2);
+        if (container2 == NULL) {
+            return leaf;
+        }
         if (container2 != container) {
             container_free(container, typecode);
             replace_container(r, leaf, container2, typecode2);
@@ -612,10 +618,18 @@ void roaring64_bitmap_add_bulk(roaring64_bitmap_t *r,
     if (leaf != NULL && compare_high48(context->high_bytes, high48) == 0) {
         // We're at a container with the correct high bits.
         uint8_t typecode1 = get_typecode(*leaf);
+        if (typecode1 == SHARED_CONTAINER_TYPE) {
+            context->leaf = NULL;
+            roaring64_bitmap_add_bulk(r, context, val);
+            return;
+        }
         container_t *container1 = get_container(r, *leaf);
         uint8_t typecode2;
         container_t *container2 =
             container_add(container1, low16, typecode1, &typecode2);
+        if (container2 == NULL) {
+            return;
+        }
         if (container2 != container1) {
             container_free(container1, typecode1);
             replace_container(r, leaf, container2, typecode2);
@@ -654,10 +668,16 @@ static inline bool add_range_closed_at(roaring64_bitmap_t *r, art_t *art,
     leaf_t *leaf = (leaf_t *)art_find(art, high48);
     if (leaf != NULL) {
         uint8_t typecode1 = get_typecode(*leaf);
+        if (typecode1 == SHARED_CONTAINER_TYPE) {
+            return false;
+        }
         container_t *container1 = get_container(r, *leaf);
         uint8_t typecode2;
         container_t *container2 =
             container_add_range(container1, typecode1, min, max, &typecode2);
+        if (container2 == NULL) {
+            return false;
+        }
         if (container2 != container1) {
             container_free(container1, typecode1);
             replace_container(r, leaf, container2, typecode2);
@@ -926,6 +946,9 @@ static inline bool containerptr_roaring64_bitmap_remove(roaring64_bitmap_t *r,
     }
 
     uint8_t typecode = get_typecode(*leaf);
+    if (typecode == SHARED_CONTAINER_TYPE) {
+        return false;
+    }
     container_t *container = get_container(r, *leaf);
     if (container == NULL) {
         return false;
@@ -933,6 +956,9 @@ static inline bool containerptr_roaring64_bitmap_remove(roaring64_bitmap_t *r,
     uint8_t typecode2;
     container_t *container2 =
         container_remove(container, low16, typecode, &typecode2);
+    if (container2 == NULL) {
+        return false;
+    }
     if (container2 != container) {
         container_free(container, typecode);
         replace_container(r, leaf, container2, typecode2);
@@ -986,10 +1012,18 @@ void roaring64_bitmap_remove_bulk(roaring64_bitmap_t *r,
         compare_high48(context->high_bytes, high48) == 0) {
         // We're at a container with the correct high bits.
         uint8_t typecode = get_typecode(*context->leaf);
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            context->leaf = NULL;
+            roaring64_bitmap_remove_bulk(r, context, val);
+            return;
+        }
         container_t *container = get_container(r, *context->leaf);
         uint8_t typecode2;
         container_t *container2 =
             container_remove(container, low16, typecode, &typecode2);
+        if (container2 == NULL) {
+            return;
+        }
         if (container2 != container) {
             container_free(container, typecode);
             replace_container(r, context->leaf, container2, typecode2);
@@ -1034,20 +1068,19 @@ static inline void remove_range_closed_at(roaring64_bitmap_t *r, art_t *art,
         return;
     }
     uint8_t typecode = get_typecode(*leaf);
+    if (typecode == SHARED_CONTAINER_TYPE) {
+        return;
+    }
     container_t *container = get_container(r, *leaf);
     uint8_t typecode2;
     container_t *container2 =
         container_remove_range(container, typecode, min, max, &typecode2);
+    if (container2 == NULL) {
+        return;
+    }
     if (container2 != container) {
         container_free(container, typecode);
-        if (container2 != NULL) {
-            replace_container(r, leaf, container2, typecode2);
-        } else {
-            bool erased = art_erase(art, high48, NULL);
-            assert(erased);
-            (void)erased;
-            remove_container(r, *leaf);
-        }
+        replace_container(r, leaf, container2, typecode2);
     }
 }
 
@@ -2458,6 +2491,11 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
                 split_key((uint64_t)k << 16, lo_high48);
                 leaf_t new_leaf = add_container(answer, lo, typecode);
                 if (!insert_leaf_or_cleanup(answer, lo_high48, new_leaf)) {
+                    // hi was already produced by container_add_offset but not
+                    // yet stored in answer; free it so it is not leaked.
+                    if (hi != NULL) {
+                        container_free(hi, typecode);
+                    }
                     roaring64_bitmap_free(answer);
                     return NULL;
                 }

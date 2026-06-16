@@ -61,9 +61,15 @@ static inline container_t *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
     if (i >= 0) {
         ra_unshare_container_at_index(ra, (uint16_t)i);
         container_t *c = ra_get_container_at_index(ra, (uint16_t)i, type);
+        if (*type == SHARED_CONTAINER_TYPE) {
+            return c;
+        }
         uint8_t new_type = *type;
         container_t *c2 = container_add(c, val & 0xFFFF, *type, &new_type);
         *index = i;
+        if (c2 == NULL) {
+            return c;
+        }
         if (c2 != c) {
             container_free(c, *type);
             ra_set_container_at_index(ra, i, c2, new_type);
@@ -134,12 +140,20 @@ static inline void add_bulk_impl(roaring_bitmap_t *r,
         context->idx = idx;
         context->key = key;
     } else {
+        if (context->typecode == SHARED_CONTAINER_TYPE) {
+            context->container = NULL;
+            add_bulk_impl(r, context, val);
+            return;
+        }
         // no need to seek the container, it is at hand
         // because we already have the container at hand, we can do the
         // insertion directly, bypassing the roaring_bitmap_add call
         uint8_t new_typecode;
         container_t *container2 = container_add(
             context->container, val & 0xFFFF, context->typecode, &new_typecode);
+        if (container2 == NULL) {
+            return;
+        }
         if (container2 != context->container) {
             // rare instance when we need to change the container type
             container_free(context->container, context->typecode);
@@ -650,9 +664,15 @@ void roaring_bitmap_add(roaring_bitmap_t *r, uint32_t val) {
         ra_unshare_container_at_index(ra, (uint16_t)i);
         container_t *container =
             ra_get_container_at_index(ra, (uint16_t)i, &typecode);
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            return;
+        }
         uint8_t newtypecode = typecode;
         container_t *container2 =
             container_add(container, val & 0xFFFF, typecode, &newtypecode);
+        if (container2 == NULL) {
+            return;
+        }
         if (container2 != container) {
             container_free(container, typecode);
             ra_set_container_at_index(&r->high_low_container, i, container2,
@@ -684,6 +704,9 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t val) {
         ra_unshare_container_at_index(&r->high_low_container, (uint16_t)i);
         container_t *container = ra_get_container_at_index(
             &r->high_low_container, (uint16_t)i, &typecode);
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            return false;
+        }
 
         const int oldCardinality =
             container_get_cardinality(container, typecode);
@@ -691,6 +714,9 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t val) {
         uint8_t newtypecode = typecode;
         container_t *container2 =
             container_add(container, val & 0xFFFF, typecode, &newtypecode);
+        if (container2 == NULL) {
+            return false;
+        }
         if (container2 != container) {
             container_free(container, typecode);
             ra_set_container_at_index(&r->high_low_container, i, container2,
@@ -730,9 +756,15 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t val) {
         ra_unshare_container_at_index(&r->high_low_container, (uint16_t)i);
         container_t *container = ra_get_container_at_index(
             &r->high_low_container, (uint16_t)i, &typecode);
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            return;
+        }
         uint8_t newtypecode = typecode;
         container_t *container2 =
             container_remove(container, val & 0xFFFF, typecode, &newtypecode);
+        if (container2 == NULL) {
+            return;
+        }
         if (container2 != container) {
             container_free(container, typecode);
             ra_set_container_at_index(&r->high_low_container, i, container2,
@@ -756,6 +788,9 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t val) {
         ra_unshare_container_at_index(&r->high_low_container, (uint16_t)i);
         container_t *container = ra_get_container_at_index(
             &r->high_low_container, (uint16_t)i, &typecode);
+        if (typecode == SHARED_CONTAINER_TYPE) {
+            return false;
+        }
 
         const int oldCardinality =
             container_get_cardinality(container, typecode);
@@ -763,6 +798,9 @@ bool roaring_bitmap_remove_checked(roaring_bitmap_t *r, uint32_t val) {
         uint8_t newtypecode = typecode;
         container_t *container2 =
             container_remove(container, val & 0xFFFF, typecode, &newtypecode);
+        if (container2 == NULL) {
+            return false;
+        }
         if (container2 != container) {
             container_free(container, typecode);
             ra_set_container_at_index(&r->high_low_container, i, container2,
@@ -797,14 +835,23 @@ void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
             pos = ra_get_index(&r->high_low_container, key);
         }
         if (pos >= 0) {
-            uint8_t new_typecode;
+            ra_unshare_container_at_index(&r->high_low_container,
+                                          (uint16_t)pos);
+            uint8_t typecode;
+            container_t *container = ra_get_container_at_index(
+                &r->high_low_container, (uint16_t)pos, &typecode);
+            if (typecode == SHARED_CONTAINER_TYPE) {
+                continue;
+            }
+            uint8_t new_typecode = typecode;
             container_t *new_container;
             new_container = container_remove(
-                r->high_low_container.containers[pos], vals[i] & 0xffff,
-                r->high_low_container.typecodes[pos], &new_typecode);
-            if (new_container != r->high_low_container.containers[pos]) {
-                container_free(r->high_low_container.containers[pos],
-                               r->high_low_container.typecodes[pos]);
+                container, vals[i] & 0xffff, typecode, &new_typecode);
+            if (new_container == NULL) {
+                continue;
+            }
+            if (new_container != container) {
+                container_free(container, typecode);
                 ra_replace_key_and_container_at_index(&r->high_low_container,
                                                       pos, key, new_container,
                                                       new_typecode);
