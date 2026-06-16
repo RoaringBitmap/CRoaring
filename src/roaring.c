@@ -62,6 +62,7 @@ static inline container_t *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
         ra_unshare_container_at_index(ra, (uint16_t)i);
         container_t *c = ra_get_container_at_index(ra, (uint16_t)i, type);
         if (*type == SHARED_CONTAINER_TYPE) {
+            *index = i;
             return c;
         }
         uint8_t new_type = *type;
@@ -81,20 +82,24 @@ static inline container_t *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
     } else {
         array_container_t *new_ac = array_container_create();
         if (new_ac == NULL) {
+            *index = -1;
             return NULL;
         }
         container_t *c =
             container_add(new_ac, val & 0xFFFF, ARRAY_CONTAINER_TYPE, type);
         if (c == NULL) {
+            *index = -1;
             return NULL;
         }
         if (*type == ARRAY_CONTAINER_TYPE && CAST_array(c)->cardinality == 0) {
             container_free(c, *type);
+            *index = -1;
             return NULL;
         }
         ra_insert_new_key_value_at(ra, -i - 1, hb, c, *type);
         if (ra_get_index(ra, hb) < 0) {
             // insert failed (OOM): c was freed by ra_insert_new_key_value_at
+            *index = -1;
             return NULL;
         }
         *index = -i - 1;
@@ -175,8 +180,8 @@ void roaring_bitmap_add_many(roaring_bitmap_t *r, size_t n_args,
         return;
     }
 
-    uint8_t typecode;
-    int idx;
+    uint8_t typecode = 0;
+    int idx = -1;
     container_t *container;
     val = *current_val;
     container = containerptr_roaring_bitmap_add(r, val, &typecode, &idx);
@@ -1240,9 +1245,13 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        (void)ra_append_copy_range(&x1->high_low_container,
-                                   &x2->high_low_container, pos2, length2,
-                                   is_cow(x2));
+        // Tail copy is nodiscard. On OOM this void inplace-or stops early:
+        // x1 stays valid but the union may be missing trailing containers.
+        if (!ra_append_copy_range(&x1->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            return;
+        }
     }
 }
 
@@ -1462,9 +1471,13 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        (void)ra_append_copy_range(&x1->high_low_container,
-                                   &x2->high_low_container, pos2, length2,
-                                   is_cow(x2));
+        // Tail copy is nodiscard. On OOM this void inplace-xor stops early:
+        // x1 stays valid but the xor may be missing trailing containers.
+        if (!ra_append_copy_range(&x1->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            return;
+        }
     }
 }
 
@@ -3043,9 +3056,13 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        (void)ra_append_copy_range(&x1->high_low_container,
-                                   &x2->high_low_container, pos2, length2,
-                                   is_cow(x2));
+        // Tail copy is nodiscard. On OOM this void lazy-or-inplace stops early:
+        // x1 stays valid but the union may be missing trailing containers.
+        if (!ra_append_copy_range(&x1->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            return;
+        }
     }
 }
 
@@ -3259,9 +3276,13 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        (void)ra_append_copy_range(&x1->high_low_container,
-                                   &x2->high_low_container, pos2, length2,
-                                   is_cow(x2));
+        // Tail copy is nodiscard. On OOM this void lazy-xor-inplace stops early:
+        // x1 stays valid but the xor may be missing trailing containers.
+        if (!ra_append_copy_range(&x1->high_low_container,
+                                  &x2->high_low_container, pos2, length2,
+                                  is_cow(x2))) {
+            return;
+        }
     }
 }
 

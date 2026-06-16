@@ -1057,11 +1057,15 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
-            // In-place: c1 already has capacity for its own cardinality, so the
-            // intersection cannot need to grow and thus cannot fail.
-            (void)array_bitset_container_intersection(
-                const_CAST_array(c1), const_CAST_bitset(c2),
-                CAST_array(c1));  // result is allowed to be same as c1
+            // In-place intersection only shrinks c1, so OOM is unexpected, but
+            // the helper is nodiscard. On failure leave c1 unchanged; the
+            // inplace bitmap op may be incomplete but stays valid.
+            if (!array_bitset_container_intersection(
+                    const_CAST_array(c1), const_CAST_bitset(c2),
+                    CAST_array(c1))) {
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             return c1;
 
         case CONTAINER_PAIR(BITSET, RUN): {
@@ -2233,10 +2237,13 @@ static inline container_t *container_iandnot(container_t *c1, uint8_t type1,
             return result;
 
         case CONTAINER_PAIR(ARRAY, ARRAY):
-            // In-place difference shrinks c1, so it cannot need to grow and
-            // thus cannot fail.
-            (void)array_array_container_iandnot(CAST_array(c1),
-                                                const_CAST_array(c2));
+            // In-place andnot only shrinks c1; check the nodiscard result anyway.
+            // On OOM leave c1 unchanged (andnot cannot be undone in place).
+            if (!array_array_container_iandnot(CAST_array(c1),
+                                               const_CAST_array(c2))) {
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;
             return c1;
 
@@ -2254,9 +2261,13 @@ static inline container_t *container_iandnot(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             *result_type = ARRAY_CONTAINER_TYPE;
-            // In-place difference shrinks c1, so it cannot fail.
-            (void)array_bitset_container_iandnot(CAST_array(c1),
-                                                 const_CAST_bitset(c2));
+            // In-place andnot only shrinks c1; check the nodiscard result anyway.
+            // On OOM leave c1 unchanged (andnot cannot be undone in place).
+            if (!array_bitset_container_iandnot(CAST_array(c1),
+                                               const_CAST_bitset(c2))) {
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             return c1;
 
         case CONTAINER_PAIR(BITSET, RUN):
@@ -2275,9 +2286,13 @@ static inline container_t *container_iandnot(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(ARRAY, RUN):
             *result_type = ARRAY_CONTAINER_TYPE;
-            // In-place difference shrinks c1, so it cannot fail.
-            (void)array_run_container_iandnot(CAST_array(c1),
-                                              const_CAST_run(c2));
+            // In-place andnot only shrinks c1; check the nodiscard result anyway.
+            // On OOM leave c1 unchanged (andnot cannot be undone in place).
+            if (!array_run_container_iandnot(CAST_array(c1),
+                                             const_CAST_run(c2))) {
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             return c1;
 
         case CONTAINER_PAIR(RUN, ARRAY):

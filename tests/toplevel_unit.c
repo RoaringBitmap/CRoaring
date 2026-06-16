@@ -813,7 +813,7 @@ void test_example(bool copy_on_write) {
     size_t limit = 1000;
     uint32_t *arr3 = (uint32_t *)malloc(limit * sizeof(uint32_t));
     assert_true(arr3 != NULL);
-    (void)roaring_bitmap_range_uint32_array(r1, offset, limit, arr3);
+    assert_true(roaring_bitmap_range_uint32_array(r1, offset, limit, arr3));
     for (size_t i = 0; i < card1 - offset; ++i) {
         assert_int_equal(arr3[i], arr1[i + offset]);
     }

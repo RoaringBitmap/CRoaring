@@ -118,11 +118,11 @@ DEFINE_TEST(and_or_test) {
     const int card_inter = array_container_cardinality(BO);
     const int card_union = array_container_cardinality(BI);
 
-    (void)array_container_intersection(B1, B2, TMP);
+    assert_true(array_container_intersection(B1, B2, TMP));
     assert_int_equal(card_inter, array_container_cardinality(TMP));
     assert_true(array_container_equals(BO, TMP));
 
-    (void)array_container_union(B1, B2, TMP);
+    assert_true(array_container_union(B1, B2, TMP));
     assert_int_equal(card_union, array_container_cardinality(TMP));
     assert_true(array_container_equals(BI, TMP));
 

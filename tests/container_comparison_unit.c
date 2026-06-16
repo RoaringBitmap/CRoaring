@@ -23,9 +23,10 @@ using namespace roaring::internal;
 
 static inline void container_checked_add(container_t *container, uint16_t val,
                                          uint8_t typecode) {
-    uint8_t new_type;
+    uint8_t new_type = typecode;
     container_t *new_container =
         container_add(container, val, typecode, &new_type);
+    assert_non_null(new_container);
     assert_int_equal(typecode, new_type);
     assert_ptr_equal(container, new_container);
 }

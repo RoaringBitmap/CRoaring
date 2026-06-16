@@ -111,10 +111,10 @@ DEFINE_TEST(and_or_test) {
         run_container_add(BO, x);
     }
 
-    (void)run_container_intersection(B1, B2, TMP);
+    assert_true(run_container_intersection(B1, B2, TMP));
     assert_true(run_container_equals(BO, TMP));
 
-    (void)run_container_union(B1, B2, TMP);
+    assert_true(run_container_union(B1, B2, TMP));
     assert_true(run_container_equals(BI, TMP));
 
     run_container_free(B1);

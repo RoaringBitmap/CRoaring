@@ -395,7 +395,10 @@ void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
         // insert_leaf_or_cleanup frees the pooled container if the ART insert
         // fails, so it is not leaked (best effort: this void API drops the
         // container on OOM).
-        (void)insert_leaf_or_cleanup(dest, it.key, dest_leaf);
+        if (!insert_leaf_or_cleanup(dest, it.key, dest_leaf)) {
+            // Nodiscard check: on OOM skip this leaf and continue. dest stays
+            // valid but overwrite may be incomplete (void API, no error return).
+        }
         art_iterator_next(&it);
     }
 }
@@ -736,7 +739,11 @@ void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
     uint16_t max_low16 = split_key(max, max_high48);
     if (compare_high48(min_high48, max_high48) == 0) {
         // Only populate range within one container.
-        (void)add_range_closed_at(r, art, min_high48, min_low16, max_low16);
+        if (!add_range_closed_at(r, art, min_high48, min_low16, max_low16)) {
+            // Nodiscard check: void API stops on OOM; bitmap stays valid but
+            // the range may not have been added.
+            return;
+        }
         return;
     }
 
@@ -746,6 +753,7 @@ void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
     // partially added) rather than iterating the remaining (potentially
     // enormous) key range.
     if (!add_range_closed_at(r, art, min_high48, min_low16, 0xffff)) {
+        // Nodiscard check: stop on OOM rather than walk the remaining key range.
         return;
     }
     uint64_t min_high_bits = min >> 16;
@@ -755,10 +763,14 @@ void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
         uint8_t current_high48[ART_KEY_BYTES];
         split_key(current << 16, current_high48);
         if (!add_range_closed_at(r, art, current_high48, 0, 0xffff)) {
+            // Nodiscard check: partial range add is acceptable under OOM.
             return;
         }
     }
-    (void)add_range_closed_at(r, art, max_high48, 0, max_low16);
+    if (!add_range_closed_at(r, art, max_high48, 0, max_low16)) {
+        // Nodiscard check: void API stops on OOM; bitmap stays valid.
+        return;
+    }
 }
 
 bool roaring64_bitmap_contains(const roaring64_bitmap_t *r, uint64_t val) {
@@ -2216,7 +2228,10 @@ static void roaring64_flip_leaf_inplace(roaring64_bitmap_t *r, uint8_t high48[],
         leaf_t new_leaf = add_container(r, container2, typecode2);
         // insert_leaf_or_cleanup frees the pooled container if the ART insert
         // fails, so it is not leaked (data loss on OOM is acceptable).
-        (void)insert_leaf_or_cleanup(r, high48, new_leaf);
+        if (!insert_leaf_or_cleanup(r, high48, new_leaf)) {
+            // Nodiscard check: void inplace flip stops; bitmap stays valid.
+            return;
+        }
         return;
     }
 
