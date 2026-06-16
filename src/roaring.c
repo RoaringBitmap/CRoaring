@@ -2696,7 +2696,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                     // Allocation failed during the bitset conversion. Fall
                     // back to a plain lazy union so we still produce a valid
                     // container when possible.
-                    c = container_lazy_or(c1, type1, c2, type2, &result_type);
+                    c = container_lazy_or(newc1, type1, c2, type2, &result_type);
                 } else {
                     newc1 = asbitset;
                     type1 = BITSET_CONTAINER_TYPE;
@@ -2805,10 +2805,17 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                     // convert to bitset
                     container_t *old_c1 = c1;
                     uint8_t old_type1 = type1;
-                    c1 = container_mutable_unwrap_shared(c1, &type1);
-                    c1 = container_to_bitset(c1, type1);
-                    container_free(old_c1, old_type1);
-                    type1 = BITSET_CONTAINER_TYPE;
+                    container_t *newc1 =
+                        container_mutable_unwrap_shared(c1, &type1);
+                    newc1 = container_to_bitset(newc1, type1);
+                    if (newc1 == NULL) {
+                        c1 = get_writable_copy_if_shared(old_c1, &old_type1);
+                        type1 = old_type1;
+                    } else {
+                        container_free(old_c1, old_type1);
+                        c1 = newc1;
+                        type1 = BITSET_CONTAINER_TYPE;
+                    }
                 }
 
                 container_t *c2 = ra_get_container_at_index(
