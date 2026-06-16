@@ -94,6 +94,9 @@ static void add_run(run_container_t *rc, int s, int e) {
 run_container_t *run_container_from_array(const array_container_t *c) {
     int32_t n_runs = array_container_number_of_runs(c);
     run_container_t *answer = run_container_create_given_capacity(n_runs);
+    if (answer == NULL) {
+        return NULL;
+    }
     int prev = -2;
     int run_start = -1;
     int32_t card = c->cardinality;
@@ -362,6 +365,10 @@ container_t *container_from_run_range(const run_container_t *run, uint32_t min,
                                       uint32_t max, uint8_t *typecode_after) {
     // We expect most of the time to end up with a bitset container
     bitset_container_t *bitset = bitset_container_create();
+    if (bitset == NULL) {
+        *typecode_after = BITSET_CONTAINER_TYPE;
+        return NULL;
+    }
     *typecode_after = BITSET_CONTAINER_TYPE;
     int32_t union_cardinality = 0;
     for (int32_t i = 0; i < run->n_runs; ++i) {
@@ -378,8 +385,12 @@ container_t *container_from_run_range(const run_container_t *run, uint32_t min,
     if (bitset->cardinality <= DEFAULT_MAX_SIZE) {
         // we need to convert to an array container
         array_container_t *array = array_container_from_bitset(bitset);
-        *typecode_after = ARRAY_CONTAINER_TYPE;
         bitset_container_free(bitset);
+        if (array == NULL) {
+            *typecode_after = BITSET_CONTAINER_TYPE;
+            return NULL;
+        }
+        *typecode_after = ARRAY_CONTAINER_TYPE;
         return array;
     }
     return bitset;

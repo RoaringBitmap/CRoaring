@@ -969,6 +969,12 @@ static void exercise_bitset_shrink_oom_paths(uint64_t seed) {
             assert_bitmap32_valid(xor_alloc);
             roaring_bitmap_free(xor_alloc);
         }
+
+        roaring_bitmap_t *andnot_alloc = roaring_bitmap_andnot(base, partner);
+        if (andnot_alloc != NULL) {
+            assert_bitmap32_valid(andnot_alloc);
+            roaring_bitmap_free(andnot_alloc);
+        }
     }
 
     restore_default_allocator();
@@ -981,6 +987,206 @@ DEFINE_TEST(test_bitset_shrink_oom_paths) {
     static const uint64_t seeds[] = {0xBEEFu, 0xCAFEu, 0xDEADu};
     for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
         exercise_bitset_shrink_oom_paths(seeds[i]);
+    }
+}
+
+// Inplace andnot bitset-shrink under OOM may leave wrong semantics (no xor-style
+// undo), but must not crash. internal_validate is not asserted here.
+static void exercise_andnot_inplace_shrink_oom_paths(uint64_t seed) {
+    restore_default_allocator();
+    roaring_bitmap_t *base = make_dense_bitset_chunk_bitmap();
+    roaring_bitmap_t *partner = make_bitset_shrink_partner_bitmap();
+    if (base == NULL || partner == NULL) {
+        roaring_bitmap_free(base);
+        roaring_bitmap_free(partner);
+        fail_msg("failed to build andnot-inplace shrink test inputs");
+    }
+
+    install_failing_allocator(seed);
+
+    for (uint32_t round = 0; round < BITSET_SHRINK_ROUNDS; ++round) {
+        roaring_bitmap_t *copy = roaring_bitmap_copy(base);
+        if (copy != NULL) {
+            roaring_bitmap_andnot_inplace(copy, partner);
+            roaring_bitmap_free(copy);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(base);
+    roaring_bitmap_free(partner);
+    assert_true(g_failalloc.alloc_failures > 0);
+}
+
+DEFINE_TEST(test_andnot_inplace_shrink_oom_paths) {
+    static const uint64_t seeds[] = {0xAD00u, 0xAD01u};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_andnot_inplace_shrink_oom_paths(seeds[i]);
+    }
+}
+
+// Small dense array container in chunk 0; full-chunk flip triggers
+// container_inot on an array (bitset allocation may fail under the hook).
+#define ARRAY_INOT_ROUNDS 60u
+
+static roaring_bitmap_t *make_small_array_chunk_bitmap(void) {
+    return roaring_bitmap_from_range(1u, 400u, 1u);
+}
+
+static void exercise_array_inot_oom_paths(uint64_t seed) {
+    restore_default_allocator();
+    roaring_bitmap_t *base = make_small_array_chunk_bitmap();
+    if (base == NULL) {
+        fail_msg("failed to build array-inot test input");
+    }
+    assert_bitmap32_valid(base);
+
+    install_failing_allocator(seed);
+
+    for (uint32_t round = 0; round < ARRAY_INOT_ROUNDS; ++round) {
+        roaring_bitmap_t *flip_inplace_copy = roaring_bitmap_copy(base);
+        if (flip_inplace_copy != NULL) {
+            roaring_bitmap_flip_inplace_closed(flip_inplace_copy, 0u, 0xFFFFu);
+            assert_bitmap32_valid(flip_inplace_copy);
+            roaring_bitmap_free(flip_inplace_copy);
+        }
+
+        roaring_bitmap_t *flip_alloc =
+            roaring_bitmap_flip_closed(base, 0u, 0xFFFFu);
+        if (flip_alloc != NULL) {
+            assert_bitmap32_valid(flip_alloc);
+            roaring_bitmap_free(flip_alloc);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(base);
+    assert_true(g_failalloc.alloc_failures > 0);
+}
+
+DEFINE_TEST(test_array_inot_oom_paths) {
+    static const uint64_t seeds[] = {0xF00Du, 0xBABEu};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_array_inot_oom_paths(seeds[i]);
+    }
+}
+
+#define FLIP_BITSET_ROUNDS 60u
+
+static void exercise_flip_inplace_oom_paths(uint64_t seed) {
+    restore_default_allocator();
+    roaring_bitmap_t *base = make_dense_bitset_chunk_bitmap();
+    if (base == NULL) {
+        fail_msg("failed to build flip-inplace test input");
+    }
+    assert_bitmap32_valid(base);
+
+    install_failing_allocator(seed);
+
+    for (uint32_t round = 0; round < FLIP_BITSET_ROUNDS; ++round) {
+        roaring_bitmap_t *copy = roaring_bitmap_copy(base);
+        if (copy != NULL) {
+            roaring_bitmap_flip_inplace_closed(copy, 100u, 20000u);
+            assert_bitmap32_valid(copy);
+            roaring_bitmap_free(copy);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(base);
+    assert_true(g_failalloc.alloc_failures > 0);
+}
+
+DEFINE_TEST(test_flip_inplace_oom_paths) {
+    static const uint64_t seeds[] = {0xFACEu, 0x600Du};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_flip_inplace_oom_paths(seeds[i]);
+    }
+}
+
+#define LAZY_OR_INPLACE_ROUNDS 60u
+
+static void exercise_lazy_or_inplace_oom_paths(uint64_t seed) {
+    restore_default_allocator();
+    roaring_bitmap_t *base = make_dense_bitset_chunk_bitmap();
+    roaring_bitmap_t *partner = make_bitset_shrink_partner_bitmap();
+    if (base == NULL || partner == NULL) {
+        roaring_bitmap_free(base);
+        roaring_bitmap_free(partner);
+        fail_msg("failed to build lazy-or-inplace test inputs");
+    }
+    assert_bitmap32_valid(base);
+    assert_bitmap32_valid(partner);
+
+    install_failing_allocator(seed);
+
+    for (uint32_t round = 0; round < LAZY_OR_INPLACE_ROUNDS; ++round) {
+        roaring_bitmap_t *copy = roaring_bitmap_copy(base);
+        if (copy != NULL) {
+            roaring_bitmap_lazy_or_inplace(copy, partner, false);
+            assert_bitmap32_valid(copy);
+            roaring_bitmap_free(copy);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(base);
+    roaring_bitmap_free(partner);
+    assert_true(g_failalloc.alloc_failures > 0);
+}
+
+DEFINE_TEST(test_lazy_or_inplace_oom_paths) {
+    static const uint64_t seeds[] = {0x1CEu, 0x0FFu};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_lazy_or_inplace_oom_paths(seeds[i]);
+    }
+}
+
+#define COW_INPLACE_ROUNDS 60u
+
+static void exercise_cow_inplace_oom_paths(uint64_t seed) {
+    restore_default_allocator();
+    roaring_bitmap_t *low = roaring_bitmap_from_range(1u, 500u, 1u);
+    roaring_bitmap_t *high = roaring_bitmap_from_range(40000u, 40500u, 1u);
+    if (low == NULL || high == NULL) {
+        roaring_bitmap_free(low);
+        roaring_bitmap_free(high);
+        fail_msg("failed to build COW test inputs");
+    }
+    roaring_bitmap_or_inplace(low, high);
+    roaring_bitmap_t *cow = roaring_bitmap_copy(low);
+    roaring_bitmap_set_copy_on_write(cow, true);
+    if (cow == NULL) {
+        roaring_bitmap_free(low);
+        roaring_bitmap_free(high);
+        fail_msg("failed to copy bitmap for COW test");
+    }
+    assert_bitmap32_valid(low);
+    assert_bitmap32_valid(cow);
+
+    install_failing_allocator(seed);
+
+    for (uint32_t round = 0; round < COW_INPLACE_ROUNDS; ++round) {
+        roaring_bitmap_t *extra = roaring_bitmap_from_range(60000u, 60100u, 1u);
+        if (extra != NULL) {
+            roaring_bitmap_or_inplace(cow, extra);
+            assert_bitmap32_valid(cow);
+            assert_bitmap32_valid(low);
+            roaring_bitmap_free(extra);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(cow);
+    roaring_bitmap_free(low);
+    roaring_bitmap_free(high);
+    assert_true(g_failalloc.alloc_failures > 0);
+}
+
+DEFINE_TEST(test_cow_inplace_oom_paths) {
+    static const uint64_t seeds[] = {0xC0B1u, 0xC0B2u};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_cow_inplace_oom_paths(seeds[i]);
     }
 }
 
@@ -1002,6 +1208,11 @@ int main(void) {
     tellmeall();
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_bitset_shrink_oom_paths),
+        cmocka_unit_test(test_andnot_inplace_shrink_oom_paths),
+        cmocka_unit_test(test_array_inot_oom_paths),
+        cmocka_unit_test(test_flip_inplace_oom_paths),
+        cmocka_unit_test(test_lazy_or_inplace_oom_paths),
+        cmocka_unit_test(test_cow_inplace_oom_paths),
         cmocka_unit_test(test_memory_pressure_roaring32),
         cmocka_unit_test(test_memory_pressure_roaring64),
     };

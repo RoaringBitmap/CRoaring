@@ -1145,6 +1145,13 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
@@ -1354,6 +1361,13 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
@@ -2897,6 +2911,13 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
@@ -3098,6 +3119,13 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
+            if (c2 == NULL) {
+                pos2++;
+                if (pos2 == length2) break;
+                s2 = ra_get_key_at_index(&x2->high_low_container,
+                                         (uint16_t)pos2);
+                continue;
+            }
             if (is_cow(x2)) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
