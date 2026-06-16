@@ -304,7 +304,8 @@ DEFINE_TEST(array_bitset_run_lazy_xor_test) {
                      bitset_container_compute_cardinality(CAST_bitset(ans)));
     bitset_container_free(CAST_bitset(ans));
 
-    assert_true(array_run_container_lazy_xor(A1, R2, RX));  // destroys content of RX
+    assert_true(
+        array_run_container_lazy_xor(A1, R2, RX));  // destroys content of RX
     assert_int_equal(cx, run_container_cardinality(RX));
 
     array_container_free(A1);

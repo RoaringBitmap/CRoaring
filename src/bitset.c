@@ -126,9 +126,10 @@ void bitset_shift_right(bitset_t *bitset, size_t s) {
         for (size_t i = 0; i < as - extra_words; i++) {
             bitset->array[i] = bitset->array[i + extra_words];
         }
-        // Shrinking with fill=false does not normally realloc, but bitset_resize
-        // is nodiscard: we must check it. This void API has no error channel, so
-        // on failure we return and leave the shifted words in place.
+        // Shrinking with fill=false does not normally realloc, but
+        // bitset_resize is nodiscard: we must check it. This void API has no
+        // error channel, so on failure we return and leave the shifted words in
+        // place.
         if (!bitset_resize(bitset, as - extra_words, false)) {
             return;
         }

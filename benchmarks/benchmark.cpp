@@ -576,8 +576,8 @@ void register_array_container(std::vector<Entry> &out) {
             e.setup = [build_pair]() -> void * { return build_pair(); };
             e.run = [](void *sv) -> int64_t {
                 auto *s = static_cast<ArrayPairState *>(sv);
-                // Nodiscard check: synthetic inputs should never OOM; -1 flags an
-                // unexpected failure to the benchmark harness.
+                // Nodiscard check: synthetic inputs should never OOM; -1 flags
+                // an unexpected failure to the benchmark harness.
                 if (!array_container_union(s->B1, s->B2, s->BO)) {
                     return -1;
                 }
@@ -604,8 +604,8 @@ void register_array_container(std::vector<Entry> &out) {
             e.setup = [build_pair]() -> void * { return build_pair(); };
             e.run = [](void *sv) -> int64_t {
                 auto *s = static_cast<ArrayPairState *>(sv);
-                // Nodiscard check: synthetic inputs should never OOM; -1 flags an
-                // unexpected failure to the benchmark harness.
+                // Nodiscard check: synthetic inputs should never OOM; -1 flags
+                // an unexpected failure to the benchmark harness.
                 if (!array_container_intersection(s->B1, s->B2, s->BO)) {
                     return -1;
                 }
@@ -1235,8 +1235,8 @@ void register_run_container(std::vector<Entry> &out) {
             e.setup = build;
             e.run = [](void *sv) -> int64_t {
                 auto *s = static_cast<S *>(sv);
-                // Nodiscard check: synthetic inputs should never OOM; -1 flags an
-                // unexpected failure to the benchmark harness.
+                // Nodiscard check: synthetic inputs should never OOM; -1 flags
+                // an unexpected failure to the benchmark harness.
                 if (!run_container_union(s->B1, s->B2, s->BO)) {
                     return -1;
                 }
@@ -1259,8 +1259,8 @@ void register_run_container(std::vector<Entry> &out) {
             e.setup = build;
             e.run = [](void *sv) -> int64_t {
                 auto *s = static_cast<S *>(sv);
-                // Nodiscard check: synthetic inputs should never OOM; -1 flags an
-                // unexpected failure to the benchmark harness.
+                // Nodiscard check: synthetic inputs should never OOM; -1 flags
+                // an unexpected failure to the benchmark harness.
                 if (!run_container_intersection(s->B1, s->B2, s->BO)) {
                     return -1;
                 }

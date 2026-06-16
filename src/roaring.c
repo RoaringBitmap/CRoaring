@@ -3276,8 +3276,8 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        // Tail copy is nodiscard. On OOM this void lazy-xor-inplace stops early:
-        // x1 stays valid but the xor may be missing trailing containers.
+        // Tail copy is nodiscard. On OOM this void lazy-xor-inplace stops
+        // early: x1 stays valid but the xor may be missing trailing containers.
         if (!ra_append_copy_range(&x1->high_low_container,
                                   &x2->high_low_container, pos2, length2,
                                   is_cow(x2))) {

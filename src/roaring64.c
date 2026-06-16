@@ -397,7 +397,8 @@ void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
         // container on OOM).
         if (!insert_leaf_or_cleanup(dest, it.key, dest_leaf)) {
             // Nodiscard check: on OOM skip this leaf and continue. dest stays
-            // valid but overwrite may be incomplete (void API, no error return).
+            // valid but overwrite may be incomplete (void API, no error
+            // return).
         }
         art_iterator_next(&it);
     }
@@ -753,7 +754,8 @@ void roaring64_bitmap_add_range_closed(roaring64_bitmap_t *r, uint64_t min,
     // partially added) rather than iterating the remaining (potentially
     // enormous) key range.
     if (!add_range_closed_at(r, art, min_high48, min_low16, 0xffff)) {
-        // Nodiscard check: stop on OOM rather than walk the remaining key range.
+        // Nodiscard check: stop on OOM rather than walk the remaining key
+        // range.
         return;
     }
     uint64_t min_high_bits = min >> 16;
