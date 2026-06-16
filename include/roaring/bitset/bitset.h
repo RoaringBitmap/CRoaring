@@ -71,7 +71,8 @@ CROARING_NODISCARD bitset_t *bitset_copy(const bitset_t *bitset);
 /* For advanced users: Resize the bitset so that it can support newarraysize *
  * 64 bits. Return true in case of success, false for failure. Pad with zeroes
  * new buffer areas if requested. */
-CROARING_NODISCARD bool bitset_resize(bitset_t *bitset, size_t newarraysize, bool padwithzeroes);
+CROARING_NODISCARD bool bitset_resize(bitset_t *bitset, size_t newarraysize,
+                                      bool padwithzeroes);
 
 /* returns how many bytes of memory the backend buffer uses */
 inline size_t bitset_size_in_bytes(const bitset_t *bitset) {

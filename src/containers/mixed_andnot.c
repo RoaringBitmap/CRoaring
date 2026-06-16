@@ -109,7 +109,8 @@ bool bitset_array_container_iandnot(bitset_container_t *src_1,
         // Shrink-to-array OOM: *dst is NULL but src_1 is already mutated
         // in-place. Unlike ixor we do not undo; the slot stays valid and
         // internal_validate passes, but the andnot result may be wrong.
-        // Acceptable under the library memory policy (abort if semantics matter).
+        // Acceptable under the library memory policy (abort if semantics
+        // matter).
         return false;  // not bitset
     }
     return true;

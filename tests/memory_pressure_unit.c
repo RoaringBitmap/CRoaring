@@ -344,28 +344,27 @@ static void pool64_remove_random(pool64_t *pool) {
 
 static uint32_t random_u32_value(void) {
     static const uint32_t candidates[] = {0, 1, 7, 42, 255, 256, 511, 1023};
-    return candidates[failalloc_rand() % (sizeof(candidates) / sizeof(candidates[0]))];
+    return candidates[failalloc_rand() %
+                      (sizeof(candidates) / sizeof(candidates[0]))];
 }
 
 static uint64_t random_u64_value(void) {
-    static const uint64_t candidates[] = {0, 1, 7, 42, 255, 256, 511, 4095,
-                                          0x10000ULL, 0x10001ULL};
+    static const uint64_t candidates[] = {
+        0, 1, 7, 42, 255, 256, 511, 4095, 0x10000ULL, 0x10001ULL};
     return candidates[failalloc_rand() %
-                     (sizeof(candidates) / sizeof(candidates[0]))];
+                      (sizeof(candidates) / sizeof(candidates[0]))];
 }
 
 static void random_u32_closed_range(uint32_t *min_out, uint32_t *max_out) {
     const uint32_t min = (uint32_t)(failalloc_rand() % 1024u);
-    const uint32_t span =
-        1u + (uint32_t)(failalloc_rand() % MAX_RANGE_SPAN_32);
+    const uint32_t span = 1u + (uint32_t)(failalloc_rand() % MAX_RANGE_SPAN_32);
     *min_out = min;
     *max_out = min + span;
 }
 
 static void random_u64_closed_range(uint64_t *min_out, uint64_t *max_out) {
     const uint64_t min = failalloc_rand() % 4096u;
-    const uint64_t span =
-        1u + (failalloc_rand() % MAX_RANGE_SPAN_64);
+    const uint64_t span = 1u + (failalloc_rand() % MAX_RANGE_SPAN_64);
     *min_out = min;
     *max_out = min + span;
 }
@@ -373,8 +372,7 @@ static void random_u64_closed_range(uint64_t *min_out, uint64_t *max_out) {
 static void random_from_range_params32(uint64_t *min_out, uint64_t *max_out,
                                        uint32_t *step_out) {
     const uint64_t min = failalloc_rand() % 2048u;
-    const uint64_t span =
-        1u + (failalloc_rand() % MAX_FROM_RANGE_ELEMS);
+    const uint64_t span = 1u + (failalloc_rand() % MAX_FROM_RANGE_ELEMS);
     *min_out = min;
     *max_out = min + span;
     *step_out = 1u + (uint32_t)(failalloc_rand() % 4u);
@@ -383,8 +381,7 @@ static void random_from_range_params32(uint64_t *min_out, uint64_t *max_out,
 static void random_from_range_params64(uint64_t *min_out, uint64_t *max_out,
                                        uint32_t *step_out) {
     const uint64_t min = failalloc_rand() % 8192u;
-    const uint64_t span =
-        1u + (failalloc_rand() % MAX_FROM_RANGE_ELEMS);
+    const uint64_t span = 1u + (failalloc_rand() % MAX_FROM_RANGE_ELEMS);
     *min_out = min;
     *max_out = min + span;
     *step_out = 1u + (uint32_t)(failalloc_rand() % 4u);
@@ -402,9 +399,8 @@ static void exercise_bitmap32(uint64_t seed) {
                 pool32_add(&pool, roaring_bitmap_create());
                 break;
             case 1:
-                pool32_add(&pool,
-                           roaring_bitmap_create_with_capacity(
-                               (uint32_t)(1u + (failalloc_rand() % 8u))));
+                pool32_add(&pool, roaring_bitmap_create_with_capacity((
+                                      uint32_t)(1u + (failalloc_rand() % 8u))));
                 break;
             case 2: {
                 uint64_t a, b;
@@ -574,8 +570,8 @@ static void exercise_bitmap32(uint64_t seed) {
             case 18: {
                 roaring_bitmap_t *a, *b;
                 if (pool32_pick_two(&pool, &a, &b)) {
-                    roaring_bitmap_t *lazy =
-                        roaring_bitmap_lazy_or(a, b, (bool)(failalloc_rand() & 1u));
+                    roaring_bitmap_t *lazy = roaring_bitmap_lazy_or(
+                        a, b, (bool)(failalloc_rand() & 1u));
                     if (lazy != NULL) {
                         roaring_bitmap_repair_after_lazy(lazy);
                         assert_bitmap32_valid(lazy);
@@ -607,8 +603,9 @@ static void exercise_bitmap32(uint64_t seed) {
             case 21: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
-                    pool32_add(&pool, roaring_bitmap_add_offset(
-                                          r, (uint32_t)(failalloc_rand() % 64u)));
+                    pool32_add(&pool,
+                               roaring_bitmap_add_offset(
+                                   r, (uint32_t)(failalloc_rand() % 64u)));
                 }
                 break;
             }
@@ -665,8 +662,7 @@ static void exercise_bitmap32(uint64_t seed) {
             case 26: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
-                    roaring_uint32_iterator_t *it =
-                        roaring_iterator_create(r);
+                    roaring_uint32_iterator_t *it = roaring_iterator_create(r);
                     if (it != NULL) {
                         roaring_uint32_iterator_free(it);
                     }
@@ -869,8 +865,9 @@ static void exercise_bitmap64(uint64_t seed) {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
                     pool64_add(&pool, roaring64_bitmap_copy(r));
-                    pool64_add(&pool, roaring64_bitmap_add_offset(
-                                          r, (uint64_t)(failalloc_rand() % 64u)));
+                    pool64_add(&pool,
+                               roaring64_bitmap_add_offset(
+                                   r, (uint64_t)(failalloc_rand() % 64u)));
                 }
                 break;
             }
@@ -882,8 +879,7 @@ static void exercise_bitmap64(uint64_t seed) {
                     if (buf != NULL) {
                         roaring64_bitmap_portable_serialize(r, buf);
                         roaring64_bitmap_t *deser =
-                            roaring64_bitmap_portable_deserialize_safe(buf,
-                                                                       sz);
+                            roaring64_bitmap_portable_deserialize_safe(buf, sz);
                         if (deser != NULL) {
                             assert_bitmap64_valid(deser);
                             pool64_add(&pool, deser);
@@ -979,7 +975,8 @@ static void exercise_bitmap64(uint64_t seed) {
 #define BITSET_SHRINK_ROUNDS 80u
 
 static roaring_bitmap_t *make_dense_bitset_chunk_bitmap(void) {
-    return roaring_bitmap_from_range(BITSET_SHRINK_BASE_MIN, BITSET_SHRINK_BASE_MAX,
+    return roaring_bitmap_from_range(BITSET_SHRINK_BASE_MIN,
+                                     BITSET_SHRINK_BASE_MAX,
                                      BITSET_SHRINK_BASE_STEP);
 }
 
@@ -1039,8 +1036,8 @@ DEFINE_TEST(test_bitset_shrink_oom_paths) {
     }
 }
 
-// Inplace andnot bitset-shrink under OOM may leave wrong semantics (no xor-style
-// undo), but must not crash. internal_validate is not asserted here.
+// Inplace andnot bitset-shrink under OOM may leave wrong semantics (no
+// xor-style undo), but must not crash. internal_validate is not asserted here.
 static void exercise_andnot_inplace_shrink_oom_paths(uint64_t seed) {
     restore_default_allocator();
     roaring_bitmap_t *base = make_dense_bitset_chunk_bitmap();
@@ -1321,9 +1318,7 @@ static void exercise_cow_shared_range_oom(uint64_t fail_nth) {
     roaring_bitmap_free(parent);
 }
 
-DEFINE_TEST(test_cow_shared_range_oom) {
-    exercise_cow_shared_range_oom(1);
-}
+DEFINE_TEST(test_cow_shared_range_oom) { exercise_cow_shared_range_oom(1); }
 
 static void exercise_inplace_merge_insert_oom(void) {
     restore_default_allocator();

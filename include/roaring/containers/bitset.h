@@ -66,7 +66,8 @@ void bitset_container_clear(bitset_container_t *bitset);
 void bitset_container_set_all(bitset_container_t *bitset);
 
 /* Duplicate bitset */
-CROARING_NODISCARD bitset_container_t *bitset_container_clone(const bitset_container_t *src);
+CROARING_NODISCARD bitset_container_t *bitset_container_clone(
+    const bitset_container_t *src);
 
 /* Set the bit in [begin,end). WARNING: as of April 2016, this method is slow
  * and

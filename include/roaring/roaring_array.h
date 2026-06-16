@@ -48,7 +48,8 @@ CROARING_NODISCARD roaring_array_t *ra_create(void);
  * Initialize an existing roaring array with the specified capacity (in number
  * of containers)
  */
-CROARING_NODISCARD bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap);
+CROARING_NODISCARD bool ra_init_with_capacity(roaring_array_t *new_ra,
+                                              uint32_t cap);
 
 /**
  * Initialize with zero capacity
@@ -58,8 +59,8 @@ void ra_init(roaring_array_t *t);
 /**
  * Copies this roaring array, we assume that dest is not initialized
  */
-CROARING_NODISCARD bool ra_copy(const roaring_array_t *source, roaring_array_t *dest,
-             bool copy_on_write);
+CROARING_NODISCARD bool ra_copy(const roaring_array_t *source,
+                                roaring_array_t *dest, bool copy_on_write);
 
 /*
  * Shrinks the capacity, returns the number of bytes saved.
@@ -69,8 +70,8 @@ int ra_shrink_to_fit(roaring_array_t *ra);
 /**
  * Copies this roaring array, we assume that dest is initialized
  */
-CROARING_NODISCARD bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
-                  bool copy_on_write);
+CROARING_NODISCARD bool ra_overwrite(const roaring_array_t *source,
+                                     roaring_array_t *dest, bool copy_on_write);
 
 /**
  * Frees the memory used by a roaring array
@@ -242,8 +243,10 @@ size_t ra_portable_serialize(const roaring_array_t *ra, char *buf);
  * and *readbytes indicates how many bytes were read. In all cases, if the
  * function returns true, then maxbytes >= *readbytes.
  */
-CROARING_NODISCARD bool ra_portable_deserialize(roaring_array_t *ra, const char *buf,
-                             const size_t maxbytes, size_t *readbytes);
+CROARING_NODISCARD bool ra_portable_deserialize(roaring_array_t *ra,
+                                                const char *buf,
+                                                const size_t maxbytes,
+                                                size_t *readbytes);
 
 /**
  * Quickly checks whether there is a serialized bitmap at the pointer,

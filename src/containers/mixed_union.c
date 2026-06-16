@@ -251,9 +251,8 @@ bool array_array_container_inplace_union(array_container_t *src_1,
             }
         }
 
-        bitset_extract_setbits_uint16(ourbitset->words,
-                                      BITSET_CONTAINER_SIZE_IN_WORDS,
-                                      src_1->array, 0);
+        bitset_extract_setbits_uint16(
+            ourbitset->words, BITSET_CONTAINER_SIZE_IN_WORDS, src_1->array, 0);
         src_1->cardinality = ourbitset->cardinality;
         *dst = src_1;
         bitset_container_free(ourbitset);

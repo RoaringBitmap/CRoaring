@@ -88,8 +88,7 @@ static inline container_t *containerptr_roaring_bitmap_add(roaring_bitmap_t *r,
         if (c == NULL) {
             return NULL;
         }
-        if (*type == ARRAY_CONTAINER_TYPE &&
-            CAST_array(c)->cardinality == 0) {
+        if (*type == ARRAY_CONTAINER_TYPE && CAST_array(c)->cardinality == 0) {
             container_free(c, *type);
             return NULL;
         }
@@ -332,9 +331,9 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
             if (ra->typecodes[src] == SHARED_CONTAINER_TYPE) {
                 new_container = NULL;
             } else {
-                new_container =
-                    container_add_range(ra->containers[src], ra->typecodes[src],
-                                        container_min, container_max, &new_type);
+                new_container = container_add_range(
+                    ra->containers[src], ra->typecodes[src], container_min,
+                    container_max, &new_type);
                 if (new_container != ra->containers[src]) {
                     container_free(ra->containers[src], ra->typecodes[src]);
                 }
@@ -370,8 +369,7 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
     for (int32_t read = prefix_length; read < middle_end; ++read) {
         container_t *c = ra->containers[read];
         uint8_t tc = ra->typecodes[read];
-        if (c != NULL && tc != 0 &&
-            container_nonzero_cardinality(c, tc)) {
+        if (c != NULL && tc != 0 && container_nonzero_cardinality(c, tc)) {
             if (write != read) {
                 ra->keys[write] = ra->keys[read];
                 ra->containers[write] = c;
@@ -532,8 +530,8 @@ bool roaring_unshare_all(roaring_bitmap_t *r) {
     for (int i = 0; i < ra->size; ++i) {
         uint8_t typecode = ra->typecodes[i];
         if (typecode == SHARED_CONTAINER_TYPE) {
-            container_t *copy =
-                get_writable_copy_if_shared(ra->containers[i], &ra->typecodes[i]);
+            container_t *copy = get_writable_copy_if_shared(ra->containers[i],
+                                                            &ra->typecodes[i]);
             if (copy != NULL) {
                 ra->containers[i] = copy;
                 unshared = true;
@@ -855,8 +853,8 @@ void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
             }
             uint8_t new_typecode = typecode;
             container_t *new_container;
-            new_container = container_remove(
-                container, vals[i] & 0xffff, typecode, &new_typecode);
+            new_container = container_remove(container, vals[i] & 0xffff,
+                                             typecode, &new_typecode);
             if (new_container == NULL) {
                 continue;
             }
@@ -1149,7 +1147,8 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
 
 // Inplace or (modifies its first argument). This is a void API: on OOM the
 // bitmap stays structurally valid (internal_validate) but may omit chunks that
-// could not be copied or merged. Abort the process if full semantics are required.
+// could not be copied or merged. Abort the process if full semantics are
+// required.
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2) {
     uint8_t result_type = 0;
@@ -1159,8 +1158,8 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     if (0 == length2) return;
 
     if (0 == length1) {
-        // Best effort: overwrite may fail under OOM (ra_overwrite returns false)
-        // with no way to report it; dest may be empty or partial.
+        // Best effort: overwrite may fail under OOM (ra_overwrite returns
+        // false) with no way to report it; dest may be empty or partial.
         (void)roaring_bitmap_overwrite(x1, x2);
         return;
     }
@@ -1396,7 +1395,8 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
             }
 
             if (c == NULL) {
-                // OOM at this key: leave c1 unchanged and advance (xor incomplete).
+                // OOM at this key: leave c1 unchanged and advance (xor
+                // incomplete).
                 ++pos2;
                 if (pos1 == length1) break;
                 if (pos2 == length2) break;
@@ -1597,8 +1597,8 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
             }
 
             if (c == NULL) {
-                // OOM: c1 may be unchanged or partially updated (bitset shrink);
-                // skip merging this key and continue.
+                // OOM: c1 may be unchanged or partially updated (bitset
+                // shrink); skip merging this key and continue.
                 ++pos2;
                 if (pos1 == length1) break;
                 if (pos2 == length2) break;
@@ -1807,7 +1807,8 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r) {
                 container_t *c1 = convert_to_bitset_or_array_container(
                     truec, card, &type_after);
                 if (c1 != NULL) {
-                    shared_container_free(CAST_shared(c));  // frees run as needed
+                    shared_container_free(
+                        CAST_shared(c));  // frees run as needed
                     ra_set_container_at_index(&r->high_low_container, i, c1,
                                               type_after);
                 }
@@ -2056,8 +2057,7 @@ CROARING_NODISCARD static bool loadfirstvalue(
  * Positions the iterator at the last value of the current container that the
  * iterator points at, if available.
  */
-CROARING_NODISCARD static bool loadlastvalue(
-    roaring_uint32_iterator_t *newit) {
+CROARING_NODISCARD static bool loadlastvalue(roaring_uint32_iterator_t *newit) {
     if (iter_new_container_partial_init(newit)) {
         uint16_t value = 0;
         newit->container_it = container_init_iterator_last(
@@ -2828,7 +2828,8 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
                     // Allocation failed during the bitset conversion. Fall
                     // back to a plain lazy union so we still produce a valid
                     // container when possible.
-                    c = container_lazy_or(newc1, type1, c2, type2, &result_type);
+                    c = container_lazy_or(newc1, type1, c2, type2,
+                                          &result_type);
                 } else {
                     newc1 = asbitset;
                     type1 = BITSET_CONTAINER_TYPE;
@@ -2939,10 +2940,10 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                         ++pos2;
                         if (pos1 == length1) break;
                         if (pos2 == length2) break;
-                        s1 = ra_get_key_at_index(
-                            &x1->high_low_container, (uint16_t)pos1);
-                        s2 = ra_get_key_at_index(
-                            &x2->high_low_container, (uint16_t)pos2);
+                        s1 = ra_get_key_at_index(&x1->high_low_container,
+                                                 (uint16_t)pos1);
+                        s2 = ra_get_key_at_index(&x2->high_low_container,
+                                                 (uint16_t)pos2);
                         continue;
                     }
                 } else {
@@ -2964,10 +2965,10 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                         ++pos2;
                         if (pos1 == length1) break;
                         if (pos2 == length2) break;
-                        s1 = ra_get_key_at_index(
-                            &x1->high_low_container, (uint16_t)pos1);
-                        s2 = ra_get_key_at_index(
-                            &x2->high_low_container, (uint16_t)pos2);
+                        s1 = ra_get_key_at_index(&x1->high_low_container,
+                                                 (uint16_t)pos1);
+                        s2 = ra_get_key_at_index(&x2->high_low_container,
+                                                 (uint16_t)pos2);
                         continue;
                     }
                     c1 = newc1;
@@ -3192,7 +3193,8 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             }
 
             if (c == NULL) {
-                // OOM at this key: leave c1 unchanged and advance (lazy xor incomplete).
+                // OOM at this key: leave c1 unchanged and advance (lazy xor
+                // incomplete).
                 ++pos2;
                 if (pos1 == length1) break;
                 if (pos2 == length2) break;

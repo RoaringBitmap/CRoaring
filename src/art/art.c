@@ -1317,8 +1317,8 @@ CROARING_NODISCARD static bool art_extend(art_t *art, art_typecode_t typecode) {
     } else {
         new_capacity = 5 * capacity / 4;
     }
-    void *new_nodes = roaring_realloc(
-        art->nodes[typecode], new_capacity * ART_NODE_SIZES[typecode]);
+    void *new_nodes = roaring_realloc(art->nodes[typecode],
+                                      new_capacity * ART_NODE_SIZES[typecode]);
     if (new_nodes == NULL) {
         return false;
     }

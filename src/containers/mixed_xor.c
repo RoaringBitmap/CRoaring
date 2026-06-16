@@ -244,7 +244,7 @@ bool array_array_container_xor(const array_container_t *src_1,
     }
     *dst = bitset_container_from_array(src_1);
     if (*dst == NULL) return false;  // allocation failure
-    bool returnval = true;  // expect a bitset
+    bool returnval = true;           // expect a bitset
     bitset_container_t *ourbitset = CAST_bitset(*dst);
     ourbitset->cardinality = (uint32_t)bitset_flip_list_withcard(
         ourbitset->words, src_1->cardinality, src_2->array, src_2->cardinality);

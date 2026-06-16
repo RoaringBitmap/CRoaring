@@ -414,9 +414,8 @@ static void release_unmoved_containers(roaring_bitmap_t *src, uint32_t from) {
     uint32_t r32_size = ra_get_size(&src->high_low_container);
     for (uint32_t j = from; j < r32_size; ++j) {
         uint8_t tc;
-        container_t *c =
-            ra_get_container_at_index(&src->high_low_container, (uint16_t)j,
-                                      &tc);
+        container_t *c = ra_get_container_at_index(&src->high_low_container,
+                                                   (uint16_t)j, &tc);
         container_free(c, tc);
     }
     src->high_low_container.size = 0;
@@ -592,8 +591,8 @@ bool roaring64_bitmap_add_checked(roaring64_bitmap_t *r, uint64_t val) {
     if (leaf != NULL) {
         container_t *old_container = get_container(r, *leaf);
         if (old_container != NULL) {
-            old_cardinality = container_get_cardinality(
-                old_container, get_typecode(*leaf));
+            old_cardinality =
+                container_get_cardinality(old_container, get_typecode(*leaf));
         }
     }
     leaf = containerptr_roaring64_bitmap_add(r, high48, low16, leaf);
@@ -1745,7 +1744,8 @@ uint64_t roaring64_bitmap_or_cardinality(const roaring64_bitmap_t *r1,
 }
 
 // Void API: on OOM r1 stays structurally valid (internal_validate) but may omit
-// leaves that could not be copied or merged. Abort if full semantics are required.
+// leaves that could not be copied or merged. Abort if full semantics are
+// required.
 void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                                  const roaring64_bitmap_t *r2) {
     if (r1 == r2) {
@@ -1804,11 +1804,10 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                 copy_leaf_container(r2, r1, (leaf_t)*it2.value);
             if (result_leaf != 0) {
                 bool inserted =
-                    it1_present
-                        ? art_iterator_insert(&it1, it2.key,
-                                              (art_val_t)result_leaf)
-                        : (add_container_insert(&r1->art, it2.key,
-                                                result_leaf) != NULL);
+                    it1_present ? art_iterator_insert(&it1, it2.key,
+                                                      (art_val_t)result_leaf)
+                                : (add_container_insert(&r1->art, it2.key,
+                                                        result_leaf) != NULL);
                 if (!inserted) {
                     // OOM linking into the ART: free the just-copied container
                     // so it is not leaked in r1's pool.
@@ -2236,7 +2235,8 @@ static void roaring64_flip_leaf_inplace(roaring64_bitmap_t *r, uint8_t high48[],
     if (container2 == NULL) {
         // Shared-container extract failed: leaf unchanged. Non-shared bitset
         // shrink-to-array OOM freed the container: erase the leaf (data loss
-        // under OOM is acceptable; see bitset_container_negation_range_inplace).
+        // under OOM is acceptable; see
+        // bitset_container_negation_range_inplace).
         if (typecode_in != SHARED_CONTAINER_TYPE) {
             bool erased = art_erase(&r->art, high48, NULL);
             assert(erased);
@@ -2487,7 +2487,7 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
                         container_free(existing_c, existing_type);
                     }
                     replace_container(answer, prev_hi_leaf, merged_c,
-                                       merged_type);
+                                      merged_type);
                     container_free(lo, typecode);
                 }
             } else {
@@ -2600,9 +2600,9 @@ size_t roaring64_bitmap_portable_size_in_bytes(const roaring64_bitmap_t *r) {
             if (in_bucket) {
                 // Most significant 32 bits of the bucket + the 32-bit bitmap.
                 size += sizeof(prev_high32);
-                size += portable_bucket_header_size(bucket_count,
-                                                    bucket_hasrun) +
-                        bucket_container_bytes;
+                size +=
+                    portable_bucket_header_size(bucket_count, bucket_hasrun) +
+                    bucket_container_bytes;
             }
             in_bucket = true;
             bucket_count = 0;

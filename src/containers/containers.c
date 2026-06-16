@@ -247,10 +247,11 @@ container_t *shared_container_extract_copy(shared_container_t *sc,
     } else {
         answer = container_clone(sc->container, inner_typecode);
         if (answer == NULL) {
-            // dec() above already dropped the refcount (e.g. 2 -> 1) even though
-            // clone failed. Other COW bitmaps still point at this wrapper, so
-            // restore the count; otherwise a later extract could steal the
-            // inner container and leave them with a dangling SHARED pointer.
+            // dec() above already dropped the refcount (e.g. 2 -> 1) even
+            // though clone failed. Other COW bitmaps still point at this
+            // wrapper, so restore the count; otherwise a later extract could
+            // steal the inner container and leave them with a dangling SHARED
+            // pointer.
             croaring_refcount_inc(&sc->counter);
             return NULL;
         }

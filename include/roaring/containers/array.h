@@ -61,10 +61,12 @@ CROARING_NODISCARD array_container_t *array_container_create(void);
 
 /* Create a new array with a specified capacity size. Return NULL in case of
  * failure. */
-CROARING_NODISCARD array_container_t *array_container_create_given_capacity(int32_t size);
+CROARING_NODISCARD array_container_t *array_container_create_given_capacity(
+    int32_t size);
 
 /* Create a new array containing all values in [min,max). */
-CROARING_NODISCARD array_container_t *array_container_create_range(uint32_t min, uint32_t max);
+CROARING_NODISCARD array_container_t *array_container_create_range(
+    uint32_t min, uint32_t max);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -75,7 +77,8 @@ int array_container_shrink_to_fit(array_container_t *src);
 void array_container_free(array_container_t *array);
 
 /* Duplicate container */
-CROARING_NODISCARD array_container_t *array_container_clone(const array_container_t *src);
+CROARING_NODISCARD array_container_t *array_container_clone(
+    const array_container_t *src);
 
 /* Get the cardinality of `array'. */
 CROARING_ALLOW_UNALIGNED

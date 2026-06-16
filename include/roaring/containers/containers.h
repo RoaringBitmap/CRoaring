@@ -87,8 +87,9 @@ typedef struct shared_container_s shared_container_t;
  * If copy_on_write = false, then clone.
  * Return NULL in case of failure.
  **/
-CROARING_NODISCARD container_t *get_copy_of_container(container_t *container, uint8_t *typecode,
-                                   bool copy_on_write);
+CROARING_NODISCARD container_t *get_copy_of_container(container_t *container,
+                                                      uint8_t *typecode,
+                                                      bool copy_on_write);
 
 /* Frees a shared container (actually decrement its counter and only frees when
  * the counter falls to zero). */
@@ -139,7 +140,8 @@ static inline uint8_t get_container_type(const container_t *c, uint8_t type) {
  * is responsible for deallocation. If the container is not shared, then it is
  * physically cloned. Sharable containers are not cloneable.
  */
-CROARING_NODISCARD container_t *container_clone(const container_t *container, uint8_t typecode);
+CROARING_NODISCARD container_t *container_clone(const container_t *container,
+                                                uint8_t typecode);
 
 /* access to container underneath, cloning it if needed */
 static inline container_t *get_writable_copy_if_shared(container_t *c,
@@ -799,9 +801,8 @@ static inline container_t *container_and(const container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(RUN, RUN):
             result = run_container_create();
             if (result == NULL) return NULL;
-            if (!run_container_intersection(const_CAST_run(c1),
-                                            const_CAST_run(c2),
-                                            CAST_run(result))) {
+            if (!run_container_intersection(
+                    const_CAST_run(c1), const_CAST_run(c2), CAST_run(result))) {
                 run_container_free(CAST_run(result));
                 return NULL;
             }
@@ -851,9 +852,9 @@ static inline container_t *container_and(const container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(ARRAY, RUN):
             result = array_container_create();
             if (result == NULL) return NULL;
-            if (!array_run_container_intersection(
-                    const_CAST_array(c1), const_CAST_run(c2),
-                    CAST_array(result))) {
+            if (!array_run_container_intersection(const_CAST_array(c1),
+                                                  const_CAST_run(c2),
+                                                  CAST_array(result))) {
                 array_container_free(CAST_array(result));
                 return NULL;
             }
@@ -863,9 +864,9 @@ static inline container_t *container_and(const container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(RUN, ARRAY):
             result = array_container_create();
             if (result == NULL) return NULL;
-            if (!array_run_container_intersection(
-                    const_CAST_array(c2), const_CAST_run(c1),
-                    CAST_array(result))) {
+            if (!array_run_container_intersection(const_CAST_array(c2),
+                                                  const_CAST_run(c1),
+                                                  CAST_array(result))) {
                 array_container_free(CAST_array(result));
                 return NULL;
             }
@@ -1003,15 +1004,14 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
     container_t *result = NULL;
     switch (PAIR_CONTAINER_TYPES(type1, type2)) {
         case CONTAINER_PAIR(BITSET, BITSET): {
-            const bool is_bitset =
-                bitset_bitset_container_intersection_inplace(
-                    CAST_bitset(c1), const_CAST_bitset(c2), &result);
+            const bool is_bitset = bitset_bitset_container_intersection_inplace(
+                CAST_bitset(c1), const_CAST_bitset(c2), &result);
             if (result == NULL) {
                 *result_type = BITSET_CONTAINER_TYPE;
                 return c1;
             }
-            *result_type = is_bitset ? BITSET_CONTAINER_TYPE
-                                     : ARRAY_CONTAINER_TYPE;
+            *result_type =
+                is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE;
             return result;
         }
 
@@ -1029,9 +1029,8 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
             }
             // as of January 2016, Java code used non-in-place intersection for
             // two runcontainers
-            if (!run_container_intersection(const_CAST_run(c1),
-                                            const_CAST_run(c2),
-                                            CAST_run(result))) {
+            if (!run_container_intersection(
+                    const_CAST_run(c1), const_CAST_run(c2), CAST_run(result))) {
                 run_container_free(CAST_run(result));
                 *result_type = RUN_CONTAINER_TYPE;
                 return c1;
@@ -1098,9 +1097,9 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                 *result_type = ARRAY_CONTAINER_TYPE;
                 return c1;
             }
-            if (!array_run_container_intersection(
-                    const_CAST_array(c1), const_CAST_run(c2),
-                    CAST_array(result))) {
+            if (!array_run_container_intersection(const_CAST_array(c1),
+                                                  const_CAST_run(c2),
+                                                  CAST_array(result))) {
                 array_container_free(CAST_array(result));
                 *result_type = ARRAY_CONTAINER_TYPE;
                 return c1;
@@ -1114,9 +1113,9 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                 *result_type = RUN_CONTAINER_TYPE;
                 return c1;
             }
-            if (!array_run_container_intersection(
-                    const_CAST_array(c2), const_CAST_run(c1),
-                    CAST_array(result))) {
+            if (!array_run_container_intersection(const_CAST_array(c2),
+                                                  const_CAST_run(c1),
+                                                  CAST_array(result))) {
                 array_container_free(CAST_array(result));
                 *result_type = RUN_CONTAINER_TYPE;
                 return c1;
@@ -2650,9 +2649,9 @@ static inline container_t *container_add_range(container_t *c, uint8_t type,
                 return run_container_create_range(0, INT32_C(0x10000));
             }
             // A bitset stays a bitset under add_range: the range can only grow
-            // the cardinality, so a valid bitset (cardinality > DEFAULT_MAX_SIZE)
-            // remains valid. (Downconverting here would break the documented
-            // type-stability of add_range.)
+            // the cardinality, so a valid bitset (cardinality >
+            // DEFAULT_MAX_SIZE) remains valid. (Downconverting here would break
+            // the documented type-stability of add_range.)
             *result_type = BITSET_CONTAINER_TYPE;
             bitset_set_lenrange(bitset->words, min, max - min);
             bitset->cardinality = union_cardinality;

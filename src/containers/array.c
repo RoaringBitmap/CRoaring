@@ -188,15 +188,14 @@ bool array_container_grow(array_container_t *container, int32_t min,
     uint16_t *new_array;
 
     if (preserve) {
-        new_array = (uint16_t *)roaring_realloc(
-            array, new_capacity * sizeof(uint16_t));
+        new_array =
+            (uint16_t *)roaring_realloc(array, new_capacity * sizeof(uint16_t));
         if (new_array == NULL) {
             return false;
         }
     } else {
         roaring_free(array);
-        new_array =
-            (uint16_t *)roaring_malloc(new_capacity * sizeof(uint16_t));
+        new_array = (uint16_t *)roaring_malloc(new_capacity * sizeof(uint16_t));
         if (new_array == NULL) {
             // Keep the container in a consistent (empty) state so it stays
             // valid and is not mistaken for having capacity.

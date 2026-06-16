@@ -6,11 +6,11 @@
 // even when the test suite is built in release mode.
 #undef NDEBUG
 
-#include <roaring/roaring.hh>
-#include <roaring/roaring64map.hh>
-
 #include <cassert>
 #include <iostream>
+
+#include <roaring/roaring.hh>
+#include <roaring/roaring64map.hh>
 
 using namespace roaring;
 

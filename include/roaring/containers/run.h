@@ -83,7 +83,8 @@ CROARING_NODISCARD run_container_t *run_container_create(void);
 
 /* Create a new run container with given capacity. Return NULL in case of
  * failure. */
-CROARING_NODISCARD run_container_t *run_container_create_given_capacity(int32_t size);
+CROARING_NODISCARD run_container_t *run_container_create_given_capacity(
+    int32_t size);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -94,7 +95,8 @@ int run_container_shrink_to_fit(run_container_t *src);
 void run_container_free(run_container_t *run);
 
 /* Duplicate container */
-CROARING_NODISCARD run_container_t *run_container_clone(const run_container_t *src);
+CROARING_NODISCARD run_container_t *run_container_clone(
+    const run_container_t *src);
 
 /*
  * Effectively deletes the value at index index, repacking data.

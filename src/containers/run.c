@@ -225,16 +225,15 @@ bool run_container_grow(run_container_t *run, int32_t min, bool copy) {
     assert(newCapacity >= min);
     if (copy) {
         rle16_t *oldruns = run->runs;
-        rle16_t *newruns = (rle16_t *)roaring_realloc(
-            oldruns, newCapacity * sizeof(rle16_t));
+        rle16_t *newruns =
+            (rle16_t *)roaring_realloc(oldruns, newCapacity * sizeof(rle16_t));
         if (newruns == NULL) {
             return false;
         }
         run->runs = newruns;
     } else {
         roaring_free(run->runs);
-        run->runs =
-            (rle16_t *)roaring_malloc(newCapacity * sizeof(rle16_t));
+        run->runs = (rle16_t *)roaring_malloc(newCapacity * sizeof(rle16_t));
         if (run->runs == NULL) {
             // Keep the container in a consistent (empty) state so it can be
             // safely freed and is not mistaken for having capacity.
