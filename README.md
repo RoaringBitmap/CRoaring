@@ -687,16 +687,30 @@ Thus, under low memory condition, an out-of-memory condition typically resulting
 in a crash may still occur. Thankfully, you may change this behavior by providing your own
 allocation functions.
 
-
 Our policy is that even random memory failures should still preserve a consistent
 internal state within the Roaring bitmaps. In particular, CRoaring keeps
 each live bitmap passing
 `roaring_bitmap_internal_validate` or `roaring64_bitmap_internal_validate`.
 
+Further, a memory allocation failure should not result in a memory leak.
+
 However, allocation failures may leave the bitmap in a state that no longer matches
 the intended mathematical result if the requested operations could not be
 completed. For this reason, trying to continue running after running out of memory
 is often worse than aborting the process.
+
+For example, we might be trying to compute the union of two bitmaps inplace
+(one of the bitmaps is being modified to store the result). Bitmaps are made
+of distinct containers in Roaring. We might have done part of the work
+successfully, thus replacing the content of one of the bitmaps with the
+intended result, but then we might run out of memory while trying to allocate
+a new container for the result. In this case, the resulting bitmap will be in
+a consistent state (it will pass `roaring_bitmap_internal_validate`), but it
+will not contain the intended result of the union operation. The library cannot
+roll back to the original bitmap content, but it also will not leak memory or
+cause crashes or memory corruption. In this case, the best course of action is
+to halt the process and fix the memory issue, rather than trying to continue
+with a bitmap that is not what you expected.
 
 # Example (C)
 

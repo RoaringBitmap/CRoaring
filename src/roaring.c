@@ -330,11 +330,14 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
         uint32_t container_max = (max_key == key) ? (max & 0xffff) : 0xffff;
         container_t *new_container = NULL;
         uint8_t new_type = 0;
+        bool keep_existing_container = false;
 
         if (src >= 0 && ra->keys[src] == key) {
             ra_unshare_container_at_index(ra, (uint16_t)src);
             if (ra->typecodes[src] == SHARED_CONTAINER_TYPE) {
+                // OOM during unshare: keep the shared container in place.
                 new_container = NULL;
+                keep_existing_container = true;
             } else {
                 new_container = container_add_range(
                     ra->containers[src], ra->typecodes[src], container_min,
@@ -359,8 +362,9 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
             // The destination slot is not receiving a container. Clear it so
             // the compaction pass below does not read a stale pointer left
             // behind by an already-consumed source slot (which would be a
-            // use-after-free or double-free).
-            if (dst >= 0) {
+            // use-after-free or double-free). Do not clear when unshare failed
+            // under OOM: the existing shared container must stay referenced.
+            if (dst >= 0 && !keep_existing_container) {
                 ra->keys[dst] = 0;
                 ra->containers[dst] = NULL;
                 ra->typecodes[dst] = 0;
