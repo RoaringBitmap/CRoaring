@@ -1480,6 +1480,10 @@ static inline container_t *container_ior(container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(ARRAY, BITSET):
             // c1 is an array, so no in-place possible
             result = bitset_container_create();
+            if (result == NULL) {
+                *result_type = type1;
+                return c1;
+            }
             *result_type = BITSET_CONTAINER_TYPE;
             array_bitset_container_union(const_CAST_array(c1),
                                          const_CAST_bitset(c2),
@@ -1509,6 +1513,10 @@ static inline container_t *container_ior(container_t *c1, uint8_t type1,
                 return c1;
             }
             result = bitset_container_create();
+            if (result == NULL) {
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             run_bitset_container_union(
                 const_CAST_run(c1), const_CAST_bitset(c2), CAST_bitset(result));
             *result_type = BITSET_CONTAINER_TYPE;
@@ -1620,6 +1628,10 @@ static inline container_t *container_lazy_ior(container_t *c1, uint8_t type1,
         case CONTAINER_PAIR(ARRAY, BITSET):
             // c1 is an array, so no in-place possible
             result = bitset_container_create();
+            if (result == NULL) {
+                *result_type = type1;
+                return c1;
+            }
             *result_type = BITSET_CONTAINER_TYPE;
             array_bitset_container_lazy_union(const_CAST_array(c1),
                                               const_CAST_bitset(c2),
@@ -1649,6 +1661,10 @@ static inline container_t *container_lazy_ior(container_t *c1, uint8_t type1,
                 return c1;
             }
             result = bitset_container_create();
+            if (result == NULL) {
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             run_bitset_container_lazy_union(const_CAST_run(c1),
                                             const_CAST_bitset(c2),
                                             CAST_bitset(result));  //  lazy
@@ -1831,6 +1847,7 @@ static inline container_t *container_lazy_xor(const container_t *c1,
     switch (PAIR_CONTAINER_TYPES(type1, type2)) {
         case CONTAINER_PAIR(BITSET, BITSET):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             bitset_container_xor_nocard(const_CAST_bitset(c1),
                                         const_CAST_bitset(c2),
                                         CAST_bitset(result));  // is lazy
@@ -1853,6 +1870,7 @@ static inline container_t *container_lazy_xor(const container_t *c1,
 
         case CONTAINER_PAIR(BITSET, ARRAY):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             *result_type = BITSET_CONTAINER_TYPE;
             array_bitset_container_lazy_xor(const_CAST_array(c2),
                                             const_CAST_bitset(c1),
@@ -1861,6 +1879,7 @@ static inline container_t *container_lazy_xor(const container_t *c1,
 
         case CONTAINER_PAIR(ARRAY, BITSET):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             *result_type = BITSET_CONTAINER_TYPE;
             array_bitset_container_lazy_xor(const_CAST_array(c1),
                                             const_CAST_bitset(c2),
@@ -1869,6 +1888,7 @@ static inline container_t *container_lazy_xor(const container_t *c1,
 
         case CONTAINER_PAIR(BITSET, RUN):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             run_bitset_container_lazy_xor(
                 const_CAST_run(c2), const_CAST_bitset(c1), CAST_bitset(result));
             *result_type = BITSET_CONTAINER_TYPE;
@@ -1876,6 +1896,7 @@ static inline container_t *container_lazy_xor(const container_t *c1,
 
         case CONTAINER_PAIR(RUN, BITSET):
             result = bitset_container_create();
+            if (result == NULL) return NULL;
             run_bitset_container_lazy_xor(
                 const_CAST_run(c1), const_CAST_bitset(c2), CAST_bitset(result));
             *result_type = BITSET_CONTAINER_TYPE;
@@ -2373,6 +2394,10 @@ static inline container_t *container_inot(container_t *c, uint8_t type,
         case ARRAY_CONTAINER_TYPE:
             // will never be inplace
             result = bitset_container_create();
+            if (result == NULL) {
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c;
+            }
             *result_type = BITSET_CONTAINER_TYPE;
             array_container_negation(CAST_array(c), CAST_bitset(result));
             array_container_free(CAST_array(c));

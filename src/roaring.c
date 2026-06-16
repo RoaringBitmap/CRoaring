@@ -2370,10 +2370,16 @@ static void inplace_flip_container(roaring_array_t *x1_arr, uint16_t hb,
             container_to_flip, ctype_in, (uint32_t)lb_start,
             (uint32_t)(lb_end + 1), &ctype_out);
         // if a new container was created, the old one was already freed
-        if (container_nonzero_cardinality(flipped_container, ctype_out)) {
+        if (flipped_container != NULL &&
+            container_nonzero_cardinality(flipped_container, ctype_out)) {
             ra_set_container_at_index(x1_arr, i, flipped_container, ctype_out);
-        } else {
+        } else if (flipped_container != NULL) {
             container_free(flipped_container, ctype_out);
+            ra_remove_at_index(x1_arr, i);
+        } else {
+            // Allocation failure: container_inot_range consumed (freed) the
+            // input container without producing a result. Drop the slot so it
+            // does not reference freed memory (data loss on OOM is acceptable).
             ra_remove_at_index(x1_arr, i);
         }
 
@@ -2423,10 +2429,16 @@ static void inplace_fully_flip_container(roaring_array_t *x1_arr, uint16_t hb) {
         flipped_container =
             container_inot(container_to_flip, ctype_in, &ctype_out);
 
-        if (container_nonzero_cardinality(flipped_container, ctype_out)) {
+        if (flipped_container != NULL &&
+            container_nonzero_cardinality(flipped_container, ctype_out)) {
             ra_set_container_at_index(x1_arr, i, flipped_container, ctype_out);
-        } else {
+        } else if (flipped_container != NULL) {
             container_free(flipped_container, ctype_out);
+            ra_remove_at_index(x1_arr, i);
+        } else {
+            // Allocation failure: container_inot consumed (freed) the input
+            // container without producing a result. Drop the slot so it does
+            // not reference freed memory (data loss on OOM is acceptable).
             ra_remove_at_index(x1_arr, i);
         }
 

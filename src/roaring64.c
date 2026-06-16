@@ -392,7 +392,10 @@ void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
         container_t *container = get_copy_of_container(
             get_container(src, leaf), &typecode, /*copy_on_write=*/false);
         leaf_t dest_leaf = add_container(dest, container, typecode);
-        add_container_insert(&dest->art, it.key, dest_leaf);
+        // insert_leaf_or_cleanup frees the pooled container if the ART insert
+        // fails, so it is not leaked (best effort: this void API drops the
+        // container on OOM).
+        (void)insert_leaf_or_cleanup(dest, it.key, dest_leaf);
         art_iterator_next(&it);
     }
 }
@@ -555,7 +558,15 @@ static inline leaf_t *containerptr_roaring64_bitmap_add(roaring64_bitmap_t *r,
             return NULL;
         }
         leaf_t new_leaf = add_container(r, container, typecode);
-        return add_container_insert(&r->art, high48, new_leaf);
+        leaf_t *inserted = add_container_insert(&r->art, high48, new_leaf);
+        if (inserted == NULL && new_leaf != 0) {
+            // The container was stored in the pool but the ART insert failed;
+            // remove and free it so it is not leaked (the free path frees
+            // containers via the ART).
+            remove_container(r, new_leaf);
+            container_free(container, typecode);
+        }
+        return inserted;
     }
 }
 
@@ -2162,7 +2173,9 @@ static void roaring64_flip_leaf_inplace(roaring64_bitmap_t *r, uint8_t high48[],
         // No container at this key, insert a full container.
         container2 = container_range_of_ones(min, max, &typecode2);
         leaf_t new_leaf = add_container(r, container2, typecode2);
-        add_container_insert(&r->art, high48, new_leaf);
+        // insert_leaf_or_cleanup frees the pooled container if the ART insert
+        // fails, so it is not leaked (data loss on OOM is acceptable).
+        (void)insert_leaf_or_cleanup(r, high48, new_leaf);
         return;
     }
 
