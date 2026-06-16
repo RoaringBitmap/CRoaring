@@ -1075,12 +1075,16 @@ static inline void remove_range_closed_at(roaring64_bitmap_t *r, art_t *art,
     uint8_t typecode2;
     container_t *container2 =
         container_remove_range(container, typecode, min, max, &typecode2);
-    if (container2 == NULL) {
-        return;
-    }
     if (container2 != container) {
         container_free(container, typecode);
-        replace_container(r, leaf, container2, typecode2);
+        if (container2 != NULL) {
+            replace_container(r, leaf, container2, typecode2);
+        } else {
+            bool erased = art_erase(art, high48, NULL);
+            assert(erased);
+            (void)erased;
+            remove_container(r, *leaf);
+        }
     }
 }
 

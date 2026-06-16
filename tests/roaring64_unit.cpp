@@ -824,6 +824,75 @@ DEFINE_TEST(test_remove_many_issue_742B) {
     roaring64_bitmap_free(r);
 }
 
+DEFINE_TEST(test_remove_range_empties_boundary_container) {
+    {
+        // Minimal repro: remove_range on a single-element array container.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add(r, 5);
+        roaring64_bitmap_remove_range(r, 5, 6);
+        assert_r64_valid(r);
+        assert_false(roaring64_bitmap_contains(r, 5));
+        assert_true(roaring64_bitmap_is_empty(r));
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 0);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // remove_range_closed within one container.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add(r, 42);
+        roaring64_bitmap_remove_range_closed(r, 42, 42);
+        assert_r64_valid(r);
+        assert_false(roaring64_bitmap_contains(r, 42));
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Run container fully covered by the removed range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        const uint64_t base = 0x10000ULL;
+        roaring64_bitmap_add_range_closed(r, base + 10, base + 20);
+        roaring64_bitmap_remove_range_closed(r, base + 10, base + 20);
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Dense bitset container fully cleared (same high-48 key).
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range_closed(r, 0, 5000);
+        roaring64_bitmap_remove_range_closed(r, 0, 5000);
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Multi-container range: min boundary container becomes empty.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add(r, 100);
+        roaring64_bitmap_add(r, 0x10000ULL);
+        roaring64_bitmap_remove_range_closed(r, 100, 0x10000);
+        assert_r64_valid(r);
+        assert_false(roaring64_bitmap_contains(r, 100));
+        assert_false(roaring64_bitmap_contains(r, 0x10000ULL));
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Multi-container range: max boundary container becomes empty.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        const uint64_t lo = 0x50000ULL;
+        const uint64_t hi = 0x60005ULL;
+        roaring64_bitmap_add(r, lo);
+        roaring64_bitmap_add(r, hi);
+        roaring64_bitmap_remove_range_closed(r, lo, hi);
+        assert_r64_valid(r);
+        assert_false(roaring64_bitmap_contains(r, lo));
+        assert_false(roaring64_bitmap_contains(r, hi));
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_free(r);
+    }
+}
+
 DEFINE_TEST(test_remove_range_closed) {
     {
         // Entire range within one container.
@@ -2912,6 +2981,7 @@ int main() {
         cmocka_unit_test(test_remove_checked),
         cmocka_unit_test(test_remove_bulk),
         cmocka_unit_test(test_remove_many),
+        cmocka_unit_test(test_remove_range_empties_boundary_container),
         cmocka_unit_test(test_remove_range_closed),
         cmocka_unit_test(test_get_cardinality),
         cmocka_unit_test(test_range_cardinality),
