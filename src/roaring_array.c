@@ -389,6 +389,9 @@ int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos) {
 
 void ra_insert_new_key_value_at(roaring_array_t *ra, int32_t i, uint16_t key,
                                 container_t *c, uint8_t typecode) {
+    if (c == NULL) {
+        return;
+    }
     if (!extend_array(ra, 1)) {
         container_free(c, typecode);
         return;

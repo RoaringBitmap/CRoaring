@@ -984,12 +984,18 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
     c2 = container_unwrap_shared(c2, &type2);
     container_t *result = NULL;
     switch (PAIR_CONTAINER_TYPES(type1, type2)) {
-        case CONTAINER_PAIR(BITSET, BITSET):
-            *result_type = bitset_bitset_container_intersection_inplace(
-                               CAST_bitset(c1), const_CAST_bitset(c2), &result)
-                               ? BITSET_CONTAINER_TYPE
-                               : ARRAY_CONTAINER_TYPE;
+        case CONTAINER_PAIR(BITSET, BITSET): {
+            const bool is_bitset =
+                bitset_bitset_container_intersection_inplace(
+                    CAST_bitset(c1), const_CAST_bitset(c2), &result);
+            if (result == NULL) {
+                *result_type = BITSET_CONTAINER_TYPE;
+                return c1;
+            }
+            *result_type = is_bitset ? BITSET_CONTAINER_TYPE
+                                     : ARRAY_CONTAINER_TYPE;
             return result;
+        }
 
         case CONTAINER_PAIR(ARRAY, ARRAY):
             array_container_intersection_inplace(CAST_array(c1),
@@ -999,14 +1005,18 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
 
         case CONTAINER_PAIR(RUN, RUN):
             result = run_container_create();
-            if (result == NULL) return NULL;
+            if (result == NULL) {
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             // as of January 2016, Java code used non-in-place intersection for
             // two runcontainers
             if (!run_container_intersection(const_CAST_run(c1),
                                             const_CAST_run(c2),
                                             CAST_run(result))) {
                 run_container_free(CAST_run(result));
-                return NULL;
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
             }
             return convert_run_to_efficient_container_and_free(CAST_run(result),
                                                                result_type);
@@ -1018,10 +1028,13 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                 *result_type = BITSET_CONTAINER_TYPE;
                 return c1;
             }
-            // On OOM the result is left as a valid empty array container.
-            (void)array_bitset_container_intersection(const_CAST_array(c2),
-                                                      const_CAST_bitset(c1),
-                                                      CAST_array(result));
+            if (!array_bitset_container_intersection(const_CAST_array(c2),
+                                                     const_CAST_bitset(c1),
+                                                     CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                *result_type = BITSET_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
@@ -1034,13 +1047,20 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                 CAST_array(c1));  // result is allowed to be same as c1
             return c1;
 
-        case CONTAINER_PAIR(BITSET, RUN):
+        case CONTAINER_PAIR(BITSET, RUN): {
             // will attempt in-place computation
+            container_t *orig = c1;
+            const uint8_t orig_type = type1;
             *result_type = run_bitset_container_intersection(
                                const_CAST_run(c2), const_CAST_bitset(c1), &c1)
                                ? BITSET_CONTAINER_TYPE
                                : ARRAY_CONTAINER_TYPE;
+            if (c1 == NULL) {
+                *result_type = orig_type;
+                return orig;
+            }
             return c1;
+        }
 
         case CONTAINER_PAIR(RUN, BITSET):
             *result_type =
@@ -1048,6 +1068,10 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                     const_CAST_run(c1), const_CAST_bitset(c2), &result)
                     ? BITSET_CONTAINER_TYPE
                     : ARRAY_CONTAINER_TYPE;
+            if (result == NULL) {
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             return result;
 
         case CONTAINER_PAIR(ARRAY, RUN):
@@ -1056,9 +1080,13 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                 *result_type = ARRAY_CONTAINER_TYPE;
                 return c1;
             }
-            // On OOM the result is left as a valid empty array container.
-            (void)array_run_container_intersection(
-                const_CAST_array(c1), const_CAST_run(c2), CAST_array(result));
+            if (!array_run_container_intersection(
+                    const_CAST_array(c1), const_CAST_run(c2),
+                    CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                *result_type = ARRAY_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 
@@ -1068,9 +1096,13 @@ static inline container_t *container_iand(container_t *c1, uint8_t type1,
                 *result_type = RUN_CONTAINER_TYPE;
                 return c1;
             }
-            // On OOM the result is left as a valid empty array container.
-            (void)array_run_container_intersection(
-                const_CAST_array(c2), const_CAST_run(c1), CAST_array(result));
+            if (!array_run_container_intersection(
+                    const_CAST_array(c2), const_CAST_run(c1),
+                    CAST_array(result))) {
+                array_container_free(CAST_array(result));
+                *result_type = RUN_CONTAINER_TYPE;
+                return c1;
+            }
             *result_type = ARRAY_CONTAINER_TYPE;  // never bitset
             return result;
 

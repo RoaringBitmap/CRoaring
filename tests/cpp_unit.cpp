@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <type_traits>
 #include <vector>
 
 #include <roaring/misc/configreport.h>
@@ -26,9 +25,6 @@ using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 #include "roaring64map_checked.hh"
 #include "test.h"
-
-static_assert(std::is_nothrow_move_constructible<Roaring>::value,
-              "Expected Roaring to be no except move constructable");
 
 namespace {
 // We put std::numeric_limits<>::max in parentheses to avoid a

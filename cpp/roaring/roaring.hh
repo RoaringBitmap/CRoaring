@@ -76,9 +76,7 @@ class Roaring {
     Roaring() : roaring{} {
         // The empty constructor roaring{} silences warnings from pedantic
         // static analyzers.
-        if (!api::roaring_bitmap_init_cleared(&roaring)) {
-            ROARING_TERMINATE("failed roaring_bitmap_init_cleared in constructor");
-        }
+        api::roaring_bitmap_init_cleared(&roaring);
     }
 
     /**
@@ -129,10 +127,9 @@ class Roaring {
         // those bits were pointers into the structure memory itself.  If such
         // things were possible, a roaring_bitmap_move() API would be needed.
         //
-        if (!api::roaring_bitmap_init_cleared(&r.roaring)) {
-            ROARING_TERMINATE(
-                "failed roaring_bitmap_init_cleared in move constructor");
-        }
+        // roaring_bitmap_init_cleared performs no allocation and cannot fail,
+        // which is what lets this move operation be noexcept.
+        api::roaring_bitmap_init_cleared(&r.roaring);
     }
 
     /**
@@ -173,10 +170,9 @@ class Roaring {
         // !!! See notes in the Move Constructor regarding roaring_bitmap_move()
         //
         roaring = r.roaring;
-        if (!api::roaring_bitmap_init_cleared(&r.roaring)) {
-            ROARING_TERMINATE(
-                "failed roaring_bitmap_init_cleared in move assignment");
-        }
+        // roaring_bitmap_init_cleared performs no allocation and cannot fail,
+        // which is what lets this move operation be noexcept.
+        api::roaring_bitmap_init_cleared(&r.roaring);
 
         return *this;
     }

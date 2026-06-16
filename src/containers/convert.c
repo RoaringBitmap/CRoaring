@@ -124,6 +124,9 @@ container_t *convert_to_bitset_or_array_container(run_container_t *rc,
                                                   uint8_t *resulttype) {
     if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *answer = array_container_create_given_capacity(card);
+        if (answer == NULL) {
+            return NULL;
+        }
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
             uint16_t run_start = rc->runs[rlepos].value;
@@ -140,6 +143,9 @@ container_t *convert_to_bitset_or_array_container(run_container_t *rc,
         return answer;
     }
     bitset_container_t *answer = bitset_container_create();
+    if (answer == NULL) {
+        return NULL;
+    }
     for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
         uint16_t run_start = rc->runs[rlepos].value;
         bitset_set_lenrange(answer->words, run_start, rc->runs[rlepos].length);
@@ -218,7 +224,10 @@ container_t *convert_run_to_efficient_container(run_container_t *c,
 container_t *convert_run_to_efficient_container_and_free(
     run_container_t *c, uint8_t *typecode_after) {
     container_t *answer = convert_run_to_efficient_container(c, typecode_after);
-    if (answer != c) run_container_free(c);
+    if (answer == NULL || answer == c) {
+        return c;
+    }
+    run_container_free(c);
     return answer;
 }
 
@@ -234,6 +243,10 @@ container_t *convert_run_optimize(container_t *c, uint8_t typecode_original,
     if (typecode_original == RUN_CONTAINER_TYPE) {
         container_t *newc =
             convert_run_to_efficient_container(CAST_run(c), typecode_after);
+        if (newc == NULL) {
+            *typecode_after = typecode_original;
+            return c;
+        }
         if (newc != c) {
             container_free(c, typecode_original);
         }

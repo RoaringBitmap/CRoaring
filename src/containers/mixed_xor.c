@@ -351,7 +351,9 @@ bool array_bitset_container_ixor(array_container_t *src_1,
                                  const bitset_container_t *src_2,
                                  container_t **dst) {
     bool ans = array_bitset_container_xor(src_1, src_2, dst);
-    array_container_free(src_1);
+    if (*dst != NULL) {
+        array_container_free(src_1);
+    }
     return ans;
 }
 
@@ -366,7 +368,9 @@ bool run_bitset_container_ixor(run_container_t *src_1,
                                const bitset_container_t *src_2,
                                container_t **dst) {
     bool ans = run_bitset_container_xor(src_1, src_2, dst);
-    run_container_free(src_1);
+    if (*dst != NULL) {
+        run_container_free(src_1);
+    }
     return ans;
 }
 
@@ -374,7 +378,9 @@ bool bitset_run_container_ixor(bitset_container_t *src_1,
                                const run_container_t *src_2,
                                container_t **dst) {
     bool ans = run_bitset_container_xor(src_2, src_1, dst);
-    bitset_container_free(src_1);
+    if (*dst != NULL) {
+        bitset_container_free(src_1);
+    }
     return ans;
 }
 
@@ -385,7 +391,9 @@ bool bitset_run_container_ixor(bitset_container_t *src_1,
 int array_run_container_ixor(array_container_t *src_1,
                              const run_container_t *src_2, container_t **dst) {
     int ans = array_run_container_xor(src_1, src_2, dst);
-    array_container_free(src_1);
+    if (*dst != NULL) {
+        array_container_free(src_1);
+    }
     return ans;
 }
 
@@ -393,7 +401,9 @@ int run_array_container_ixor(run_container_t *src_1,
                              const array_container_t *src_2,
                              container_t **dst) {
     int ans = array_run_container_xor(src_2, src_1, dst);
-    run_container_free(src_1);
+    if (*dst != NULL) {
+        run_container_free(src_1);
+    }
     return ans;
 }
 
@@ -401,14 +411,18 @@ bool array_array_container_ixor(array_container_t *src_1,
                                 const array_container_t *src_2,
                                 container_t **dst) {
     bool ans = array_array_container_xor(src_1, src_2, dst);
-    array_container_free(src_1);
+    if (*dst != NULL) {
+        array_container_free(src_1);
+    }
     return ans;
 }
 
 int run_run_container_ixor(run_container_t *src_1, const run_container_t *src_2,
                            container_t **dst) {
     int ans = run_run_container_xor(src_1, src_2, dst);
-    run_container_free(src_1);
+    if (*dst != NULL) {
+        run_container_free(src_1);
+    }
     return ans;
 }
 

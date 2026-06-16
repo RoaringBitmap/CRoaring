@@ -237,10 +237,17 @@ bool array_array_container_inplace_union(array_container_t *src_1,
     if (ourbitset->cardinality <= DEFAULT_MAX_SIZE) {
         // need to convert!
         if (src_1->capacity < ourbitset->cardinality) {
-            if (!array_container_grow(src_1, ourbitset->cardinality, false)) {
+            // Grow with preserve=true so that, on allocation failure, src_1
+            // keeps its original contents and stays valid (the contract for
+            // container_iunion is that c1 is left unchanged on OOM). The
+            // preserved bytes are overwritten below on success.
+            if (!array_container_grow(src_1, ourbitset->cardinality, true)) {
                 bitset_container_free(ourbitset);
                 *dst = NULL;
-                return false;
+                // Signal allocation failure: a BITSET result type together
+                // with *dst == NULL makes the container_iunion dispatcher
+                // return NULL (rather than treating it as an in-place result).
+                return true;
             }
         }
 

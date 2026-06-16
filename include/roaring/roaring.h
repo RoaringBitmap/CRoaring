@@ -53,7 +53,7 @@ CROARING_NODISCARD roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_
  * Returns NULL if the allocation fails.
  * Client is responsible for calling `roaring_bitmap_free()`.
  */
-inline CROARING_NODISCARD roaring_bitmap_t *roaring_bitmap_create(void) {
+CROARING_NODISCARD inline roaring_bitmap_t *roaring_bitmap_create(void) {
     return roaring_bitmap_create_with_capacity(0);
 }
 
@@ -67,10 +67,15 @@ CROARING_NODISCARD bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, u
 /**
  * Initialize a roaring bitmap structure in memory controlled by client.
  * The bitmap will be in a "clear" state, with no auxiliary allocations.
- * Returns true on success. With cap 0 there are no auxiliary allocations.
+ * This performs no allocation and therefore cannot fail as long as the provided pointer is valid.
  */
-inline CROARING_NODISCARD bool roaring_bitmap_init_cleared(roaring_bitmap_t *r) {
-    return roaring_bitmap_init_with_capacity(r, 0);
+inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r) {
+    // For performance reasons, this function is inline and uses internal
+    // functions directly. ra_init only assigns fields, so it cannot fail.
+#ifdef __cplusplus
+    using namespace ::roaring::internal;
+#endif
+    ra_init(&r->high_low_container);
 }
 
 /**
@@ -1094,7 +1099,7 @@ bool roaring_bitmap_internal_validate(const roaring_bitmap_t *r,
 /*********************
 * What follows is code use to iterate through values in a roaring bitmap
 
-CROARING_NODISCARD roaring_bitmap_t *r =...
+roaring_bitmap_t *r =...
 roaring_uint32_iterator_t i;
 roaring_iterator_create(r, &i);
 while(i.has_value) {

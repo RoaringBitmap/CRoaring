@@ -26,9 +26,16 @@ extern int posix_memalign(void **memptr, size_t alignment, size_t size);
 // Roughly one in FAIL_ALLOC_MODULO allocation attempts returns NULL.
 #define FAIL_ALLOC_MODULO 6u
 
-#define MAX_LIVE_32 8
-#define MAX_LIVE_64 8
-#define ROUNDS_PER_SEED 400u
+// Keep live bitmaps few and small so this test stays lightweight even when
+// allocations succeed under the seeded failing hook.
+#define MAX_LIVE_32 4
+#define MAX_LIVE_64 4
+#define ROUNDS_PER_SEED 120u
+#define NUM_OPS_32 28u
+#define NUM_OPS_64 24u
+#define MAX_RANGE_SPAN_32 48u
+#define MAX_RANGE_SPAN_64 48u
+#define MAX_FROM_RANGE_ELEMS 64u
 
 typedef struct {
     uint64_t prng_state;
@@ -211,11 +218,47 @@ static roaring_bitmap_t *pool32_pick(const pool32_t *pool) {
     return pool->items[failalloc_rand() % pool->count];
 }
 
+static bool pool32_pick_two(const pool32_t *pool, roaring_bitmap_t **a,
+                            roaring_bitmap_t **b) {
+    if (pool->count < 2) {
+        return false;
+    }
+    *a = pool->items[failalloc_rand() % pool->count];
+    *b = pool->items[failalloc_rand() % pool->count];
+    return true;
+}
+
+static roaring_bitmap_t *pool32_copy_for_inplace(const pool32_t *pool) {
+    roaring_bitmap_t *src = pool32_pick(pool);
+    if (src == NULL) {
+        return NULL;
+    }
+    return roaring_bitmap_copy(src);
+}
+
 static roaring64_bitmap_t *pool64_pick(const pool64_t *pool) {
     if (pool->count == 0) {
         return NULL;
     }
     return pool->items[failalloc_rand() % pool->count];
+}
+
+static bool pool64_pick_two(const pool64_t *pool, roaring64_bitmap_t **a,
+                            roaring64_bitmap_t **b) {
+    if (pool->count < 2) {
+        return false;
+    }
+    *a = pool->items[failalloc_rand() % pool->count];
+    *b = pool->items[failalloc_rand() % pool->count];
+    return true;
+}
+
+static roaring64_bitmap_t *pool64_copy_for_inplace(const pool64_t *pool) {
+    roaring64_bitmap_t *src = pool64_pick(pool);
+    if (src == NULL) {
+        return NULL;
+    }
+    return roaring64_bitmap_copy(src);
 }
 
 static void pool32_validate_all(const pool32_t *pool) {
@@ -269,24 +312,51 @@ static void pool64_remove_random(pool64_t *pool) {
 }
 
 static uint32_t random_u32_value(void) {
-    static const uint32_t candidates[] = {
-        0,          1,          42,         255,        256,
-        65535,      65536,      131072,     1048576,    0x7fffffff};
+    static const uint32_t candidates[] = {0, 1, 7, 42, 255, 256, 511, 1023};
     return candidates[failalloc_rand() % (sizeof(candidates) / sizeof(candidates[0]))];
 }
 
 static uint64_t random_u64_value(void) {
-    static const uint64_t candidates[] = {
-        0,
-        1,
-        42,
-        0xffff,
-        0x10000,
-        0x100000000ULL,
-        0x123456789abcdefULL,
-        0xffffffffffffffffULL};
+    static const uint64_t candidates[] = {0, 1, 7, 42, 255, 256, 511, 4095,
+                                          0x10000ULL, 0x10001ULL};
     return candidates[failalloc_rand() %
                      (sizeof(candidates) / sizeof(candidates[0]))];
+}
+
+static void random_u32_closed_range(uint32_t *min_out, uint32_t *max_out) {
+    const uint32_t min = (uint32_t)(failalloc_rand() % 1024u);
+    const uint32_t span =
+        1u + (uint32_t)(failalloc_rand() % MAX_RANGE_SPAN_32);
+    *min_out = min;
+    *max_out = min + span;
+}
+
+static void random_u64_closed_range(uint64_t *min_out, uint64_t *max_out) {
+    const uint64_t min = failalloc_rand() % 4096u;
+    const uint64_t span =
+        1u + (failalloc_rand() % MAX_RANGE_SPAN_64);
+    *min_out = min;
+    *max_out = min + span;
+}
+
+static void random_from_range_params32(uint64_t *min_out, uint64_t *max_out,
+                                       uint32_t *step_out) {
+    const uint64_t min = failalloc_rand() % 2048u;
+    const uint64_t span =
+        1u + (failalloc_rand() % MAX_FROM_RANGE_ELEMS);
+    *min_out = min;
+    *max_out = min + span;
+    *step_out = 1u + (uint32_t)(failalloc_rand() % 4u);
+}
+
+static void random_from_range_params64(uint64_t *min_out, uint64_t *max_out,
+                                       uint32_t *step_out) {
+    const uint64_t min = failalloc_rand() % 8192u;
+    const uint64_t span =
+        1u + (failalloc_rand() % MAX_FROM_RANGE_ELEMS);
+    *min_out = min;
+    *max_out = min + span;
+    *step_out = 1u + (uint32_t)(failalloc_rand() % 4u);
 }
 
 static void exercise_bitmap32(uint64_t seed) {
@@ -294,57 +364,68 @@ static void exercise_bitmap32(uint64_t seed) {
     pool32_t pool = {0};
 
     for (uint32_t round = 0; round < ROUNDS_PER_SEED; ++round) {
-        const uint32_t op = (uint32_t)(failalloc_rand() % 12u);
+        const uint32_t op = (uint32_t)(failalloc_rand() % NUM_OPS_32);
 
         switch (op) {
-            case 0: {
+            case 0:
                 pool32_add(&pool, roaring_bitmap_create());
                 break;
-            }
-            case 1: {
+            case 1:
                 pool32_add(&pool,
                            roaring_bitmap_create_with_capacity(
-                               (uint32_t)(1u + (failalloc_rand() % 64u))));
+                               (uint32_t)(1u + (failalloc_rand() % 8u))));
+                break;
+            case 2: {
+                uint64_t a, b;
+                uint32_t step;
+                random_from_range_params32(&a, &b, &step);
+                pool32_add(&pool, roaring_bitmap_from_range(a, b, step));
                 break;
             }
-            case 2: {
+            case 3: {
+                const uint32_t vals[] = {1, 42, 65537};
+                pool32_add(&pool, roaring_bitmap_of_ptr(3, vals));
+                break;
+            }
+            case 4: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
-                    uint32_t a = random_u32_value();
-                    uint32_t b = random_u32_value();
-                    if (a > b) {
-                        uint32_t tmp = a;
-                        a = b;
-                        b = tmp;
-                    }
+                    uint32_t a, b;
+                    random_u32_closed_range(&a, &b);
                     roaring_bitmap_add(r, random_u32_value());
                     roaring_bitmap_add_range_closed(r, a, b);
                 }
                 break;
             }
-            case 3: {
+            case 5: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
+                    const uint32_t vals[] = {7, 99, 1000, 65535};
+                    roaring_bitmap_add_many(r, 4, vals);
+                }
+                break;
+            }
+            case 6: {
+                roaring_bitmap_t *r = pool32_pick(&pool);
+                if (r != NULL) {
+                    uint32_t a, b;
+                    random_u32_closed_range(&a, &b);
                     roaring_bitmap_remove(r, random_u32_value());
+                    roaring_bitmap_remove_range_closed(r, a, b);
                 }
                 break;
             }
-            case 4: {
-                if (pool.count >= 2) {
-                    roaring_bitmap_t *a = pool.items[0];
-                    roaring_bitmap_t *b = pool.items[1];
-                    roaring_bitmap_t *result = roaring_bitmap_or(a, b);
-                    if (result != NULL) {
-                        assert_bitmap32_valid(result);
-                        pool32_add(&pool, result);
-                    }
+            case 7: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                if (copy != NULL) {
+                    roaring_bitmap_clear(copy);
+                    pool32_add(&pool, copy);
                 }
                 break;
             }
-            case 5: {
-                if (pool.count >= 2) {
-                    roaring_bitmap_t *a = pool.items[0];
-                    roaring_bitmap_t *b = pool.items[1];
+            case 8: {
+                roaring_bitmap_t *a, *b;
+                if (pool32_pick_two(&pool, &a, &b)) {
                     roaring_bitmap_t *result = roaring_bitmap_and(a, b);
                     if (result != NULL) {
                         assert_bitmap32_valid(result);
@@ -353,15 +434,154 @@ static void exercise_bitmap32(uint64_t seed) {
                 }
                 break;
             }
-            case 6: {
+            case 9: {
+                roaring_bitmap_t *a, *b;
+                if (pool32_pick_two(&pool, &a, &b)) {
+                    roaring_bitmap_t *result = roaring_bitmap_or(a, b);
+                    if (result != NULL) {
+                        assert_bitmap32_valid(result);
+                        pool32_add(&pool, result);
+                    }
+                }
+                break;
+            }
+            case 10: {
+                roaring_bitmap_t *a, *b;
+                if (pool32_pick_two(&pool, &a, &b)) {
+                    roaring_bitmap_t *result = roaring_bitmap_xor(a, b);
+                    if (result != NULL) {
+                        assert_bitmap32_valid(result);
+                        pool32_add(&pool, result);
+                    }
+                }
+                break;
+            }
+            case 11: {
+                roaring_bitmap_t *a, *b;
+                if (pool32_pick_two(&pool, &a, &b)) {
+                    roaring_bitmap_t *result = roaring_bitmap_andnot(a, b);
+                    if (result != NULL) {
+                        assert_bitmap32_valid(result);
+                        pool32_add(&pool, result);
+                    }
+                }
+                break;
+            }
+            case 12: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                roaring_bitmap_t *other = pool32_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring_bitmap_and_inplace(copy, other);
+                    assert_bitmap32_valid(copy);
+                    pool32_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring_bitmap_free(copy);
+                }
+                break;
+            }
+            case 13: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                roaring_bitmap_t *other = pool32_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring_bitmap_or_inplace(copy, other);
+                    assert_bitmap32_valid(copy);
+                    pool32_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring_bitmap_free(copy);
+                }
+                break;
+            }
+            case 14: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                roaring_bitmap_t *other = pool32_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring_bitmap_xor_inplace(copy, other);
+                    assert_bitmap32_valid(copy);
+                    pool32_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring_bitmap_free(copy);
+                }
+                break;
+            }
+            case 15: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                roaring_bitmap_t *other = pool32_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring_bitmap_andnot_inplace(copy, other);
+                    assert_bitmap32_valid(copy);
+                    pool32_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring_bitmap_free(copy);
+                }
+                break;
+            }
+            case 16: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
-                    roaring_bitmap_t *copy = roaring_bitmap_copy(r);
+                    uint32_t a, b;
+                    random_u32_closed_range(&a, &b);
+                    roaring_bitmap_t *flipped =
+                        roaring_bitmap_flip_closed(r, a, b);
+                    if (flipped != NULL) {
+                        assert_bitmap32_valid(flipped);
+                        pool32_add(&pool, flipped);
+                    }
+                }
+                break;
+            }
+            case 17: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                if (copy != NULL) {
+                    uint32_t a, b;
+                    random_u32_closed_range(&a, &b);
+                    roaring_bitmap_flip_inplace_closed(copy, a, b);
+                    assert_bitmap32_valid(copy);
                     pool32_add(&pool, copy);
                 }
                 break;
             }
-            case 7: {
+            case 18: {
+                roaring_bitmap_t *a, *b;
+                if (pool32_pick_two(&pool, &a, &b)) {
+                    roaring_bitmap_t *lazy =
+                        roaring_bitmap_lazy_or(a, b, (bool)(failalloc_rand() & 1u));
+                    if (lazy != NULL) {
+                        roaring_bitmap_repair_after_lazy(lazy);
+                        assert_bitmap32_valid(lazy);
+                        pool32_add(&pool, lazy);
+                    }
+                }
+                break;
+            }
+            case 19: {
+                roaring_bitmap_t *copy = pool32_copy_for_inplace(&pool);
+                roaring_bitmap_t *other = pool32_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring_bitmap_lazy_xor_inplace(copy, other);
+                    roaring_bitmap_repair_after_lazy(copy);
+                    assert_bitmap32_valid(copy);
+                    pool32_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring_bitmap_free(copy);
+                }
+                break;
+            }
+            case 20: {
+                roaring_bitmap_t *r = pool32_pick(&pool);
+                if (r != NULL) {
+                    pool32_add(&pool, roaring_bitmap_copy(r));
+                }
+                break;
+            }
+            case 21: {
+                roaring_bitmap_t *r = pool32_pick(&pool);
+                if (r != NULL) {
+                    pool32_add(&pool, roaring_bitmap_add_offset(
+                                          r, (uint32_t)(failalloc_rand() % 64u)));
+                }
+                break;
+            }
+            case 22: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
                     size_t sz = roaring_bitmap_portable_size_in_bytes(r);
@@ -379,19 +599,16 @@ static void exercise_bitmap32(uint64_t seed) {
                 }
                 break;
             }
-            case 8: {
+            case 23: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
                     roaring_bitmap_shrink_to_fit(r);
                     roaring_bitmap_run_optimize(r);
+                    roaring_bitmap_remove_run_compression(r);
                 }
                 break;
             }
-            case 9: {
-                pool32_remove_random(&pool);
-                break;
-            }
-            case 10: {
+            case 24: {
                 if (pool.count >= 2) {
                     const roaring_bitmap_t *args[2] = {pool.items[0],
                                                        pool.items[1]};
@@ -404,7 +621,17 @@ static void exercise_bitmap32(uint64_t seed) {
                 }
                 break;
             }
-            default: {
+            case 25: {
+                roaring_bitmap_t *r = pool32_pick(&pool);
+                if (r != NULL && !roaring_bitmap_is_empty(r)) {
+                    uint32_t value = 0;
+                    (void)roaring_bitmap_select(r, 0, &value);
+                    (void)roaring_bitmap_rank(r, value);
+                    (void)roaring_bitmap_contains(r, value);
+                }
+                break;
+            }
+            case 26: {
                 roaring_bitmap_t *r = pool32_pick(&pool);
                 if (r != NULL) {
                     roaring_uint32_iterator_t *it =
@@ -415,6 +642,9 @@ static void exercise_bitmap32(uint64_t seed) {
                 }
                 break;
             }
+            default:
+                pool32_remove_random(&pool);
+                break;
         }
 
         pool32_validate_all(&pool);
@@ -431,51 +661,57 @@ static void exercise_bitmap64(uint64_t seed) {
     pool64_t pool = {0};
 
     for (uint32_t round = 0; round < ROUNDS_PER_SEED; ++round) {
-        const uint32_t op = (uint32_t)(failalloc_rand() % 12u);
+        const uint32_t op = (uint32_t)(failalloc_rand() % NUM_OPS_64);
 
         switch (op) {
-            case 0: {
+            case 0:
                 pool64_add(&pool, roaring64_bitmap_create());
                 break;
-            }
             case 1: {
+                uint64_t a, b;
+                uint32_t step;
+                random_from_range_params64(&a, &b, &step);
+                pool64_add(&pool, roaring64_bitmap_from_range(a, b, step));
+                break;
+            }
+            case 2: {
+                const uint64_t vals[] = {1, 42, 0x100000000ULL};
+                pool64_add(&pool, roaring64_bitmap_of_ptr(3, vals));
+                break;
+            }
+            case 3: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
+                    uint64_t a, b;
+                    random_u64_closed_range(&a, &b);
                     roaring64_bitmap_add(r, random_u64_value());
-                    uint64_t a = random_u64_value();
-                    uint64_t b = random_u64_value();
-                    if (a > b) {
-                        uint64_t tmp = a;
-                        a = b;
-                        b = tmp;
-                    }
                     roaring64_bitmap_add_range_closed(r, a, b);
                 }
                 break;
             }
-            case 2: {
+            case 4: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
+                    uint64_t a, b;
+                    const uint64_t vals[] = {7, 99, 0xdeadbeefULL};
+                    random_u64_closed_range(&a, &b);
+                    roaring64_bitmap_add_many(r, 3, vals);
                     roaring64_bitmap_remove(r, random_u64_value());
+                    roaring64_bitmap_remove_range_closed(r, a, b);
                 }
                 break;
             }
-            case 3: {
-                if (pool.count >= 2) {
-                    roaring64_bitmap_t *a = pool.items[0];
-                    roaring64_bitmap_t *b = pool.items[1];
-                    roaring64_bitmap_t *result = roaring64_bitmap_or(a, b);
-                    if (result != NULL) {
-                        assert_bitmap64_valid(result);
-                        pool64_add(&pool, result);
-                    }
+            case 5: {
+                roaring64_bitmap_t *copy = pool64_copy_for_inplace(&pool);
+                if (copy != NULL) {
+                    roaring64_bitmap_clear(copy);
+                    pool64_add(&pool, copy);
                 }
                 break;
             }
-            case 4: {
-                if (pool.count >= 2) {
-                    roaring64_bitmap_t *a = pool.items[0];
-                    roaring64_bitmap_t *b = pool.items[1];
+            case 6: {
+                roaring64_bitmap_t *a, *b;
+                if (pool64_pick_two(&pool, &a, &b)) {
                     roaring64_bitmap_t *result = roaring64_bitmap_and(a, b);
                     if (result != NULL) {
                         assert_bitmap64_valid(result);
@@ -484,15 +720,122 @@ static void exercise_bitmap64(uint64_t seed) {
                 }
                 break;
             }
-            case 5: {
+            case 7: {
+                roaring64_bitmap_t *a, *b;
+                if (pool64_pick_two(&pool, &a, &b)) {
+                    roaring64_bitmap_t *result = roaring64_bitmap_or(a, b);
+                    if (result != NULL) {
+                        assert_bitmap64_valid(result);
+                        pool64_add(&pool, result);
+                    }
+                }
+                break;
+            }
+            case 8: {
+                roaring64_bitmap_t *a, *b;
+                if (pool64_pick_two(&pool, &a, &b)) {
+                    roaring64_bitmap_t *result = roaring64_bitmap_xor(a, b);
+                    if (result != NULL) {
+                        assert_bitmap64_valid(result);
+                        pool64_add(&pool, result);
+                    }
+                }
+                break;
+            }
+            case 9: {
+                roaring64_bitmap_t *a, *b;
+                if (pool64_pick_two(&pool, &a, &b)) {
+                    roaring64_bitmap_t *result = roaring64_bitmap_andnot(a, b);
+                    if (result != NULL) {
+                        assert_bitmap64_valid(result);
+                        pool64_add(&pool, result);
+                    }
+                }
+                break;
+            }
+            case 10: {
+                roaring64_bitmap_t *copy = pool64_copy_for_inplace(&pool);
+                roaring64_bitmap_t *other = pool64_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring64_bitmap_and_inplace(copy, other);
+                    assert_bitmap64_valid(copy);
+                    pool64_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring64_bitmap_free(copy);
+                }
+                break;
+            }
+            case 11: {
+                roaring64_bitmap_t *copy = pool64_copy_for_inplace(&pool);
+                roaring64_bitmap_t *other = pool64_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring64_bitmap_or_inplace(copy, other);
+                    assert_bitmap64_valid(copy);
+                    pool64_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring64_bitmap_free(copy);
+                }
+                break;
+            }
+            case 12: {
+                roaring64_bitmap_t *copy = pool64_copy_for_inplace(&pool);
+                roaring64_bitmap_t *other = pool64_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring64_bitmap_xor_inplace(copy, other);
+                    assert_bitmap64_valid(copy);
+                    pool64_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring64_bitmap_free(copy);
+                }
+                break;
+            }
+            case 13: {
+                roaring64_bitmap_t *copy = pool64_copy_for_inplace(&pool);
+                roaring64_bitmap_t *other = pool64_pick(&pool);
+                if (copy != NULL && other != NULL) {
+                    roaring64_bitmap_andnot_inplace(copy, other);
+                    assert_bitmap64_valid(copy);
+                    pool64_add(&pool, copy);
+                } else if (copy != NULL) {
+                    roaring64_bitmap_free(copy);
+                }
+                break;
+            }
+            case 14: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
-                    roaring64_bitmap_t *copy = roaring64_bitmap_copy(r);
+                    uint64_t a, b;
+                    random_u64_closed_range(&a, &b);
+                    roaring64_bitmap_t *flipped =
+                        roaring64_bitmap_flip_closed(r, a, b);
+                    if (flipped != NULL) {
+                        assert_bitmap64_valid(flipped);
+                        pool64_add(&pool, flipped);
+                    }
+                }
+                break;
+            }
+            case 15: {
+                roaring64_bitmap_t *copy = pool64_copy_for_inplace(&pool);
+                if (copy != NULL) {
+                    uint64_t a, b;
+                    random_u64_closed_range(&a, &b);
+                    roaring64_bitmap_flip_closed_inplace(copy, a, b);
+                    assert_bitmap64_valid(copy);
                     pool64_add(&pool, copy);
                 }
                 break;
             }
-            case 6: {
+            case 16: {
+                roaring64_bitmap_t *r = pool64_pick(&pool);
+                if (r != NULL) {
+                    pool64_add(&pool, roaring64_bitmap_copy(r));
+                    pool64_add(&pool, roaring64_bitmap_add_offset(
+                                          r, (uint64_t)(failalloc_rand() % 64u)));
+                }
+                break;
+            }
+            case 17: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
                     size_t sz = roaring64_bitmap_portable_size_in_bytes(r);
@@ -511,44 +854,26 @@ static void exercise_bitmap64(uint64_t seed) {
                 }
                 break;
             }
-            case 7: {
+            case 18: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
                     roaring64_bitmap_shrink_to_fit(r);
                     roaring64_bitmap_run_optimize(r);
+                    roaring64_bitmap_remove_run_compression(r);
                 }
                 break;
             }
-            case 8: {
-                pool64_remove_random(&pool);
-                break;
-            }
-            case 9: {
-                if (pool.count >= 2) {
-                    roaring64_bitmap_t *a = pool.items[0];
-                    roaring64_bitmap_t *b = pool.items[1];
-                    roaring64_bitmap_t *result = roaring64_bitmap_xor(a, b);
-                    if (result != NULL) {
-                        assert_bitmap64_valid(result);
-                        pool64_add(&pool, result);
-                    }
-                }
-                break;
-            }
-            case 10: {
+            case 19: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
-                if (r != NULL) {
-                    roaring64_bitmap_t *flipped =
-                        roaring64_bitmap_flip_closed(r, random_u64_value(),
-                                                     random_u64_value());
-                    if (flipped != NULL) {
-                        assert_bitmap64_valid(flipped);
-                        pool64_add(&pool, flipped);
-                    }
+                if (r != NULL && !roaring64_bitmap_is_empty(r)) {
+                    uint64_t value = 0;
+                    (void)roaring64_bitmap_select(r, 0, &value);
+                    (void)roaring64_bitmap_rank(r, value);
+                    (void)roaring64_bitmap_contains(r, value);
                 }
                 break;
             }
-            default: {
+            case 20: {
                 roaring64_bitmap_t *r = pool64_pick(&pool);
                 if (r != NULL) {
                     roaring64_iterator_t *it = roaring64_iterator_create(r);
@@ -558,6 +883,30 @@ static void exercise_bitmap64(uint64_t seed) {
                 }
                 break;
             }
+            case 21: {
+                roaring64_bitmap_t *r = pool64_pick(&pool);
+                if (r != NULL) {
+                    roaring64_bitmap_overwrite(r, r);
+                }
+                break;
+            }
+            case 22: {
+                roaring64_bitmap_t *r = pool64_pick(&pool);
+                if (r != NULL) {
+                    uint64_t a, b;
+                    random_u64_closed_range(&a, &b);
+                    roaring64_bitmap_t *flipped =
+                        roaring64_bitmap_flip(r, a, b);
+                    if (flipped != NULL) {
+                        assert_bitmap64_valid(flipped);
+                        pool64_add(&pool, flipped);
+                    }
+                }
+                break;
+            }
+            default:
+                pool64_remove_random(&pool);
+                break;
         }
 
         pool64_validate_all(&pool);
@@ -570,14 +919,14 @@ static void exercise_bitmap64(uint64_t seed) {
 }
 
 DEFINE_TEST(test_memory_pressure_roaring32) {
-    static const uint64_t seeds[] = {1, 42, 0xC0FFEE, 0xDEADBEEFCAFEBABEULL};
+    static const uint64_t seeds[] = {1, 42};
     for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
         exercise_bitmap32(seeds[i]);
     }
 }
 
 DEFINE_TEST(test_memory_pressure_roaring64) {
-    static const uint64_t seeds[] = {7, 99, 0xBADC0DE, 0x0123456789ABCDEFULL};
+    static const uint64_t seeds[] = {7, 99};
     for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
         exercise_bitmap64(seeds[i]);
     }

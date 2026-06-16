@@ -2208,14 +2208,18 @@ art_iterator_t art_upper_bound(art_t *art, const art_key_chunk_t *key) {
     return iterator;
 }
 
-void art_iterator_insert(art_iterator_t *iterator, const art_key_chunk_t *key,
+bool art_iterator_insert(art_iterator_t *iterator, const art_key_chunk_t *key,
                          art_val_t val) {
     // TODO: This can likely be faster.
-    art_insert(iterator->art, key, val);
+    if (art_insert(iterator->art, key, val) == NULL) {
+        // Allocation failure: the tree and iterator are left unchanged.
+        return false;
+    }
     assert(iterator->art->root != CROARING_ART_NULL_REF);
     iterator->frame = 0;
     iterator->depth = 0;
     art_node_iterator_lower_bound(iterator->art->root, iterator, key);
+    return true;
 }
 
 bool art_iterator_erase(art_iterator_t *iterator, art_val_t *erased_val) {

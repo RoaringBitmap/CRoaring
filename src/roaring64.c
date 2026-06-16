@@ -477,6 +477,9 @@ roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
         return NULL;
     }
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
     if (step >= (1 << 16)) {
         // Only one value per container.
         for (uint64_t value = min; value < max; value += step) {
@@ -499,7 +502,9 @@ roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
         uint8_t high48[ART_KEY_BYTES];
         split_key(min, high48);
         leaf_t leaf = add_container(r, container, typecode);
-        add_container_insert(&r->art, high48, leaf);
+        if (!insert_leaf_or_cleanup(r, high48, leaf)) {
+            break;
+        }
 
         uint64_t gap = container_max - container_min + step - 1;
         uint64_t increment = gap - (gap % step);
@@ -514,6 +519,9 @@ roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
 roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
                                             const uint64_t *vals) {
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
     roaring64_bitmap_add_many(r, n_args, vals);
     return r;
 }
@@ -615,7 +623,7 @@ void roaring64_bitmap_add_bulk(roaring64_bitmap_t *r,
 
 void roaring64_bitmap_add_many(roaring64_bitmap_t *r, size_t n_args,
                                const uint64_t *vals) {
-    if (n_args == 0) {
+    if (r == NULL || n_args == 0) {
         return;
     }
     const uint64_t *end = vals + n_args;
@@ -1177,9 +1185,11 @@ bool roaring64_bitmap_remove_run_compression(roaring64_bitmap_t *r) {
             uint8_t new_typecode;
             container_t *new_container =
                 convert_to_bitset_or_array_container(run, card, &new_typecode);
-            run_container_free(run);
-            replace_container(r, leaf, new_container, new_typecode);
-            removed = true;
+            if (new_container != NULL) {
+                run_container_free(run);
+                replace_container(r, leaf, new_container, new_typecode);
+                removed = true;
+            }
         }
         art_iterator_next(&it);
     }
@@ -1196,8 +1206,10 @@ bool roaring64_bitmap_run_optimize(roaring64_bitmap_t *r) {
         // created, convert_run_optimize does that internally.
         container_t *new_container = convert_run_optimize(
             get_container(r, *leaf), get_typecode(*leaf), &new_typecode);
-        replace_container(r, leaf, new_container, new_typecode);
-        has_run_container |= new_typecode == RUN_CONTAINER_TYPE;
+        if (new_container != NULL) {
+            replace_container(r, leaf, new_container, new_typecode);
+            has_run_container |= new_typecode == RUN_CONTAINER_TYPE;
+        }
         art_iterator_next(&it);
     }
     return has_run_container;
@@ -1508,6 +1520,12 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
                         get_typecode(leaf2), &typecode2);
                 }
 
+                if (container2 == NULL) {
+                    art_iterator_next(&it1);
+                    art_iterator_next(&it2);
+                    continue;
+                }
+
                 if (container2 != container) {
                     container_free(container, typecode);
                 }
@@ -1717,7 +1735,9 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                                                get_container(r2, leaf2),
                                                get_typecode(leaf2), &typecode2);
                 }
-                if (container2 != container1) {
+                if (container2 == NULL) {
+                    // OOM: keep container1 unchanged.
+                } else if (container2 != container1) {
                     container_free(container1, typecode1);
                     replace_container(r1, leaf1, container2, typecode2);
                 }
@@ -1732,7 +1752,21 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
             // Cases 2 and 3c: it2 is the only iterator or is before it1.
             leaf_t result_leaf =
                 copy_leaf_container(r2, r1, (leaf_t)*it2.value);
-            art_iterator_insert(&it1, it2.key, (art_val_t)result_leaf);
+            if (result_leaf != 0) {
+                bool inserted =
+                    it1_present
+                        ? art_iterator_insert(&it1, it2.key,
+                                              (art_val_t)result_leaf)
+                        : (add_container_insert(&r1->art, it2.key,
+                                                result_leaf) != NULL);
+                if (!inserted) {
+                    // OOM linking into the ART: free the just-copied container
+                    // so it is not leaked in r1's pool.
+                    container_free(get_container(r1, result_leaf),
+                                   get_typecode(result_leaf));
+                    remove_container(r1, result_leaf);
+                }
+            }
             art_iterator_next(&it2);
         }
     }
@@ -1852,7 +1886,7 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                     container2 = container_xor(container1, typecode1,
                                                get_container(r2, leaf2),
                                                get_typecode(leaf2), &typecode2);
-                    if (container2 != container1) {
+                    if (container2 != container1 && container2 != NULL) {
                         // We only free when doing container_xor, not
                         // container_ixor, as ixor frees the original
                         // internally.
@@ -1862,6 +1896,12 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                     container2 = container_ixor(
                         container1, typecode1, get_container(r2, leaf2),
                         get_typecode(leaf2), &typecode2);
+                }
+
+                if (container2 == NULL) {
+                    art_iterator_next(&it1);
+                    art_iterator_next(&it2);
+                    continue;
                 }
 
                 if (!container_nonzero_cardinality(container2, typecode2)) {
@@ -1888,11 +1928,25 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
             // Cases 2 and 3c: it2 is the only iterator or is before it1.
             leaf_t result_leaf =
                 copy_leaf_container(r2, r1, (leaf_t)*it2.value);
-            if (it1_present) {
-                art_iterator_insert(&it1, it2.key, (art_val_t)result_leaf);
-                art_iterator_next(&it1);
-            } else {
-                add_container_insert(&r1->art, it2.key, result_leaf);
+            if (result_leaf != 0) {
+                bool inserted;
+                if (it1_present) {
+                    inserted = art_iterator_insert(&it1, it2.key,
+                                                   (art_val_t)result_leaf);
+                    if (inserted) {
+                        art_iterator_next(&it1);
+                    }
+                } else {
+                    inserted = (add_container_insert(&r1->art, it2.key,
+                                                     result_leaf) != NULL);
+                }
+                if (!inserted) {
+                    // OOM linking into the ART: free the just-copied container
+                    // so it is not leaked in r1's pool.
+                    container_free(get_container(r1, result_leaf),
+                                   get_typecode(result_leaf));
+                    remove_container(r1, result_leaf);
+                }
             }
             art_iterator_next(&it2);
         }
@@ -1902,6 +1956,9 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
 roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
                                             const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    if (result == NULL) {
+        return NULL;
+    }
 
     art_iterator_t it1 = art_init_iterator((art_t *)&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator((art_t *)&r2->art, /*first=*/true);
@@ -1927,11 +1984,17 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
                     get_container(r2, leaf2), get_typecode(leaf2),
                     &result_typecode);
 
+                if (result_container == NULL) {  // allocation failure
+                    roaring64_bitmap_free(result);
+                    return NULL;
+                }
                 if (container_nonzero_cardinality(result_container,
                                                   result_typecode)) {
-                    leaf_t result_leaf = add_container(result, result_container,
-                                                       result_typecode);
-                    add_container_insert(&result->art, it1.key, result_leaf);
+                    if (!add_container_at(result, it1.key, result_container,
+                                          result_typecode)) {
+                        roaring64_bitmap_free(result);
+                        return NULL;
+                    }
                 } else {
                     container_free(result_container, result_typecode);
                 }
@@ -1943,7 +2006,10 @@ roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
             // Cases 1 and 2a: it1 is the only iterator or is before it2.
             leaf_t result_leaf =
                 copy_leaf_container(r1, result, (leaf_t)*it1.value);
-            add_container_insert(&result->art, it1.key, result_leaf);
+            if (!insert_leaf_or_cleanup(result, it1.key, result_leaf)) {
+                roaring64_bitmap_free(result);
+                return NULL;
+            }
             art_iterator_next(&it1);
         } else if (compare_result > 0) {
             // Case 2c: it1 is after it2.
@@ -1988,7 +2054,7 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                     container2 = container_andnot(
                         container1, typecode1, get_container(r2, leaf2),
                         get_typecode(leaf2), &typecode2);
-                    if (container2 != container1) {
+                    if (container2 != container1 && container2 != NULL) {
                         // We only free when doing container_andnot, not
                         // container_iandnot, as iandnot frees the original
                         // internally.
@@ -1998,6 +2064,12 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                     container2 = container_iandnot(
                         container1, typecode1, get_container(r2, leaf2),
                         get_typecode(leaf2), &typecode2);
+                }
+
+                if (container2 == NULL) {
+                    art_iterator_next(&it1);
+                    art_iterator_next(&it2);
+                    continue;
                 }
 
                 if (!container_nonzero_cardinality(container2, typecode2)) {
@@ -2255,6 +2327,9 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
     }
 
     roaring64_bitmap_t *answer = roaring64_bitmap_create();
+    if (answer == NULL) {
+        return NULL;
+    }
 
     // Decompose the offset into a signed container-level shift and an
     // intra-container shift. For negative offsets the low 16 bits wrap: e.g.
@@ -2290,7 +2365,10 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
                     get_copy_of_container(get_container(r, leaf), &typecode,
                                           /*copy_on_write=*/false);
                 leaf_t new_leaf = add_container(answer, container, typecode);
-                add_container_insert(&answer->art, new_high48, new_leaf);
+                if (!insert_leaf_or_cleanup(answer, new_high48, new_leaf)) {
+                    roaring64_bitmap_free(answer);
+                    return NULL;
+                }
             }
             art_iterator_next(&it);
         }
@@ -2332,16 +2410,24 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
                 uint8_t merged_type;
                 container_t *merged_c = container_ior(
                     existing_c, existing_type, lo, typecode, &merged_type);
-                if (merged_c != existing_c) {
-                    container_free(existing_c, existing_type);
+                if (merged_c == NULL) {
+                    container_free(lo, typecode);
+                } else {
+                    if (merged_c != existing_c) {
+                        container_free(existing_c, existing_type);
+                    }
+                    replace_container(answer, prev_hi_leaf, merged_c,
+                                       merged_type);
+                    container_free(lo, typecode);
                 }
-                replace_container(answer, prev_hi_leaf, merged_c, merged_type);
-                container_free(lo, typecode);
             } else {
                 uint8_t lo_high48[ART_KEY_BYTES];
                 split_key((uint64_t)k << 16, lo_high48);
                 leaf_t new_leaf = add_container(answer, lo, typecode);
-                add_container_insert(&answer->art, lo_high48, new_leaf);
+                if (!insert_leaf_or_cleanup(answer, lo_high48, new_leaf)) {
+                    roaring64_bitmap_free(answer);
+                    return NULL;
+                }
             }
         }
 
@@ -2350,8 +2436,11 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
             uint8_t hi_high48[ART_KEY_BYTES];
             split_key((uint64_t)(k + 1) << 16, hi_high48);
             leaf_t new_leaf = add_container(answer, hi, typecode);
-            prev_hi_leaf = add_container_insert(&answer->art, hi_high48,
-                                                  new_leaf);
+            if (!insert_leaf_or_cleanup(answer, hi_high48, new_leaf)) {
+                roaring64_bitmap_free(answer);
+                return NULL;
+            }
+            prev_hi_leaf = (leaf_t *)art_find(&answer->art, hi_high48);
             prev_hi_k = k + 1;
         }
 
@@ -2366,7 +2455,9 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
         uint8_t typecode = get_typecode(*leaf_ptr);
         container_t *repaired = container_repair_after_lazy(
             get_container(answer, *leaf_ptr), &typecode);
-        replace_container(answer, leaf_ptr, repaired, typecode);
+        if (repaired != NULL) {
+            replace_container(answer, leaf_ptr, repaired, typecode);
+        }
         art_iterator_next(&repair_it);
     }
 
@@ -2946,6 +3037,9 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     }
 
     roaring64_bitmap_t *r = roaring64_bitmap_create();
+    if (r == NULL) {
+        return NULL;
+    }
 
     // Flags.
     if (maxbytes < sizeof(r->flags)) {
