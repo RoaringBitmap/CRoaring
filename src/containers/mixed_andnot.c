@@ -19,12 +19,6 @@ namespace roaring {
 namespace internal {
 #endif
 
-static inline void bitset_free_on_failed_array_conversion(
-    bitset_container_t *bitset, container_t **dst) {
-    bitset_container_free(bitset);
-    *dst = NULL;
-}
-
 /* Compute the andnot of src_1 and src_2 and write the result to
  * dst, a valid array container that could be the same as dst.*/
 bool array_bitset_container_andnot(const array_container_t *src_1,

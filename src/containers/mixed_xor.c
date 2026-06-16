@@ -17,12 +17,6 @@ namespace roaring {
 namespace internal {
 #endif
 
-static inline void bitset_free_on_failed_array_conversion(
-    bitset_container_t *bitset, container_t **dst) {
-    bitset_container_free(bitset);
-    *dst = NULL;
-}
-
 /* Compute the xor of src_1 and src_2 and write the result to
  * dst (which has no container initially).
  * Result is true iff dst is a bitset  */
