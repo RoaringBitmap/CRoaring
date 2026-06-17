@@ -37,6 +37,7 @@ Portable Roaring bitmaps in C (and C++) with full support for your favorite comp
   - [Usage (Using conan)](#usage-using-conan)
   - [Usage (Using vcpkg on Windows, Linux and macOS)](#usage-using-vcpkg-on-windows-linux-and-macos)
 - [SIMD-related throttling](#simd-related-throttling)
+  - [WebAssembly SIMD128 / ARM Neon pairing](#webassembly-simd128-and-arm-neon-elif-hygiene)
 - [Thread safety](#thread-safety)
 - [How to best aggregate bitmaps?](#how-to-best-aggregate-bitmaps)
 - [Wrappers for Roaring Bitmaps](#wrappers-for-roaring-bitmaps)
@@ -1178,6 +1179,16 @@ To build with OpenHarmony SDK please see the [OpenHarmony Cross Compile Guide](h
 Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.
 
 Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.
+
+## WebAssembly SIMD128 and ARM Neon (elif hygiene)
+
+SIMD forks that are shared between **WebAssembly** (`-msimd128`) and **ARM Neon** often use `#elif defined(CROARING_WASM_SIMD)` and `#elif defined(CROARING_USENEON)` in the same source file. To catch structural mistakes (for example, more Wasm branches than Neon branches in a file that uses both), run:
+
+```bash
+bash tools/check_wasm_simd_neon_pairing.sh
+```
+
+That check is **not** a proof of algorithmic equivalence; it is a line-count / ordering heuristic. End-to-end behavioral parity of the amalgamation on native vs wasm is covered by `bash tools/run_wasm_differential_test.sh`, which you can run locally. The pairing linter runs in the GitHub Actions [emscripten workflow](.github/workflows/emscripten.yml); the differential digest job is wired into that workflow once wasm SIMD code lands (its SIMD-uplift guard needs SIMD present to assert against).
 
 # Thread safety
 

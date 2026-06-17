@@ -164,6 +164,19 @@ if(ENABLE_ROARING_TESTS AND BASH AND NOT EMSCRIPTEN)
     target_compile_definitions(amalgamate_demo_cpp PUBLIC ROARING_EXCEPTIONS=0)
   endif()
   add_test(amalgamate_demo_cpp amalgamate_demo_cpp)
+
+  add_custom_target(wasm_differential_test
+    COMMAND ${BASH} "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_wasm_differential_test.sh"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Native vs Emscripten WASM digest (needs emcc, node, wasm-objdump from WABT or Emscripten upstream)"
+    VERBATIM
+  )
+  add_custom_target(wasm_neon_simd_parity_check
+    COMMAND ${BASH} "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_wasm_simd_neon_pairing.sh"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Verify #elif NEON / Wasm SIMD preprocessor pairing under src/"
+    VERBATIM
+  )
 else()
   message(STATUS "Amalgamation tests disabled")
 endif()

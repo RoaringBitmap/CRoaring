@@ -11,9 +11,9 @@ jobs:
       - uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
       - name: Verify
         run: emcc -v
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v3.6.0
       - name: Configure
         run: emcmake cmake -B build
-      - name: Build # We build but do not test 
+      - name: Build
         run: cmake --build build
+      - name: NEON vs Wasm SIMD preprocessor pairing
+        run: bash tools/check_wasm_simd_neon_pairing.sh
