@@ -265,9 +265,6 @@ inline int roaring_leading_zeroes(unsigned long long input_num) {
 #define CROARING_NODISCARD
 #endif
 
-// Deprecated alias; prefer CROARING_NODISCARD.
-#define CROARING_WARN_UNUSED CROARING_NODISCARD
-
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
 #ifdef CROARING_USENEON
