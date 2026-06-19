@@ -130,7 +130,7 @@ inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r, bool cow) {
  * The returned pointer may be NULL in case of errors. The caller is responsible
  * for freeing the return bitmap.
  */
-roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *bm,
+roaring_bitmap_t *roaring_bitmap_add_offset(const roaring_bitmap_t *r,
                                             int64_t offset);
 /**
  * Describe the inner structure of the bitmap.
@@ -240,7 +240,7 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *r1,
 /**
  * Check whether a bitmap and an open range intersect.
  */
-bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm, uint64_t x,
+bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *r, uint64_t x,
                                          uint64_t y);
 
 /**

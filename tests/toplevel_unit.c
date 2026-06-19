@@ -150,26 +150,28 @@ DEFINE_TEST(range_contains) {
 }
 
 DEFINE_TEST(contains_bulk) {
-    roaring_bitmap_t *bm = roaring_bitmap_create();
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_array_t *ra = &r->high_low_container;
+
     roaring_bulk_context_t context = {0, 0, 0, 0};
 
     // Ensure checking an empty bitmap is okay
-    assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0));
-    assert_true(!roaring_bitmap_contains_bulk(bm, &context, 0xFFFFFFFF));
+    assert_true(!roaring_bitmap_contains_bulk(r, &context, 0));
+    assert_true(!roaring_bitmap_contains_bulk(r, &context, 0xFFFFFFFF));
 
     // create RLE container from [0, 1000]
-    roaring_bitmap_add_range_closed(bm, 0, 1000);
+    roaring_bitmap_add_range_closed(r, 0, 1000);
 
     // add array container from 77000
     for (uint32_t i = 77000; i < 87000; i += 2) {
-        roaring_bitmap_add(bm, i);
+        roaring_bitmap_add(r, i);
     }
     // add bitset container from 132000
     for (uint32_t i = 132000; i < 140000; i += 2) {
-        roaring_bitmap_add(bm, i);
+        roaring_bitmap_add(r, i);
     }
 
-    roaring_bitmap_add(bm, UINT32_MAX);
+    roaring_bitmap_add(r, UINT32_MAX);
 
     uint32_t values[] = {
         1000,            // 1
@@ -189,27 +191,23 @@ DEFINE_TEST(contains_bulk) {
 
     for (size_t i = 0; i < test_count; i++) {
         roaring_bulk_context_t empty_context = {0, 0, 0, 0};
-        bool expected_contains = roaring_bitmap_contains(bm, values[i]);
-        assert_true(expected_contains == roaring_bitmap_contains_bulk(
-                                             bm, &empty_context, values[i]));
+        bool expected_contains = roaring_bitmap_contains(r, values[i]);
         assert_true(expected_contains ==
-                    roaring_bitmap_contains_bulk(bm, &context, values[i]));
+                    roaring_bitmap_contains_bulk(r, &empty_context, values[i]));
+        assert_true(expected_contains ==
+                    roaring_bitmap_contains_bulk(r, &context, values[i]));
 
         if (expected_contains) {
             assert_int_equal(context.key, values[i] >> 16);
         }
         if (context.container != NULL) {
-            assert_uint_in_range(context.idx, 0,
-                                 bm->high_low_container.size - 1);
-            assert_ptr_equal(context.container,
-                             bm->high_low_container.containers[context.idx]);
-            assert_int_equal(context.key,
-                             bm->high_low_container.keys[context.idx]);
-            assert_int_equal(context.typecode,
-                             bm->high_low_container.typecodes[context.idx]);
+            assert_uint_in_range(context.idx, 0, ra->size - 1);
+            assert_ptr_equal(context.container, ra->containers[context.idx]);
+            assert_int_equal(context.key, ra->keys[context.idx]);
+            assert_int_equal(context.typecode, ra->typecodes[context.idx]);
         }
     }
-    roaring_bitmap_free(bm);
+    roaring_bitmap_free(r);
 }
 
 DEFINE_TEST(is_really_empty) {
@@ -401,41 +399,40 @@ void can_add_to_copies(bool copy_on_write) {
 }
 
 void convert_all_containers(roaring_bitmap_t *r, uint8_t dst_type) {
-    for (int32_t i = 0; i < r->high_low_container.size; i++) {
+    roaring_array_t *ra = &r->high_low_container;
+
+    for (int32_t i = 0; i < ra->size; i++) {
         // first step: convert src_type to ARRAY
-        if (r->high_low_container.typecodes[i] == BITSET_CONTAINER_TYPE) {
-            array_container_t *dst_container = array_container_from_bitset(
-                CAST_bitset(r->high_low_container.containers[i]));
-            bitset_container_free(
-                CAST_bitset(r->high_low_container.containers[i]));
-            r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE;
-        } else if (r->high_low_container.typecodes[i] == RUN_CONTAINER_TYPE) {
-            array_container_t *dst_container = array_container_from_run(
-                CAST_run(r->high_low_container.containers[i]));
-            run_container_free(CAST_run(r->high_low_container.containers[i]));
-            r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = ARRAY_CONTAINER_TYPE;
+        if (ra->typecodes[i] == BITSET_CONTAINER_TYPE) {
+            array_container_t *dst_container =
+                array_container_from_bitset(CAST_bitset(ra->containers[i]));
+            bitset_container_free(CAST_bitset(ra->containers[i]));
+            ra->containers[i] = dst_container;
+            ra->typecodes[i] = ARRAY_CONTAINER_TYPE;
+        } else if (ra->typecodes[i] == RUN_CONTAINER_TYPE) {
+            array_container_t *dst_container =
+                array_container_from_run(CAST_run(ra->containers[i]));
+            run_container_free(CAST_run(ra->containers[i]));
+            ra->containers[i] = dst_container;
+            ra->typecodes[i] = ARRAY_CONTAINER_TYPE;
         }
-        assert_true(r->high_low_container.typecodes[i] == ARRAY_CONTAINER_TYPE);
+        assert_true(ra->typecodes[i] == ARRAY_CONTAINER_TYPE);
 
         // second step: convert ARRAY to dst_type
         if (dst_type == BITSET_CONTAINER_TYPE) {
-            bitset_container_t *dst_container = bitset_container_from_array(
-                CAST_array(r->high_low_container.containers[i]));
-            array_container_free(
-                CAST_array(r->high_low_container.containers[i]));
-            r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = BITSET_CONTAINER_TYPE;
+            bitset_container_t *dst_container =
+                bitset_container_from_array(CAST_array(ra->containers[i]));
+            array_container_free(CAST_array(ra->containers[i]));
+            ra->containers[i] = dst_container;
+            ra->typecodes[i] = BITSET_CONTAINER_TYPE;
         } else if (dst_type == RUN_CONTAINER_TYPE) {
-            run_container_t *dst_container = run_container_from_array(
-                CAST_array(r->high_low_container.containers[i]));
-            array_container_free(
-                CAST_array(r->high_low_container.containers[i]));
-            r->high_low_container.containers[i] = dst_container;
-            r->high_low_container.typecodes[i] = RUN_CONTAINER_TYPE;
+            run_container_t *dst_container =
+                run_container_from_array(CAST_array(ra->containers[i]));
+            array_container_free(CAST_array(ra->containers[i]));
+            ra->containers[i] = dst_container;
+            ra->typecodes[i] = RUN_CONTAINER_TYPE;
         }
-        assert_true(r->high_low_container.typecodes[i] == dst_type);
+        assert_true(ra->typecodes[i] == dst_type);
     }
 }
 
@@ -521,16 +518,19 @@ void sbs_remove_many(sbs_t *sbs, size_t n_args, uint32_t *vals) {
 }
 
 bool sbs_check_type(sbs_t *sbs, uint8_t type) {
+    roaring_array_t *ra = &sbs->roaring->high_low_container;
+
     bool answer = true;
-    for (int32_t i = 0; i < sbs->roaring->high_low_container.size; i++) {
-        answer =
-            answer && (sbs->roaring->high_low_container.typecodes[i] == type);
+    for (int32_t i = 0; i < ra->size; i++) {
+        answer = answer && (ra->typecodes[i] == type);
     }
     return answer;
 }
 
 bool sbs_is_empty(sbs_t *sbs) {
-    return sbs->roaring->high_low_container.size == 0;
+    roaring_array_t *ra = &sbs->roaring->high_low_container;
+
+    return ra->size == 0;
 }
 
 void sbs_compare(sbs_t *sbs) {
@@ -601,7 +601,9 @@ DEFINE_TEST(test_stats) {
 DEFINE_TEST(with_huge_capacity) {
     roaring_bitmap_t *r = roaring_bitmap_create_with_capacity(UINT32_MAX);
     assert_non_null(r);
-    assert_int_equal(r->high_low_container.allocation_size, (1 << 16));
+    roaring_array_t *ra = &r->high_low_container;
+
+    assert_int_equal(ra->allocation_size, (1 << 16));
     roaring_bitmap_free(r);
 }
 
@@ -5224,10 +5226,12 @@ DEFINE_TEST(test_frozen_serialization) {
 
 DEFINE_TEST(test_frozen_serialization_max_containers) {
     roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_array_t *ra = &r->high_low_container;
+
     for (int64_t i = 0; i < 65536; i++) {
         roaring_bitmap_add(r, 65536 * i);
     }
-    assert_true(r->high_low_container.size == 65536);
+    assert_true(ra->size == 65536);
     frozen_serialization_compare(r);
 }
 
