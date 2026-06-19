@@ -237,13 +237,17 @@ static inline void tellmeall() {
 #if CROARING_IS_BIG_ENDIAN
     printf("# big-endian system detected\n");
 #endif /* CROARING_IS_BIG_ENDIAN */
-#if defined(__x86_64__) || defined(_M_X64) || defined(__amd64__)
+#if CROARING_IS_X64
     printf("# x64 processor detected\n");
+#elif defined(CROARING_IS_RISCV64)
+    printf("# RISC-V 64-bit processor detected\n");
+#elif defined(CROARING_IS_RISCV)
+    printf("# RISC-V processor detected\n");
 #elif defined(__arm__) || defined(__aarch64__) || defined(__arm64__) || \
     defined(_M_ARM) || defined(_M_ARM64)
     printf("# ARM processor detected\n");
 #else
-    printf("# Non-X64, non-ARM processor\n");
+    printf("# Non-x64, non-ARM, non-RISC-V processor\n");
 #endif /* architecture detection */
 #if defined(__clang__)
     printf("# compiler: clang %d.%d.%d\n", __clang_major__, __clang_minor__,
