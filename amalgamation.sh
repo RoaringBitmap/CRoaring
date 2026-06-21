@@ -65,6 +65,7 @@ $SCRIPTPATH/include/roaring/roaring64.h
 #
 ALL_PUBLIC_HH="
 $SCRIPTPATH/cpp/roaring/roaring.hh
+$SCRIPTPATH/cpp/roaring/roaring64.hh
 $SCRIPTPATH/cpp/roaring/roaring64map.hh
 "
 
