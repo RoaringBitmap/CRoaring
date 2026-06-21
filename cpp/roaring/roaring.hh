@@ -794,7 +794,7 @@ class Roaring {
     Roaring operator&(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_and(&roaring, &o.roaring);
         if (r == NULL) {
-            ROARING_TERMINATE("failed materalization in and");
+            ROARING_TERMINATE("failed materialization in and");
         }
         return Roaring(r);
     }
@@ -807,7 +807,7 @@ class Roaring {
     Roaring operator-(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_andnot(&roaring, &o.roaring);
         if (r == NULL) {
-            ROARING_TERMINATE("failed materalization in andnot");
+            ROARING_TERMINATE("failed materialization in andnot");
         }
         return Roaring(r);
     }
@@ -820,7 +820,7 @@ class Roaring {
     Roaring operator|(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_or(&roaring, &o.roaring);
         if (r == NULL) {
-            ROARING_TERMINATE("failed materalization in or");
+            ROARING_TERMINATE("failed materialization in or");
         }
         return Roaring(r);
     }
@@ -833,7 +833,7 @@ class Roaring {
     Roaring operator^(const Roaring &o) const {
         roaring_bitmap_t *r = api::roaring_bitmap_xor(&roaring, &o.roaring);
         if (r == NULL) {
-            ROARING_TERMINATE("failed materalization in xor");
+            ROARING_TERMINATE("failed materialization in xor");
         }
         return Roaring(r);
     }
