@@ -221,6 +221,16 @@ class Roaring64 {
     }
 
     /**
+     * Construct a bitmap from a list of uint64_t values.
+     * E.g., bitmapOfList({1,2,3}).
+     */
+    static Roaring64 bitmapOfList(std::initializer_list<uint64_t> l) {
+        Roaring64 ans;
+        ans.addMany(l.size(), l.begin());
+        return ans;
+    }
+
+    /**
      * Adds value x.
      */
     void add(uint64_t x) noexcept { api::roaring64_bitmap_add(roaring, x); }

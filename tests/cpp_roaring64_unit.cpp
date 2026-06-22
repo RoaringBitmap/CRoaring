@@ -67,7 +67,7 @@ DEFINE_TEST(test_cpp_r64_construction_helpers) {
     const uint64_t vals[] = {1, uint64_t(1) << 33, uint64_t(1) << 33, 7};
     Roaring64 r;
     r.addMany(4, vals);
-    assert_int_equal(r.cardinality(), 3);  // dup collapses
+    assert_int_equal(r.cardinality(), 3);
 
     Roaring64 il{1, 2, 3, 2};
     assert_int_equal(il.cardinality(), 3);
@@ -77,10 +77,14 @@ DEFINE_TEST(test_cpp_r64_construction_helpers) {
     assert_int_equal(bof.cardinality(), 3);
     assert_true(bof.contains(20));
 
+    Roaring64 bol = Roaring64::bitmapOfList({10, 20, 20, uint64_t(1) << 40});
+    assert_int_equal(bol.cardinality(), 3);
+    assert_true(bol.contains(uint64_t(1) << 40));
+
     // ctor from a (n, data) array.
     const uint64_t data[] = {100, uint64_t(1) << 60, 100, 7};
     Roaring64 from_data(4, data);
-    assert_int_equal(from_data.cardinality(), 3);  // dup collapses
+    assert_int_equal(from_data.cardinality(), 3);
     assert_true(from_data.contains(uint64_t(1) << 60));
     assert_true(from_data.contains(7));
 }
