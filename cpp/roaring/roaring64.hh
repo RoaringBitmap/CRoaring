@@ -93,7 +93,6 @@ class Roaring64ConstIterator {
 
     // TODO: operator-- for bidirectional iteration
 
-    /** True if both iterators are at the same position. */
     bool operator==(const Roaring64ConstIterator& o) const {
         bool a = atEnd();
         bool b = o.atEnd();
