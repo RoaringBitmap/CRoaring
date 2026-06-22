@@ -91,8 +91,6 @@ class Roaring64ConstIterator {
         return orig;
     }
 
-    // TODO: operator-- for bidirectional iteration
-
     bool operator==(const Roaring64ConstIterator& o) const {
         bool a = atEnd();
         bool b = o.atEnd();
@@ -127,8 +125,6 @@ class Roaring64 {
             ROARING_TERMINATE("failed memory alloc in roaring64_bitmap_create");
         }
     }
-
-    // TODO: Implement Roaring64(size_t n, const uint32_t *data)
 
     /**
      * Construct a bitmap from a list of 64-bit integer values.
@@ -236,12 +232,6 @@ class Roaring64 {
      */
     void add(uint64_t x) noexcept { api::roaring64_bitmap_add(roaring, x); }
 
-    // TODO: Implement addChecked(uint64_t x)
-
-    // TODO: Implement addRange(uint64_t min, uint64_t max)
-
-    // TODO: Implement addRangeClosed(uint64_t min, uint64_t max)
-
     /**
      * Adds 'n_args' values from the contiguous memory range starting at 'vals'.
      */
@@ -255,12 +245,6 @@ class Roaring64 {
     void remove(uint64_t x) noexcept {
         api::roaring64_bitmap_remove(roaring, x);
     }
-
-    // TODO: Implement removeChecked(uint64_t x)
-
-    // TODO: Implement removeRange(uint64_t min, uint64_t max)
-
-    // TODO: Implement removeRangeClosed(uint64_t min, uint64_t max)
 
     /**
      * Clears the bitmap.
@@ -287,10 +271,6 @@ class Roaring64 {
     bool contains(uint64_t x) const noexcept {
         return api::roaring64_bitmap_contains(roaring, x);
     }
-
-    // TODO: Implement containsRange(uint64_t min, uint64_t max)
-
-    // TODO: Implement containsRangeClosed(uint64_t min, uint64_t max)
 
     /**
      * Compute the intersection of the current bitmap and the provided bitmap,
@@ -350,44 +330,12 @@ class Roaring64 {
         return api::roaring64_bitmap_is_empty(roaring);
     }
 
-    // TODO: Implement isFull()
-
-    // TODO: Implement isSubset(const Roaring64 &r)
-
-    // TODO: Implement isStrictSubset(const Roaring64 &r)
-
     /**
      * Return true if the two bitmaps contain the same elements.
      */
     bool operator==(const Roaring64& r) const noexcept {
         return api::roaring64_bitmap_equals(roaring, r.roaring);
     }
-
-    // TODO: Implement flip(uint64_t min, uint64_t max)
-
-    // TODO: Implement flipClosed(uint64_t min, uint64_t max)
-
-    // TODO: Implement removeRunCompression()
-
-    // TODO: Implement runOptimize()
-
-    // TODO: Implement shrinkToFit()
-
-    // TODO: Implement select(uint64_t rank, uint64_t *element)
-
-    // TODO: Implement rank(uint64_t x)
-
-    // TODO: Implement getIndex(uint64_t x)
-
-    // TODO: Implement write(char *buf, bool portable) / getSizeInBytes(bool)
-
-    // TODO: Implement read(const char *buf, bool portable) / readSafe(...)
-
-    // TODO: Implement frozenView(const char *buf) / writeFrozen /
-    // getFrozenSizeInBytes
-
-    // TODO: Implement portableDeserializeFrozen(const char *buf)  (no C
-    // equivalent yet)
 
     /**
      * Computes the intersection between two bitmaps and returns new bitmap.
@@ -441,13 +389,6 @@ class Roaring64 {
         return Roaring64(result);
     }
 
-    // TODO: Implement setCopyOnWrite(bool val)  (COW unsupported by ART
-    // backend)
-
-    // TODO: Implement printf()
-
-    // TODO: Implement fastunion(size_t n, const Roaring64 **inputs)
-
     typedef Roaring64ConstIterator const_iterator;
 
     /**
@@ -462,8 +403,6 @@ class Roaring64 {
      */
     const_iterator end() const noexcept { return const_iterator(); }
 
-    // TODO: reverse iteration (rbegin/rend)
-
     /**
      * Write the values of the bitmap, in sorted order, to `ans`. The caller is
      * responsible for allocating space for cardinality() values.
@@ -471,8 +410,6 @@ class Roaring64 {
     void toArray(uint64_t* ans) const noexcept {
         api::roaring64_bitmap_to_uint64_array(roaring, ans);
     }
-
-    // TODO: Implement uint32_t convenience overloads (add/remove/contains/...)
 
    private:
     roaring64_bitmap_t* roaring;
