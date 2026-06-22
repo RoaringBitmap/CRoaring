@@ -220,8 +220,11 @@ DEFINE_TEST(test_cpp_r64_random_vs_set) {
     for (size_t i = 0; i < 5000; ++i) {
         if (!added.empty() && (next() & 3) == 0) {  // 25%
             // Remove an existing value.
-            uint64_t v = added[next() % added.size()];
+            size_t idx = next() % added.size();
+            uint64_t v = added[idx];
             r.remove(v);
+            added[idx] = added.back();
+            added.pop_back();
         } else {  // 75%
             // Add a new value.
             uint64_t high48 =
