@@ -257,14 +257,14 @@ class Roaring64 {
     void clear() noexcept { api::roaring64_bitmap_clear(roaring); }
 
     /**
-     * Return the largest value (if not empty)
+     * Returns the largest value in the set, or 0 if empty.
      */
     uint64_t maximum() const noexcept {
         return api::roaring64_bitmap_maximum(roaring);
     }
 
     /**
-     * Return the smallest value (if not empty)
+     * Returns the smallest value in the set, or UINT64_MAX if the set is empty.
      */
     uint64_t minimum() const noexcept {
         return api::roaring64_bitmap_minimum(roaring);

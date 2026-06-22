@@ -310,14 +310,14 @@ class Roaring {
     void clear() { api::roaring_bitmap_clear(&roaring); }
 
     /**
-     * Return the largest value (if not empty)
+     * Returns the greatest value in the set, or 0 if the set is empty.
      */
     uint32_t maximum() const noexcept {
         return api::roaring_bitmap_maximum(&roaring);
     }
 
     /**
-     * Return the smallest value (if not empty)
+     * Returns the smallest value in the set, or UINT32_MAX if the set is empty.
      */
     uint32_t minimum() const noexcept {
         return api::roaring_bitmap_minimum(&roaring);

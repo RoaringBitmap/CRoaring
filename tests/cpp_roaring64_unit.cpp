@@ -86,6 +86,11 @@ DEFINE_TEST(test_cpp_r64_construction_helpers) {
 }
 
 DEFINE_TEST(test_cpp_r64_minmax_equals) {
+    // Empty bitmap returns sentinel values.
+    Roaring64 empty;
+    assert_true(empty.minimum() == UINT64_MAX);
+    assert_true(empty.maximum() == 0);
+
     Roaring64 a{5, uint64_t(1) << 40, 7};
     assert_int_equal(a.minimum(), 5);
     assert_int_equal(a.maximum(), uint64_t(1) << 40);
