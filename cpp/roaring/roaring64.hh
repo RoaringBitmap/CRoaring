@@ -147,6 +147,8 @@ class Roaring64 {
 
     /**
      * Construct a roaring object by taking control of a malloc()'d C struct.
+     *
+     * Passing a NULL pointer is unsafe.
      * The pointer to the C struct will be invalid after the call.
      */
     explicit Roaring64(roaring64_bitmap_t* s) noexcept : roaring(s) {}
