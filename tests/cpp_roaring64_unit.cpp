@@ -2,6 +2,7 @@
  * Unit tests for the C++ roaring::Roaring64 class (ART-based 64-bit bitmap).
  */
 #include <cstdint>
+#include <iterator>
 #include <type_traits>
 #include <vector>
 
@@ -202,6 +203,44 @@ DEFINE_TEST(test_cpp_r64_iteration) {
     assert_int_equal(*it4, uint64_t(7));
 }
 
+DEFINE_TEST(test_cpp_r64_bidirectional) {
+    Roaring64 r{5, 7, 7, uint64_t(1) << 40, 5};
+
+    assert_int_equal(*std::prev(r.end()), uint64_t(1) << 40);
+
+    std::vector<uint64_t> backward;
+    for (auto it = r.end(); it != r.begin();) {
+        --it;
+        backward.push_back(*it);
+    }
+    std::vector<uint64_t> expected = {uint64_t(1) << 40, 7, 5};
+    assert_int_equal(backward.size(), expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        assert_int_equal(backward[i], expected[i]);
+    }
+
+    auto m = r.begin();
+    ++m;
+    ++m;
+    --m;
+    assert_int_equal(*m, uint64_t(7));
+
+    auto p = r.end();
+    --p;
+    auto q = p--;
+    assert_int_equal(*q, uint64_t(1) << 40);
+    assert_int_equal(*p, uint64_t(7));
+
+    // reverse over empty yields nothing
+    Roaring64 empty;
+    std::vector<uint64_t> rev_empty;
+    for (auto it = empty.end(); it != empty.begin();) {
+        --it;
+        rev_empty.push_back(*it);
+    }
+    assert_true(rev_empty.empty());
+}
+
 DEFINE_TEST(test_cpp_r64_random_vs_set) {
     doublechecked::Roaring64 r;
     std::vector<uint64_t> added;  // values that have been added
@@ -259,6 +298,7 @@ int main() {
         cmocka_unit_test(test_cpp_r64_minmax_equals),
         cmocka_unit_test(test_cpp_r64_set_ops),
         cmocka_unit_test(test_cpp_r64_iteration),
+        cmocka_unit_test(test_cpp_r64_bidirectional),
         cmocka_unit_test(test_cpp_r64_random_vs_set),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -22,38 +22,44 @@
 namespace roaring {
 
 /**
- * Const iterator of a Roaring64.
- * Wraps a roaring64_iterator_t. An end iterator holds a null handle.
+ * Const bidirectional iterator over a Roaring64.
  */
 class Roaring64ConstIterator {
    public:
-    typedef std::forward_iterator_tag iterator_category;
+    typedef std::bidirectional_iterator_tag iterator_category;
     typedef uint64_t value_type;
     typedef std::ptrdiff_t difference_type;
     typedef void pointer;
     typedef uint64_t reference;
 
-    /** Begin iterator over roaring64_bitmap_t. */
-    explicit Roaring64ConstIterator(const api::roaring64_bitmap_t* r)
-        : it(api::roaring64_iterator_create(r)) {}
+    /**
+     * Create an iterator over a bitmap.
+     * Begin if `first` is true, otherwise end.
+     */
 
-    /** End iterator. */
-    Roaring64ConstIterator() : it(nullptr) {}
+    explicit Roaring64ConstIterator(const api::roaring64_bitmap_t* r,
+                                    bool first = true)
+        : parent(r), it(first ? api::roaring64_iterator_create(r) : nullptr) {}
+
+    Roaring64ConstIterator() : parent(nullptr), it(nullptr) {}
 
     Roaring64ConstIterator(const Roaring64ConstIterator& o)
-        : it(o.it == nullptr ? nullptr : api::roaring64_iterator_copy(o.it)) {}
+        : parent(o.parent),
+          it(o.it == nullptr ? nullptr : api::roaring64_iterator_copy(o.it)) {}
 
     Roaring64ConstIterator& operator=(const Roaring64ConstIterator& o) {
         if (this != &o) {
             if (it != nullptr) {
                 api::roaring64_iterator_free(it);
             }
+            parent = o.parent;
             it = o.it == nullptr ? nullptr : api::roaring64_iterator_copy(o.it);
         }
         return *this;
     }
 
-    Roaring64ConstIterator(Roaring64ConstIterator&& o) noexcept : it(o.it) {
+    Roaring64ConstIterator(Roaring64ConstIterator&& o) noexcept
+        : parent(o.parent), it(o.it) {
         o.it = nullptr;
     }
 
@@ -62,6 +68,7 @@ class Roaring64ConstIterator {
             if (it != nullptr) {
                 api::roaring64_iterator_free(it);
             }
+            parent = o.parent;
             it = o.it;
             o.it = nullptr;
         }
@@ -91,6 +98,23 @@ class Roaring64ConstIterator {
         return orig;
     }
 
+    Roaring64ConstIterator& operator--() {
+        if (it == nullptr) {
+            // End holds no handle yet; create one at the parent's last value
+            it = api::roaring64_iterator_create_last(parent);
+        } else {
+            api::roaring64_iterator_previous(it);
+        }
+        return *this;
+    }
+
+    /** Postfix decrement. Returns the pre-decrement position. */
+    Roaring64ConstIterator operator--(int) {
+        Roaring64ConstIterator orig(*this);
+        --(*this);
+        return orig;
+    }
+
     bool operator==(const Roaring64ConstIterator& o) const {
         bool a = atEnd();
         bool b = o.atEnd();
@@ -110,6 +134,7 @@ class Roaring64ConstIterator {
         return it == nullptr || !api::roaring64_iterator_has_value(it);
     }
 
+    const api::roaring64_bitmap_t* parent;
     api::roaring64_iterator_t* it;
 };
 
@@ -395,13 +420,12 @@ class Roaring64 {
      * Return an iterator over the bitmap values, ordered from smallest to
      * largest.
      */
-    const_iterator begin() const { return const_iterator(roaring); }
+    const_iterator begin() const { return const_iterator(roaring, true); }
 
     /**
-     * A bogus iterator that can be used together with begin()
-     * for constructions such as: for (auto i = b.begin(); i != b.end(); ++i) {}
+     * Return a past-the-end iterator. Decrementing it yields the last value.
      */
-    const_iterator end() const noexcept { return const_iterator(); }
+    const_iterator end() const { return const_iterator(roaring, false); }
 
     /**
      * Write the values of the bitmap, in sorted order, to `ans`. The caller is
