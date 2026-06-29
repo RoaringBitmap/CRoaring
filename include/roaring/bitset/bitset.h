@@ -50,11 +50,11 @@ struct bitset_s {
 typedef struct bitset_s bitset_t;
 
 /* Create a new bitset. Return NULL in case of failure. */
-bitset_t *bitset_create(void);
+CROARING_NODISCARD bitset_t *bitset_create(void);
 
 /* Create a new bitset able to contain size bits. Return NULL in case of
  * failure. */
-bitset_t *bitset_create_with_capacity(size_t size);
+CROARING_NODISCARD bitset_t *bitset_create_with_capacity(size_t size);
 
 /* Free memory. */
 void bitset_free(bitset_t *bitset);
@@ -66,12 +66,13 @@ void bitset_clear(bitset_t *bitset);
 void bitset_fill(bitset_t *bitset);
 
 /* Create a copy */
-bitset_t *bitset_copy(const bitset_t *bitset);
+CROARING_NODISCARD bitset_t *bitset_copy(const bitset_t *bitset);
 
 /* For advanced users: Resize the bitset so that it can support newarraysize *
  * 64 bits. Return true in case of success, false for failure. Pad with zeroes
  * new buffer areas if requested. */
-bool bitset_resize(bitset_t *bitset, size_t newarraysize, bool padwithzeroes);
+CROARING_NODISCARD bool bitset_resize(bitset_t *bitset, size_t newarraysize,
+                                      bool padwithzeroes);
 
 /* returns how many bytes of memory the backend buffer uses */
 inline size_t bitset_size_in_bytes(const bitset_t *bitset) {
@@ -90,11 +91,11 @@ inline size_t bitset_size_in_words(const bitset_t *bitset) {
 
 /* For advanced users: Grow the bitset so that it can support newarraysize * 64
  * bits with padding. Return true in case of success, false for failure. */
-bool bitset_grow(bitset_t *bitset, size_t newarraysize);
+CROARING_NODISCARD bool bitset_grow(bitset_t *bitset, size_t newarraysize);
 
 /* attempts to recover unused memory, return false in case of
  * roaring_reallocation failure */
-bool bitset_trim(bitset_t *bitset);
+CROARING_NODISCARD bool bitset_trim(bitset_t *bitset);
 
 /* shifts all bits by 's' positions so that the bitset representing values
  * 1,2,10 would represent values 1+s, 2+s, 10+s */

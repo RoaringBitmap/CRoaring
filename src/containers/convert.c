@@ -21,6 +21,7 @@ namespace internal {
 // types.
 bitset_container_t *bitset_container_from_array(const array_container_t *ac) {
     bitset_container_t *ans = bitset_container_create();
+    if (ans == NULL) return NULL;
     int limit = array_container_cardinality(ac);
     for (int i = 0; i < limit; ++i) bitset_container_set(ans, ac->array[i]);
     return ans;
@@ -29,6 +30,7 @@ bitset_container_t *bitset_container_from_array(const array_container_t *ac) {
 bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     int card = run_container_cardinality(arr);
     bitset_container_t *answer = bitset_container_create();
+    if (answer == NULL) return NULL;
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         rle16_t vl = arr->runs[rlepos];
         bitset_set_lenrange(answer->words, vl.value, vl.length);
@@ -40,6 +42,7 @@ bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
 array_container_t *array_container_from_run(const run_container_t *arr) {
     array_container_t *answer =
         array_container_create_given_capacity(run_container_cardinality(arr));
+    if (answer == NULL) return NULL;
     answer->cardinality = 0;
     for (int rlepos = 0; rlepos < arr->n_runs; ++rlepos) {
         int run_start = arr->runs[rlepos].value;
@@ -55,6 +58,7 @@ array_container_t *array_container_from_run(const run_container_t *arr) {
 array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
     array_container_t *result =
         array_container_create_given_capacity(bits->cardinality);
+    if (result == NULL) return NULL;
     result->cardinality = bits->cardinality;
 #if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
@@ -90,6 +94,9 @@ static void add_run(run_container_t *rc, int s, int e) {
 run_container_t *run_container_from_array(const array_container_t *c) {
     int32_t n_runs = array_container_number_of_runs(c);
     run_container_t *answer = run_container_create_given_capacity(n_runs);
+    if (answer == NULL) {
+        return NULL;
+    }
     int prev = -2;
     int run_start = -1;
     int32_t card = c->cardinality;
@@ -120,6 +127,9 @@ container_t *convert_to_bitset_or_array_container(run_container_t *rc,
                                                   uint8_t *resulttype) {
     if (card <= DEFAULT_MAX_SIZE) {
         array_container_t *answer = array_container_create_given_capacity(card);
+        if (answer == NULL) {
+            return NULL;
+        }
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
             uint16_t run_start = rc->runs[rlepos].value;
@@ -136,6 +146,9 @@ container_t *convert_to_bitset_or_array_container(run_container_t *rc,
         return answer;
     }
     bitset_container_t *answer = bitset_container_create();
+    if (answer == NULL) {
+        return NULL;
+    }
     for (int rlepos = 0; rlepos < rc->n_runs; ++rlepos) {
         uint16_t run_start = rc->runs[rlepos].value;
         bitset_set_lenrange(answer->words, run_start, rc->runs[rlepos].length);
@@ -173,6 +186,12 @@ container_t *convert_run_to_efficient_container(run_container_t *c,
     if (card <= DEFAULT_MAX_SIZE) {
         // to array
         array_container_t *answer = array_container_create_given_capacity(card);
+        if (answer == NULL) {
+            // Allocation failed: this conversion is only an optimization, so
+            // keep the (valid) run container instead of failing.
+            *typecode_after = RUN_CONTAINER_TYPE;
+            return c;
+        }
         answer->cardinality = 0;
         for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
             int run_start = c->runs[rlepos].value;
@@ -188,6 +207,11 @@ container_t *convert_run_to_efficient_container(run_container_t *c,
 
     // else to bitset
     bitset_container_t *answer = bitset_container_create();
+    if (answer == NULL) {
+        // Allocation failed: keep the (valid) run container.
+        *typecode_after = RUN_CONTAINER_TYPE;
+        return c;
+    }
 
     for (int rlepos = 0; rlepos < c->n_runs; ++rlepos) {
         int start = c->runs[rlepos].value;
@@ -203,7 +227,10 @@ container_t *convert_run_to_efficient_container(run_container_t *c,
 container_t *convert_run_to_efficient_container_and_free(
     run_container_t *c, uint8_t *typecode_after) {
     container_t *answer = convert_run_to_efficient_container(c, typecode_after);
-    if (answer != c) run_container_free(c);
+    if (answer == NULL || answer == c) {
+        return c;
+    }
+    run_container_free(c);
     return answer;
 }
 
@@ -219,6 +246,10 @@ container_t *convert_run_optimize(container_t *c, uint8_t typecode_original,
     if (typecode_original == RUN_CONTAINER_TYPE) {
         container_t *newc =
             convert_run_to_efficient_container(CAST_run(c), typecode_after);
+        if (newc == NULL) {
+            *typecode_after = typecode_original;
+            return c;
+        }
         if (newc != c) {
             container_free(c, typecode_original);
         }
@@ -239,6 +270,11 @@ container_t *convert_run_optimize(container_t *c, uint8_t typecode_original,
         }
         // else convert array to run container
         run_container_t *answer = run_container_create_given_capacity(n_runs);
+        if (answer == NULL) {
+            // Allocation failed: keep the original array container unchanged.
+            *typecode_after = ARRAY_CONTAINER_TYPE;
+            return c;
+        }
         int prev = -2;
         int run_start = -1;
 
@@ -277,6 +313,11 @@ container_t *convert_run_optimize(container_t *c, uint8_t typecode_original,
         // BitmapContainer bc, int nbrRuns))
         assert(n_runs > 0);  // no empty bitmaps
         run_container_t *answer = run_container_create_given_capacity(n_runs);
+        if (answer == NULL) {
+            // Allocation failed: keep the original bitset container unchanged.
+            *typecode_after = BITSET_CONTAINER_TYPE;
+            return c;
+        }
 
         int long_ctr = 0;
         uint64_t cur_word = c_qua_bitset->words[0];
@@ -324,6 +365,10 @@ container_t *container_from_run_range(const run_container_t *run, uint32_t min,
                                       uint32_t max, uint8_t *typecode_after) {
     // We expect most of the time to end up with a bitset container
     bitset_container_t *bitset = bitset_container_create();
+    if (bitset == NULL) {
+        *typecode_after = BITSET_CONTAINER_TYPE;
+        return NULL;
+    }
     *typecode_after = BITSET_CONTAINER_TYPE;
     int32_t union_cardinality = 0;
     for (int32_t i = 0; i < run->n_runs; ++i) {
@@ -340,8 +385,12 @@ container_t *container_from_run_range(const run_container_t *run, uint32_t min,
     if (bitset->cardinality <= DEFAULT_MAX_SIZE) {
         // we need to convert to an array container
         array_container_t *array = array_container_from_bitset(bitset);
-        *typecode_after = ARRAY_CONTAINER_TYPE;
         bitset_container_free(bitset);
+        if (array == NULL) {
+            *typecode_after = BITSET_CONTAINER_TYPE;
+            return NULL;
+        }
+        *typecode_after = ARRAY_CONTAINER_TYPE;
         return array;
     }
     return bitset;

@@ -581,7 +581,8 @@ DEFINE_TEST(test_art_iterator_insert) {
     art_insert(&art, (art_key_chunk_t*)keys[0], values[0]);
     art_iterator_t iterator = art_init_iterator(&art, true);
     for (size_t i = 1; i < keys.size(); ++i) {
-        art_iterator_insert(&iterator, (art_key_chunk_t*)keys[i], values[i]);
+        assert_true(art_iterator_insert(&iterator, (art_key_chunk_t*)keys[i],
+                                        values[i]));
         assert_art_valid(&art);
         assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i]);
         assert_true(*iterator.value == values[i]);

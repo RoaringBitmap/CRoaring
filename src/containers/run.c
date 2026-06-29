@@ -79,7 +79,11 @@ bool run_container_add(run_container_t *run, uint16_t pos) {
             }
         }
     }
-    makeRoomAtIndex(run, (uint16_t)(index + 1));
+    if (!makeRoomAtIndex(run, (uint16_t)(index + 1))) {
+        // Allocation failed: the value could not be added; the container is
+        // left unchanged (and valid).
+        return false;
+    }
     run->runs[index + 1].value = pos;
     run->runs[index + 1].length = 0;
     return true;
@@ -110,9 +114,13 @@ int run_container_shrink_to_fit(run_container_t *src) {
     int savings = src->capacity - src->n_runs;
     src->capacity = src->n_runs;
     rle16_t *oldruns = src->runs;
-    src->runs =
+    rle16_t *newruns =
         (rle16_t *)roaring_realloc(oldruns, src->capacity * sizeof(rle16_t));
-    if (src->runs == NULL) roaring_free(oldruns);  // should never happen?
+    if (newruns == NULL) {
+        src->capacity += savings;
+        return 0;
+    }
+    src->runs = newruns;
     return savings;
 }
 /* Create a new run container. Return NULL in case of failure. */
@@ -130,6 +138,9 @@ run_container_t *run_container_clone(const run_container_t *src) {
     return run;
 }
 
+// Split c across a 16-bit boundary after adding offset. On OOM the caller may
+// receive only the low half (*loc); partial output is acceptable under the
+// memory policy.
 void run_container_offset(const run_container_t *c, container_t **loc,
                           container_t **hic, uint16_t offset) {
     run_container_t *lo = NULL, *hi = NULL;
@@ -155,6 +166,9 @@ void run_container_offset(const run_container_t *c, container_t **loc,
 
     if (loc && lo_cap) {
         lo = run_container_create_given_capacity(lo_cap);
+        if (lo == NULL) {
+            return;
+        }
         memcpy(lo->runs, c->runs, lo_cap * sizeof(rle16_t));
         lo->n_runs = lo_cap;
         for (unsigned int i = 0; i < lo_cap; ++i) {
@@ -165,6 +179,9 @@ void run_container_offset(const run_container_t *c, container_t **loc,
 
     if (hic && hi_cap) {
         hi = run_container_create_given_capacity(hi_cap);
+        if (hi == NULL) {
+            return;  // *loc may already be set; see function comment
+        }
         memcpy(hi->runs, c->runs + pivot, hi_cap * sizeof(rle16_t));
         hi->n_runs = hi_cap;
         for (unsigned int i = 0; i < hi_cap; ++i) {
@@ -196,39 +213,55 @@ void run_container_free(run_container_t *run) {
     roaring_free(run);
 }
 
-void run_container_grow(run_container_t *run, int32_t min, bool copy) {
+bool run_container_grow(run_container_t *run, int32_t min, bool copy) {
     int32_t newCapacity = (run->capacity == 0)   ? RUN_DEFAULT_INIT_SIZE
                           : run->capacity < 64   ? run->capacity * 2
                           : run->capacity < 1024 ? run->capacity * 3 / 2
                                                  : run->capacity * 5 / 4;
     if (newCapacity < min) newCapacity = min;
-    run->capacity = newCapacity;
-    assert(run->capacity >= min);
+    if (newCapacity <= run->capacity) {
+        return true;
+    }
+    assert(newCapacity >= min);
     if (copy) {
         rle16_t *oldruns = run->runs;
-        run->runs = (rle16_t *)roaring_realloc(oldruns,
-                                               run->capacity * sizeof(rle16_t));
-        if (run->runs == NULL) roaring_free(oldruns);
+        rle16_t *newruns =
+            (rle16_t *)roaring_realloc(oldruns, newCapacity * sizeof(rle16_t));
+        if (newruns == NULL) {
+            return false;
+        }
+        run->runs = newruns;
     } else {
         roaring_free(run->runs);
-        run->runs = (rle16_t *)roaring_malloc(run->capacity * sizeof(rle16_t));
+        run->runs = (rle16_t *)roaring_malloc(newCapacity * sizeof(rle16_t));
+        if (run->runs == NULL) {
+            // Keep the container in a consistent (empty) state so it can be
+            // safely freed and is not mistaken for having capacity.
+            run->capacity = 0;
+            run->n_runs = 0;
+            return false;
+        }
     }
-    // We may have run->runs == NULL.
+    run->capacity = newCapacity;
+    return true;
 }
 
-/* copy one container into another */
-void run_container_copy(const run_container_t *src, run_container_t *dst) {
+/* copy one container into another. Returns false on allocation failure. */
+bool run_container_copy(const run_container_t *src, run_container_t *dst) {
     const int32_t n_runs = src->n_runs;
     if (src->n_runs > dst->capacity) {
-        run_container_grow(dst, n_runs, false);
+        if (!run_container_grow(dst, n_runs, false)) {
+            return false;
+        }
     }
     dst->n_runs = n_runs;
     memcpy(dst->runs, src->runs, sizeof(rle16_t) * n_runs);
+    return true;
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_union(const run_container_t *src_1,
+bool run_container_union(const run_container_t *src_1,
                          const run_container_t *src_2, run_container_t *dst) {
     // TODO: this could be a lot more efficient
 
@@ -237,17 +270,15 @@ void run_container_union(const run_container_t *src_1,
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
         if (if1) {
-            run_container_copy(src_1, dst);
-            return;
+            return run_container_copy(src_1, dst);
         }
         if (if2) {
-            run_container_copy(src_2, dst);
-            return;
+            return run_container_copy(src_2, dst);
         }
     }
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
     if (dst->capacity < neededcapacity)
-        run_container_grow(dst, neededcapacity, false);
+        if (!run_container_grow(dst, neededcapacity, false)) return false;
     dst->n_runs = 0;
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
@@ -280,11 +311,12 @@ void run_container_union(const run_container_t *src_1,
         run_container_append(dst, src_1->runs[rlepos], &previousrle);
         rlepos++;
     }
+    return true;
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `src_1'
  */
-void run_container_union_inplace(run_container_t *src_1,
+bool run_container_union_inplace(run_container_t *src_1,
                                  const run_container_t *src_2) {
     // TODO: this could be a lot more efficient
 
@@ -293,18 +325,17 @@ void run_container_union_inplace(run_container_t *src_1,
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
         if (if1) {
-            return;
+            return true;
         }
         if (if2) {
-            run_container_copy(src_2, src_1);
-            return;
+            return run_container_copy(src_2, src_1);
         }
     }
     // we move the data to the end of the current array
     const int32_t maxoutput = src_1->n_runs + src_2->n_runs;
     const int32_t neededcapacity = maxoutput + src_1->n_runs;
     if (src_1->capacity < neededcapacity)
-        run_container_grow(src_1, neededcapacity, true);
+        if (!run_container_grow(src_1, neededcapacity, true)) return false;
     memmove(src_1->runs + maxoutput, src_1->runs,
             src_1->n_runs * sizeof(rle16_t));
     rle16_t *inputsrc1 = src_1->runs + maxoutput;
@@ -340,19 +371,20 @@ void run_container_union_inplace(run_container_t *src_1,
         run_container_append(src_1, inputsrc1[rlepos], &previousrle);
         rlepos++;
     }
+    return true;
 }
 
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result
  * to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_xor(const run_container_t *src_1,
+bool run_container_xor(const run_container_t *src_1,
                        const run_container_t *src_2, run_container_t *dst) {
     // don't bother to convert xor with full range into negation
     // since negation is implemented similarly
 
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
     if (dst->capacity < neededcapacity)
-        run_container_grow(dst, neededcapacity, false);
+        if (!run_container_grow(dst, neededcapacity, false)) return false;
 
     int32_t pos1 = 0;
     int32_t pos2 = 0;
@@ -380,29 +412,28 @@ void run_container_xor(const run_container_t *src_1,
                                              src_2->runs[pos2].length);
         pos2++;
     }
+    return true;
 }
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-void run_container_intersection(const run_container_t *src_1,
+bool run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst) {
     const bool if1 = run_container_is_full(src_1);
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
         if (if1) {
-            run_container_copy(src_2, dst);
-            return;
+            return run_container_copy(src_2, dst);
         }
         if (if2) {
-            run_container_copy(src_1, dst);
-            return;
+            return run_container_copy(src_1, dst);
         }
     }
     // TODO: this could be a lot more efficient, could use SIMD optimizations
     const int32_t neededcapacity = src_1->n_runs + src_2->n_runs;
     if (dst->capacity < neededcapacity)
-        run_container_grow(dst, neededcapacity, false);
+        if (!run_container_grow(dst, neededcapacity, false)) return false;
     dst->n_runs = 0;
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
@@ -460,6 +491,7 @@ void run_container_intersection(const run_container_t *src_1,
             dst->n_runs++;
         }
     }
+    return true;
 }
 
 /* Compute the size of the intersection of src_1 and src_2 . */
@@ -572,12 +604,13 @@ bool run_container_intersect(const run_container_t *src_1,
 
 /* Compute the difference of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-void run_container_andnot(const run_container_t *src_1,
+bool run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst) {
     // following Java implementation as of June 2016
 
     if (dst->capacity < src_1->n_runs + src_2->n_runs)
-        run_container_grow(dst, src_1->n_runs + src_2->n_runs, false);
+        if (!run_container_grow(dst, src_1->n_runs + src_2->n_runs, false))
+            return false;
 
     dst->n_runs = 0;
 
@@ -630,6 +663,7 @@ void run_container_andnot(const run_container_t *src_1,
             dst->n_runs += src_1->n_runs - rlepos1;
         }
     }
+    return true;
 }
 
 /*
@@ -741,8 +775,15 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     uint16_t cast_16;
     memcpy(&cast_16, buf, sizeof(uint16_t));
     container->n_runs = croaring_letoh16(cast_16);
-    if (container->n_runs > container->capacity)
-        run_container_grow(container, container->n_runs, false);
+    if (container->n_runs > container->capacity) {
+        if (!run_container_grow(container, container->n_runs, false)) {
+            // Allocation failed: leave the container empty (and valid). The
+            // caller pre-sizes the container, so this path is not normally
+            // reached.
+            container->n_runs = 0;
+            return run_container_size_in_bytes(container);
+        }
+    }
     if (container->n_runs > 0) {
 #if CROARING_IS_BIG_ENDIAN
         const char *in = buf + sizeof(uint16_t);

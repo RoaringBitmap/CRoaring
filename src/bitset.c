@@ -91,13 +91,18 @@ void bitset_shift_left(bitset_t *bitset, size_t s) {
     int inword_shift = s % 64;
     size_t as = bitset->arraysize;
     if (inword_shift == 0) {
-        bitset_resize(bitset, as + extra_words, false);
+        // On allocation failure leave the bitset unchanged (and valid).
+        if (!bitset_resize(bitset, as + extra_words, false)) {
+            return;
+        }
         // could be done with a memmove
         for (size_t i = as + extra_words; i > extra_words; i--) {
             bitset->array[i - 1] = bitset->array[i - 1 - extra_words];
         }
     } else {
-        bitset_resize(bitset, as + extra_words + 1, true);
+        if (!bitset_resize(bitset, as + extra_words + 1, true)) {
+            return;
+        }
         bitset->array[as + extra_words] =
             bitset->array[as - 1] >> (64 - inword_shift);
         for (size_t i = as + extra_words; i >= extra_words + 2; i--) {
@@ -121,7 +126,13 @@ void bitset_shift_right(bitset_t *bitset, size_t s) {
         for (size_t i = 0; i < as - extra_words; i++) {
             bitset->array[i] = bitset->array[i + extra_words];
         }
-        bitset_resize(bitset, as - extra_words, false);
+        // Shrinking with fill=false does not normally realloc, but
+        // bitset_resize is nodiscard: we must check it. This void API has no
+        // error channel, so on failure we return and leave the shifted words in
+        // place.
+        if (!bitset_resize(bitset, as - extra_words, false)) {
+            return;
+        }
 
     } else {
         for (size_t i = 0; i + extra_words + 1 < as; i++) {
@@ -131,7 +142,10 @@ void bitset_shift_right(bitset_t *bitset, size_t s) {
         }
         bitset->array[as - extra_words - 1] =
             (bitset->array[as - 1] >> inword_shift);
-        bitset_resize(bitset, as - extra_words, false);
+        // Same nodiscard check as the inword_shift == 0 branch above.
+        if (!bitset_resize(bitset, as - extra_words, false)) {
+            return;
+        }
     }
 }
 

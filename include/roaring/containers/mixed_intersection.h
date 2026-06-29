@@ -33,7 +33,8 @@ namespace internal {
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
  * valid container. */
-void array_bitset_container_intersection(const array_container_t *src_1,
+CROARING_NODISCARD
+bool array_bitset_container_intersection(const array_container_t *src_1,
                                          const bitset_container_t *src_2,
                                          array_container_t *dst);
 
@@ -58,7 +59,8 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
 /* Compute the intersection between src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
  * valid container. */
-void array_run_container_intersection(const array_container_t *src_1,
+CROARING_NODISCARD
+bool array_run_container_intersection(const array_container_t *src_1,
                                       const run_container_t *src_2,
                                       array_container_t *dst);
 

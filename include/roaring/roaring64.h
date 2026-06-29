@@ -56,14 +56,15 @@ typedef struct roaring64_bulk_context_s {
  * Client is responsible for calling `roaring64_bitmap_free()`.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_create(void);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_create(void);
 void roaring64_bitmap_free(roaring64_bitmap_t *r);
 
 /**
  * Returns a copy of a bitmap.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_copy(
+    const roaring64_bitmap_t *r);
 
 /**
  * Copies a bitmap from src to dest. It is assumed that the pointer dest
@@ -80,8 +81,8 @@ void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
 /**
  * Creates a new bitmap of a pointer to N 64-bit integers.
  */
-roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
-                                            const uint64_t *vals);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_of_ptr(
+    size_t n_args, const uint64_t *vals);
 
 #ifdef __cplusplus
 /**
@@ -128,15 +129,16 @@ roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
  * After calling this function, the original bitmap will be empty, and the
  * returned bitmap will contain all the values from the original bitmap.
  */
-roaring64_bitmap_t *roaring64_bitmap_move_from_roaring32(roaring_bitmap_t *r);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_move_from_roaring32(
+    roaring_bitmap_t *r);
 
 /**
  * Create a new bitmap containing all the values in [min, max) that are at a
  * distance k*step from min.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_from_range(uint64_t min, uint64_t max,
-                                                uint64_t step);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_from_range(
+    uint64_t min, uint64_t max, uint64_t step);
 
 /**
  * Adds the provided value to the bitmap.
@@ -411,8 +413,8 @@ bool roaring64_bitmap_is_strict_subset(const roaring64_bitmap_t *r1,
  *
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_and(const roaring64_bitmap_t *r1,
-                                         const roaring64_bitmap_t *r2);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_and(
+    const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2);
 
 /**
  * Computes the size of the intersection between two bitmaps.
@@ -456,8 +458,8 @@ double roaring64_bitmap_jaccard_index(const roaring64_bitmap_t *r1,
  * responsible for free-ing the result.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
-                                        const roaring64_bitmap_t *r2);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_or(
+    const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2);
 
 /**
  * Computes the size of the union between two bitmaps.
@@ -476,8 +478,8 @@ void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
  * bitmap. The caller is responsible for free-ing the result.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_xor(const roaring64_bitmap_t *r1,
-                                         const roaring64_bitmap_t *r2);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_xor(
+    const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2);
 
 /**
  * Computes the size of the symmetric difference (xor) between two bitmaps.
@@ -497,8 +499,8 @@ void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
  * bitmap. The caller is responsible for free-ing the result.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_andnot(const roaring64_bitmap_t *r1,
-                                            const roaring64_bitmap_t *r2);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_andnot(
+    const roaring64_bitmap_t *r1, const roaring64_bitmap_t *r2);
 
 /**
  * Computes the size of the difference (andnot) between two bitmaps.
@@ -519,8 +521,8 @@ void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
  * passed through unchanged.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_flip(const roaring64_bitmap_t *r,
-                                          uint64_t min, uint64_t max);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_flip(
+    const roaring64_bitmap_t *r, uint64_t min, uint64_t max);
 
 /**
  * Compute the negation of the bitmap in the interval [min, max].
@@ -528,8 +530,8 @@ roaring64_bitmap_t *roaring64_bitmap_flip(const roaring64_bitmap_t *r,
  * passed through unchanged.
  * The returned pointer may be NULL in case of errors.
  */
-roaring64_bitmap_t *roaring64_bitmap_flip_closed(const roaring64_bitmap_t *r,
-                                                 uint64_t min, uint64_t max);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_flip_closed(
+    const roaring64_bitmap_t *r, uint64_t min, uint64_t max);
 
 /**
  * In-place version of `roaring64_bitmap_flip`. Compute the negation of the
@@ -552,7 +554,7 @@ void roaring64_bitmap_flip_closed_inplace(roaring64_bitmap_t *r, uint64_t min,
  * overflow or underflow uint64_t are dropped. The caller is responsible for
  * freeing the returned bitmap.
  */
-roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
     const roaring64_bitmap_t *r, bool positive, uint64_t offset);
 
 /**
@@ -640,8 +642,8 @@ size_t roaring64_bitmap_portable_deserialize_size(const char *buf,
  * corresponds to the serialized bitmap. The CRoaring library does not provide
  * checksumming.
  */
-roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf,
-                                                               size_t maxbytes);
+CROARING_NODISCARD roaring64_bitmap_t *
+roaring64_bitmap_portable_deserialize_safe(const char *buf, size_t maxbytes);
 
 /**
  * Returns the number of bytes required to serialize this bitmap in a "frozen"
@@ -689,8 +691,8 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
  * compatible with little-endian systems. This is not a bug, it is by design,
  * since the format imitates C memory layout of roaring64_bitmap_t.
  */
-roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
-                                                 size_t maxbytes);
+CROARING_NODISCARD roaring64_bitmap_t *roaring64_bitmap_frozen_view(
+    const char *buf, size_t maxbytes);
 
 /**
  * Iterate over the bitmap elements. The function `iterator` is called once for
@@ -727,7 +729,8 @@ void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
  * to the first value and `roaring64_iterator_has_value()` returns true. The
  * value can be retrieved with `roaring64_iterator_value()`.
  */
-roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r);
+CROARING_NODISCARD roaring64_iterator_t *roaring64_iterator_create(
+    const roaring64_bitmap_t *r);
 
 /**
  * Create an iterator object that can be used to iterate through the values.
@@ -737,7 +740,7 @@ roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r);
  * to the last value and `roaring64_iterator_has_value()` returns true. The
  * value can be retrieved with `roaring64_iterator_value()`.
  */
-roaring64_iterator_t *roaring64_iterator_create_last(
+CROARING_NODISCARD roaring64_iterator_t *roaring64_iterator_create_last(
     const roaring64_bitmap_t *r);
 
 /**
@@ -758,7 +761,8 @@ void roaring64_iterator_reinit_last(const roaring64_bitmap_t *r,
  * Creates a copy of the iterator. Caller is responsible for calling
  * `roaring64_iterator_free()` on the resulting iterator.
  */
-roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it);
+CROARING_NODISCARD roaring64_iterator_t *roaring64_iterator_copy(
+    const roaring64_iterator_t *it);
 
 /**
  * Free the iterator.

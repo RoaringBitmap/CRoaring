@@ -127,6 +127,8 @@ class Roaring {
         // those bits were pointers into the structure memory itself.  If such
         // things were possible, a roaring_bitmap_move() API would be needed.
         //
+        // roaring_bitmap_init_cleared performs no allocation and cannot fail,
+        // which is what lets this move operation be noexcept.
         api::roaring_bitmap_init_cleared(&r.roaring);
     }
 
@@ -168,6 +170,8 @@ class Roaring {
         // !!! See notes in the Move Constructor regarding roaring_bitmap_move()
         //
         roaring = r.roaring;
+        // roaring_bitmap_init_cleared performs no allocation and cannot fail,
+        // which is what lets this move operation be noexcept.
         api::roaring_bitmap_init_cleared(&r.roaring);
 
         return *this;
@@ -449,7 +453,8 @@ class Roaring {
      */
     void rangeUint32Array(uint32_t *ans, size_t offset,
                           size_t limit) const noexcept {
-        api::roaring_bitmap_range_uint32_array(&roaring, offset, limit, ans);
+        (void)api::roaring_bitmap_range_uint32_array(&roaring, offset, limit,
+                                                     ans);
     }
 
     /**

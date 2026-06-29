@@ -238,15 +238,25 @@ container_t *container_clone(const container_t *c, uint8_t typecode) {
 container_t *shared_container_extract_copy(shared_container_t *sc,
                                            uint8_t *typecode) {
     assert(sc->typecode != SHARED_CONTAINER_TYPE);
-    *typecode = sc->typecode;
+    const uint8_t inner_typecode = sc->typecode;
     container_t *answer;
     if (croaring_refcount_dec(&sc->counter)) {
         answer = sc->container;
         sc->container = NULL;  // paranoid
         roaring_free(sc);
     } else {
-        answer = container_clone(sc->container, *typecode);
+        answer = container_clone(sc->container, inner_typecode);
+        if (answer == NULL) {
+            // dec() above already dropped the refcount (e.g. 2 -> 1) even
+            // though clone failed. Other COW bitmaps still point at this
+            // wrapper, so restore the count; otherwise a later extract could
+            // steal the inner container and leave them with a dangling SHARED
+            // pointer.
+            croaring_refcount_inc(&sc->counter);
+            return NULL;
+        }
     }
+    *typecode = inner_typecode;
     assert(*typecode != SHARED_CONTAINER_TYPE);
     return answer;
 }
