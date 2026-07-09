@@ -143,7 +143,7 @@ Linux or macOS users might follow the following instructions if they have a rece
  2. Create a new file named `demo.cpp` with this content:
     ```C++
     #include <iostream>
-    #include "roaring.hh" // the amalgamated roaring.hh includes roaring64map.hh
+    #include "roaring.hh" // the amalgamated roaring.hh includes roaring64map.hh and roaring64.hh
     #include "roaring.c"
     int main() {
         roaring::Roaring r1;
@@ -181,11 +181,11 @@ Linux or macOS users might follow the following instructions if they have a rece
 # How to use the library?
 
 The library offers both a C API (`roaring.h` for 32-bit bitmaps, `roaring64.h`
-for 64-bit bitmaps) and a C++ API (`roaring.hh` and `roaring64map.hh`). The two
-short programs below cover the most common operations: creating a bitmap, adding
-values, querying it, combining bitmaps with set operations, and iterating over
-the values. Both programs are part of our test suite, so they are guaranteed to
-compile and run.
+for 64-bit bitmaps) and a C++ API (`roaring.hh`, `roaring64map.hh`, and
+`roaring64.hh`). The two short programs below cover the most common operations:
+creating a bitmap, adding values, querying it, combining bitmaps with set
+operations, and iterating over the values. Both programs are part of our test
+suite, so they are guaranteed to compile and run.
 
 ## The C API
 
@@ -251,9 +251,10 @@ int main(void) {
 
 ## The C++ API
 
-The C++ classes (`roaring::Roaring` and `roaring::Roaring64Map`) wrap the C API
-and manage memory for you: the destructor frees the bitmap, and set operations
-are exposed as operators (`&`, `|`, `^`, `-`). No explicit `free` is required.
+The C++ classes (`roaring::Roaring`, `roaring::Roaring64Map`, and
+`roaring::Roaring64`) wrap the C API and manage memory for you: the destructor
+frees the bitmap, and set operations are exposed as operators (`&`, `|`, `^`,
+`-`). No explicit `free` is required.
 
 ```cpp
 #include <roaring/roaring.hh>
@@ -410,7 +411,8 @@ The C interface is found in the files
 We also have a C++ interface:
 
 - [roaring.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring.hh),
-- [roaring64map.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring64map.hh).
+- [roaring64map.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring64map.hh),
+- [roaring64.hh](https://github.com/RoaringBitmap/CRoaring/blob/master/cpp/roaring/roaring64.hh).
 
 
 # Main API functions
@@ -507,11 +509,12 @@ Below is an overview of the main functions provided by CRoaring in C, covering b
 
 # C++ API functions
 
-The C++ interface is provided via the `roaring.hh` (32-bit) and `roaring64map.hh` (64-bit) headers. These offer a modern, type-safe, and convenient API for manipulating Roaring bitmaps in C++.
+The C++ interface is provided via the `roaring.hh` (32-bit), `roaring64map.hh`, and `roaring64.hh` (64-bit) headers. These offer a modern, type-safe, and convenient API for manipulating Roaring bitmaps in C++.
 
 ## Main Classes
 - `roaring::Roaring` — 32-bit Roaring bitmap
-- `roaring::Roaring64Map` — 64-bit Roaring bitmap
+- `roaring::Roaring64Map` — 64-bit Roaring bitmap (`std::map`-based)
+- `roaring::Roaring64` — 64-bit Roaring bitmap (ART-based C API wrapper; experimental)
 
 ## Common Methods (32-bit and 64-bit)
 - `Roaring()` / `Roaring64Map()`
@@ -589,7 +592,9 @@ for (auto v : r3) {
 }
 ```
 
-For 64-bit values, use `#include "roaring64map.hh"` and the `Roaring64Map` class, which has a similar API.
+## 64-bit bitmaps
+
+For 64-bit values, there are two classes. `Roaring64Map` (`roaring64map.hh`) keys a `std::map` by the high 32 bits, each entry a 32-bit `Roaring` bitmap. `Roaring64` (`roaring64.hh`) wraps the C API's native 64-bit bitmap, which uses an Adaptive Radix Tree with 48-bit keys and 16-bit containers.
 
 
 # Dealing with large volumes of data
