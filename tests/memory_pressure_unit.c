@@ -1320,6 +1320,138 @@ static void exercise_cow_shared_range_oom(uint64_t fail_nth) {
 
 DEFINE_TEST(test_cow_shared_range_oom) { exercise_cow_shared_range_oom(1); }
 
+// Regression: XOR of an array container (cardinality >= 32) with a run
+// container drives array_run_container_xor, which builds a temporary container
+// from the run via array_container_from_run / bitset_container_from_run. Both
+// can return NULL under OOM; the temporary must not be dereferenced (this is
+// the same family as issue #841). We cover both the small-run branch
+// (array_container_from_run, run cardinality <= DEFAULT_MAX_SIZE) and the
+// large-run branch (bitset_container_from_run).
+static void exercise_xor_array_run_oom(void) {
+    restore_default_allocator();
+    // ~100 sparse values in chunk 0 stay an array container (cardinality >= 32).
+    roaring_bitmap_t *arr = roaring_bitmap_create();
+    if (arr != NULL) {
+        for (uint32_t v = 0; v < 100u; v++) {
+            roaring_bitmap_add(arr, v * 3u);
+        }
+    }
+    // Contiguous ranges become run containers after run_optimize.
+    roaring_bitmap_t *small_run = roaring_bitmap_from_range(0u, 300u, 1u);
+    roaring_bitmap_t *large_run = roaring_bitmap_from_range(0u, 9000u, 1u);
+    if (arr == NULL || small_run == NULL || large_run == NULL) {
+        roaring_bitmap_free(arr);
+        roaring_bitmap_free(small_run);
+        roaring_bitmap_free(large_run);
+        fail_msg("failed to build xor array/run inputs");
+    }
+    roaring_bitmap_run_optimize(small_run);
+    roaring_bitmap_run_optimize(large_run);
+    assert_bitmap32_valid(arr);
+
+    roaring_bitmap_t *runs[2] = {small_run, large_run};
+    bool saw_failure = false;
+    for (size_t ri = 0; ri < 2; ri++) {
+        for (uint64_t fail_nth = 1; fail_nth <= 40; fail_nth++) {
+            restore_default_allocator();
+            roaring_bitmap_t *a = roaring_bitmap_copy(arr);
+            if (a == NULL) {
+                continue;
+            }
+            install_fail_nth_allocator(fail_nth);
+            roaring_bitmap_xor_inplace(a, runs[ri]);  // must not crash on OOM
+            restore_default_allocator();
+            assert_bitmap32_valid(a);
+            if (g_failalloc.alloc_failures > 0) {
+                saw_failure = true;
+            }
+            roaring_bitmap_free(a);
+        }
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(arr);
+    roaring_bitmap_free(small_run);
+    roaring_bitmap_free(large_run);
+    assert_true(saw_failure);
+}
+
+DEFINE_TEST(test_xor_array_run_oom) { exercise_xor_array_run_oom(); }
+
+// Regression: roaring_bitmap_andnot with an empty first operand allocates the
+// empty result via roaring_bitmap_create(), which can fail under OOM. The
+// result must be NULL-checked before roaring_bitmap_set_copy_on_write().
+static void exercise_andnot_empty_oom(void) {
+    bool saw_failure = false;
+    for (uint64_t fail_nth = 1; fail_nth <= 4; fail_nth++) {
+        restore_default_allocator();
+        roaring_bitmap_t *empty = roaring_bitmap_create();  // empty first operand
+        roaring_bitmap_t *other = roaring_bitmap_from_range(0u, 100u, 1u);
+        if (empty == NULL || other == NULL) {
+            roaring_bitmap_free(empty);
+            roaring_bitmap_free(other);
+            fail_msg("failed to build andnot-empty inputs");
+        }
+        roaring_bitmap_set_copy_on_write(other, true);
+
+        install_fail_nth_allocator(fail_nth);
+        roaring_bitmap_t *res = roaring_bitmap_andnot(empty, other);  // no crash
+        restore_default_allocator();
+
+        assert_bitmap32_valid(res);  // res may be NULL under OOM (acceptable)
+        if (g_failalloc.alloc_failures > 0) {
+            saw_failure = true;
+        }
+        roaring_bitmap_free(res);
+        roaring_bitmap_free(empty);
+        roaring_bitmap_free(other);
+    }
+    assert_true(saw_failure);
+}
+
+DEFINE_TEST(test_andnot_empty_oom) { exercise_andnot_empty_oom(); }
+
+// Regression: roaring_bitmap_remove_range_closed on a COW copy whose container
+// is shared. When ra_unshare_container_at_index fails under OOM the container
+// stays shared; the range cannot be removed, but the shared wrapper must be
+// kept as a survivor rather than dropped by the compaction pass (which would
+// leak it). LeakSanitizer at process exit is the primary check here.
+static void exercise_cow_remove_range_leak_oom(uint64_t seed) {
+    roaring_bitmap_t *parent = make_cow_shared_parent_bitmap();
+
+    bool saw_failure = false;
+    for (uint32_t round = 0; round < 60u; round++) {
+        restore_default_allocator();
+        roaring_bitmap_t *cow = roaring_bitmap_copy(parent);
+        if (cow == NULL) {
+            roaring_bitmap_free(parent);
+            fail_msg("failed to copy COW shared bitmap for remove-range test");
+        }
+
+        install_failing_allocator_modulo(seed + (uint64_t)round, 3u);
+        roaring_bitmap_remove_range_closed(cow, 100u, 40400u);
+        restore_default_allocator();
+
+        assert_bitmap32_valid(cow);
+        assert_bitmap32_valid(parent);
+        if (g_failalloc.alloc_failures > 0) {
+            saw_failure = true;
+        }
+        roaring_bitmap_free(cow);
+    }
+
+    restore_default_allocator();
+    roaring_bitmap_free(parent);
+    assert_true(saw_failure);
+}
+
+DEFINE_TEST(test_cow_remove_range_leak_oom) {
+    static const uint64_t seeds[] = {0x5EED1u, 0x5EED2u, 0x5EED3u};
+    for (size_t i = 0; i < sizeof(seeds) / sizeof(seeds[0]); ++i) {
+        exercise_cow_remove_range_leak_oom(seeds[i]);
+    }
+}
+
 static void exercise_inplace_merge_insert_oom(void) {
     restore_default_allocator();
     roaring_bitmap_t *high_base = roaring_bitmap_from_range(40000u, 40100u, 1u);
@@ -1447,6 +1579,9 @@ int main(void) {
         cmocka_unit_test(test_cow_inplace_oom_paths),
         cmocka_unit_test(test_cow_shared_remove_many_oom),
         cmocka_unit_test(test_cow_shared_range_oom),
+        cmocka_unit_test(test_xor_array_run_oom),
+        cmocka_unit_test(test_andnot_empty_oom),
+        cmocka_unit_test(test_cow_remove_range_leak_oom),
         cmocka_unit_test(test_inplace_merge_insert_oom),
         cmocka_unit_test(test_cow_add_remove_oom_paths),
         cmocka_unit_test(test_memory_pressure_roaring32),

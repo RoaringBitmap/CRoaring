@@ -145,12 +145,20 @@ int array_run_container_xor(const array_container_t *src_1,
         // Java implementation works with the array, xoring the run elements via
         // iterator
         array_container_t *temp = array_container_from_run(src_2);
+        if (temp == NULL) {  // allocation failure
+            *dst = NULL;
+            return 0;
+        }
         bool ret_is_bitset = array_array_container_xor(temp, src_1, dst);
         array_container_free(temp);
         return ret_is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE;
 
     } else {  // guess that it will end up as a bitset
         bitset_container_t *result = bitset_container_from_run(src_2);
+        if (result == NULL) {  // allocation failure
+            *dst = NULL;
+            return 0;
+        }
         bool is_bitset = bitset_array_container_ixor(result, src_1, dst);
         // any necessary type conversion has been done by the ixor
         int retval = (is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE);

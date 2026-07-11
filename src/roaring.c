@@ -422,7 +422,15 @@ void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min,
         container_t *new_container;
         uint8_t new_type;
         if (ra->typecodes[src] == SHARED_CONTAINER_TYPE) {
+            // OOM during unshare: the container is still shared, so the range
+            // cannot be removed from it. Keep it as a survivor at dst;
+            // otherwise the compaction below drops the slot without freeing
+            // the shared wrapper (a leak).
+            ra_replace_key_and_container_at_index(ra, dst, ra->keys[src],
+                                                  ra->containers[src],
+                                                  ra->typecodes[src]);
             src++;
+            dst++;
             continue;
         }
         new_container =
@@ -1492,6 +1500,9 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
               length2 = x2->high_low_container.size;
     if (0 == length1) {
         roaring_bitmap_t *empty_bitmap = roaring_bitmap_create();
+        if (empty_bitmap == NULL) {
+            return NULL;
+        }
         roaring_bitmap_set_copy_on_write(empty_bitmap,
                                          is_cow(x1) || is_cow(x2));
         return empty_bitmap;
@@ -1926,8 +1937,10 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf) {
         memcpy(&card, bufaschar + 1, sizeof(uint32_t));
         card = croaring_letoh32(card);
 
-        const uint32_t *elems =
-            (const uint32_t *)(bufaschar + 1 + sizeof(uint32_t));
+        // The elements follow the type byte and the cardinality. They may not
+        // be 4-byte aligned, so we index a char pointer and read with memcpy;
+        // forming a (misaligned) uint32_t* would be undefined behavior.
+        const char *elems = bufaschar + 1 + sizeof(uint32_t);
 
         roaring_bitmap_t *bitmap = roaring_bitmap_create();
         if (bitmap == NULL) {
@@ -1935,9 +1948,8 @@ roaring_bitmap_t *roaring_bitmap_deserialize(const void *buf) {
         }
         roaring_bulk_context_t context = CROARING_ZERO_INITIALIZER;
         for (uint32_t i = 0; i < card; i++) {
-            // elems may not be aligned, read with memcpy
             uint32_t elem;
-            memcpy(&elem, elems + i, sizeof(elem));
+            memcpy(&elem, elems + i * sizeof(uint32_t), sizeof(elem));
             elem = croaring_letoh32(elem);
             roaring_bitmap_add_bulk(bitmap, &context, elem);
         }
