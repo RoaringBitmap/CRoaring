@@ -1645,6 +1645,13 @@ static int run_negation_range_tests(int k, int h, int start_offset, int r_start,
     return 1;
 }
 
+/* The negation-range sweeps below take about 24 seconds each and dominate the
+ * runtime of the whole test suite, so they are disabled by default. Set this to
+ * 1 when working on run container negation. */
+#define CROARING_SLOW_NEGATION_RANGE_TESTS 0
+
+#if CROARING_SLOW_NEGATION_RANGE_TESTS
+
 /* Version that does not check whether return types and inplaceness are
  * right */
 
@@ -1738,6 +1745,8 @@ DEFINE_TEST(run_many_negation_range_tests_simpler_notinplace) {
 DEFINE_TEST(run_many_negation_range_tests_simpler_inplace) {
     run_many_negation_range_tests_simpler(true);
 }
+
+#endif  // CROARING_SLOW_NEGATION_RANGE_TESTS
 
 /* result is a bitset */
 DEFINE_TEST(run_negation_range_inplace_test1) {
@@ -2006,8 +2015,6 @@ int main() {
         cmocka_unit_test(bitset_negation_range_test2),
         cmocka_unit_test(bitset_negation_range_inplace_test1),
         cmocka_unit_test(bitset_negation_range_inplace_test2),
-        cmocka_unit_test(run_many_negation_range_tests_simpler_notinplace),
-        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),
         cmocka_unit_test(run_negation_range_inplace_test1),
         cmocka_unit_test(run_negation_range_inplace_test2),
         cmocka_unit_test(run_negation_range_inplace_test3),
@@ -2026,18 +2033,10 @@ int main() {
         cmocka_unit_test(run_negation_range_test7),
         cmocka_unit_test(run_negation_range_test8),
         cmocka_unit_test(run_negation_range_test9),
-        /* two very expensive tests that probably should usually be
-           omitted */
-
-        /*cmocka_unit_test(
-            run_many_negation_range_tests_simpler_notinplace),  // lots
-        of
-                                                                //
-        partial
-                                                                //
-        ranges,
-        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),*/
-        /* */
+#if CROARING_SLOW_NEGATION_RANGE_TESTS
+        cmocka_unit_test(run_many_negation_range_tests_simpler_notinplace),
+        cmocka_unit_test(run_many_negation_range_tests_simpler_inplace),
+#endif
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
