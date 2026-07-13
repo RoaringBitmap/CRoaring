@@ -1329,7 +1329,8 @@ DEFINE_TEST(test_cow_shared_range_oom) { exercise_cow_shared_range_oom(1); }
 // large-run branch (bitset_container_from_run).
 static void exercise_xor_array_run_oom(void) {
     restore_default_allocator();
-    // ~100 sparse values in chunk 0 stay an array container (cardinality >= 32).
+    // ~100 sparse values in chunk 0 stay an array container (cardinality >=
+    // 32).
     roaring_bitmap_t *arr = roaring_bitmap_create();
     if (arr != NULL) {
         for (uint32_t v = 0; v < 100u; v++) {
@@ -1385,7 +1386,8 @@ static void exercise_andnot_empty_oom(void) {
     bool saw_failure = false;
     for (uint64_t fail_nth = 1; fail_nth <= 4; fail_nth++) {
         restore_default_allocator();
-        roaring_bitmap_t *empty = roaring_bitmap_create();  // empty first operand
+        roaring_bitmap_t *empty =
+            roaring_bitmap_create();  // empty first operand
         roaring_bitmap_t *other = roaring_bitmap_from_range(0u, 100u, 1u);
         if (empty == NULL || other == NULL) {
             roaring_bitmap_free(empty);
@@ -1395,7 +1397,8 @@ static void exercise_andnot_empty_oom(void) {
         roaring_bitmap_set_copy_on_write(other, true);
 
         install_fail_nth_allocator(fail_nth);
-        roaring_bitmap_t *res = roaring_bitmap_andnot(empty, other);  // no crash
+        roaring_bitmap_t *res =
+            roaring_bitmap_andnot(empty, other);  // no crash
         restore_default_allocator();
 
         assert_bitmap32_valid(res);  // res may be NULL under OOM (acceptable)
