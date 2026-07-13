@@ -1,14 +1,15 @@
 var searchData=
 [
-  ['below_0',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md38',1,'']]],
-  ['best_20aggregate_20bitmaps_1',['How to best aggregate bitmaps?',['../index.html#autotoc_md45',1,'']]],
+  ['below_0',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md39',1,'']]],
+  ['best_20aggregate_20bitmaps_1',['How to best aggregate bitmaps?',['../index.html#autotoc_md46',1,'']]],
   ['bit_20and_2064_20bit_2',['Common Methods (32-bit and 64-bit)',['../index.html#autotoc_md25',1,'']]],
-  ['bit_20roaring_20bitmaps_20c_3',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md35',1,'']]],
-  ['bitmaps_4',['bitmaps',['../index.html#autotoc_md45',1,'How to best aggregate bitmaps?'],['../index.html#autotoc_md46',1,'Wrappers for Roaring Bitmaps']]],
-  ['bitmaps_20c_5',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md35',1,'']]],
-  ['bitsets_20c_6',['Conventional bitsets (C)',['../index.html#autotoc_md36',1,'']]],
-  ['building_20openharmony_7',['Building (OpenHarmony)',['../index.html#autotoc_md42',1,'']]],
-  ['building_20visual_20studio_20under_20windows_8',['Building (Visual Studio under Windows)',['../index.html#autotoc_md39',1,'']]],
-  ['building_20with_20cmake_20linux_20and_20macos_20visual_20studio_20or_20openharmony_20users_20should_20see_20below_9',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md38',1,'']]],
-  ['bulk_20operations_10',['Bulk Operations',['../index.html#autotoc_md29',1,'']]]
+  ['bit_20bitmaps_3',['64-bit bitmaps',['../index.html#autotoc_md31',1,'']]],
+  ['bit_20roaring_20bitmaps_20c_4',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md36',1,'']]],
+  ['bitmaps_5',['bitmaps',['../index.html#autotoc_md31',1,'64-bit bitmaps'],['../index.html#autotoc_md46',1,'How to best aggregate bitmaps?'],['../index.html#autotoc_md47',1,'Wrappers for Roaring Bitmaps']]],
+  ['bitmaps_20c_6',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md36',1,'']]],
+  ['bitsets_20c_7',['Conventional bitsets (C)',['../index.html#autotoc_md37',1,'']]],
+  ['building_20openharmony_8',['Building (OpenHarmony)',['../index.html#autotoc_md43',1,'']]],
+  ['building_20visual_20studio_20under_20windows_9',['Building (Visual Studio under Windows)',['../index.html#autotoc_md40',1,'']]],
+  ['building_20with_20cmake_20linux_20and_20macos_20visual_20studio_20or_20openharmony_20users_20should_20see_20below_10',['Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)',['../index.html#autotoc_md39',1,'']]],
+  ['bulk_20operations_11',['Bulk Operations',['../index.html#autotoc_md29',1,'']]]
 ];
