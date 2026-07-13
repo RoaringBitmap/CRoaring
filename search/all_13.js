@@ -1,15 +1,15 @@
 var searchData=
 [
   ['readme_2emd_0',['README.md',['../da/ddd/README_8md.html',1,'']]],
-  ['redis_20module_1',['Redis Module',['../index.html#autotoc_md55',1,'']]],
-  ['references_20about_20roaring_2',['References about Roaring',['../index.html#autotoc_md60',1,'']]],
-  ['related_20throttling_3',['SIMD-related throttling',['../index.html#autotoc_md44',1,'']]],
+  ['redis_20module_1',['Redis Module',['../index.html#autotoc_md56',1,'']]],
+  ['references_20about_20roaring_2',['References about Roaring',['../index.html#autotoc_md61',1,'']]],
+  ['related_20throttling_3',['SIMD-related throttling',['../index.html#autotoc_md45',1,'']]],
   ['removing_20values_4',['Adding and Removing Values',['../index.html#autotoc_md16',1,'']]],
   ['requirements_5',['Requirements',['../index.html#autotoc_md4',1,'']]],
-  ['roaring_6',['References about Roaring',['../index.html#autotoc_md60',1,'']]],
+  ['roaring_6',['References about Roaring',['../index.html#autotoc_md61',1,'']]],
   ['roaring_20as_20a_20cpm_20dependency_7',['Using Roaring as a CPM dependency',['../index.html#autotoc_md10',1,'']]],
-  ['roaring_20bitmaps_8',['Wrappers for Roaring Bitmaps',['../index.html#autotoc_md47',1,'']]],
-  ['roaring_20bitmaps_20c_9',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md36',1,'']]],
+  ['roaring_20bitmaps_8',['Wrappers for Roaring Bitmaps',['../index.html#autotoc_md48',1,'']]],
+  ['roaring_20bitmaps_20c_9',['Compressed 64-bit Roaring bitmaps (C)',['../index.html#autotoc_md37',1,'']]],
   ['roaring_2eh_10',['roaring.h',['../dc/d56/roaring_8h.html',1,'']]],
   ['roaring64_2eh_11',['roaring64.h',['../d8/d01/roaring64_8h.html',1,'']]],
   ['roaring64_5fbitmap_5fadd_12',['roaring64_bitmap_add',['../d8/d01/roaring64_8h.html#a511b38d167a3c0f4ddfbd5c8ca7b6f19',1,'roaring64.h']]],
@@ -236,5 +236,5 @@ var searchData=
   ['roaring_5fuint32_5frange_5fclosed_5ft_233',['roaring_uint32_range_closed_t',['../dc/d56/roaring_8h.html#ae46680416b421ae17f6e201b0b3aac6c',1,'roaring.h']]],
   ['roaring_5funshare_5fall_234',['roaring_unshare_all',['../dc/d56/roaring_8h.html#a273c78a958942b3ebaa38110823fb5b2',1,'roaring.h']]],
   ['running_20microbenchmarks_235',['Running microbenchmarks',['../index.html#autotoc_md33',1,'']]],
-  ['rust_236',['Rust',['../index.html#autotoc_md53',1,'']]]
+  ['rust_236',['Rust',['../index.html#autotoc_md54',1,'']]]
 ];

@@ -655,7 +655,10 @@ Custom memory allocators</h1>
 <div class="line">    .aligned_free = roaring_bitmap_aligned_free,</div>
 <div class="line">};</div>
 </div><!-- fragment --><p>We require that the <code>free</code>/<code>aligned_free</code> functions follow the C convention where <code>free(NULL)</code>/<code>aligned_free(NULL)</code> have no effect.</p>
-<h1><a class="anchor" id="autotoc_md35"></a>
+<h2><a class="anchor" id="autotoc_md35"></a>
+Memory allocation policy</h2>
+<p>The CRoaring library makes it easy to provide your own memory allocation functions. If a memory allocation fails (for example, due to an out-of-memory condition), we recommend that you halt your process. We provide no guarantees of consistency or correctness after a memory allocation failure.</p>
+<h1><a class="anchor" id="autotoc_md36"></a>
 Example (C)</h1>
 <p>This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a <code>roaring</code> directory. If you are working from the amalgamation script, you may add the line <code>#include "roaring.c"</code> if you are not linking against a prebuilt CRoaring library and replace <code>#include &lt;<a class="el" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</code> by <code>#include "roaring.h"</code>.</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dc/d56/roaring_8h.html">roaring/roaring.h</a>&gt;</span></div>
@@ -849,7 +852,7 @@ Example (C)</h1>
 <div class="ttc" id="aroaring_8h_html_aa7d6e6919e46905bf7e5ddd824f3eb55"><div class="ttname"><a href="dc/d56/roaring_8h.html#aa7d6e6919e46905bf7e5ddd824f3eb55">roaring_uint32_iterator_read</a></div><div class="ttdeci">uint32_t roaring_uint32_iterator_read(roaring_uint32_iterator_t *it, uint32_t *buf, uint32_t count)</div></div>
 <div class="ttc" id="aroaring_8h_html_aeb2bce70178e0d7ba0096eb96beed660"><div class="ttname"><a href="dc/d56/roaring_8h.html#aeb2bce70178e0d7ba0096eb96beed660">roaring_bitmap_printf</a></div><div class="ttdeci">void roaring_bitmap_printf(const roaring_bitmap_t *r)</div></div>
 <div class="ttc" id="aroaring_8h_html_af6611d4a7cb36e597353ce944104e3f6"><div class="ttname"><a href="dc/d56/roaring_8h.html#af6611d4a7cb36e597353ce944104e3f6">roaring_bitmap_of_ptr</a></div><div class="ttdeci">roaring_bitmap_t * roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals)</div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md36"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md37"></a>
 Compressed 64-bit Roaring bitmaps (C)</h1>
 <p>We also support efficient 64-bit compressed bitmaps in C:</p>
 <div class="fragment"><div class="line">++</div>
@@ -858,7 +861,7 @@ Compressed 64-bit Roaring bitmaps (C)</h1>
 <div class="line"> printf(<span class="stringliteral">&quot;cardinality (64-bit) = %d\n&quot;</span>, (<span class="keywordtype">int</span>) <a class="code hl_function" href="d8/d01/roaring64_8h.html#af1c9e7991db9341d1b3da6989395e444">roaring64_bitmap_get_cardinality</a>(r2));</div>
 <div class="line"> <a class="code hl_function" href="d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free</a>(r2);</div>
 </div><!-- fragment --><p>The API is similar to the conventional 32-bit bitmaps. Please see the header file <code><a class="el" href="d8/d01/roaring64_8h.html">roaring64.h</a></code> (compare with <code><a class="el" href="dc/d56/roaring_8h.html">roaring.h</a></code>).</p>
-<h1><a class="anchor" id="autotoc_md37"></a>
+<h1><a class="anchor" id="autotoc_md38"></a>
 Conventional bitsets (C)</h1>
 <p>We support convention bitsets (uncompressed) as part of the library.</p>
 <p>Simple example:</p>
@@ -912,7 +915,7 @@ Conventional bitsets (C)</h1>
 <div class="line"><a class="code hl_function" href="dc/d56/roaring_8h.html#a77dba28e5abf41cbd2502b0fffc5eeeb">roaring_bitmap_free</a>(r1);</div>
 <div class="ttc" id="aroaring_8h_html_a981ceddb33269e47cc3c61b9bf71a450"><div class="ttname"><a href="dc/d56/roaring_8h.html#a981ceddb33269e47cc3c61b9bf71a450">roaring_bitmap_to_bitset</a></div><div class="ttdeci">bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset)</div></div>
 </div><!-- fragment --><p>You should be aware that a convention bitset (<code>bitset_t *</code>) may use much more memory than a Roaring bitmap in some cases. You should run benchmarks to determine whether the conversion to a bitset has performance benefits in your case.</p>
-<h1><a class="anchor" id="autotoc_md38"></a>
+<h1><a class="anchor" id="autotoc_md39"></a>
 Example (C++)</h1>
 <p>This example assumes that CRoaring has been build and that you are linking against the corresponding library. By default, CRoaring will install its header files in a <code>roaring</code> directory so you may need to replace <code>#include "roaring.hh"</code> by <code>#include &lt;roaring/roaring.hh&gt;</code>. If you are working from the amalgamation script, you may add the line <code>#include "roaring.c"</code> if you are not linking against a CRoaring prebuilt library.</p>
 <div class="fragment"><div class="line"> ++</div>
@@ -1021,7 +1024,7 @@ Example (C++)</h1>
 <div class="line">    j.move_equalorlarger(4);  <span class="comment">// *j == 4</span></div>
 <div class="line">    <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md39"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md40"></a>
 Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)</h1>
 <p>CRoaring follows the standard cmake workflow. Starting from the root directory of the project (CRoaring), you can do:</p>
 <div class="fragment"><div class="line">mkdir -p build</div>
@@ -1048,7 +1051,7 @@ Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should 
 <div class="fragment"><div class="line">./tools/clang-format-check.sh</div>
 </div><!-- fragment --><p>To reformat your code according to the style convention (make sure that <code>clang-format</code> is installed):</p>
 <div class="fragment"><div class="line">./tools/clang-format.sh</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md40"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md41"></a>
 Building (Visual Studio under Windows)</h1>
 <p>We are assuming that you have a common Windows PC with at least Visual Studio 2015, and an x64 processor.</p>
 <p>To build with at least Visual Studio 2015 from the command line:</p><ul>
@@ -1067,13 +1070,13 @@ Building (Visual Studio under Windows)</h1>
 <li>For testing, in the Standard toolbar, drop the <code>Select Startup Item...</code> menu and choose one of the tests. Run the test by pressing the button to the left of the dropdown.</li>
 </ul>
 <p>We have optimizations specific to AVX2 and AVX-512 in the code, and they are turned dynamically based on the detected hardware at runtime.</p>
-<h2><a class="anchor" id="autotoc_md41"></a>
+<h2><a class="anchor" id="autotoc_md42"></a>
 Usage (Using &lt;tt&gt;conan&lt;/tt&gt;)</h2>
 <p>You can install pre-built binaries for <code>roaring</code> or build it from source using <a href="https://conan.io/">Conan</a>. Use the following command to install latest version:</p>
 <div class="fragment"><div class="line">conan install --requires=&quot;roaring/[*]&quot; --build=missing</div>
 </div><!-- fragment --><p>For detailed instructions on how to use Conan, please refer to the <a href="https://docs.conan.io/2/">Conan documentation</a>.</p>
 <p>The <code>roaring</code> Conan recipe is kept up to date by Conan maintainers and community contributors. If the version is out of date, please <a href="https://github.com/conan-io/conan-center-index">create an issue or pull request</a> on the ConanCenterIndex repository.</p>
-<h2><a class="anchor" id="autotoc_md42"></a>
+<h2><a class="anchor" id="autotoc_md43"></a>
 Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 <p><a href="https://github.com/Microsoft/vcpkg">vcpkg</a> users on Windows, Linux and macOS can download and install <code>roaring</code> with one single command from their favorite shell.</p>
 <p>On Linux and macOS:</p>
@@ -1086,14 +1089,14 @@ Usage (Using &lt;tt&gt;vcpkg&lt;/tt&gt; on Windows, Linux and macOS)</h2>
 </div><!-- fragment --><p>will build and install <code>roaring</code> as a static library.</p>
 <p>These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.</p>
 <p>If you find the version of <code>roaring</code> shipped with <code>vcpkg</code> is out-of-date, feel free to report it to <code>vcpkg</code> community either by submiting an issue or by creating a PR.</p>
-<h1><a class="anchor" id="autotoc_md43"></a>
+<h1><a class="anchor" id="autotoc_md44"></a>
 Building (OpenHarmony)</h1>
 <p>To build with OpenHarmony SDK please see the <a href="https://gitcode.com/openharmony-sig/tpc_c_cplusplus/blob/master/Cross-Compilation Guide for Open-Source Third-Party Libraries in OpenHarmony_en.md">OpenHarmony Cross Compile Guide</a></p>
-<h1><a class="anchor" id="autotoc_md44"></a>
+<h1><a class="anchor" id="autotoc_md45"></a>
 SIMD-related throttling</h1>
 <p>Our AVX2 code does not use floating-point numbers or multiplications, so it is not subject to turbo frequency throttling on many-core Intel processors.</p>
 <p>Our AVX-512 code is only enabled on recent hardware (Intel Ice Lake or better and AMD Zen 4) where SIMD-specific frequency throttling is not observed.</p>
-<h1><a class="anchor" id="autotoc_md45"></a>
+<h1><a class="anchor" id="autotoc_md46"></a>
 Thread safety</h1>
 <p>Like, for example, STL containers, the CRoaring library has no built-in thread support. Thus whenever you modify a bitmap in one thread, it is unsafe to query it in others. However, you can safely copy a bitmap and use both copies in concurrently.</p>
 <p>If you use "copy-on-write" (default to disabled), then you should pass copies to the different threads. They will create shared containers, and for shared containers, we use reference counting with an atomic counter.</p>
@@ -1120,7 +1123,7 @@ Thread safety</h1>
 <div class="line">std::thread thread1(run, rarray1);</div>
 <div class="line">std::thread thread2(run, rarray2);</div>
 <div class="ttc" id="aroaring_8h_html_a84bd77c991d7520ab336433b3dff4cf5"><div class="ttname"><a href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a></div><div class="ttdeci">void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r, bool cow)</div><div class="ttdef"><b>Definition</b> <a href="dc/d56/roaring_8h_source.html#l00117">roaring.h:117</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md46"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md47"></a>
 How to best aggregate bitmaps?</h1>
 <p>Suppose you want to compute the union (OR) of many bitmaps. How do you proceed? There are many different strategies.</p>
 <p>You can use <code>roaring_bitmap_or_many(bitmapcount, bitmaps)</code> or <code>roaring_bitmap_or_many_heap(bitmapcount, bitmaps)</code> or you may even roll your own aggregation:</p>
@@ -1132,54 +1135,54 @@ How to best aggregate bitmaps?</h1>
 <p>The <code>roaring_bitmap_or_many</code> is meant as a good default. It works by trying to delay work as much as possible. However, because it delays computations, it also does not optimize the format as the computation runs. It might thus fail to see some useful pattern in the data such as long consecutive values.</p>
 <p>The approach based on repeated calls to <code>roaring_bitmap_or_inplace</code> is also fine, and might even be faster in some cases. You can expect it to be faster if, after a few calls, you get long sequences of consecutive values in the answer. That is, if the final answer is all integers in the range [0,1000000), and this is apparent quickly, then the later <code>roaring_bitmap_or_inplace</code> will be very fast.</p>
 <p>You should benchmark these alternatives on your own data to decide what is best.</p>
-<h1><a class="anchor" id="autotoc_md47"></a>
+<h1><a class="anchor" id="autotoc_md48"></a>
 Wrappers for Roaring Bitmaps</h1>
 <p>This page lists several community-contributed wrappers for the Roaring Bitmap library, enabling its use in various programming languages and environments.</p>
-<h2><a class="anchor" id="autotoc_md48"></a>
+<h2><a class="anchor" id="autotoc_md49"></a>
 Python</h2>
 <p>Tom Cornebize developed a Python wrapper, <b>PyRoaringBitMap</b>, which can be found at <a href="https://github.com/Ezibenroc/PyRoaringBitMap">https://github.com/Ezibenroc/PyRoaringBitMap</a>.</p>
 <p>Installation is straightforward using pip:</p>
 <div class="fragment"><div class="line">pip install pyroaring</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md49"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md50"></a>
 JavaScript (Node.js)</h2>
 <p>Salvatore Previti created a Node.js wrapper, <b>roaring-node</b>, available at <a href="https://github.com/SalvatorePreviti/roaring-node">https://github.com/SalvatorePreviti/roaring-node</a>.</p>
 <p>You can install it via npm with the following command:</p>
 <div class="fragment"><div class="line">npm install roaring</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md50"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md51"></a>
 Swift</h2>
 <p>Jérémie Piotte authored the <a href="https://github.com/RoaringBitmap/SwiftRoaring">Swift wrapper</a>.</p>
-<h2><a class="anchor" id="autotoc_md51"></a>
+<h2><a class="anchor" id="autotoc_md52"></a>
 C</h2>
 <p>There is a C# wrapper, <b>CRoaring.Net</b>, located at <a href="https://github.com/k-wojcik/Roaring.Net">https://github.com/k-wojcik/Roaring.Net</a>. This wrapper is compatible with Windows and Linux on x64 processors.</p>
-<h2><a class="anchor" id="autotoc_md52"></a>
+<h2><a class="anchor" id="autotoc_md53"></a>
 Go (Golang)</h2>
 <p>A Go wrapper is available at the official RoaringBitmap GitHub organization: <a href="https://github.com/RoaringBitmap/gocroaring">https://github.com/RoaringBitmap/gocroaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md53"></a>
+<h2><a class="anchor" id="autotoc_md54"></a>
 Rust</h2>
 <p>Saulius Grigaliunas developed a Rust wrapper, <b>croaring-rs</b>, which can be found at <a href="https://github.com/saulius/croaring-rs">https://github.com/saulius/croaring-rs</a>.</p>
-<h2><a class="anchor" id="autotoc_md54"></a>
+<h2><a class="anchor" id="autotoc_md55"></a>
 D</h2>
 <p>Yuce Tekol created a D wrapper, <b>droaring</b>, available at <a href="https://github.com/yuce/droaring">https://github.com/yuce/droaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md55"></a>
+<h2><a class="anchor" id="autotoc_md56"></a>
 Redis Module</h2>
 <p>Antonio Guilherme Ferreira Viggiano wrote a Redis Module integrating Roaring Bitmaps, available at <a href="https://github.com/aviggiano/redis-roaring">https://github.com/aviggiano/redis-roaring</a>.</p>
-<h2><a class="anchor" id="autotoc_md56"></a>
+<h2><a class="anchor" id="autotoc_md57"></a>
 Zig</h2>
 <p>Justin Whear contributed a Zig wrapper, located at <a href="https://github.com/jwhear/roaring-zig">https://github.com/jwhear/roaring-zig</a>.</p>
-<h1><a class="anchor" id="autotoc_md57"></a>
+<h1><a class="anchor" id="autotoc_md58"></a>
 Mailing list/discussion group</h1>
 <p><a href="https://groups.google.com/forum/#!forum/roaring-bitmaps">https://groups.google.com/forum/#!forum/roaring-bitmaps</a></p>
-<h1><a class="anchor" id="autotoc_md58"></a>
+<h1><a class="anchor" id="autotoc_md59"></a>
 Contributing</h1>
 <p>When contributing a change to the project, please run <code>tools/run-clangcldocker.sh</code> after making any changes if you have docker and bash. A github action runs on all PRs to ensure formatting is consistent with this.</p>
 <p>If you are using AI, please review our AI usage policy.</p>
 <p>For large PRs, prefer smaller incremental PRs or request staged review.</p>
 <p>Contributions are licensed under the project’s license. Ensure your work complies and does not infringe on third-party rights.</p>
 <p>A compiler or static-analyzer warning is not a bug. Do not report such cases as bugs. We do accept pull requests if you want to silence warnings issued by code analyzers, however.</p>
-<h1><a class="anchor" id="autotoc_md59"></a>
+<h1><a class="anchor" id="autotoc_md60"></a>
 Stars</h1>
 <p><a href="https://www.star-history.com/#RoaringBitmap/CRoaring&amp;Date"><img src="https://api.star-history.com/svg?repos=RoaringBitmap/CRoaring&amp;type=Date" alt="Star History Chart" class="inline"/></a></p>
-<h1><a class="anchor" id="autotoc_md60"></a>
+<h1><a class="anchor" id="autotoc_md61"></a>
 References about Roaring</h1>
 <ul>
 <li>Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience Volume 48, Issue 4 April 2018 Pages 867-895 <a href="https://arxiv.org/abs/1709.07821">arXiv:1709.07821</a></li>
