@@ -671,6 +671,10 @@ We require that the `free`/`aligned_free` functions follow the C
 convention where `free(NULL)`/`aligned_free(NULL)` have no effect.
 
 
+## Memory allocation policy
+
+The CRoaring library makes it easy to provide your own memory allocation functions. If a memory allocation fails (for example, due to an out-of-memory condition), we recommend that you halt your process. We provide no guarantees of consistency or correctness after a memory allocation failure.
+
 # Example (C)
 
 
