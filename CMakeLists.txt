@@ -52,6 +52,7 @@ option(ROARING_BUILD_C_TESTS_AS_CPP "Build test C files using C++ compilation" O
 option(ROARING_SANITIZE "Sanitize addresses" OFF)
 option(ROARING_SANITIZE_THREADS "Sanitize threads" OFF)
 option(ROARING_SANITIZE_UNDEFINED "Sanitize undefined behaviors" OFF)
+option(ROARING_SANITIZE_MEMORY "Sanitize memory (MemorySanitizer)" OFF)
 option(ROARING_UNSAFE_FROZEN_TESTS "If ON, tests some frozen functions which are unsafe as they include unaligned reads, this can cause crashes" OFF)
 
 option(ENABLE_ROARING_TESTS "If OFF, disable unit tests altogether" ON)

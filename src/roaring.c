@@ -2823,6 +2823,10 @@ void roaring_bitmap_rank_many(const roaring_bitmap_t *bm, const uint32_t *begin,
             iter++;
         }
     }
+    while (iter != end) {  // must have N outputs for N inputs...
+        *(ans++) = size;   // ...everything left is beyond all containers
+        iter++;
+    }
 }
 
 /**
