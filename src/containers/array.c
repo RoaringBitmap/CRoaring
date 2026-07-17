@@ -100,6 +100,9 @@ array_container_t *array_container_clone(const array_container_t *src) {
     return newcontainer;
 }
 
+// Split c across a 16-bit boundary after adding offset. On OOM the caller may
+// receive only the low half (*loc) and not the high half; that partial result
+// is structurally valid and acceptable under the library memory policy.
 void array_container_offset(const array_container_t *c, container_t **loc,
                             container_t **hic, uint16_t offset) {
     array_container_t *lo = NULL, *hi = NULL;
@@ -110,6 +113,9 @@ void array_container_offset(const array_container_t *c, container_t **loc,
     lo_cap = count_less(c->array, c->cardinality, top);
     if (loc && lo_cap) {
         lo = array_container_create_given_capacity(lo_cap);
+        if (lo == NULL) {
+            return;
+        }
         for (int i = 0; i < lo_cap; ++i) {
             lo->array[i] = c->array[i] + offset;
         }
@@ -120,6 +126,9 @@ void array_container_offset(const array_container_t *c, container_t **loc,
     hi_cap = c->cardinality - lo_cap;
     if (hic && hi_cap) {
         hi = array_container_create_given_capacity(hi_cap);
+        if (hi == NULL) {
+            return;  // *loc may already be set; see function comment
+        }
         for (int i = 0; i < hi_cap; ++i) {
             hi->array[i] = c->array[lo_cap + i] + offset;
         }
@@ -138,9 +147,13 @@ int array_container_shrink_to_fit(array_container_t *src) {
         src->array = NULL;
     } else {
         uint16_t *oldarray = src->array;
-        src->array = (uint16_t *)roaring_realloc(
+        uint16_t *newarray = (uint16_t *)roaring_realloc(
             oldarray, src->capacity * sizeof(uint16_t));
-        if (src->array == NULL) roaring_free(oldarray);  // should never happen?
+        if (newarray == NULL) {
+            src->capacity += savings;
+            return 0;
+        }
+        src->array = newarray;
     }
     return savings;
 }
@@ -163,37 +176,53 @@ static inline int32_t clamp(int32_t val, int32_t min, int32_t max) {
     return ((val < min) ? min : (val > max) ? max : val);
 }
 
-void array_container_grow(array_container_t *container, int32_t min,
+bool array_container_grow(array_container_t *container, int32_t min,
                           bool preserve) {
     int32_t max = (min <= DEFAULT_MAX_SIZE ? DEFAULT_MAX_SIZE : 65536);
     int32_t new_capacity = clamp(grow_capacity(container->capacity), min, max);
-
-    container->capacity = new_capacity;
-    uint16_t *array = container->array;
-
-    if (preserve) {
-        container->array =
-            (uint16_t *)roaring_realloc(array, new_capacity * sizeof(uint16_t));
-        if (container->array == NULL) roaring_free(array);
-    } else {
-        roaring_free(array);
-        container->array =
-            (uint16_t *)roaring_malloc(new_capacity * sizeof(uint16_t));
+    if (new_capacity <= container->capacity) {
+        return true;
     }
 
-    // if realloc fails, we have container->array == NULL.
+    uint16_t *array = container->array;
+    uint16_t *new_array;
+
+    if (preserve) {
+        new_array =
+            (uint16_t *)roaring_realloc(array, new_capacity * sizeof(uint16_t));
+        if (new_array == NULL) {
+            return false;
+        }
+    } else {
+        roaring_free(array);
+        new_array = (uint16_t *)roaring_malloc(new_capacity * sizeof(uint16_t));
+        if (new_array == NULL) {
+            // Keep the container in a consistent (empty) state so it stays
+            // valid and is not mistaken for having capacity.
+            container->array = NULL;
+            container->capacity = 0;
+            container->cardinality = 0;
+            return false;
+        }
+    }
+
+    container->array = new_array;
+    container->capacity = new_capacity;
+    return true;
 }
 
-/* Copy one container into another. We assume that they are distinct. */
-void array_container_copy(const array_container_t *src,
+/* Copy one container into another. We assume that they are distinct.
+ * Returns false on allocation failure. */
+bool array_container_copy(const array_container_t *src,
                           array_container_t *dst) {
     const int32_t cardinality = src->cardinality;
     if (cardinality > dst->capacity) {
-        array_container_grow(dst, cardinality, false);
+        if (!array_container_grow(dst, cardinality, false)) return false;
     }
 
     dst->cardinality = cardinality;
     memcpy(dst->array, src->array, cardinality * sizeof(uint16_t));
+    return true;
 }
 
 void array_container_add_from_range(array_container_t *arr, uint32_t min,
@@ -206,28 +235,30 @@ void array_container_add_from_range(array_container_t *arr, uint32_t min,
 /* Computes the union of array1 and array2 and write the result to arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
  */
-void array_container_union(const array_container_t *array_1,
+bool array_container_union(const array_container_t *array_1,
                            const array_container_t *array_2,
                            array_container_t *out) {
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
 
     if (out->capacity < max_cardinality) {
-        array_container_grow(out, max_cardinality, false);
+        if (!array_container_grow(out, max_cardinality, false)) return false;
     }
     out->cardinality = (int32_t)fast_union_uint16(
         array_1->array, card_1, array_2->array, card_2, out->array);
+    return true;
 }
 
 /* Computes the  difference of array1 and array2 and write the result
  * to array out.
  * Array out does not need to be distinct from array_1
  */
-void array_container_andnot(const array_container_t *array_1,
+bool array_container_andnot(const array_container_t *array_1,
                             const array_container_t *array_2,
                             array_container_t *out) {
     if (out->capacity < array_1->cardinality)
-        array_container_grow(out, array_1->cardinality, false);
+        if (!array_container_grow(out, array_1->cardinality, false))
+            return false;
 #if CROARING_IS_X64
     if ((croaring_hardware_support() & ROARING_SUPPORTS_AVX2) &&
         (out != array_1) && (out != array_2)) {
@@ -244,6 +275,7 @@ void array_container_andnot(const array_container_t *array_1,
         difference_uint16(array_1->array, array_1->cardinality, array_2->array,
                           array_2->cardinality, out->array);
 #endif
+    return true;
 }
 
 /* Computes the symmetric difference of array1 and array2 and write the
@@ -251,13 +283,13 @@ void array_container_andnot(const array_container_t *array_1,
  * to arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
  */
-void array_container_xor(const array_container_t *array_1,
+bool array_container_xor(const array_container_t *array_1,
                          const array_container_t *array_2,
                          array_container_t *out) {
     const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
     const int32_t max_cardinality = card_1 + card_2;
     if (out->capacity < max_cardinality) {
-        array_container_grow(out, max_cardinality, false);
+        if (!array_container_grow(out, max_cardinality, false)) return false;
     }
 
 #if CROARING_IS_X64
@@ -275,6 +307,7 @@ void array_container_xor(const array_container_t *array_1,
         xor_uint16(array_1->array, array_1->cardinality, array_2->array,
                    array_2->cardinality, out->array);
 #endif
+    return true;
 }
 
 static inline int32_t minimum_int32(int32_t a, int32_t b) {
@@ -285,7 +318,7 @@ static inline int32_t minimum_int32(int32_t a, int32_t b) {
  * arrayout.
  * It is assumed that arrayout is distinct from both array1 and array2.
  * */
-void array_container_intersection(const array_container_t *array1,
+bool array_container_intersection(const array_container_t *array1,
                                   const array_container_t *array2,
                                   array_container_t *out) {
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality,
@@ -293,12 +326,13 @@ void array_container_intersection(const array_container_t *array1,
     const int threshold = 64;  // subject to tuning
 #if CROARING_IS_X64
     if (out->capacity < min_card) {
-        array_container_grow(out, min_card + sizeof(__m128i) / sizeof(uint16_t),
-                             false);
+        if (!array_container_grow(
+                out, min_card + sizeof(__m128i) / sizeof(uint16_t), false))
+            return false;
     }
 #else
     if (out->capacity < min_card) {
-        array_container_grow(out, min_card, false);
+        if (!array_container_grow(out, min_card, false)) return false;
     }
 #endif
 
@@ -322,6 +356,7 @@ void array_container_intersection(const array_container_t *array1,
                                             array2->array, card_2, out->array);
 #endif
     }
+    return true;
 }
 
 /* computes the size of the intersection of array1 and array2
@@ -547,7 +582,13 @@ bool array_container_is_subset(const array_container_t *container1,
 int32_t array_container_read(int32_t cardinality, array_container_t *container,
                              const char *buf) {
     if (container->capacity < cardinality) {
-        array_container_grow(container, cardinality, false);
+        if (!array_container_grow(container, cardinality, false)) {
+            // Allocation failed: leave the container empty (and valid). The
+            // caller pre-sizes the container, so this path is not normally
+            // reached.
+            container->cardinality = 0;
+            return array_container_size_in_bytes(container);
+        }
     }
     container->cardinality = cardinality;
 #if CROARING_IS_BIG_ENDIAN

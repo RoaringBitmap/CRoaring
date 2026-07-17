@@ -67,10 +67,16 @@ bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap);
 /**
  * Initialize a roaring bitmap structure in memory controlled by client.
  * The bitmap will be in a "clear" state, with no auxiliary allocations.
- * Since this performs no allocations, the function will not fail.
+ * This performs no allocation and therefore cannot fail as long as the provided
+ * pointer is valid.
  */
 inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r) {
-    roaring_bitmap_init_with_capacity(r, 0);
+    // For performance reasons, this function is inline and uses internal
+    // functions directly. ra_init only assigns fields, so it cannot fail.
+#ifdef __cplusplus
+    using namespace ::roaring::internal;
+#endif
+    ra_init(&r->high_low_container);
 }
 
 /**

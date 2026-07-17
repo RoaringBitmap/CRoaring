@@ -54,7 +54,7 @@ typedef struct bitset_container_s bitset_container_t;
 #define movable_CAST_bitset(c) movable_CAST(bitset_container_t **, c)
 
 /* Create a new bitset. Return NULL in case of failure. */
-bitset_container_t *bitset_container_create(void);
+CROARING_NODISCARD bitset_container_t *bitset_container_create(void);
 
 /* Free memory. */
 void bitset_container_free(bitset_container_t *bitset);
@@ -66,7 +66,8 @@ void bitset_container_clear(bitset_container_t *bitset);
 void bitset_container_set_all(bitset_container_t *bitset);
 
 /* Duplicate bitset */
-bitset_container_t *bitset_container_clone(const bitset_container_t *src);
+CROARING_NODISCARD bitset_container_t *bitset_container_clone(
+    const bitset_container_t *src);
 
 /* Set the bit in [begin,end). WARNING: as of April 2016, this method is slow
  * and

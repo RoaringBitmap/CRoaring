@@ -57,14 +57,16 @@ typedef struct array_container_s array_container_t;
 
 /* Create a new array with default. Return NULL in case of failure. See also
  * array_container_create_given_capacity. */
-array_container_t *array_container_create(void);
+CROARING_NODISCARD array_container_t *array_container_create(void);
 
 /* Create a new array with a specified capacity size. Return NULL in case of
  * failure. */
-array_container_t *array_container_create_given_capacity(int32_t size);
+CROARING_NODISCARD array_container_t *array_container_create_given_capacity(
+    int32_t size);
 
 /* Create a new array containing all values in [min,max). */
-array_container_t *array_container_create_range(uint32_t min, uint32_t max);
+CROARING_NODISCARD array_container_t *array_container_create_range(
+    uint32_t min, uint32_t max);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -75,7 +77,8 @@ int array_container_shrink_to_fit(array_container_t *src);
 void array_container_free(array_container_t *array);
 
 /* Duplicate container */
-array_container_t *array_container_clone(const array_container_t *src);
+CROARING_NODISCARD array_container_t *array_container_clone(
+    const array_container_t *src);
 
 /* Get the cardinality of `array'. */
 CROARING_ALLOW_UNALIGNED
@@ -88,8 +91,10 @@ static inline bool array_container_nonzero_cardinality(
     return array->cardinality > 0;
 }
 
-/* Copy one container into another. We assume that they are distinct. */
-void array_container_copy(const array_container_t *src, array_container_t *dst);
+/* Copy one container into another. We assume that they are distinct.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool array_container_copy(const array_container_t *src, array_container_t *dst);
 
 /*  Add all the values in [min,max) (included) at a distance k*step from min.
     The container must have a size less or equal to DEFAULT_MAX_SIZE after this
@@ -108,19 +113,24 @@ static inline bool array_container_full(const array_container_t *array) {
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
- * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void array_container_union(const array_container_t *src_1,
+ * It is assumed that `dst' is distinct from both `src_1' and `src_2'.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool array_container_union(const array_container_t *src_1,
                            const array_container_t *src_2,
                            array_container_t *dst);
 
 /* symmetric difference, see array_container_union */
-void array_container_xor(const array_container_t *array_1,
+CROARING_NODISCARD
+bool array_container_xor(const array_container_t *array_1,
                          const array_container_t *array_2,
                          array_container_t *out);
 
 /* Computes the intersection of src_1 and src_2 and write the result to
- * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-void array_container_intersection(const array_container_t *src_1,
+ * dst. It is assumed that dst is distinct from both src_1 and src_2.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool array_container_intersection(const array_container_t *src_1,
                                   const array_container_t *src_2,
                                   array_container_t *dst);
 
@@ -180,7 +190,10 @@ static inline int32_t array_container_serialized_size_in_bytes(int32_t card) {
  * parameter. If preserve is false, then the new content will be uninitialized,
  * otherwise the old content is copied.
  */
-void array_container_grow(array_container_t *container, int32_t min,
+// Returns false if the (re)allocation failed. On failure with preserve=false
+// the container is left empty (and valid); with preserve=true it is unchanged.
+CROARING_NODISCARD
+bool array_container_grow(array_container_t *container, int32_t min,
                           bool preserve);
 
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
@@ -264,7 +277,8 @@ static inline bool array_container_select(const array_container_t *container,
  * to array out.
  * Array out does not need to be distinct from array_1
  */
-void array_container_andnot(const array_container_t *array_1,
+CROARING_NODISCARD
+bool array_container_andnot(const array_container_t *array_1,
                             const array_container_t *array_2,
                             array_container_t *out);
 
@@ -275,7 +289,13 @@ static inline void array_container_append(array_container_t *arr,
     const int32_t capacity = arr->capacity;
 
     if (array_container_full(arr)) {
-        array_container_grow(arr, capacity + 1, true);
+        if (!array_container_grow(arr, capacity + 1, true)) {
+            return;
+        }
+    }
+
+    if (arr->array == NULL) {
+        return;
     }
 
     arr->array[arr->cardinality++] = pos;
@@ -293,10 +313,18 @@ static inline int array_container_try_add(array_container_t *arr,
                                           int32_t max_cardinality) {
     const int32_t cardinality = arr->cardinality;
 
+    if (arr->array == NULL && cardinality > 0) {
+        return -1;
+    }
+
     // best case, we can append.
     if ((array_container_empty(arr) || arr->array[cardinality - 1] < value) &&
         cardinality < max_cardinality) {
+        const int32_t cardinality_before = arr->cardinality;
         array_container_append(arr, value);
+        if (arr->cardinality == cardinality_before) {
+            return -1;
+        }
         return 1;
     }
 
@@ -306,7 +334,12 @@ static inline int array_container_try_add(array_container_t *arr,
         return 0;
     } else if (cardinality < max_cardinality) {
         if (array_container_full(arr)) {
-            array_container_grow(arr, arr->capacity + 1, true);
+            if (!array_container_grow(arr, arr->capacity + 1, true)) {
+                return -1;
+            }
+        }
+        if (arr->array == NULL) {
+            return -1;
         }
         const int32_t insert_idx = -loc - 1;
         memmove(arr->array + insert_idx + 1, arr->array + insert_idx,
@@ -527,7 +560,9 @@ static inline void array_container_add_range_nvals(array_container_t *array,
                                                    int32_t nvals_greater) {
     int32_t union_cardinality = nvals_less + (max - min + 1) + nvals_greater;
     if (union_cardinality > array->capacity) {
-        array_container_grow(array, union_cardinality, true);
+        if (!array_container_grow(array, union_cardinality, true)) {
+            return;
+        }
     }
     memmove(&(array->array[union_cardinality - nvals_greater]),
             &(array->array[array->cardinality - nvals_greater]),

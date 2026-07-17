@@ -257,10 +257,19 @@ inline int roaring_leading_zeroes(unsigned long long input_num) {
 #define ALIGNED(x)
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
-#define CROARING_WARN_UNUSED __attribute__((warn_unused_result))
+// Mark return values that must not be ignored (allocation failures, etc.).
+// Uses standard [[nodiscard]] in C23 and C++17+; falls back to compiler
+// attributes elsewhere.
+#if defined(__cplusplus) && __cplusplus >= 201703L
+#define CROARING_NODISCARD [[nodiscard]]
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#define CROARING_NODISCARD [[nodiscard]]
+#elif defined(__GNUC__) || defined(__clang__)
+#define CROARING_NODISCARD __attribute__((warn_unused_result))
+#elif defined(_MSC_VER)
+#define CROARING_NODISCARD _Check_return_
 #else
-#define CROARING_WARN_UNUSED
+#define CROARING_NODISCARD
 #endif
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)

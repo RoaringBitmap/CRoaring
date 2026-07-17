@@ -16,11 +16,11 @@ namespace internal {
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst.  */
-void array_bitset_container_intersection(const array_container_t *src_1,
+bool array_bitset_container_intersection(const array_container_t *src_1,
                                          const bitset_container_t *src_2,
                                          array_container_t *dst) {
     if (dst->capacity < src_1->cardinality) {
-        array_container_grow(dst, src_1->cardinality, false);
+        if (!array_container_grow(dst, src_1->cardinality, false)) return false;
     }
     int32_t newcard = 0;  // dst could be src_1
     const int32_t origcard = src_1->cardinality;
@@ -43,6 +43,7 @@ void array_bitset_container_intersection(const array_container_t *src_1,
          */
     }
     dst->cardinality = newcard;
+    return true;
 }
 
 /* Compute the size of the intersection of src_1 and src_2. */
@@ -70,18 +71,18 @@ bool array_bitset_container_intersect(const array_container_t *src_1,
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is allowed for dst to be equal to src_1. We assume that dst is a
  * valid container. */
-void array_run_container_intersection(const array_container_t *src_1,
+bool array_run_container_intersection(const array_container_t *src_1,
                                       const run_container_t *src_2,
                                       array_container_t *dst) {
     if (run_container_is_full(src_2)) {
-        if (dst != src_1) array_container_copy(src_1, dst);
-        return;
+        if (dst != src_1) return array_container_copy(src_1, dst);
+        return true;
     }
     if (dst->capacity < src_1->cardinality) {
-        array_container_grow(dst, src_1->cardinality, false);
+        if (!array_container_grow(dst, src_1->cardinality, false)) return false;
     }
     if (src_2->n_runs == 0) {
-        return;
+        return true;
     }
     int32_t rlepos = 0;
     int32_t arraypos = 0;
@@ -94,7 +95,7 @@ void array_run_container_intersection(const array_container_t *src_1,
             ++rlepos;
             if (rlepos == src_2->n_runs) {
                 dst->cardinality = newcard;
-                return;  // we are done
+                return true;  // we are done
             }
             rle = src_2->runs[rlepos];
         }
@@ -108,6 +109,7 @@ void array_run_container_intersection(const array_container_t *src_1,
         }
     }
     dst->cardinality = newcard;
+    return true;
 }
 
 /* Compute the intersection of src_1 and src_2 and write the result to

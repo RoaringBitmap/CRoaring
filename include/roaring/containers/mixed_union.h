@@ -86,15 +86,18 @@ bool array_array_container_lazy_inplace_union(array_container_t *src_1,
  * valid container. The result might need to be further converted to array or
  * bitset container,
  * the caller is responsible for the eventual conversion. */
-void array_run_container_union(const array_container_t *src_1,
+CROARING_NODISCARD
+bool array_run_container_union(const array_container_t *src_1,
                                const run_container_t *src_2,
                                run_container_t *dst);
 
 /* Compute the union of src_1 and src_2 and write the result to
  * src2. The result might need to be further converted to array or
  * bitset container,
- * the caller is responsible for the eventual conversion. */
-void array_run_container_inplace_union(const array_container_t *src_1,
+ * the caller is responsible for the eventual conversion.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool array_run_container_inplace_union(const array_container_t *src_1,
                                        run_container_t *src_2);
 
 /* Compute the union of src_1 and src_2 and write the result to

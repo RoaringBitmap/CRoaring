@@ -79,11 +79,12 @@ typedef struct run_container_s run_container_t;
 #define movable_CAST_run(c) movable_CAST(run_container_t **, c)
 
 /* Create a new run container. Return NULL in case of failure. */
-run_container_t *run_container_create(void);
+CROARING_NODISCARD run_container_t *run_container_create(void);
 
 /* Create a new run container with given capacity. Return NULL in case of
  * failure. */
-run_container_t *run_container_create_given_capacity(int32_t size);
+CROARING_NODISCARD run_container_t *run_container_create_given_capacity(
+    int32_t size);
 
 /*
  * Shrink the capacity to the actual size, return the number of bytes saved.
@@ -94,7 +95,8 @@ int run_container_shrink_to_fit(run_container_t *src);
 void run_container_free(run_container_t *run);
 
 /* Duplicate container */
-run_container_t *run_container_clone(const run_container_t *src);
+CROARING_NODISCARD run_container_t *run_container_clone(
+    const run_container_t *src);
 
 /*
  * Effectively deletes the value at index index, repacking data.
@@ -200,20 +202,28 @@ static inline int32_t rle16_count_greater(const rle16_t *array,
  * existing data needs to be copied over depends on copy. If "copy" is false,
  * then the new content will be uninitialized, otherwise a copy is made.
  */
-void run_container_grow(run_container_t *run, int32_t min, bool copy);
+// Returns false if growing the backing array failed.
+CROARING_NODISCARD
+bool run_container_grow(run_container_t *run, int32_t min, bool copy);
 
 /**
- * Moves the data so that we can write data at index
+ * Moves the data so that we can write data at index. Returns false if growing
+ * the backing array failed (in which case nothing is moved).
  */
-static inline void makeRoomAtIndex(run_container_t *run, uint16_t index) {
+CROARING_NODISCARD
+static inline bool makeRoomAtIndex(run_container_t *run, uint16_t index) {
     /* This function calls realloc + memmove sequentially to move by one index.
      * Potentially copying twice the array.
      */
-    if (run->n_runs + 1 > run->capacity)
-        run_container_grow(run, run->n_runs + 1, true);
+    if (run->n_runs + 1 > run->capacity) {
+        if (!run_container_grow(run, run->n_runs + 1, true)) {
+            return false;
+        }
+    }
     memmove(run->runs + 1 + index, run->runs + index,
             (run->n_runs - index) * sizeof(rle16_t));
     run->n_runs++;
+    return true;
 }
 
 /* Add `pos' to `run'. Returns true if `pos' was not present. */
@@ -238,11 +248,15 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
         int32_t le = run->runs[index].length;
         if (offset < le) {
             // need to break in two
-            run->runs[index].length = (uint16_t)(offset - 1);
             // need to insert
             uint16_t newvalue = pos + 1;
             int32_t newlength = le - offset - 1;
-            makeRoomAtIndex(run, (uint16_t)(index + 1));
+            if (!makeRoomAtIndex(run, (uint16_t)(index + 1))) {
+                // Allocation failed: leave the container unchanged so it stays
+                // valid; the value could not be removed.
+                return false;
+            }
+            run->runs[index].length = (uint16_t)(offset - 1);
             run->runs[index + 1].value = newvalue;
             run->runs[index + 1].length = (uint16_t)newlength;
             return true;
@@ -316,7 +330,9 @@ static inline bool run_container_empty(const run_container_t *run) {
 }
 
 /* Copy one container into another. We assume that they are distinct. */
-void run_container_copy(const run_container_t *src, run_container_t *dst);
+// Returns false on allocation failure.
+CROARING_NODISCARD
+bool run_container_copy(const run_container_t *src, run_container_t *dst);
 
 /**
  * Append run described by vl to the run container, possibly merging.
@@ -397,17 +413,23 @@ static inline bool run_container_is_full(const run_container_t *run) {
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
- * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_union(const run_container_t *src_1,
+ * It is assumed that `dst' is distinct from both `src_1' and `src_2'.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool run_container_union(const run_container_t *src_1,
                          const run_container_t *src_2, run_container_t *dst);
 
-/* Compute the union of `src_1' and `src_2' and write the result to `src_1' */
-void run_container_union_inplace(run_container_t *src_1,
+/* Compute the union of `src_1' and `src_2' and write the result to `src_1'.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool run_container_union_inplace(run_container_t *src_1,
                                  const run_container_t *src_2);
 
 /* Compute the intersection of src_1 and src_2 and write the result to
- * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-void run_container_intersection(const run_container_t *src_1,
+ * dst. It is assumed that dst is distinct from both src_1 and src_2.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst);
 
@@ -422,7 +444,8 @@ bool run_container_intersect(const run_container_t *src_1,
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result
  * to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
-void run_container_xor(const run_container_t *src_1,
+CROARING_NODISCARD
+bool run_container_xor(const run_container_t *src_1,
                        const run_container_t *src_2, run_container_t *dst);
 
 /*
@@ -551,9 +574,10 @@ bool run_container_select(const run_container_t *container,
                           uint32_t *element);
 
 /* Compute the difference of src_1 and src_2 and write the result to
- * dst. It is assumed that dst is distinct from both src_1 and src_2. */
-
-void run_container_andnot(const run_container_t *src_1,
+ * dst. It is assumed that dst is distinct from both src_1 and src_2.
+ * Returns false on allocation failure. */
+CROARING_NODISCARD
+bool run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst);
 
 void run_container_offset(const run_container_t *c, container_t **loc,
@@ -610,7 +634,11 @@ static inline void run_container_add_range_nruns(run_container_t *run,
                                                  int32_t nruns_greater) {
     int32_t nruns_common = run->n_runs - nruns_less - nruns_greater;
     if (nruns_common == 0) {
-        makeRoomAtIndex(run, (uint16_t)nruns_less);
+        if (!makeRoomAtIndex(run, (uint16_t)nruns_less)) {
+            // Allocation failed: leave the container unchanged (still valid);
+            // the range is not added.
+            return;
+        }
         run->runs[nruns_less].value = (uint16_t)min;
         run->runs[nruns_less].length = (uint16_t)(max - min);
     } else {
@@ -650,7 +678,10 @@ static inline void run_container_shift_tail(run_container_t *run, int32_t count,
                                             int32_t distance) {
     if (distance > 0) {
         if (run->capacity < count + distance) {
-            run_container_grow(run, count + distance, true);
+            if (!run_container_grow(run, count + distance, true)) {
+                // Allocation failed: leave the container unchanged (valid).
+                return;
+            }
         }
     }
     int32_t srcpos = run->n_runs - count;
@@ -674,7 +705,11 @@ static inline void run_container_remove_range(run_container_t *run,
         // split this run into two adjacent runs
 
         // right subinterval
-        makeRoomAtIndex(run, (uint16_t)(first + 1));
+        if (!makeRoomAtIndex(run, (uint16_t)(first + 1))) {
+            // Allocation failed: leave the container unchanged (still valid);
+            // the range is not removed.
+            return;
+        }
         run->runs[first + 1].value = (uint16_t)(max + 1);
         run->runs[first + 1].length =
             (uint16_t)((run->runs[first].value + run->runs[first].length) -

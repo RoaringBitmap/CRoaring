@@ -70,6 +70,9 @@ static roaring_pq_t *create_pq(const roaring_bitmap_t **arr, uint32_t length) {
     size_t alloc_size =
         sizeof(roaring_pq_t) + sizeof(roaring_pq_element_t) * length;
     roaring_pq_t *answer = (roaring_pq_t *)roaring_malloc(alloc_size);
+    if (answer == NULL) {
+        return NULL;
+    }
     answer->elements = (roaring_pq_element_t *)(answer + 1);
     answer->size = length;
     for (uint32_t i = 0; i < length; i++) {
@@ -95,6 +98,31 @@ static roaring_pq_element_t pq_poll(roaring_pq_t *pq) {
     return ans;
 }
 
+// Aborts lazy_or_from_lazy_inputs on allocation failure: frees the partial
+// answer, the containers still owned by x1 (indexes [from1, length1)) and x2
+// (indexes [from2, length2)), then the two consumed input bitmaps. Returns
+// NULL for the caller to propagate. Containers already moved into answer or
+// freed during the merge are excluded by from1/from2 so nothing is double
+// freed or leaked.
+static roaring_bitmap_t *lazy_or_inputs_abort(roaring_bitmap_t *answer,
+                                              roaring_bitmap_t *x1, int from1,
+                                              roaring_bitmap_t *x2, int from2) {
+    roaring_array_t *ra1 = &x1->high_low_container;
+    roaring_array_t *ra2 = &x2->high_low_container;
+    for (int32_t i = from1; i < ra1->size; ++i) {
+        container_free(ra1->containers[i], ra1->typecodes[i]);
+    }
+    for (int32_t i = from2; i < ra2->size; ++i) {
+        container_free(ra2->containers[i], ra2->typecodes[i]);
+    }
+    ra_clear_without_containers(ra1);
+    ra_clear_without_containers(ra2);
+    roaring_free(x1);
+    roaring_free(x2);
+    roaring_bitmap_free(answer);
+    return NULL;
+}
+
 // this function consumes and frees the inputs
 static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                                                   roaring_bitmap_t *x2) {
@@ -109,8 +137,13 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         roaring_bitmap_free(x2);
         return x1;
     }
-    uint32_t neededcap = length1 > length2 ? length2 : length1;
+    // Reserve the worst-case capacity up front so that the per-key appends
+    // below never need to grow (and thus never fail).
+    uint32_t neededcap = (uint32_t)length1 + (uint32_t)length2;
     roaring_bitmap_t *answer = roaring_bitmap_create_with_capacity(neededcap);
+    if (answer == NULL) {  // allocation failure: abort, nothing consumed yet
+        return lazy_or_inputs_abort(NULL, x1, 0, x2, 0);
+    }
     int pos1 = 0, pos2 = 0;
     uint8_t type1, type2;
     uint16_t s1 = ra_get_key_at_index(&x1->high_low_container, (uint16_t)pos1);
@@ -149,9 +182,12 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
                     container_free(c1, type1);
                 }
             }
-            // since we assume that the initial containers are non-empty, the
-            // result here
-            // can only be non-empty
+            // The inputs were non-empty so the union is non-empty; c is NULL
+            // only on allocation failure, in which case the two source
+            // containers have already been freed, so skip past them.
+            if (c == NULL) {
+                return lazy_or_inputs_abort(answer, x1, pos1 + 1, x2, pos2 + 1);
+            }
             ra_append(&answer->high_low_container, s1, c, result_type);
             ++pos1;
             ++pos2;
@@ -163,6 +199,7 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         } else if (s1 < s2) {  // s1 < s2
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
+            // ownership of c1 moves into answer (capacity is reserved).
             ra_append(&answer->high_low_container, s1, c1, type1);
             pos1++;
             if (pos1 == length1) break;
@@ -178,11 +215,15 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
         }
     }
     if (pos1 == length1) {
-        ra_append_move_range(&answer->high_low_container,
-                             &x2->high_low_container, pos2, length2);
+        if (!ra_append_move_range(&answer->high_low_container,
+                                  &x2->high_low_container, pos2, length2)) {
+            return lazy_or_inputs_abort(answer, x1, pos1, x2, pos2);
+        }
     } else if (pos2 == length2) {
-        ra_append_move_range(&answer->high_low_container,
-                             &x1->high_low_container, pos1, length1);
+        if (!ra_append_move_range(&answer->high_low_container,
+                                  &x1->high_low_container, pos1, length1)) {
+            return lazy_or_inputs_abort(answer, x1, pos1, x2, pos2);
+        }
     }
     ra_clear_without_containers(&x1->high_low_container);
     ra_clear_without_containers(&x2->high_low_container);
@@ -197,6 +238,16 @@ static roaring_bitmap_t *lazy_or_from_lazy_inputs(roaring_bitmap_t *x1,
  * a naive algorithm. Caller is responsible for freeing the
  * result.
  */
+// Frees every temporary bitmap still held by the queue. Used to clean up
+// after an allocation failure so we can abort without leaking.
+static void pq_free_temporaries(roaring_pq_t *pq) {
+    for (uint64_t i = 0; i < pq->size; ++i) {
+        if (pq->elements[i].is_temporary) {
+            roaring_bitmap_free(pq->elements[i].bitmap);
+        }
+    }
+}
+
 roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
                                               const roaring_bitmap_t **x) {
     if (number == 0) {
@@ -206,13 +257,23 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
         return roaring_bitmap_copy(x[0]);
     }
     roaring_pq_t *pq = create_pq(x, number);
+    if (pq == NULL) {
+        return NULL;
+    }
     while (pq->size > 1) {
         roaring_pq_element_t x1 = pq_poll(pq);
         roaring_pq_element_t x2 = pq_poll(pq);
 
         if (x1.is_temporary && x2.is_temporary) {
+            // lazy_or_from_lazy_inputs consumes (frees) both inputs, even
+            // when it fails and returns NULL.
             roaring_bitmap_t *newb =
                 lazy_or_from_lazy_inputs(x1.bitmap, x2.bitmap);
+            if (newb == NULL) {  // allocation failure: abort
+                pq_free_temporaries(pq);
+                pq_free(pq);
+                return NULL;
+            }
             // should normally return a fresh new bitmap *except* that
             // it can return x1.bitmap or x2.bitmap in degenerate cases
             bool temporary = !((newb == x1.bitmap) && (newb == x2.bitmap));
@@ -232,6 +293,12 @@ roaring_bitmap_t *roaring_bitmap_or_many_heap(uint32_t number,
         } else {
             roaring_bitmap_t *newb =
                 roaring_bitmap_lazy_or(x1.bitmap, x2.bitmap, false);
+            if (newb == NULL) {  // allocation failure: abort
+                // x1 and x2 are original inputs (not temporary); do not free.
+                pq_free_temporaries(pq);
+                pq_free(pq);
+                return NULL;
+            }
             uint64_t bsize = roaring_bitmap_portable_size_in_bytes(newb);
             roaring_pq_element_t newelement = {
                 .size = bsize, .is_temporary = true, .bitmap = newb};

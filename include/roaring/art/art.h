@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <roaring/portability.h>  // CROARING_NODISCARD
+
 /*
  * This file contains an implementation of an Adaptive Radix Tree as described
  * in https://db.in.tum.de/~leis/papers/ART.pdf.
@@ -186,9 +188,12 @@ bool art_iterator_lower_bound(art_iterator_t *iterator,
                               const art_key_chunk_t *key);
 
 /**
- * Insert the value and positions the iterator at the key.
+ * Insert the value and positions the iterator at the key. Returns false on
+ * allocation failure, in which case the tree and the iterator are left
+ * unchanged.
  */
-void art_iterator_insert(art_iterator_t *iterator, const art_key_chunk_t *key,
+CROARING_NODISCARD
+bool art_iterator_insert(art_iterator_t *iterator, const art_key_chunk_t *key,
                          art_val_t val);
 
 /**

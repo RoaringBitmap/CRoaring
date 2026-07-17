@@ -73,6 +73,12 @@ container_t *convert_run_to_efficient_container_and_free(
 container_t *container_from_run_range(const run_container_t *run, uint32_t min,
                                       uint32_t max, uint8_t *typecode_after);
 
+static inline void bitset_free_on_failed_array_conversion(
+    bitset_container_t *bitset, container_t **dst) {
+    bitset_container_free(bitset);
+    *dst = NULL;
+}
+
 #ifdef __cplusplus
 }
 }
