@@ -43,6 +43,7 @@ Portable Roaring bitmaps in C (and C++) with full support for your favorite comp
 - [Mailing list/discussion group](#mailing-listdiscussion-group)
 - [Contributing](#contributing)
 - [References about Roaring](#references-about-roaring)
+- [OpenZL Integration](#openzl-integration)
 
 # Introduction
 
@@ -1325,6 +1326,27 @@ A compiler or static-analyzer warning is not a bug. Do not report such cases as 
 
 
 [![Star History Chart](https://api.star-history.com/svg?repos=RoaringBitmap/CRoaring&type=Date)](https://www.star-history.com/#RoaringBitmap/CRoaring&Date)
+
+# OpenZL Integration
+
+The `openzl/` subdirectory provides an [OpenZL](https://github.com/facebook/openzl) integration with an SDDL description of the [Roaring Bitmap serialization format](https://github.com/RoaringBitmap/RoaringFormatSpec). This enables format-aware compression of serialized Roaring Bitmap data using OpenZL's specialized compressor.
+
+To enable OpenZL support, set the  `ROARING_OPENZL` flag during configuration:
+
+```
+cmake -DROARING_OPENZL=ON -B build
+```
+
+The SDDL file (`openzl/roaring.sddl`) describes the portable Roaring Bitmap binary format, including:
+
+- Cookie-based format detection (with and without run containers)
+- Container descriptors (key + cardinality)
+- All three container types: array, bitset, and run-length encoded
+- Offset headers for random access
+
+See the [SDDL documentation](https://openzl.org/sddl/) for more on the format description language.
+
+
 
 # References about Roaring
 
