@@ -993,8 +993,7 @@ static void roaring_inplace_merge_bulk(roaring_bitmap_t *x1,
         uint16_t k1 = ra1->keys[left];
         uint16_t k2 = ra2->keys[right];
         if (k1 < k2) {
-            ra_append(&merged, k1, ra1->containers[left],
-                      ra1->typecodes[left]);
+            ra_append(&merged, k1, ra1->containers[left], ra1->typecodes[left]);
             left++;
         } else if (k1 > k2) {
             uint8_t type2 = ra2->typecodes[right];
