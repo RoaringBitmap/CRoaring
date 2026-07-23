@@ -17,10 +17,9 @@
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 #ifdef __cplusplus
-using namespace ::roaring::internal;
 extern "C" {
 namespace roaring {
-namespace api {
+namespace internal {
 #endif
 
 #if CROARING_IS_X64
@@ -1143,7 +1142,7 @@ void bitset_flip_list(uint64_t *words, const uint16_t *list, uint64_t length) {
 #ifdef __cplusplus
 }
 }
-}  // extern "C" { namespace roaring { namespace api {
+}  // extern "C" { namespace roaring { namespace internal {
 #endif
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop

@@ -4,6 +4,7 @@
 #include "roaring/roaring64map.hh"
 
 using namespace roaring;
+
 int main() {
     Roaring r1;
     for (uint32_t i = 100; i < 1000; i++) {
