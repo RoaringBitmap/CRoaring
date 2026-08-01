@@ -2,17 +2,23 @@
  * Unit tests for the C++ roaring::Roaring64 class (ART-based 64-bit bitmap).
  */
 #include <cstdint>
+#include <cstring>
+#include <fstream>
 #include <iterator>
+#include <string>
 #include <type_traits>
 #include <vector>
 
 #include <roaring/roaring64.h>  // C API for comparison
 #include <roaring/roaring64.hh>
+#include <roaring/roaring64map.hh>
 
+#include "config.h"
 #include "roaring64_checked.hh"
 #include "test.h"
 
 using roaring::Roaring64;
+using roaring::Roaring64Map;
 
 static_assert(std::is_nothrow_move_constructible<Roaring64>::value,
               "Expected Roaring64 to be nothrow move constructible");
@@ -293,6 +299,147 @@ DEFINE_TEST(test_cpp_r64_shrink_to_fit) {
     assert_int_equal(r.shrinkToFit(), 0);
 }
 
+DEFINE_TEST(test_cpp_r64_run_compression) {
+    Roaring64 r;
+    for (uint64_t i = 100; i <= 10000; i++) {
+        r.add(i);
+    }
+    size_t size_origin = r.getSizeInBytes();
+    bool has_run = r.runOptimize();
+    size_t size_optimized = r.getSizeInBytes();
+    assert_true(has_run);
+    assert_true(size_origin > size_optimized);
+    bool removed = r.removeRunCompression();
+    assert_true(removed);
+    size_t size_removed = r.getSizeInBytes();
+    assert_true(size_removed > size_optimized);
+}
+
+DEFINE_TEST(test_cpp_r64_serialization) {
+    Roaring64 r{1, 2, uint64_t(1) << 33, uint64_t(1) << 50,
+                14000000000000000100ull};
+
+    size_t expected = r.getSizeInBytes();
+    std::vector<char> buf(expected);
+    assert_int_equal(r.write(buf.data()), expected);
+
+    assert_true(Roaring64::readSafe(buf.data(), buf.size()) == r);
+    assert_true(Roaring64::read(buf.data()) == r);
+
+    assert_int_equal(
+        Roaring64::serializedSizeInBytesSafe(buf.data(), buf.size()), expected);
+    // a truncated buffer is rejected
+    assert_int_equal(
+        Roaring64::serializedSizeInBytesSafe(buf.data(), buf.size() - 1), 0);
+}
+
+DEFINE_TEST(test_cpp_r64_serialization_empty) {
+    Roaring64 empty;
+    std::vector<char> buf(empty.getSizeInBytes());
+    assert_int_equal(empty.write(buf.data()), buf.size());
+
+    Roaring64 back = Roaring64::readSafe(buf.data(), buf.size());
+    assert_true(back.isEmpty());
+    assert_true(back == empty);
+}
+
+DEFINE_TEST(test_cpp_r64_serialization_containers) {
+    Roaring64 r;
+    r.add(uint64_t(1) << 50);  // array container
+    for (uint64_t i = 0; i < 20000; i += 2) {
+        r.add(i);  // bitset container
+    }
+    for (uint64_t i = 100000; i < 130000; ++i) {
+        r.add(i);  // run container
+    }
+    assert_true(r.runOptimize());
+
+    std::vector<char> buf(r.getSizeInBytes());
+    assert_int_equal(r.write(buf.data()), buf.size());
+    assert_true(Roaring64::readSafe(buf.data(), buf.size()) == r);
+}
+
+DEFINE_TEST(test_cpp_r64_serialization_matches_roaring64map) {
+    // the portable format is shared, so the buffers are interchangeable
+    const uint64_t vals[] = {1, 2, uint64_t(1) << 33, uint64_t(1) << 50,
+                             14000000000000000100ull};
+    Roaring64 r(5, vals);
+    Roaring64Map m;
+    for (uint64_t v : vals) {
+        m.add(v);
+    }
+
+    std::vector<char> from_r(r.getSizeInBytes());
+    r.write(from_r.data());
+    std::vector<char> from_m(m.getSizeInBytes());
+    m.write(from_m.data());
+
+    assert_int_equal(from_r.size(), from_m.size());
+    assert_true(memcmp(from_r.data(), from_m.data(), from_r.size()) == 0);
+
+    Roaring64Map m_read = Roaring64Map::readSafe(from_r.data(), from_r.size());
+    assert_true(m_read == m);
+
+    Roaring64 r_read = Roaring64::readSafe(from_m.data(), from_m.size());
+    assert_true(r_read == r);
+}
+
+// Returns true on success, false on exception. The files were written by
+// Roaring64Map, which shares the portable format.
+static bool deserialize64(const std::string& filename) {
+    std::ifstream in(TEST_DATA_DIR + filename, std::ios::binary);
+    std::vector<char> buf1(std::istreambuf_iterator<char>(in), {});
+    Roaring64 r;
+#if ROARING_EXCEPTIONS
+    try {
+        r = Roaring64::readSafe(buf1.data(), buf1.size());
+    } catch (...) {
+        return false;
+    }
+#else   // ROARING_EXCEPTIONS
+    r = Roaring64::readSafe(buf1.data(), buf1.size());
+#endif  // ROARING_EXCEPTIONS
+    std::vector<char> buf2(r.getSizeInBytes());
+    assert_int_equal(buf1.size(), buf2.size());
+    assert_int_equal(r.write(buf2.data()), buf2.size());
+    assert_memory_equal(buf1.data(), buf2.data(), buf1.size());
+    return true;
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_empty) {
+    assert_true(deserialize64("64mapempty.bin"));
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_32bit_vals) {
+    assert_true(deserialize64("64map32bitvals.bin"));
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_spread_vals) {
+    assert_true(deserialize64("64mapspreadvals.bin"));
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_high_vals) {
+    assert_true(deserialize64("64maphighvals.bin"));
+}
+
+#if ROARING_EXCEPTIONS
+DEFINE_TEST(test_cpp_r64_deserialize_empty_input) {
+    assert_false(deserialize64("64mapemptyinput.bin"));
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_size_too_small) {
+    assert_false(deserialize64("64mapsizetoosmall.bin"));
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_invalid_size) {
+    assert_false(deserialize64("64mapinvalidsize.bin"));
+}
+
+DEFINE_TEST(test_cpp_r64_deserialize_key_too_small) {
+    assert_false(deserialize64("64mapkeytoosmall.bin"));
+}
+#endif
+
 DEFINE_TEST(test_cpp_r64_random_vs_set) {
     doublechecked::Roaring64 r;
     std::vector<uint64_t> added;  // values that have been added
@@ -350,6 +497,10 @@ DEFINE_TEST(test_cpp_r64_random_vs_set) {
     }
     r.validate();  // manually validate
 
+    std::vector<char> buf(r.getSizeInBytes());
+    assert_int_equal(r.write(buf.data()), buf.size());
+    assert_true(Roaring64::readSafe(buf.data(), buf.size()) == r.plain);
+
     // exercise clear
     r.clear();
     assert_true(r.isEmpty());
@@ -369,6 +520,21 @@ int main() {
         cmocka_unit_test(test_cpp_r64_run_optimize),
         cmocka_unit_test(test_cpp_r64_remove_run_compression),
         cmocka_unit_test(test_cpp_r64_shrink_to_fit),
+        cmocka_unit_test(test_cpp_r64_run_compression),
+        cmocka_unit_test(test_cpp_r64_serialization),
+        cmocka_unit_test(test_cpp_r64_serialization_empty),
+        cmocka_unit_test(test_cpp_r64_serialization_containers),
+        cmocka_unit_test(test_cpp_r64_serialization_matches_roaring64map),
+        cmocka_unit_test(test_cpp_r64_deserialize_empty),
+        cmocka_unit_test(test_cpp_r64_deserialize_32bit_vals),
+        cmocka_unit_test(test_cpp_r64_deserialize_spread_vals),
+        cmocka_unit_test(test_cpp_r64_deserialize_high_vals),
+#if ROARING_EXCEPTIONS
+        cmocka_unit_test(test_cpp_r64_deserialize_empty_input),
+        cmocka_unit_test(test_cpp_r64_deserialize_size_too_small),
+        cmocka_unit_test(test_cpp_r64_deserialize_invalid_size),
+        cmocka_unit_test(test_cpp_r64_deserialize_key_too_small),
+#endif
         cmocka_unit_test(test_cpp_r64_random_vs_set),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);

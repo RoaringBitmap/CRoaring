@@ -440,6 +440,50 @@ class Roaring64 {
         return api::roaring64_bitmap_shrink_to_fit(roaring);
     }
 
+    /**
+     * How many bytes are required to serialize this bitmap.
+     */
+    size_t getSizeInBytes() const noexcept {
+        return api::roaring64_bitmap_portable_size_in_bytes(roaring);
+    }
+
+    /**
+     * Write a bitmap to a char buffer, which should refer to at least
+     * getSizeInBytes() allocated bytes. Returns how many bytes were written.
+     * Only the portable format is supported.
+     */
+    size_t write(char* buf) const noexcept {
+        return api::roaring64_bitmap_portable_serialize(roaring, buf);
+    }
+
+    /**
+     * Read a bitmap from a serialized version, placing no limit on how many
+     * bytes are read. See also readSafe. May throw std::runtime_error.
+     */
+    static Roaring64 read(const char* buf) { return readSafe(buf, SIZE_MAX); }
+
+    /**
+     * Read a bitmap from a serialized version, reading no more than maxbytes
+     * bytes. The result is usable only if the input follows the format
+     * specification. May throw std::runtime_error.
+     */
+    static Roaring64 readSafe(const char* buf, size_t maxbytes) {
+        roaring64_bitmap_t* result =
+            api::roaring64_bitmap_portable_deserialize_safe(buf, maxbytes);
+        if (result == nullptr) {
+            ROARING_TERMINATE("failed alloc while reading");
+        }
+        return Roaring64(result);
+    }
+
+    /**
+     * Compute how many bytes would be read by readSafe. Returns 0 if the
+     * serialized data is invalid.
+     */
+    static size_t serializedSizeInBytesSafe(const char* buf, size_t maxbytes) {
+        return api::roaring64_bitmap_portable_deserialize_size(buf, maxbytes);
+    }
+
     typedef Roaring64ConstIterator const_iterator;
 
     /**
