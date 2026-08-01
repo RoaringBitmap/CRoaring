@@ -533,8 +533,8 @@ The C++ interface is provided via the `roaring.hh` (32-bit), `roaring64map.hh`, 
   - Check if the bitmap is empty.
 - `void clear()`
   - Remove all elements.
-- `void runOptimize()`
-  - Convert internal containers to run containers for better compression.
+- `bool runOptimize()`
+  - Convert internal containers to run containers for better compression. Returns `true` if the result has at least one run container.
 - `void setCopyOnWrite(bool enable)`
   - Enable or disable copy-on-write mode for fast/shallow copies.
 - `bool operator==(const Roaring&) const` / `bool operator==(const Roaring64Map&) const`
@@ -562,11 +562,11 @@ The C++ interface is provided via the `roaring.hh` (32-bit), `roaring64map.hh`, 
 ## Serialization and Deserialization
 - `size_t getSizeInBytes() const`
   - Get the size in bytes for serialization.
-- `void write(char* buf) const`
-  - Serialize the bitmap to a buffer.
+- `size_t write(char* buf) const`
+  - Serialize the bitmap to a buffer. Returns how many bytes were written.
 - `static Roaring read(const char* buf, bool portable = true)`
   - Deserialize a bitmap from a buffer.
-- `static Roaring readSafe(const char* buf, size_t maxbytes, bool portable = true)`
+- `static Roaring readSafe(const char* buf, size_t maxbytes)`
   - Safe deserialization (will not read past `maxbytes`).
 
 ## Bulk Operations
