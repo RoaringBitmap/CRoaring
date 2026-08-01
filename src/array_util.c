@@ -1641,9 +1641,19 @@ static inline uint32_t unique(uint16_t *out, uint32_t len) {
     return pos;
 }
 
-// use with qsort, could be avoided
-static int uint16_compare(const void *a, const void *b) {
-    return (*(uint16_t *)a - *(uint16_t *)b);
+// Sort a very short run of uint16 values in place. The callers below feed this
+// at most 16 values; calling qsort() for that costs more in glibc merge-sort
+// setup, function-pointer compares and memmove traffic than the sort itself.
+static inline void sort_uint16_short(uint16_t *z, uint32_t n) {
+    for (uint32_t i = 1; i < n; i++) {
+        uint16_t v = z[i];
+        uint32_t j = i;
+        while (j > 0 && z[j - 1] > v) {
+            z[j] = z[j - 1];
+            j--;
+        }
+        z[j] = v;
+    }
 }
 
 CROARING_TARGET_AVX2
@@ -1712,7 +1722,7 @@ uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
         memcpy(buffer + leftoversize, array1 + 8 * pos1,
                (length1 - 8 * len1) * sizeof(uint16_t));
         leftoversize += length1 - 8 * len1;
-        qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+        sort_uint16_short(buffer, leftoversize);
 
         leftoversize = unique(buffer, leftoversize);
         len += (uint32_t)union_uint16(buffer, leftoversize, array2 + 8 * pos2,
@@ -1721,7 +1731,7 @@ uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
         memcpy(buffer + leftoversize, array2 + 8 * pos2,
                (length2 - 8 * len2) * sizeof(uint16_t));
         leftoversize += length2 - 8 * len2;
-        qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+        sort_uint16_short(buffer, leftoversize);
         leftoversize = unique(buffer, leftoversize);
         len += (uint32_t)union_uint16(buffer, leftoversize, array1 + 8 * pos1,
                                       length1 - 8 * pos1, output);
@@ -1853,7 +1863,7 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
                    (length2 - 8 * pos2) * sizeof(uint16_t));
             len += (length2 - 8 * pos2);
         } else {
-            qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+            sort_uint16_short(buffer, leftoversize);
             leftoversize = unique_xor(buffer, leftoversize);
             len += xor_uint16(buffer, leftoversize, array2 + 8 * pos2,
                               length2 - 8 * pos2, output);
@@ -1867,7 +1877,7 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
                    (length1 - 8 * pos1) * sizeof(uint16_t));
             len += (length1 - 8 * pos1);
         } else {
-            qsort(buffer, leftoversize, sizeof(uint16_t), uint16_compare);
+            sort_uint16_short(buffer, leftoversize);
             leftoversize = unique_xor(buffer, leftoversize);
             len += xor_uint16(buffer, leftoversize, array1 + 8 * pos1,
                               length1 - 8 * pos1, output);
