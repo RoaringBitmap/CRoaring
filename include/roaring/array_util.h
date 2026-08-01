@@ -320,6 +320,7 @@ uint32_t avx512_union_uint16(const uint16_t *set_1, uint32_t size_1,
                              const uint16_t *set_2, uint32_t size_2,
                              uint16_t *buffer);
 #endif  // CROARING_COMPILER_SUPPORTS_AVX512
+
 /**
  * A fast SSE-based XOR function.
  */

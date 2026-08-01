@@ -1822,12 +1822,25 @@ static inline int avx512_emit_unique16(__m512i v, uint16_t *out,
  * 32-lane blocks this routine has written at most 32*(p1+p2) - 32 values,
  * because one merged block is always held back in `vmax`. The output pointer
  * therefore stays strictly behind the read pointers.
+ *
+ * That bound is exactly tight rather than merely satisfied: in the worst case
+ * the final merge below writes its last value to precisely the slot the last
+ * input value was read from. Anything that reduces how much the tail holds back
+ * -- shrinking `pending`, emitting `vmax` sooner -- silently breaks aliased
+ * callers, so re-derive the bound before changing the buffering here.
  */
 uint32_t avx512_union_uint16(const uint16_t *array1, uint32_t length1,
                              const uint16_t *array2, uint32_t length2,
                              uint16_t *output) {
     const uint32_t W = 32;  // lanes per 512-bit register
     if (length1 < W || length2 < W) {
+        // Not enough on one side to fill a block. union_vector16 keeps
+        // vectorizing at 8-lane granularity, so it still beats the scalar
+        // merge once there is a worthwhile amount of data on the other side;
+        // below that its own fixed overhead dominates.
+        if (length1 + length2 >= 64) {
+            return union_vector16(array1, length1, array2, length2, output);
+        }
         return (uint32_t)union_uint16(array1, length1, array2, length2, output);
     }
     const uint32_t blocks1 = length1 / W, blocks2 = length2 / W;
@@ -1900,7 +1913,16 @@ uint32_t avx512_union_uint16(const uint16_t *array1, uint32_t length1,
 
     uint16_t merged[2 * 32];  // <= W pending + (W-1) leftover
     size_t nmerged = union_uint16(pending, npending, shortrest, nshort, merged);
-    out += union_uint16(merged, nmerged, longrest, nlong, out);
+    // When the small side held fewer than two blocks the loop above ran at most
+    // once, so `longrest` can still be most of the larger input. Finishing that
+    // scalar would give away more than the block loop won, hence the same
+    // 8-lane handoff as in the short-input case.
+    if (nlong >= 64) {
+        out += union_vector16(merged, (uint32_t)nmerged, longrest,
+                              (uint32_t)nlong, out);
+    } else {
+        out += union_uint16(merged, nmerged, longrest, nlong, out);
+    }
     return (uint32_t)(out - output);
 }
 CROARING_UNTARGET_AVX512
