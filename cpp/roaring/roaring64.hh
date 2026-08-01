@@ -414,6 +414,32 @@ class Roaring64 {
         return Roaring64(result);
     }
 
+    /**
+     * Remove run-length encoding even when it is more space efficient.
+     * Return whether a change was applied.
+     */
+    bool removeRunCompression() noexcept {
+        return api::roaring64_bitmap_remove_run_compression(roaring);
+    }
+
+    /**
+     * Convert array and bitmap containers to run containers when it is more
+     * efficient; also convert from run containers when more space efficient.
+     * Returns true if the result has at least one run container.
+     * Additional savings might be possible by calling shrinkToFit().
+     */
+    bool runOptimize() noexcept {
+        return api::roaring64_bitmap_run_optimize(roaring);
+    }
+
+    /**
+     * If needed, reallocate memory to shrink the memory usage.
+     * Returns the number of bytes saved.
+     */
+    size_t shrinkToFit() noexcept {
+        return api::roaring64_bitmap_shrink_to_fit(roaring);
+    }
+
     typedef Roaring64ConstIterator const_iterator;
 
     /**

@@ -241,6 +241,58 @@ DEFINE_TEST(test_cpp_r64_bidirectional) {
     assert_true(rev_empty.empty());
 }
 
+DEFINE_TEST(test_cpp_r64_run_optimize) {
+    Roaring64 r;
+    const uint64_t sparse = uint64_t(1) << 40;
+    r.add(sparse);
+    assert_false(r.runOptimize());
+
+    for (uint64_t i = 0; i < 30000; ++i) {
+        r.add(i);
+    }
+    assert_true(r.runOptimize());
+
+    assert_int_equal(r.cardinality(), 30001);
+    assert_true(r.contains(0));
+    assert_true(r.contains(29999));
+    assert_false(r.contains(30000));
+    assert_true(r.contains(sparse));
+}
+
+DEFINE_TEST(test_cpp_r64_remove_run_compression) {
+    Roaring64 r;
+    for (uint64_t i = 0; i < 30000; ++i) {
+        r.add(i);
+    }
+    assert_true(r.runOptimize());
+    assert_true(r.removeRunCompression());
+    assert_false(r.removeRunCompression());
+    assert_true(r.runOptimize());
+
+    assert_int_equal(r.cardinality(), 30000);
+    assert_true(r.contains(0));
+    assert_true(r.contains(29999));
+    assert_false(r.contains(30000));
+}
+
+DEFINE_TEST(test_cpp_r64_shrink_to_fit) {
+    Roaring64 r;
+    for (uint64_t i = 0; i < 1000; ++i) {
+        r.add(i << 32);  // one container per value
+    }
+    for (uint64_t i = 500; i < 1000; ++i) {
+        r.remove(i << 32);
+    }
+    assert_true(r.shrinkToFit() > 0);  // slack from the removed containers
+
+    assert_int_equal(r.cardinality(), 500);
+    assert_true(r.contains(0));
+    assert_true(r.contains(uint64_t(499) << 32));
+    assert_false(r.contains(uint64_t(500) << 32));
+
+    assert_int_equal(r.shrinkToFit(), 0);
+}
+
 DEFINE_TEST(test_cpp_r64_random_vs_set) {
     doublechecked::Roaring64 r;
     std::vector<uint64_t> added;  // values that have been added
@@ -273,12 +325,27 @@ DEFINE_TEST(test_cpp_r64_random_vs_set) {
             r.add(v);
             added.push_back(v);
         }
+        // Periodically apply a post-processing step to the bitset
+        switch (next() % 15) {
+            case 0:
+                r.removeRunCompression();
+                break;
+            case 1:
+                r.runOptimize();
+                break;
+            case 2:
+                r.shrinkToFit();
+                break;
+            default:
+                break;
+        }
         if ((i % 500) == 0) {
             (void)r.cardinality();
             if (!added.empty()) {
                 (void)r.contains(added[next() % added.size()]);
             }
             (void)r.isEmpty();
+            r.validate();
         }
     }
     r.validate();  // manually validate
@@ -299,6 +366,9 @@ int main() {
         cmocka_unit_test(test_cpp_r64_set_ops),
         cmocka_unit_test(test_cpp_r64_iteration),
         cmocka_unit_test(test_cpp_r64_bidirectional),
+        cmocka_unit_test(test_cpp_r64_run_optimize),
+        cmocka_unit_test(test_cpp_r64_remove_run_compression),
+        cmocka_unit_test(test_cpp_r64_shrink_to_fit),
         cmocka_unit_test(test_cpp_r64_random_vs_set),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
