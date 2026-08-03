@@ -82,6 +82,16 @@ class Roaring64 {
         return ans;
     }
 
+    bool removeRunCompression() { return plain.removeRunCompression(); }
+
+    bool runOptimize() { return plain.runOptimize(); }
+
+    size_t shrinkToFit() { return plain.shrinkToFit(); }
+
+    size_t write(char* buf) const { return plain.write(buf); }
+
+    size_t getSizeInBytes() const { return plain.getSizeInBytes(); }
+
     // Manually validates the full contents against the reference set.
     void validate() const {
         assert_int_equal(plain.cardinality(), check.size());
