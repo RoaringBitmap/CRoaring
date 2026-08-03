@@ -514,8 +514,8 @@ Common Methods (32-bit and 64-bit)</h2>
 <li>Remove all elements.</li>
 </ul>
 </li>
-<li><code>void runOptimize()</code><ul>
-<li>Convert internal containers to run containers for better compression.</li>
+<li><code>bool runOptimize()</code><ul>
+<li>Convert internal containers to run containers for better compression. Returns <code>true</code> if the result has at least one run container.</li>
 </ul>
 </li>
 <li><code>void setCopyOnWrite(bool enable)</code><ul>
@@ -571,15 +571,15 @@ Serialization and Deserialization</h2>
 <li>Get the size in bytes for serialization.</li>
 </ul>
 </li>
-<li><code>void write(char* buf) const</code><ul>
-<li>Serialize the bitmap to a buffer.</li>
+<li><code>size_t write(char* buf) const</code><ul>
+<li>Serialize the bitmap to a buffer. Returns how many bytes were written.</li>
 </ul>
 </li>
 <li><code>static Roaring read(const char* buf, bool portable = true)</code><ul>
 <li>Deserialize a bitmap from a buffer.</li>
 </ul>
 </li>
-<li><code>static Roaring readSafe(const char* buf, size_t maxbytes, bool portable = true)</code><ul>
+<li><code>static Roaring readSafe(const char* buf, size_t maxbytes)</code><ul>
 <li>Safe deserialization (will not read past <code>maxbytes</code>).</li>
 </ul>
 </li>
