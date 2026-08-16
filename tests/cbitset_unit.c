@@ -6,6 +6,10 @@
 
 #include "test.h"
 
+#ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
+using namespace roaring::api;
+#endif
+
 int compute_cardinality(bitset_t *b) {
     size_t k = 0;
     for (size_t i = 0; bitset_next_set_bit(b, &i); i++) {

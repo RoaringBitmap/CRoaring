@@ -19,7 +19,7 @@
 #ifdef __cplusplus
 extern "C" {
 namespace roaring {
-namespace api {
+namespace internal {
 #endif
 
 /**
@@ -38,13 +38,19 @@ namespace api {
 extern "C++" {
 struct container_s {};
 }
-#define ROARING_CONTAINER_T ::roaring::api::container_s
+#define ROARING_CONTAINER_T ::roaring::internal::container_s
 #else
 #define ROARING_CONTAINER_T void  // no compile-time checking
 #endif
 
 #define ROARING_FLAG_COW UINT8_C(0x1)
 #define ROARING_FLAG_FROZEN UINT8_C(0x2)
+
+#ifdef __cplusplus
+}  // end namespace internal (but still in namespace roaring)
+using internal::container_s;  // use scoped to this namespace block
+namespace api {                        // begin API namespace
+#endif
 
 /**
  * Roaring arrays are array-based key-value pairs having containers as values
@@ -153,7 +159,7 @@ typedef struct roaring_container_iterator_s {
 #ifdef __cplusplus
 }
 }
-}  // extern "C" { namespace roaring { namespace api {
+}  // extern "C" { namespace roaring { namespace internal {
 #endif
 
 #endif /* ROARING_TYPES_H */
