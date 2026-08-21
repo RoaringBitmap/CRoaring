@@ -61,6 +61,24 @@ typedef struct roaring64_iterator_s {
     // in the forward direction. If false, there are no more values in the
     // backward direction.
     bool saturated_forward;
+
+    // Forward-iteration cache for bitset containers. `container_iterator_next`
+    // recomputes the word index from `container_it.index`, reloads the word
+    // and re-masks it for every value; keeping the remaining bits of the
+    // current word here turns that into a `tzcnt` and a `blsr`. Array and run
+    // containers already advance by a single increment and gain nothing from
+    // a cache, so they stay on the ordinary path.
+    //
+    // Every field is a pure function of the ART position and
+    // `container_it.index`, so the cache describes where the iterator is
+    // exactly when both still match what it was built from. `fast_type` is
+    // BITSET_CONTAINER_TYPE, or 0 when there is no usable cache.
+    const art_val_t *fast_art_value;
+    const uint64_t *fast_words;
+    uint64_t fast_word;
+    uint32_t fast_wordindex;
+    int32_t fast_index;
+    uint8_t fast_type;
 } roaring64_iterator_t;
 
 static inline bool is_frozen64(const roaring64_bitmap_t *r) {
@@ -182,6 +200,36 @@ static inline int compare_high48(art_key_chunk_t key1[],
     return art_compare_keys(key1, key2);
 }
 
+// Cache the current container so advance() need not re-read the ART leaf,
+// reload the container pointer, or (for bitsets) re-mask the current word.
+// Called after any positioning that sets container_it.index.
+// fast_type is 0 when there is no usable cache (run containers, exhausted).
+static inline void roaring64_iterator_prime(roaring64_iterator_t *it) {
+    it->fast_type = 0;
+    if (it->art_it.value == NULL) {
+        return;
+    }
+    leaf_t leaf = (leaf_t)*it->art_it.value;
+    if (get_typecode(leaf) != BITSET_CONTAINER_TYPE) {
+        return;
+    }
+    const bitset_container_t *bc =
+        const_CAST_bitset(get_container(it->r, leaf));
+    int32_t index = it->container_it.index;
+    uint32_t wordindex = (uint32_t)index >> 6;
+    uint32_t bit = (uint32_t)index & 63u;
+    uint64_t word = bc->words[wordindex];
+    // Bits strictly after the current value in this word. A shift of 64 is
+    // undefined, so the last bit of a word is a special case.
+    it->fast_word =
+        (bit == 63u) ? UINT64_C(0) : (word & (UINT64_MAX << (bit + 1)));
+    it->fast_words = bc->words;
+    it->fast_wordindex = wordindex;
+    it->fast_index = index;
+    it->fast_art_value = it->art_it.value;
+    it->fast_type = BITSET_CONTAINER_TYPE;
+}
+
 static inline bool roaring64_iterator_init_at_leaf_first(
     roaring64_iterator_t *it) {
     it->high48 = combine_key(it->art_it.key, 0);
@@ -190,7 +238,9 @@ static inline bool roaring64_iterator_init_at_leaf_first(
     it->container_it = container_init_iterator(get_container(it->r, leaf),
                                                get_typecode(leaf), &low16);
     it->value = it->high48 | low16;
-    return (it->has_value = true);
+    it->has_value = true;
+    roaring64_iterator_prime(it);
+    return true;
 }
 
 static inline bool roaring64_iterator_init_at_leaf_last(
@@ -201,7 +251,9 @@ static inline bool roaring64_iterator_init_at_leaf_last(
     it->container_it = container_init_iterator_last(get_container(it->r, leaf),
                                                     get_typecode(leaf), &low16);
     it->value = it->high48 | low16;
-    return (it->has_value = true);
+    it->has_value = true;
+    roaring64_iterator_prime(it);
+    return true;
 }
 
 static inline roaring64_iterator_t *roaring64_iterator_init_at(
@@ -217,6 +269,7 @@ static inline roaring64_iterator_t *roaring64_iterator_init_at(
         }
     } else {
         it->saturated_forward = first;
+        it->fast_type = 0;
     }
     return it;
 }
@@ -2793,7 +2846,19 @@ uint64_t roaring64_iterator_value(const roaring64_iterator_t *it) {
     return it->value;
 }
 
-bool roaring64_iterator_advance(roaring64_iterator_t *it) {
+// The current container is exhausted: step the ART to the next leaf.
+static inline bool roaring64_iterator_next_leaf(roaring64_iterator_t *it) {
+    if (art_iterator_next(&it->art_it)) {
+        return roaring64_iterator_init_at_leaf_first(it);
+    }
+    it->saturated_forward = true;
+    it->fast_type = 0;
+    return (it->has_value = false);
+}
+
+// Everything `advance` needs when the bitset cache does not describe where the
+// iterator is: a restart, or a step through the container iterator.
+static inline bool roaring64_iterator_advance_slow(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
         if (it->saturated_forward) {
             return (it->has_value = false);
@@ -2802,17 +2867,48 @@ bool roaring64_iterator_advance(roaring64_iterator_t *it) {
         return it->has_value;
     }
     leaf_t leaf = (leaf_t)*it->art_it.value;
+    uint8_t typecode = get_typecode(leaf);
     uint16_t low16 = (uint16_t)it->value;
-    if (container_iterator_next(get_container(it->r, leaf), get_typecode(leaf),
+    if (container_iterator_next(get_container(it->r, leaf), typecode,
                                 &it->container_it, &low16)) {
         it->value = it->high48 | low16;
+        it->has_value = true;
+        if (typecode == BITSET_CONTAINER_TYPE) {
+            // Only reached when the cache was stale, i.e. something else moved
+            // the cursor. Array and run containers never have a cache, and
+            // priming them would cost a leaf load per value.
+            roaring64_iterator_prime(it);
+        }
+        return true;
+    }
+    return roaring64_iterator_next_leaf(it);
+}
+
+bool roaring64_iterator_advance(roaring64_iterator_t *it) {
+    // Matching both the leaf and `container_it.index` is enough to know the
+    // cache describes where the iterator actually is: within a container the
+    // index determines the position. Anything that moved the cursor --
+    // `previous`, `move_equalorlarger`, any of the `read` variants -- moved one
+    // of them, and drops through to the slow path, which rebuilds the cache.
+    if (it->fast_type != 0 && it->fast_art_value == it->art_it.value &&
+        it->fast_index == it->container_it.index) {
+        uint64_t word = it->fast_word;
+        uint32_t wi = it->fast_wordindex;
+        while (word == 0) {
+            if (++wi >= BITSET_CONTAINER_SIZE_IN_WORDS) {
+                return roaring64_iterator_next_leaf(it);
+            }
+            word = it->fast_words[wi];
+            it->fast_wordindex = wi;
+        }
+        uint32_t index = wi * 64 + (uint32_t)roaring_trailing_zeroes(word);
+        it->fast_word = word & (word - 1);
+        it->fast_index = (int32_t)index;
+        it->container_it.index = (int32_t)index;
+        it->value = it->high48 | index;
         return (it->has_value = true);
     }
-    if (art_iterator_next(&it->art_it)) {
-        return roaring64_iterator_init_at_leaf_first(it);
-    }
-    it->saturated_forward = true;
-    return (it->has_value = false);
+    return roaring64_iterator_advance_slow(it);
 }
 
 bool roaring64_iterator_previous(roaring64_iterator_t *it) {
@@ -2829,12 +2925,15 @@ bool roaring64_iterator_previous(roaring64_iterator_t *it) {
     if (container_iterator_prev(get_container(it->r, leaf), get_typecode(leaf),
                                 &it->container_it, &low16)) {
         it->value = it->high48 | low16;
-        return (it->has_value = true);
+        it->has_value = true;
+        it->fast_type = 0;
+        return true;
     }
     if (art_iterator_prev(&it->art_it)) {
         return roaring64_iterator_init_at_leaf_last(it);
     }
     it->saturated_forward = false;  // Saturated backward.
+    it->fast_type = 0;
     return (it->has_value = false);
 }
 
@@ -2849,6 +2948,7 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
         if (!art_iterator_lower_bound(&it->art_it, val_high48)) {
             // Only smaller keys found.
             it->saturated_forward = true;
+            it->fast_type = 0;
             return (it->has_value = false);
         }
         it->high48 = combine_key(it->art_it.key, 0);
@@ -2864,11 +2964,14 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
                 get_container(it->r, leaf), get_typecode(leaf),
                 &it->container_it, &low16, val_low16)) {
             it->value = it->high48 | low16;
-            return (it->has_value = true);
+            it->has_value = true;
+            it->fast_type = 0;
+            return true;
         }
         // Only smaller entries in this container, move to the next.
         if (!art_iterator_next(&it->art_it)) {
             it->saturated_forward = true;
+            it->fast_type = 0;
             return (it->has_value = false);
         }
     }
@@ -2897,6 +3000,7 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
         if (has_value) {
             it->has_value = true;
             it->value = it->high48 | low16;
+            it->fast_type = 0;
             assert(consumed == count);
             return consumed;
         }
@@ -2905,6 +3009,7 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
             roaring64_iterator_init_at_leaf_first(it);
         } else {
             it->saturated_forward = true;
+            it->fast_type = 0;
         }
     }
     return consumed;
