@@ -2019,6 +2019,14 @@ void check_portable_serialization(const roaring64_bitmap_t* r1) {
     assert_r64_valid(r2);
     assert_true(roaring64_bitmap_equals(r2, r1));
     roaring64_bitmap_free(r2);
+
+    roaring64_bitmap_t* r3 = roaring64_bitmap_portable_deserialize_frozen(
+        buf.data(), serialized_size);
+    assert_r64_valid(r3);
+    assert_true(roaring64_bitmap_equals(r3, r1));
+    roaring64_bitmap_free(r3);
+    assert_null(roaring64_bitmap_portable_deserialize_frozen(
+        buf.data(), serialized_size > 0 ? serialized_size - 1 : 0));
 }
 
 DEFINE_TEST(test_portable_serialize) {
@@ -2036,6 +2044,13 @@ DEFINE_TEST(test_portable_serialize) {
     check_portable_serialization(r);
 
     roaring64_bitmap_add_range(r, 1ULL << 16, 1ULL << 32);
+    check_portable_serialization(r);
+
+    // Dense bitset container (cardinality > DEFAULT_MAX_SIZE).
+    roaring64_bitmap_add_range(r, 0, 5000);
+    check_portable_serialization(r);
+
+    roaring64_bitmap_run_optimize(r);
     check_portable_serialization(r);
 
     roaring64_bitmap_free(r);

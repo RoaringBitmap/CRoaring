@@ -484,6 +484,21 @@ class Roaring64 {
         return api::roaring64_bitmap_portable_deserialize_size(buf, maxbytes);
     }
 
+    /**
+     * Read a bitmap from a portable serialized buffer as a read-only view of
+     * the container payloads. See
+     * roaring64_bitmap_portable_deserialize_frozen(). May throw
+     * std::runtime_error.
+     */
+    static Roaring64 readSafeFrozen(const char* buf, size_t maxbytes) {
+        roaring64_bitmap_t* result =
+            api::roaring64_bitmap_portable_deserialize_frozen(buf, maxbytes);
+        if (result == nullptr) {
+            ROARING_TERMINATE("failed alloc while reading frozen portable");
+        }
+        return Roaring64(result);
+    }
+
     typedef Roaring64ConstIterator const_iterator;
 
     /**

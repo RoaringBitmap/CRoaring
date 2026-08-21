@@ -4031,6 +4031,42 @@ static void register_ser_deser(std::vector<Entry> &out) {
                 e.reusable_state = true;
                 out.push_back(std::move(e));
             }
+            // r64PortableDeserializeFrozen
+            {
+                Entry e;
+                e.name = "synthetic/r64PortableDeserializeFrozen/" + ptag;
+                e.description =
+                    "roaring64_bitmap_portable_deserialize_frozen(buf, size) "
+                    "+ free per iteration (payloads alias the buffer).";
+                e.setup = [count, step]() -> void * {
+                    auto *s = new serState;
+                    s->r = roaring64_bitmap_create();
+                    for (size_t i = 0; i < count; ++i)
+                        roaring64_bitmap_add(s->r, i * step);
+                    s->buf.resize(
+                        roaring64_bitmap_portable_size_in_bytes(s->r));
+                    roaring64_bitmap_portable_serialize(s->r, s->buf.data());
+                    return s;
+                };
+                e.run = [](void *sv) -> int64_t {
+                    auto *s = static_cast<serState *>(sv);
+                    roaring64_bitmap_t *r2 =
+                        roaring64_bitmap_portable_deserialize_frozen(
+                            s->buf.data(), s->buf.size());
+                    int64_t ok = r2 ? 1 : 0;
+                    if (r2) roaring64_bitmap_free(r2);
+                    return ok;
+                };
+                e.teardown = [](void *sv) {
+                    auto *s = static_cast<serState *>(sv);
+                    roaring64_bitmap_free(s->r);
+                    delete s;
+                };
+                e.ops_per_run = static_cast<int64_t>(count);
+                e.inner_reps = 5;
+                e.reusable_state = true;
+                out.push_back(std::move(e));
+            }
             // r64FrozenDeserialize
             {
                 Entry e;

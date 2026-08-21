@@ -653,6 +653,30 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf,
                                                                size_t maxbytes);
 
 /**
+ * Read a bitmap from a portable serialized buffer as a read-only view of the
+ * container payloads. Headers and the ART index are allocated; bitset/array/run
+ * payloads alias `buf` and are not copied.
+ *
+ * In case of failure, NULL is returned. The function will not read beyond
+ * `maxbytes`.
+ *
+ * The returned bitmap must only be used in a readonly manner. It must be
+ * freed with `roaring64_bitmap_free()`. The backing buffer must not be freed
+ * or modified while it backs the bitmap.
+ *
+ * This function is endian-sensitive. If you have a big-endian system (e.g., a
+ * mainframe IBM s390x), in-place viewing of the little-endian portable format
+ * is not compatible. This is not a bug, it is by design: payloads are used
+ * as they sit in the buffer. The 32-bit
+ * `roaring_bitmap_portable_deserialize_frozen` has the same limitation.
+ *
+ * Unaligned payload accesses are possible; the bitset kernels use unaligned
+ * loads.
+ */
+roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
+    const char *buf, size_t maxbytes);
+
+/**
  * Returns the number of bytes required to serialize this bitmap in a "frozen"
  * format. This is not compatible with any other serialization formats.
  *
