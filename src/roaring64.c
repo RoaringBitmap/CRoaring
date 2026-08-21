@@ -39,6 +39,9 @@ typedef struct roaring64_bitmap_s {
     uint64_t first_free;
     uint64_t capacity;
     container_t **containers;
+    // Parallel to containers[]. Live slots (non-NULL pointers) have the
+    // matching typecode; NULL slots are skipped and their typecodes ignored.
+    uint8_t *typecodes;
 } roaring64_bitmap_t;
 
 // Leaf type of the ART used to keep the high 48 bits of each entry.
@@ -100,19 +103,26 @@ static inline container_t *get_container(const roaring64_bitmap_t *r,
     return r->containers[get_index(leaf)];
 }
 
+// Writes the pointer and its typecode together so they cannot drift.
+static inline void set_container_at(roaring64_bitmap_t *r, uint64_t index,
+                                    container_t *container, uint8_t typecode) {
+    r->containers[index] = container;
+    r->typecodes[index] = typecode;
+}
+
 // Replaces the container of `leaf` with the given container. Returns the
 // modified leaf for convenience.
 static inline leaf_t replace_container(roaring64_bitmap_t *r, leaf_t *leaf,
                                        container_t *container,
                                        uint8_t typecode) {
     uint64_t index = get_index(*leaf);
-    r->containers[index] = container;
+    set_container_at(r, index, container, typecode);
     *leaf = create_leaf(index, typecode);
     return *leaf;
 }
 
 /**
- * Extends the array of container pointers.
+ * Extends the array of container pointers (and the parallel typecode array).
  */
 static void extend_containers(roaring64_bitmap_t *r) {
     uint64_t size = r->first_free;
@@ -131,6 +141,8 @@ static void extend_containers(roaring64_bitmap_t *r) {
     r->containers = (container_t **)roaring_realloc(
         r->containers, new_capacity * sizeof(container_t *));
     memset(r->containers + r->capacity, 0, increase * sizeof(container_t *));
+    r->typecodes = (uint8_t *)roaring_realloc(r->typecodes,
+                                              new_capacity * sizeof(uint8_t));
     r->capacity = new_capacity;
 }
 
@@ -155,7 +167,7 @@ static uint64_t allocate_index(roaring64_bitmap_t *r) {
 static leaf_t add_container(roaring64_bitmap_t *r, container_t *container,
                             uint8_t typecode) {
     uint64_t index = allocate_index(r);
-    r->containers[index] = container;
+    set_container_at(r, index, container, typecode);
     return create_leaf(index, typecode);
 }
 
@@ -229,6 +241,7 @@ roaring64_bitmap_t *roaring64_bitmap_create(void) {
     r->capacity = 0;
     r->first_free = 0;
     r->containers = NULL;
+    r->typecodes = NULL;
     return r;
 }
 
@@ -252,6 +265,7 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
         art_free(&r->art);
     }
     roaring_free(r->containers);
+    roaring_free(r->typecodes);
     roaring_free(r);
 }
 
@@ -897,13 +911,15 @@ void roaring64_bitmap_clear(roaring64_bitmap_t *r) {
 }
 
 uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r) {
-    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
+    // Scan the pointer array rather than the ART: the arrays are sequential
+    // and the ART is not. first_free is a free-list head, not a size, so
+    // after deletes live containers can sit above it; skip NULL slots.
     uint64_t cardinality = 0;
-    while (it.value != NULL) {
-        leaf_t leaf = (leaf_t)*it.value;
-        cardinality += container_get_cardinality(get_container(r, leaf),
-                                                 get_typecode(leaf));
-        art_iterator_next(&it);
+    for (uint64_t i = 0; i < r->capacity; ++i) {
+        if (r->containers[i] != NULL) {
+            cardinality +=
+                container_get_cardinality(r->containers[i], r->typecodes[i]);
+        }
     }
     return cardinality;
 }
@@ -1027,9 +1043,10 @@ static void move_to_shrink(roaring64_bitmap_t *r, leaf_t *leaf) {
     if (idx < r->first_free) {
         return;
     }
-    r->containers[r->first_free] = get_container(r, *leaf);
+    uint8_t typecode = get_typecode(*leaf);
+    set_container_at(r, r->first_free, get_container(r, *leaf), typecode);
     r->containers[idx] = NULL;
-    *leaf = create_leaf(r->first_free, get_typecode(*leaf));
+    *leaf = create_leaf(r->first_free, typecode);
     r->first_free = next_free_container_idx(r);
 }
 
@@ -1054,7 +1071,10 @@ size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
     if (new_capacity < r->capacity) {
         r->containers = (container_t **)roaring_realloc(
             r->containers, new_capacity * sizeof(container_t *));
-        freed += (r->capacity - new_capacity) * sizeof(container_t *);
+        r->typecodes = (uint8_t *)roaring_realloc(
+            r->typecodes, new_capacity * sizeof(uint8_t));
+        freed += (r->capacity - new_capacity) *
+                 (sizeof(container_t *) + sizeof(uint8_t));
         r->capacity = new_capacity;
     }
     return freed;
@@ -1110,8 +1130,17 @@ static bool roaring64_leaf_internal_validate(const art_val_t val,
                                              void *context) {
     leaf_t leaf = (leaf_t)val;
     roaring64_bitmap_t *r = (roaring64_bitmap_t *)context;
-    return container_internal_validate(get_container(r, leaf),
-                                       get_typecode(leaf), reason);
+    uint64_t index = get_index(leaf);
+    uint8_t typecode = get_typecode(leaf);
+    if (index >= r->capacity || r->containers[index] == NULL) {
+        *reason = "ART leaf points at an empty container slot";
+        return false;
+    }
+    if (r->typecodes[index] != typecode) {
+        *reason = "typecode array does not match ART leaf";
+        return false;
+    }
+    return container_internal_validate(r->containers[index], typecode, reason);
 }
 
 bool roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r,
@@ -2651,6 +2680,10 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
 
     r->containers =
         (container_t **)roaring_malloc(r->capacity * sizeof(container_t *));
+    r->typecodes = (uint8_t *)roaring_malloc(r->capacity * sizeof(uint8_t));
+    if (r->capacity > 0) {
+        memset(r->containers, 0, r->capacity * sizeof(container_t *));
+    }
 
     // Container element counts.
     if (maxbytes < r->capacity * sizeof(uint16_t)) {
@@ -2717,8 +2750,10 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
 
         // The container index is unrelated to the iteration order.
         uint64_t index = get_index(leaf);
-        r->containers[index] = container_frozen_view(typecode, elem_count,
-                                                     &bitsets, &arrays, &runs);
+        set_container_at(r, index,
+                         container_frozen_view(typecode, elem_count, &bitsets,
+                                               &arrays, &runs),
+                         typecode);
 
         art_iterator_next(&it);
     }
