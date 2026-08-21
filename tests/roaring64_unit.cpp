@@ -944,6 +944,52 @@ DEFINE_TEST(test_get_cardinality) {
         assert_int_equal(roaring64_bitmap_get_cardinality(r), 7);
         roaring64_bitmap_free(r);
     }
+    {
+        // Deletes leave NULL holes in containers[]; cardinality must skip
+        // them rather than treating first_free as a dense end.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        const int n = 64;
+        for (int i = 0; i < n; ++i) {
+            roaring64_bitmap_add(r, ((uint64_t)i << 16) | 1);
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), n);
+        assert_r64_valid(r);
+
+        for (int i = 0; i < n; i += 2) {
+            roaring64_bitmap_remove(r, ((uint64_t)i << 16) | 1);
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), n / 2);
+        assert_r64_valid(r);
+
+        for (int i = n; i < n + 16; ++i) {
+            roaring64_bitmap_add(r, ((uint64_t)i << 16) | 1);
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), n / 2 + 16);
+        assert_r64_valid(r);
+
+        roaring64_bitmap_t* r2 = roaring64_bitmap_create();
+        roaring64_bitmap_add(r2, (1ULL << 16) | 1);
+        assert_int_equal(roaring64_bitmap_or_cardinality(r, r2), n / 2 + 16);
+        assert_int_equal(roaring64_bitmap_andnot_cardinality(r, r2),
+                         n / 2 + 15);
+
+        roaring64_bitmap_shrink_to_fit(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), n / 2 + 16);
+        assert_r64_valid(r);
+
+        roaring64_bitmap_free(r2);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Array -> bitset conversion must keep typecodes[] in sync.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        for (uint32_t i = 0; i < 4097; ++i) {
+            roaring64_bitmap_add(r, i);
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 4097);
+        assert_r64_valid(r);
+        roaring64_bitmap_free(r);
+    }
 }
 
 DEFINE_TEST(test_range_cardinality) {
