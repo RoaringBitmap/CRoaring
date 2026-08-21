@@ -917,8 +917,8 @@ uint64_t roaring64_bitmap_get_cardinality(const roaring64_bitmap_t *r) {
     uint64_t cardinality = 0;
     for (uint64_t i = 0; i < r->capacity; ++i) {
         if (r->containers[i] != NULL) {
-            cardinality += container_get_cardinality(r->containers[i],
-                                                     r->typecodes[i]);
+            cardinality +=
+                container_get_cardinality(r->containers[i], r->typecodes[i]);
         }
     }
     return cardinality;
