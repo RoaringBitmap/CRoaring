@@ -35,6 +35,15 @@ typedef uint64_t roaring64_leaf_t;
  */
 typedef struct roaring64_iterator_s roaring64_iterator_t;
 
+/** The leading members of `roaring64_iterator_t`, so that
+ * `roaring64_iterator_value()` and `roaring64_iterator_has_value()` can be
+ * read without a call. The iterator itself stays opaque; do not declare one of
+ * these, and do not rely on the layout beyond these two members. */
+typedef struct roaring64_iterator_public_s {
+    uint64_t value;
+    bool has_value;
+} roaring64_iterator_public_t;
+
 /**
  * A bit of context usable with `roaring64_bitmap_*_bulk()` functions.
  *
@@ -768,14 +777,22 @@ void roaring64_iterator_free(roaring64_iterator_t *it);
 /**
  * Returns true if the iterator currently points to a value. If so, calling
  * `roaring64_iterator_value()` returns the value.
+ *
+ * A pointer to a structure, suitably converted, points to its initial member
+ * (C17 6.7.2.1p15), and `roaring64_iterator_public_t` is the initial member of
+ * `roaring64_iterator_t`, so this reads the field directly.
  */
-bool roaring64_iterator_has_value(const roaring64_iterator_t *it);
+inline bool roaring64_iterator_has_value(const roaring64_iterator_t *it) {
+    return ((const roaring64_iterator_public_t *)it)->has_value;
+}
 
 /**
  * Returns the value the iterator currently points to. Should only be called if
  * `roaring64_iterator_has_value()` returns true.
  */
-uint64_t roaring64_iterator_value(const roaring64_iterator_t *it);
+inline uint64_t roaring64_iterator_value(const roaring64_iterator_t *it) {
+    return ((const roaring64_iterator_public_t *)it)->value;
+}
 
 /**
  * Advance the iterator. If there is a new value, then

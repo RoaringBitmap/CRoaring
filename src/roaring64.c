@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -48,13 +49,16 @@ typedef roaring64_leaf_t leaf_t;
 
 // Iterator struct to hold iteration state.
 typedef struct roaring64_iterator_s {
+    // Must stay first, and must stay a `roaring64_iterator_public_t`: the
+    // inline `roaring64_iterator_value` / `roaring64_iterator_has_value` in
+    // the public header reach these two members by converting a
+    // `roaring64_iterator_t *` to a pointer to its initial member.
+    roaring64_iterator_public_t pub;
+
     const roaring64_bitmap_t *r;
     art_iterator_t art_it;
     roaring_container_iterator_t container_it;
     uint64_t high48;  // Key that art_it points to.
-
-    uint64_t value;
-    bool has_value;
 
     // If has_value is false, then the iterator is saturated. This field
     // indicates the direction of saturation. If true, there are no more values
@@ -237,8 +241,8 @@ static inline bool roaring64_iterator_init_at_leaf_first(
     uint16_t low16 = 0;
     it->container_it = container_init_iterator(get_container(it->r, leaf),
                                                get_typecode(leaf), &low16);
-    it->value = it->high48 | low16;
-    it->has_value = true;
+    it->pub.value = it->high48 | low16;
+    it->pub.has_value = true;
     roaring64_iterator_prime(it);
     return true;
 }
@@ -250,8 +254,8 @@ static inline bool roaring64_iterator_init_at_leaf_last(
     uint16_t low16 = 0;
     it->container_it = container_init_iterator_last(get_container(it->r, leaf),
                                                     get_typecode(leaf), &low16);
-    it->value = it->high48 | low16;
-    it->has_value = true;
+    it->pub.value = it->high48 | low16;
+    it->pub.has_value = true;
     roaring64_iterator_prime(it);
     return true;
 }
@@ -260,8 +264,8 @@ static inline roaring64_iterator_t *roaring64_iterator_init_at(
     const roaring64_bitmap_t *r, roaring64_iterator_t *it, bool first) {
     it->r = r;
     it->art_it = art_init_iterator((art_t *)&r->art, first);
-    it->has_value = it->art_it.value != NULL;
-    if (it->has_value) {
+    it->pub.has_value = it->art_it.value != NULL;
+    if (it->pub.has_value) {
         if (first) {
             roaring64_iterator_init_at_leaf_first(it);
         } else {
@@ -2838,13 +2842,11 @@ roaring64_iterator_t *roaring64_iterator_copy(const roaring64_iterator_t *it) {
 
 void roaring64_iterator_free(roaring64_iterator_t *it) { roaring_free(it); }
 
-bool roaring64_iterator_has_value(const roaring64_iterator_t *it) {
-    return it->has_value;
-}
+CROARING_STATIC_ASSERT(offsetof(roaring64_iterator_t, pub) == 0,
+                       "the public members must be first in the iterator");
 
-uint64_t roaring64_iterator_value(const roaring64_iterator_t *it) {
-    return it->value;
-}
+extern inline bool roaring64_iterator_has_value(const roaring64_iterator_t *it);
+extern inline uint64_t roaring64_iterator_value(const roaring64_iterator_t *it);
 
 // The current container is exhausted: step the ART to the next leaf.
 static inline bool roaring64_iterator_next_leaf(roaring64_iterator_t *it) {
@@ -2853,7 +2855,7 @@ static inline bool roaring64_iterator_next_leaf(roaring64_iterator_t *it) {
     }
     it->saturated_forward = true;
     it->fast_type = 0;
-    return (it->has_value = false);
+    return (it->pub.has_value = false);
 }
 
 // Everything `advance` needs when the bitset cache does not describe where the
@@ -2861,18 +2863,18 @@ static inline bool roaring64_iterator_next_leaf(roaring64_iterator_t *it) {
 static inline bool roaring64_iterator_advance_slow(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
         if (it->saturated_forward) {
-            return (it->has_value = false);
+            return (it->pub.has_value = false);
         }
         roaring64_iterator_init_at(it->r, it, /*first=*/true);
-        return it->has_value;
+        return it->pub.has_value;
     }
     leaf_t leaf = (leaf_t)*it->art_it.value;
     uint8_t typecode = get_typecode(leaf);
-    uint16_t low16 = (uint16_t)it->value;
+    uint16_t low16 = (uint16_t)it->pub.value;
     if (container_iterator_next(get_container(it->r, leaf), typecode,
                                 &it->container_it, &low16)) {
-        it->value = it->high48 | low16;
-        it->has_value = true;
+        it->pub.value = it->high48 | low16;
+        it->pub.has_value = true;
         if (typecode == BITSET_CONTAINER_TYPE) {
             // Only reached when the cache was stale, i.e. something else moved
             // the cursor. Array and run containers never have a cache, and
@@ -2905,8 +2907,8 @@ bool roaring64_iterator_advance(roaring64_iterator_t *it) {
         it->fast_word = word & (word - 1);
         it->fast_index = (int32_t)index;
         it->container_it.index = (int32_t)index;
-        it->value = it->high48 | index;
-        return (it->has_value = true);
+        it->pub.value = it->high48 | index;
+        return (it->pub.has_value = true);
     }
     return roaring64_iterator_advance_slow(it);
 }
@@ -2915,17 +2917,17 @@ bool roaring64_iterator_previous(roaring64_iterator_t *it) {
     if (it->art_it.value == NULL) {
         if (!it->saturated_forward) {
             // Saturated backward.
-            return (it->has_value = false);
+            return (it->pub.has_value = false);
         }
         roaring64_iterator_init_at(it->r, it, /*first=*/false);
-        return it->has_value;
+        return it->pub.has_value;
     }
     leaf_t leaf = (leaf_t)*it->art_it.value;
-    uint16_t low16 = (uint16_t)it->value;
+    uint16_t low16 = (uint16_t)it->pub.value;
     if (container_iterator_prev(get_container(it->r, leaf), get_typecode(leaf),
                                 &it->container_it, &low16)) {
-        it->value = it->high48 | low16;
-        it->has_value = true;
+        it->pub.value = it->high48 | low16;
+        it->pub.has_value = true;
         it->fast_type = 0;
         return true;
     }
@@ -2934,14 +2936,14 @@ bool roaring64_iterator_previous(roaring64_iterator_t *it) {
     }
     it->saturated_forward = false;  // Saturated backward.
     it->fast_type = 0;
-    return (it->has_value = false);
+    return (it->pub.has_value = false);
 }
 
 bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
                                            uint64_t val) {
     uint8_t val_high48[ART_KEY_BYTES];
     uint16_t val_low16 = split_key(val, val_high48);
-    if (!it->has_value || it->high48 != (val & 0xFFFFFFFFFFFF0000)) {
+    if (!it->pub.has_value || it->high48 != (val & 0xFFFFFFFFFFFF0000)) {
         // The ART iterator is before or after the high48 bits of `val` (or
         // beyond the ART altogether), so we need to move to a leaf with a
         // key equal or greater.
@@ -2949,7 +2951,7 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
             // Only smaller keys found.
             it->saturated_forward = true;
             it->fast_type = 0;
-            return (it->has_value = false);
+            return (it->pub.has_value = false);
         }
         it->high48 = combine_key(it->art_it.key, 0);
         // Fall through to the next if statement.
@@ -2959,12 +2961,12 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
         // We're at equal high bits, check if a suitable value can be found
         // in this container.
         leaf_t leaf = (leaf_t)*it->art_it.value;
-        uint16_t low16 = (uint16_t)it->value;
+        uint16_t low16 = (uint16_t)it->pub.value;
         if (container_iterator_lower_bound(
                 get_container(it->r, leaf), get_typecode(leaf),
                 &it->container_it, &low16, val_low16)) {
-            it->value = it->high48 | low16;
-            it->has_value = true;
+            it->pub.value = it->high48 | low16;
+            it->pub.has_value = true;
             it->fast_type = 0;
             return true;
         }
@@ -2972,7 +2974,7 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
         if (!art_iterator_next(&it->art_it)) {
             it->saturated_forward = true;
             it->fast_type = 0;
-            return (it->has_value = false);
+            return (it->pub.has_value = false);
         }
     }
 
@@ -2984,10 +2986,10 @@ bool roaring64_iterator_move_equalorlarger(roaring64_iterator_t *it,
 uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
                                  uint64_t count) {
     uint64_t consumed = 0;
-    while (it->has_value && consumed < count) {
+    while (it->pub.has_value && consumed < count) {
         uint32_t container_consumed;
         leaf_t leaf = (leaf_t)*it->art_it.value;
-        uint16_t low16 = (uint16_t)it->value;
+        uint16_t low16 = (uint16_t)it->pub.value;
         uint32_t container_count = UINT32_MAX;
         if (count - consumed < (uint64_t)UINT32_MAX) {
             container_count = count - consumed;
@@ -2998,14 +3000,14 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
         consumed += container_consumed;
         buf += container_consumed;
         if (has_value) {
-            it->has_value = true;
-            it->value = it->high48 | low16;
+            it->pub.has_value = true;
+            it->pub.value = it->high48 | low16;
             it->fast_type = 0;
             assert(consumed == count);
             return consumed;
         }
-        it->has_value = art_iterator_next(&it->art_it);
-        if (it->has_value) {
+        it->pub.has_value = art_iterator_next(&it->art_it);
+        if (it->pub.has_value) {
             roaring64_iterator_init_at_leaf_first(it);
         } else {
             it->saturated_forward = true;
@@ -3018,10 +3020,10 @@ uint64_t roaring64_iterator_read(roaring64_iterator_t *it, uint64_t *buf,
 uint64_t roaring64_iterator_read_backward(roaring64_iterator_t *it,
                                           uint64_t *buf, uint64_t count) {
     uint64_t consumed = 0;
-    while (it->has_value && consumed < count) {
+    while (it->pub.has_value && consumed < count) {
         uint32_t container_consumed;
         leaf_t leaf = *it->art_it.value;
-        uint16_t low16 = (uint16_t)it->value;
+        uint16_t low16 = (uint16_t)it->pub.value;
         uint32_t container_count = UINT32_MAX;
         if (count - consumed < (uint64_t)UINT32_MAX) {
             container_count = count - consumed;
@@ -3032,13 +3034,13 @@ uint64_t roaring64_iterator_read_backward(roaring64_iterator_t *it,
         consumed += container_consumed;
         buf += container_consumed;
         if (has_value) {
-            it->has_value = true;
-            it->value = it->high48 | low16;
+            it->pub.has_value = true;
+            it->pub.value = it->high48 | low16;
             assert(consumed == count);
             return consumed;
         }
-        it->has_value = art_iterator_prev(&it->art_it);
-        if (it->has_value) {
+        it->pub.has_value = art_iterator_prev(&it->art_it);
+        if (it->pub.has_value) {
             roaring64_iterator_init_at_leaf_last(it);
         } else {
             it->saturated_forward = false;
@@ -3051,10 +3053,10 @@ size_t roaring64_iterator_read_ranges(roaring64_iterator_t *it,
                                       roaring64_range_closed_t *buf,
                                       size_t count) {
     size_t ret = 0;
-    while (it->has_value && ret < count) {
-        buf[ret].min = it->value;
+    while (it->pub.has_value && ret < count) {
+        buf[ret].min = it->pub.value;
         for (;;) {
-            uint16_t low16 = (uint16_t)it->value;
+            uint16_t low16 = (uint16_t)it->pub.value;
             leaf_t leaf = (leaf_t)*it->art_it.value;
             bool container_has_more;
             uint16_t run_end_low16 = container_iterator_find_run_end(
@@ -3063,12 +3065,12 @@ size_t roaring64_iterator_read_ranges(roaring64_iterator_t *it,
             buf[ret].max = it->high48 | run_end_low16;
 
             if (container_has_more) {
-                it->value = it->high48 | low16;
+                it->pub.value = it->high48 | low16;
                 break;
             }
             // Move to next leaf
-            it->has_value = art_iterator_next(&it->art_it);
-            if (it->has_value) {
+            it->pub.has_value = art_iterator_next(&it->art_it);
+            if (it->pub.has_value) {
                 roaring64_iterator_init_at_leaf_first(it);
             } else {
                 it->saturated_forward = true;
@@ -3076,7 +3078,8 @@ size_t roaring64_iterator_read_ranges(roaring64_iterator_t *it,
             }
             // Continue merging only if the run reached the container
             // boundary and the next leaf starts exactly at max+1.
-            if (run_end_low16 != UINT16_MAX || it->value != buf[ret].max + 1) {
+            if (run_end_low16 != UINT16_MAX ||
+                it->pub.value != buf[ret].max + 1) {
                 break;
             }
         }
@@ -3089,10 +3092,10 @@ size_t roaring64_iterator_read_prev_ranges(roaring64_iterator_t *it,
                                            roaring64_range_closed_t *buf,
                                            size_t count) {
     size_t ret = 0;
-    while (it->has_value && ret < count) {
-        buf[ret].max = it->value;
+    while (it->pub.has_value && ret < count) {
+        buf[ret].max = it->pub.value;
         for (;;) {
-            uint16_t low16 = (uint16_t)it->value;
+            uint16_t low16 = (uint16_t)it->pub.value;
             leaf_t leaf = (leaf_t)*it->art_it.value;
             bool container_has_more;
             uint16_t run_start_low16 = container_iterator_find_run_start(
@@ -3101,12 +3104,12 @@ size_t roaring64_iterator_read_prev_ranges(roaring64_iterator_t *it,
             buf[ret].min = it->high48 | run_start_low16;
 
             if (container_has_more) {
-                it->value = it->high48 | low16;
+                it->pub.value = it->high48 | low16;
                 break;
             }
             // Move to previous leaf
-            it->has_value = art_iterator_prev(&it->art_it);
-            if (it->has_value) {
+            it->pub.has_value = art_iterator_prev(&it->art_it);
+            if (it->pub.has_value) {
                 roaring64_iterator_init_at_leaf_last(it);
             } else {
                 it->saturated_forward = false;
@@ -3114,7 +3117,7 @@ size_t roaring64_iterator_read_prev_ranges(roaring64_iterator_t *it,
             }
             // Continue merging only if the run reached the container
             // boundary and the previous leaf ends exactly at min-1.
-            if (run_start_low16 != 0 || it->value != buf[ret].min - 1) {
+            if (run_start_low16 != 0 || it->pub.value != buf[ret].min - 1) {
                 break;
             }
         }
