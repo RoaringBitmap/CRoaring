@@ -113,6 +113,8 @@ $(document).ready(function(){initNavTree('d8/d01/roaring64_8h.html','../../'); i
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d2e/structroaring64__iterator__public__s.html">roaring64_iterator_public_s</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/dce/structroaring64__bulk__context__s.html">roaring64_bulk_context_s</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/d9f/structroaring64__range__closed__s.html">roaring64_range_closed_s</a></td></tr>
@@ -131,6 +133,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:ae2e459e0f9121b1f5703184653bf758d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67980556db783643a6ccf7d71e1ed698" id="r_a67980556db783643a6ccf7d71e1ed698"><td class="memItemLeft" align="right" valign="top">typedef struct roaring64_iterator_s&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a></td></tr>
 <tr class="separator:a67980556db783643a6ccf7d71e1ed698"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a899dc8c28f6f90e543ca838aef5e388d" id="r_a899dc8c28f6f90e543ca838aef5e388d"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d4/d2e/structroaring64__iterator__public__s.html">roaring64_iterator_public_s</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a899dc8c28f6f90e543ca838aef5e388d">roaring64_iterator_public_t</a></td></tr>
+<tr class="separator:a899dc8c28f6f90e543ca838aef5e388d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af222e7202ae9eca057f6b5cd869fefd5" id="r_af222e7202ae9eca057f6b5cd869fefd5"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../df/dce/structroaring64__bulk__context__s.html">roaring64_bulk_context_s</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#af222e7202ae9eca057f6b5cd869fefd5">roaring64_bulk_context_t</a></td></tr>
 <tr class="separator:af222e7202ae9eca057f6b5cd869fefd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70d9b9fb4c47c21e2485e32fa7c410cf" id="r_a70d9b9fb4c47c21e2485e32fa7c410cf"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="../../d4/d9f/structroaring64__range__closed__s.html">roaring64_range_closed_s</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf">roaring64_range_closed_t</a></td></tr>
@@ -336,7 +340,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Creates a new bitmap which contains all values passed in as arguments.</p>
 <p>To create a bitmap from a variable number of arguments, use the <code>roaring64_bitmap_of_ptr</code> function instead. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00119">119</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00128">128</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -372,6 +376,21 @@ Functions</h2></td></tr>
 <p>A bit of context usable with <code>roaring64_bitmap_*_bulk()</code> functions.</p>
 <p>Should be initialized with <code>{0}</code> (or <code>memset()</code> to all zeros). Callers should treat it as an opaque type.</p>
 <p>A context may only be used with a single bitmap (unless re-initialized to zero), and any modification to a bitmap (other than modifications performed with <code>_bulk()</code> functions with the context passed) will invalidate any contexts associated with that bitmap. </p>
+
+</div>
+</div>
+<a id="a899dc8c28f6f90e543ca838aef5e388d" name="a899dc8c28f6f90e543ca838aef5e388d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a899dc8c28f6f90e543ca838aef5e388d">&#9670;&#160;</a></span>roaring64_iterator_public_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="../../d4/d2e/structroaring64__iterator__public__s.html">roaring64_iterator_public_s</a> <a class="el" href="../../d8/d01/roaring64_8h.html#a899dc8c28f6f90e543ca838aef5e388d">roaring64_iterator_public_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>The leading members of <code>roaring64_iterator_t</code>, so that <code><a class="el" href="../../d8/d01/roaring64_8h.html#a3407daef6cf818a628ae387a2506a1fb">roaring64_iterator_value()</a></code> and <code><a class="el" href="../../d8/d01/roaring64_8h.html#a9d4b959bbe9f9cdb4159f8d2c9d4ec65">roaring64_iterator_has_value()</a></code> can be read without a call. The iterator itself stays opaque; do not declare one of these, and do not rely on the layout beyond these two members. </p>
 
 </div>
 </div>
@@ -592,7 +611,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted up by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00564">564</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00573">573</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
@@ -2457,7 +2476,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted down by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00575">575</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00584">584</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="../../d8/d01/roaring64_8h.html#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
@@ -2684,6 +2703,9 @@ Functions</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">bool roaring64_iterator_has_value </td>
@@ -2693,8 +2715,16 @@ Functions</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
-<p>Returns true if the iterator currently points to a value. If so, calling <code><a class="el" href="../../d8/d01/roaring64_8h.html#a3407daef6cf818a628ae387a2506a1fb">roaring64_iterator_value()</a></code> returns the value. </p>
+<p>Returns true if the iterator currently points to a value. If so, calling <code><a class="el" href="../../d8/d01/roaring64_8h.html#a3407daef6cf818a628ae387a2506a1fb">roaring64_iterator_value()</a></code> returns the value.</p>
+<p>A pointer to a structure, suitably converted, points to its initial member (C17 6.7.2.1p15), and <code>roaring64_iterator_public_t</code> is the initial member of <code>roaring64_iterator_t</code>, so this reads the field directly. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00785">785</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -2967,6 +2997,9 @@ Functions</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">uint64_t roaring64_iterator_value </td>
@@ -2976,8 +3009,15 @@ Functions</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 <p>Returns the value the iterator currently points to. Should only be called if <code><a class="el" href="../../d8/d01/roaring64_8h.html#a9d4b959bbe9f9cdb4159f8d2c9d4ec65">roaring64_iterator_has_value()</a></code> returns true. </p>
+
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00793">793</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>

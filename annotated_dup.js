@@ -1,6 +1,7 @@
 var annotated_dup =
 [
     [ "roaring64_bulk_context_s", "df/dce/structroaring64__bulk__context__s.html", "df/dce/structroaring64__bulk__context__s" ],
+    [ "roaring64_iterator_public_s", "d4/d2e/structroaring64__iterator__public__s.html", "d4/d2e/structroaring64__iterator__public__s" ],
     [ "roaring64_range_closed_s", "d4/d9f/structroaring64__range__closed__s.html", "d4/d9f/structroaring64__range__closed__s" ],
     [ "roaring_bitmap_s", "dd/d7a/structroaring__bitmap__s.html", "dd/d7a/structroaring__bitmap__s" ],
     [ "roaring_bulk_context_s", "db/d0d/structroaring__bulk__context__s.html", "db/d0d/structroaring__bulk__context__s" ],

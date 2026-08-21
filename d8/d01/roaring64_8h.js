@@ -1,10 +1,12 @@
 var roaring64_8h =
 [
+    [ "roaring64_iterator_public_s", "d4/d2e/structroaring64__iterator__public__s.html", "d4/d2e/structroaring64__iterator__public__s" ],
     [ "roaring64_bulk_context_s", "df/dce/structroaring64__bulk__context__s.html", "df/dce/structroaring64__bulk__context__s" ],
     [ "roaring64_range_closed_s", "d4/d9f/structroaring64__range__closed__s.html", "d4/d9f/structroaring64__range__closed__s" ],
     [ "roaring64_bitmap_from", "d8/d01/roaring64_8h.html#a976c28d08097779d3d5d82ba032667ac", null ],
     [ "roaring64_bitmap_t", "d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c", null ],
     [ "roaring64_bulk_context_t", "d8/d01/roaring64_8h.html#af222e7202ae9eca057f6b5cd869fefd5", null ],
+    [ "roaring64_iterator_public_t", "d8/d01/roaring64_8h.html#a899dc8c28f6f90e543ca838aef5e388d", null ],
     [ "roaring64_iterator_t", "d8/d01/roaring64_8h.html#a67980556db783643a6ccf7d71e1ed698", null ],
     [ "roaring64_leaf_t", "d8/d01/roaring64_8h.html#ae2e459e0f9121b1f5703184653bf758d", null ],
     [ "roaring64_range_closed_t", "d8/d01/roaring64_8h.html#a70d9b9fb4c47c21e2485e32fa7c410cf", null ],
