@@ -3115,6 +3115,13 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
     if (buf == NULL) {
         return NULL;
     }
+#if CROARING_IS_BIG_ENDIAN
+    // The portable format is little-endian and this function uses the payload
+    // bytes where they sit, so there is no correct view of them here. Refuse
+    // rather than hand back a bitmap that silently reads byte-swapped values.
+    (void)maxbytes;
+    return NULL;
+#else
     size_t remaining = maxbytes;
 
     if (remaining < sizeof(uint64_t)) {
@@ -3213,6 +3220,7 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
         remaining -= consumed;
     }
     return r;
+#endif
 }
 
 bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,

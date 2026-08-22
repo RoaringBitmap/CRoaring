@@ -680,11 +680,10 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf,
  * after that is the bitmap considered safe for use. We also recommend
  * checksumming the serialized data; CRoaring does not provide checksumming.
  *
- * This function is endian-sensitive. If you have a big-endian system (e.g., a
- * mainframe IBM s390x), in-place viewing of the little-endian portable format
- * is not compatible. This is not a bug, it is by design: payloads are used
- * as they sit in the buffer. The 32-bit
- * `roaring_bitmap_portable_deserialize_frozen` has the same limitation.
+ * Returns NULL on a big-endian system (e.g., a mainframe IBM s390x). The
+ * portable format is little-endian and this function uses the payload bytes
+ * where they sit, so there is no correct in-place view of them there; use
+ * `roaring64_bitmap_portable_deserialize_safe()`, which converts as it copies.
  *
  * Container payloads are used where they sit in the buffer, so they may be
  * unaligned. Every access path is either SIMD with unaligned loads or marked
