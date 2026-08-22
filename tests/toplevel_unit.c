@@ -5235,6 +5235,21 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
 // This test is unsafe, as it may trigger unaligned memory access
 // It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
 DEFINE_TEST(test_portable_deserialize_frozen) {
+#if CROARING_IS_BIG_ENDIAN
+    // The portable format is little-endian and this view uses the payloads
+    // where they sit, so the function refuses on a big-endian host. Check
+    // that contract; the rest of the test has nothing to view.
+    {
+        roaring_bitmap_t *r = roaring_bitmap_from(1, 2, 3, 100, 1000, 10000);
+        uint32_t size = roaring_bitmap_portable_size_in_bytes(r);
+        char *buf = (char *)malloc(size);
+        assert_int_equal(roaring_bitmap_portable_serialize(r, buf), size);
+        assert_null(roaring_bitmap_portable_deserialize_frozen(buf));
+        free(buf);
+        roaring_bitmap_free(r);
+        return;
+    }
+#else
     roaring_bitmap_t *r1 =
         roaring_bitmap_from(1, 2, 3, 100, 1000, 10000, 1000000, 20000000);
     assert_non_null(r1);
@@ -5326,6 +5341,7 @@ DEFINE_TEST(test_portable_deserialize_frozen) {
     roaring_bitmap_free(r1);
     roaring_bitmap_free(r2);
     free(serialized);
+#endif
 }
 #endif  // ROARING_UNSAFE_FROZEN_TESTS
 
