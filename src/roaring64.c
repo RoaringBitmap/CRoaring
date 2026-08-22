@@ -109,13 +109,14 @@ typedef union {
     run_container_t run;
 } frozen_container_header_t;
 
-static void *arena_alloc(char **arena, size_t num_bytes) {
+static void *roaring64_arena_alloc(char **arena, size_t num_bytes) {
     char *res = *arena;
     *arena += num_bytes;
     return res;
 }
 
-static char *arena_pad(char *cursor, const char *base, size_t alignment) {
+static char *roaring64_arena_pad(char *cursor, const char *base,
+                                 size_t alignment) {
     uint64_t off = (uint64_t)(cursor - base);
     uint64_t aligned = (off + alignment - 1) & ~(uint64_t)(alignment - 1);
     return (char *)base + aligned;
@@ -2753,13 +2754,13 @@ static roaring64_bitmap_t *alloc_frozen_bitmap(
         return NULL;
     }
     char *cursor = base;
-    roaring64_bitmap_t *r =
-        (roaring64_bitmap_t *)arena_alloc(&cursor, sizeof(roaring64_bitmap_t));
+    roaring64_bitmap_t *r = (roaring64_bitmap_t *)roaring64_arena_alloc(
+        &cursor, sizeof(roaring64_bitmap_t));
     art_init_cleared(&r->art);
     r->flags = ROARING_FLAG_FROZEN;
     r->capacity = capacity;
     r->first_free = 0;
-    cursor = arena_pad(cursor, base, alignof(container_t *));
+    cursor = roaring64_arena_pad(cursor, base, alignof(container_t *));
     if (capacity == 0) {
         r->containers = NULL;
         r->typecodes = NULL;
@@ -2768,12 +2769,13 @@ static roaring64_bitmap_t *alloc_frozen_bitmap(
         }
         return r;
     }
-    r->containers = (container_t **)arena_alloc(&cursor, ptrs);
+    r->containers = (container_t **)roaring64_arena_alloc(&cursor, ptrs);
     memset(r->containers, 0, ptrs);
-    r->typecodes = (uint8_t *)arena_alloc(&cursor, codes);
-    cursor = arena_pad(cursor, base, alignof(frozen_container_header_t));
+    r->typecodes = (uint8_t *)roaring64_arena_alloc(&cursor, codes);
+    cursor =
+        roaring64_arena_pad(cursor, base, alignof(frozen_container_header_t));
     frozen_container_header_t *hdrs =
-        (frozen_container_header_t *)arena_alloc(&cursor, headers);
+        (frozen_container_header_t *)roaring64_arena_alloc(&cursor, headers);
     if (headers_out != NULL) {
         *headers_out = hdrs;
     }
@@ -2833,12 +2835,22 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     buf += sizeof(capacity);
     maxbytes -= sizeof(capacity);
 
+    // The element counts alone need two bytes per container, so a capacity
+    // larger than that cannot be satisfied by this buffer. Checked before
+    // allocating, so a short buffer claiming a huge count cannot make us
+    // reserve (and clear) an arena sized from attacker-controlled bytes.
+    if (capacity > maxbytes / sizeof(uint16_t)) {
+        return NULL;
+    }
+
     frozen_container_header_t *headers = NULL;
     roaring64_bitmap_t *r = alloc_frozen_bitmap(capacity, &headers);
     if (r == NULL) {
         return NULL;
     }
-    r->flags = flags | ROARING_FLAG_FROZEN | ROARING_FLAG_FROZEN_ART;
+    // Only flags the format actually defines; the byte comes from the buffer.
+    r->flags = (uint8_t)(flags & ROARING_FLAG_COW) | ROARING_FLAG_FROZEN |
+               ROARING_FLAG_FROZEN_ART;
 
     // Container element counts.
     if (maxbytes < capacity * sizeof(uint16_t)) {
@@ -3094,7 +3106,6 @@ static bool view_one_portable32(roaring64_bitmap_t *r,
             remaining -= payload_size;
         }
     }
-    (void)remaining;
     return true;
 }
 
@@ -3104,7 +3115,6 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
     if (buf == NULL) {
         return NULL;
     }
-    const char *initial_buf = buf;
     size_t remaining = maxbytes;
 
     if (remaining < sizeof(uint64_t)) {
@@ -3202,7 +3212,6 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
         buf += consumed;
         remaining -= consumed;
     }
-    (void)initial_buf;
     return r;
 }
 

@@ -299,6 +299,7 @@ extern inline container_t *container_andnot(const container_t *c1,
                                             uint8_t type2,
                                             uint8_t *result_type);
 
+CROARING_ALLOW_UNALIGNED
 roaring_container_iterator_t container_init_iterator(const container_t *c,
                                                      uint8_t typecode,
                                                      uint16_t *value) {
@@ -338,6 +339,7 @@ roaring_container_iterator_t container_init_iterator(const container_t *c,
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 roaring_container_iterator_t container_init_iterator_last(const container_t *c,
                                                           uint8_t typecode,
                                                           uint16_t *value) {
@@ -417,6 +419,7 @@ bool container_iterator_lower_bound(const container_t *c, uint8_t typecode,
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 bool container_iterator_read_into_uint32(const container_t *c, uint8_t typecode,
                                          roaring_container_iterator_t *it,
                                          uint32_t high16, uint32_t *buf,
@@ -508,6 +511,7 @@ bool container_iterator_read_into_uint32(const container_t *c, uint8_t typecode,
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
                                          roaring_container_iterator_t *it,
                                          uint64_t high48, uint64_t *buf,
@@ -599,6 +603,7 @@ bool container_iterator_read_into_uint64(const container_t *c, uint8_t typecode,
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 bool container_iterator_read_backward_into_uint32(
     const container_t *c, uint8_t typecode, roaring_container_iterator_t *it,
     uint32_t high16, uint32_t *buf, uint32_t count, uint32_t *consumed,
@@ -690,6 +695,7 @@ bool container_iterator_read_backward_into_uint32(
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 bool container_iterator_read_backward_into_uint64(
     const container_t *c, uint8_t typecode, roaring_container_iterator_t *it,
     uint64_t high48, uint64_t *buf, uint32_t count, uint32_t *consumed,
