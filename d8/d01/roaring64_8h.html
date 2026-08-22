@@ -276,6 +276,8 @@ Functions</h2></td></tr>
 <tr class="separator:a9a5113340fea367d4f4b265843faaf75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a12df0f6d0c223b5e6e8655d4f0bd5f58" id="r_a12df0f6d0c223b5e6e8655d4f0bd5f58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a12df0f6d0c223b5e6e8655d4f0bd5f58">roaring64_bitmap_portable_deserialize_safe</a> (const char *buf, size_t maxbytes)</td></tr>
 <tr class="separator:a12df0f6d0c223b5e6e8655d4f0bd5f58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa4e94682da0c32f6a38e7faf88243e3" id="r_afa4e94682da0c32f6a38e7faf88243e3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#afa4e94682da0c32f6a38e7faf88243e3">roaring64_bitmap_portable_deserialize_frozen</a> (const char *buf, size_t maxbytes)</td></tr>
+<tr class="separator:afa4e94682da0c32f6a38e7faf88243e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a025b8fdf85a43e843ba8c6cb4f543188" id="r_a025b8fdf85a43e843ba8c6cb4f543188"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a025b8fdf85a43e843ba8c6cb4f543188">roaring64_bitmap_frozen_size_in_bytes</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r)</td></tr>
 <tr class="separator:a025b8fdf85a43e843ba8c6cb4f543188"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ab1ba20d1f5de72ddf8af5dec288a99" id="r_a9ab1ba20d1f5de72ddf8af5dec288a99"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d01/roaring64_8h.html#a9ab1ba20d1f5de72ddf8af5dec288a99">roaring64_bitmap_frozen_serialize</a> (const <a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> *r, char *buf)</td></tr>
@@ -1901,6 +1903,41 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="afa4e94682da0c32f6a38e7faf88243e3" name="afa4e94682da0c32f6a38e7faf88243e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa4e94682da0c32f6a38e7faf88243e3">&#9670;&#160;</a></span>roaring64_bitmap_portable_deserialize_frozen()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d8/d01/roaring64_8h.html#a8c5f0692fea8689552a0c13013fbac8c">roaring64_bitmap_t</a> * roaring64_bitmap_portable_deserialize_frozen </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>buf</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>maxbytes</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Read a bitmap from a portable serialized buffer as a read-only view of the container payloads. Headers and the ART index are allocated; bitset/array/run payloads alias <code>buf</code> and are not copied.</p>
+<p>In case of failure, NULL is returned. The function will not read beyond <code>maxbytes</code>.</p>
+<p>The returned bitmap must only be used in a readonly manner. It must be freed with <code><a class="el" href="../../d8/d01/roaring64_8h.html#aef1d257f0919f000eee69813b5484986">roaring64_bitmap_free()</a></code>. The backing buffer must outlive the bitmap and must not be freed or modified while it backs it. Calling any mutating function on the result is undefined behavior: its container array and headers live in a single allocation, so growing it would reallocate an interior pointer.</p>
+<p>The function itself is safe in the sense that it will not read beyond (buf, maxbytes). However, as with <code><a class="el" href="../../d8/d01/roaring64_8h.html#a12df0f6d0c223b5e6e8655d4f0bd5f58">roaring64_bitmap_portable_deserialize_safe()</a></code>, a bitmap read from garbage may not be in a valid state, and subsequent operations on it may not lead to sensible results: array containers must be sorted, and run containers sorted and non-overlapping, which is guaranteed only when the input came from a real serialized bitmap.</p>
+<p>If the source is untrusted, you should call <code>roaring64_bitmap_internal_validate</code> on the result before using it. Only after that is the bitmap considered safe for use. We also recommend checksumming the serialized data; CRoaring does not provide checksumming.</p>
+<p>Returns NULL on a big-endian system (e.g., a mainframe IBM s390x). The portable format is little-endian and this function uses the payload bytes where they sit, so there is no correct in-place view of them there; use <code><a class="el" href="../../d8/d01/roaring64_8h.html#a12df0f6d0c223b5e6e8655d4f0bd5f58">roaring64_bitmap_portable_deserialize_safe()</a></code>, which converts as it copies.</p>
+<p>Container payloads are used where they sit in the buffer, so they may be unaligned. Every access path is either SIMD with unaligned loads or marked <code>CROARING_ALLOW_UNALIGNED</code>. </p>
+
+</div>
+</div>
 <a id="a12df0f6d0c223b5e6e8655d4f0bd5f58" name="a12df0f6d0c223b5e6e8655d4f0bd5f58"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a12df0f6d0c223b5e6e8655d4f0bd5f58">&#9670;&#160;</a></span>roaring64_bitmap_portable_deserialize_safe()</h2>
 
@@ -2724,7 +2761,7 @@ Functions</h2></td></tr>
 <p>Returns true if the iterator currently points to a value. If so, calling <code><a class="el" href="../../d8/d01/roaring64_8h.html#a3407daef6cf818a628ae387a2506a1fb">roaring64_iterator_value()</a></code> returns the value.</p>
 <p>A pointer to a structure, suitably converted, points to its initial member (C17 6.7.2.1p15), and <code>roaring64_iterator_public_t</code> is the initial member of <code>roaring64_iterator_t</code>, so this reads the field directly. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00785">785</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00825">825</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -3017,7 +3054,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Returns the value the iterator currently points to. Should only be called if <code><a class="el" href="../../d8/d01/roaring64_8h.html#a9d4b959bbe9f9cdb4159f8d2c9d4ec65">roaring64_iterator_has_value()</a></code> returns true. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00793">793</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00833">833</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
