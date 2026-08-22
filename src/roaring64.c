@@ -99,6 +99,29 @@ static inline bool is_frozen64(const roaring64_bitmap_t *r) {
     return r->flags & ROARING_FLAG_FROZEN;
 }
 
+static inline bool is_frozen_art64(const roaring64_bitmap_t *r) {
+    return r->flags & ROARING_FLAG_FROZEN_ART;
+}
+
+typedef union {
+    bitset_container_t bitset;
+    array_container_t array;
+    run_container_t run;
+} frozen_container_header_t;
+
+static void *roaring64_arena_alloc(char **arena, size_t num_bytes) {
+    char *res = *arena;
+    *arena += num_bytes;
+    return res;
+}
+
+static char *roaring64_arena_pad(char *cursor, const char *base,
+                                 size_t alignment) {
+    uint64_t off = (uint64_t)(cursor - base);
+    uint64_t aligned = (off + alignment - 1) & ~(uint64_t)(alignment - 1);
+    return (char *)base + aligned;
+}
+
 // Splits the given uint64 key into high 48 bit and low 16 bit components.
 // Expects high48_out to be of length ART_KEY_BYTES.
 static inline uint16_t split_key(uint64_t key, uint8_t high48_out[]) {
@@ -198,6 +221,37 @@ static leaf_t add_container(roaring64_bitmap_t *r, container_t *container,
     uint64_t index = allocate_index(r);
     set_container_at(r, index, container, typecode);
     return create_leaf(index, typecode);
+}
+
+static void ensure_container_capacity(roaring64_bitmap_t *r, uint64_t extra) {
+    uint64_t needed = r->first_free + extra;
+    if (needed <= r->capacity) {
+        return;
+    }
+    uint64_t new_capacity = r->capacity;
+    if (new_capacity == 0) {
+        new_capacity = 2;
+    }
+    while (new_capacity < needed) {
+        uint64_t grown;
+        if (new_capacity < 1024) {
+            grown = 2 * new_capacity;
+        } else {
+            grown = new_capacity + new_capacity / 4;
+        }
+        if (grown <= new_capacity) {
+            new_capacity = needed;
+            break;
+        }
+        new_capacity = grown;
+    }
+    uint64_t increase = new_capacity - r->capacity;
+    r->containers = (container_t **)roaring_realloc(
+        r->containers, new_capacity * sizeof(container_t *));
+    memset(r->containers + r->capacity, 0, increase * sizeof(container_t *));
+    r->typecodes = (uint8_t *)roaring_realloc(r->typecodes,
+                                              new_capacity * sizeof(uint8_t));
+    r->capacity = new_capacity;
 }
 
 static void remove_container(roaring64_bitmap_t *r, leaf_t leaf) {
@@ -313,21 +367,22 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
     if (!r) {
         return;
     }
+    if (is_frozen64(r)) {
+        // Headers, containers[], and typecodes[] live in the same allocation
+        // as `r`. Payloads alias a caller buffer.
+        if (!is_frozen_art64(r)) {
+            art_free(&r->art);
+        }
+        roaring_free(r);
+        return;
+    }
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     while (it.value != NULL) {
         leaf_t leaf = (leaf_t)*it.value;
-        if (is_frozen64(r)) {
-            // Only free the container itself, not the buffer-backed contents
-            // within.
-            roaring_free(get_container(r, leaf));
-        } else {
-            container_free(get_container(r, leaf), get_typecode(leaf));
-        }
+        container_free(get_container(r, leaf), get_typecode(leaf));
         art_iterator_next(&it);
     }
-    if (!is_frozen64(r)) {
-        art_free(&r->art);
-    }
+    art_free(&r->art);
     roaring_free(r->containers);
     roaring_free(r->typecodes);
     roaring_free(r);
@@ -399,6 +454,7 @@ static void move_from_roaring32_offset(roaring64_bitmap_t *dst,
                                        uint32_t high_bits) {
     uint64_t key_base = ((uint64_t)high_bits) << 32;
     uint32_t r32_size = ra_get_size(&src->high_low_container);
+    ensure_container_capacity(dst, r32_size);
     for (uint32_t i = 0; i < r32_size; ++i) {
         uint16_t key = ra_get_key_at_index(&src->high_low_container, i);
         uint8_t typecode;
@@ -2429,22 +2485,26 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(
         previous_high32 = high32;
 
         // Read the 32-bit Roaring bitmaps representing the least
-        // significant bits of a set of elements.
-        size_t bitmap32_size = roaring_bitmap_portable_deserialize_size(
-            buf, maxbytes - read_bytes);
-        if (bitmap32_size == 0) {
-            roaring64_bitmap_free(r);
-            return NULL;
-        }
-
-        roaring_bitmap_t *bitmap32 = roaring_bitmap_portable_deserialize_safe(
-            buf, maxbytes - read_bytes);
+        // significant bits of a set of elements. ra_portable_deserialize
+        // already reports bytes consumed, so we do not walk the 32-bit
+        // format a second time with deserialize_size.
+        roaring_bitmap_t *bitmap32 =
+            (roaring_bitmap_t *)roaring_malloc(sizeof(roaring_bitmap_t));
         if (bitmap32 == NULL) {
             roaring64_bitmap_free(r);
             return NULL;
         }
-        buf += bitmap32_size;
-        read_bytes += bitmap32_size;
+        size_t bytesread = 0;
+        bool is_ok = ra_portable_deserialize(&bitmap32->high_low_container, buf,
+                                             maxbytes - read_bytes, &bytesread);
+        if (!is_ok) {
+            roaring_free(bitmap32);
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
+        roaring_bitmap_set_copy_on_write(bitmap32, false);
+        buf += bytesread;
+        read_bytes += bytesread;
 
         // While we don't attempt to validate much, we must ensure that there
         // is no duplication in the high 48 bits - inserting into the ART
@@ -2673,22 +2733,68 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
     return buf - initial_buf;
 }
 
-static container_t *container_frozen_view(uint8_t typecode, uint32_t elem_count,
-                                          const uint64_t **bitsets,
-                                          const uint16_t **arrays,
-                                          const rle16_t **runs) {
+static roaring64_bitmap_t *alloc_frozen_bitmap(
+    uint64_t capacity, frozen_container_header_t **headers_out) {
+    if (capacity > SIZE_MAX / sizeof(frozen_container_header_t)) {
+        return NULL;
+    }
+    size_t ptrs = (size_t)capacity * sizeof(container_t *);
+    size_t codes = (size_t)capacity * sizeof(uint8_t);
+    size_t headers = (size_t)capacity * sizeof(frozen_container_header_t);
+    size_t pad = alignof(container_t *) + alignof(frozen_container_header_t);
+    if (sizeof(roaring64_bitmap_t) > SIZE_MAX - ptrs ||
+        sizeof(roaring64_bitmap_t) + ptrs > SIZE_MAX - codes ||
+        sizeof(roaring64_bitmap_t) + ptrs + codes > SIZE_MAX - headers ||
+        sizeof(roaring64_bitmap_t) + ptrs + codes + headers > SIZE_MAX - pad) {
+        return NULL;
+    }
+    size_t sz = sizeof(roaring64_bitmap_t) + ptrs + codes + headers + pad;
+    char *base = (char *)roaring_malloc(sz);
+    if (base == NULL) {
+        return NULL;
+    }
+    char *cursor = base;
+    roaring64_bitmap_t *r = (roaring64_bitmap_t *)roaring64_arena_alloc(
+        &cursor, sizeof(roaring64_bitmap_t));
+    art_init_cleared(&r->art);
+    r->flags = ROARING_FLAG_FROZEN;
+    r->capacity = capacity;
+    r->first_free = 0;
+    cursor = roaring64_arena_pad(cursor, base, alignof(container_t *));
+    if (capacity == 0) {
+        r->containers = NULL;
+        r->typecodes = NULL;
+        if (headers_out != NULL) {
+            *headers_out = NULL;
+        }
+        return r;
+    }
+    r->containers = (container_t **)roaring64_arena_alloc(&cursor, ptrs);
+    memset(r->containers, 0, ptrs);
+    r->typecodes = (uint8_t *)roaring64_arena_alloc(&cursor, codes);
+    cursor =
+        roaring64_arena_pad(cursor, base, alignof(frozen_container_header_t));
+    frozen_container_header_t *hdrs =
+        (frozen_container_header_t *)roaring64_arena_alloc(&cursor, headers);
+    if (headers_out != NULL) {
+        *headers_out = hdrs;
+    }
+    return r;
+}
+
+static container_t *container_frozen_view_at(
+    frozen_container_header_t *header, uint8_t typecode, uint32_t elem_count,
+    const uint64_t **bitsets, const uint16_t **arrays, const rle16_t **runs) {
     switch (typecode) {
         case BITSET_CONTAINER_TYPE: {
-            bitset_container_t *c = (bitset_container_t *)roaring_malloc(
-                sizeof(bitset_container_t));
+            bitset_container_t *c = &header->bitset;
             c->cardinality = elem_count;
             c->words = (uint64_t *)*bitsets;
             *bitsets += BITSET_CONTAINER_SIZE_IN_WORDS;
             return (container_t *)c;
         }
         case ARRAY_CONTAINER_TYPE: {
-            array_container_t *c =
-                (array_container_t *)roaring_malloc(sizeof(array_container_t));
+            array_container_t *c = &header->array;
             c->cardinality = elem_count;
             c->capacity = elem_count;
             c->array = (uint16_t *)*arrays;
@@ -2696,19 +2802,15 @@ static container_t *container_frozen_view(uint8_t typecode, uint32_t elem_count,
             return (container_t *)c;
         }
         case RUN_CONTAINER_TYPE: {
-            run_container_t *c =
-                (run_container_t *)roaring_malloc(sizeof(run_container_t));
+            run_container_t *c = &header->run;
             c->n_runs = elem_count;
             c->capacity = elem_count;
             c->runs = (rle16_t *)*runs;
             *runs += elem_count;
             return (container_t *)c;
         }
-        default: {
-            assert(false);
-            roaring_unreachable;
+        default:
             return NULL;
-        }
     }
 }
 
@@ -2721,42 +2823,43 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
         return NULL;
     }
 
-    roaring64_bitmap_t *r = roaring64_bitmap_create();
-
-    // Flags.
-    if (maxbytes < sizeof(r->flags)) {
-        roaring64_bitmap_free(r);
+    uint8_t flags;
+    uint64_t capacity;
+    if (maxbytes < sizeof(flags) + sizeof(capacity)) {
         return NULL;
     }
-    memcpy(&r->flags, buf, sizeof(r->flags));
-    buf += sizeof(r->flags);
-    maxbytes -= sizeof(r->flags);
-    r->flags |= ROARING_FLAG_FROZEN;
+    memcpy(&flags, buf, sizeof(flags));
+    buf += sizeof(flags);
+    maxbytes -= sizeof(flags);
+    memcpy(&capacity, buf, sizeof(capacity));
+    buf += sizeof(capacity);
+    maxbytes -= sizeof(capacity);
 
-    // Container count.
-    if (maxbytes < sizeof(r->capacity)) {
-        roaring64_bitmap_free(r);
+    // The element counts alone need two bytes per container, so a capacity
+    // larger than that cannot be satisfied by this buffer. Checked before
+    // allocating, so a short buffer claiming a huge count cannot make us
+    // reserve (and clear) an arena sized from attacker-controlled bytes.
+    if (capacity > maxbytes / sizeof(uint16_t)) {
         return NULL;
     }
-    memcpy(&r->capacity, buf, sizeof(r->capacity));
-    buf += sizeof(r->capacity);
-    maxbytes -= sizeof(r->capacity);
 
-    r->containers =
-        (container_t **)roaring_malloc(r->capacity * sizeof(container_t *));
-    r->typecodes = (uint8_t *)roaring_malloc(r->capacity * sizeof(uint8_t));
-    if (r->capacity > 0) {
-        memset(r->containers, 0, r->capacity * sizeof(container_t *));
+    frozen_container_header_t *headers = NULL;
+    roaring64_bitmap_t *r = alloc_frozen_bitmap(capacity, &headers);
+    if (r == NULL) {
+        return NULL;
     }
+    // Only flags the format actually defines; the byte comes from the buffer.
+    r->flags = (uint8_t)(flags & ROARING_FLAG_COW) | ROARING_FLAG_FROZEN |
+               ROARING_FLAG_FROZEN_ART;
 
     // Container element counts.
-    if (maxbytes < r->capacity * sizeof(uint16_t)) {
+    if (maxbytes < capacity * sizeof(uint16_t)) {
         roaring64_bitmap_free(r);
         return NULL;
     }
     const char *elem_counts = buf;
-    buf += r->capacity * sizeof(uint16_t);
-    maxbytes -= r->capacity * sizeof(uint16_t);
+    buf += capacity * sizeof(uint16_t);
+    maxbytes -= capacity * sizeof(uint16_t);
 
     // Total container sizes.
     uint64_t total_sizes[4];
@@ -2804,6 +2907,10 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     // Deserialize in ART iteration order.
     art_iterator_t it = art_init_iterator(&r->art, /*first=*/true);
     for (size_t i = 0; it.value != NULL; ++i) {
+        if (i >= capacity) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
         leaf_t leaf = (leaf_t)*it.value;
         uint8_t typecode = get_typecode(leaf);
 
@@ -2814,10 +2921,17 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
 
         // The container index is unrelated to the iteration order.
         uint64_t index = get_index(leaf);
-        set_container_at(r, index,
-                         container_frozen_view(typecode, elem_count, &bitsets,
-                                               &arrays, &runs),
-                         typecode);
+        if (index >= capacity) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
+        container_t *c = container_frozen_view_at(
+            headers + index, typecode, elem_count, &bitsets, &arrays, &runs);
+        if (c == NULL) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
+        set_container_at(r, index, c, typecode);
 
         art_iterator_next(&it);
     }
@@ -2825,7 +2939,288 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     // Padding to make overall size a multiple of required alignment.
     buf = CROARING_ALIGN_BUF(buf, CROARING_BITSET_ALIGNMENT);
 
+    r->first_free = r->capacity;
     return r;
+}
+
+static bool view_one_portable32(roaring64_bitmap_t *r,
+                                frozen_container_header_t *headers,
+                                uint32_t high32, const char *buf,
+                                size_t maxbytes, size_t *consumed) {
+    *consumed = roaring_bitmap_portable_deserialize_size(buf, maxbytes);
+    if (*consumed == 0 || *consumed > maxbytes) {
+        return false;
+    }
+    const char *start = buf;
+    size_t remaining = *consumed;
+
+    uint32_t cookie;
+    memcpy(&cookie, buf, sizeof(cookie));
+    cookie = croaring_letoh32(cookie);
+    buf += sizeof(cookie);
+    remaining -= sizeof(cookie);
+
+    int32_t num_containers;
+    const char *run_flag_bitset = NULL;
+    bool hasrun = false;
+    bool has_offsets;
+
+    if (cookie == SERIAL_COOKIE_NO_RUNCONTAINER) {
+        if (remaining < sizeof(uint32_t)) {
+            return false;
+        }
+        uint32_t n_le;
+        memcpy(&n_le, buf, sizeof(n_le));
+        num_containers = (int32_t)croaring_letoh32(n_le);
+        buf += sizeof(uint32_t);
+        remaining -= sizeof(uint32_t);
+        has_offsets = true;
+    } else if ((cookie & 0xFFFF) == SERIAL_COOKIE) {
+        num_containers = (int32_t)(cookie >> 16) + 1;
+        hasrun = true;
+        int32_t run_flag_bitset_size = (num_containers + 7) / 8;
+        if (num_containers < 0 || remaining < (size_t)run_flag_bitset_size) {
+            return false;
+        }
+        run_flag_bitset = buf;
+        buf += run_flag_bitset_size;
+        remaining -= (size_t)run_flag_bitset_size;
+        has_offsets = num_containers >= NO_OFFSET_THRESHOLD;
+    } else {
+        return false;
+    }
+    if (num_containers < 0 || num_containers > (1 << 16)) {
+        return false;
+    }
+
+    size_t desc_bytes = (size_t)num_containers * 2 * sizeof(uint16_t);
+    if (remaining < desc_bytes) {
+        return false;
+    }
+    const char *keyscards = buf;
+    buf += desc_bytes;
+    remaining -= desc_bytes;
+
+    const char *offset_bytes = NULL;
+    if (has_offsets) {
+        size_t off_bytes = (size_t)num_containers * sizeof(uint32_t);
+        if (remaining < off_bytes) {
+            return false;
+        }
+        offset_bytes = buf;
+        buf += off_bytes;
+        remaining -= off_bytes;
+    }
+
+    int32_t last_key = -1;
+    uint64_t key_base = ((uint64_t)high32) << 32;
+
+    for (int32_t i = 0; i < num_containers; ++i) {
+        uint16_t key, card_m1;
+        memcpy(&key, keyscards + 4 * (size_t)i, sizeof(key));
+        key = croaring_letoh16(key);
+        memcpy(&card_m1, keyscards + 4 * (size_t)i + 2, sizeof(card_m1));
+        card_m1 = croaring_letoh16(card_m1);
+        if ((int32_t)key <= last_key) {
+            return false;
+        }
+        last_key = (int32_t)key;
+
+        uint32_t cardinality = (uint32_t)card_m1 + 1;
+        bool isbitmap = cardinality > DEFAULT_MAX_SIZE;
+        bool isrun = false;
+        if (hasrun && (run_flag_bitset[i / 8] & (1 << (i % 8))) != 0) {
+            isbitmap = false;
+            isrun = true;
+        }
+
+        const char *payload;
+        if (offset_bytes != NULL) {
+            uint32_t off;
+            memcpy(&off, offset_bytes + (size_t)i * sizeof(uint32_t),
+                   sizeof(off));
+            off = croaring_letoh32(off);
+            if ((size_t)off >= *consumed) {
+                return false;
+            }
+            payload = start + off;
+        } else {
+            payload = buf;
+        }
+
+        uint8_t typecode;
+        size_t payload_size;
+        if (isbitmap) {
+            typecode = BITSET_CONTAINER_TYPE;
+            payload_size = BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
+        } else if (isrun) {
+            typecode = RUN_CONTAINER_TYPE;
+            if ((size_t)(payload - start) + sizeof(uint16_t) > *consumed) {
+                return false;
+            }
+            uint16_t n_runs;
+            memcpy(&n_runs, payload, sizeof(n_runs));
+            n_runs = croaring_letoh16(n_runs);
+            payload_size = sizeof(uint16_t) + (size_t)n_runs * sizeof(rle16_t);
+        } else {
+            typecode = ARRAY_CONTAINER_TYPE;
+            payload_size = (size_t)cardinality * sizeof(uint16_t);
+        }
+        if ((size_t)(payload - start) + payload_size > *consumed) {
+            return false;
+        }
+
+        if (r->first_free >= r->capacity) {
+            return false;
+        }
+        uint64_t index = allocate_index(r);
+        frozen_container_header_t *header = headers + index;
+        container_t *c;
+        if (isbitmap) {
+            header->bitset.cardinality = (int32_t)cardinality;
+            header->bitset.words = (uint64_t *)payload;
+            c = (container_t *)&header->bitset;
+        } else if (isrun) {
+            uint16_t n_runs;
+            memcpy(&n_runs, payload, sizeof(n_runs));
+            n_runs = croaring_letoh16(n_runs);
+            header->run.n_runs = n_runs;
+            header->run.capacity = n_runs;
+            header->run.runs = (rle16_t *)(payload + sizeof(uint16_t));
+            c = (container_t *)&header->run;
+        } else {
+            header->array.cardinality = (int32_t)cardinality;
+            header->array.capacity = (int32_t)cardinality;
+            header->array.array = (uint16_t *)payload;
+            c = (container_t *)&header->array;
+        }
+        set_container_at(r, index, c, typecode);
+
+        uint8_t high48[ART_KEY_BYTES];
+        uint64_t high48_bits = key_base | ((uint64_t)key << 16);
+        split_key(high48_bits, high48);
+        art_insert(&r->art, high48, (art_val_t)create_leaf(index, typecode));
+
+        if (offset_bytes == NULL) {
+            buf += payload_size;
+            remaining -= payload_size;
+        }
+    }
+    return true;
+}
+
+CROARING_ALLOW_UNALIGNED
+roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
+    const char *buf, size_t maxbytes) {
+    if (buf == NULL) {
+        return NULL;
+    }
+#if CROARING_IS_BIG_ENDIAN
+    // The portable format is little-endian and this function uses the payload
+    // bytes where they sit, so there is no correct view of them here. Refuse
+    // rather than hand back a bitmap that silently reads byte-swapped values.
+    (void)maxbytes;
+    return NULL;
+#else
+    size_t remaining = maxbytes;
+
+    if (remaining < sizeof(uint64_t)) {
+        return NULL;
+    }
+    uint64_t buckets;
+    memcpy(&buckets, buf, sizeof(buckets));
+    buckets = croaring_letoh64(buckets);
+    buf += sizeof(buckets);
+    remaining -= sizeof(buckets);
+    if (buckets > UINT32_MAX) {
+        return NULL;
+    }
+
+    uint64_t ncontainers = 0;
+    const char *count_buf = buf;
+    size_t count_remaining = remaining;
+    int64_t previous_high32 = -1;
+    for (uint64_t bucket = 0; bucket < buckets; ++bucket) {
+        if (count_remaining < sizeof(uint32_t)) {
+            return NULL;
+        }
+        uint32_t high32;
+        memcpy(&high32, count_buf, sizeof(high32));
+        high32 = croaring_letoh32(high32);
+        count_buf += sizeof(high32);
+        count_remaining -= sizeof(high32);
+        if (high32 <= previous_high32) {
+            return NULL;
+        }
+        previous_high32 = high32;
+        size_t bitmap32_size = roaring_bitmap_portable_deserialize_size(
+            count_buf, count_remaining);
+        if (bitmap32_size == 0) {
+            return NULL;
+        }
+        uint32_t cookie;
+        if (count_remaining < sizeof(cookie)) {
+            return NULL;
+        }
+        memcpy(&cookie, count_buf, sizeof(cookie));
+        cookie = croaring_letoh32(cookie);
+        int32_t size;
+        if ((cookie & 0xFFFF) == SERIAL_COOKIE) {
+            size = (int32_t)(cookie >> 16) + 1;
+        } else if (cookie == SERIAL_COOKIE_NO_RUNCONTAINER) {
+            if (count_remaining < 2 * sizeof(uint32_t)) {
+                return NULL;
+            }
+            uint32_t size_le;
+            memcpy(&size_le, count_buf + sizeof(uint32_t), sizeof(size_le));
+            size = (int32_t)croaring_letoh32(size_le);
+        } else {
+            return NULL;
+        }
+        if (size < 0) {
+            return NULL;
+        }
+        ncontainers += (uint64_t)size;
+        count_buf += bitmap32_size;
+        count_remaining -= bitmap32_size;
+    }
+
+    frozen_container_header_t *headers = NULL;
+    roaring64_bitmap_t *r = alloc_frozen_bitmap(ncontainers, &headers);
+    if (r == NULL) {
+        return NULL;
+    }
+    // ART is owned; payloads alias buf.
+    r->flags = ROARING_FLAG_FROZEN;
+
+    previous_high32 = -1;
+    for (uint64_t bucket = 0; bucket < buckets; ++bucket) {
+        if (remaining < sizeof(uint32_t)) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
+        uint32_t high32;
+        memcpy(&high32, buf, sizeof(high32));
+        high32 = croaring_letoh32(high32);
+        buf += sizeof(high32);
+        remaining -= sizeof(high32);
+        if (high32 <= previous_high32) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
+        previous_high32 = high32;
+
+        size_t consumed = 0;
+        if (!view_one_portable32(r, headers, high32, buf, remaining,
+                                 &consumed)) {
+            roaring64_bitmap_free(r);
+            return NULL;
+        }
+        buf += consumed;
+        remaining -= consumed;
+    }
+    return r;
+#endif
 }
 
 bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,

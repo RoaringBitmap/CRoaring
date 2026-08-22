@@ -653,6 +653,46 @@ roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_safe(const char *buf,
                                                                size_t maxbytes);
 
 /**
+ * Read a bitmap from a portable serialized buffer as a read-only view of the
+ * container payloads. Headers and the ART index are allocated; bitset/array/run
+ * payloads alias `buf` and are not copied.
+ *
+ * In case of failure, NULL is returned. The function will not read beyond
+ * `maxbytes`.
+ *
+ * The returned bitmap must only be used in a readonly manner. It must be
+ * freed with `roaring64_bitmap_free()`. The backing buffer must outlive the
+ * bitmap and must not be freed or modified while it backs it. Calling any
+ * mutating function on the result is undefined behavior: its container array
+ * and headers live in a single allocation, so growing it would reallocate an
+ * interior pointer.
+ *
+ * The function itself is safe in the sense that it will not read beyond
+ * (buf, maxbytes). However, as with
+ * `roaring64_bitmap_portable_deserialize_safe()`, a bitmap read from garbage
+ * may not be in a valid state, and subsequent operations on it may not lead
+ * to sensible results: array containers must be sorted, and run containers
+ * sorted and non-overlapping, which is guaranteed only when the input came
+ * from a real serialized bitmap.
+ *
+ * If the source is untrusted, you should call
+ * `roaring64_bitmap_internal_validate` on the result before using it. Only
+ * after that is the bitmap considered safe for use. We also recommend
+ * checksumming the serialized data; CRoaring does not provide checksumming.
+ *
+ * Returns NULL on a big-endian system (e.g., a mainframe IBM s390x). The
+ * portable format is little-endian and this function uses the payload bytes
+ * where they sit, so there is no correct in-place view of them there; use
+ * `roaring64_bitmap_portable_deserialize_safe()`, which converts as it copies.
+ *
+ * Container payloads are used where they sit in the buffer, so they may be
+ * unaligned. Every access path is either SIMD with unaligned loads or marked
+ * `CROARING_ALLOW_UNALIGNED`.
+ */
+roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
+    const char *buf, size_t maxbytes);
+
+/**
  * Returns the number of bytes required to serialize this bitmap in a "frozen"
  * format. This is not compatible with any other serialization formats.
  *

@@ -37,6 +37,25 @@ bool test_serialization(const std::string& filename) {
     if (!roaring64_bitmap_internal_validate(r, &reason)) {
         fail_msg("Validation failed: %s", reason);
     }
+    roaring64_bitmap_t* rf = roaring64_bitmap_portable_deserialize_frozen(
+        buf1.data(), deserialized_size);
+#if CROARING_IS_BIG_ENDIAN
+    // No in-place view of a little-endian format on a big-endian host.
+    if (rf != nullptr) {
+        fail_msg("portable frozen view should be unavailable on big-endian");
+    }
+#else
+    if (rf == nullptr) {
+        fail_msg("portable frozen view failed on %s", filename.c_str());
+    }
+    if (!roaring64_bitmap_internal_validate(rf, &reason)) {
+        fail_msg("Frozen validation failed: %s", reason);
+    }
+    if (!roaring64_bitmap_equals(r, rf)) {
+        fail_msg("portable frozen view disagrees with copy deserialize");
+    }
+    roaring64_bitmap_free(rf);
+#endif
 
     // Reserialize.
     size_t serialized_size = roaring64_bitmap_portable_size_in_bytes(r);
