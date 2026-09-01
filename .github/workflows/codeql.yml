@@ -35,7 +35,7 @@ jobs:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@e46ed2cbd01164d986452f91f178727624ae40d7 # v4.35.3
+        uses: github/codeql-action/autobuild@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         if: ${{ matrix.language == 'cpp' || matrix.language == 'python' }}
 
       - name: Perform CodeQL Analysis
