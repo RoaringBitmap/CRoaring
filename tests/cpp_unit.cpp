@@ -2160,18 +2160,85 @@ DEFINE_TEST(test_cpp_and_cardinality_64_matches_materialized) {
     assert_true(r1.intersect(r2) == ((r1 & r2).cardinality() > 0));
 }
 
-DEFINE_TEST(test_cpp_and_cardinality_64_checked) {
-    doublechecked::Roaring64Map r1, r2;
+DEFINE_TEST(test_cpp_or_cardinality_64) {
+    Roaring64Map r1, r2, empty;
+    for (uint64_t i = 0; i < 100; ++i) {
+        r1.add(i);
+        r1.add((uint64_t(2) << 32) + i);
+    }
+    for (uint64_t i = 50; i < 150; ++i) {
+        r2.add(i);
+        r2.add((uint64_t(8) << 32) + i);
+    }
+    assert_true(r1.or_cardinality(r2) == (r1 | r2).cardinality());
+    assert_true(r2.or_cardinality(r1) == (r1 | r2).cardinality());
+    assert_true(r1.or_cardinality(empty) == r1.cardinality());
+    assert_true(empty.or_cardinality(r1) == r1.cardinality());
+    assert_true(r1.or_cardinality(r1) == r1.cardinality());
+}
+
+DEFINE_TEST(test_cpp_xor_cardinality_64) {
+    Roaring64Map r1, r2, empty;
+    for (uint64_t i = 0; i < 100; ++i) {
+        r1.add(i);
+        r1.add((uint64_t(4) << 32) + i);
+    }
+    for (uint64_t i = 50; i < 150; ++i) {
+        r2.add(i);
+        r2.add((uint64_t(6) << 32) + i);
+    }
+    assert_true(r1.xor_cardinality(r2) == (r1 ^ r2).cardinality());
+    assert_true(r2.xor_cardinality(r1) == (r1 ^ r2).cardinality());
+    assert_true(r1.xor_cardinality(empty) == r1.cardinality());
+    assert_true(r1.xor_cardinality(r1) == 0);
+}
+
+DEFINE_TEST(test_cpp_andnot_cardinality_64) {
+    Roaring64Map r1, r2, empty;
+    for (uint64_t i = 0; i < 100; ++i) {
+        r1.add(i);
+        r1.add((uint64_t(3) << 32) + i);
+    }
+    for (uint64_t i = 50; i < 150; ++i) {
+        r2.add(i);
+        r2.add((uint64_t(5) << 32) + i);
+    }
+    // A key held only by r1, so the two differences have distinct sizes and
+    // the asymmetry check below is meaningful.
+    r1.add((uint64_t(9) << 32) + 1);
+    assert_true(r1.andnot_cardinality(r2) == (r1 - r2).cardinality());
+    assert_true(r2.andnot_cardinality(r1) == (r2 - r1).cardinality());
+    assert_true(r1.andnot_cardinality(r2) != r2.andnot_cardinality(r1));
+    assert_true(r1.andnot_cardinality(empty) == r1.cardinality());
+    assert_true(empty.andnot_cardinality(r1) == 0);
+    assert_true(r1.andnot_cardinality(r1) == 0);
+}
+
+DEFINE_TEST(test_cpp_set_cardinality_64_checked) {
+    // The checked wrappers assert against std::set, so simply calling each
+    // method on operands with shared, disjoint and one-sided keys is the test.
+    doublechecked::Roaring64Map r1, r2, empty;
     for (uint64_t k = 0; k < 3; ++k) {
         for (uint64_t i = 0; i < 300; i += 7) {
             r1.add((k << 32) + i);
         }
         for (uint64_t i = 0; i < 300; i += 5) {
-            r2.add((k << 32) + i);
+            r2.add(((k + 1) << 32) + i);
         }
     }
-    r1.and_cardinality(r2);
-    r1.intersect(r2);
+    r1.add((uint64_t(90) << 32) + 3);
+    r2.add((uint64_t(91) << 32) + 4);
+
+    const doublechecked::Roaring64Map *operands[3] = {&r1, &r2, &empty};
+    for (auto *a : operands) {
+        for (auto *b : operands) {
+            a->and_cardinality(*b);
+            a->intersect(*b);
+            a->or_cardinality(*b);
+            a->xor_cardinality(*b);
+            a->andnot_cardinality(*b);
+        }
+    }
 }
 
 DEFINE_TEST(test_cpp_is_subset_64) {
@@ -2466,7 +2533,10 @@ int main() {
         cmocka_unit_test(test_cpp_and_cardinality_64_disjoint_keys),
         cmocka_unit_test(test_cpp_intersect_predicate_64),
         cmocka_unit_test(test_cpp_and_cardinality_64_matches_materialized),
-        cmocka_unit_test(test_cpp_and_cardinality_64_checked),
+        cmocka_unit_test(test_cpp_or_cardinality_64),
+        cmocka_unit_test(test_cpp_xor_cardinality_64),
+        cmocka_unit_test(test_cpp_andnot_cardinality_64),
+        cmocka_unit_test(test_cpp_set_cardinality_64_checked),
         cmocka_unit_test(test_cpp_is_subset_64),
         cmocka_unit_test(test_cpp_fast_union_64),
         cmocka_unit_test(test_cpp_to_string),
