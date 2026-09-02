@@ -435,6 +435,34 @@ class Roaring64Map {
         return ans;
     }
 
+    uint64_t or_cardinality(const Roaring64Map &r) const {
+        uint64_t ans = plain.or_cardinality(r.plain);
+        std::vector<uint64_t> expected;
+        std::set_union(check.begin(), check.end(), r.check.begin(),
+                       r.check.end(), std::back_inserter(expected));
+        assert_true(ans == expected.size());
+        return ans;
+    }
+
+    uint64_t xor_cardinality(const Roaring64Map &r) const {
+        uint64_t ans = plain.xor_cardinality(r.plain);
+        std::vector<uint64_t> expected;
+        std::set_symmetric_difference(check.begin(), check.end(),
+                                      r.check.begin(), r.check.end(),
+                                      std::back_inserter(expected));
+        assert_true(ans == expected.size());
+        return ans;
+    }
+
+    uint64_t andnot_cardinality(const Roaring64Map &r) const {
+        uint64_t ans = plain.andnot_cardinality(r.plain);
+        std::vector<uint64_t> expected;
+        std::set_difference(check.begin(), check.end(), r.check.begin(),
+                            r.check.end(), std::back_inserter(expected));
+        assert_true(ans == expected.size());
+        return ans;
+    }
+
     bool isStrictSubset(
         const Roaring64Map &r) const {  // is `this` subset of `r`?
         bool ans = plain.isStrictSubset(r.plain);
