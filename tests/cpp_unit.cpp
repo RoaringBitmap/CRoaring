@@ -2160,6 +2160,20 @@ DEFINE_TEST(test_cpp_and_cardinality_64_matches_materialized) {
     assert_true(r1.intersect(r2) == ((r1 & r2).cardinality() > 0));
 }
 
+DEFINE_TEST(test_cpp_and_cardinality_64_checked) {
+    doublechecked::Roaring64Map r1, r2;
+    for (uint64_t k = 0; k < 3; ++k) {
+        for (uint64_t i = 0; i < 300; i += 7) {
+            r1.add((k << 32) + i);
+        }
+        for (uint64_t i = 0; i < 300; i += 5) {
+            r2.add((k << 32) + i);
+        }
+    }
+    r1.and_cardinality(r2);
+    r1.intersect(r2);
+}
+
 DEFINE_TEST(test_cpp_is_subset_64) {
     Roaring64Map r1 = Roaring64Map::bitmapOf(1, uint64_t(1));
     Roaring64Map r2 = Roaring64Map::bitmapOf(1, uint64_t(1) << 32);
@@ -2452,6 +2466,7 @@ int main() {
         cmocka_unit_test(test_cpp_and_cardinality_64_disjoint_keys),
         cmocka_unit_test(test_cpp_intersect_predicate_64),
         cmocka_unit_test(test_cpp_and_cardinality_64_matches_materialized),
+        cmocka_unit_test(test_cpp_and_cardinality_64_checked),
         cmocka_unit_test(test_cpp_is_subset_64),
         cmocka_unit_test(test_cpp_fast_union_64),
         cmocka_unit_test(test_cpp_to_string),
