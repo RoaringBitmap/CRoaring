@@ -29,11 +29,13 @@
 #define INCLUDE_ROARING_64_MAP_CHECKED_HH_
 
 #include <algorithm>
+#include <iterator>
 #include <new>
 #include <set>  // sorted set, typically a red-black tree implementation
 #include <stdarg.h>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "test.h"
 
@@ -412,6 +414,24 @@ class Roaring64Map {
                                check.begin(),
                                check.end()  // range to test for containment
                                ));
+        return ans;
+    }
+
+    uint64_t and_cardinality(const Roaring64Map &r) const {
+        uint64_t ans = plain.and_cardinality(r.plain);
+        std::vector<uint64_t> expected;
+        std::set_intersection(check.begin(), check.end(), r.check.begin(),
+                              r.check.end(), std::back_inserter(expected));
+        assert_true(ans == expected.size());
+        return ans;
+    }
+
+    bool intersect(const Roaring64Map &r) const {
+        bool ans = plain.intersect(r.plain);
+        std::vector<uint64_t> expected;
+        std::set_intersection(check.begin(), check.end(), r.check.begin(),
+                              r.check.end(), std::back_inserter(expected));
+        assert_true(ans == !expected.empty());
         return ans;
     }
 
