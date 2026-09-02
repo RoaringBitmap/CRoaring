@@ -2110,6 +2110,56 @@ DEFINE_TEST(test_combinatoric_flip_many_64) {
     }
 }
 
+DEFINE_TEST(test_cpp_and_cardinality_64_basic) {
+    Roaring64Map r1, r2;
+    for (uint64_t i = 0; i < 100; ++i) {
+        r1.add(i);
+        r1.add((uint64_t(1) << 32) + i);
+    }
+    for (uint64_t i = 50; i < 150; ++i) {
+        r2.add(i);
+        r2.add((uint64_t(1) << 32) + i);
+    }
+    assert_true(r1.and_cardinality(r2) == 100);
+}
+
+DEFINE_TEST(test_cpp_and_cardinality_64_disjoint_keys) {
+    Roaring64Map r1, r2;
+    r1.add(uint64_t(1));
+    r1.add((uint64_t(2) << 32) + 5);
+    r2.add((uint64_t(7) << 32) + 1);
+    r2.add((uint64_t(9) << 32) + 5);
+    assert_true(r1.and_cardinality(r2) == 0);
+    assert_false(r1.intersect(r2));
+}
+
+DEFINE_TEST(test_cpp_intersect_predicate_64) {
+    Roaring64Map r1, r2, empty;
+    r1.add(uint64_t(1));
+    r1.add((uint64_t(3) << 32) + 8);
+    r2.add((uint64_t(3) << 32) + 8);
+    assert_true(r1.intersect(r2));
+    assert_true(r2.intersect(r1));
+    assert_false(r1.intersect(empty));
+    assert_false(empty.intersect(r1));
+    assert_false(empty.intersect(empty));
+    assert_true(r1.intersect(r1));
+}
+
+DEFINE_TEST(test_cpp_and_cardinality_64_matches_materialized) {
+    Roaring64Map r1, r2;
+    for (uint64_t k = 0; k < 4; ++k) {
+        for (uint64_t i = 0; i < 200; i += 3) {
+            r1.add((k << 32) + i);
+        }
+        for (uint64_t i = 0; i < 200; i += 2) {
+            r2.add(((k + 1) << 32) + i);
+        }
+    }
+    assert_true(r1.and_cardinality(r2) == (r1 & r2).cardinality());
+    assert_true(r1.intersect(r2) == ((r1 & r2).cardinality() > 0));
+}
+
 DEFINE_TEST(test_cpp_is_subset_64) {
     Roaring64Map r1 = Roaring64Map::bitmapOf(1, uint64_t(1));
     Roaring64Map r2 = Roaring64Map::bitmapOf(1, uint64_t(1) << 32);
@@ -2398,6 +2448,10 @@ int main() {
         cmocka_unit_test(test_issue304),
         cmocka_unit_test(issue_336),
         cmocka_unit_test(issue_372),
+        cmocka_unit_test(test_cpp_and_cardinality_64_basic),
+        cmocka_unit_test(test_cpp_and_cardinality_64_disjoint_keys),
+        cmocka_unit_test(test_cpp_intersect_predicate_64),
+        cmocka_unit_test(test_cpp_and_cardinality_64_matches_materialized),
         cmocka_unit_test(test_cpp_is_subset_64),
         cmocka_unit_test(test_cpp_fast_union_64),
         cmocka_unit_test(test_cpp_to_string),
