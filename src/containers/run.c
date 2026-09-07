@@ -34,7 +34,9 @@ extern inline bool run_container_nonzero_cardinality(const run_container_t *rc);
 extern inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
 extern inline run_container_t *run_container_create_range(uint32_t start,
                                                           uint32_t stop);
-extern inline int run_container_cardinality(const run_container_t *run);
+
+// not `extern inline` (defined below in this file)
+int run_container_cardinality(const run_container_t *run);
 
 bool run_container_add(run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);

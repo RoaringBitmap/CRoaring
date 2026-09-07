@@ -5,6 +5,8 @@
 #include <roaring/misc/configreport.h>
 #include <roaring/roaring.h>
 
+using namespace roaring::internal;
+
 // We are mostly running this test to check for data races using thread
 // sanitizer.
 void run(roaring_bitmap_t **rarray) {
