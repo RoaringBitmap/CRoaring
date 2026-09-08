@@ -7,10 +7,13 @@
 DEFINE_TEST(test_non_atomic_refcount) {
     croaring_refcount_t refcount = 2;
 
+    assert_false(croaring_refcount_is_unique(&refcount));
     assert_false(croaring_refcount_dec(&refcount));
     assert_int_equal(croaring_refcount_get(&refcount), 1);
+    assert_true(croaring_refcount_is_unique(&refcount));
     assert_true(croaring_refcount_dec(&refcount));
     assert_int_equal(croaring_refcount_get(&refcount), 0);
+    assert_false(croaring_refcount_is_unique(&refcount));
 }
 
 int main() {

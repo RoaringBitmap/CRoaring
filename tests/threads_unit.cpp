@@ -1,7 +1,11 @@
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
 
+#include <roaring/memory.h>
 #include <roaring/misc/configreport.h>
 #include <roaring/roaring.h>
 
@@ -74,9 +78,111 @@ bool run_threads_unit_tests() {
     return true;
 }
 
+namespace {
+
+// Regression test for https://github.com/RoaringBitmap/CRoaring/issues/876:
+// cloning a shared container must not race with another thread releasing its
+// own reference to it. The memory hooks let us force the interleaving: the
+// cloning thread is paused when the clone allocates, and the other thread
+// frees its bitmap at that exact moment.
+
+std::mutex race_mutex;
+std::condition_variable race_cv;
+bool freer_may_go = false;
+bool freer_done = false;
+bool clone_intercepted = false;
+thread_local bool intercept_armed = false;
+
+const std::chrono::seconds race_timeout(30);
+
+void *race_malloc(size_t size) {
+    if (intercept_armed && !clone_intercepted) {
+        clone_intercepted = true;  // intercept the first allocation only
+        std::unique_lock<std::mutex> lock(race_mutex);
+        freer_may_go = true;
+        race_cv.notify_all();
+        race_cv.wait_for(lock, race_timeout, [] { return freer_done; });
+    }
+    return malloc(size);
+}
+
+void *race_aligned_malloc(size_t alignment, size_t size) {
+    void *p;
+#ifdef _MSC_VER
+    p = _aligned_malloc(size, alignment);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    p = __mingw_aligned_malloc(size, alignment);
+#else
+    if (posix_memalign(&p, alignment, size) != 0) return NULL;
+#endif
+    return p;
+}
+
+void race_aligned_free(void *p) {
+#ifdef _MSC_VER
+    _aligned_free(p);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    __mingw_aligned_free(p);
+#else
+    free(p);
+#endif
+}
+
+}  // namespace
+
+bool run_shared_container_race_test() {
+    roaring_memory_t hooks = {
+        race_malloc,         realloc,          calloc, free,
+        race_aligned_malloc, race_aligned_free};
+    roaring_init_memory_hook(hooks);
+
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    for (uint32_t i = 0; i < 10000; i++) {
+        roaring_bitmap_add(r1, 2 * i + 1);
+    }
+    roaring_bitmap_set_copy_on_write(r1, true);
+    roaring_bitmap_t *r2 = roaring_bitmap_copy(r1);
+
+    std::thread modifier([r1] {
+        intercept_armed = true;
+        roaring_bitmap_add(r1, 2);  // clones the shared container
+        intercept_armed = false;
+    });
+    std::thread freer([r2] {
+        std::unique_lock<std::mutex> lock(race_mutex);
+        race_cv.wait_for(lock, race_timeout, [] { return freer_may_go; });
+        lock.unlock();
+        roaring_bitmap_free(r2);  // drops the other reference
+        lock.lock();
+        freer_done = true;
+        race_cv.notify_all();
+    });
+    modifier.join();
+    freer.join();
+
+    bool is_ok = true;
+    if (!clone_intercepted) {
+        printf("the shared container was never cloned, test is ineffective\n");
+        is_ok = false;
+    }
+    if (!roaring_bitmap_contains(r1, 2) ||
+        roaring_bitmap_get_cardinality(r1) != 10001) {
+        printf("the bitmap was not correctly modified\n");
+        is_ok = false;
+    }
+    const char *reason = NULL;
+    if (!roaring_bitmap_internal_validate(r1, &reason)) {
+        printf("the bitmap is invalid: %s\n", reason);
+        is_ok = false;
+    }
+    roaring_bitmap_free(r1);
+    return is_ok;
+}
+
 int main() {
     roaring::misc::tellmeall();
     bool is_ok = run_threads_unit_tests();
+    is_ok = run_shared_container_race_test() && is_ok;
     if (is_ok) {
         printf("code run completed.\n");
     }
