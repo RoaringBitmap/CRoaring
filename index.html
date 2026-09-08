@@ -1102,7 +1102,7 @@ Thread safety</h1>
 <p>If you use "copy-on-write" (default to disabled), then you should pass copies to the different threads. They will create shared containers, and for shared containers, we use reference counting with an atomic counter.</p>
 <p>To summarize:</p><ul>
 <li>If you do not use copy-on-write, you can access concurrent the same bitmap safely as long as you do not modify it. If you plan on modifying it, you should pass different copies to the different threads.</li>
-<li>If you use copy-on-write, you should always pass copies to the different threads.</li>
+<li>If you use copy-on-write, you should always pass copies to the different threads. The copies are then lightweight (shared containers).</li>
 </ul>
 <p>Thus the following pattern where you copy bitmaps and pass them to different threads is safe with or without COW:</p>
 <div class="fragment"><div class="line"><a class="code hl_function" href="dc/d56/roaring_8h.html#a84bd77c991d7520ab336433b3dff4cf5">roaring_bitmap_set_copy_on_write</a>(r1, <span class="keyword">true</span>);</div>
