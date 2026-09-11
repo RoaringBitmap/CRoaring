@@ -48,6 +48,7 @@ namespace roaring {
           "+r"(count)                                       \
         :            /* read/write */                       \
         "r"(testBit) /* read only */                        \
+        : "cc"                                              \
     )
 
 #define ASM_CLEAR_BIT_DEC_WAS_SET(testByte, testBit, count) \
@@ -58,6 +59,7 @@ namespace roaring {
           "+r"(count)                                       \
         :            /* read/write */                       \
         "r"(testBit) /* read only */                        \
+        : "cc"                                              \
     )
 
 #define ASM_BT64(testByte, testBit, count) \
@@ -68,6 +70,7 @@ namespace roaring {
         :              /* write */         \
         "r"(testByte), /* read only */     \
         "r"(testBit)   /* read only */     \
+        : "cc"                              \
     )
 
 #endif
