@@ -1,0 +1,41 @@
+name: Ubuntu-Fil-C-CI
+
+'on':
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ubuntu-fil-c
+    runs-on: ubuntu-latest
+
+    env:
+      FILC_VERSION: 0.684
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Fil-C
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends patchelf xz-utils
+          ARCH=$(uname -m)
+          DIST="filc-${FILC_VERSION}-linux-${ARCH}"
+          curl -fsSL -o "${DIST}.tar.xz" \
+            "https://github.com/pizlonator/fil-c/releases/download/v${FILC_VERSION}/${DIST}.tar.xz"
+          tar xf "${DIST}.tar.xz"
+          cd "${DIST}"
+          ./setup.sh
+          echo "CC=${PWD}/build/bin/clang" >> "$GITHUB_ENV"
+          echo "CXX=${PWD}/build/bin/clang++" >> "$GITHUB_ENV"
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          # ROARING_UNSAFE_FROZEN_TESTS is left off: those tests do unaligned
+          # reads by design, which Fil-C rejects at runtime.
+          cmake -DENABLE_ROARING_TESTS=ON -DENABLE_ROARING_BENCHMARKS=OFF ..
+          cmake --build .
+          ctest . --output-on-failure
