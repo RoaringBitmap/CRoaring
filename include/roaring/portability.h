@@ -172,6 +172,14 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #include <arm_neon.h>
 #endif
 
+#if defined(CROARING_IS_RISCV) && defined(__riscv_vector)
+#define CROARING_USERVV
+#endif
+
+#if defined(CROARING_USERVV)
+#include <riscv_vector.h>
+#endif
+
 #if defined(__e2k__)
 // we have an e2k (Elbrus-2000) processor
 #define CROARING_IS_E2K 1
