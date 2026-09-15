@@ -1,0 +1,105 @@
+name: Release
+
+# Manually triggered. Bumps the version (patch, minor or major), regenerates
+# the amalgamation, runs a sanity build, commits the version bump to master,
+# tags it and publishes a GitHub release with the amalgamated files attached.
+
+'on':
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Which part of the version to bump'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Compute new version
+        id: version
+        run: |
+          current=$(git describe --abbrev=0 --tags)
+          current=${current#v}
+          IFS=. read -r major minor patch <<< "$current"
+          case "${{ inputs.bump }}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "unknown bump type"; exit 1 ;;
+          esac
+          new="$major.$minor.$patch"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "Releasing $current -> $new (${{ inputs.bump }})"
+
+      - name: Bump version files and amalgamate
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python3 tools/release.py "${{ steps.version.outputs.new }}"
+          rm -f CMakeLists.txt.bak doxygen.bak
+          grep -q "ROARING_VERSION \"${{ steps.version.outputs.new }}\"" include/roaring/roaring_version.h
+          grep -q "ROARING_LIB_VERSION \"${{ steps.version.outputs.new }}\"" CMakeLists.txt
+          grep -q "PROJECT_NUMBER         = \"${{ steps.version.outputs.new }}\"" doxygen
+
+      - name: Collect release assets
+        run: |
+          mkdir -p release-assets
+          cp roaring.c roaring.h roaring.hh release-assets/
+          cp cpp/roaring/roaring64map.hh release-assets/
+          ls -la release-assets
+
+      - name: Test amalgamation
+        run: |
+          cc  -O3 -std=c11   -o amalgamation_demo_c   amalgamation_demo.c   && ./amalgamation_demo_c
+          c++ -O3 -std=c++11 -o amalgamation_demo_cpp amalgamation_demo.cpp && ./amalgamation_demo_cpp
+          rm -f amalgamation_demo_c amalgamation_demo_cpp
+
+      - name: Build and test
+        run: |
+          mkdir build
+          cd build
+          cmake -DENABLE_ROARING_TESTS=ON ..
+          cmake --build .
+          ctest . --output-on-failure
+
+      - name: Commit, tag and push
+        run: |
+          new="${{ steps.version.outputs.new }}"
+          git add CMakeLists.txt doxygen include/roaring/roaring_version.h
+          git commit -m "$new"
+          git tag -a "v$new" -m "version $new"
+          git push origin master
+          git push origin "v$new"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          new="${{ steps.version.outputs.new }}"
+          gh release create "v$new" \
+            --title "v$new" \
+            --generate-notes \
+            --notes-start-tag "v${{ steps.version.outputs.current }}" \
+            release-assets/roaring.c \
+            release-assets/roaring.h \
+            release-assets/roaring.hh \
+            release-assets/roaring64map.hh
