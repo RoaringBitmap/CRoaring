@@ -40,6 +40,7 @@ $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/isadetection.h
 $SCRIPTPATH/include/roaring/roaring_types.h
 $SCRIPTPATH/include/roaring/bitset/bitset.h
+$SCRIPTPATH/include/roaring/containers/perfparameters.h
 $SCRIPTPATH/include/roaring/containers/container_defs.h
 $SCRIPTPATH/include/roaring/array_util.h
 $SCRIPTPATH/include/roaring/bitset_util.h
@@ -74,7 +75,6 @@ $SCRIPTPATH/cpp/roaring/roaring64map.hh
 # need to be in this order.
 #
 ALL_PRIVATE_H="
-$SCRIPTPATH/include/roaring/containers/perfparameters.h
 $SCRIPTPATH/include/roaring/utilasm.h
 $SCRIPTPATH/include/roaring/art/art.h
 "
