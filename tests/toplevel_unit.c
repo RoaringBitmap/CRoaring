@@ -3890,6 +3890,46 @@ DEFINE_TEST(test_or_many_memory_leak) {
     }
 }
 
+// Two bitset containers whose union is full must collapse to a single run
+// container, both in the eager and in the lazy (or_many) code paths. This
+// depends on CROARING_OR_BITSET_CONVERSION_TO_FULL and
+// CROARING_LAZY_OR_BITSET_CONVERSION_TO_FULL being visible where they are
+// tested, which the amalgamation once broke (issue #883).
+DEFINE_TEST(test_full_bitset_union_becomes_run) {
+    roaring_bitmap_t *evens = roaring_bitmap_create();
+    roaring_bitmap_t *odds = roaring_bitmap_create();
+    for (uint32_t v = 0; v < 65536; v += 2) {
+        roaring_bitmap_add(evens, v);
+        roaring_bitmap_add(odds, v + 1);
+    }
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(evens, &stats);
+    assert_int_equal(stats.n_bitset_containers, 1);
+    roaring_bitmap_statistics(odds, &stats);
+    assert_int_equal(stats.n_bitset_containers, 1);
+
+    roaring_bitmap_t *eager = roaring_bitmap_copy(evens);
+    roaring_bitmap_or_inplace(eager, odds);
+    assert_int_equal(roaring_bitmap_get_cardinality(eager), 65536);
+    roaring_bitmap_statistics(eager, &stats);
+    assert_int_equal(stats.n_containers, 1);
+    assert_int_equal(stats.n_run_containers, 1);
+    assert_int_equal(stats.n_bitset_containers, 0);
+
+    const roaring_bitmap_t *inputs[3] = {evens, odds, odds};
+    roaring_bitmap_t *lazy = roaring_bitmap_or_many(3, inputs);
+    assert_int_equal(roaring_bitmap_get_cardinality(lazy), 65536);
+    roaring_bitmap_statistics(lazy, &stats);
+    assert_int_equal(stats.n_containers, 1);
+    assert_int_equal(stats.n_run_containers, 1);
+    assert_int_equal(stats.n_bitset_containers, 0);
+
+    roaring_bitmap_free(evens);
+    roaring_bitmap_free(odds);
+    roaring_bitmap_free(eager);
+    roaring_bitmap_free(lazy);
+}
+
 void test_iterator_generate_data(uint32_t **values_out, uint32_t *count_out) {
     const size_t capacity = 1000 * 1000;
     uint32_t *values =
@@ -5645,6 +5685,7 @@ int main() {
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_subset),
         cmocka_unit_test(test_or_many_memory_leak),
+        cmocka_unit_test(test_full_bitset_union_becomes_run),
         // cmocka_unit_test(test_run_to_bitset),
         // cmocka_unit_test(test_run_to_array),
         cmocka_unit_test(test_read_uint32_iterator_array),

@@ -39,7 +39,9 @@ $SCRIPTPATH/include/roaring/roaring_version.h
 $SCRIPTPATH/include/roaring/portability.h
 $SCRIPTPATH/include/roaring/isadetection.h
 $SCRIPTPATH/include/roaring/roaring_types.h
+$SCRIPTPATH/include/roaring/utilasm.h
 $SCRIPTPATH/include/roaring/bitset/bitset.h
+$SCRIPTPATH/include/roaring/containers/perfparameters.h
 $SCRIPTPATH/include/roaring/containers/container_defs.h
 $SCRIPTPATH/include/roaring/array_util.h
 $SCRIPTPATH/include/roaring/bitset_util.h
@@ -74,8 +76,6 @@ $SCRIPTPATH/cpp/roaring/roaring64map.hh
 # need to be in this order.
 #
 ALL_PRIVATE_H="
-$SCRIPTPATH/include/roaring/containers/perfparameters.h
-$SCRIPTPATH/include/roaring/utilasm.h
 $SCRIPTPATH/include/roaring/art/art.h
 "
 
@@ -167,6 +167,26 @@ echo "Creating ${AMAL_C}..."
         dofile $h
     done
 } > "${DESTINATION}/${AMAL_C}"
+
+# Sanity check: the amalgamation drops all #include <roaring/...> lines, so a
+# macro that ${AMAL_H} tests with #if/#ifdef/#ifndef/#elif must be defined in
+# ${AMAL_H} itself (or by the compiler), never only in ${AMAL_C}, which is
+# emitted after the header. Otherwise the header silently sees the macro as
+# undefined. See https://github.com/RoaringBitmap/CRoaring/issues/883
+echo "Checking that ${AMAL_H} does not test macros defined only in ${AMAL_C}..."
+ORDERING_ERRORS=0
+for m in $(grep -o '^# *define [A-Za-z_][A-Za-z0-9_]*' "${DESTINATION}/${AMAL_C}" | awk '{print $NF}' | sort -u); do
+    if grep -q -E "^# *define $m([^A-Za-z0-9_]|$)" "${DESTINATION}/${AMAL_H}"; then
+        continue
+    fi
+    if grep -n -E "^# *(if|ifdef|ifndef|elif)([^A-Za-z0-9_].*)?[^A-Za-z0-9_]$m([^A-Za-z0-9_]|$)" "${DESTINATION}/${AMAL_H}"; then
+        echo "FATAL: ${AMAL_H} tests macro $m, which is only defined in ${AMAL_C}."
+        ORDERING_ERRORS=1
+    fi
+done
+if [ "$ORDERING_ERRORS" -ne 0 ]; then
+    exit 1
+fi
 
 
 echo "Creating ${DEMOC}..."
