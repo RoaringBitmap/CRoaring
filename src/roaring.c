@@ -783,7 +783,8 @@ roaring_bitmap_t *roaring_bitmap_or_many(size_t number,
     roaring_bitmap_t *answer =
         roaring_bitmap_lazy_or(x[0], x[1], CROARING_LAZY_OR_BITSET_CONVERSION);
     for (size_t i = 2; i < number; i++) {
-        roaring_bitmap_lazy_or_inplace(answer, x[i], CROARING_LAZY_OR_BITSET_CONVERSION);
+        roaring_bitmap_lazy_or_inplace(answer, x[i],
+                                       CROARING_LAZY_OR_BITSET_CONVERSION);
     }
     roaring_bitmap_repair_after_lazy(answer);
     return answer;
