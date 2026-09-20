@@ -11,6 +11,7 @@
 
 #ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
 using namespace roaring::internal;
+using namespace roaring::misc;
 #endif
 
 #include "../benchmarks/numbersfromtextfiles.h"

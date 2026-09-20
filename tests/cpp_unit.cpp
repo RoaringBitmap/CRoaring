@@ -1066,7 +1066,6 @@ DEFINE_TEST(test_cpp_contains_range_closed_64) {
         // bucket partial.
         auto b0 = uint64_t(0);
         auto b2 = uint64_t(2) << 32;
-        auto uint32_max = (std::numeric_limits<uint32_t>::max)();
         Roaring64Map r;
         r.addRangeClosed(b0, b0 + uint32_max);
         r.addRangeClosed(b2, b2 + 5);
@@ -1077,7 +1076,6 @@ DEFINE_TEST(test_cpp_contains_range_closed_64) {
         // bucket.
         auto b0 = uint64_t(0);
         auto b1 = uint64_t(1) << 32;
-        auto uint32_max = (std::numeric_limits<uint32_t>::max)();
         Roaring64Map r;
         r.addRangeClosed(b0, b0 + uint32_max);
         assert_false(r.containsRangeClosed(b0, b1));
