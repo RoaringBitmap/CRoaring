@@ -1272,6 +1272,29 @@ static uint8_t art_common_prefix(const art_key_chunk_t key1[],
 }
 
 /**
+ * Grows the array of nodes of the given typecode to `new_capacity` elements,
+ * linking the new elements at the end of the free list. Does nothing if
+ * `new_capacity` is not larger than the current capacity. Invalidates pointers
+ * into the array obtained by `art_deref`.
+ */
+static void art_grow_to(art_t *art, art_typecode_t typecode,
+                        uint64_t new_capacity) {
+    uint64_t capacity = art->capacities[typecode];
+    if (new_capacity <= capacity) {
+        return;
+    }
+    art->capacities[typecode] = new_capacity;
+    art->nodes[typecode] = roaring_realloc(
+        art->nodes[typecode], new_capacity * ART_NODE_SIZES[typecode]);
+    uint64_t increase = new_capacity - capacity;
+    memset(art_get_node(art, capacity, typecode), 0,
+           increase * ART_NODE_SIZES[typecode]);
+    for (uint64_t i = capacity; i < new_capacity; ++i) {
+        art_node_set_next_free(art_get_node(art, i, typecode), typecode, i + 1);
+    }
+}
+
+/**
  * Extends the array of nodes of the given typecode. Invalidates pointers into
  * the array obtained by `art_deref`.
  */
@@ -1289,15 +1312,7 @@ static void art_extend(art_t *art, art_typecode_t typecode) {
     } else {
         new_capacity = 5 * capacity / 4;
     }
-    art->capacities[typecode] = new_capacity;
-    art->nodes[typecode] = roaring_realloc(
-        art->nodes[typecode], new_capacity * ART_NODE_SIZES[typecode]);
-    uint64_t increase = new_capacity - capacity;
-    memset(art_get_node(art, capacity, typecode), 0,
-           increase * ART_NODE_SIZES[typecode]);
-    for (uint64_t i = capacity; i < new_capacity; ++i) {
-        art_node_set_next_free(art_get_node(art, i, typecode), typecode, i + 1);
-    }
+    art_grow_to(art, typecode, new_capacity);
 }
 
 /**
@@ -1844,6 +1859,21 @@ void art_free(art_t *art) {
          ++t) {
         roaring_free(art->nodes[t]);
     }
+}
+
+void art_reserve(art_t *art, uint64_t num_leaves) {
+    art_grow_to(art, CROARING_ART_LEAF_TYPE, num_leaves);
+}
+
+uint64_t art_num_leaves(const art_t *art) {
+    uint64_t num_free = 0;
+    for (uint64_t i = art->first_free[CROARING_ART_LEAF_TYPE];
+         i < art->capacities[CROARING_ART_LEAF_TYPE];
+         i = art_node_get_next_free(art,
+                                    art_to_ref(i, CROARING_ART_LEAF_TYPE))) {
+        num_free++;
+    }
+    return art->capacities[CROARING_ART_LEAF_TYPE] - num_free;
 }
 
 void art_printf(const art_t *art) {

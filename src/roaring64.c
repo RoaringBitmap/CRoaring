@@ -174,6 +174,24 @@ static inline leaf_t replace_container(roaring64_bitmap_t *r, leaf_t *leaf,
 }
 
 /**
+ * Grows the array of container pointers (and the parallel typecode array) to
+ * `new_capacity` entries. Does nothing if `new_capacity` is not larger than
+ * the current capacity.
+ */
+static void grow_containers_to(roaring64_bitmap_t *r, uint64_t new_capacity) {
+    if (new_capacity <= r->capacity) {
+        return;
+    }
+    uint64_t increase = new_capacity - r->capacity;
+    r->containers = (container_t **)roaring_realloc(
+        r->containers, new_capacity * sizeof(container_t *));
+    memset(r->containers + r->capacity, 0, increase * sizeof(container_t *));
+    r->typecodes = (uint8_t *)roaring_realloc(r->typecodes,
+                                              new_capacity * sizeof(uint8_t));
+    r->capacity = new_capacity;
+}
+
+/**
  * Extends the array of container pointers (and the parallel typecode array).
  */
 static void extend_containers(roaring64_bitmap_t *r) {
@@ -189,13 +207,17 @@ static void extend_containers(roaring64_bitmap_t *r) {
     } else {
         new_capacity = 5 * r->capacity / 4;
     }
-    uint64_t increase = new_capacity - r->capacity;
-    r->containers = (container_t **)roaring_realloc(
-        r->containers, new_capacity * sizeof(container_t *));
-    memset(r->containers + r->capacity, 0, increase * sizeof(container_t *));
-    r->typecodes = (uint8_t *)roaring_realloc(r->typecodes,
-                                              new_capacity * sizeof(uint8_t));
-    r->capacity = new_capacity;
+    grow_containers_to(r, new_capacity);
+}
+
+/**
+ * Reserves room for `num_containers` containers in the ART and in the
+ * container array, so that a result of known maximum size can be built
+ * without repeatedly reallocating both. Intended for freshly created bitmaps.
+ */
+static void reserve_containers(roaring64_bitmap_t *r, uint64_t num_containers) {
+    art_reserve(&r->art, num_containers);
+    grow_containers_to(r, num_containers);
 }
 
 static uint64_t next_free_container_idx(const roaring64_bitmap_t *r) {
@@ -390,6 +412,7 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
 
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    reserve_containers(result, art_num_leaves(&r->art));
 
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
     while (it.value != NULL) {
@@ -1541,6 +1564,10 @@ double roaring64_bitmap_jaccard_index(const roaring64_bitmap_t *r1,
 roaring64_bitmap_t *roaring64_bitmap_or(const roaring64_bitmap_t *r1,
                                         const roaring64_bitmap_t *r2) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
+    // The result has at least max(n1, n2) containers and at most n1 + n2, so
+    // reserving the upper bound is at most a 2x overestimate.
+    reserve_containers(result,
+                       art_num_leaves(&r1->art) + art_num_leaves(&r2->art));
 
     art_iterator_t it1 = art_init_iterator((art_t *)&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator((art_t *)&r2->art, /*first=*/true);
