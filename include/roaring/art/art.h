@@ -200,6 +200,21 @@ void art_iterator_insert(art_iterator_t *iterator, const art_key_chunk_t *key,
 bool art_iterator_erase(art_iterator_t *iterator, art_val_t *erased_val);
 
 /**
+ * Ensures the ART has room for at least `num_leaves` leaves in total before
+ * further leaf allocations are needed. Only leaf storage is reserved; inner
+ * nodes keep growing on demand. Invalidates pointers to values previously
+ * returned by `art_insert` and `art_find`.
+ */
+void art_reserve(art_t *art, uint64_t num_leaves);
+
+/**
+ * Returns the number of leaves (key/value pairs) in the ART. This walks the
+ * free list of leaves, so it is O(1) for an ART that has had no erasures or
+ * that has been shrunken, and O(number of free leaf slots) otherwise.
+ */
+uint64_t art_num_leaves(const art_t *art);
+
+/**
  * Shrinks the internal arrays in the ART to remove any unused elements. Returns
  * the number of bytes freed.
  */

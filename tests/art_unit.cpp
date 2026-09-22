@@ -655,6 +655,68 @@ DEFINE_TEST(test_art_shrink_grow_node48) {
     art_free(&art);
 }
 
+DEFINE_TEST(test_art_num_leaves_and_reserve) {
+    std::vector<std::array<uint8_t, 6>> keys;
+    for (size_t i = 0; i < 300; ++i) {
+        keys.push_back({0, 0, 0, 0, static_cast<uint8_t>(i / 256),
+                        static_cast<uint8_t>(i % 256)});
+    }
+    {
+        // Counting through inserts and erasures, with a non-trivial free list.
+        art_t art;
+        art_init_cleared(&art);
+        assert_int_equal(art_num_leaves(&art), 0);
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_insert(&art, (art_key_chunk_t*)keys[i].data(), i);
+            assert_int_equal(art_num_leaves(&art), i + 1);
+        }
+        // Erase every third key, in an order that scatters the free list.
+        size_t erased = 0;
+        for (size_t i = 0; i < keys.size(); i += 3) {
+            art_val_t erased_val;
+            assert_true(
+                art_erase(&art, (art_key_chunk_t*)keys[i].data(), &erased_val));
+            ++erased;
+            assert_int_equal(art_num_leaves(&art), keys.size() - erased);
+        }
+        // Re-insert some, reusing free slots.
+        for (size_t i = 0; i < keys.size(); i += 6) {
+            art_insert(&art, (art_key_chunk_t*)keys[i].data(), i);
+            --erased;
+            assert_int_equal(art_num_leaves(&art), keys.size() - erased);
+        }
+        assert_art_valid(&art);
+        art_shrink_to_fit(&art);
+        assert_int_equal(art_num_leaves(&art), keys.size() - erased);
+        art_free(&art);
+    }
+    {
+        // Reserving up front leaves the count unchanged and the ART usable.
+        art_t art;
+        art_init_cleared(&art);
+        art_reserve(&art, keys.size());
+        assert_int_equal(art_num_leaves(&art), 0);
+        // Value pointers stay valid only if the leaf array is never
+        // reallocated, which is what the reservation guarantees.
+        art_val_t* first =
+            art_insert(&art, (art_key_chunk_t*)keys[0].data(), 0);
+        for (size_t i = 1; i < keys.size(); ++i) {
+            art_insert(&art, (art_key_chunk_t*)keys[i].data(), i);
+        }
+        assert_true(art_find(&art, (art_key_chunk_t*)keys[0].data()) == first);
+        // Reserving less than the current capacity is a no-op.
+        art_reserve(&art, 1);
+        assert_true(art_find(&art, (art_key_chunk_t*)keys[0].data()) == first);
+        assert_int_equal(art_num_leaves(&art), keys.size());
+        assert_art_valid(&art);
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_val_t* val = art_find(&art, (art_key_chunk_t*)keys[i].data());
+            assert_true(val != NULL && *val == i);
+        }
+        art_free(&art);
+    }
+}
+
 DEFINE_TEST(test_art_frozen_view) {
     {
         // ART with multiple node sizes.
@@ -747,6 +809,7 @@ int main() {
         cmocka_unit_test(test_art_iterator_insert),
         cmocka_unit_test(test_art_shadowed),
         cmocka_unit_test(test_art_shrink_grow_node48),
+        cmocka_unit_test(test_art_num_leaves_and_reserve),
         cmocka_unit_test(test_art_frozen_view),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
