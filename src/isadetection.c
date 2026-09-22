@@ -81,6 +81,45 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif  // CROARING_COMPILER_SUPPORTS_AVX512
 #endif
 
+#if CROARING_IS_ARM64 && defined(__linux__)
+#include <sys/auxv.h>
+// The kernel advertises SVE in AT_HWCAP and SVE2 in AT_HWCAP2. Older
+// headers may not define these constants, so we provide the kernel's values
+// (we deliberately do not include <asm/hwcap.h>, which is not available on
+// all toolchains, e.g., musl without linux-headers).
+#ifndef AT_HWCAP2
+#define AT_HWCAP2 26
+#endif
+#ifndef HWCAP_SVE
+#define HWCAP_SVE (1 << 22)
+#endif
+#ifndef HWCAP2_SVE2
+#define HWCAP2_SVE2 (1 << 1)
+#endif
+#endif  // CROARING_IS_ARM64 && defined(__linux__)
+
+#if CROARING_IS_ARM64 && defined(_WIN32)
+#ifndef _WINDOWS_
+// We avoid including <windows.h> (macro pollution); this matches the
+// declaration in the Windows SDK (BOOL WINAPI
+// IsProcessorFeaturePresent(DWORD)).
+#ifdef __cplusplus
+#define CROARING_EXTERN_C extern "C"
+#else
+#define CROARING_EXTERN_C
+#endif
+CROARING_EXTERN_C __declspec(dllimport) int __stdcall IsProcessorFeaturePresent(
+    unsigned long ProcessorFeature);
+#endif  // _WINDOWS_
+// Only recent Windows SDKs define these processor features.
+#ifndef PF_ARM_SVE_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE_INSTRUCTIONS_AVAILABLE 46
+#endif
+#ifndef PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE 47
+#endif
+#endif  // CROARING_IS_ARM64 && defined(_WIN32)
+
 #ifdef __cplusplus
 extern "C" {
 namespace roaring {
@@ -101,7 +140,9 @@ enum croaring_instruction_set {
     CROARING_AVX512VBMI2 = 0x800,
     CROARING_AVX512BITALG = 0x1000,
     CROARING_AVX512VPOPCNTDQ = 0x2000,
-    CROARING_UNINITIALIZED = 0x8000
+    CROARING_SVE = 0x4000,
+    CROARING_UNINITIALIZED = 0x8000,
+    CROARING_SVE2 = 0x10000
 };
 
 #if CROARING_COMPILER_SUPPORTS_AVX512
@@ -258,7 +299,41 @@ static inline uint32_t dynamic_croaring_detect_supported_architectures(void) {
 
 #endif  // end SIMD extension detection code
 
-#if CROARING_IS_X64  // x64
+#if CROARING_IS_ARM64
+
+static inline uint32_t dynamic_croaring_detect_supported_architectures(void) {
+    // NEON is mandatory on AArch64.
+    uint32_t host_isa = CROARING_NEON;
+#if defined(__linux__)
+    unsigned long hwcap = getauxval(AT_HWCAP);
+    unsigned long hwcap2 = getauxval(AT_HWCAP2);
+    if (hwcap & HWCAP_SVE) {
+        host_isa |= CROARING_SVE;
+        // We only claim SVE2 when SVE is also present. Before Linux 6.14, the
+        // kernel set HWCAP2_SVE2 on processors implementing SME(2) but not
+        // SVE, because SVE2 instructions are available in streaming mode. Our
+        // SVE2 code runs in non-streaming mode and needs actual SVE.
+        if (hwcap2 & HWCAP2_SVE2) {
+            host_isa |= CROARING_SVE2;
+        }
+    }
+#elif defined(_WIN32)
+    if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)) {
+        host_isa |= CROARING_SVE;
+        // As on Linux, require SVE before claiming SVE2.
+        if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
+            host_isa |= CROARING_SVE2;
+        }
+    }
+#endif
+    // On other systems (e.g., macOS, where Apple Silicon has no SVE), we only
+    // report NEON.
+    return host_isa;
+}
+
+#endif  // CROARING_IS_ARM64
+
+#if CROARING_IS_X64 || CROARING_IS_ARM64
 
 #if CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_CPP
 static inline uint32_t croaring_detect_supported_architectures(void) {
@@ -286,6 +361,10 @@ static inline uint32_t croaring_detect_supported_architectures(void) {
     return buffer;
 }
 #endif  // CROARING_C_ATOMIC
+
+#endif  // CROARING_IS_X64 || CROARING_IS_ARM64
+
+#if CROARING_IS_X64  // x64
 
 #ifdef ROARING_DISABLE_AVX
 
@@ -341,6 +420,24 @@ int croaring_hardware_support(void) {
 #endif
 
 #endif  // CROARING_IS_X64 // x64
+
+#if CROARING_IS_ARM64
+
+int croaring_hardware_support(void) {
+    static
+#if CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_C
+        _Atomic
+#endif
+        int support = 0xFFFFFFF;
+    if (support == 0xFFFFFFF) {
+        uint32_t isa = croaring_detect_supported_architectures();
+        support = ((isa & CROARING_SVE) ? ROARING_SUPPORTS_SVE : 0) |
+                  ((isa & CROARING_SVE2) ? ROARING_SUPPORTS_SVE2 : 0);
+    }
+    return support;
+}
+
+#endif  // CROARING_IS_ARM64
 #ifdef __cplusplus
 }
 }

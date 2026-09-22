@@ -37,20 +37,32 @@
 #endif  // #ifndef CROARING_COMPILER_SUPPORTS_AVX512
 #endif  // #ifndef CROARING_COMPILER_SUPPORTS_AVX512
 
+#endif  // CROARING_IS_X64
+
+#if CROARING_IS_X64 || CROARING_IS_ARM64
 #ifdef __cplusplus
 extern "C" {
 namespace roaring {
 namespace internal {
 #endif
 enum {
+    // x64
     ROARING_SUPPORTS_AVX2 = 1,
     ROARING_SUPPORTS_AVX512 = 2,
+    // ARM64
+    ROARING_SUPPORTS_SVE = 4,
+    ROARING_SUPPORTS_SVE2 = 8,
 };
+/**
+ * Returns a bitmask of the ROARING_SUPPORTS_* flags describing the
+ * instruction sets supported by the current processor and operating system.
+ * The result is computed once and cached.
+ */
 int croaring_hardware_support(void);
 #ifdef __cplusplus
 }
 }
 }  // extern "C" { namespace roaring { namespace internal {
 #endif
-#endif  // CROARING_IS_X64
+#endif  // CROARING_IS_X64 || CROARING_IS_ARM64
 #endif  // ROARING_ISADETECTION_H

@@ -165,6 +165,11 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #endif  // CROARING_REGULAR_VISUAL_STUDIO
 #endif  // defined(__x86_64__) || defined(_M_X64)
 
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
+// we have a 64-bit ARM processor
+#define CROARING_IS_ARM64 1
+#endif
+
 #if !defined(CROARING_USENEON) && !defined(DISABLENEON) && defined(__ARM_NEON)
 #define CROARING_USENEON
 #endif
