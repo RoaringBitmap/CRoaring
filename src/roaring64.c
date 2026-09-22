@@ -2643,29 +2643,31 @@ size_t roaring64_bitmap_frozen_size_in_bytes(const roaring64_bitmap_t *r) {
     return size;
 }
 
+// The output cursors are byte pointers rather than typed pointers: the output
+// buffer itself need not be aligned (only `roaring64_bitmap_frozen_view`
+// requires alignment), and forming a misaligned typed pointer is undefined
+// behavior even if it is only ever passed to memcpy.
 static inline void container_frozen_serialize(const container_t *container,
-                                              uint8_t typecode,
-                                              uint64_t **bitsets,
-                                              uint16_t **arrays,
-                                              rle16_t **runs) {
+                                              uint8_t typecode, char **bitsets,
+                                              char **arrays, char **runs) {
     size_t size = container_get_frozen_size(container, typecode);
     switch (typecode) {
         case BITSET_CONTAINER_TYPE: {
             bitset_container_t *bitset = (bitset_container_t *)container;
             memcpy(*bitsets, bitset->words, size);
-            *bitsets += BITSET_CONTAINER_SIZE_IN_WORDS;
+            *bitsets += size;
             break;
         }
         case ARRAY_CONTAINER_TYPE: {
             array_container_t *array = (array_container_t *)container;
             memcpy(*arrays, array->array, size);
-            *arrays += container_get_element_count(container, typecode);
+            *arrays += size;
             break;
         }
         case RUN_CONTAINER_TYPE: {
             run_container_t *run = (run_container_t *)container;
             memcpy(*runs, run->runs, size);
-            *runs += container_get_element_count(container, typecode);
+            *runs += size;
             break;
         }
         default: {
@@ -2735,13 +2737,13 @@ size_t roaring64_bitmap_frozen_serialize(const roaring64_bitmap_t *r,
     // Runs before arrays as run elements are larger than array elements and
     // smaller than bitset elements.
     buf = pad_align(buf, initial_buf, CROARING_BITSET_ALIGNMENT);
-    uint64_t *bitsets = (uint64_t *)buf;
+    char *bitsets = buf;
     buf += total_sizes[BITSET_CONTAINER_TYPE];
     buf = pad_align(buf, initial_buf, alignof(rle16_t));
-    rle16_t *runs = (rle16_t *)buf;
+    char *runs = buf;
     buf += total_sizes[RUN_CONTAINER_TYPE];
     buf = pad_align(buf, initial_buf, alignof(uint16_t));
-    uint16_t *arrays = (uint16_t *)buf;
+    char *arrays = buf;
     buf += total_sizes[ARRAY_CONTAINER_TYPE];
 
     it = art_init_iterator((art_t *)&r->art, /*first=*/true);
