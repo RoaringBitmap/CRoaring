@@ -5194,6 +5194,187 @@ DEFINE_TEST(test_remove_many) {
     }
 }
 
+// A mutator must unshare a container before editing it in place, or it edits a
+// container the bitmaps copied from it still own.
+#define COW_SPARSE_VALUE (5 << 16)
+#define COW_DENSE_END (1 << 17)
+#define COW_CARDINALITY (COW_DENSE_END + 1)
+
+static roaring_bitmap_t *cow_source(bool run_optimize) {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(r, true);
+    roaring_bitmap_add_range(r, 0, COW_DENSE_END);
+    roaring_bitmap_add(r, COW_SPARSE_VALUE);
+    if (run_optimize) {
+        roaring_bitmap_run_optimize(r);
+    }
+    return r;
+}
+
+static void assert_cow_intact(const roaring_bitmap_t *r) {
+    assert_bitmap_validate(r);
+    assert_true(roaring_bitmap_get_cardinality(r) == COW_CARDINALITY);
+    assert_true(roaring_bitmap_contains(r, 0));
+    assert_true(roaring_bitmap_contains(r, COW_DENSE_END - 1));
+    assert_true(roaring_bitmap_contains(r, COW_SPARSE_VALUE));
+}
+
+// Mutates one side of a sharing pair and checks the other side is unchanged,
+// with the roles reversed the second time.
+static void check_unshares(void (*mutate)(roaring_bitmap_t *),
+                           bool run_optimize) {
+    roaring_bitmap_t *source = cow_source(run_optimize);
+    roaring_bitmap_t *copy = roaring_bitmap_copy(source);
+    mutate(copy);
+    assert_cow_intact(source);
+    assert_bitmap_validate(copy);
+    roaring_bitmap_free(copy);
+    roaring_bitmap_free(source);
+
+    source = cow_source(run_optimize);
+    copy = roaring_bitmap_copy(source);
+    mutate(source);
+    assert_cow_intact(copy);
+    assert_bitmap_validate(source);
+    roaring_bitmap_free(copy);
+    roaring_bitmap_free(source);
+}
+
+static void cow_remove_many(roaring_bitmap_t *r) {
+    uint32_t values[] = {1, 3, 5, 7, 65536 + 1, 65536 + 3, COW_SPARSE_VALUE};
+    roaring_bitmap_remove_many(r, sizeof(values) / sizeof(values[0]), values);
+}
+
+static void cow_remove_many_one_container(roaring_bitmap_t *r) {
+    uint32_t values[] = {1, 2, 3};
+    roaring_bitmap_remove_many(r, sizeof(values) / sizeof(values[0]), values);
+}
+
+static void cow_remove_many_empties_container(roaring_bitmap_t *r) {
+    uint32_t value = COW_SPARSE_VALUE;
+    roaring_bitmap_remove_many(r, 1, &value);
+}
+
+static void cow_add_many(roaring_bitmap_t *r) {
+    uint32_t values[] = {COW_DENSE_END + 1, COW_DENSE_END + 3, 2, 4};
+    roaring_bitmap_add_many(r, sizeof(values) / sizeof(values[0]), values);
+}
+
+static void cow_add_bulk(roaring_bitmap_t *r) {
+    roaring_bulk_context_t context = {0, 0, 0, 0};
+    for (uint32_t v = COW_DENSE_END + 1; v < COW_DENSE_END + 16; v++) {
+        roaring_bitmap_add_bulk(r, &context, v);
+    }
+    roaring_bitmap_add_bulk(r, &context, 2);
+}
+
+static void cow_add(roaring_bitmap_t *r) { roaring_bitmap_add(r, 2); }
+
+static void cow_add_checked(roaring_bitmap_t *r) {
+    assert_false(roaring_bitmap_add_checked(r, 2));
+}
+
+static void cow_remove(roaring_bitmap_t *r) { roaring_bitmap_remove(r, 2); }
+
+static void cow_remove_checked(roaring_bitmap_t *r) {
+    assert_true(roaring_bitmap_remove_checked(r, 2));
+}
+
+static void cow_add_range(roaring_bitmap_t *r) {
+    roaring_bitmap_add_range(r, COW_DENSE_END + 1, COW_DENSE_END + 100);
+}
+
+static void cow_remove_range(roaring_bitmap_t *r) {
+    roaring_bitmap_remove_range(r, 10, 100);
+}
+
+static void cow_flip_inplace(roaring_bitmap_t *r) {
+    roaring_bitmap_flip_inplace(r, 10, 100);
+}
+
+static void cow_run_optimize(roaring_bitmap_t *r) {
+    roaring_bitmap_run_optimize(r);
+}
+
+static void cow_remove_run_compression(roaring_bitmap_t *r) {
+    roaring_bitmap_remove_run_compression(r);
+}
+
+static void cow_shrink_to_fit(roaring_bitmap_t *r) {
+    roaring_bitmap_shrink_to_fit(r);
+}
+
+static void cow_and_inplace(roaring_bitmap_t *r) {
+    roaring_bitmap_t *other = roaring_bitmap_from_range(0, 100, 1);
+    roaring_bitmap_and_inplace(r, other);
+    roaring_bitmap_free(other);
+}
+
+static void cow_or_inplace(roaring_bitmap_t *r) {
+    roaring_bitmap_t *other =
+        roaring_bitmap_from_range(COW_DENSE_END + 1, COW_DENSE_END + 100, 1);
+    roaring_bitmap_or_inplace(r, other);
+    roaring_bitmap_free(other);
+}
+
+static void cow_xor_inplace(roaring_bitmap_t *r) {
+    roaring_bitmap_t *other = roaring_bitmap_from_range(0, 100, 1);
+    roaring_bitmap_xor_inplace(r, other);
+    roaring_bitmap_free(other);
+}
+
+static void cow_andnot_inplace(roaring_bitmap_t *r) {
+    roaring_bitmap_t *other = roaring_bitmap_from_range(0, 100, 1);
+    roaring_bitmap_andnot_inplace(r, other);
+    roaring_bitmap_free(other);
+}
+
+DEFINE_TEST(test_remove_many_copy_on_write) {
+    for (int run_optimize = 0; run_optimize <= 1; run_optimize++) {
+        check_unshares(cow_remove_many, run_optimize);
+        check_unshares(cow_remove_many_one_container, run_optimize);
+        check_unshares(cow_remove_many_empties_container, run_optimize);
+    }
+}
+
+DEFINE_TEST(test_remove_many_copy_on_write_many_copies) {
+    roaring_bitmap_t *source = cow_source(false);
+    roaring_bitmap_t *copies[4];
+    for (size_t i = 0; i < 4; i++) {
+        copies[i] = roaring_bitmap_copy(source);
+    }
+    for (size_t i = 0; i < 4; i++) {
+        cow_remove_many(copies[i]);
+        assert_bitmap_validate(copies[i]);
+        assert_cow_intact(source);
+        for (size_t j = i + 1; j < 4; j++) {
+            assert_cow_intact(copies[j]);
+        }
+    }
+    for (size_t i = 0; i < 4; i++) {
+        roaring_bitmap_free(copies[i]);
+    }
+    assert_cow_intact(source);
+    roaring_bitmap_free(source);
+}
+
+// The other in-place mutators are already correct; these keep them that way.
+DEFINE_TEST(test_inplace_mutators_copy_on_write) {
+    void (*const mutators[])(roaring_bitmap_t *) = {
+        cow_add,           cow_add_checked,   cow_add_many,
+        cow_add_bulk,      cow_remove,        cow_remove_checked,
+        cow_add_range,     cow_remove_range,  cow_flip_inplace,
+        cow_run_optimize,  cow_shrink_to_fit, cow_remove_run_compression,
+        cow_and_inplace,   cow_or_inplace,    cow_xor_inplace,
+        cow_andnot_inplace};
+    const size_t count = sizeof(mutators) / sizeof(mutators[0]);
+    for (int run_optimize = 0; run_optimize <= 1; run_optimize++) {
+        for (size_t i = 0; i < count; i++) {
+            check_unshares(mutators[i], run_optimize);
+        }
+    }
+}
+
 DEFINE_TEST(test_range_cardinality) {
     const uint64_t s = 65536;
 
@@ -5726,6 +5907,9 @@ int main() {
         cmocka_unit_test(test_add_range),
         cmocka_unit_test(test_remove_range),
         cmocka_unit_test(test_remove_many),
+        cmocka_unit_test(test_remove_many_copy_on_write),
+        cmocka_unit_test(test_remove_many_copy_on_write_many_copies),
+        cmocka_unit_test(test_inplace_mutators_copy_on_write),
         cmocka_unit_test(test_range_cardinality),
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
