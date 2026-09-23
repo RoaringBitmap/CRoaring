@@ -2424,6 +2424,46 @@ DEFINE_TEST(test_cpp_deserialize_64_key_too_small) {
 }
 #endif
 
+DEFINE_TEST(test_cpp_internal_validate) {
+    {
+        Roaring r;
+        r.add(1);
+        r.add(100);
+        r.add(70000);
+        r.runOptimize();
+        const char *reason = nullptr;
+        assert_true(r.internal_validate(&reason));
+    }
+    {
+        // A run container declaring zero runs: readSafe accepts it, validate must not.
+        const char data[] = {0x3B, 0x30, 0, 0, 0x01, 0, 0, 0, 0, 0, 0};
+        Roaring r = Roaring::readSafe(data, sizeof(data));
+        const char *reason = nullptr;
+        assert_false(r.internal_validate(&reason));
+        assert_true(reason != nullptr);
+    }
+}
+
+DEFINE_TEST(test_cpp_r64map_internal_validate) {
+    {
+        Roaring64Map r;
+        r.add(uint64_t(1));
+        r.add(uint64_t(1) << 40);
+        const char *reason = nullptr;
+        assert_true(r.internal_validate(&reason));
+    }
+    {
+        // Roaring64Map (one entry, key 0) wrapping the same zero-run container.
+        const char data[] = {1,    0,    0, 0, 0,    0, 0, 0,
+                             0,    0,    0, 0, 0x3B, 0x30, 0, 0,
+                             0x01, 0,    0, 0, 0,    0, 0};
+        Roaring64Map r = Roaring64Map::readSafe(data, sizeof(data));
+        const char *reason = nullptr;
+        assert_false(r.internal_validate(&reason));
+        assert_true(reason != nullptr);
+    }
+}
+
 DEFINE_TEST(test_cpp_contains_range_interleaved_containers) {
     {
         Roaring roaring;
@@ -2541,6 +2581,8 @@ int main() {
         cmocka_unit_test(test_cpp_fast_union_64),
         cmocka_unit_test(test_cpp_to_string),
         cmocka_unit_test(test_cpp_remove_run_compression),
+        cmocka_unit_test(test_cpp_internal_validate),
+        cmocka_unit_test(test_cpp_r64map_internal_validate),
         cmocka_unit_test(test_cpp_contains_range_interleaved_containers),
         cmocka_unit_test(test_cpp_copy_map_iterator_to_different_map),
     };

@@ -1208,6 +1208,19 @@ class Roaring64Map {
     }
 
     /**
+     * Validate the structure of every inner bitmap.
+     * Returns false and sets *reason (when not null) on the first invalid one.
+     */
+    bool internal_validate(const char **reason = nullptr) const {
+        for (const auto &map_entry : roarings) {
+            if (!map_entry.second.internal_validate(reason)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Convert array and bitmap containers to run containers when it is more
      * efficient; also convert from run containers when more space efficient.
      * Returns true if the result has at least one run container.

@@ -485,6 +485,14 @@ class Roaring {
     }
 
     /**
+     * Validate the structure of a bitmap read from an untrusted source.
+     * Returns false and sets *reason (when not null) if it is invalid.
+     */
+    bool internal_validate(const char **reason = nullptr) const noexcept {
+        return api::roaring_bitmap_internal_validate(&roaring, reason);
+    }
+
+    /**
      * Convert array and bitmap containers to run containers when it is more
      * efficient; also convert from run containers when more space efficient.
      * Returns true if the result has at least one run container.  Additional
