@@ -704,6 +704,10 @@ void roaring_bitmap_remove_many(roaring_bitmap_t *r, size_t n_args,
         uint16_t key = (uint16_t)(vals[i] >> 16);
         if (pos < 0 || key != r->high_low_container.keys[pos]) {
             pos = ra_get_index(&r->high_low_container, key);
+            if (pos >= 0) {
+                ra_unshare_container_at_index(&r->high_low_container,
+                                              (uint16_t)pos);
+            }
         }
         if (pos >= 0) {
             uint8_t new_typecode;
