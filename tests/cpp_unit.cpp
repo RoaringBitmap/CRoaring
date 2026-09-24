@@ -2435,7 +2435,8 @@ DEFINE_TEST(test_cpp_internal_validate) {
         assert_true(r.internal_validate(&reason));
     }
     {
-        // A run container declaring zero runs: readSafe accepts it, validate must not.
+        // A run container declaring zero runs: readSafe accepts it, validate
+        // must not.
         const char data[] = {0x3B, 0x30, 0, 0, 0x01, 0, 0, 0, 0, 0, 0};
         Roaring r = Roaring::readSafe(data, sizeof(data));
         const char *reason = nullptr;
@@ -2454,9 +2455,8 @@ DEFINE_TEST(test_cpp_r64map_internal_validate) {
     }
     {
         // Roaring64Map (one entry, key 0) wrapping the same zero-run container.
-        const char data[] = {1,    0,    0, 0, 0,    0, 0, 0,
-                             0,    0,    0, 0, 0x3B, 0x30, 0, 0,
-                             0x01, 0,    0, 0, 0,    0, 0};
+        const char data[] = {1,    0,    0, 0, 0,    0, 0, 0, 0, 0, 0, 0,
+                             0x3B, 0x30, 0, 0, 0x01, 0, 0, 0, 0, 0, 0};
         Roaring64Map r = Roaring64Map::readSafe(data, sizeof(data));
         const char *reason = nullptr;
         assert_false(r.internal_validate(&reason));
