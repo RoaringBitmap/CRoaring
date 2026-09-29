@@ -92,8 +92,9 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #define CROARING_IS_RISCV64 1
 #endif
 
-#elif defined(__x86_64__) || defined(_M_X64)
+#elif defined(__x86_64__) || (defined(_M_X64) && !defined(_M_ARM64EC))
 // we have an x64 processor
+// (ARM64EC also defines _M_X64, but it targets ARM64 and is handled below)
 #define CROARING_IS_X64 1
 
 #if defined(_MSC_VER) && (_MSC_VER < 1910)
@@ -163,7 +164,7 @@ extern "C" {  // portability definitions are in global scope, not a namespace
 #endif  // SIMDJSON_CLANG_VISUAL_STUDIO
 
 #endif  // CROARING_REGULAR_VISUAL_STUDIO
-#endif  // defined(__x86_64__) || defined(_M_X64)
+#endif  // defined(__x86_64__) || (defined(_M_X64) && !defined(_M_ARM64EC))
 
 #if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 // we have a 64-bit ARM processor
