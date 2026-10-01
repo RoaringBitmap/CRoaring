@@ -262,6 +262,7 @@ frees the bitmap, and set operations are exposed as operators (`&`, `|`, `^`,
 
 #include <cassert>
 #include <iostream>
+#include <unordered_map>
 
 using namespace roaring;
 
@@ -284,6 +285,17 @@ int main() {
     Roaring intersection = r & other;
     assert(intersection.cardinality() == 2);  // {100, 1000}
 
+    // Roaring can be used directly as a key in standard unordered containers.
+    Roaring equal_r;
+    equal_r.addRange(10, 20);
+    equal_r.add(1000);
+    equal_r.add(100);
+    equal_r.add(1);
+    assert(r == equal_r);
+    std::unordered_map<Roaring, const char *> labels;
+    labels.emplace(r, "example");
+    assert(labels.find(equal_r) != labels.end());
+
     // Range-based iteration visits the values in sorted (increasing) order.
     uint64_t sum = 0;
     for (uint32_t value : r) {
@@ -301,6 +313,21 @@ int main() {
     return EXIT_SUCCESS;
 }
 ```
+
+The default `std::hash<roaring::Roaring>` is consistent with logical
+`operator==`: valid bitmaps with the same values have the same hash regardless
+of their internal representation or construction history. Hashing performs one
+allocation-free `O(cardinality)` scan and uses `O(1)` auxiliary storage. Hash
+collisions remain possible; this is a non-cryptographic hash, and its numeric
+result is not stable across executions, platforms, builds, or releases. Do not
+persist it or use it as an integrity check.
+
+An unordered container stores a value snapshot of an inserted key, so later
+changes to the caller's original bitmap do not change the stored key. Never
+modify a key held by the container; erase and reinsert it when its logical value
+must change. Hashing also does not validate a bitmap. Data deserialized from an
+untrusted source must pass the documented `roaring_bitmap_internal_validate`
+check before any use, including hashing.
 
 For more extensive, fully commented examples (serialization, bulk operations,
 copy-on-write, aggregating many bitmaps, etc.), see the [Example (C)](#example-c)

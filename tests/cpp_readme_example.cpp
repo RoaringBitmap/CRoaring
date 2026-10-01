@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <unordered_map>
 
 #include <roaring/roaring.hh>
 #include <roaring/roaring64map.hh>
@@ -32,6 +33,17 @@ int main() {
     // Operators return new bitmaps; their memory is managed for you.
     Roaring intersection = r & other;
     assert(intersection.cardinality() == 2);  // {100, 1000}
+
+    // Roaring can be used directly as a key in standard unordered containers.
+    Roaring equal_r;
+    equal_r.addRange(10, 20);
+    equal_r.add(1000);
+    equal_r.add(100);
+    equal_r.add(1);
+    assert(r == equal_r);
+    std::unordered_map<Roaring, const char *> labels;
+    labels.emplace(r, "example");
+    assert(labels.find(equal_r) != labels.end());
 
     // Range-based iteration visits the values in sorted (increasing) order.
     uint64_t sum = 0;
