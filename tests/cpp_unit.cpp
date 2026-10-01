@@ -243,6 +243,85 @@ DEFINE_TEST(test_cpp_hash_serialization_round_trips) {
     assert_equal_hash(source, native);
 }
 
+static Roaring reconstruct_bitmap(const Roaring &source) {
+    if (source.isEmpty()) {
+        return Roaring();
+    }
+    std::vector<uint32_t> values(source.cardinality());
+    source.toUint32Array(values.data());
+    return Roaring(values.size(), values.data());
+}
+
+static void assert_default_hash_containers(const Roaring &key) {
+    const Roaring equivalent = reconstruct_bitmap(key);
+    Roaring different = equivalent;
+    if (different.contains(17)) {
+        different.remove(17);
+    } else {
+        different.add(17);
+    }
+    assert_equal_hash(key, equivalent);
+
+    std::unordered_map<Roaring, int> map;
+    map.reserve(4);
+    assert_true(map.insert(std::make_pair(key, 42)).second);
+    std::unordered_map<Roaring, int>::const_iterator map_match =
+        map.find(equivalent);
+    assert_true(map_match != map.end());
+    assert_int_equal(map_match->second, 42);
+    const size_t map_size = map.size();
+    assert_false(map.insert(std::make_pair(equivalent, 99)).second);
+    assert_int_equal(map.size(), map_size);
+    assert_true(map.find(different) == map.end());
+    map.rehash(map.bucket_count() * 2 + 1);
+    map_match = map.find(equivalent);
+    assert_true(map_match != map.end());
+    assert_int_equal(map_match->second, 42);
+
+    std::unordered_set<Roaring> set;
+    set.reserve(4);
+    assert_true(set.insert(key).second);
+    assert_true(set.find(equivalent) != set.end());
+    const size_t set_size = set.size();
+    assert_false(set.insert(equivalent).second);
+    assert_int_equal(set.size(), set_size);
+    assert_true(set.find(different) == set.end());
+    set.rehash(set.bucket_count() * 2 + 1);
+    assert_true(set.find(equivalent) != set.end());
+}
+
+DEFINE_TEST(test_cpp_default_hash_containers) {
+    assert_default_hash_containers(Roaring());
+    assert_default_hash_containers(Roaring({0}));
+    assert_default_hash_containers(Roaring({uint32_max}));
+    assert_default_hash_containers(Roaring({0, 65535, 65536, uint32_max}));
+
+    Roaring multi_container = {1, 65537, 131075, 65536007, uint32_max};
+    multi_container.addRange(200000, 210000);
+    assert_default_hash_containers(multi_container);
+}
+
+static void assert_lvalue_key_isolation(bool copy_on_write) {
+    Roaring original = {1, 2, 65536, uint32_max};
+    original.setCopyOnWrite(copy_on_write);
+    const Roaring old_value = reconstruct_bitmap(original);
+
+    std::unordered_set<Roaring> set;
+    assert_true(set.insert(original).second);
+    original.add(7);
+
+    const std::unordered_set<Roaring>::const_iterator stored =
+        set.find(old_value);
+    assert_true(stored != set.end());
+    assert_true(set.find(original) == set.end());
+    assert_equal_hash(*stored, old_value);
+}
+
+DEFINE_TEST(test_cpp_hash_lvalue_key_isolation) {
+    assert_lvalue_key_isolation(false);
+    assert_lvalue_key_isolation(true);
+}
+
 DEFINE_TEST(serial_test) {
     uint32_t values[] = {5, 2, 3, 4, 1};
     Roaring r1(sizeof(values) / sizeof(uint32_t), values);
@@ -2697,6 +2776,8 @@ int main() {
         cmocka_unit_test(test_cpp_hash_copy_on_write),
         cmocka_unit_test(test_cpp_hash_frozen_view),
         cmocka_unit_test(test_cpp_hash_serialization_round_trips),
+        cmocka_unit_test(test_cpp_default_hash_containers),
+        cmocka_unit_test(test_cpp_hash_lvalue_key_isolation),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
