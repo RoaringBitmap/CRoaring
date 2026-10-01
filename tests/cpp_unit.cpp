@@ -81,6 +81,107 @@ DEFINE_TEST(test_cpp_hash_smoke) {
     assert_true(set.find(right) != set.end());
 }
 
+static void assert_equal_hash(const Roaring &left, const Roaring &right) {
+    assert_true(left == right);
+    assert_int_equal(std::hash<Roaring>()(left), std::hash<Roaring>()(right));
+}
+
+static Roaring snapshot_c_bitmap(const roaring_bitmap_t *bitmap) {
+    roaring_bitmap_t *copy = roaring_bitmap_copy(bitmap);
+    assert_non_null(copy);
+    return Roaring(copy);
+}
+
+DEFINE_TEST(test_cpp_hash_construction_paths) {
+    const uint32_t values[] = {1, 2, 3, 4};
+    const Roaring expected = {1, 2, 3, 4};
+    const Roaring from_pointer(sizeof(values) / sizeof(values[0]), values);
+    const Roaring from_list = Roaring::bitmapOfList({1, 2, 3, 4});
+
+    Roaring from_reverse_add;
+    for (uint32_t value = 4; value != 0; --value) {
+        from_reverse_add.add(value);
+    }
+
+    Roaring from_add_many;
+    from_add_many.addMany(sizeof(values) / sizeof(values[0]), values);
+
+    Roaring from_range;
+    from_range.addRange(1, 5);
+
+    assert_equal_hash(expected, from_pointer);
+    assert_equal_hash(expected, from_list);
+    assert_equal_hash(expected, from_reverse_add);
+    assert_equal_hash(expected, from_add_many);
+    assert_equal_hash(expected, from_range);
+}
+
+DEFINE_TEST(test_cpp_hash_representation_independence) {
+    roaring_statistics_t statistics;
+
+    roaring_bitmap_t *small = roaring_bitmap_create();
+    assert_non_null(small);
+    for (uint32_t value = 1; value <= 4; ++value) {
+        roaring_bitmap_add(small, value);
+    }
+    roaring_bitmap_statistics(small, &statistics);
+    assert_int_equal(statistics.n_array_containers, 1);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring small_array = snapshot_c_bitmap(small);
+
+    assert_true(roaring_bitmap_run_optimize(small));
+    roaring_bitmap_statistics(small, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 1);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring small_run = snapshot_c_bitmap(small);
+
+    assert_true(roaring_bitmap_remove_run_compression(small));
+    roaring_bitmap_statistics(small, &statistics);
+    assert_int_equal(statistics.n_array_containers, 1);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring small_array_again = snapshot_c_bitmap(small);
+
+    assert_equal_hash(small_array, small_run);
+    assert_equal_hash(small_array, small_array_again);
+    roaring_bitmap_add(small, 5);
+    assert_equal_hash(small_array, Roaring({1, 2, 3, 4}));
+    roaring_bitmap_free(small);
+
+    roaring_bitmap_t *large = roaring_bitmap_create();
+    assert_non_null(large);
+    for (uint32_t value = 0; value < 10000; ++value) {
+        roaring_bitmap_add(large, value);
+    }
+    roaring_bitmap_statistics(large, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 1);
+    const Roaring large_bitset = snapshot_c_bitmap(large);
+
+    assert_true(roaring_bitmap_run_optimize(large));
+    roaring_bitmap_statistics(large, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 1);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring large_run = snapshot_c_bitmap(large);
+
+    assert_true(roaring_bitmap_remove_run_compression(large));
+    roaring_bitmap_statistics(large, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 1);
+    const Roaring large_bitset_again = snapshot_c_bitmap(large);
+
+    assert_equal_hash(large_bitset, large_run);
+    assert_equal_hash(large_bitset, large_bitset_again);
+    roaring_bitmap_add(large, 10000);
+    assert_int_equal(large_bitset.cardinality(), 10000);
+    roaring_bitmap_free(large);
+}
+
 DEFINE_TEST(serial_test) {
     uint32_t values[] = {5, 2, 3, 4, 1};
     Roaring r1(sizeof(values) / sizeof(uint32_t), values);
@@ -2530,6 +2631,8 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(fuzz_001),
         cmocka_unit_test(test_cpp_hash_smoke),
+        cmocka_unit_test(test_cpp_hash_construction_paths),
+        cmocka_unit_test(test_cpp_hash_representation_independence),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
