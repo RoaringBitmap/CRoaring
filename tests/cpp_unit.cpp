@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <random>
 #include <stdio.h>
@@ -12,6 +13,9 @@
 #include <string.h>
 #include <time.h>
 #include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <roaring/misc/configreport.h>
@@ -29,6 +33,9 @@ using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
               "Expected Roaring to be no except move constructable");
+static_assert(noexcept(std::declval<const std::hash<Roaring> &>()(
+                  std::declval<const Roaring &>())),
+              "Expected Roaring hashing to be noexcept");
 
 namespace {
 // We put std::numeric_limits<>::max in parentheses to avoid a
@@ -51,6 +58,27 @@ DEFINE_TEST(fuzz_001) {
     roaring::Roaring b;
     b.addRange(173, 0);
     assert_true(b.cardinality() == 0);
+}
+
+DEFINE_TEST(test_cpp_hash_smoke) {
+    const std::hash<Roaring> hasher;
+    const Roaring empty;
+    (void)hasher(empty);
+
+    const uint32_t values[] = {1, 2, 65536};
+    const Roaring left = {1, 2, 65536};
+    const Roaring right(sizeof(values) / sizeof(values[0]), values);
+    assert_true(left == right);
+    assert_true(hasher(left) == hasher(right));
+
+    std::unordered_map<Roaring, int> map;
+    assert_true(map.insert(std::make_pair(left, 42)).second);
+    assert_true(map.find(right) != map.end());
+    assert_int_equal(map.find(right)->second, 42);
+
+    std::unordered_set<Roaring> set;
+    assert_true(set.insert(left).second);
+    assert_true(set.find(right) != set.end());
 }
 
 DEFINE_TEST(serial_test) {
@@ -2501,6 +2529,7 @@ int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(fuzz_001),
+        cmocka_unit_test(test_cpp_hash_smoke),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
