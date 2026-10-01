@@ -1,0 +1,4 @@
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR riscv64)
+
+find_program(CMAKE_CROSSCOMPILING_EMULATOR NAMES qemu-riscv64-static qemu-riscv64 REQUIRED)
