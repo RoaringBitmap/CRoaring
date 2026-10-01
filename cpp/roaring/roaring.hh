@@ -6,6 +6,9 @@ A C++ header for Roaring Bitmaps.
 
 #include <algorithm>
 #include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <limits>
 #include <new>
@@ -1088,5 +1091,38 @@ inline RoaringSetBitBiDirectionalIterator &Roaring::end() const {
 }
 
 }  // namespace roaring
+
+namespace std {
+
+template <>
+struct hash<roaring::Roaring> {
+    typedef roaring::Roaring argument_type;
+    typedef size_t result_type;
+
+    result_type operator()(const argument_type &bitmap) const noexcept {
+        HashState state = {UINT64_C(14695981039346656037)};
+        bitmap.iterate(hashValue, &state);
+        if (sizeof(result_type) == sizeof(std::uint64_t)) {
+            return static_cast<result_type>(state.value);
+        }
+        return static_cast<result_type>(state.value ^ (state.value >> 32));
+    }
+
+   private:
+    struct HashState {
+        std::uint64_t value;
+    };
+
+    static bool hashValue(std::uint32_t value, void *param) noexcept {
+        HashState *state = static_cast<HashState *>(param);
+        for (unsigned int shift = 0; shift < 32; shift += 8) {
+            state->value ^= static_cast<std::uint64_t>((value >> shift) & 0xff);
+            state->value *= UINT64_C(1099511628211);
+        }
+        return true;
+    }
+};
+
+}  // namespace std
 
 #endif /* INCLUDE_ROARING_HH_ */
