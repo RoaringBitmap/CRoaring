@@ -182,6 +182,67 @@ DEFINE_TEST(test_cpp_hash_representation_independence) {
     roaring_bitmap_free(large);
 }
 
+static void assert_hash_copy_on_write(bool copy_on_write) {
+    Roaring original = {1, 2, 65536, uint32_max};
+    original.setCopyOnWrite(copy_on_write);
+    Roaring copy = original;
+
+    assert_equal_hash(original, copy);
+    copy.add(7);
+
+    const Roaring expected_original = {1, 2, 65536, uint32_max};
+    assert_equal_hash(original, expected_original);
+    assert_false(copy == original);
+}
+
+DEFINE_TEST(test_cpp_hash_copy_on_write) {
+    assert_hash_copy_on_write(false);
+    assert_hash_copy_on_write(true);
+}
+
+DEFINE_TEST(test_cpp_hash_frozen_view) {
+    Roaring source = {1, 2, 65536, 131075, uint32_max};
+    source.addRange(200000, 210000);
+    source.runOptimize();
+
+    const size_t frozen_size = source.getFrozenSizeInBytes();
+    char *buffer = static_cast<char *>(roaring_aligned_malloc(32, frozen_size));
+    assert_non_null(buffer);
+    source.writeFrozen(buffer);
+
+    {
+        const Roaring view = Roaring::frozenView(buffer, frozen_size);
+        assert_equal_hash(source, view);
+
+        std::unordered_set<Roaring> values;
+        assert_true(values.insert(source).second);
+        assert_true(values.find(view) != values.end());
+    }
+
+    roaring_aligned_free(buffer);
+}
+
+DEFINE_TEST(test_cpp_hash_serialization_round_trips) {
+    Roaring source = {0, 1, 65535, 65536, uint32_max};
+    source.addRange(200000, 210000);
+    source.runOptimize();
+
+    const size_t portable_size = source.getSizeInBytes();
+    std::vector<char> portable_buffer(portable_size);
+    assert_int_equal(source.write(portable_buffer.data()), portable_size);
+    const Roaring portable =
+        Roaring::readSafe(portable_buffer.data(), portable_buffer.size());
+    assert_true(portable.internal_validate());
+    assert_equal_hash(source, portable);
+
+    const size_t native_size = source.getSizeInBytes(false);
+    std::vector<char> native_buffer(native_size);
+    assert_int_equal(source.write(native_buffer.data(), false), native_size);
+    const Roaring native = Roaring::read(native_buffer.data(), false);
+    assert_true(native.internal_validate());
+    assert_equal_hash(source, native);
+}
+
 DEFINE_TEST(serial_test) {
     uint32_t values[] = {5, 2, 3, 4, 1};
     Roaring r1(sizeof(values) / sizeof(uint32_t), values);
@@ -2633,6 +2694,9 @@ int main() {
         cmocka_unit_test(test_cpp_hash_smoke),
         cmocka_unit_test(test_cpp_hash_construction_paths),
         cmocka_unit_test(test_cpp_hash_representation_independence),
+        cmocka_unit_test(test_cpp_hash_copy_on_write),
+        cmocka_unit_test(test_cpp_hash_frozen_view),
+        cmocka_unit_test(test_cpp_hash_serialization_round_trips),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),
