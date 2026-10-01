@@ -143,6 +143,7 @@ Linux or macOS users might follow the following instructions if they have a rece
  2. Create a new file named `demo.cpp` with this content:
     ```C++
     #include <iostream>
+    #include <unordered_map>
     #include "roaring.hh" // the amalgamated roaring.hh includes roaring64map.hh and roaring64.hh
     #include "roaring.c"
     int main() {
@@ -151,6 +152,14 @@ Linux or macOS users might follow the following instructions if they have a rece
             r1.add(i);
         }
         std::cout << "cardinality = " << r1.cardinality() << std::endl;
+
+        roaring::Roaring equal_r1;
+        for (uint32_t i = 1000; i-- > 100;) {
+            equal_r1.add(i);
+        }
+        std::unordered_map<roaring::Roaring, int> values;
+        values.emplace(r1, 42);
+        if (values.find(equal_r1) == values.end()) return 1;
 
         roaring::Roaring64Map r2;
         for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {
@@ -391,6 +400,7 @@ find_package(roaring REQUIRED)
 
 file(WRITE main.cpp "
 #include <iostream>
+#include <unordered_map>
 #include \"roaring/roaring.hh\"
 int main() {
   roaring::Roaring r1;
@@ -398,6 +408,13 @@ int main() {
     r1.add(i);
   }
   std::cout << \"cardinality = \" << r1.cardinality() << std::endl;
+  roaring::Roaring equal_r1;
+  for (uint32_t i = 1000; i-- > 100;) {
+    equal_r1.add(i);
+  }
+  std::unordered_map<roaring::Roaring, int> values;
+  values.emplace(r1, 42);
+  if (values.find(equal_r1) == values.end()) return 1;
   return 0;
 }")
 
