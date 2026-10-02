@@ -301,6 +301,27 @@ DEFINE_TEST(test_cpp_default_hash_containers) {
     assert_default_hash_containers(multi_container);
 }
 
+DEFINE_TEST(test_cpp_hash_java_set_deduplication) {
+    std::unordered_set<Roaring> optimized;
+    std::unordered_set<Roaring> unoptimized;
+    std::unordered_set<Roaring> mixed;
+
+    for (size_t index = 0; index < 1000; ++index) {
+        Roaring run = {1, 2, 3, 4};
+        assert_true(run.runOptimize());
+        const Roaring array = {1, 2, 3, 4};
+
+        optimized.insert(run);
+        unoptimized.insert(array);
+        mixed.insert(run);
+        mixed.insert(array);
+    }
+
+    assert_int_equal(optimized.size(), 1);
+    assert_int_equal(unoptimized.size(), 1);
+    assert_int_equal(mixed.size(), 1);
+}
+
 static void assert_lvalue_key_isolation(bool copy_on_write) {
     Roaring original = {1, 2, 65536, uint32_max};
     original.setCopyOnWrite(copy_on_write);
@@ -2777,6 +2798,7 @@ int main() {
         cmocka_unit_test(test_cpp_hash_frozen_view),
         cmocka_unit_test(test_cpp_hash_serialization_round_trips),
         cmocka_unit_test(test_cpp_default_hash_containers),
+        cmocka_unit_test(test_cpp_hash_java_set_deduplication),
         cmocka_unit_test(test_cpp_hash_lvalue_key_isolation),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
