@@ -798,6 +798,16 @@ DEFINE_TEST(test_remove_many) {
         roaring64_bitmap_free(r);
     }
     {
+        // Empty a key's container with its first value, then remove again.
+        roaring64_bitmap_t* r = roaring64_bitmap_from(0, 1 << 20);
+        std::array<uint64_t, 2> vals = {0, 0};
+        roaring64_bitmap_remove_many(r, 2, vals.data());
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), 1);
+        assert_true(roaring64_bitmap_contains(r, 1 << 20));
+        roaring64_bitmap_free(r);
+    }
+    {
         // Remove a value multiple times.
         roaring64_bitmap_t* r = roaring64_bitmap_from(123, 124);
         std::array<uint64_t, 3> vals = {123, 124, 124};
