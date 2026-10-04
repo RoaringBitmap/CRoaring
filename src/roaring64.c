@@ -964,9 +964,12 @@ void roaring64_bitmap_remove_bulk(roaring64_bitmap_t *r,
         // We're not positioned anywhere yet or the high bits of the key
         // differ.
         leaf_t *leaf = (leaf_t *)art_find(art, high48);
-        containerptr_roaring64_bitmap_remove(r, high48, low16, leaf);
-        context->leaf = leaf;
-        memcpy(context->high_bytes, high48, ART_KEY_BYTES);
+        if (containerptr_roaring64_bitmap_remove(r, high48, low16, leaf)) {
+            context->leaf = NULL;
+        } else {
+            context->leaf = leaf;
+            memcpy(context->high_bytes, high48, ART_KEY_BYTES);
+        }
     }
 }
 
