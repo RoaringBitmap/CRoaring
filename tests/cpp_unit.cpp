@@ -33,9 +33,10 @@ using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
               "Expected Roaring to be no except move constructable");
-static_assert(noexcept(std::declval<const std::hash<Roaring> &>()(
-                  std::declval<const Roaring &>())),
-              "Expected Roaring hashing to be noexcept");
+using RoaringHash = std::hash<Roaring>;
+constexpr bool roaring_hash_is_noexcept =
+    noexcept(std::declval<RoaringHash>()(std::declval<Roaring>()));
+static_assert(!roaring_hash_is_noexcept, "Expected cacheable hash signature");
 
 namespace {
 // We put std::numeric_limits<>::max in parentheses to avoid a
@@ -79,6 +80,18 @@ DEFINE_TEST(test_cpp_hash_smoke) {
     std::unordered_set<Roaring> set;
     assert_true(set.insert(left).second);
     assert_true(set.find(right) != set.end());
+}
+
+DEFINE_TEST(test_cpp_hash_32_bit_fold) {
+    const uint64_t mixed_input = UINT64_C(0x0123456789abcdef);
+    const uint64_t low_input = UINT64_C(0x00000000ffffffff);
+    const uint64_t high_input = UINT64_C(0xffffffff00000000);
+    const uint32_t mixed = roaring::internal::roaring_hash_fold_32(mixed_input);
+    const uint32_t low = roaring::internal::roaring_hash_fold_32(low_input);
+    const uint32_t high = roaring::internal::roaring_hash_fold_32(high_input);
+    assert_int_equal(mixed, UINT32_C(0x88888888));
+    assert_int_equal(low, UINT32_C(0xffffffff));
+    assert_int_equal(high, UINT32_C(0xffffffff));
 }
 
 static void assert_equal_hash(const Roaring &left, const Roaring &right) {
@@ -2792,6 +2805,7 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(fuzz_001),
         cmocka_unit_test(test_cpp_hash_smoke),
+        cmocka_unit_test(test_cpp_hash_32_bit_fold),
         cmocka_unit_test(test_cpp_hash_construction_paths),
         cmocka_unit_test(test_cpp_hash_representation_independence),
         cmocka_unit_test(test_cpp_hash_copy_on_write),

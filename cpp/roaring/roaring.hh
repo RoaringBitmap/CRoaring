@@ -41,6 +41,25 @@ A C++ header for Roaring Bitmaps.
 
 namespace roaring {
 
+namespace internal {
+
+inline std::uint32_t roaring_hash_fold_32(std::uint64_t value) noexcept {
+    return static_cast<std::uint32_t>(value ^ (value >> 32));
+}
+
+inline std::size_t roaring_hash_fold_size_t(std::uint64_t value) noexcept {
+    constexpr bool supported_size_t =
+        sizeof(std::size_t) == sizeof(std::uint32_t) ||
+        sizeof(std::size_t) == sizeof(std::uint64_t);
+    static_assert(supported_size_t, "Expected 32-bit or 64-bit size_t");
+    if (sizeof(std::size_t) == sizeof(std::uint64_t)) {
+        return static_cast<std::size_t>(value);
+    }
+    return static_cast<std::size_t>(roaring_hash_fold_32(value));
+}
+
+}  // namespace internal
+
 class RoaringSetBitBiDirectionalIterator;
 
 /** DEPRECATED, use `RoaringSetBitBiDirectionalIterator`. */
@@ -1099,13 +1118,10 @@ struct hash<roaring::Roaring> {
     typedef roaring::Roaring argument_type;
     typedef size_t result_type;
 
-    result_type operator()(const argument_type &bitmap) const noexcept {
+    result_type operator()(const argument_type &bitmap) const {
         HashState state = {UINT64_C(14695981039346656037)};
         bitmap.iterate(hashValue, &state);
-        if (sizeof(result_type) == sizeof(std::uint64_t)) {
-            return static_cast<result_type>(state.value);
-        }
-        return static_cast<result_type>(state.value ^ (state.value >> 32));
+        return roaring::internal::roaring_hash_fold_size_t(state.value);
     }
 
    private:

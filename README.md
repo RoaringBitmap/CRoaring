@@ -328,8 +328,8 @@ The default `std::hash<roaring::Roaring>` is consistent with logical
 of their internal representation or construction history. Hashing performs one
 allocation-free `O(cardinality)` scan and uses `O(1)` auxiliary storage. Hash
 collisions remain possible; this is a non-cryptographic hash, and its numeric
-result is not stable across executions, platforms, builds, or releases. Do not
-persist it or use it as an integrity check.
+result is not guaranteed to remain stable across platforms, builds, or releases.
+Do not persist it or use it as an integrity check.
 
 An unordered container stores a value snapshot of an inserted key, so later
 changes to the caller's original bitmap do not change the stored key. Never
