@@ -114,6 +114,7 @@ int main() {
   set(AMALG_CPP "${AMALGAMATION_DIR}/demo_amalg_cpp.cpp")
   file(WRITE "${AMALG_CPP}" "
 #include <iostream>
+#include <unordered_map>
 #include \"roaring.hh\" // the amalgamated roaring.hh includes roaring64map.hh
 #include \"roaring.c\"
 int main() {
@@ -122,6 +123,14 @@ int main() {
         r1.add(i);
     }
     std::cout << \"cardinality = \" << r1.cardinality() << std::endl;
+
+    roaring::Roaring equal_r1;
+    for (uint32_t i = 1000; i-- > 100;) {
+        equal_r1.add(i);
+    }
+    std::unordered_map<roaring::Roaring, int> values;
+    values.emplace(r1, 42);
+    if (values.find(equal_r1) == values.end()) return 1;
 
     roaring::Roaring64Map r2;
     for (uint64_t i = 18000000000000000100ull; i < 18000000000000001000ull; i++) {

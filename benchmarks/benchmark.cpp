@@ -33,6 +33,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <random>
@@ -42,6 +43,7 @@
 #include <sys/stat.h>
 #include <thread>
 #include <unistd.h>
+#include <unordered_set>
 #include <vector>
 
 #include <roaring/containers/array.h>
@@ -52,6 +54,7 @@
 #include <roaring/misc/configreport.h>
 #include <roaring/portability.h>
 #include <roaring/roaring.h>
+#include <roaring/roaring.hh>
 #include <roaring/roaring64.h>
 #include <roaring/roaring64map.hh>
 
@@ -62,6 +65,7 @@
 // When the roaring headers are compiled as C++, the internal container
 // symbols live in roaring::internal.
 using namespace roaring::internal;
+using roaring::Roaring;
 using roaring::Roaring64Map;
 using roaring::misc::tellmeall;
 
@@ -1402,6 +1406,143 @@ void register_equals(std::vector<Entry> &out) {
         DEFAULT_MAX_SIZE, r_create, b_create, r_free, b_free, r_add, b_add,
         run_container_equals_bitset));
 }
+
+// --------------------------------------------- C++ Roaring hash benches
+
+namespace cpp_hash_bench {
+
+struct HashState {
+    Roaring bitmap;
+};
+
+using Populate = std::function<void(Roaring &)>;
+
+struct HashSpec {
+    const char *name;
+    const char *description;
+    Populate populate;
+    int64_t inner_reps;
+};
+
+int64_t measured_hash(const Roaring &bitmap) {
+    const size_t hash = std::hash<Roaring>()(bitmap);
+    const int64_t signed_max = (std::numeric_limits<int64_t>::max)();
+    const size_t mask = static_cast<size_t>(signed_max);
+    return static_cast<int64_t>(hash & mask);
+}
+
+void delete_hash_state(void *state_pointer) {
+    delete static_cast<HashState *>(state_pointer);
+}
+
+Entry make_hash(const HashSpec &spec) {
+    Entry e;
+    e.name = spec.name;
+    e.description = spec.description;
+    e.setup = [spec]() -> void * {
+        auto *state = new HashState;
+        spec.populate(state->bitmap);
+        return state;
+    };
+    e.run = [](void *state_pointer) -> int64_t {
+        auto *state = static_cast<HashState *>(state_pointer);
+        return measured_hash(state->bitmap);
+    };
+    e.teardown = delete_hash_state;
+    e.ops_per_run = 1;
+    e.inner_reps = spec.inner_reps;
+    e.reusable_state = true;
+    return e;
+}
+
+void populate_array(Roaring &bitmap) {
+    for (uint32_t value = 0; value < UINT32_C(65536); value += 16) {
+        bitmap.add(value);
+    }
+}
+
+void populate_bitset(Roaring &bitmap) {
+    for (uint32_t value = 0; value < UINT32_C(65536); value += 2) {
+        bitmap.add(value);
+    }
+}
+
+void populate_run(Roaring &bitmap) {
+    bitmap.addRange(0, UINT64_C(1000000));
+    bitmap.runOptimize();
+}
+
+void register_benchmarks(std::vector<Entry> &out) {
+    const char *array_description =
+        "Hashes a sparse Roaring bitmap containing 4096 values in array "
+        "containers. This measures the per-value cost on the compact sparse "
+        "representation.";
+    const char *bitset_description =
+        "Hashes a dense Roaring bitmap containing every even value below 65536 "
+        "in a bitset container. The logical hash still visits every set value.";
+    const char *run_description =
+        "Hashes one million consecutive values after run optimization. This "
+        "exposes the cardinality-dependent cost when a very small run "
+        "container represents a large logical set.";
+    const HashSpec array = {"cpp_hash/array_4096", array_description,
+                            populate_array, 100};
+    const HashSpec bitset = {"cpp_hash/bitset_32768", bitset_description,
+                             populate_bitset, 10};
+    const HashSpec run = {"cpp_hash/run_1000000", run_description, populate_run,
+                          1};
+    out.push_back(make_hash(array));
+    out.push_back(make_hash(bitset));
+    out.push_back(make_hash(run));
+
+    struct RehashState {
+        std::vector<std::unordered_set<Roaring>> sets;
+    };
+    Entry rehash;
+    rehash.name = "cpp_hash/unordered_set_rehash_16x128x1024";
+    rehash.description =
+        "Rehashes 16 unordered_set instances containing 128 distinct Roaring "
+        "keys of cardinality 1024. On libstdc++ this verifies the benefit of "
+        "storing each expensive hash in its node instead of rescanning "
+        "resident bitmap keys.";
+    rehash.setup = []() -> void * {
+        auto *state = new RehashState;
+        std::vector<Roaring> keys;
+        keys.reserve(128);
+        for (uint32_t key = 0; key < 128; ++key) {
+            Roaring bitmap;
+            const uint32_t base = key * UINT32_C(100000);
+            for (uint32_t index = 0; index < 1024; ++index) {
+                bitmap.add(base + index * 16);
+            }
+            keys.push_back(std::move(bitmap));
+        }
+        state->sets.resize(16);
+        for (auto &set : state->sets) {
+            set.reserve(keys.size());
+            set.insert(keys.begin(), keys.end());
+        }
+        return state;
+    };
+    rehash.run = [](void *state_pointer) -> int64_t {
+        auto *state = static_cast<RehashState *>(state_pointer);
+        size_t size = 0;
+        for (auto &set : state->sets) {
+            set.rehash(set.bucket_count() * 2 + 1);
+            size += set.size();
+        }
+        return static_cast<int64_t>(size);
+    };
+    rehash.teardown = [](void *state_pointer) {
+        delete static_cast<RehashState *>(state_pointer);
+    };
+    rehash.ops_per_run = 16;
+    rehash.inner_reps = 1;
+    rehash.expected = 16 * 128;
+    rehash.check_expected = true;
+    out.push_back(std::move(rehash));
+}
+
+}  // namespace cpp_hash_bench
 
 // --------------------------------------------- create benches
 
@@ -4405,6 +4546,7 @@ int main(int argc, char **argv) {
     register_bitset_container(benchmarks);
     register_run_container(benchmarks);
     register_equals(benchmarks);
+    cpp_hash_bench::register_benchmarks(benchmarks);
     register_create(benchmarks);
     add_bench::register_add_benchmarks(benchmarks);
     adversarial::register_benchmarks(benchmarks);
