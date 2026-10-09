@@ -1869,7 +1869,7 @@ uint32_t avx512_union_uint16(const uint16_t *array1, uint32_t length1,
             _mm512_loadu_si512((const __m512i *)(take1 ? pa : pb));
         p1 += take1;
         p2 += 1 - take1;
-        avx512_bitonic_merge32(v, vmax, &vmin, &vmax);
+        avx512_bitonic_merge32(vmax, v, &vmin, &vmax);
         out += avx512_emit_unique16(vmin, out, &last);
     }
 
