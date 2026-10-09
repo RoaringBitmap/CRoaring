@@ -1674,32 +1674,15 @@ uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
     laststore = _mm_set1_epi16(-1);
     output += store_unique(laststore, vecMin, output);
     laststore = vecMin;
-    if ((pos1 < len1) && (pos2 < len2)) {
-        uint16_t curA, curB;
-        curA = array1[8 * pos1];
-        curB = array2[8 * pos2];
-        while (true) {
-            if (curA <= curB) {
-                V = _mm_lddqu_si128((const __m128i *)array1 + pos1);
-                pos1++;
-                if (pos1 < len1) {
-                    curA = array1[8 * pos1];
-                } else {
-                    break;
-                }
-            } else {
-                V = _mm_lddqu_si128((const __m128i *)array2 + pos2);
-                pos2++;
-                if (pos2 < len2) {
-                    curB = array2[8 * pos2];
-                } else {
-                    break;
-                }
-            }
-            sse_merge(vecMax, V, &vecMin, &vecMax);
-            output += store_unique(laststore, vecMin, output);
-            laststore = vecMin;
-        }
+    while ((pos1 < len1) && (pos2 < len2)) {
+        // Which side advances is essentially unpredictable, so select the
+        // source pointer without branching.
+        const uint16_t *pa = array1 + 8 * pos1;
+        const uint16_t *pb = array2 + 8 * pos2;
+        const uint32_t take1 = (*pa <= *pb) ? 1 : 0;
+        V = _mm_lddqu_si128((const __m128i *)(take1 ? pa : pb));
+        pos1 += take1;
+        pos2 += 1 - take1;
         sse_merge(vecMax, V, &vecMin, &vecMax);
         output += store_unique(laststore, vecMin, output);
         laststore = vecMin;
@@ -1984,39 +1967,18 @@ uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
     output += store_unique_xor(laststore, vecMin, output);
 
     laststore = vecMin;
-    if ((pos1 < len1) && (pos2 < len2)) {
-        uint16_t curA, curB;
-        curA = array1[8 * pos1];
-        curB = array2[8 * pos2];
-        while (true) {
-            if (curA <= curB) {
-                V = _mm_lddqu_si128((const __m128i *)array1 + pos1);
-                pos1++;
-                if (pos1 < len1) {
-                    curA = array1[8 * pos1];
-                } else {
-                    break;
-                }
-            } else {
-                V = _mm_lddqu_si128((const __m128i *)array2 + pos2);
-                pos2++;
-                if (pos2 < len2) {
-                    curB = array2[8 * pos2];
-                } else {
-                    break;
-                }
-            }
-            sse_merge(vecMax, V, &vecMin, &vecMax);
-            // conditionally stores the last value of laststore as well as all
-            // but the
-            // last value of vecMin
-            output += store_unique_xor(laststore, vecMin, output);
-            laststore = vecMin;
-        }
+    while ((pos1 < len1) && (pos2 < len2)) {
+        // Which side advances is essentially unpredictable, so select the
+        // source pointer without branching.
+        const uint16_t *pa = array1 + 8 * pos1;
+        const uint16_t *pb = array2 + 8 * pos2;
+        const uint32_t take1 = (*pa <= *pb) ? 1 : 0;
+        V = _mm_lddqu_si128((const __m128i *)(take1 ? pa : pb));
+        pos1 += take1;
+        pos2 += 1 - take1;
         sse_merge(vecMax, V, &vecMin, &vecMax);
         // conditionally stores the last value of laststore as well as all but
-        // the
-        // last value of vecMin
+        // the last value of vecMin
         output += store_unique_xor(laststore, vecMin, output);
         laststore = vecMin;
     }
