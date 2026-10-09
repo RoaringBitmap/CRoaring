@@ -1767,8 +1767,7 @@ CROARING_TARGET_AVX512
 // smaller value in whichever lane has its d-bit clear. `hi` selects the lanes
 // whose d-bit is set.
 static inline __m512i avx512_cx16(__m512i v, __m512i t, __mmask32 hi) {
-    return _mm512_mask_mov_epi16(_mm512_min_epu16(v, t), hi,
-                                 _mm512_max_epu16(v, t));
+    return _mm512_mask_min_epu16(_mm512_max_epu16(v, t), ~hi, v, t);
 }
 
 // Sort a bitonic 32-lane sequence into ascending order. Each distance has a
