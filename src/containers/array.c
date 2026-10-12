@@ -398,6 +398,14 @@ void array_container_intersection_inplace(array_container_t *src_1,
     }
 }
 
+/* Constant n: one or two vector operations on every compiler. */
+static inline void array_put(uint32_t *out, const uint16_t *array,
+                             uint32_t base, size_t n) {
+    for (size_t k = 0; k < n; ++k) {
+        out[k] = base + array[k];
+    }
+}
+
 CROARING_ALLOW_UNALIGNED
 int array_container_to_uint32_array(void *vout, const array_container_t *cont,
                                     uint32_t base) {
@@ -414,6 +422,31 @@ int array_container_to_uint32_array(void *vout, const array_container_t *cont,
             vout, cont->array, cont->cardinality, base);
     }
 #endif  // CROARING_IS_X64
+    const size_t cardinality = (size_t)cont->cardinality;
+    const uint16_t *array = cont->array;
+    // Typed stores vectorize on every compiler; all callers but
+    // roaring_bitmap_serialize pass an aligned vout.
+    if (cardinality >= 4 && ((uintptr_t)vout & 3) == 0) {
+        uint32_t *out = (uint32_t *)vout;
+        uint32_t *out_end = out + cardinality;
+        const uint16_t *array_end = array + cardinality;
+        if (cardinality < 8) {  // overlapping writes end at cardinality
+            array_put(out, array, base, 4);
+            array_put(out_end - 4, array_end - 4, base, 4);
+            return (int)cardinality;
+        }
+        const size_t full = cardinality & ~(size_t)15;
+        for (size_t i = 0; i < full; i += 16) {
+            array_put(out + i, array + i, base, 16);
+        }
+        if (cardinality - full > 8) {
+            array_put(out + full, array + full, base, 8);
+        }
+        if (full != cardinality) {
+            array_put(out_end - 8, array_end - 8, base, 8);
+        }
+        return (int)cardinality;
+    }
     int outpos = 0;
     uint32_t *out = (uint32_t *)vout;
     size_t i = 0;

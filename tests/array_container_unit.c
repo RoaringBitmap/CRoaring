@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>
@@ -154,6 +155,39 @@ DEFINE_TEST(to_uint32_array_test) {
         }
 
         free(out);
+        array_container_free(B);
+    }
+}
+
+// Without AVX2, cardinalities up to 80 at each misalignment reach every path:
+// the plain loop, the 4-to-7 cover, blocks of 16 and both 8-value tails.
+DEFINE_TEST(to_uint32_array_small_test) {
+    static unsigned char buffer[64 + 4 * 80 + 3 + 64];
+    for (int32_t card = 0; card <= 80; ++card) {
+        array_container_t* B = array_container_create();
+        assert_non_null(B);
+        for (int32_t k = 0; k < card; ++k) {
+            array_container_add(B, (uint16_t)(k * 7 + 3));
+        }
+        array_container_shrink_to_fit(B);  // so ASan sees a read past the end
+        for (int variant = 0; variant < 8; ++variant) {
+            const uint32_t base = variant < 4 ? 0x12340000 : 0xFFFF0000;
+            unsigned char* out = buffer + 64 + variant % 4;
+            memset(buffer, 0xAB, sizeof(buffer));
+            assert_int_equal(array_container_to_uint32_array(out, B, base),
+                             card);
+            for (int32_t k = 0; k < card; ++k) {
+                uint32_t value;
+                memcpy(&value, out + 4 * k, sizeof(value));
+                assert_int_equal(value, base + (uint32_t)(k * 7 + 3));
+            }
+            for (unsigned char* b = buffer; b < out; ++b) {
+                assert_int_equal(*b, 0xAB);  // nothing before the start
+            }
+            for (int b = 0; b < 64; ++b) {
+                assert_int_equal(out[4 * card + b], 0xAB);  // nor past the end
+            }
+        }
         array_container_free(B);
     }
 }
@@ -373,6 +407,7 @@ int main() {
         cmocka_unit_test(add_contains_test),
         cmocka_unit_test(and_or_test),
         cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(to_uint32_array_small_test),
         cmocka_unit_test(select_test),
         cmocka_unit_test(capacity_test)};
 
