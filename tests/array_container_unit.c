@@ -186,7 +186,7 @@ DEFINE_TEST(number_of_runs_test) {
     array_container_t* a = array_container_create();
     assert_non_null(a);
     assert_int_equal(array_container_number_of_runs(a), 0);
-    uint64_t state = 42;
+    uint64_t rng = 42;
     for (int trial = 0; trial < 200; ++trial) {
         a->cardinality = 0;
         int32_t expected = 0;
@@ -197,9 +197,9 @@ DEFINE_TEST(number_of_runs_test) {
             if ((int)v != prev + 1) expected++;
             array_container_add(a, (uint16_t)v);
             prev = (int)v;
-            state = state * 6364136223846793005ULL + 1442695040888963407ULL;
-            uint32_t gap = (trial % 2 == 0) ? ((state >> 60) < 12 ? 1 : 3)
-                                            : 1 + (uint32_t)(state >> 57);
+            rng = rng * 6364136223846793005ULL + 1442695040888963407ULL;
+            uint32_t gap = (trial % 2 == 0) ? ((rng >> 60) < 12 ? 1 : 3)
+                                            : 1 + (uint32_t)(rng >> 57);
             v += gap;
         }
         if (trial % 3 == 0 && prev != 65535) {

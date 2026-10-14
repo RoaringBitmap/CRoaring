@@ -175,16 +175,16 @@ DEFINE_TEST(intersection_extract_matches_scalar) {
     assert_non_null(words1);
     assert_non_null(words2);
     assert_non_null(want);
-    uint64_t state = 1234;
+    uint64_t rng = 1234;
     // Each bit is set with probability density / 64 in both inputs.
     for (unsigned int density = 0; density <= 64; density++) {
         for (unsigned int trial = 0; trial < 4; trial++) {
             for (size_t i = 0; i < length; ++i) {
                 uint64_t w1 = 0, w2 = 0;
                 for (unsigned int b = 0; b < 64; b++) {
-                    if ((splitmix64(&state) & 63) < density)
+                    if ((splitmix64(&rng) & 63) < density)
                         w1 |= UINT64_C(1) << b;
-                    if ((splitmix64(&state) & 63) < density)
+                    if ((splitmix64(&rng) & 63) < density)
                         w2 |= UINT64_C(1) << b;
                 }
                 words1[i] = w1;
@@ -262,10 +262,10 @@ DEFINE_TEST(scalar_merges_match_reference) {
     assert_non_null(got);
     assert_non_null(in_a);
     assert_non_null(in_b);
-    uint64_t state = 99;
+    uint64_t rng = 99;
     for (int trial = 0; trial < 2000; trial++) {
-        size_t na = make_sorted_set(&state, trial % 4, a);
-        size_t nb = make_sorted_set(&state, (trial / 4) % 4, b);
+        size_t na = make_sorted_set(&rng, trial % 4, a);
+        size_t nb = make_sorted_set(&rng, (trial / 4) % 4, b);
         if (trial % 50 == 0) na = 0;
         if (trial % 70 == 1) nb = trial % 3;
         memset(in_a, 0, 1 << 16);
