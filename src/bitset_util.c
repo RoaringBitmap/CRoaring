@@ -713,6 +713,41 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
 
     return out - initout;
 }
+
+// Unlike bitset_extract_setbits_avx512_uint16, there is no "if (v != 0)"
+// test: on sparse intersections, about half the words are zero and the test
+// is mispredicted about once per value. With v == 0, the masked store writes
+// nothing and we advance by zero. The stores never write past the last value.
+// We stop once all "card" values are written: masked stores with an empty
+// mask can still need a slow microcode assist when they touch a page that
+// was never written, such as one past the end of "out".
+size_t bitset_extract_intersection_setbits_avx512_uint16(
+    const uint64_t *__restrict__ words1, const uint64_t *__restrict__ words2,
+    size_t length, uint16_t *out, size_t card, uint16_t base) {
+    uint16_t *initout = out;
+    uint16_t *const endout = out + card;
+    __m512i base_v = _mm512_set1_epi16((short)base);
+    const __m512i inc_v = _mm512_set1_epi16(64);
+    const __m512i index_table = _mm512_loadu_si512(vbmi2_table);
+    for (size_t i = 0; i < length && out < endout; i++) {
+        uint64_t v = words1[i] & words2[i];
+        unsigned advance = (unsigned)roaring_hamming(v);
+        __m512i vec = _mm512_maskz_compress_epi8((__mmask64)v, index_table);
+        _mm512_mask_storeu_epi16(
+            out, (__mmask32)_bzhi_u64(~UINT64_C(0), advance),
+            _mm512_add_epi16(base_v, _mm512_cvtepu8_epi16(
+                                         _mm512_castsi512_si256(vec))));
+        if (advance > 32) {
+            _mm512_mask_storeu_epi16(
+                out + 32, (__mmask32)_bzhi_u64(~UINT64_C(0), advance - 32),
+                _mm512_add_epi16(base_v, _mm512_cvtepu8_epi16(
+                                             _mm512_extracti64x4_epi64(vec, 1))));
+        }
+        out += advance;
+        base_v = _mm512_add_epi16(base_v, inc_v);
+    }
+    return out - initout;
+}
 CROARING_UNTARGET_AVX512
 #endif
 
@@ -805,6 +840,82 @@ size_t bitset_extract_intersection_setbits_uint16(
         base += 64;
     }
     return outpos;
+}
+
+// Decodes the words of (words1 AND words2) from index *i onward, writing K
+// values per word unconditionally and advancing only past the real ones, so
+// that there is no data-dependent branch unless a word has more than K bits.
+// The trailing-zero count of (w | 1 << 63) is that of w when w != 0, and 63
+// (a harmless value, later overwritten) when w == 0. The unconditional writes
+// can land up to K - 1 values past the last real one, so it stops while 64
+// slots of slack remain in "out"; the caller finishes with the plain loop.
+#define CROARING_DEFINE_EXTRACT_INTERSECTION_K(K)                             \
+    static inline size_t extract_intersection_branchless_##K(                 \
+        const uint64_t *__restrict__ words1,                                  \
+        const uint64_t *__restrict__ words2, size_t length, uint16_t *out,    \
+        size_t card, size_t *i, uint16_t *base) {                             \
+        size_t pos = 0;                                                       \
+        size_t j = *i;                                                        \
+        uint16_t b = *base;                                                   \
+        for (; j < length && pos + 64 <= card; ++j) {                         \
+            /* Skip groups of four empty words: rare on random data, where */ \
+            /* the branch is well predicted, but common on clustered data. */ \
+            if (j + 4 <= length &&                                            \
+                ((words1[j] & words2[j]) | (words1[j + 1] & words2[j + 1]) |  \
+                 (words1[j + 2] & words2[j + 2]) |                            \
+                 (words1[j + 3] & words2[j + 3])) == 0) {                     \
+                j += 3;                                                       \
+                b = (uint16_t)(b + 256);                                      \
+                continue;                                                     \
+            }                                                                 \
+            uint64_t w = words1[j] & words2[j];                               \
+            for (int k = 0; k < K; k++) {                                     \
+                out[pos] = (uint16_t)(b + roaring_trailing_zeroes(            \
+                                              w | (UINT64_C(1) << 63)));      \
+                pos += (w != 0);                                              \
+                w &= (w - 1);                                                 \
+            }                                                                 \
+            while (w != 0) {                                                  \
+                out[pos++] = (uint16_t)(b + roaring_trailing_zeroes(w));      \
+                w &= (w - 1);                                                 \
+            }                                                                 \
+            b = (uint16_t)(b + 64);                                           \
+        }                                                                     \
+        *i = j;                                                               \
+        *base = b;                                                            \
+        return pos;                                                           \
+    }
+CROARING_DEFINE_EXTRACT_INTERSECTION_K(1)
+CROARING_DEFINE_EXTRACT_INTERSECTION_K(2)
+CROARING_DEFINE_EXTRACT_INTERSECTION_K(4)
+CROARING_DEFINE_EXTRACT_INTERSECTION_K(8)
+#undef CROARING_DEFINE_EXTRACT_INTERSECTION_K
+
+size_t bitset_extract_intersection_setbits_uint16_with_card(
+    const uint64_t *__restrict__ words1, const uint64_t *__restrict__ words2,
+    size_t length, uint16_t *out, size_t card, uint16_t base) {
+    size_t i = 0;
+    size_t pos;
+    // Write about 2.5 times as many values per word as the average word
+    // holds, so that words with more bits than that (handled by a branch)
+    // are rare. Past 1.6 bits per word, writing 8 values costs more than the
+    // occasional branch, so 4 values serve up to 3 bits per word. The
+    // thresholds were measured on an Emerald Rapids Xeon.
+    if (card * 5 < length * 2) {
+        pos = extract_intersection_branchless_1(words1, words2, length, out,
+                                                card, &i, &base);
+    } else if (card * 5 < length * 4) {
+        pos = extract_intersection_branchless_2(words1, words2, length, out,
+                                                card, &i, &base);
+    } else if (card < length * 3) {
+        pos = extract_intersection_branchless_4(words1, words2, length, out,
+                                                card, &i, &base);
+    } else {
+        pos = extract_intersection_branchless_8(words1, words2, length, out,
+                                                card, &i, &base);
+    }
+    return pos + bitset_extract_intersection_setbits_uint16(
+                     words1 + i, words2 + i, length - i, out + pos, base);
 }
 
 #if CROARING_IS_X64

@@ -7,7 +7,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include <roaring/array_util.h>
 #include <roaring/bitset_util.h>
 #include <roaring/isadetection.h>
 #include <roaring/misc/configreport.h>
@@ -153,6 +155,180 @@ DEFINE_TEST(avx512_extract_matches_scalar) {
 }
 #endif  // CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
 
+static uint64_t splitmix64(uint64_t* state) {
+    uint64_t z = (*state += UINT64_C(0x9e3779b97f4a7c15));
+    z = (z ^ (z >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+    z = (z ^ (z >> 27)) * UINT64_C(0x94d049bb133111eb);
+    return z ^ (z >> 31);
+}
+
+// Checks the branchless intersection decoders against the plain loop, on
+// random bitsets with densities from empty to full, so that every choice of
+// unrolling (and the fallback for words with many bits) is exercised. The
+// output buffer holds exactly the cardinality: a sanitizer catches any write
+// past it.
+DEFINE_TEST(intersection_extract_matches_scalar) {
+    const size_t length = (1 << 16) / 64;
+    uint64_t* words1 = (uint64_t*)malloc(length * sizeof(uint64_t));
+    uint64_t* words2 = (uint64_t*)malloc(length * sizeof(uint64_t));
+    uint16_t* want = (uint16_t*)malloc((1 << 16) * sizeof(uint16_t));
+    assert_non_null(words1);
+    assert_non_null(words2);
+    assert_non_null(want);
+    uint64_t state = 1234;
+    // Each bit is set with probability density / 64 in both inputs.
+    for (unsigned int density = 0; density <= 64; density++) {
+        for (unsigned int trial = 0; trial < 4; trial++) {
+            for (size_t i = 0; i < length; ++i) {
+                uint64_t w1 = 0, w2 = 0;
+                for (unsigned int b = 0; b < 64; b++) {
+                    if ((splitmix64(&state) & 63) < density)
+                        w1 |= UINT64_C(1) << b;
+                    if ((splitmix64(&state) & 63) < density)
+                        w2 |= UINT64_C(1) << b;
+                }
+                words1[i] = w1;
+                words2[i] = w2;
+            }
+            const uint16_t base = (uint16_t)(trial * 7);
+            size_t card = bitset_extract_intersection_setbits_uint16(
+                words1, words2, length, want, base);
+            uint16_t* got =
+                (uint16_t*)malloc((card > 0 ? card : 1) * sizeof(uint16_t));
+            assert_non_null(got);
+            size_t n = bitset_extract_intersection_setbits_uint16_with_card(
+                words1, words2, length, got, card, base);
+            assert_int_equal(n, card);
+            for (size_t j = 0; j < card; ++j) {
+                assert_int_equal(got[j], want[j]);
+            }
+#if CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
+            if (croaring_hardware_support() & ROARING_SUPPORTS_AVX512) {
+                n = bitset_extract_intersection_setbits_avx512_uint16(
+                    words1, words2, length, got, card, base);
+                assert_int_equal(n, card);
+                for (size_t j = 0; j < card; ++j) {
+                    assert_int_equal(got[j], want[j]);
+                }
+            }
+#endif
+            free(got);
+        }
+    }
+    free(words1);
+    free(words2);
+    free(want);
+}
+
+// Fills "out" with a sorted set of distinct values following one of several
+// patterns, from random to strongly clustered. Returns its size.
+static size_t make_sorted_set(uint64_t* state, int pattern, uint16_t* out) {
+    size_t n = 0;
+    const uint32_t start = (uint32_t)(splitmix64(state) % 2000);
+    const uint32_t density = 1 + (uint32_t)(splitmix64(state) % 64);
+    for (uint32_t v = start; v < (1 << 16) && n < 4096; v++) {
+        bool take;
+        switch (pattern) {
+            case 0:  // random
+                take = (splitmix64(state) & 63) < density;
+                break;
+            case 1:  // blocks of 64
+                take = ((v / 64) % 2) == (density % 2);
+                break;
+            case 2:  // one run
+                take = v < start + 100 * density;
+                break;
+            default:  // every third value
+                take = v % 3 == 0;
+                break;
+        }
+        if (take) out[n++] = (uint16_t)v;
+    }
+    return n;
+}
+
+// Compares the scalar array merges with simple reference implementations,
+// including the in-place layouts that the containers use.
+DEFINE_TEST(scalar_merges_match_reference) {
+    uint16_t* a = (uint16_t*)malloc(4096 * sizeof(uint16_t));
+    uint16_t* b = (uint16_t*)malloc(4096 * sizeof(uint16_t));
+    uint16_t* want = (uint16_t*)malloc(8192 * sizeof(uint16_t));
+    uint16_t* got = (uint16_t*)malloc(8192 * sizeof(uint16_t));
+    bool* in_a = (bool*)malloc(1 << 16);
+    bool* in_b = (bool*)malloc(1 << 16);
+    assert_non_null(a);
+    assert_non_null(b);
+    assert_non_null(want);
+    assert_non_null(got);
+    assert_non_null(in_a);
+    assert_non_null(in_b);
+    uint64_t state = 99;
+    for (int trial = 0; trial < 2000; trial++) {
+        size_t na = make_sorted_set(&state, trial % 4, a);
+        size_t nb = make_sorted_set(&state, (trial / 4) % 4, b);
+        if (trial % 50 == 0) na = 0;
+        if (trial % 70 == 1) nb = trial % 3;
+        memset(in_a, 0, 1 << 16);
+        memset(in_b, 0, 1 << 16);
+        for (size_t i = 0; i < na; i++) in_a[a[i]] = true;
+        for (size_t i = 0; i < nb; i++) in_b[b[i]] = true;
+        for (int op = 0; op < 4; op++) {
+            size_t nwant = 0;
+            for (uint32_t v = 0; v < (1 << 16); v++) {
+                bool keep = op == 0   ? (in_a[v] && in_b[v])
+                            : op == 1 ? (in_a[v] || in_b[v])
+                            : op == 2 ? (in_a[v] != in_b[v])
+                                      : (in_a[v] && !in_b[v]);
+                if (keep) want[nwant++] = (uint16_t)v;
+            }
+            size_t n;
+            if (op == 0) {
+                n = (size_t)intersect_uint16(a, na, b, nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+                assert_int_equal(intersect_uint16_cardinality(a, na, b, nb),
+                                 nwant);
+                // In place, in either input.
+                memcpy(got, a, na * sizeof(uint16_t));
+                n = (size_t)intersect_uint16(got, na, b, nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+                memcpy(got, b, nb * sizeof(uint16_t));
+                n = (size_t)intersect_uint16(a, na, got, nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+            } else if (op == 1) {
+                n = union_uint16(a, na, b, nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+                // In place: a stored nb values into the output buffer.
+                memcpy(got + nb, a, na * sizeof(uint16_t));
+                n = union_uint16(got + nb, na, b, nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+            } else if (op == 2) {
+                n = (size_t)xor_uint16(a, (int32_t)na, b, (int32_t)nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+            } else {
+                n = (size_t)difference_uint16(a, (int)na, b, (int)nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+                memcpy(got, a, na * sizeof(uint16_t));
+                n = (size_t)difference_uint16(got, (int)na, b, (int)nb, got);
+                assert_int_equal(n, nwant);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+            }
+        }
+    }
+    free(a);
+    free(b);
+    free(want);
+    free(got);
+    free(in_a);
+    free(in_b);
+}
+
 int main() {
     tellmeall();
 
@@ -162,6 +338,8 @@ int main() {
 #if CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
         cmocka_unit_test(avx512_extract_matches_scalar),
 #endif
+        cmocka_unit_test(intersection_extract_matches_scalar),
+        cmocka_unit_test(scalar_merges_match_reference),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

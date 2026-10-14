@@ -971,54 +971,93 @@ bool intersect_skewed_uint16_nonempty(const uint16_t *small, size_t size_s,
 /**
  * Generic intersection function.
  */
-int32_t intersect_uint16(const uint16_t *A, const size_t lenA,
-                         const uint16_t *B, const size_t lenB, uint16_t *out) {
-    const uint16_t *initout = out;
-    if (lenA == 0 || lenB == 0) return 0;
-    const uint16_t *endA = A + lenA;
-    const uint16_t *endB = B + lenB;
+// The scalar merges below avoid a data-dependent branch per value: on sets
+// that interleave unpredictably, a branchy merge mispredicts about once per
+// value. While four values remain on each side, they first look for a block
+// of four values to handle at once (all below the other side's current value,
+// or equal to the other side's next four values), which is common and well
+// predicted on clustered data. Otherwise they take four branchless steps.
+static inline bool croaring_equal4_uint16(const uint16_t *a,
+                                          const uint16_t *b) {
+    uint64_t x, y;
+    memcpy(&x, a, sizeof(x));
+    memcpy(&y, b, sizeof(y));
+    return x == y;
+}
 
-    while (1) {
-        while (*A < *B) {
-        SKIP_FIRST_COMPARE:
-            if (++A == endA) return (int32_t)(out - initout);
-        }
-        while (*A > *B) {
-            if (++B == endB) return (int32_t)(out - initout);
-        }
-        if (*A == *B) {
-            *out++ = *A;
-            if (++A == endA || ++B == endB) return (int32_t)(out - initout);
+int32_t intersect_uint16(const uint16_t *A, size_t lenA, const uint16_t *B,
+                         size_t lenB, uint16_t *out) {
+    if (lenA == 0 || lenB == 0) return 0;
+    // Every write goes to out[k..] with k <= i and k <= j, so "out" may be A.
+    // If it is B, swap the inputs, since the values written come from A.
+    if (out == B) {
+        const uint16_t *tmp = A;
+        A = B;
+        B = tmp;
+        size_t tmplen = lenA;
+        lenA = lenB;
+        lenB = tmplen;
+    }
+    size_t i = 0, j = 0, k = 0;
+    while (i + 4 <= lenA && j + 4 <= lenB) {
+        if (A[i + 3] < B[j]) {
+            i += 4;
+        } else if (B[j + 3] < A[i]) {
+            j += 4;
+        } else if (croaring_equal4_uint16(A + i, B + j)) {
+            memmove(out + k, A + i, 4 * sizeof(uint16_t));
+            k += 4;
+            i += 4;
+            j += 4;
         } else {
-            goto SKIP_FIRST_COMPARE;
+            for (int step = 0; step < 4; step++) {
+                const uint16_t a = A[i], b = B[j];
+                out[k] = a;
+                k += (a == b);
+                i += (a <= b);
+                j += (a >= b);
+            }
         }
     }
-    // return (int32_t)(out - initout);  // NOTREACHED
+    while (i < lenA && j < lenB) {
+        const uint16_t a = A[i], b = B[j];
+        out[k] = a;
+        k += (a == b);
+        i += (a <= b);
+        j += (a >= b);
+    }
+    return (int32_t)k;
 }
 
 int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
                                      const uint16_t *B, const size_t lenB) {
+    size_t i = 0, j = 0;
     int32_t answer = 0;
-    if (lenA == 0 || lenB == 0) return 0;
-    const uint16_t *endA = A + lenA;
-    const uint16_t *endB = B + lenB;
-
-    while (1) {
-        while (*A < *B) {
-        SKIP_FIRST_COMPARE:
-            if (++A == endA) return answer;
-        }
-        while (*A > *B) {
-            if (++B == endB) return answer;
-        }
-        if (*A == *B) {
-            ++answer;
-            if (++A == endA || ++B == endB) return answer;
+    while (i + 4 <= lenA && j + 4 <= lenB) {
+        if (A[i + 3] < B[j]) {
+            i += 4;
+        } else if (B[j + 3] < A[i]) {
+            j += 4;
+        } else if (croaring_equal4_uint16(A + i, B + j)) {
+            answer += 4;
+            i += 4;
+            j += 4;
         } else {
-            goto SKIP_FIRST_COMPARE;
+            for (int step = 0; step < 4; step++) {
+                const uint16_t a = A[i], b = B[j];
+                answer += (a == b);
+                i += (a <= b);
+                j += (a >= b);
+            }
         }
     }
-    // return answer;  // NOTREACHED
+    while (i < lenA && j < lenB) {
+        const uint16_t a = A[i], b = B[j];
+        answer += (a == b);
+        i += (a <= b);
+        j += (a >= b);
+    }
+    return answer;
 }
 
 bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
@@ -1103,40 +1142,38 @@ size_t intersection_uint32_card(const uint32_t *A, const size_t lenA,
 
 size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
+    // Every write goes before buffer + idx_1 + size_2, so buffer may start
+    // size_2 values before set_1 (array_array_container_inplace_union).
     size_t pos = 0, idx_1 = 0, idx_2 = 0;
-
-    if (0 == size_2) {
-        memmove(buffer, set_1, size_1 * sizeof(uint16_t));
-        return size_1;
-    }
-    if (0 == size_1) {
-        memmove(buffer, set_2, size_2 * sizeof(uint16_t));
-        return size_2;
-    }
-
-    uint16_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
-
-    while (true) {
-        if (val_1 < val_2) {
-            buffer[pos++] = val_1;
-            ++idx_1;
-            if (idx_1 >= size_1) break;
-            val_1 = set_1[idx_1];
-        } else if (val_2 < val_1) {
-            buffer[pos++] = val_2;
-            ++idx_2;
-            if (idx_2 >= size_2) break;
-            val_2 = set_2[idx_2];
+    while (idx_1 + 4 <= size_1 && idx_2 + 4 <= size_2) {
+        if (set_1[idx_1 + 3] < set_2[idx_2]) {
+            memmove(buffer + pos, set_1 + idx_1, 4 * sizeof(uint16_t));
+            pos += 4;
+            idx_1 += 4;
+        } else if (set_2[idx_2 + 3] < set_1[idx_1]) {
+            memmove(buffer + pos, set_2 + idx_2, 4 * sizeof(uint16_t));
+            pos += 4;
+            idx_2 += 4;
+        } else if (croaring_equal4_uint16(set_1 + idx_1, set_2 + idx_2)) {
+            memmove(buffer + pos, set_1 + idx_1, 4 * sizeof(uint16_t));
+            pos += 4;
+            idx_1 += 4;
+            idx_2 += 4;
         } else {
-            buffer[pos++] = val_1;
-            ++idx_1;
-            ++idx_2;
-            if (idx_1 >= size_1 || idx_2 >= size_2) break;
-            val_1 = set_1[idx_1];
-            val_2 = set_2[idx_2];
+            for (int step = 0; step < 4; step++) {
+                const uint16_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
+                buffer[pos++] = val_1 < val_2 ? val_1 : val_2;
+                idx_1 += (val_1 <= val_2);
+                idx_2 += (val_1 >= val_2);
+            }
         }
     }
-
+    while (idx_1 < size_1 && idx_2 < size_2) {
+        const uint16_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
+        buffer[pos++] = val_1 < val_2 ? val_1 : val_2;
+        idx_1 += (val_1 <= val_2);
+        idx_2 += (val_1 >= val_2);
+    }
     if (idx_1 < size_1) {
         const size_t n_elems = size_1 - idx_1;
         memmove(buffer + pos, set_1 + idx_1, n_elems * sizeof(uint16_t));
@@ -1146,73 +1183,78 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
         memmove(buffer + pos, set_2 + idx_2, n_elems * sizeof(uint16_t));
         pos += n_elems;
     }
-
     return pos;
 }
 
 int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
                       int length2, uint16_t *a_out) {
-    int out_card = 0;
-    int k1 = 0, k2 = 0;
-    if (length1 == 0) return 0;
-    if (length2 == 0) {
-        if (a1 != a_out) memcpy(a_out, a1, sizeof(uint16_t) * length1);
-        return length1;
-    }
-    uint16_t s1 = a1[k1];
-    uint16_t s2 = a2[k2];
-    while (true) {
-        if (s1 < s2) {
-            a_out[out_card++] = s1;
-            ++k1;
-            if (k1 >= length1) {
-                break;
+    // Every write goes to a_out[k..] with k <= i, so a_out may be a1.
+    int i = 0, j = 0, k = 0;
+    while (i + 4 <= length1 && j + 4 <= length2) {
+        if (a1[i + 3] < a2[j]) {
+            memmove(a_out + k, a1 + i, 4 * sizeof(uint16_t));
+            k += 4;
+            i += 4;
+        } else if (a2[j + 3] < a1[i]) {
+            j += 4;
+        } else if (croaring_equal4_uint16(a1 + i, a2 + j)) {
+            i += 4;
+            j += 4;
+        } else {
+            for (int step = 0; step < 4; step++) {
+                const uint16_t a = a1[i], b = a2[j];
+                a_out[k] = a;
+                k += (a < b);
+                i += (a <= b);
+                j += (a >= b);
             }
-            s1 = a1[k1];
-        } else if (s1 == s2) {
-            ++k1;
-            ++k2;
-            if (k1 >= length1) {
-                break;
-            }
-            if (k2 >= length2) {
-                memmove(a_out + out_card, a1 + k1,
-                        sizeof(uint16_t) * (length1 - k1));
-                return out_card + length1 - k1;
-            }
-            s1 = a1[k1];
-            s2 = a2[k2];
-        } else {  // if (val1>val2)
-            ++k2;
-            if (k2 >= length2) {
-                memmove(a_out + out_card, a1 + k1,
-                        sizeof(uint16_t) * (length1 - k1));
-                return out_card + length1 - k1;
-            }
-            s2 = a2[k2];
         }
     }
-    return out_card;
+    while (i < length1 && j < length2) {
+        const uint16_t a = a1[i], b = a2[j];
+        a_out[k] = a;
+        k += (a < b);
+        i += (a <= b);
+        j += (a >= b);
+    }
+    if (i < length1) {
+        memmove(a_out + k, a1 + i, sizeof(uint16_t) * (length1 - i));
+        k += length1 - i;
+    }
+    return k;
 }
 
 int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
                    const uint16_t *array_2, int32_t card_2, uint16_t *out) {
     int32_t pos1 = 0, pos2 = 0, pos_out = 0;
-    while (pos1 < card_1 && pos2 < card_2) {
-        const uint16_t v1 = array_1[pos1];
-        const uint16_t v2 = array_2[pos2];
-        if (v1 == v2) {
-            ++pos1;
-            ++pos2;
-            continue;
-        }
-        if (v1 < v2) {
-            out[pos_out++] = v1;
-            ++pos1;
+    while (pos1 + 4 <= card_1 && pos2 + 4 <= card_2) {
+        if (array_1[pos1 + 3] < array_2[pos2]) {
+            memcpy(out + pos_out, array_1 + pos1, 4 * sizeof(uint16_t));
+            pos_out += 4;
+            pos1 += 4;
+        } else if (array_2[pos2 + 3] < array_1[pos1]) {
+            memcpy(out + pos_out, array_2 + pos2, 4 * sizeof(uint16_t));
+            pos_out += 4;
+            pos2 += 4;
+        } else if (croaring_equal4_uint16(array_1 + pos1, array_2 + pos2)) {
+            pos1 += 4;
+            pos2 += 4;
         } else {
-            out[pos_out++] = v2;
-            ++pos2;
+            for (int step = 0; step < 4; step++) {
+                const uint16_t v1 = array_1[pos1], v2 = array_2[pos2];
+                out[pos_out] = v1 < v2 ? v1 : v2;
+                pos_out += (v1 != v2);
+                pos1 += (v1 <= v2);
+                pos2 += (v1 >= v2);
+            }
         }
+    }
+    while (pos1 < card_1 && pos2 < card_2) {
+        const uint16_t v1 = array_1[pos1], v2 = array_2[pos2];
+        out[pos_out] = v1 < v2 ? v1 : v2;
+        pos_out += (v1 != v2);
+        pos1 += (v1 <= v2);
+        pos2 += (v1 >= v2);
     }
     if (pos1 < card_1) {
         const size_t n_elems = card_1 - pos1;

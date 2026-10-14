@@ -3024,10 +3024,74 @@ DEFINE_TEST(test_iterator_read_past_end_can_go_previous) {
     roaring64_bitmap_free(bitmap);
 }
 
+// Shrinks bitmaps that lost most of their containers, with inner nodes of
+// every type, and checks that the content and the structure survive.
+DEFINE_TEST(test_shrink_to_fit_many_containers) {
+    // High key bytes spread so that the tree has Node4, Node16, Node48 and
+    // Node256 inner nodes.
+    const uint64_t highs[] = {0, 1, 3, 7, 20, 100, 1000};
+    for (uint64_t step : {1, 2, 3, 10, 100, 1000000}) {
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        std::vector<uint64_t> kept;
+        for (uint64_t high : highs) {
+            uint64_t n = 4 * (high + 1) + 300;
+            for (uint64_t i = 0; i < n; ++i) {
+                roaring64_bitmap_add(r, (high << 40) | (i << 16) | (i & 7));
+            }
+        }
+        uint64_t k = 0;
+        for (uint64_t high : highs) {
+            uint64_t n = 4 * (high + 1) + 300;
+            for (uint64_t i = 0; i < n; ++i, ++k) {
+                uint64_t v = (high << 40) | (i << 16) | (i & 7);
+                if (k % step == 0) {
+                    kept.push_back(v);
+                } else {
+                    roaring64_bitmap_remove(r, v);
+                }
+            }
+        }
+        assert_true(roaring64_bitmap_shrink_to_fit(r) > 0);
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_shrink_to_fit(r), 0);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), kept.size());
+        std::vector<uint64_t> got(kept.size());
+        roaring64_bitmap_to_uint64_array(r, got.data());
+        assert_true(got == kept);
+        // The shrunken bitmap must still accept changes.
+        for (uint64_t v : kept) {
+            roaring64_bitmap_add(r, v + 1);
+        }
+        roaring64_bitmap_remove(r, kept[0]);
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r),
+                         2 * kept.size() - 1);
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Every container removed.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        for (uint64_t i = 0; i < 1000; ++i) {
+            roaring64_bitmap_add(r, i << 16);
+        }
+        for (uint64_t i = 0; i < 1000; ++i) {
+            roaring64_bitmap_remove(r, i << 16);
+        }
+        roaring64_bitmap_shrink_to_fit(r);
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_is_empty(r));
+        roaring64_bitmap_add(r, 42);
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_contains(r, 42));
+        roaring64_bitmap_free(r);
+    }
+}
+
 }  // namespace
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_shrink_to_fit_many_containers),
         cmocka_unit_test(test_remove_many_issue_742),
         cmocka_unit_test(test_remove_many_issue_742B),
         cmocka_unit_test(fuzz_deserializer),
