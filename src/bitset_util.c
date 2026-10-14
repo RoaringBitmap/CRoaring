@@ -735,13 +735,14 @@ size_t bitset_extract_intersection_setbits_avx512_uint16(
         __m512i vec = _mm512_maskz_compress_epi8((__mmask64)v, index_table);
         _mm512_mask_storeu_epi16(
             out, (__mmask32)_bzhi_u64(~UINT64_C(0), advance),
-            _mm512_add_epi16(base_v, _mm512_cvtepu8_epi16(
-                                         _mm512_castsi512_si256(vec))));
+            _mm512_add_epi16(
+                base_v, _mm512_cvtepu8_epi16(_mm512_castsi512_si256(vec))));
         if (advance > 32) {
             _mm512_mask_storeu_epi16(
                 out + 32, (__mmask32)_bzhi_u64(~UINT64_C(0), advance - 32),
-                _mm512_add_epi16(base_v, _mm512_cvtepu8_epi16(
-                                             _mm512_extracti64x4_epi64(vec, 1))));
+                _mm512_add_epi16(
+                    base_v,
+                    _mm512_cvtepu8_epi16(_mm512_extracti64x4_epi64(vec, 1))));
         }
         out += advance;
         base_v = _mm512_add_epi16(base_v, inc_v);

@@ -1666,8 +1666,7 @@ static size_t art_shrink_node_arrays(art_t *art) {
  * compaction: `maps[t][i]` is the new index of the node of type `t` at index
  * `i`.
  */
-static inline art_ref_t art_shrink_remap(uint64_t *const *maps,
-                                         art_ref_t ref) {
+static inline art_ref_t art_shrink_remap(uint64_t *const *maps, art_ref_t ref) {
     art_typecode_t typecode = art_ref_typecode(ref);
     return art_to_ref(maps[typecode][art_ref_index(ref)], typecode);
 }
@@ -1675,15 +1674,13 @@ static inline art_ref_t art_shrink_remap(uint64_t *const *maps,
 /**
  * Rewrites the child references of an inner node with `maps`.
  */
-static void art_shrink_remap_children(art_node_t *node,
-                                      art_typecode_t typecode,
+static void art_shrink_remap_children(art_node_t *node, art_typecode_t typecode,
                                       uint64_t *const *maps) {
     switch (typecode) {
         case CROARING_ART_NODE4_TYPE: {
             art_node4_t *node4 = (art_node4_t *)node;
             for (uint8_t i = 0; i < node4->count; ++i) {
-                node4->children[i] =
-                    art_shrink_remap(maps, node4->children[i]);
+                node4->children[i] = art_shrink_remap(maps, node4->children[i]);
             }
         } break;
         case CROARING_ART_NODE16_TYPE: {
@@ -1763,8 +1760,8 @@ size_t art_shrink_to_fit(art_t *art) {
         live[t] = count;
     }
     // Rewrite the references while the nodes are still in place.
-    for (art_typecode_t t = CROARING_ART_NODE4_TYPE;
-         t <= CROARING_ART_MAX_TYPE; ++t) {
+    for (art_typecode_t t = CROARING_ART_NODE4_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
         for (uint64_t i = 0; i < art->capacities[t]; ++i) {
             if (maps[t][i] != CROARING_ART_SHRINK_FREE) {
                 art_shrink_remap_children(art_get_node(art, i, t), t,
