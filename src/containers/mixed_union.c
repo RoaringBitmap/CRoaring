@@ -206,15 +206,17 @@ bool array_array_container_inplace_union(array_container_t *src_1,
             }
             return false;  // not a bitset
         } else {
-            memmove(src_1->array + src_2->cardinality, src_1->array,
-                    src_1->cardinality * sizeof(uint16_t));
-            // In theory, we could use fast_union_uint16, but it is unsafe. It
-            // fails with Intel compilers in particular.
+            // fast_union_uint16 cannot work in place: its vectorized stores
+            // could overwrite values not yet read.
             // https://github.com/RoaringBitmap/CRoaring/pull/452
             // See report https://github.com/RoaringBitmap/CRoaring/issues/476
-            src_1->cardinality = (int32_t)union_uint16(
-                src_1->array + src_2->cardinality, src_1->cardinality,
-                src_2->array, src_2->cardinality, src_1->array);
+            // So we copy src_1 aside first, which costs about as much as
+            // moving it to the end of its array for the scalar union.
+            uint16_t buffer[DEFAULT_MAX_SIZE];
+            memcpy(buffer, src_1->array, src_1->cardinality * sizeof(uint16_t));
+            src_1->cardinality = (int32_t)fast_union_uint16(
+                buffer, src_1->cardinality, src_2->array, src_2->cardinality,
+                src_1->array);
             return false;  // not a bitset
         }
     }

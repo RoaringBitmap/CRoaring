@@ -1991,11 +1991,59 @@ DEFINE_TEST(run_negation_range_test9) {
                              false, false);
 }
 
+// In-place union of two arrays when the first one has room for the result,
+// compared with the union into a new container.
+DEFINE_TEST(array_array_inplace_union_spare_capacity_test) {
+    uint32_t state = 12345;
+    for (int trial = 0; trial < 300; trial++) {
+        int n1 = trial % 41 * 50, n2 = (trial * 7) % 37 * 50;
+        array_container_t* a = array_container_create_given_capacity(4096);
+        array_container_t* b = array_container_create();
+        assert_non_null(a);
+        assert_non_null(b);
+        for (int i = 0; i < n1; i++) {
+            state = state * 1664525 + 1013904223;
+            array_container_add(
+                a, (uint16_t)(state >> 16) % (trial % 3 ? 65535 : 5000));
+        }
+        for (int i = 0; i < n2; i++) {
+            state = state * 1664525 + 1013904223;
+            array_container_add(
+                b, (uint16_t)(state >> 16) % (trial % 3 ? 65535 : 5000));
+        }
+        array_container_t* want = array_container_create();
+        assert_non_null(want);
+        array_container_union(a, b, want);
+        container_t* dst = NULL;
+        bool is_bitset = array_array_container_inplace_union(a, b, &dst);
+        if (a->cardinality + b->cardinality <= DEFAULT_MAX_SIZE &&
+            dst == NULL) {
+            assert_false(is_bitset);
+            assert_true(array_container_equals(a, want));
+        } else {
+            uint8_t type =
+                is_bitset ? BITSET_CONTAINER_TYPE : ARRAY_CONTAINER_TYPE;
+            container_t* result = dst != NULL ? dst : (container_t*)a;
+            int card = container_get_cardinality(result, type);
+            assert_int_equal(card, want->cardinality);
+            for (int i = 0; i < want->cardinality; i++) {
+                assert_true(container_contains(result, want->array[i], type));
+            }
+            if (dst != NULL && dst != (container_t*)a)
+                container_free(dst, type);
+        }
+        array_container_free(a);
+        array_container_free(b);
+        array_container_free(want);
+    }
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(array_bitset_and_or_xor_andnot_test),
+        cmocka_unit_test(array_array_inplace_union_spare_capacity_test),
         cmocka_unit_test(array_bitset_run_lazy_xor_test),
         cmocka_unit_test(run_xor_test),
         cmocka_unit_test(run_ixor_test),
