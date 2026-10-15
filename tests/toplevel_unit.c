@@ -3876,6 +3876,74 @@ DEFINE_TEST(test_subset) {
     roaring_bitmap_free(rb2);
 }
 
+// In-place union of a bitmap with few containers into one with many.
+DEFINE_TEST(test_or_inplace_few_containers) {
+    uint32_t seed = 1234;
+    for (int trial = 0; trial < 200; trial++) {
+        // Mixing bitmaps with and without copy-on-write is unsupported.
+        bool cow1 = trial & 1, cow2 = cow1;
+        roaring_bitmap_t *big = roaring_bitmap_create();
+        roaring_bitmap_set_copy_on_write(big, cow1);
+        // Keys 2k, with array, bitset, run and full containers.
+        for (uint32_t k = 0; k < 1000; k++) {
+            uint32_t base = (2 * k) << 16;
+            switch (k % 4) {
+                case 0:
+                    roaring_bitmap_add(big, base + k);
+                    break;
+                case 1:
+                    for (uint32_t v = 0; v < 65536; v += 3)
+                        roaring_bitmap_add(big, base + v);
+                    break;
+                case 2:
+                    roaring_bitmap_add_range(big, base + 100, base + 5000);
+                    break;
+                default:
+                    roaring_bitmap_add_range(big, base, base + 65536);
+            }
+        }
+        roaring_bitmap_run_optimize(big);
+        roaring_bitmap_t *small = roaring_bitmap_create();
+        roaring_bitmap_set_copy_on_write(small, cow2);
+        int nkeys = 1 + trial % 20;
+        for (int j = 0; j < nkeys; j++) {
+            seed = seed * 1103515245 + 12345;
+            // Existing keys, keys between them, before them and after them.
+            uint32_t key = (seed >> 8) % 2004;
+            if (j == 0 && trial % 3 == 0) key = 2003;
+            uint32_t base = key << 16;
+            if (seed & 1) {
+                roaring_bitmap_add_range(small, base + (seed >> 20),
+                                         base + 65536);
+            } else {
+                roaring_bitmap_add(small, base + (seed >> 16));
+            }
+        }
+        roaring_bitmap_t *shared = NULL;
+        if (cow1) shared = roaring_bitmap_copy(big);  // Shares containers.
+        roaring_bitmap_t *expected = roaring_bitmap_or(big, small);
+        roaring_bitmap_t *small_copy = roaring_bitmap_copy(small);
+        roaring_bitmap_or_inplace(big, small);
+        const char *reason = NULL;
+        assert_true(roaring_bitmap_internal_validate(big, &reason));
+        assert_true(roaring_bitmap_equals(big, expected));
+        assert_true(roaring_bitmap_equals(small, small_copy));
+        if (shared) {
+            roaring_bitmap_t *expected2 = roaring_bitmap_or(shared, small);
+            roaring_bitmap_free(shared);
+            assert_true(roaring_bitmap_equals(big, expected2));
+            roaring_bitmap_free(expected2);
+        }
+        roaring_bitmap_free(small);
+        // The containers copied from 'small' must outlive it.
+        assert_true(roaring_bitmap_internal_validate(big, &reason));
+        assert_true(roaring_bitmap_equals(big, expected));
+        roaring_bitmap_free(small_copy);
+        roaring_bitmap_free(expected);
+        roaring_bitmap_free(big);
+    }
+}
+
 DEFINE_TEST(test_or_many_memory_leak) {
     for (int i = 0; i < 10; i++) {
         roaring_bitmap_t *bm1 = roaring_bitmap_create();
@@ -5739,6 +5807,7 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_or_inplace_few_containers),
         cmocka_unit_test(issue743),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(issue660),
