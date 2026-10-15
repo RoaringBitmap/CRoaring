@@ -3564,12 +3564,10 @@ DEFINE_TEST(test_flip_sparse_array_container) {
             assert_true(roaring_bitmap_internal_validate(flipped, NULL));
             assert_true(roaring_bitmap_internal_validate(inplace, NULL));
             assert_true(roaring_bitmap_equals(flipped, inplace));
-            uint64_t expected = roaring_bitmap_get_cardinality(bm) + end -
-                                start -
-                                2 * roaring_bitmap_range_cardinality(
-                                        bm, start, end);
-            assert_int_equal(roaring_bitmap_get_cardinality(flipped),
-                             expected);
+            uint64_t expected =
+                roaring_bitmap_get_cardinality(bm) + end - start -
+                2 * roaring_bitmap_range_cardinality(bm, start, end);
+            assert_int_equal(roaring_bitmap_get_cardinality(flipped), expected);
             for (uint32_t v = 0; v < 70000; v++) {
                 bool in_range = v >= start && v < end;
                 assert_true(roaring_bitmap_contains(flipped, v) ==
