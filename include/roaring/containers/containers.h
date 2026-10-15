@@ -2018,9 +2018,8 @@ static inline container_t *container_not(const container_t *c, uint8_t type,
                     : ARRAY_CONTAINER_TYPE;
             return result;
         case ARRAY_CONTAINER_TYPE:
-            result = bitset_container_create();
-            *result_type = BITSET_CONTAINER_TYPE;
-            array_container_negation(const_CAST_array(c), CAST_bitset(result));
+            *result_type = (uint8_t)array_container_negation_range_to_any(
+                const_CAST_array(c), 0, 1 << 16, &result);
             return result;
         case RUN_CONTAINER_TYPE:
             *result_type =
@@ -2082,9 +2081,8 @@ static inline container_t *container_inot(container_t *c, uint8_t type,
             return result;
         case ARRAY_CONTAINER_TYPE:
             // will never be inplace
-            result = bitset_container_create();
-            *result_type = BITSET_CONTAINER_TYPE;
-            array_container_negation(CAST_array(c), CAST_bitset(result));
+            *result_type = (uint8_t)array_container_negation_range_to_any(
+                CAST_array(c), 0, 1 << 16, &result);
             array_container_free(CAST_array(c));
             return result;
         case RUN_CONTAINER_TYPE:

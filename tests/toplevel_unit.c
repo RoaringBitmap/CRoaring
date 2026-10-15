@@ -3573,10 +3573,13 @@ DEFINE_TEST(test_flip_sparse_array_container) {
                 assert_true(roaring_bitmap_contains(flipped, v) ==
                             (roaring_bitmap_contains(bm, v) != in_range));
             }
-            if (cards[c] <= 2046 && start == 0 && end == 65536) {
+            if (cards[c] <= 2046 && start == 0 && end % 65536 == 0) {
+                // The flipped chunks are all runs, whole or partial flips.
                 roaring_statistics_t stats;
                 roaring_bitmap_statistics(flipped, &stats);
-                assert_int_equal(stats.n_run_containers, 1);
+                assert_int_equal(stats.n_run_containers, end / 65536);
+                roaring_bitmap_statistics(inplace, &stats);
+                assert_int_equal(stats.n_run_containers, end / 65536);
             }
             roaring_bitmap_free(bm);
             roaring_bitmap_free(flipped);
