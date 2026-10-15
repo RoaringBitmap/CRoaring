@@ -225,6 +225,13 @@ int array_container_negation_range_to_any(const array_container_t *src,
         *dst = ans;
         return RUN_CONTAINER_TYPE;
     }
+    if (range_start == 0 && range_end == (1 << 16)) {
+        // The negation of a whole array is always a bitset, built in one pass.
+        bitset_container_t *ans = bitset_container_create();
+        if (ans != NULL) array_container_negation(src, ans);
+        *dst = ans;
+        return BITSET_CONTAINER_TYPE;
+    }
     return array_container_negation_range(src, range_start, range_end, dst)
                ? BITSET_CONTAINER_TYPE
                : ARRAY_CONTAINER_TYPE;
