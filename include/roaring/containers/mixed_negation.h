@@ -93,6 +93,17 @@ bool array_container_negation_range_inplace(array_container_t *src,
                                             const int range_end,
                                             container_t **dst);
 
+/* Negation across a range of the container.
+ * Compute the negation of src and write the result to *dst, which is not
+ * preallocated. Unlike array_container_negation_range, the result may be a
+ * run container: the negation of a sparse array over a large range has few
+ * runs. Returns the typecode of the result.
+ */
+int array_container_negation_range_to_any(const array_container_t *src,
+                                          const int range_start,
+                                          const int range_end,
+                                          container_t **dst);
+
 /* Negation across a range of the container
  * Compute the  negation of src  and write the result
  * to *dst.  A true return value indicates a bitset result,
