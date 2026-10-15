@@ -2975,6 +2975,9 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     return r;
 }
 
+#if !CROARING_IS_BIG_ENDIAN
+// Only used by roaring64_bitmap_portable_deserialize_frozen, which refuses to
+// run on big-endian systems.
 static bool view_one_portable32(roaring64_bitmap_t *r,
                                 frozen_container_header_t *headers,
                                 uint32_t high32, const char *buf,
@@ -3140,6 +3143,7 @@ static bool view_one_portable32(roaring64_bitmap_t *r,
     }
     return true;
 }
+#endif  // !CROARING_IS_BIG_ENDIAN
 
 CROARING_ALLOW_UNALIGNED
 roaring64_bitmap_t *roaring64_bitmap_portable_deserialize_frozen(
