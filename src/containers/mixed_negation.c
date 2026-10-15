@@ -172,6 +172,27 @@ bool array_container_negation_range_inplace(array_container_t *src,
     return ans;
 }
 
+int array_container_negation_range_to_any(const array_container_t *src,
+                                          const int range_start,
+                                          const int range_end,
+                                          container_t **dst) {
+    // The result has more than DEFAULT_MAX_SIZE values, so it would be a
+    // bitset, but it has at most cardinality + 1 runs: when these runs take
+    // less room than a bitset, we negate as a run container.
+    if (range_end - range_start - src->cardinality > DEFAULT_MAX_SIZE &&
+        run_container_serialized_size_in_bytes(src->cardinality + 1) <
+            BITSET_CONTAINER_SIZE_IN_WORDS * (int32_t)sizeof(uint64_t)) {
+        run_container_t *runs = run_container_from_array(src);
+        int typecode =
+            run_container_negation_range(runs, range_start, range_end, dst);
+        run_container_free(runs);
+        return typecode;
+    }
+    return array_container_negation_range(src, range_start, range_end, dst)
+               ? BITSET_CONTAINER_TYPE
+               : ARRAY_CONTAINER_TYPE;
+}
+
 /* Negation across a range of the container
  * Compute the  negation of src  and write the result
  * to *dst.  A true return value indicates a bitset result,

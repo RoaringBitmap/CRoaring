@@ -3545,6 +3545,48 @@ DEFINE_TEST(test_flip_run_container_removal2) {
     roaring_bitmap_free(bm);
 }
 
+// Flipping a sparse array container over a large range gives few runs.
+DEFINE_TEST(test_flip_sparse_array_container) {
+    const uint32_t cards[] = {1, 2, 100, 2045, 2046, 2047, 3000, 4096};
+    const uint32_t ranges[][2] = {
+        {0, 65536}, {0, 1 << 20}, {100, 60000}, {7, 5000}, {65530, 131072}};
+    for (size_t c = 0; c < sizeof(cards) / sizeof(cards[0]); c++) {
+        for (size_t g = 0; g < sizeof(ranges) / sizeof(ranges[0]); g++) {
+            roaring_bitmap_t *bm = roaring_bitmap_create();
+            // Spread the values over the first chunk, with some neighbors.
+            for (uint32_t k = 0; k < cards[c]; k++) {
+                roaring_bitmap_add(bm, (k * 15u) % 65536 + (k & 1));
+            }
+            uint32_t start = ranges[g][0], end = ranges[g][1];
+            roaring_bitmap_t *flipped = roaring_bitmap_flip(bm, start, end);
+            roaring_bitmap_t *inplace = roaring_bitmap_copy(bm);
+            roaring_bitmap_flip_inplace(inplace, start, end);
+            assert_true(roaring_bitmap_internal_validate(flipped, NULL));
+            assert_true(roaring_bitmap_internal_validate(inplace, NULL));
+            assert_true(roaring_bitmap_equals(flipped, inplace));
+            uint64_t expected = roaring_bitmap_get_cardinality(bm) + end -
+                                start -
+                                2 * roaring_bitmap_range_cardinality(
+                                        bm, start, end);
+            assert_int_equal(roaring_bitmap_get_cardinality(flipped),
+                             expected);
+            for (uint32_t v = 0; v < 70000; v++) {
+                bool in_range = v >= start && v < end;
+                assert_true(roaring_bitmap_contains(flipped, v) ==
+                            (roaring_bitmap_contains(bm, v) != in_range));
+            }
+            if (cards[c] <= 2046 && start == 0 && end == 65536) {
+                roaring_statistics_t stats;
+                roaring_bitmap_statistics(flipped, &stats);
+                assert_int_equal(stats.n_run_containers, 1);
+            }
+            roaring_bitmap_free(bm);
+            roaring_bitmap_free(flipped);
+            roaring_bitmap_free(inplace);
+        }
+    }
+}
+
 // randomized test for rank query
 DEFINE_TEST(select_test) {
     const int min_runs = 1;
@@ -5863,6 +5905,7 @@ int main() {
         cmocka_unit_test(test_flip_bitset_container_removal),
         cmocka_unit_test(test_flip_run_container_removal),
         cmocka_unit_test(test_flip_run_container_removal2),
+        cmocka_unit_test(test_flip_sparse_array_container),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_subset),
         cmocka_unit_test(test_or_many_memory_leak),

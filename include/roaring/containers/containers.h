@@ -2052,11 +2052,8 @@ static inline container_t *container_not_range(const container_t *c,
                     : ARRAY_CONTAINER_TYPE;
             return result;
         case ARRAY_CONTAINER_TYPE:
-            *result_type =
-                array_container_negation_range(const_CAST_array(c), range_start,
-                                               range_end, &result)
-                    ? BITSET_CONTAINER_TYPE
-                    : ARRAY_CONTAINER_TYPE;
+            *result_type = (uint8_t)array_container_negation_range_to_any(
+                const_CAST_array(c), range_start, range_end, &result);
             return result;
         case RUN_CONTAINER_TYPE:
             *result_type = (uint8_t)run_container_negation_range(
@@ -2118,10 +2115,9 @@ static inline container_t *container_inot_range(container_t *c, uint8_t type,
                                : ARRAY_CONTAINER_TYPE;
             return result;
         case ARRAY_CONTAINER_TYPE:
-            *result_type = array_container_negation_range_inplace(
-                               CAST_array(c), range_start, range_end, &result)
-                               ? BITSET_CONTAINER_TYPE
-                               : ARRAY_CONTAINER_TYPE;
+            *result_type = (uint8_t)array_container_negation_range_to_any(
+                CAST_array(c), range_start, range_end, &result);
+            array_container_free(CAST_array(c));
             return result;
         case RUN_CONTAINER_TYPE:
             *result_type = (uint8_t)run_container_negation_range_inplace(
