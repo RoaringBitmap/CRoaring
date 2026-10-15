@@ -180,6 +180,45 @@ DEFINE_TEST(select_test) {
     array_container_free(B);
 }
 
+// Compares array_container_number_of_runs with a direct count, including
+// runs that end at 65535.
+DEFINE_TEST(number_of_runs_test) {
+    array_container_t* a = array_container_create();
+    assert_non_null(a);
+    assert_int_equal(array_container_number_of_runs(a), 0);
+    uint64_t rng = 42;
+    for (int trial = 0; trial < 200; ++trial) {
+        a->cardinality = 0;
+        int32_t expected = 0;
+        int prev = -2;
+        // Mostly consecutive values for even trials, sparse for odd ones.
+        uint32_t v = (uint32_t)(trial * 97) % 1000;
+        while (v < (1 << 16) && a->cardinality < 4000) {
+            if ((int)v != prev + 1) expected++;
+            array_container_add(a, (uint16_t)v);
+            prev = (int)v;
+            rng = rng * 6364136223846793005ULL + 1442695040888963407ULL;
+            uint32_t gap = (trial % 2 == 0) ? ((rng >> 60) < 12 ? 1 : 3)
+                                            : 1 + (uint32_t)(rng >> 57);
+            v += gap;
+        }
+        if (trial % 3 == 0 && prev != 65535) {
+            if (prev != 65534) expected++;
+            array_container_add(a, 65535);
+        }
+        assert_int_equal(array_container_number_of_runs(a), expected);
+    }
+    a->cardinality = 0;
+    array_container_add(a, 65535);
+    assert_int_equal(array_container_number_of_runs(a), 1);
+    a->cardinality = 0;
+    for (uint32_t i = 65000; i < (1 << 16); ++i) {
+        array_container_add(a, (uint16_t)i);
+    }
+    assert_int_equal(array_container_number_of_runs(a), 1);
+    array_container_free(a);
+}
+
 DEFINE_TEST(capacity_test) {
     array_container_t* array = array_container_create();
     for (uint32_t i = 0; i < DEFAULT_MAX_SIZE; i++) {
@@ -374,7 +413,8 @@ int main() {
         cmocka_unit_test(and_or_test),
         cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
-        cmocka_unit_test(capacity_test)};
+        cmocka_unit_test(capacity_test),
+        cmocka_unit_test(number_of_runs_test)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

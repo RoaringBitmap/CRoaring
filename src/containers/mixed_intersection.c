@@ -298,6 +298,26 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
 }
 
 /*
+ * Write the "card" common values of two bitset containers to "out", which
+ * must hold exactly "card" values.
+ */
+static inline void extract_intersection_to_array(
+    const bitset_container_t *src_1, const bitset_container_t *src_2,
+    uint16_t *out, int32_t card) {
+#if CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
+    if (croaring_hardware_support() & ROARING_SUPPORTS_AVX512) {
+        bitset_extract_intersection_setbits_avx512_uint16(
+            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS, out,
+            (size_t)card, 0);
+        return;
+    }
+#endif
+    bitset_extract_intersection_setbits_uint16_with_card(
+        src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS, out,
+        (size_t)card, 0);
+}
+
+/*
  * Compute the intersection between src_1 and src_2 and write the result
  * to *dst. If the return function is true, the result is a bitset_container_t
  * otherwise is a array_container_t.
@@ -317,9 +337,8 @@ bool bitset_bitset_container_intersection(const bitset_container_t *src_1,
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
         CAST_array(*dst)->cardinality = newCardinality;
-        bitset_extract_intersection_setbits_uint16(
-            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS,
-            CAST_array(*dst)->array, 0);
+        extract_intersection_to_array(src_1, src_2, CAST_array(*dst)->array,
+                                      newCardinality);
     }
     return false;  // not a bitset
 }
@@ -337,9 +356,8 @@ bool bitset_bitset_container_intersection_inplace(
     *dst = array_container_create_given_capacity(newCardinality);
     if (*dst != NULL) {
         CAST_array(*dst)->cardinality = newCardinality;
-        bitset_extract_intersection_setbits_uint16(
-            src_1->words, src_2->words, BITSET_CONTAINER_SIZE_IN_WORDS,
-            CAST_array(*dst)->array, 0);
+        extract_intersection_to_array(src_1, src_2, CAST_array(*dst)->array,
+                                      newCardinality);
     }
     return false;  // not a bitset
 }

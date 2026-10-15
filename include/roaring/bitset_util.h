@@ -261,6 +261,28 @@ size_t bitset_extract_intersection_setbits_uint16(
     size_t length, uint16_t *out, uint16_t base);
 
 /*
+ * Same as bitset_extract_intersection_setbits_uint16, but the caller passes
+ * the number of common set bits ("card", e.g., from a "justcard" function)
+ * and "out" must hold exactly that many values. Knowing the cardinality lets
+ * the function avoid a data-dependent branch per word, which is mispredicted
+ * about once per value on sparse intersections.
+ */
+size_t bitset_extract_intersection_setbits_uint16_with_card(
+    const uint64_t *__restrict__ words1, const uint64_t *__restrict__ words2,
+    size_t length, uint16_t *out, size_t card, uint16_t base);
+
+/*
+ * Same as bitset_extract_intersection_setbits_uint16_with_card, using AVX-512
+ * VBMI2 (VPCOMPRESSB) and no data-dependent branch per word.
+ *
+ * Only call it when croaring_hardware_support() reports
+ * ROARING_SUPPORTS_AVX512.
+ */
+size_t bitset_extract_intersection_setbits_avx512_uint16(
+    const uint64_t *__restrict__ words1, const uint64_t *__restrict__ words2,
+    size_t length, uint16_t *out, size_t card, uint16_t base);
+
+/*
  * Given a bitset having cardinality card, set all bit values in the list (there
  * are length of them)
  * and return the updated cardinality. This evidently assumes that the bitset

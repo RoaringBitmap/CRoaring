@@ -1635,85 +1635,6 @@ static void art_node_printf(const art_t *art, art_ref_t ref, uint8_t depth) {
 }
 
 /**
- * Moves the node at `ref` to the earliest free index before it (if any),
- * returns the new ref. Assumes `art->first_free[typecode]` points to the
- * smallest free index.
- */
-static art_ref_t art_move_node_to_shrink(art_t *art, art_ref_t ref) {
-    uint64_t idx = art_ref_index(ref);
-    art_typecode_t typecode = art_ref_typecode(ref);
-    uint64_t first_free = art->first_free[typecode];
-    assert(idx != first_free);
-    if (idx < first_free) {
-        return ref;
-    }
-    uint64_t from = idx;
-    uint64_t to = first_free;
-    uint64_t next_free = art_node_get_next_free(art, art_to_ref(to, typecode));
-    memcpy(art_get_node(art, to, typecode), art_get_node(art, from, typecode),
-           ART_NODE_SIZES[typecode]);
-
-    // With an integer representing the next free index, and an `x` representing
-    // an occupied index, assume the following scenario at the start of this
-    // function:
-    //     nodes = [1,2,5,x,x]
-    //     first_free = 0
-    //
-    // We just moved a node from index 3 to 0:
-    //     nodes = [x,2,5,?,x]
-    //
-    // We need to modify the free list so that the free indices are ascending.
-    // This can be done by traversing the list until we find a node with a
-    // `next_free` greater than the index we copied the node from, and inserting
-    // the new index in between. This leads to the following:
-    //     nodes = [x,2,3,5,x]
-    //     first_free = 1
-    uint64_t initial_next_free = next_free;
-    uint64_t current = next_free;
-    while (next_free < from) {
-        current = next_free;
-        next_free =
-            art_node_get_next_free(art, art_to_ref(next_free, typecode));
-    }
-    art_node_set_next_free(art_deref(art, ref), typecode, next_free);
-    if (current < from) {
-        art_node_set_next_free(art_get_node(art, current, typecode), typecode,
-                               from);
-    }
-    art->first_free[typecode] =
-        from < initial_next_free ? from : initial_next_free;
-    return art_to_ref(to, typecode);
-}
-
-/**
- * Sorts the free lists pointed to by art->first_free in ascending index order.
- */
-static void art_sort_free_lists(art_t *art) {
-    for (art_typecode_t type = CROARING_ART_LEAF_TYPE;
-         type <= CROARING_ART_NODE256_TYPE; ++type) {
-        bool *free_indices =
-            (bool *)roaring_calloc(art->capacities[type], sizeof(bool));
-
-        for (uint64_t i = art->first_free[type]; i < art->capacities[type];
-             i = art_node_get_next_free(art, art_to_ref(i, type))) {
-            free_indices[i] = true;
-        }
-
-        uint64_t first_free = art->capacities[type];
-        for (uint64_t i = art->capacities[type]; i > 0; --i) {
-            uint64_t index = i - 1;
-            if (free_indices[index]) {
-                art_node_set_next_free(art_get_node(art, index, type), type,
-                                       first_free);
-                first_free = index;
-            }
-        }
-        art->first_free[type] = first_free;
-        roaring_free(free_indices);
-    }
-}
-
-/**
  * Shrinks all node arrays to `first_free`. Assumes all indices after
  * `first_free` are unused.
  */
@@ -1723,8 +1644,13 @@ static size_t art_shrink_node_arrays(art_t *art) {
          ++t) {
         if (art->first_free[t] < art->capacities[t]) {
             uint64_t new_capacity = art->first_free[t];
-            art->nodes[t] = roaring_realloc(art->nodes[t],
-                                            new_capacity * ART_NODE_SIZES[t]);
+            if (new_capacity == 0) {
+                roaring_free(art->nodes[t]);
+                art->nodes[t] = NULL;
+            } else {
+                art->nodes[t] = roaring_realloc(
+                    art->nodes[t], new_capacity * ART_NODE_SIZES[t]);
+            }
             freed += (art->capacities[t] - new_capacity) * ART_NODE_SIZES[t];
             art->capacities[t] = new_capacity;
         }
@@ -1732,49 +1658,54 @@ static size_t art_shrink_node_arrays(art_t *art) {
     return freed;
 }
 
+// Marks the free slot of a shrunken node array.
+#define CROARING_ART_SHRINK_FREE UINT64_MAX
+
 /**
- * Traverses the ART, moving nodes to earlier free indices and modifying their
- * references along the way.
+ * Returns `ref` with its index replaced by the index it gets after
+ * compaction: `maps[t][i]` is the new index of the node of type `t` at index
+ * `i`.
  */
-static void art_shrink_at(art_t *art, art_ref_t ref) {
-    if (art_is_leaf(ref)) {
-        return;
-    }
-    switch (art_ref_typecode(ref)) {
+static inline art_ref_t art_shrink_remap(uint64_t *const *maps, art_ref_t ref) {
+    art_typecode_t typecode = art_ref_typecode(ref);
+    return art_to_ref(maps[typecode][art_ref_index(ref)], typecode);
+}
+
+/**
+ * Rewrites the child references of an inner node with `maps`.
+ */
+static void art_shrink_remap_children(art_node_t *node, art_typecode_t typecode,
+                                      uint64_t *const *maps) {
+    switch (typecode) {
         case CROARING_ART_NODE4_TYPE: {
-            art_node4_t *node4 = (art_node4_t *)art_deref(art, ref);
+            art_node4_t *node4 = (art_node4_t *)node;
             for (uint8_t i = 0; i < node4->count; ++i) {
-                node4->children[i] =
-                    art_move_node_to_shrink(art, node4->children[i]);
-                art_shrink_at(art, node4->children[i]);
+                node4->children[i] = art_shrink_remap(maps, node4->children[i]);
             }
         } break;
         case CROARING_ART_NODE16_TYPE: {
-            art_node16_t *node16 = (art_node16_t *)art_deref(art, ref);
+            art_node16_t *node16 = (art_node16_t *)node;
             for (uint8_t i = 0; i < node16->count; ++i) {
                 node16->children[i] =
-                    art_move_node_to_shrink(art, node16->children[i]);
-                art_shrink_at(art, node16->children[i]);
+                    art_shrink_remap(maps, node16->children[i]);
             }
         } break;
         case CROARING_ART_NODE48_TYPE: {
-            art_node48_t *node48 = (art_node48_t *)art_deref(art, ref);
+            art_node48_t *node48 = (art_node48_t *)node;
             for (int i = 0; i < 256; ++i) {
                 if (node48->keys[i] != CROARING_ART_NODE48_EMPTY_VAL) {
                     uint8_t idx = node48->keys[i];
                     node48->children[idx] =
-                        art_move_node_to_shrink(art, node48->children[idx]);
-                    art_shrink_at(art, node48->children[idx]);
+                        art_shrink_remap(maps, node48->children[idx]);
                 }
             }
         } break;
         case CROARING_ART_NODE256_TYPE: {
-            art_node256_t *node256 = (art_node256_t *)art_deref(art, ref);
+            art_node256_t *node256 = (art_node256_t *)node;
             for (int i = 0; i < 256; ++i) {
                 if (node256->children[i] != CROARING_ART_NULL_REF) {
                     node256->children[i] =
-                        art_move_node_to_shrink(art, node256->children[i]);
-                    art_shrink_at(art, node256->children[i]);
+                        art_shrink_remap(maps, node256->children[i]);
                 }
             }
         } break;
@@ -1798,13 +1729,67 @@ size_t art_shrink_to_fit(art_t *art) {
     if (art_is_shrunken(art)) {
         return 0;
     }
+    // Compacts each node array in time linear in its capacity: every live node
+    // moves to its rank among the live nodes of its type, which keeps their
+    // relative order, and every reference is rewritten to match.
+    uint64_t *maps[CROARING_ART_MAX_TYPE + 1] = {NULL};
+    uint64_t live[CROARING_ART_MAX_TYPE + 1] = {0};
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        uint64_t capacity = art->capacities[t];
+        if (capacity == 0) {
+            continue;
+        }
+        maps[t] = (uint64_t *)roaring_calloc(capacity, sizeof(uint64_t));
+        if (maps[t] == NULL) {
+            for (art_typecode_t u = CROARING_ART_MIN_TYPE; u < t; ++u) {
+                roaring_free(maps[u]);
+            }
+            return 0;
+        }
+        for (uint64_t i = art->first_free[t]; i < capacity;
+             i = art_node_get_next_free(art, art_to_ref(i, t))) {
+            maps[t][i] = CROARING_ART_SHRINK_FREE;
+        }
+        uint64_t count = 0;
+        for (uint64_t i = 0; i < capacity; ++i) {
+            if (maps[t][i] != CROARING_ART_SHRINK_FREE) {
+                maps[t][i] = count++;
+            }
+        }
+        live[t] = count;
+    }
+    // Rewrite the references while the nodes are still in place.
+    for (art_typecode_t t = CROARING_ART_NODE4_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        for (uint64_t i = 0; i < art->capacities[t]; ++i) {
+            if (maps[t][i] != CROARING_ART_SHRINK_FREE) {
+                art_shrink_remap_children(art_get_node(art, i, t), t,
+                                          (uint64_t *const *)maps);
+            }
+        }
+    }
     if (art->root != CROARING_ART_NULL_REF) {
-        art_sort_free_lists(art);
-        art->root = art_move_node_to_shrink(art, art->root);
-        art_shrink_at(art, art->root);
+        art->root = art_shrink_remap((uint64_t *const *)maps, art->root);
+    }
+    // Move the nodes. Going in ascending order, a node only moves to a slot
+    // that is free or already moved out of.
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        for (uint64_t i = 0; i < art->capacities[t]; ++i) {
+            uint64_t to = maps[t][i];
+            if (to != CROARING_ART_SHRINK_FREE && to != i) {
+                memcpy(art_get_node(art, to, t), art_get_node(art, i, t),
+                       ART_NODE_SIZES[t]);
+            }
+        }
+        art->first_free[t] = live[t];
+        roaring_free(maps[t]);
     }
     return art_shrink_node_arrays(art);
 }
+
+#undef CROARING_ART_SHRINK_FREE
 
 bool art_is_shrunken(const art_t *art) {
     for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;

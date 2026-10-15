@@ -493,14 +493,17 @@ bool array_container_validate(const array_container_t *v, const char **reason) {
 
 /* Compute the number of runs */
 int32_t array_container_number_of_runs(const array_container_t *ac) {
-    // Can SIMD work here?
-    int32_t nr_runs = 0;
-    int32_t prev = -2;
-    for (const uint16_t *p = ac->array; p != ac->array + ac->cardinality; ++p) {
-        if (*p != prev + 1) nr_runs++;
-        prev = *p;
+    const uint16_t *array = ac->array;
+    const int32_t card = ac->cardinality;
+    if (card == 0) return 0;
+    // Every value starts a run unless it follows its predecessor. The values
+    // are strictly increasing, so array[i - 1] + 1 cannot wrap around to a
+    // match. The loop has no branch on the data and compilers vectorize it.
+    int32_t continuing = 0;
+    for (int32_t i = 1; i < card; ++i) {
+        continuing += (array[i] == (uint16_t)(array[i - 1] + 1));
     }
-    return nr_runs;
+    return card - continuing;
 }
 
 /**
