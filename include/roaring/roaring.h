@@ -589,6 +589,24 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
 bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset);
 
 /**
+ * Writes the values of the bitmap from 64 * first_word (included) to
+ * 64 * (first_word + n_words) (excluded) as a bitset in `words`: value
+ * 64 * (first_word + k) + i, if present, sets bit i of words[k]. All n_words
+ * words are written (the caller does not need to zero them). The cost is
+ * proportional to n_words plus the number of values and runs in the range,
+ * not to the size of the bitmap.
+ *
+ * first_word + n_words must be at most 2^26 (that is, 2^32 / 64).
+ *
+ *   uint64_t words[16];
+ *   // values 1024 to 2047, value 1024 + 64 * k + i in bit i of words[k]
+ *   roaring_bitmap_range_to_words(mybitmap, 16, 16, words);
+ */
+void roaring_bitmap_range_to_words(const roaring_bitmap_t *r,
+                                   uint32_t first_word, uint32_t n_words,
+                                   uint64_t *words);
+
+/**
  * Convert the bitmap to a sorted array from `offset` by `limit`, output in
  * `ans`.
  *

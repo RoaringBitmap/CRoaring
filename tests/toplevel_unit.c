@@ -3621,6 +3621,97 @@ DEFINE_TEST(test_flip_sparse_array_container) {
     }
 }
 
+// Checks roaring_bitmap_range_to_words against roaring_bitmap_contains.
+static void check_range_to_words(const roaring_bitmap_t *bm,
+                                 uint32_t first_word, uint32_t n_words) {
+    uint64_t *words = (uint64_t *)malloc((n_words + 2) * sizeof(uint64_t));
+    assert_non_null(words);
+    // Guard words around the output must not be touched.
+    words[0] = words[n_words + 1] = UINT64_C(0x0123456789abcdef);
+    for (uint32_t k = 1; k <= n_words; k++) words[k] = ~UINT64_C(0);
+    roaring_bitmap_range_to_words(bm, first_word, n_words, words + 1);
+    assert_true(words[0] == UINT64_C(0x0123456789abcdef));
+    assert_true(words[n_words + 1] == UINT64_C(0x0123456789abcdef));
+    for (uint32_t k = 0; k < n_words; k++) {
+        uint64_t expected = 0;
+        for (uint32_t i = 0; i < 64; i++) {
+            uint32_t v = (uint32_t)(((uint64_t)first_word + k) * 64 + i);
+            if (roaring_bitmap_contains(bm, v)) expected |= UINT64_C(1) << i;
+        }
+        assert_true(words[k + 1] == expected);
+    }
+    free(words);
+}
+
+DEFINE_TEST(test_range_to_words) {
+    roaring_bitmap_t *bm = roaring_bitmap_create();
+    uint32_t seed = 1234;
+    // Chunk 0: array, chunk 1: bitset, chunk 2: runs, chunk 4: array, and
+    // the last chunk of the 32-bit range: runs and values at the very end.
+    for (uint32_t k = 0; k < 1000; k++) {
+        seed = seed * 1664525 + 1013904223;
+        roaring_bitmap_add(bm, (seed >> 16) % 65536);
+    }
+    for (uint32_t k = 0; k < 30000; k++) {
+        seed = seed * 1664525 + 1013904223;
+        roaring_bitmap_add(bm, 65536 + (seed >> 16) % 65536);
+    }
+    for (uint32_t k = 0; k < 300; k++) {
+        seed = seed * 1664525 + 1013904223;
+        uint32_t s = 2 * 65536 + (seed >> 16) % 65000;
+        roaring_bitmap_add_range(bm, s, s + 1 + (seed >> 8) % 300);
+    }
+    roaring_bitmap_add(bm, 4 * 65536 + 63);
+    roaring_bitmap_add(bm, 4 * 65536 + 64);
+    roaring_bitmap_add_range(bm, UINT64_C(0xFFFF0000) + 100,
+                             UINT64_C(0xFFFF0000) + 40000);
+    roaring_bitmap_add_range(bm, UINT64_C(0xFFFFFFF0), UINT64_C(0x100000000));
+    roaring_bitmap_run_optimize(bm);
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(bm, &stats);
+    assert_true(stats.n_array_containers >= 2);
+    assert_true(stats.n_bitset_containers >= 1);
+    assert_true(stats.n_run_containers >= 2);
+
+    const uint32_t last = (UINT32_C(1) << 26);
+    const uint32_t windows[][2] = {{0, 0},
+                                   {0, 1},
+                                   {0, 1024},
+                                   {0, 5000},
+                                   {1, 1},
+                                   {3, 2},
+                                   {1023, 2},
+                                   {1000, 100},
+                                   {1024, 1024},
+                                   {1500, 1},
+                                   {2047, 3},
+                                   {2048, 1024},
+                                   {2100, 7},
+                                   {2900, 300},
+                                   {4096, 1},
+                                   {4096, 2},
+                                   {3000, 2000},
+                                   {10000, 10},
+                                   {last - 1, 1},
+                                   {last - 1024, 1024},
+                                   {last - 700, 700},
+                                   {last - 1100, 200},
+                                   {last - 3000, 3000}};
+    for (size_t w = 0; w < sizeof(windows) / sizeof(windows[0]); w++) {
+        check_range_to_words(bm, windows[w][0], windows[w][1]);
+    }
+    for (int trial = 0; trial < 200; trial++) {
+        seed = seed * 1664525 + 1013904223;
+        uint32_t first = (seed >> 8) % 5200;
+        seed = seed * 1664525 + 1013904223;
+        check_range_to_words(bm, first, (seed >> 8) % 1500);
+    }
+    roaring_bitmap_t *empty = roaring_bitmap_create();
+    check_range_to_words(empty, 100, 50);
+    roaring_bitmap_free(empty);
+    roaring_bitmap_free(bm);
+}
+
 // randomized test for rank query
 DEFINE_TEST(select_test) {
     const int min_runs = 1;
@@ -6009,6 +6100,7 @@ int main() {
         cmocka_unit_test(test_flip_run_container_removal),
         cmocka_unit_test(test_flip_run_container_removal2),
         cmocka_unit_test(test_flip_sparse_array_container),
+        cmocka_unit_test(test_range_to_words),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_subset),
         cmocka_unit_test(test_or_many_memory_leak),

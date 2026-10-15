@@ -3705,6 +3705,74 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
 #endif
 }
 
+void roaring_bitmap_range_to_words(const roaring_bitmap_t *r,
+                                   uint32_t first_word, uint32_t n_words,
+                                   uint64_t *words) {
+    memset(words, 0, (size_t)n_words * sizeof(uint64_t));
+    if (n_words == 0) return;
+    assert((uint64_t)first_word + n_words <= (UINT64_C(1) << 26));
+    const uint64_t begin = (uint64_t)first_word * 64;
+    const uint64_t end = begin + (uint64_t)n_words * 64;  // excluded
+    const roaring_array_t *ra = &r->high_low_container;
+    int32_t i = ra_get_index(ra, (uint16_t)(begin >> 16));
+    if (i < 0) i = -i - 1;
+    for (; i < ra->size; ++i) {
+        const uint64_t chunk = (uint64_t)ra->keys[i] << 16;
+        if (chunk >= end) break;
+        // The window covers the words [lo, hi) of the container, which go
+        // to out[0, hi - lo).
+        const uint32_t lo =
+            chunk < begin ? (uint32_t)((begin - chunk) / 64) : 0;
+        const uint32_t hi =
+            chunk + 65536 > end ? (uint32_t)((end - chunk) / 64) : 1024;
+        uint64_t *out = words + (chunk / 64 + lo - first_word);
+        const uint32_t vlo = lo * 64, vhi = hi * 64;  // values [vlo, vhi)
+        uint8_t type = ra->typecodes[i];
+        const container_t *c =
+            container_unwrap_shared(ra->containers[i], &type);
+        switch (type) {
+            case BITSET_CONTAINER_TYPE:
+                memcpy(out, const_CAST_bitset(c)->words + lo,
+                       (size_t)(hi - lo) * sizeof(uint64_t));
+                break;
+            case ARRAY_CONTAINER_TYPE: {
+                const array_container_t *src = const_CAST_array(c);
+                int32_t k = 0;
+                if (vlo > 0) {
+                    k = binarySearch(src->array, src->cardinality,
+                                     (uint16_t)vlo);
+                    if (k < 0) k = -k - 1;
+                }
+                for (; k < src->cardinality && src->array[k] < vhi; ++k) {
+                    const uint32_t v = src->array[k] - vlo;
+                    out[v / 64] |= UINT64_C(1) << (v % 64);
+                }
+            } break;
+            case RUN_CONTAINER_TYPE: {
+                const run_container_t *src = const_CAST_run(c);
+                int32_t k = 0;
+                if (vlo > 0) {
+                    // The last run starting at or before vlo may reach it.
+                    k = interleavedBinarySearch(src->runs, src->n_runs,
+                                                (uint16_t)vlo);
+                    if (k < 0) k = -k - 2;
+                    if (k < 0) k = 0;
+                }
+                for (; k < src->n_runs && src->runs[k].value < vhi; ++k) {
+                    uint32_t s = src->runs[k].value;
+                    uint32_t e = s + src->runs[k].length + 1;  // excluded
+                    if (e <= vlo) continue;
+                    if (s < vlo) s = vlo;
+                    if (e > vhi) e = vhi;
+                    bitset_set_range(out, s - vlo, e - vlo);
+                }
+            } break;
+            default:
+                roaring_unreachable;
+        }
+    }
+}
+
 bool roaring_bitmap_to_bitset(const roaring_bitmap_t *r, bitset_t *bitset) {
     uint32_t max_value = roaring_bitmap_maximum(r);
     size_t new_array_size = (size_t)(max_value / 64 + 1);
