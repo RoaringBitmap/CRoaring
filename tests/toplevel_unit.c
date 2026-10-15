@@ -3586,6 +3586,39 @@ DEFINE_TEST(test_flip_sparse_array_container) {
             roaring_bitmap_free(inplace);
         }
     }
+    // Clustered values around the ends of the range, so that runs touch.
+    uint32_t seed = 4321;
+    for (int trial = 0; trial < 300; trial++) {
+        seed = seed * 1664525 + 1013904223;
+        uint32_t start = (seed >> 8) % 3000;
+        seed = seed * 1664525 + 1013904223;
+        uint32_t end = 65536 - (seed >> 8) % 3000;
+        if (trial % 3 == 0) end = 65536;
+        if (trial % 5 == 0) start = 0;
+        roaring_bitmap_t *bm = roaring_bitmap_create();
+        const uint32_t centers[] = {0, start, end, 30000, 65535};
+        for (size_t c = 0; c < 5; c++) {
+            for (int k = 0; k < 40; k++) {
+                seed = seed * 1664525 + 1013904223;
+                int64_t v =
+                    (int64_t)centers[c] + (int64_t)((seed >> 8) % 9) - 4;
+                if (v >= 0 && v < 65536) roaring_bitmap_add(bm, (uint32_t)v);
+            }
+        }
+        roaring_bitmap_t *flipped = roaring_bitmap_flip(bm, start, end);
+        roaring_bitmap_t *inplace = roaring_bitmap_copy(bm);
+        roaring_bitmap_flip_inplace(inplace, start, end);
+        assert_true(roaring_bitmap_internal_validate(flipped, NULL));
+        assert_true(roaring_bitmap_equals(flipped, inplace));
+        for (uint32_t v = 0; v < 65536; v++) {
+            bool in_range = v >= start && v < end;
+            assert_true(roaring_bitmap_contains(flipped, v) ==
+                        (roaring_bitmap_contains(bm, v) != in_range));
+        }
+        roaring_bitmap_free(bm);
+        roaring_bitmap_free(flipped);
+        roaring_bitmap_free(inplace);
+    }
 }
 
 // randomized test for rank query

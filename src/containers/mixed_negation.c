@@ -172,21 +172,58 @@ bool array_container_negation_range_inplace(array_container_t *src,
     return ans;
 }
 
+// Appends the run [start, end] (inclusive) after the n runs, merging it with
+// the last one when they touch. Returns the new number of runs.
+static inline int32_t append_run(rle16_t *runs, int32_t n, uint32_t start,
+                                 uint32_t end) {
+    if (n > 0 &&
+        (uint32_t)runs[n - 1].value + runs[n - 1].length + 1 == start) {
+        runs[n - 1].length = (uint16_t)(end - runs[n - 1].value);
+        return n;
+    }
+    runs[n].value = (uint16_t)start;
+    runs[n].length = (uint16_t)(end - start);
+    return n + 1;
+}
+
 int array_container_negation_range_to_any(const array_container_t *src,
                                           const int range_start,
                                           const int range_end,
                                           container_t **dst) {
     // The result has more than DEFAULT_MAX_SIZE values, so it would be a
     // bitset, but it has at most cardinality + 1 runs: when these runs take
-    // less room than a bitset, we negate as a run container.
+    // less room than a bitset, we build them directly. In the range, the
+    // runs are the gaps between the values; outside, the values themselves.
     if (range_end - range_start - src->cardinality > DEFAULT_MAX_SIZE &&
         run_container_serialized_size_in_bytes(src->cardinality + 1) <
             BITSET_CONTAINER_SIZE_IN_WORDS * (int32_t)sizeof(uint64_t)) {
-        run_container_t *runs = run_container_from_array(src);
-        int typecode =
-            run_container_negation_range(runs, range_start, range_end, dst);
-        run_container_free(runs);
-        return typecode;
+        run_container_t *ans =
+            run_container_create_given_capacity(src->cardinality + 1);
+        if (ans == NULL) {
+            *dst = NULL;
+            return RUN_CONTAINER_TYPE;
+        }
+        const uint16_t *array = src->array;
+        const int32_t card = src->cardinality;
+        rle16_t *runs = ans->runs;
+        int32_t n = 0, k = 0;
+        for (; k < card && array[k] < range_start; k++) {
+            n = append_run(runs, n, array[k], array[k]);
+        }
+        uint32_t next = (uint32_t)range_start;  // first value not yet decided
+        for (; k < card && array[k] < range_end; k++) {
+            if (array[k] > next) n = append_run(runs, n, next, array[k] - 1u);
+            next = array[k] + 1u;
+        }
+        if (next < (uint32_t)range_end) {
+            n = append_run(runs, n, next, (uint32_t)range_end - 1);
+        }
+        for (; k < card; k++) {
+            n = append_run(runs, n, array[k], array[k]);
+        }
+        ans->n_runs = n;
+        *dst = ans;
+        return RUN_CONTAINER_TYPE;
     }
     return array_container_negation_range(src, range_start, range_end, dst)
                ? BITSET_CONTAINER_TYPE
