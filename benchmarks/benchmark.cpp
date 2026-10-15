@@ -519,6 +519,66 @@ void register_array_container(std::vector<Entry> &out) {
         e.check_expected = true;
         out.push_back(std::move(e));
     }
+    {
+        struct S {
+            std::vector<array_container_t *> containers;
+            uint32_t *out;
+        };
+        constexpr int kContainers = 4096;
+        // A fixed LCG picks 1 to 16 values per container, as in a sparse
+        // bitmap.
+        auto build = []() -> S * {
+            auto *s = new S;
+            uint32_t seed = 12345;
+            for (int c = 0; c < kContainers; ++c) {
+                seed = seed * 1103515245u + 12345u;
+                const int card = 1 + static_cast<int>((seed >> 16) % 16);
+                array_container_t *B = array_container_create();
+                for (int k = 0; k < card; ++k) {
+                    array_container_add(B, static_cast<uint16_t>(k * 97 + c));
+                }
+                s->containers.push_back(B);
+            }
+            s->out = static_cast<uint32_t *>(malloc(sizeof(uint32_t) * 16));
+            return s;
+        };
+        S *probe = build();
+        int64_t values = 0;
+        for (array_container_t *B : probe->containers) {
+            values += array_container_cardinality(B);
+            array_container_free(B);
+        }
+        free(probe->out);
+        delete probe;
+        Entry e;
+        e.name = "array_container/to_uint32_array/small";
+        e.description =
+            "Converts 4096 array_container_t holding 1 to 16 values each (a "
+            "fixed pseudo-random size per container, as in a sparse bitmap) "
+            "into one reused uint32_t buffer. Reported cost is per container.";
+        e.setup = [build]() -> void * { return build(); };
+        e.run = [](void *sv) -> int64_t {
+            auto *s = static_cast<S *>(sv);
+            int64_t total = 0;
+            for (array_container_t *B : s->containers) {
+                total += array_container_to_uint32_array(s->out, B, 1234);
+            }
+            return total;
+        };
+        e.teardown = [](void *sv) {
+            auto *s = static_cast<S *>(sv);
+            for (array_container_t *B : s->containers) {
+                array_container_free(B);
+            }
+            free(s->out);
+            delete s;
+        };
+        e.ops_per_run = kContainers;
+        e.expected = values;
+        e.check_expected = true;
+        e.reusable_state = true;
+        out.push_back(std::move(e));
+    }
 
     // Union / intersection across two densities. Two pair flavors:
     //   stride3_stride5 — dense containers, large output.
