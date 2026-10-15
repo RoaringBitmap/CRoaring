@@ -1994,7 +1994,7 @@ DEFINE_TEST(run_negation_range_test9) {
 // In-place union of two arrays when the first one has room for the result,
 // compared with the union into a new container.
 DEFINE_TEST(array_array_inplace_union_spare_capacity_test) {
-    uint32_t state = 12345;
+    uint32_t seed = 12345;
     for (int trial = 0; trial < 300; trial++) {
         int n1 = trial % 41 * 50, n2 = (trial * 7) % 37 * 50;
         array_container_t* a = array_container_create_given_capacity(4096);
@@ -2002,14 +2002,14 @@ DEFINE_TEST(array_array_inplace_union_spare_capacity_test) {
         assert_non_null(a);
         assert_non_null(b);
         for (int i = 0; i < n1; i++) {
-            state = state * 1664525 + 1013904223;
+            seed = seed * 1664525 + 1013904223;
             array_container_add(
-                a, (uint16_t)(state >> 16) % (trial % 3 ? 65535 : 5000));
+                a, (uint16_t)(seed >> 16) % (trial % 3 ? 65535 : 5000));
         }
         for (int i = 0; i < n2; i++) {
-            state = state * 1664525 + 1013904223;
+            seed = seed * 1664525 + 1013904223;
             array_container_add(
-                b, (uint16_t)(state >> 16) % (trial % 3 ? 65535 : 5000));
+                b, (uint16_t)(seed >> 16) % (trial % 3 ? 65535 : 5000));
         }
         array_container_t* want = array_container_create();
         assert_non_null(want);
