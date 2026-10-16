@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <random>
 #include <stdio.h>
@@ -12,6 +13,9 @@
 #include <string.h>
 #include <time.h>
 #include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <roaring/misc/configreport.h>
@@ -29,6 +33,10 @@ using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
               "Expected Roaring to be no except move constructable");
+using RoaringHash = std::hash<Roaring>;
+constexpr bool roaring_hash_is_noexcept =
+    noexcept(std::declval<RoaringHash>()(std::declval<Roaring>()));
+static_assert(!roaring_hash_is_noexcept, "Expected cacheable hash signature");
 
 namespace {
 // We put std::numeric_limits<>::max in parentheses to avoid a
@@ -51,6 +59,301 @@ DEFINE_TEST(fuzz_001) {
     roaring::Roaring b;
     b.addRange(173, 0);
     assert_true(b.cardinality() == 0);
+}
+
+DEFINE_TEST(test_cpp_hash_smoke) {
+    const std::hash<Roaring> hasher;
+    const Roaring empty;
+    (void)hasher(empty);
+
+    const uint32_t values[] = {1, 2, 65536};
+    const Roaring left = {1, 2, 65536};
+    const Roaring right(sizeof(values) / sizeof(values[0]), values);
+    assert_true(left == right);
+    assert_true(hasher(left) == hasher(right));
+
+    std::unordered_map<Roaring, int> map;
+    assert_true(map.insert(std::make_pair(left, 42)).second);
+    assert_true(map.find(right) != map.end());
+    assert_int_equal(map.find(right)->second, 42);
+
+    std::unordered_set<Roaring> set;
+    assert_true(set.insert(left).second);
+    assert_true(set.find(right) != set.end());
+}
+
+DEFINE_TEST(test_cpp_hash_32_bit_fold) {
+    const uint64_t mixed_input = UINT64_C(0x0123456789abcdef);
+    const uint64_t low_input = UINT64_C(0x00000000ffffffff);
+    const uint64_t high_input = UINT64_C(0xffffffff00000000);
+    const uint32_t mixed = roaring::internal::roaring_hash_fold_32(mixed_input);
+    const uint32_t low = roaring::internal::roaring_hash_fold_32(low_input);
+    const uint32_t high = roaring::internal::roaring_hash_fold_32(high_input);
+    assert_int_equal(mixed, UINT32_C(0x88888888));
+    assert_int_equal(low, UINT32_C(0xffffffff));
+    assert_int_equal(high, UINT32_C(0xffffffff));
+}
+
+static void assert_equal_hash(const Roaring &left, const Roaring &right) {
+    assert_true(left == right);
+    assert_int_equal(std::hash<Roaring>()(left), std::hash<Roaring>()(right));
+}
+
+static Roaring snapshot_c_bitmap(const roaring_bitmap_t *bitmap) {
+    roaring_bitmap_t *copy = roaring_bitmap_copy(bitmap);
+    assert_non_null(copy);
+    return Roaring(copy);
+}
+
+DEFINE_TEST(test_cpp_hash_construction_paths) {
+    const uint32_t values[] = {1, 2, 3, 4};
+    const Roaring expected = {1, 2, 3, 4};
+    const Roaring from_pointer(sizeof(values) / sizeof(values[0]), values);
+    const Roaring from_list = Roaring::bitmapOfList({1, 2, 3, 4});
+
+    Roaring from_reverse_add;
+    for (uint32_t value = 4; value != 0; --value) {
+        from_reverse_add.add(value);
+    }
+
+    Roaring from_add_many;
+    from_add_many.addMany(sizeof(values) / sizeof(values[0]), values);
+
+    Roaring from_range;
+    from_range.addRange(1, 5);
+
+    assert_equal_hash(expected, from_pointer);
+    assert_equal_hash(expected, from_list);
+    assert_equal_hash(expected, from_reverse_add);
+    assert_equal_hash(expected, from_add_many);
+    assert_equal_hash(expected, from_range);
+}
+
+DEFINE_TEST(test_cpp_hash_representation_independence) {
+    roaring_statistics_t statistics;
+
+    roaring_bitmap_t *small = roaring_bitmap_create();
+    assert_non_null(small);
+    for (uint32_t value = 1; value <= 4; ++value) {
+        roaring_bitmap_add(small, value);
+    }
+    roaring_bitmap_statistics(small, &statistics);
+    assert_int_equal(statistics.n_array_containers, 1);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring small_array = snapshot_c_bitmap(small);
+
+    assert_true(roaring_bitmap_run_optimize(small));
+    roaring_bitmap_statistics(small, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 1);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring small_run = snapshot_c_bitmap(small);
+
+    assert_true(roaring_bitmap_remove_run_compression(small));
+    roaring_bitmap_statistics(small, &statistics);
+    assert_int_equal(statistics.n_array_containers, 1);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring small_array_again = snapshot_c_bitmap(small);
+
+    assert_equal_hash(small_array, small_run);
+    assert_equal_hash(small_array, small_array_again);
+    roaring_bitmap_add(small, 5);
+    assert_equal_hash(small_array, Roaring({1, 2, 3, 4}));
+    roaring_bitmap_free(small);
+
+    roaring_bitmap_t *large = roaring_bitmap_create();
+    assert_non_null(large);
+    for (uint32_t value = 0; value < 10000; ++value) {
+        roaring_bitmap_add(large, value);
+    }
+    roaring_bitmap_statistics(large, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 1);
+    const Roaring large_bitset = snapshot_c_bitmap(large);
+
+    assert_true(roaring_bitmap_run_optimize(large));
+    roaring_bitmap_statistics(large, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 1);
+    assert_int_equal(statistics.n_bitset_containers, 0);
+    const Roaring large_run = snapshot_c_bitmap(large);
+
+    assert_true(roaring_bitmap_remove_run_compression(large));
+    roaring_bitmap_statistics(large, &statistics);
+    assert_int_equal(statistics.n_array_containers, 0);
+    assert_int_equal(statistics.n_run_containers, 0);
+    assert_int_equal(statistics.n_bitset_containers, 1);
+    const Roaring large_bitset_again = snapshot_c_bitmap(large);
+
+    assert_equal_hash(large_bitset, large_run);
+    assert_equal_hash(large_bitset, large_bitset_again);
+    roaring_bitmap_add(large, 10000);
+    assert_int_equal(large_bitset.cardinality(), 10000);
+    roaring_bitmap_free(large);
+}
+
+static void assert_hash_copy_on_write(bool copy_on_write) {
+    Roaring original = {1, 2, 65536, uint32_max};
+    original.setCopyOnWrite(copy_on_write);
+    Roaring copy = original;
+
+    assert_equal_hash(original, copy);
+    copy.add(7);
+
+    const Roaring expected_original = {1, 2, 65536, uint32_max};
+    assert_equal_hash(original, expected_original);
+    assert_false(copy == original);
+}
+
+DEFINE_TEST(test_cpp_hash_copy_on_write) {
+    assert_hash_copy_on_write(false);
+    assert_hash_copy_on_write(true);
+}
+
+DEFINE_TEST(test_cpp_hash_frozen_view) {
+    Roaring source = {1, 2, 65536, 131075, uint32_max};
+    source.addRange(200000, 210000);
+    source.runOptimize();
+
+    const size_t frozen_size = source.getFrozenSizeInBytes();
+    char *buffer = static_cast<char *>(roaring_aligned_malloc(32, frozen_size));
+    assert_non_null(buffer);
+    source.writeFrozen(buffer);
+
+    {
+        const Roaring view = Roaring::frozenView(buffer, frozen_size);
+        assert_equal_hash(source, view);
+
+        std::unordered_set<Roaring> values;
+        assert_true(values.insert(source).second);
+        assert_true(values.find(view) != values.end());
+    }
+
+    roaring_aligned_free(buffer);
+}
+
+DEFINE_TEST(test_cpp_hash_serialization_round_trips) {
+    Roaring source = {0, 1, 65535, 65536, uint32_max};
+    source.addRange(200000, 210000);
+    source.runOptimize();
+
+    const size_t portable_size = source.getSizeInBytes();
+    std::vector<char> portable_buffer(portable_size);
+    assert_int_equal(source.write(portable_buffer.data()), portable_size);
+    const Roaring portable =
+        Roaring::readSafe(portable_buffer.data(), portable_buffer.size());
+    assert_true(portable.internal_validate());
+    assert_equal_hash(source, portable);
+
+    const size_t native_size = source.getSizeInBytes(false);
+    std::vector<char> native_buffer(native_size);
+    assert_int_equal(source.write(native_buffer.data(), false), native_size);
+    const Roaring native = Roaring::read(native_buffer.data(), false);
+    assert_true(native.internal_validate());
+    assert_equal_hash(source, native);
+}
+
+static Roaring reconstruct_bitmap(const Roaring &source) {
+    if (source.isEmpty()) {
+        return Roaring();
+    }
+    std::vector<uint32_t> values(source.cardinality());
+    source.toUint32Array(values.data());
+    return Roaring(values.size(), values.data());
+}
+
+static void assert_default_hash_containers(const Roaring &key) {
+    const Roaring equivalent = reconstruct_bitmap(key);
+    Roaring different = equivalent;
+    if (different.contains(17)) {
+        different.remove(17);
+    } else {
+        different.add(17);
+    }
+    assert_equal_hash(key, equivalent);
+
+    std::unordered_map<Roaring, int> map;
+    map.reserve(4);
+    assert_true(map.insert(std::make_pair(key, 42)).second);
+    std::unordered_map<Roaring, int>::const_iterator map_match =
+        map.find(equivalent);
+    assert_true(map_match != map.end());
+    assert_int_equal(map_match->second, 42);
+    const size_t map_size = map.size();
+    assert_false(map.insert(std::make_pair(equivalent, 99)).second);
+    assert_int_equal(map.size(), map_size);
+    assert_true(map.find(different) == map.end());
+    map.rehash(map.bucket_count() * 2 + 1);
+    map_match = map.find(equivalent);
+    assert_true(map_match != map.end());
+    assert_int_equal(map_match->second, 42);
+
+    std::unordered_set<Roaring> set;
+    set.reserve(4);
+    assert_true(set.insert(key).second);
+    assert_true(set.find(equivalent) != set.end());
+    const size_t set_size = set.size();
+    assert_false(set.insert(equivalent).second);
+    assert_int_equal(set.size(), set_size);
+    assert_true(set.find(different) == set.end());
+    set.rehash(set.bucket_count() * 2 + 1);
+    assert_true(set.find(equivalent) != set.end());
+}
+
+DEFINE_TEST(test_cpp_default_hash_containers) {
+    assert_default_hash_containers(Roaring());
+    assert_default_hash_containers(Roaring({0}));
+    assert_default_hash_containers(Roaring({uint32_max}));
+    assert_default_hash_containers(Roaring({0, 65535, 65536, uint32_max}));
+
+    Roaring multi_container = {1, 65537, 131075, 65536007, uint32_max};
+    multi_container.addRange(200000, 210000);
+    assert_default_hash_containers(multi_container);
+}
+
+DEFINE_TEST(test_cpp_hash_java_set_deduplication) {
+    std::unordered_set<Roaring> optimized;
+    std::unordered_set<Roaring> unoptimized;
+    std::unordered_set<Roaring> mixed;
+
+    for (size_t index = 0; index < 1000; ++index) {
+        Roaring run = {1, 2, 3, 4};
+        assert_true(run.runOptimize());
+        const Roaring array = {1, 2, 3, 4};
+
+        optimized.insert(run);
+        unoptimized.insert(array);
+        mixed.insert(run);
+        mixed.insert(array);
+    }
+
+    assert_int_equal(optimized.size(), 1);
+    assert_int_equal(unoptimized.size(), 1);
+    assert_int_equal(mixed.size(), 1);
+}
+
+static void assert_lvalue_key_isolation(bool copy_on_write) {
+    Roaring original = {1, 2, 65536, uint32_max};
+    original.setCopyOnWrite(copy_on_write);
+    const Roaring old_value = reconstruct_bitmap(original);
+
+    std::unordered_set<Roaring> set;
+    assert_true(set.insert(original).second);
+    original.add(7);
+
+    const std::unordered_set<Roaring>::const_iterator stored =
+        set.find(old_value);
+    assert_true(stored != set.end());
+    assert_true(set.find(original) == set.end());
+    assert_equal_hash(*stored, old_value);
+}
+
+DEFINE_TEST(test_cpp_hash_lvalue_key_isolation) {
+    assert_lvalue_key_isolation(false);
+    assert_lvalue_key_isolation(true);
 }
 
 DEFINE_TEST(serial_test) {
@@ -2501,6 +2804,16 @@ int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(fuzz_001),
+        cmocka_unit_test(test_cpp_hash_smoke),
+        cmocka_unit_test(test_cpp_hash_32_bit_fold),
+        cmocka_unit_test(test_cpp_hash_construction_paths),
+        cmocka_unit_test(test_cpp_hash_representation_independence),
+        cmocka_unit_test(test_cpp_hash_copy_on_write),
+        cmocka_unit_test(test_cpp_hash_frozen_view),
+        cmocka_unit_test(test_cpp_hash_serialization_round_trips),
+        cmocka_unit_test(test_cpp_default_hash_containers),
+        cmocka_unit_test(test_cpp_hash_java_set_deduplication),
+        cmocka_unit_test(test_cpp_hash_lvalue_key_isolation),
         cmocka_unit_test(test_bitmap_of_32),
         cmocka_unit_test(test_bitmap_of_64),
         cmocka_unit_test(serial_test),

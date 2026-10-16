@@ -14,6 +14,7 @@ find_package(roaring REQUIRED)
 
 file(WRITE main.cpp "
 #include <iostream>
+#include <unordered_map>
 #include \"roaring/roaring.hh\"
 int main() {
   roaring::Roaring r1;
@@ -21,6 +22,13 @@ int main() {
     r1.add(i);
   }
   std::cout << \"cardinality = \" << r1.cardinality() << std::endl;
+  roaring::Roaring equal_r1;
+  for (uint32_t i = 1000; i-- > 100;) {
+    equal_r1.add(i);
+  }
+  std::unordered_map<roaring::Roaring, int> values;
+  values.emplace(r1, 42);
+  if (values.find(equal_r1) == values.end()) return 1;
   return 0;
 }")
 

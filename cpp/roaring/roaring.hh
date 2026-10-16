@@ -6,6 +6,9 @@ A C++ header for Roaring Bitmaps.
 
 #include <algorithm>
 #include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <limits>
 #include <new>
@@ -37,6 +40,25 @@ A C++ header for Roaring Bitmaps.
 #include <roaring/roaring_array.h>  // roaring::internal array functions used
 
 namespace roaring {
+
+namespace internal {
+
+inline std::uint32_t roaring_hash_fold_32(std::uint64_t value) noexcept {
+    return static_cast<std::uint32_t>(value ^ (value >> 32));
+}
+
+inline std::size_t roaring_hash_fold_size_t(std::uint64_t value) noexcept {
+    constexpr bool supported_size_t =
+        sizeof(std::size_t) == sizeof(std::uint32_t) ||
+        sizeof(std::size_t) == sizeof(std::uint64_t);
+    static_assert(supported_size_t, "Expected 32-bit or 64-bit size_t");
+    if (sizeof(std::size_t) == sizeof(std::uint64_t)) {
+        return static_cast<std::size_t>(value);
+    }
+    return static_cast<std::size_t>(roaring_hash_fold_32(value));
+}
+
+}  // namespace internal
 
 class RoaringSetBitBiDirectionalIterator;
 
@@ -1088,5 +1110,35 @@ inline RoaringSetBitBiDirectionalIterator &Roaring::end() const {
 }
 
 }  // namespace roaring
+
+namespace std {
+
+template <>
+struct hash<roaring::Roaring> {
+    typedef roaring::Roaring argument_type;
+    typedef size_t result_type;
+
+    result_type operator()(const argument_type &bitmap) const {
+        HashState state = {UINT64_C(14695981039346656037)};
+        bitmap.iterate(hashValue, &state);
+        return roaring::internal::roaring_hash_fold_size_t(state.value);
+    }
+
+   private:
+    struct HashState {
+        std::uint64_t value;
+    };
+
+    static bool hashValue(std::uint32_t value, void *param) noexcept {
+        HashState *state = static_cast<HashState *>(param);
+        for (unsigned int shift = 0; shift < 32; shift += 8) {
+            state->value ^= static_cast<std::uint64_t>((value >> shift) & 0xff);
+            state->value *= UINT64_C(1099511628211);
+        }
+        return true;
+    }
+};
+
+}  // namespace std
 
 #endif /* INCLUDE_ROARING_HH_ */
