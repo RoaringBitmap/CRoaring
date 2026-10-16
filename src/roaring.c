@@ -3705,9 +3705,9 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
 #endif
 }
 
-void roaring_bitmap_range_to_words(const roaring_bitmap_t *r,
-                                   uint32_t first_word, uint32_t n_words,
-                                   uint64_t *words) {
+void roaring_bitmap_word_range_to_bitset(const roaring_bitmap_t *r,
+                                         uint32_t first_word, uint32_t n_words,
+                                         uint64_t *words) {
     memset(words, 0, (size_t)n_words * sizeof(uint64_t));
     if (n_words == 0) return;
     assert((uint64_t)first_word + n_words <= (UINT64_C(1) << 26));

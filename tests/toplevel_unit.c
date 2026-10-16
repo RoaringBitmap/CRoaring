@@ -3621,15 +3621,15 @@ DEFINE_TEST(test_flip_sparse_array_container) {
     }
 }
 
-// Checks roaring_bitmap_range_to_words against roaring_bitmap_contains.
-static void check_range_to_words(const roaring_bitmap_t *bm,
-                                 uint32_t first_word, uint32_t n_words) {
+// Checks roaring_bitmap_word_range_to_bitset against roaring_bitmap_contains.
+static void check_word_range_to_bitset(const roaring_bitmap_t *bm,
+                                       uint32_t first_word, uint32_t n_words) {
     uint64_t *words = (uint64_t *)malloc((n_words + 2) * sizeof(uint64_t));
     assert_non_null(words);
     // Guard words around the output must not be touched.
     words[0] = words[n_words + 1] = UINT64_C(0x0123456789abcdef);
     for (uint32_t k = 1; k <= n_words; k++) words[k] = ~UINT64_C(0);
-    roaring_bitmap_range_to_words(bm, first_word, n_words, words + 1);
+    roaring_bitmap_word_range_to_bitset(bm, first_word, n_words, words + 1);
     assert_true(words[0] == UINT64_C(0x0123456789abcdef));
     assert_true(words[n_words + 1] == UINT64_C(0x0123456789abcdef));
     for (uint32_t k = 0; k < n_words; k++) {
@@ -3643,7 +3643,7 @@ static void check_range_to_words(const roaring_bitmap_t *bm,
     free(words);
 }
 
-DEFINE_TEST(test_range_to_words) {
+DEFINE_TEST(test_word_range_to_bitset) {
     roaring_bitmap_t *bm = roaring_bitmap_create();
     uint32_t seed = 1234;
     // Chunk 0: array, chunk 1: bitset, chunk 2: runs, chunk 4: array, and
@@ -3698,16 +3698,16 @@ DEFINE_TEST(test_range_to_words) {
                                    {last - 1100, 200},
                                    {last - 3000, 3000}};
     for (size_t w = 0; w < sizeof(windows) / sizeof(windows[0]); w++) {
-        check_range_to_words(bm, windows[w][0], windows[w][1]);
+        check_word_range_to_bitset(bm, windows[w][0], windows[w][1]);
     }
     for (int trial = 0; trial < 200; trial++) {
         seed = seed * 1664525 + 1013904223;
         uint32_t first = (seed >> 8) % 5200;
         seed = seed * 1664525 + 1013904223;
-        check_range_to_words(bm, first, (seed >> 8) % 1500);
+        check_word_range_to_bitset(bm, first, (seed >> 8) % 1500);
     }
     roaring_bitmap_t *empty = roaring_bitmap_create();
-    check_range_to_words(empty, 100, 50);
+    check_word_range_to_bitset(empty, 100, 50);
     roaring_bitmap_free(empty);
     roaring_bitmap_free(bm);
 }
@@ -6100,7 +6100,7 @@ int main() {
         cmocka_unit_test(test_flip_run_container_removal),
         cmocka_unit_test(test_flip_run_container_removal2),
         cmocka_unit_test(test_flip_sparse_array_container),
-        cmocka_unit_test(test_range_to_words),
+        cmocka_unit_test(test_word_range_to_bitset),
         cmocka_unit_test(select_test),
         cmocka_unit_test(test_subset),
         cmocka_unit_test(test_or_many_memory_leak),
