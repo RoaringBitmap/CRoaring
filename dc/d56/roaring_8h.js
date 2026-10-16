@@ -98,6 +98,7 @@ var roaring_8h =
     [ "roaring_bitmap_statistics", "dc/d56/roaring_8h.html#a7a93b6d30779144e6facb829d5783dde", null ],
     [ "roaring_bitmap_to_bitset", "dc/d56/roaring_8h.html#a981ceddb33269e47cc3c61b9bf71a450", null ],
     [ "roaring_bitmap_to_uint32_array", "dc/d56/roaring_8h.html#a4b15efab08a78a20645a96d9a69ad587", null ],
+    [ "roaring_bitmap_word_range_to_bitset", "dc/d56/roaring_8h.html#ad7be88330c6f63dccb9626f273190cb0", null ],
     [ "roaring_bitmap_xor", "dc/d56/roaring_8h.html#aca29764fa4b6d2d82dbc00f3701fde64", null ],
     [ "roaring_bitmap_xor_cardinality", "dc/d56/roaring_8h.html#a953a31622e8ded6e92758fb259f28a86", null ],
     [ "roaring_bitmap_xor_inplace", "dc/d56/roaring_8h.html#a4eb22c2860d271742c9ead0856b30c71", null ],
