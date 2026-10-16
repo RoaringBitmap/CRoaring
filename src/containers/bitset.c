@@ -323,6 +323,21 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
     return vgetq_lane_u64(n, 0) + vgetq_lane_u64(n, 1);
 }
 
+#elif defined(CROARING_USERVV)
+int bitset_container_compute_cardinality(
+    const bitset_container_t *bitset) {
+    const uint64_t *words = bitset->words;
+    int32_t sum = 0;
+
+    for (size_t i = 0;i < BITSET_CONTAINER_SIZE_IN_WORDS;i += 4) {
+        sum += roaring_hamming(words[i]);
+        sum += roaring_hamming(words[i + 1]);
+        sum += roaring_hamming(words[i + 2]);
+        sum += roaring_hamming(words[i + 3]);
+    }
+    return sum;
+}
+
 #else  // CROARING_IS_X64
 
 /* Get the number of bits set (force computation) */
@@ -339,6 +354,31 @@ int bitset_container_compute_cardinality(const bitset_container_t *bitset) {
 }
 
 #endif  // CROARING_IS_X64
+
+#if defined(CROARING_USERVV)
+
+#define CROARING_RVV_OP_and(a, b, vl) \
+    __riscv_vand_vv_u64m4((a), (b), (vl))
+
+#define CROARING_RVV_OP_intersection(a, b, vl) \
+    CROARING_RVV_OP_and((a), (b), (vl))
+
+#define CROARING_RVV_OP_or(a, b, vl) \
+    __riscv_vor_vv_u64m4((a), (b), (vl))
+
+#define CROARING_RVV_OP_union(a, b, vl) \
+    CROARING_RVV_OP_or((a), (b), (vl))
+
+#define CROARING_RVV_OP_xor(a, b, vl) \
+    __riscv_vxor_vv_u64m4((a), (b), (vl))
+
+#define CROARING_RVV_OP_andnot(a, b, vl) \
+    __riscv_vand_vv_u64m4(               \
+        (a),                              \
+        __riscv_vnot_v_u64m4((b), (vl)), \
+        (vl))
+#endif
+
 
 #if CROARING_IS_X64
 
@@ -758,9 +798,9 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
     } else {                                                                   \
       return _scalar_bitset_container_##opname##_justcard(src_1, src_2);       \
     }                                                                          \
-  }
+  }                                                                            \
 
-#else // CROARING_COMPILER_SUPPORTS_AVX512
+#else //  CROARING_COMPILER_SUPPORTS_AVX512
 
 
 #define CROARING_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)   \
@@ -789,11 +829,11 @@ SCALAR_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
     } else {                                                                   \
       return _scalar_bitset_container_##opname##_justcard(src_1, src_2);       \
     }                                                                          \
-  }
+  }                                                                            \
 
 #endif //  CROARING_COMPILER_SUPPORTS_AVX512
 
-#elif defined(CROARING_USENEON)
+#elif defined(CROARING_USENEON) // CROARING_IS_X64
 
 #define CROARING_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)  \
 int bitset_container_##opname(const bitset_container_t *src_1,                \
@@ -879,9 +919,72 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1,     \
     n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n2)));                           \
     n = vaddq_u64(n, vpaddlq_u32(vpaddlq_u16(n3)));                           \
     return vgetq_lane_u64(n, 0) + vgetq_lane_u64(n, 1);                       \
-}
+}                                                                             \
 
-#else
+#elif defined(CROARING_USERVV) // CROARING_IS_X64
+
+#define CROARING_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)                      \
+int bitset_container_##opname(const bitset_container_t *src_1,            \
+                              const bitset_container_t *src_2,            \
+                              bitset_container_t *dst) {                   \
+    const uint64_t *__restrict__ words_1 = src_1->words;                   \
+    const uint64_t *__restrict__ words_2 = src_2->words;                   \
+    uint64_t *out = dst->words;                                            \
+    int32_t sum = 0;                                                       \
+    for (size_t i = 0;i < BITSET_CONTAINER_SIZE_IN_WORDS;i += 2) {         \
+        const uint64_t word_1 =(words_1[i]) opsymbol (words_2[i]);         \
+        const uint64_t word_2 =(words_1[i + 1]) opsymbol (words_2[i + 1]); \
+        out[i] = word_1;                                                    \
+        out[i + 1] = word_2;                                                \
+        sum += roaring_hamming(word_1);                                    \
+        sum += roaring_hamming(word_2);                                    \
+    }                                                                      \
+    dst->cardinality = sum;                                                 \
+    return dst->cardinality;                                                \
+}                                                                          \
+                                                                           \
+int bitset_container_##opname##_nocard(                                    \
+        const bitset_container_t *src_1,                                   \
+        const bitset_container_t *src_2,                                   \
+        bitset_container_t *dst) {                                         \
+    const uint64_t *__restrict__ words_1 = src_1->words;                   \
+    const uint64_t *__restrict__ words_2 = src_2->words;                   \
+    uint64_t *out = dst->words;                                             \
+    size_t words_remaining = BITSET_CONTAINER_SIZE_IN_WORDS;               \
+                                                                           \
+    while (words_remaining != 0) {                                         \
+        size_t vl =__riscv_vsetvl_e64m4(words_remaining);                  \
+        vuint64m4_t va =__riscv_vle64_v_u64m4(words_1, vl);                \
+        vuint64m4_t vb =__riscv_vle64_v_u64m4(words_2, vl);                \
+        vuint64m4_t vr = CROARING_RVV_OP_##opname(va, vb, vl);             \
+        __riscv_vse64_v_u64m4(out, vr, vl);                                \
+                                                                           \
+        words_1 += vl;                                                      \
+        words_2 += vl;                                                      \
+        out += vl;                                                          \
+        words_remaining -= vl;                                              \
+    }                                                                      \
+                                                                           \
+    dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                         \
+    return dst->cardinality;                                                \
+}                                                                          \
+                                                                           \
+int bitset_container_##opname##_justcard(                                  \
+        const bitset_container_t *src_1,                                   \
+        const bitset_container_t *src_2) {                                 \
+    const uint64_t *__restrict__ words_1 = src_1->words;                   \
+    const uint64_t *__restrict__ words_2 = src_2->words;                   \
+    int32_t sum = 0;                                                       \
+    for (size_t i = 0;i < BITSET_CONTAINER_SIZE_IN_WORDS;i += 2) {         \
+        const uint64_t word_1 = (words_1[i]) opsymbol (words_2[i]);        \
+        const uint64_t word_2 =(words_1[i + 1]) opsymbol (words_2[i + 1]); \
+        sum += roaring_hamming(word_1);                                    \
+        sum += roaring_hamming(word_2);                                    \
+    }                                                                      \
+    return sum;                                                            \
+}                                                                           \
+
+#else // CROARING_IS_X64
 
 #define CROARING_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic, neon_intrinsic)  \
 int bitset_container_##opname(const bitset_container_t *src_1,            \
@@ -926,9 +1029,10 @@ int bitset_container_##opname##_justcard(const bitset_container_t *src_1, \
         sum += roaring_hamming(word_2);                                    \
     }                                                                     \
     return sum;                                                           \
-}
+}                                                                         \
 
 #endif // CROARING_IS_X64
+
 
 // we duplicate the function because other containers use the "or" term, makes API more consistent
 CROARING_BITSET_CONTAINER_FN(or,    |, _mm256_or_si256, vorrq_u64)
@@ -938,8 +1042,9 @@ CROARING_BITSET_CONTAINER_FN(union, |, _mm256_or_si256, vorrq_u64)
 CROARING_BITSET_CONTAINER_FN(and,          &, _mm256_and_si256, vandq_u64)
 CROARING_BITSET_CONTAINER_FN(intersection, &, _mm256_and_si256, vandq_u64)
 
-CROARING_BITSET_CONTAINER_FN(xor,    ^,  _mm256_xor_si256,    veorq_u64)
-CROARING_BITSET_CONTAINER_FN(andnot, &~, _mm256_andnot_si256, vbicq_u64)
+CROARING_BITSET_CONTAINER_FN(xor,          ^, _mm256_xor_si256, veorq_u64)
+CROARING_BITSET_CONTAINER_FN(andnot,      &~, _mm256_andnot_si256, vbicq_u64)
+
 // clang-format On
 
 
