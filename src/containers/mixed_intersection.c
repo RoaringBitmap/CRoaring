@@ -25,12 +25,13 @@ void array_bitset_container_intersection(const array_container_t *src_1,
     int32_t newcard = 0;  // dst could be src_1
     const int32_t origcard = src_1->cardinality;
     const uint16_t *array = src_1->array;
+    const uint64_t *words = src_2->words;
     uint16_t *out = dst->array;
     for (int i = 0; i < origcard; ++i) {
         uint16_t key = array[i];
         // this branchless approach is much faster...
         out[newcard] = key;
-        newcard += bitset_container_contains(src_2, key);
+        newcard += (words[key >> 6] >> (key & 63)) & 1;
         /**
          * we could do it this way instead...
          * if (bitset_container_contains(src_2, key)) {
@@ -137,6 +138,7 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
         }
         const rle16_t *runs = src_1->runs;
         const int32_t n_runs = src_1->n_runs;
+        const uint64_t *words = src_2->words;
         uint16_t *out = answer->array;
         int32_t newcard = 0;
         for (int32_t rlepos = 0; rlepos < n_runs; ++rlepos) {
@@ -145,7 +147,7 @@ bool run_bitset_container_intersection(const run_container_t *src_1,
             for (uint32_t runValue = rle.value; runValue <= endofrun;
                  ++runValue) {
                 out[newcard] = (uint16_t)runValue;
-                newcard += bitset_container_contains(src_2, runValue);
+                newcard += (words[runValue >> 6] >> (runValue & 63)) & 1;
             }
         }
         answer->cardinality = newcard;
