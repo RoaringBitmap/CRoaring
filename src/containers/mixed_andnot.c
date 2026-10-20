@@ -31,11 +31,12 @@ void array_bitset_container_andnot(const array_container_t *src_1,
     int32_t newcard = 0;
     const int32_t origcard = src_1->cardinality;
     const uint16_t *array = src_1->array;
+    const uint64_t *words = src_2->words;
     uint16_t *out = dst->array;
     for (int i = 0; i < origcard; ++i) {
         uint16_t key = array[i];
         out[newcard] = key;
-        newcard += 1 - bitset_container_contains(src_2, key);
+        newcard += 1 - ((words[key >> 6] >> (key & 63)) & 1);
     }
     dst->cardinality = newcard;
 }

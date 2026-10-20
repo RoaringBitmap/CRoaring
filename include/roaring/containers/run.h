@@ -513,46 +513,40 @@ static inline bool run_container_equals(const run_container_t *container1,
 bool run_container_is_subset(const run_container_t *container1,
                              const run_container_t *container2);
 
-// follows the Java implementation closely
-// length is the rle-value.  Ie, run [10,12) uses a length value 1.
+/**
+ * Appends the run [start, start + length] to the n_runs sorted runs in `runs',
+ * xoring it with the last run, and returns the new number of runs. `runs' must
+ * have room for n_runs + 1 runs. Follows the Java implementation closely.
+ */
 static inline int32_t run_append_exclusive(rle16_t *runs, int32_t n_runs,
                                            uint16_t start, uint16_t length) {
-    int old_end;
     rle16_t *last_run = n_runs ? runs + (n_runs - 1) : NULL;
-    rle16_t *appended_last_run = runs + n_runs;
-
-    if (!n_runs ||
-        (start > (old_end = last_run->value + last_run->length + 1))) {
-        *appended_last_run = CROARING_MAKE_RLE16(start, length);
+    const int old_end = n_runs ? last_run->value + last_run->length + 1 : -1;
+    if (start > old_end) {
+        runs[n_runs] = CROARING_MAKE_RLE16(start, length);
         return n_runs + 1;
     }
-    if (old_end == start) {
-        // we merge
-        last_run->length += (length + 1);
+    if (start == old_end) {  // we merge
+        last_run->length += length + 1;
         return n_runs;
     }
-    int new_end = start + length + 1;
-
-    if (start == last_run->value) {
-        // wipe out previous
+    const int new_end = start + length + 1;
+    if (start == last_run->value) {  // wipe out previous
         if (new_end < old_end) {
             *last_run = CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
-            return n_runs;
         } else if (new_end > old_end) {
             *last_run = CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
-            return n_runs;
         } else {
             return n_runs - 1;
         }
+        return n_runs;
     }
     last_run->length = start - last_run->value - 1;
     if (new_end < old_end) {
-        *appended_last_run =
-            CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
+        runs[n_runs] = CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
         return n_runs + 1;
     } else if (new_end > old_end) {
-        *appended_last_run =
-            CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
+        runs[n_runs] = CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
         return n_runs + 1;
     }
     return n_runs;
