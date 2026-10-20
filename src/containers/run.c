@@ -354,32 +354,34 @@ void run_container_xor(const run_container_t *src_1,
     if (dst->capacity < neededcapacity)
         run_container_grow(dst, neededcapacity, false);
 
+    rle16_t *out = dst->runs;
+    int32_t n_out = 0;
     int32_t pos1 = 0;
     int32_t pos2 = 0;
-    dst->n_runs = 0;
 
     while ((pos1 < src_1->n_runs) && (pos2 < src_2->n_runs)) {
         if (src_1->runs[pos1].value <= src_2->runs[pos2].value) {
-            run_container_smart_append_exclusive(dst, src_1->runs[pos1].value,
-                                                 src_1->runs[pos1].length);
+            n_out = run_append_exclusive(out, n_out, src_1->runs[pos1].value,
+                                         src_1->runs[pos1].length);
             pos1++;
         } else {
-            run_container_smart_append_exclusive(dst, src_2->runs[pos2].value,
-                                                 src_2->runs[pos2].length);
+            n_out = run_append_exclusive(out, n_out, src_2->runs[pos2].value,
+                                         src_2->runs[pos2].length);
             pos2++;
         }
     }
     while (pos1 < src_1->n_runs) {
-        run_container_smart_append_exclusive(dst, src_1->runs[pos1].value,
-                                             src_1->runs[pos1].length);
+        n_out = run_append_exclusive(out, n_out, src_1->runs[pos1].value,
+                                     src_1->runs[pos1].length);
         pos1++;
     }
 
     while (pos2 < src_2->n_runs) {
-        run_container_smart_append_exclusive(dst, src_2->runs[pos2].value,
-                                             src_2->runs[pos2].length);
+        n_out = run_append_exclusive(out, n_out, src_2->runs[pos2].value,
+                                     src_2->runs[pos2].length);
         pos2++;
     }
+    dst->n_runs = n_out;
 }
 
 /* Compute the intersection of src_1 and src_2 and write the result to
@@ -579,7 +581,7 @@ void run_container_andnot(const run_container_t *src_1,
     if (dst->capacity < src_1->n_runs + src_2->n_runs)
         run_container_grow(dst, src_1->n_runs + src_2->n_runs, false);
 
-    dst->n_runs = 0;
+    int32_t n_out = 0;
 
     int rlepos1 = 0;
     int rlepos2 = 0;
@@ -591,8 +593,7 @@ void run_container_andnot(const run_container_t *src_1,
     while ((rlepos1 < src_1->n_runs) && (rlepos2 < src_2->n_runs)) {
         if (end <= start2) {
             // output the first run
-            dst->runs[dst->n_runs++] =
-                CROARING_MAKE_RLE16(start, end - start - 1);
+            dst->runs[n_out++] = CROARING_MAKE_RLE16(start, end - start - 1);
             rlepos1++;
             if (rlepos1 < src_1->n_runs) {
                 start = src_1->runs[rlepos1].value;
@@ -607,7 +608,7 @@ void run_container_andnot(const run_container_t *src_1,
             }
         } else {
             if (start < start2) {
-                dst->runs[dst->n_runs++] =
+                dst->runs[n_out++] =
                     CROARING_MAKE_RLE16(start, start2 - start - 1);
             }
             if (end2 < end) {
@@ -622,14 +623,15 @@ void run_container_andnot(const run_container_t *src_1,
         }
     }
     if (rlepos1 < src_1->n_runs) {
-        dst->runs[dst->n_runs++] = CROARING_MAKE_RLE16(start, end - start - 1);
+        dst->runs[n_out++] = CROARING_MAKE_RLE16(start, end - start - 1);
         rlepos1++;
         if (rlepos1 < src_1->n_runs) {
-            memcpy(dst->runs + dst->n_runs, src_1->runs + rlepos1,
+            memcpy(dst->runs + n_out, src_1->runs + rlepos1,
                    sizeof(rle16_t) * (src_1->n_runs - rlepos1));
-            dst->n_runs += src_1->n_runs - rlepos1;
+            n_out += src_1->n_runs - rlepos1;
         }
     }
+    dst->n_runs = n_out;
 }
 
 /*
@@ -819,51 +821,10 @@ bool run_container_is_subset(const run_container_t *container1,
 // TODO: write smart_append_exclusive version to match the overloaded 1 param
 // Java version (or  is it even used?)
 
-// follows the Java implementation closely
-// length is the rle-value.  Ie, run [10,12) uses a length value 1.
 void run_container_smart_append_exclusive(run_container_t *src,
                                           const uint16_t start,
                                           const uint16_t length) {
-    int old_end;
-    rle16_t *last_run = src->n_runs ? src->runs + (src->n_runs - 1) : NULL;
-    rle16_t *appended_last_run = src->runs + src->n_runs;
-
-    if (!src->n_runs ||
-        (start > (old_end = last_run->value + last_run->length + 1))) {
-        *appended_last_run = CROARING_MAKE_RLE16(start, length);
-        src->n_runs++;
-        return;
-    }
-    if (old_end == start) {
-        // we merge
-        last_run->length += (length + 1);
-        return;
-    }
-    int new_end = start + length + 1;
-
-    if (start == last_run->value) {
-        // wipe out previous
-        if (new_end < old_end) {
-            *last_run = CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
-            return;
-        } else if (new_end > old_end) {
-            *last_run = CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
-            return;
-        } else {
-            src->n_runs--;
-            return;
-        }
-    }
-    last_run->length = start - last_run->value - 1;
-    if (new_end < old_end) {
-        *appended_last_run =
-            CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
-        src->n_runs++;
-    } else if (new_end > old_end) {
-        *appended_last_run =
-            CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
-        src->n_runs++;
-    }
+    src->n_runs = run_append_exclusive(src->runs, src->n_runs, start, length);
 }
 
 bool run_container_select(const run_container_t *container,

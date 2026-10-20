@@ -47,7 +47,9 @@
 #include <roaring/containers/array.h>
 #include <roaring/containers/bitset.h>
 #include <roaring/containers/convert.h>
+#include <roaring/containers/mixed_andnot.h>
 #include <roaring/containers/mixed_equal.h>
+#include <roaring/containers/mixed_intersection.h>
 #include <roaring/containers/run.h>
 #include <roaring/misc/configreport.h>
 #include <roaring/portability.h>
@@ -1461,6 +1463,132 @@ void register_equals(std::vector<Entry> &out) {
         "word checks against the bitset.",
         DEFAULT_MAX_SIZE, r_create, b_create, r_free, b_free, r_add, b_add,
         run_container_equals_bitset));
+}
+
+// --------------------------------------------- store loop benches
+
+// Loops storing through a container's array: without strict aliasing, each
+// store may change the container fields the loop reads.
+void register_store_loops(std::vector<Entry> &out) {
+    struct S {
+        array_container_t *array;      // every 16th value: 4096 values
+        bitset_container_t *bitset;    // every third value
+        run_container_t *runs1;        // runs of 11 every 32 values
+        run_container_t *runs2;        // runs of 6 every 24 values
+        run_container_t *short_runs;   // runs of 2 every 32 values
+        array_container_t *array_out;  // preallocated outputs
+        run_container_t *run_out;
+    };
+    auto add_runs = [](run_container_t *r, int length, int step, int shift) {
+        for (int x = shift; x + length <= (1 << 16); x += step) {
+            for (int v = x; v < x + length; ++v) {
+                run_container_add(r, static_cast<uint16_t>(v));
+            }
+        }
+    };
+    auto setup = [add_runs]() -> void * {
+        auto *s = new S;
+        s->array = array_container_create();
+        populate_array_stride(s->array, 16);
+        s->bitset = bitset_container_create();
+        populate_bitset_stride(s->bitset, 3);
+        s->runs1 = run_container_create();
+        add_runs(s->runs1, 11, 32, 0);
+        s->runs2 = run_container_create();
+        add_runs(s->runs2, 6, 24, 7);
+        s->short_runs = run_container_create();
+        add_runs(s->short_runs, 2, 32, 0);
+        s->array_out = array_container_create_given_capacity(DEFAULT_MAX_SIZE);
+        s->run_out = run_container_create();
+        return s;
+    };
+    auto teardown = [](void *sv) {
+        auto *s = static_cast<S *>(sv);
+        array_container_free(s->array);
+        bitset_container_free(s->bitset);
+        run_container_free(s->runs1);
+        run_container_free(s->runs2);
+        run_container_free(s->short_runs);
+        array_container_free(s->array_out);
+        run_container_free(s->run_out);
+        delete s;
+    };
+    auto add = [&](const char *name, const char *description,
+                   int64_t (*fn)(S *)) {
+        Entry e;
+        e.name = name;
+        e.description = description;
+        e.setup = setup;
+        e.run = [fn](void *sv) { return fn(static_cast<S *>(sv)); };
+        e.teardown = teardown;
+        e.inner_reps = 2000;
+        e.reusable_state = true;
+        out.push_back(std::move(e));
+    };
+
+    add("array_container/offset",
+        "array_container_offset() of a 4096-value array container by 1000, "
+        "split into two new containers.",
+        [](S *s) -> int64_t {
+            container_t *lo = NULL, *hi = NULL;
+            array_container_offset(s->array, &lo, &hi, 1000);
+            int64_t card =
+                CAST_array(lo)->cardinality + CAST_array(hi)->cardinality;
+            array_container_free(CAST_array(lo));
+            array_container_free(CAST_array(hi));
+            return card;
+        });
+    add("bitset_container/offset",
+        "bitset_container_offset() of a bitset container holding every "
+        "third value by 1000, split into two new containers.",
+        [](S *s) -> int64_t {
+            container_t *lo = NULL, *hi = NULL;
+            bitset_container_offset(s->bitset, &lo, &hi, 1000);
+            int64_t card =
+                CAST_bitset(lo)->cardinality + CAST_bitset(hi)->cardinality;
+            bitset_container_free(CAST_bitset(lo));
+            bitset_container_free(CAST_bitset(hi));
+            return card;
+        });
+    add("mixed/array_bitset_intersection",
+        "array_bitset_container_intersection() of a 4096-value array and a "
+        "bitset holding every third value, into a preallocated array.",
+        [](S *s) -> int64_t {
+            array_bitset_container_intersection(s->array, s->bitset,
+                                                s->array_out);
+            return s->array_out->cardinality;
+        });
+    add("mixed/array_bitset_andnot",
+        "array_bitset_container_andnot() of a 4096-value array and a bitset "
+        "holding every third value, into a preallocated array.",
+        [](S *s) -> int64_t {
+            array_bitset_container_andnot(s->array, s->bitset, s->array_out);
+            return s->array_out->cardinality;
+        });
+    add("mixed/run_bitset_intersection",
+        "run_bitset_container_intersection() of 2048 runs of 2 values and a "
+        "bitset holding every third value: an array result.",
+        [](S *s) -> int64_t {
+            container_t *dst = NULL;
+            run_bitset_container_intersection(s->short_runs, s->bitset, &dst);
+            int64_t card = CAST_array(dst)->cardinality;
+            array_container_free(CAST_array(dst));
+            return card;
+        });
+    add("run_container/andnot",
+        "run_container_andnot() of 2048 runs of 11 values and 2730 runs of "
+        "6 values, into a preallocated run container.",
+        [](S *s) -> int64_t {
+            run_container_andnot(s->runs1, s->runs2, s->run_out);
+            return s->run_out->n_runs;
+        });
+    add("run_container/xor",
+        "run_container_xor() of 2048 runs of 11 values and 2730 runs of 6 "
+        "values, into a preallocated run container.",
+        [](S *s) -> int64_t {
+            run_container_xor(s->runs1, s->runs2, s->run_out);
+            return s->run_out->n_runs;
+        });
 }
 
 // --------------------------------------------- create benches
@@ -4465,6 +4593,7 @@ int main(int argc, char **argv) {
     register_bitset_container(benchmarks);
     register_run_container(benchmarks);
     register_equals(benchmarks);
+    register_store_loops(benchmarks);
     register_create(benchmarks);
     add_bench::register_add_benchmarks(benchmarks);
     adversarial::register_benchmarks(benchmarks);
