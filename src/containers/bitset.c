@@ -189,16 +189,18 @@ void bitset_container_offset(const bitset_container_t *c, container_t **loc,
     i = offset % 64;
     end = 1024 - b;
 
+    const uint64_t *words = c->words;
     if (loc != NULL) {
         bc = bitset_container_create();
+        uint64_t *out = bc->words + b;
         if (i == 0) {
-            memcpy(bc->words + b, c->words, 8 * end);
+            memcpy(out, words, 8 * end);
         } else {
-            bc->words[b] = c->words[0] << i;
+            out[0] = words[0] << i;
             for (uint32_t k = 1; k < end; ++k) {
-                val = c->words[k] << i;
-                val |= c->words[k - 1] >> (64 - i);
-                bc->words[b + k] = val;
+                val = words[k] << i;
+                val |= words[k - 1] >> (64 - i);
+                out[k] = val;
             }
         }
 
@@ -223,15 +225,16 @@ void bitset_container_offset(const bitset_container_t *c, container_t **loc,
         bc = bitset_container_create();
     }
 
+    uint64_t *out = bc->words;
     if (i == 0) {
-        memcpy(bc->words, c->words + end, 8 * b);
+        memcpy(out, words + end, 8 * b);
     } else {
         for (uint32_t k = end; k < 1024; ++k) {
-            val = c->words[k] << i;
-            val |= c->words[k - 1] >> (64 - i);
-            bc->words[k - end] = val;
+            val = words[k] << i;
+            val |= words[k - 1] >> (64 - i);
+            out[k - end] = val;
         }
-        bc->words[b] = c->words[1023] >> (64 - i);
+        out[b] = words[1023] >> (64 - i);
     }
 
     bc->cardinality = bitset_container_compute_cardinality(bc);

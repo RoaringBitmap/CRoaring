@@ -514,6 +514,45 @@ bool run_container_is_subset(const run_container_t *container1,
                              const run_container_t *container2);
 
 /**
+ * Appends the run [start, start + length] to the n_runs sorted runs in `runs',
+ * xoring it with the last run, and returns the new number of runs. `runs' must
+ * have room for n_runs + 1 runs. Follows the Java implementation closely.
+ */
+static inline int32_t run_append_exclusive(rle16_t *runs, int32_t n_runs,
+                                           uint16_t start, uint16_t length) {
+    rle16_t *last_run = n_runs ? runs + (n_runs - 1) : NULL;
+    const int old_end = n_runs ? last_run->value + last_run->length + 1 : -1;
+    if (start > old_end) {
+        runs[n_runs] = CROARING_MAKE_RLE16(start, length);
+        return n_runs + 1;
+    }
+    if (start == old_end) {  // we merge
+        last_run->length += length + 1;
+        return n_runs;
+    }
+    const int new_end = start + length + 1;
+    if (start == last_run->value) {  // wipe out previous
+        if (new_end < old_end) {
+            *last_run = CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
+        } else if (new_end > old_end) {
+            *last_run = CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
+        } else {
+            return n_runs - 1;
+        }
+        return n_runs;
+    }
+    last_run->length = start - last_run->value - 1;
+    if (new_end < old_end) {
+        runs[n_runs] = CROARING_MAKE_RLE16(new_end, old_end - new_end - 1);
+        return n_runs + 1;
+    } else if (new_end > old_end) {
+        runs[n_runs] = CROARING_MAKE_RLE16(old_end, new_end - old_end - 1);
+        return n_runs + 1;
+    }
+    return n_runs;
+}
+
+/**
  * Used in a start-finish scan that appends segments, for XOR and NOT
  */
 

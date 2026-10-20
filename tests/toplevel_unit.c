@@ -5954,6 +5954,66 @@ DEFINE_TEST(issue538b) {
     roaring_bitmap_free(expected);
 }
 
+static roaring_bitmap_t *offset_by_value(const roaring_bitmap_t *r,
+                                         int64_t offset) {
+    roaring_bitmap_t *answer = roaring_bitmap_create();
+    roaring_uint32_iterator_t *it = roaring_iterator_create(r);
+    for (; it->has_value; roaring_uint32_iterator_advance(it)) {
+        int64_t v = (int64_t)it->current_value + offset;
+        if (v >= 0 && v <= UINT32_MAX) roaring_bitmap_add(answer, (uint32_t)v);
+    }
+    roaring_uint32_iterator_free(it);
+    return answer;
+}
+
+DEFINE_TEST(add_offset_each_container_type) {
+    roaring_bitmap_t *array = roaring_bitmap_from_range(0, 65536, 37);
+    roaring_bitmap_t *bitset = roaring_bitmap_from_range(0, 65536, 3);
+    roaring_bitmap_t *runs = roaring_bitmap_create();
+    for (uint32_t x = 0; x < 65536; x += 50) {
+        roaring_bitmap_add_range(runs, x, x + 10);
+    }
+    roaring_bitmap_t *inputs[] = {array, bitset, runs};
+    const int64_t offsets[] = {1, 63, 64, 1000, 65535, -1, -1000};
+    for (size_t k = 0; k < 3; ++k) {
+        roaring_bitmap_add(inputs[k], 65535);  // a bit in the last word
+        roaring_bitmap_run_optimize(inputs[k]);
+        for (size_t o = 0; o < sizeof(offsets) / sizeof(offsets[0]); ++o) {
+            roaring_bitmap_t *shifted =
+                roaring_bitmap_add_offset(inputs[k], offsets[o]);
+            roaring_bitmap_t *expected = offset_by_value(inputs[k], offsets[o]);
+            assert_true(roaring_bitmap_equals(shifted, expected));
+            roaring_bitmap_free(shifted);
+            roaring_bitmap_free(expected);
+        }
+        roaring_bitmap_free(inputs[k]);
+    }
+}
+
+// The first operand keeps several runs past the second's last one.
+DEFINE_TEST(andnot_run_containers_tail) {
+    roaring_bitmap_t *r1 = roaring_bitmap_create();
+    roaring_bitmap_t *r2 = roaring_bitmap_create();
+    for (uint32_t x = 0; x < 4000; x += 20) {
+        roaring_bitmap_add_range(r1, x, x + 5);
+        if (x < 1000) roaring_bitmap_add_range(r2, x + 1, x + 4);
+    }
+    roaring_bitmap_run_optimize(r1);
+    roaring_bitmap_run_optimize(r2);
+    roaring_bitmap_t *diff = roaring_bitmap_andnot(r1, r2);
+    roaring_bitmap_t *expected = roaring_bitmap_create();
+    for (uint32_t v = 0; v < 4000; ++v) {
+        if (roaring_bitmap_contains(r1, v) && !roaring_bitmap_contains(r2, v)) {
+            roaring_bitmap_add(expected, v);
+        }
+    }
+    assert_true(roaring_bitmap_equals(diff, expected));
+    roaring_bitmap_free(r1);
+    roaring_bitmap_free(r2);
+    roaring_bitmap_free(diff);
+    roaring_bitmap_free(expected);
+}
+
 DEFINE_TEST(issue_15jan2024) {
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     roaring_bitmap_add(r1, 1);
@@ -5978,6 +6038,8 @@ int main() {
         cmocka_unit_test(issue743),
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(issue660),
+        cmocka_unit_test(add_offset_each_container_type),
+        cmocka_unit_test(andnot_run_containers_tail),
         cmocka_unit_test(issue538b),
         cmocka_unit_test(issue538),
         cmocka_unit_test(simple_roaring_bitmap_or_many),
