@@ -522,6 +522,17 @@ DEFINE_TEST(test_contains_range) {
         roaring64_bitmap_free(r);
     }
     {
+        // Containers missing from the end of the range, followed by a
+        // container past the range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range(r, 0, 1 << 16);
+        roaring64_bitmap_add(r, 4 << 16);
+        assert_true(roaring64_bitmap_contains_range(r, 0, 1 << 16));
+        assert_false(roaring64_bitmap_contains_range(r, 0, (1 << 16) + 1));
+        assert_false(roaring64_bitmap_contains_range(r, 0, (3 << 16) + 1));
+        roaring64_bitmap_free(r);
+    }
+    {
         // Range larger than bitmap.
         roaring64_bitmap_t* r = roaring64_bitmap_create();
         roaring64_bitmap_add_range(r, 1, 1 << 16);
@@ -651,6 +662,18 @@ DEFINE_TEST(test_contains_range_closed) {
         roaring64_bitmap_add_range_closed(r, (2 << 16), (3 << 16) - 2);
         assert_false(
             roaring64_bitmap_contains_range_closed(r, 1, (3 << 16) - 2));
+        roaring64_bitmap_free(r);
+    }
+    {
+        // Containers missing from the end of the range, followed by a
+        // container past the range.
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        roaring64_bitmap_add_range_closed(r, 0, (1 << 16) - 1);
+        roaring64_bitmap_add(r, 4 << 16);
+        assert_true(
+            roaring64_bitmap_contains_range_closed(r, 0, (1 << 16) - 1));
+        assert_false(roaring64_bitmap_contains_range_closed(r, 0, 1 << 16));
+        assert_false(roaring64_bitmap_contains_range_closed(r, 0, 3 << 16));
         roaring64_bitmap_free(r);
     }
     {

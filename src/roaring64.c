@@ -741,9 +741,9 @@ bool roaring64_bitmap_contains_range_closed(const roaring64_bitmap_t *r,
     while (it.value != NULL) {
         uint64_t current_high48_bits = combine_key(it.key, 0);
         if (current_high48_bits > max_high48_bits) {
-            // We've passed the end of the range with all containers containing
-            // the range.
-            return true;
+            // We've passed the end of the range. The range is contained only
+            // if the container holding max was checked.
+            break;
         }
         if (current_high48_bits - prev_high48_bits > 0x10000) {
             // There is a gap in the iterator that falls in the range.
