@@ -267,6 +267,29 @@ int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
  */
 bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
                                const uint16_t *B, const size_t lenB);
+
+#ifndef CROARING_SKEWED_MERGE_RATIO
+#define CROARING_SKEWED_MERGE_RATIO 8
+#endif
+
+/**
+ * True when an array of size_small values is short enough, next to one of
+ * size_large values, that the scalar merges (union_uint16, xor_uint16,
+ * difference_uint16 and the end of the intersections) gallop through the long
+ * array instead of merging.
+ */
+static inline bool croaring_skewed_sizes(size_t size_small, size_t size_large) {
+    return size_small * CROARING_SKEWED_MERGE_RATIO < size_large;
+}
+
+/**
+ * The vectorized union and xor run at several values per cycle, so they only
+ * lose to the galloping merges when the sizes differ by more.
+ */
+#ifndef CROARING_SKEWED_VECTOR_MERGE_RATIO
+#define CROARING_SKEWED_VECTOR_MERGE_RATIO 32
+#endif
+
 /**
  * Generic union function.
  */

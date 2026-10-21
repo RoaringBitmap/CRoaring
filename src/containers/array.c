@@ -232,7 +232,14 @@ void array_container_andnot(const array_container_t *array_1,
     if (out->capacity < array_1->cardinality)
         array_container_grow(out, array_1->cardinality, false);
 #if CROARING_IS_X64
-    if ((croaring_hardware_support() & ROARING_SUPPORTS_AVX2) &&
+    // difference_vector16 only vectorizes while 8 values remain on each
+    // side, and loses to the galloping scalar code when one side is
+    // much shorter.
+    const int32_t card_1 = array_1->cardinality, card_2 = array_2->cardinality;
+    const int32_t card_min = card_1 < card_2 ? card_1 : card_2;
+    const int32_t card_max = card_1 < card_2 ? card_2 : card_1;
+    const bool skewed = card_min < 8 || card_min * 128 < card_max;
+    if (!skewed && (croaring_hardware_support() & ROARING_SUPPORTS_AVX2) &&
         (out != array_1) && (out != array_2)) {
         out->cardinality = difference_vector16(
             array_1->array, array_1->cardinality, array_2->array,
@@ -264,7 +271,9 @@ void array_container_xor(const array_container_t *array_1,
     }
 
 #if CROARING_IS_X64
-    if (croaring_hardware_support() & ROARING_SUPPORTS_AVX2) {
+    if (!(card_1 * CROARING_SKEWED_VECTOR_MERGE_RATIO < card_2 ||
+          card_2 * CROARING_SKEWED_VECTOR_MERGE_RATIO < card_1) &&
+        (croaring_hardware_support() & ROARING_SUPPORTS_AVX2)) {
         out->cardinality =
             xor_vector16(array_1->array, array_1->cardinality, array_2->array,
                          array_2->cardinality, out->array);

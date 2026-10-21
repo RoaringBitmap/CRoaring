@@ -7,6 +7,7 @@ of CRoaring operations.
 
 - `bench`: dataset-backed and synthetic microbenchmarks (contains, unions, intersections, etc.)
 - `synthetic_bench`: additional synthetic workloads
+- `array_merge_bench`: unions, differences, symmetric differences and intersections between a small and a large array container
 
 ## Build
 

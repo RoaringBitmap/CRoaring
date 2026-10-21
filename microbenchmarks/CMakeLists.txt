@@ -29,3 +29,7 @@ target_compile_definitions(bench PRIVATE BENCHMARK_DATA_DIR="${BENCHMARK_DATA_DI
 add_executable(synthetic_bench synthetic_bench.cpp)
 target_link_libraries(synthetic_bench PRIVATE roaring)
 target_link_libraries(synthetic_bench PRIVATE benchmark::benchmark)
+
+add_executable(array_merge_bench array_merge_bench.cpp)
+target_link_libraries(array_merge_bench PRIVATE roaring)
+target_link_libraries(array_merge_bench PRIVATE benchmark::benchmark)
