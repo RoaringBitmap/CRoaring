@@ -985,6 +985,142 @@ static inline bool croaring_equal4_uint16(const uint16_t *a,
     return x == y;
 }
 
+// The branchless steps carry a dependency from one value to the next,
+// so they cost several cycles per value. When one side is much shorter,
+// or once fewer than four values remain on one side, the merges below
+// instead locate each value of the short side in the long side by
+// galloping and copy the values in between in bulk.
+
+// Returns the first index i in [lo, n) with array[i] >= key, or n.
+static inline size_t croaring_gallop_uint16(const uint16_t *array, size_t lo,
+                                            size_t n, uint16_t key) {
+    if (lo >= n || array[lo] >= key) return lo;
+    // Invariant: array[lo] < key, and the answer is in (lo, hi], where
+    // hi == n stands for a value >= key past the end.
+    size_t step = 1, hi = lo + 1;
+    while (hi < n && array[hi] < key) {
+        lo = hi;
+        step <<= 1;
+        hi = lo + step;
+    }
+    if (hi > n) hi = n;
+    size_t len = hi - lo;
+    while (len > 1) {
+        const size_t half = len >> 1;
+        if (array[lo + half] < key) lo += half;
+        len -= half;
+    }
+    return lo + 1;
+}
+
+// Union of a short and a long sorted array. Every write goes to
+// out[pos] with pos <= i + j, where i and j count the values read so
+// far.
+static size_t union_skewed_uint16(const uint16_t *small, size_t size_s,
+                                  const uint16_t *large, size_t size_l,
+                                  uint16_t *out) {
+    size_t pos = 0, j = 0;
+    for (size_t i = 0; i < size_s; i++) {
+        const uint16_t v = small[i];
+        const size_t p = croaring_gallop_uint16(large, j, size_l, v);
+        memmove(out + pos, large + j, (p - j) * sizeof(uint16_t));
+        pos += p - j;
+        j = p;
+        out[pos++] = v;
+        j += (j < size_l && large[j] == v);
+    }
+    memmove(out + pos, large + j, (size_l - j) * sizeof(uint16_t));
+    return pos + size_l - j;
+}
+
+// Symmetric difference of a short and a long sorted array.
+static int32_t xor_skewed_uint16(const uint16_t *small, size_t size_s,
+                                 const uint16_t *large, size_t size_l,
+                                 uint16_t *out) {
+    size_t pos = 0, j = 0;
+    for (size_t i = 0; i < size_s; i++) {
+        const uint16_t v = small[i];
+        const size_t p = croaring_gallop_uint16(large, j, size_l, v);
+        memcpy(out + pos, large + j, (p - j) * sizeof(uint16_t));
+        pos += p - j;
+        j = p;
+        if (j < size_l && large[j] == v) {
+            j++;
+        } else {
+            out[pos++] = v;
+        }
+    }
+    memcpy(out + pos, large + j, (size_l - j) * sizeof(uint16_t));
+    return (int32_t)(pos + size_l - j);
+}
+
+// a1 minus a short a2. Every write goes to a_out[k..] with k <= i, so
+// a_out may be a1.
+static int difference_skewed_small_a2_uint16(const uint16_t *a1, int length1,
+                                             const uint16_t *a2, int length2,
+                                             uint16_t *a_out) {
+    size_t i = 0, k = 0;
+    for (int j = 0; j < length2 && i < (size_t)length1; j++) {
+        const uint16_t v = a2[j];
+        const size_t p = croaring_gallop_uint16(a1, i, (size_t)length1, v);
+        memmove(a_out + k, a1 + i, (p - i) * sizeof(uint16_t));
+        k += p - i;
+        i = p;
+        i += (i < (size_t)length1 && a1[i] == v);
+    }
+    memmove(a_out + k, a1 + i, ((size_t)length1 - i) * sizeof(uint16_t));
+    return (int)(k + (size_t)length1 - i);
+}
+
+// A short a1 minus a2. Every write goes to a_out[k] with k <= i, so
+// a_out may be a1.
+static int difference_skewed_small_a1_uint16(const uint16_t *a1, int length1,
+                                             const uint16_t *a2, int length2,
+                                             uint16_t *a_out) {
+    size_t j = 0, k = 0;
+    for (int i = 0; i < length1; i++) {
+        const uint16_t v = a1[i];
+        j = croaring_gallop_uint16(a2, j, (size_t)length2, v);
+        a_out[k] = v;
+        k += (j == (size_t)length2 || a2[j] != v);
+    }
+    return (int)k;
+}
+
+// Intersection of a short and a long sorted array, writing only on a
+// match: every write goes to out[k] with k no larger than the index of
+// the matched value on either side, so out may be either input.
+static size_t intersect_tail_uint16(const uint16_t *small, size_t size_s,
+                                    const uint16_t *large, size_t size_l,
+                                    uint16_t *out) {
+    size_t j = 0, k = 0;
+    for (size_t i = 0; i < size_s && j < size_l; i++) {
+        const uint16_t v = small[i];
+        j = croaring_gallop_uint16(large, j, size_l, v);
+        if (j < size_l && large[j] == v) {
+            out[k++] = v;
+            j++;
+        }
+    }
+    return k;
+}
+
+static size_t intersect_tail_uint16_cardinality(const uint16_t *small,
+                                                size_t size_s,
+                                                const uint16_t *large,
+                                                size_t size_l) {
+    size_t j = 0, k = 0;
+    for (size_t i = 0; i < size_s && j < size_l; i++) {
+        const uint16_t v = small[i];
+        j = croaring_gallop_uint16(large, j, size_l, v);
+        if (j < size_l && large[j] == v) {
+            k++;
+            j++;
+        }
+    }
+    return k;
+}
+
 int32_t intersect_uint16(const uint16_t *A, size_t lenA, const uint16_t *B,
                          size_t lenB, uint16_t *out) {
     if (lenA == 0 || lenB == 0) return 0;
@@ -1019,6 +1155,17 @@ int32_t intersect_uint16(const uint16_t *A, size_t lenA, const uint16_t *B,
             }
         }
     }
+    // Fewer than four values remain on one side. If many remain on the
+    // other, gallop rather than step through them one at a time.
+    const size_t remA = lenA - i, remB = lenB - j;
+    if (croaring_skewed_sizes(remA, remB)) {
+        return (int32_t)(k + intersect_tail_uint16(A + i, remA, B + j, remB,
+                                                   out + k));
+    }
+    if (croaring_skewed_sizes(remB, remA)) {
+        return (int32_t)(k + intersect_tail_uint16(B + j, remB, A + i, remA,
+                                                   out + k));
+    }
     while (i < lenA && j < lenB) {
         const uint16_t a = A[i], b = B[j];
         out[k] = a;
@@ -1050,6 +1197,17 @@ int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
                 j += (a >= b);
             }
         }
+    }
+    // Fewer than four values remain on one side. If many remain on the
+    // other, gallop rather than step through them one at a time.
+    const size_t remA = lenA - i, remB = lenB - j;
+    if (croaring_skewed_sizes(remA, remB)) {
+        return answer + (int32_t)intersect_tail_uint16_cardinality(A + i, remA,
+                                                                   B + j, remB);
+    }
+    if (croaring_skewed_sizes(remB, remA)) {
+        return answer + (int32_t)intersect_tail_uint16_cardinality(B + j, remB,
+                                                                   A + i, remA);
     }
     while (i < lenA && j < lenB) {
         const uint16_t a = A[i], b = B[j];
@@ -1144,6 +1302,12 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
     // Every write goes before buffer + idx_1 + size_2, so buffer may start
     // size_2 values before set_1 (array_array_container_inplace_union).
+    if (croaring_skewed_sizes(size_1, size_2)) {
+        return union_skewed_uint16(set_1, size_1, set_2, size_2, buffer);
+    }
+    if (croaring_skewed_sizes(size_2, size_1)) {
+        return union_skewed_uint16(set_2, size_2, set_1, size_1, buffer);
+    }
     size_t pos = 0, idx_1 = 0, idx_2 = 0;
     while (idx_1 + 4 <= size_1 && idx_2 + 4 <= size_2) {
         if (set_1[idx_1 + 3] < set_2[idx_2]) {
@@ -1168,6 +1332,17 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
             }
         }
     }
+    // Fewer than four values remain on one side. If many remain on the
+    // other, gallop rather than step through them one at a time.
+    const size_t rem_1 = size_1 - idx_1, rem_2 = size_2 - idx_2;
+    if (croaring_skewed_sizes(rem_1, rem_2)) {
+        return pos + union_skewed_uint16(set_1 + idx_1, rem_1, set_2 + idx_2,
+                                         rem_2, buffer + pos);
+    }
+    if (croaring_skewed_sizes(rem_2, rem_1)) {
+        return pos + union_skewed_uint16(set_2 + idx_2, rem_2, set_1 + idx_1,
+                                         rem_1, buffer + pos);
+    }
     while (idx_1 < size_1 && idx_2 < size_2) {
         const uint16_t val_1 = set_1[idx_1], val_2 = set_2[idx_2];
         buffer[pos++] = val_1 < val_2 ? val_1 : val_2;
@@ -1189,6 +1364,14 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
 int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
                       int length2, uint16_t *a_out) {
     // Every write goes to a_out[k..] with k <= i, so a_out may be a1.
+    if (croaring_skewed_sizes((size_t)length2, (size_t)length1)) {
+        return difference_skewed_small_a2_uint16(a1, length1, a2, length2,
+                                                 a_out);
+    }
+    if (croaring_skewed_sizes((size_t)length1, (size_t)length2)) {
+        return difference_skewed_small_a1_uint16(a1, length1, a2, length2,
+                                                 a_out);
+    }
     int i = 0, j = 0, k = 0;
     while (i + 4 <= length1 && j + 4 <= length2) {
         if (a1[i + 3] < a2[j]) {
@@ -1210,6 +1393,17 @@ int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
             }
         }
     }
+    // Fewer than four values remain on one side. If many remain on the
+    // other, gallop rather than step through them one at a time.
+    const int rem_1 = length1 - i, rem_2 = length2 - j;
+    if (croaring_skewed_sizes((size_t)rem_2, (size_t)rem_1)) {
+        return k + difference_skewed_small_a2_uint16(a1 + i, rem_1, a2 + j,
+                                                     rem_2, a_out + k);
+    }
+    if (croaring_skewed_sizes((size_t)rem_1, (size_t)rem_2)) {
+        return k + difference_skewed_small_a1_uint16(a1 + i, rem_1, a2 + j,
+                                                     rem_2, a_out + k);
+    }
     while (i < length1 && j < length2) {
         const uint16_t a = a1[i], b = a2[j];
         a_out[k] = a;
@@ -1226,6 +1420,14 @@ int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
 
 int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
                    const uint16_t *array_2, int32_t card_2, uint16_t *out) {
+    if (croaring_skewed_sizes((size_t)card_1, (size_t)card_2)) {
+        return xor_skewed_uint16(array_1, (size_t)card_1, array_2,
+                                 (size_t)card_2, out);
+    }
+    if (croaring_skewed_sizes((size_t)card_2, (size_t)card_1)) {
+        return xor_skewed_uint16(array_2, (size_t)card_2, array_1,
+                                 (size_t)card_1, out);
+    }
     int32_t pos1 = 0, pos2 = 0, pos_out = 0;
     while (pos1 + 4 <= card_1 && pos2 + 4 <= card_2) {
         if (array_1[pos1 + 3] < array_2[pos2]) {
@@ -1248,6 +1450,20 @@ int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
                 pos2 += (v1 >= v2);
             }
         }
+    }
+    // Fewer than four values remain on one side. If many remain on the
+    // other, gallop rather than step through them one at a time.
+    const size_t rem_1 = (size_t)(card_1 - pos1),
+                 rem_2 = (size_t)(card_2 - pos2);
+    if (croaring_skewed_sizes(rem_1, rem_2)) {
+        return pos_out + xor_skewed_uint16(array_1 + pos1, rem_1,
+                                           array_2 + pos2, rem_2,
+                                           out + pos_out);
+    }
+    if (croaring_skewed_sizes(rem_2, rem_1)) {
+        return pos_out + xor_skewed_uint16(array_2 + pos2, rem_2,
+                                           array_1 + pos1, rem_1,
+                                           out + pos_out);
     }
     while (pos1 < card_1 && pos2 < card_2) {
         const uint16_t v1 = array_1[pos1], v2 = array_2[pos2];
@@ -2207,6 +2423,10 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1,
                          const uint16_t *set_2, size_t size_2,
                          uint16_t *buffer) {
 #if CROARING_IS_X64
+    if (size_1 * CROARING_SKEWED_VECTOR_MERGE_RATIO < size_2 ||
+        size_2 * CROARING_SKEWED_VECTOR_MERGE_RATIO < size_1) {
+        return union_uint16(set_1, size_1, set_2, size_2, buffer);
+    }
     const unsigned support = (unsigned)croaring_hardware_support();
 #if CROARING_COMPILER_SUPPORTS_AVX512
     if (support & ROARING_SUPPORTS_AVX512) {
