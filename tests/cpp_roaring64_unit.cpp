@@ -70,6 +70,86 @@ DEFINE_TEST(test_cpp_r64_add_remove_contains_clear) {
     assert_true(r.isEmpty());
 }
 
+DEFINE_TEST(test_cpp_r64_add_remove_checked) {
+    Roaring64 r;
+    const uint64_t v = uint64_t(1) << 50;
+    assert_true(r.addChecked(v));
+    assert_false(r.addChecked(v));
+    assert_true(r.contains(v));
+    assert_true(r.removeChecked(v));
+    assert_false(r.removeChecked(v));
+    assert_true(r.isEmpty());
+}
+
+DEFINE_TEST(test_cpp_r64_add_remove_range) {
+    const uint64_t K = uint64_t(1) << 32;
+
+    Roaring64 r;
+    r.addRange(K - 10, K + 10);  // spans two containers
+    assert_int_equal(r.cardinality(), 20);
+    assert_int_equal(r.minimum(), K - 10);
+    assert_int_equal(r.maximum(), K + 9);
+
+    r.addRangeClosed(K + 10, K + 19);
+    assert_int_equal(r.cardinality(), 30);
+    assert_int_equal(r.maximum(), K + 19);
+
+    r.removeRange(K - 10, K);
+    assert_int_equal(r.cardinality(), 20);
+    assert_int_equal(r.minimum(), K);
+
+    r.removeRangeClosed(K, K + 18);
+    assert_true((r == Roaring64{K + 19}));
+
+    // empty ranges are no-ops
+    r.addRange(5, 5);
+    r.addRangeClosed(6, 5);
+    r.removeRange(K + 19, K + 19);
+    r.removeRangeClosed(K + 20, K + 19);
+    assert_true((r == Roaring64{K + 19}));
+
+    // closed ranges can reach UINT64_MAX
+    r.addRangeClosed(UINT64_MAX - 9, UINT64_MAX);
+    assert_int_equal(r.cardinality(), 11);
+    assert_true(r.contains(UINT64_MAX));
+    r.removeRangeClosed(UINT64_MAX - 9, UINT64_MAX);
+    assert_true((r == Roaring64{K + 19}));
+
+    // full containers
+    Roaring64 big;
+    big.addRange(0, uint64_t(1) << 18);
+    assert_int_equal(big.cardinality(), uint64_t(1) << 18);
+    big.removeRange(1000, (uint64_t(1) << 18) - 1000);
+    assert_int_equal(big.cardinality(), 2000);
+    assert_true(big.contains(999));
+    assert_false(big.contains(1000));
+    assert_true(big.contains((uint64_t(1) << 18) - 1000));
+}
+
+DEFINE_TEST(test_cpp_r64_contains_range) {
+    const uint64_t K = uint64_t(1) << 32;
+
+    Roaring64 r;
+    r.addRangeClosed(K - 10, K + 10);
+    assert_true(r.containsRange(K - 10, K + 11));
+    assert_false(r.containsRange(K - 11, K + 11));
+    assert_false(r.containsRange(K - 10, K + 12));
+    assert_true(r.containsRangeClosed(K - 10, K + 10));
+    assert_false(r.containsRangeClosed(K - 10, K + 11));
+
+    // empty ranges are always contained
+    assert_true(r.containsRange(7, 7));
+    assert_true(r.containsRangeClosed(8, 7));
+
+    r.remove(K);
+    assert_false(r.containsRangeClosed(K - 10, K + 10));
+    assert_true(r.containsRange(K + 1, K + 11));
+
+    r.addRangeClosed(UINT64_MAX - 4, UINT64_MAX);
+    assert_true(r.containsRangeClosed(UINT64_MAX - 4, UINT64_MAX));
+    assert_false(r.containsRangeClosed(UINT64_MAX - 5, UINT64_MAX));
+}
+
 DEFINE_TEST(test_cpp_r64_construction_helpers) {
     const uint64_t vals[] = {1, uint64_t(1) << 33, uint64_t(1) << 33, 7};
     Roaring64 r;
@@ -149,6 +229,53 @@ DEFINE_TEST(test_cpp_r64_set_ops) {
     c = a;
     c -= b;
     assert_true(c == a_minus_b);
+}
+
+DEFINE_TEST(test_cpp_r64_is_subset) {
+    Roaring64 a{1, uint64_t(1) << 40};
+    Roaring64 b{1, 7, uint64_t(1) << 40};
+    Roaring64 empty;
+
+    assert_true(a.isSubset(b));
+    assert_true(a.isStrictSubset(b));
+    assert_false(b.isSubset(a));
+    assert_false(b.isStrictSubset(a));
+
+    assert_true(a.isSubset(a));
+    assert_false(a.isStrictSubset(a));
+
+    assert_true(empty.isSubset(a));
+    assert_true(empty.isStrictSubset(a));
+    assert_true(empty.isSubset(empty));
+    assert_false(empty.isStrictSubset(empty));
+
+    a.add(uint64_t(1) << 50);
+    assert_false(a.isSubset(b));
+    assert_false(a.isStrictSubset(b));
+}
+
+DEFINE_TEST(test_cpp_r64_flip) {
+    const uint64_t K = uint64_t(1) << 32;
+    const uint64_t far = uint64_t(1) << 50;
+
+    Roaring64 r{K - 2, K, K + 2, far};
+    r.flip(K - 2, K + 2);
+    assert_true((r == Roaring64{K - 1, K + 1, K + 2, far}));
+    r.flipClosed(K - 2, K + 2);
+    assert_true((r == Roaring64{K - 2, K, far}));
+
+    // empty ranges are no-ops
+    r.flip(9, 9);
+    r.flipClosed(10, 9);
+    assert_true((r == Roaring64{K - 2, K, far}));
+
+    // closed ranges can reach UINT64_MAX
+    Roaring64 e;
+    e.flipClosed(UINT64_MAX - 9, UINT64_MAX);
+    assert_int_equal(e.cardinality(), 10);
+    assert_true(e.contains(UINT64_MAX));
+    e.flipClosed(UINT64_MAX - 9, UINT64_MAX);
+    assert_true(e.isEmpty());
 }
 
 DEFINE_TEST(test_cpp_r64_iteration) {
@@ -507,14 +634,90 @@ DEFINE_TEST(test_cpp_r64_random_vs_set) {
     r.validate();
 }
 
+DEFINE_TEST(test_cpp_r64_random_range_ops_vs_set) {
+    doublechecked::Roaring64 r;
+
+    uint64_t seed = 123456789;
+    auto next = [&seed]() {
+        seed = 6364136223846793005ULL * seed + 1442695040888963407ULL;
+        return seed;
+    };
+
+    // Ranges start near container and key boundaries, and near the top of the
+    // 64-bit space, so that they overlap and span containers.
+    const uint64_t bases[] = {0, (uint64_t(1) << 16) - 512,
+                              (uint64_t(1) << 32) - 512,
+                              (uint64_t(1) << 48) - 512, UINT64_MAX - 1024};
+    const size_t num_bases = sizeof(bases) / sizeof(bases[0]);
+
+    for (size_t i = 0; i < 1000; ++i) {
+        uint64_t min = bases[next() % num_bases] + next() % 1024;
+        // mostly short ranges, some long enough to fill bitset containers
+        uint64_t width = (next() % 8 == 0) ? next() % 10000 : next() % 300;
+        uint64_t max = (UINT64_MAX - min < width) ? UINT64_MAX : min + width;
+
+        const bool check_subset = (i % 16) == 0;
+        doublechecked::Roaring64 before;
+        if (check_subset) {
+            before = r;
+        }
+
+        switch (next() % 8) {
+            case 0:
+                r.addRange(min, max);
+                break;
+            case 1:
+                r.addRangeClosed(min, max);
+                break;
+            case 2:
+                r.removeRange(min, max);
+                break;
+            case 3:
+                r.removeRangeClosed(min, max);
+                break;
+            case 4:
+                r.flip(min, max);
+                break;
+            case 5:
+                r.flipClosed(min, max);
+                break;
+            case 6:
+                (void)r.addChecked(min);
+                break;
+            default:
+                (void)r.removeChecked(min);
+                break;
+        }
+        if (next() % 10 == 0) {
+            r.runOptimize();
+        }
+
+        (void)r.containsRange(min, max);
+        (void)r.containsRangeClosed(min, max);
+        if (check_subset) {
+            (void)before.isSubset(r);
+            (void)r.isSubset(before);
+            (void)before.isStrictSubset(r);
+            (void)r.isStrictSubset(before);
+            r.validate();
+        }
+    }
+    r.validate();
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_cpp_r64_default_empty),
         cmocka_unit_test(test_cpp_r64_copy_and_move),
         cmocka_unit_test(test_cpp_r64_add_remove_contains_clear),
+        cmocka_unit_test(test_cpp_r64_add_remove_checked),
+        cmocka_unit_test(test_cpp_r64_add_remove_range),
+        cmocka_unit_test(test_cpp_r64_contains_range),
         cmocka_unit_test(test_cpp_r64_construction_helpers),
         cmocka_unit_test(test_cpp_r64_minmax_equals),
         cmocka_unit_test(test_cpp_r64_set_ops),
+        cmocka_unit_test(test_cpp_r64_is_subset),
+        cmocka_unit_test(test_cpp_r64_flip),
         cmocka_unit_test(test_cpp_r64_iteration),
         cmocka_unit_test(test_cpp_r64_bidirectional),
         cmocka_unit_test(test_cpp_r64_run_optimize),
@@ -536,6 +739,7 @@ int main() {
         cmocka_unit_test(test_cpp_r64_deserialize_key_too_small),
 #endif
         cmocka_unit_test(test_cpp_r64_random_vs_set),
+        cmocka_unit_test(test_cpp_r64_random_range_ops_vs_set),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
