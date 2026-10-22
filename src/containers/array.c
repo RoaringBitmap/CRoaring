@@ -364,6 +364,33 @@ int array_container_intersection_cardinality(const array_container_t *array1,
     }
 }
 
+#if CROARING_IS_X64 && CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_C
+CROARING_TARGET_AVX2
+static bool array_container_intersect_vector16_nonempty(
+    const uint16_t *array1, size_t size1, const uint16_t *array2, size_t size2,
+    size_t *index1, size_t *index2) {
+    size_t i = 0, j = 0;
+    const size_t lanes = sizeof(__m128i) / sizeof(uint16_t);
+    while (i + lanes <= size1 && j + lanes <= size2) {
+        const __m128i a = _mm_loadu_si128((const __m128i *)(array1 + i));
+        const __m128i b = _mm_loadu_si128((const __m128i *)(array2 + j));
+        const __m128i matches = _mm_cmpestrm(
+            b, (int)lanes, a, (int)lanes,
+            _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
+        if (_mm_extract_epi32(matches, 0) != 0) return true;
+
+        const uint16_t max1 = array1[i + lanes - 1];
+        const uint16_t max2 = array2[j + lanes - 1];
+        if (max1 <= max2) i += lanes;
+        if (max2 <= max1) j += lanes;
+    }
+    *index1 = i;
+    *index2 = j;
+    return false;
+}
+CROARING_UNTARGET_AVX2
+#endif
+
 bool array_container_intersect(const array_container_t *array1,
                                const array_container_t *array2) {
     int32_t card_1 = array1->cardinality, card_2 = array2->cardinality;
@@ -375,7 +402,25 @@ bool array_container_intersect(const array_container_t *array1,
         return intersect_skewed_uint16_nonempty(array2->array, card_2,
                                                 array1->array, card_1);
     } else {
-        // we do not bother vectorizing
+#if CROARING_IS_X64 && CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_C
+        if (card_1 >= 8 && card_2 >= 8) {
+            // Keep an immediate hit on the scalar path, before the feature
+            // gate.
+            if (array1->array[0] == array2->array[0]) return true;
+            // croaring_hardware_support lazily caches its answer; use the
+            // runtime gate here only when that cache is atomic.
+            if (croaring_hardware_support() & ROARING_SUPPORTS_AVX2) {
+                size_t i = 0, j = 0;
+                if (array_container_intersect_vector16_nonempty(
+                        array1->array, card_1, array2->array, card_2, &i, &j))
+                    return true;
+                if (i == (size_t)card_1 || j == (size_t)card_2) return false;
+                return intersect_uint16_nonempty(
+                    array1->array + i, (size_t)card_1 - i, array2->array + j,
+                    (size_t)card_2 - j);
+            }
+        }
+#endif
         return intersect_uint16_nonempty(array1->array, card_1, array2->array,
                                          card_2);
     }
