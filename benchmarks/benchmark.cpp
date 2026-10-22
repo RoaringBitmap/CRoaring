@@ -2274,7 +2274,6 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
         e.teardown = nullptr;
         e.ops_per_run = std::max<size_t>(1, loaded->bitmaps.size() - 1);
         e.inner_reps = 20;
-        e.reusable_state = true;
         out.push_back(std::move(e));
     }
     {
