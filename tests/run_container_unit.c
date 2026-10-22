@@ -124,6 +124,103 @@ DEFINE_TEST(and_or_test) {
     run_container_free(TMP);
 }
 
+static void add_run_values(run_container_t* run, uint32_t start, uint32_t end) {
+    for (uint32_t value = start; value < end; ++value) {
+        assert_true(run_container_add(run, (uint16_t)value));
+    }
+}
+
+DEFINE_TEST(run_intersect_skip_test) {
+    run_container_t* runs = run_container_create();
+    run_container_t* middle_hit = run_container_create();
+    run_container_t* last_hit = run_container_create();
+    run_container_t* gap = run_container_create();
+    run_container_t* overshoot_left = run_container_create();
+    run_container_t* overshoot_right = run_container_create();
+    run_container_t* low = run_container_create();
+    run_container_t* low_adjacent = run_container_create();
+    run_container_t* low_overlap = run_container_create();
+    run_container_t* high_before = run_container_create();
+    run_container_t* high_adjacent = run_container_create();
+    run_container_t* high_overlap = run_container_create();
+    run_container_t* high_prefix = run_container_create();
+    run_container_t* high_last = run_container_create();
+
+    assert_non_null(runs);
+    assert_non_null(middle_hit);
+    assert_non_null(last_hit);
+    assert_non_null(gap);
+    assert_non_null(overshoot_left);
+    assert_non_null(overshoot_right);
+    assert_non_null(low);
+    assert_non_null(low_adjacent);
+    assert_non_null(low_overlap);
+    assert_non_null(high_before);
+    assert_non_null(high_adjacent);
+    assert_non_null(high_overlap);
+    assert_non_null(high_prefix);
+    assert_non_null(high_last);
+
+    for (uint32_t run = 0; run < 32; ++run) {
+        uint32_t start = run * 6;
+        add_run_values(runs, start, start + 3);
+    }
+    add_run_values(middle_hit, 16 * 6 + 2, 16 * 6 + 5);
+    add_run_values(last_hit, 31 * 6 + 2, 31 * 6 + 5);
+    add_run_values(gap, 31 * 6 + 3, 31 * 6 + 6);
+
+    assert_true(run_container_intersect(runs, middle_hit));
+    assert_true(run_container_intersect(middle_hit, runs));
+    assert_true(run_container_intersect(runs, last_hit));
+    assert_true(run_container_intersect(last_hit, runs));
+    assert_false(run_container_intersect(runs, gap));
+    assert_false(run_container_intersect(gap, runs));
+
+    add_run_values(overshoot_left, 0, 3);
+    add_run_values(overshoot_left, 12, 15);
+    add_run_values(overshoot_right, 3, 6);
+    add_run_values(overshoot_right, 15, 18);
+    assert_false(run_container_intersect(overshoot_left, overshoot_right));
+    assert_false(run_container_intersect(overshoot_right, overshoot_left));
+
+    add_run_values(low, 0, 3);
+    add_run_values(low_adjacent, 3, 6);
+    add_run_values(low_overlap, 2, 5);
+    assert_false(run_container_intersect(low, low_adjacent));
+    assert_true(run_container_intersect(low, low_overlap));
+
+    add_run_values(high_before, 65530, 65533);
+    add_run_values(high_adjacent, 65533, 65536);
+    assert_true(run_container_add(high_overlap, UINT16_MAX));
+    assert_false(run_container_intersect(high_before, high_adjacent));
+    assert_false(run_container_intersect(high_adjacent, high_before));
+    assert_true(run_container_intersect(high_adjacent, high_overlap));
+    assert_true(run_container_intersect(high_overlap, high_adjacent));
+
+    for (uint32_t run = 0; run < 32; ++run) {
+        uint32_t start = run * 2114;
+        add_run_values(high_prefix, start, start + 2);
+    }
+    assert_true(run_container_add(high_last, UINT16_MAX));
+    assert_true(run_container_intersect(high_prefix, high_last));
+    assert_true(run_container_intersect(high_last, high_prefix));
+
+    run_container_free(runs);
+    run_container_free(middle_hit);
+    run_container_free(last_hit);
+    run_container_free(gap);
+    run_container_free(overshoot_left);
+    run_container_free(overshoot_right);
+    run_container_free(low);
+    run_container_free(low_adjacent);
+    run_container_free(low_overlap);
+    run_container_free(high_before);
+    run_container_free(high_adjacent);
+    run_container_free(high_overlap);
+    run_container_free(high_prefix);
+    run_container_free(high_last);
+}
+
 // returns 0 on error, 1 if ok.
 DEFINE_TEST(to_uint32_array_test) {
     for (size_t offset = 1; offset < 128; offset *= 2) {
@@ -220,9 +317,13 @@ int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
-        cmocka_unit_test(select_test), cmocka_unit_test(remove_range_test),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(add_contains_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(run_intersect_skip_test),
+        cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(select_test),
+        cmocka_unit_test(remove_range_test),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
