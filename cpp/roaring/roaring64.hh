@@ -258,6 +258,29 @@ class Roaring64 {
     void add(uint64_t x) noexcept { api::roaring64_bitmap_add(roaring, x); }
 
     /**
+     * Adds value x.
+     * Returns true if a new value was added, false if the value was already
+     * present.
+     */
+    bool addChecked(uint64_t x) noexcept {
+        return api::roaring64_bitmap_add_checked(roaring, x);
+    }
+
+    /**
+     * Adds all values in the half-open interval [min, max).
+     */
+    void addRange(uint64_t min, uint64_t max) noexcept {
+        api::roaring64_bitmap_add_range(roaring, min, max);
+    }
+
+    /**
+     * Adds all values in the closed interval [min, max].
+     */
+    void addRangeClosed(uint64_t min, uint64_t max) noexcept {
+        api::roaring64_bitmap_add_range_closed(roaring, min, max);
+    }
+
+    /**
      * Adds 'n_args' values from the contiguous memory range starting at 'vals'.
      */
     void addMany(size_t n_args, const uint64_t* vals) noexcept {
@@ -269,6 +292,29 @@ class Roaring64 {
      */
     void remove(uint64_t x) noexcept {
         api::roaring64_bitmap_remove(roaring, x);
+    }
+
+    /**
+     * Removes value x.
+     * Returns true if the value was removed, false if the value was not
+     * present.
+     */
+    bool removeChecked(uint64_t x) noexcept {
+        return api::roaring64_bitmap_remove_checked(roaring, x);
+    }
+
+    /**
+     * Removes all values in the half-open interval [min, max).
+     */
+    void removeRange(uint64_t min, uint64_t max) noexcept {
+        api::roaring64_bitmap_remove_range(roaring, min, max);
+    }
+
+    /**
+     * Removes all values in the closed interval [min, max].
+     */
+    void removeRangeClosed(uint64_t min, uint64_t max) noexcept {
+        api::roaring64_bitmap_remove_range_closed(roaring, min, max);
     }
 
     /**
@@ -295,6 +341,22 @@ class Roaring64 {
      */
     bool contains(uint64_t x) const noexcept {
         return api::roaring64_bitmap_contains(roaring, x);
+    }
+
+    /**
+     * Returns true if all values in the half-open interval [min, max) are
+     * present. An empty interval is always contained.
+     */
+    bool containsRange(uint64_t min, uint64_t max) const noexcept {
+        return api::roaring64_bitmap_contains_range(roaring, min, max);
+    }
+
+    /**
+     * Returns true if all values in the closed interval [min, max] are present.
+     * An empty interval is always contained.
+     */
+    bool containsRangeClosed(uint64_t min, uint64_t max) const noexcept {
+        return api::roaring64_bitmap_contains_range_closed(roaring, min, max);
     }
 
     /**
@@ -356,6 +418,20 @@ class Roaring64 {
     }
 
     /**
+     * Returns true if the bitmap is a subset of the other.
+     */
+    bool isSubset(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_is_subset(roaring, r.roaring);
+    }
+
+    /**
+     * Returns true if the bitmap is a strict subset of the other.
+     */
+    bool isStrictSubset(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_is_strict_subset(roaring, r.roaring);
+    }
+
+    /**
      * Return true if the two bitmaps contain the same elements.
      */
     bool operator==(const Roaring64& r) const noexcept {
@@ -412,6 +488,22 @@ class Roaring64 {
             ROARING_TERMINATE("failed materialization in xor");
         }
         return Roaring64(result);
+    }
+
+    /**
+     * Computes the negation of the bitmap within the half-open interval
+     * [min, max). Areas outside the interval are unchanged.
+     */
+    void flip(uint64_t min, uint64_t max) noexcept {
+        api::roaring64_bitmap_flip_inplace(roaring, min, max);
+    }
+
+    /**
+     * Computes the negation of the bitmap within the closed interval
+     * [min, max]. Areas outside the interval are unchanged.
+     */
+    void flipClosed(uint64_t min, uint64_t max) noexcept {
+        api::roaring64_bitmap_flip_closed_inplace(roaring, min, max);
     }
 
     /**
