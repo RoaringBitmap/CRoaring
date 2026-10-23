@@ -534,6 +534,56 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
     return answer;
 }
 
+enum { kRunIntersectLinearScan = 8 };
+
+static inline int32_t run_container_advance_until(const run_container_t *src,
+                                                  int32_t pos, uint16_t value,
+                                                  int32_t *start,
+                                                  int32_t *end) {
+    int32_t scanned = 0;
+    while (scanned < kRunIntersectLinearScan && pos + 1 < src->n_runs) {
+        ++pos;
+        const rle16_t *run = &src->runs[pos];
+        *start = run->value;
+        *end = (int32_t)run->value + run->length + 1;
+        ++scanned;
+        if (*end > value) return pos;
+    }
+    if (pos + 1 == src->n_runs) return src->n_runs;
+
+    int32_t low = pos;
+    int32_t step = 1;
+    int32_t high;
+    for (;;) {
+        int32_t remaining = src->n_runs - low;
+        int32_t probe = step >= remaining ? src->n_runs - 1 : low + step;
+        const rle16_t *run = &src->runs[probe];
+        uint32_t run_end = (uint32_t)run->value + run->length + 1;
+        if (run_end > value) {
+            high = probe;
+            break;
+        }
+        if (probe == src->n_runs - 1) return src->n_runs;
+        low = probe;
+        step = step <= (src->n_runs - low) / 2 ? step * 2 : src->n_runs - low;
+    }
+
+    int32_t first = low + 1;
+    while (first < high) {
+        int32_t middle = first + (high - first) / 2;
+        const rle16_t *run = &src->runs[middle];
+        uint32_t run_end = (uint32_t)run->value + run->length + 1;
+        if (run_end > value) {
+            high = middle;
+        } else {
+            first = middle + 1;
+        }
+    }
+    *start = src->runs[first].value;
+    *end = *start + src->runs[first].length + 1;
+    return first;
+}
+
 bool run_container_intersect(const run_container_t *src_1,
                              const run_container_t *src_2) {
     const bool if1 = run_container_is_full(src_1);
@@ -554,20 +604,17 @@ bool run_container_intersect(const run_container_t *src_1,
     int32_t xend = xstart + src_2->runs[xrlepos].length + 1;
     while ((rlepos < src_1->n_runs) && (xrlepos < src_2->n_runs)) {
         if (end <= xstart) {
-            ++rlepos;
-            if (rlepos < src_1->n_runs) {
-                start = src_1->runs[rlepos].value;
-                end = start + src_1->runs[rlepos].length + 1;
-            }
-        } else if (xend <= start) {
-            ++xrlepos;
-            if (xrlepos < src_2->n_runs) {
-                xstart = src_2->runs[xrlepos].value;
-                xend = xstart + src_2->runs[xrlepos].length + 1;
-            }
-        } else {  // they overlap
-            return true;
+            rlepos = run_container_advance_until(
+                src_1, rlepos, (uint16_t)xstart, &start, &end);
+            if (rlepos == src_1->n_runs) return false;
         }
+        if (xend <= start) {
+            xrlepos = run_container_advance_until(
+                src_2, xrlepos, (uint16_t)start, &xstart, &xend);
+            if (xrlepos == src_2->n_runs) return false;
+            continue;
+        }
+        return true;
     }
     return false;
 }
