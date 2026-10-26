@@ -1,0 +1,5 @@
+var searchData=
+[
+  ['example_20c_0',['Example C',['../index.html#autotoc_md36',1,'Example (C)'],['../index.html#autotoc_md39',1,'Example (C++)']]],
+  ['example_20usage_1',['Example Usage',['../index.html#autotoc_md30',1,'']]]
+];

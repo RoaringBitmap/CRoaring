@@ -1,8 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19":[30,0,3,0],
-"df/dce/structroaring64__bulk__context__s.html":[30,0,0],
-"df/dce/structroaring64__bulk__context__s.html#a3dad528d3cc158f622898442e311044b":[30,0,0,0],
 "df/dce/structroaring64__bulk__context__s.html#ac1c1e04fc8ac939eabee19b5ab0c992f":[30,0,0,1],
 "dir_9feda2c92ea8e8810f9be4158a9b5851.html":[31,0,0,0],
 "dir_d44c64559bbebec7f509842c48db8b23.html":[31,0,0],
@@ -12,8 +9,8 @@ var NAVTREEINDEX1 =
 "globals.html":[31,1,0],
 "globals.html":[31,1,0,0],
 "globals_defs.html":[31,1,3],
-"globals_func.html":[31,1,1,0],
 "globals_func.html":[31,1,1],
+"globals_func.html":[31,1,1,0],
 "globals_type.html":[31,1,2],
 "index.html":[],
 "index.html#autotoc_md1":[0],

@@ -70,8 +70,8 @@ var NAVTREE =
     [ "Example (C++)", "index.html#autotoc_md39", null ],
     [ "Building with cmake (Linux and macOS, Visual Studio or OpenHarmony users should see below)", "index.html#autotoc_md40", null ],
     [ "Building (Visual Studio under Windows)", "index.html#autotoc_md41", [
-      [ "Usage (Using <tt>conan</tt>)", "index.html#autotoc_md42", null ],
-      [ "Usage (Using <tt>vcpkg</tt> on Windows, Linux and macOS)", "index.html#autotoc_md43", null ]
+      [ "Usage (Using <span class=\"tt\">conan</span>)", "index.html#autotoc_md42", null ],
+      [ "Usage (Using <span class=\"tt\">vcpkg</span> on Windows, Linux and macOS)", "index.html#autotoc_md43", null ]
     ] ],
     [ "Building (OpenHarmony)", "index.html#autotoc_md44", null ],
     [ "SIMD-related throttling", "index.html#autotoc_md45", null ],
@@ -115,8 +115,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"dd/d7a/structroaring__bitmap__s.html#acf42856216e3a50da302ef1c34269d19"
+"df/dce/structroaring64__bulk__context__s.html#ac1c1e04fc8ac939eabee19b5ab0c992f"
 ];
 
-var SYNCONMSG = 'click to disable panel synchronisation';
-var SYNCOFFMSG = 'click to enable panel synchronisation';
+var SYNCONMSG = 'click to disable panel synchronization';
+var SYNCOFFMSG = 'click to enable panel synchronization';
+var LISTOFALLMEMBERS = 'List of all members';

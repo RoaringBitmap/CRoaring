@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['croaring_0',['CRoaring',['../index.html',1,'']]]
+  ['32_20bit_20and_2064_20bit_0',['Common Methods (32-bit and 64-bit)',['../index.html#autotoc_md25',1,'']]]
 ];
