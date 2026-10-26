@@ -27,6 +27,7 @@ bitset_container_t *bitset_container_from_array(const array_container_t *ac) {
     return ans;
 }
 
+CROARING_ALLOW_UNALIGNED
 bitset_container_t *bitset_container_from_run(const run_container_t *arr) {
     int card = run_container_cardinality(arr);
     bitset_container_t *answer = bitset_container_create();

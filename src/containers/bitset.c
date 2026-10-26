@@ -1032,6 +1032,7 @@ void bitset_container_printf_as_uint32_array(const bitset_container_t * v, uint3
 /*
  * Validate the container. Returns true if valid.
  */
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_validate(const bitset_container_t *v, const char **reason) {
     if (v->words == NULL) {
         *reason = "words is NULL";
