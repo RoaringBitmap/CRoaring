@@ -586,6 +586,7 @@ const uint8_t vbmi2_table[64] = {
 // goes to values nobody wants. And only the ceil(popcount/16) blocks that
 // carry a value are computed at all -- bitset containers are usually well
 // under half full, so the later blocks are almost always skipped.
+CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length,
                                      uint32_t *vout, size_t outcapacity,
                                      uint32_t base) {
@@ -661,6 +662,7 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length,
 // Same kernel as bitset_extract_setbits_avx512, writing 16-bit values, so the
 // blocks hold 32 values instead of 16. This one is only worth calling on
 // reasonably dense input: see array_container_from_bitset.
+CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
                                             size_t length, uint16_t *vout,
                                             size_t capacity, uint16_t base) {
@@ -721,6 +723,7 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
 // We stop once all "card" values are written: masked stores with an empty
 // mask can still need a slow microcode assist when they touch a page that
 // was never written, such as one past the end of "out".
+CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_intersection_setbits_avx512_uint16(
     const uint64_t *__restrict__ words1, const uint64_t *__restrict__ words2,
     size_t length, uint16_t *out, size_t card, uint16_t base) {
@@ -753,6 +756,7 @@ CROARING_UNTARGET_AVX512
 #endif
 
 CROARING_TARGET_AVX2
+CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
                                    uint32_t *out, size_t outcapacity,
                                    uint32_t base) {
@@ -934,6 +938,7 @@ size_t bitset_extract_intersection_setbits_uint16_with_card(
  * This function uses SSE decoding.
  */
 CROARING_TARGET_AVX2
+CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits_sse_uint16(const uint64_t *words, size_t length,
                                          uint16_t *out, size_t outcapacity,
                                          uint16_t base) {

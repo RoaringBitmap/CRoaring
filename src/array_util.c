@@ -382,6 +382,7 @@ static const uint8_t shuffle_mask16[] = {
  * Optimized by D. Lemire on May 3rd 2013
  */
 CROARING_TARGET_AVX2
+CROARING_ALLOW_UNALIGNED
 int32_t intersect_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                            size_t s_b, uint16_t *C) {
     size_t count = 0;
@@ -482,6 +483,7 @@ int array_container_to_uint32_array_vector16(void *vout, const uint16_t *array,
     return outpos;
 }
 
+CROARING_ALLOW_UNALIGNED
 int32_t intersect_vector16_inplace(uint16_t *A, size_t s_a, const uint16_t *B,
                                    size_t s_b) {
     size_t count = 0;
@@ -577,6 +579,7 @@ int32_t intersect_vector16_inplace(uint16_t *A, size_t s_a, const uint16_t *B,
 CROARING_UNTARGET_AVX2
 
 CROARING_TARGET_AVX2
+CROARING_ALLOW_UNALIGNED
 int32_t intersect_vector16_cardinality(const uint16_t *A, size_t s_a,
                                        const uint16_t *B, size_t s_b) {
     size_t count = 0;
@@ -651,6 +654,7 @@ CROARING_TARGET_AVX2
 // Warning:
 // This function may not be safe if A == C or B == C.
 /////////
+CROARING_ALLOW_UNALIGNED
 int32_t difference_vector16(const uint16_t *A, size_t s_a, const uint16_t *B,
                             size_t s_b, uint16_t *C) {
     // we handle the degenerate case
@@ -1916,6 +1920,7 @@ static inline void sort_uint16_short(uint16_t *z, uint32_t n) {
 CROARING_TARGET_AVX2
 // a one-pass SSE union algorithm
 // This function may not be safe if array1 == output or array2 == output.
+CROARING_ALLOW_UNALIGNED
 uint32_t union_vector16(const uint16_t *array1, uint32_t length1,
                         const uint16_t *array2, uint32_t length2,
                         uint16_t *output) {
@@ -2082,6 +2087,7 @@ static inline int avx512_emit_unique16(__m512i v, uint16_t *out,
  * -- shrinking `pending`, emitting `vmax` sooner -- silently breaks aliased
  * callers, so re-derive the bound before changing the buffering here.
  */
+CROARING_ALLOW_UNALIGNED
 uint32_t avx512_union_uint16(const uint16_t *array1, uint32_t length1,
                              const uint16_t *array2, uint32_t length2,
                              uint16_t *output) {
@@ -2223,6 +2229,7 @@ static inline uint32_t unique_xor(uint16_t *out, uint32_t len) {
 }
 CROARING_TARGET_AVX2
 // a one-pass SSE xor algorithm
+CROARING_ALLOW_UNALIGNED
 uint32_t xor_vector16(const uint16_t *array1, uint32_t length1,
                       const uint16_t *array2, uint32_t length2,
                       uint16_t *output) {
@@ -2475,6 +2482,7 @@ size_t fast_union_uint16(const uint16_t *set_1, size_t size_1,
 #if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
 CROARING_TARGET_AVX512
+CROARING_ALLOW_UNALIGNED
 static inline bool _avx512_memequals(const void *s1, const void *s2, size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
     const uint8_t *ptr2 = (const uint8_t *)s2;
@@ -2533,6 +2541,7 @@ CROARING_UNTARGET_AVX512
 #endif  // CROARING_COMPILER_SUPPORTS_AVX512
 
 CROARING_TARGET_AVX2
+CROARING_ALLOW_UNALIGNED
 static inline bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
     const uint8_t *ptr2 = (const uint8_t *)s2;
