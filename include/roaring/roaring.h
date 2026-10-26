@@ -633,6 +633,14 @@ bool roaring_bitmap_remove_run_compression(roaring_bitmap_t *r);
  * Convert array and bitmap containers to run containers when it is more
  * efficient; also convert from run containers when more space efficient.
  *
+ * Adding or removing single values (for example with roaring_bitmap_add or
+ * roaring_bitmap_remove) does not convert a run container back to an array or
+ * bitmap container when its runs stop being the most compact encoding. Such a
+ * container can then use more memory and serialized space than needed: in the
+ * worst case, the runs of one 65536-value chunk can take about 128 KiB where a
+ * bitmap container takes 8 KiB. Calling this function again after such
+ * modifications recovers that space.
+ *
  * Returns true if the result has at least one run container.
  * Additional savings might be possible by calling `shrinkToFit()`.
  */
