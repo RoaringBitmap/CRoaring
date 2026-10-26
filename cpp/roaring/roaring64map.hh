@@ -1201,9 +1201,9 @@ class Roaring64Map {
      */
     bool removeRunCompression() {
         return std::accumulate(
-            roarings.begin(), roarings.end(), true,
+            roarings.begin(), roarings.end(), false,
             [](bool previous, std::pair<const uint32_t, Roaring> &map_entry) {
-                return map_entry.second.removeRunCompression() && previous;
+                return map_entry.second.removeRunCompression() || previous;
             });
     }
 
@@ -1237,9 +1237,9 @@ class Roaring64Map {
      */
     bool runOptimize() {
         return std::accumulate(
-            roarings.begin(), roarings.end(), true,
+            roarings.begin(), roarings.end(), false,
             [](bool previous, std::pair<const uint32_t, Roaring> &map_entry) {
-                return map_entry.second.runOptimize() && previous;
+                return map_entry.second.runOptimize() || previous;
             });
     }
 
