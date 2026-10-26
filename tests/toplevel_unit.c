@@ -5799,6 +5799,161 @@ DEFINE_TEST(test_portable_deserialize_frozen) {
     free(serialized);
 #endif
 }
+
+#if !CROARING_IS_BIG_ENDIAN
+static bool count_values(uint32_t value, void *param) {
+    (void)value;
+    (*(uint64_t *)param)++;
+    return true;
+}
+
+// Run the read-only API over a portable frozen view of "r" whose buffer starts
+// "offset" bytes past an aligned address. The container payloads then sit at
+// any alignment, which the view must tolerate.
+static void check_frozen_view_queries(const roaring_bitmap_t *r,
+                                      size_t offset) {
+    size_t size = roaring_bitmap_portable_size_in_bytes(r);
+    char *storage = (char *)malloc(size + offset);
+    char *buf = storage + offset;
+    assert_int_equal(roaring_bitmap_portable_serialize(r, buf), size);
+    roaring_bitmap_t *v = roaring_bitmap_portable_deserialize_frozen(buf);
+    assert_non_null(v);
+
+    const char *reason = NULL;
+    assert_true(roaring_bitmap_internal_validate(v, &reason));
+    assert_true(roaring_bitmap_equals(v, r));
+    assert_true(roaring_bitmap_equals(r, v));
+    assert_true(roaring_bitmap_is_subset(v, r));
+    assert_true(roaring_bitmap_is_subset(r, v));
+    assert_false(roaring_bitmap_is_strict_subset(v, r));
+    assert_false(roaring_bitmap_is_empty(v));
+
+    uint64_t card = roaring_bitmap_get_cardinality(r);
+    assert_int_equal(roaring_bitmap_get_cardinality(v), card);
+    assert_int_equal(roaring_bitmap_minimum(v), roaring_bitmap_minimum(r));
+    assert_int_equal(roaring_bitmap_maximum(v), roaring_bitmap_maximum(r));
+    assert_int_equal(roaring_bitmap_range_cardinality(v, 100, 200000),
+                     roaring_bitmap_range_cardinality(r, 100, 200000));
+    assert_int_equal(roaring_bitmap_contains_range(v, 140000, 150000),
+                     roaring_bitmap_contains_range(r, 140000, 150000));
+    assert_true(roaring_bitmap_intersect(v, r));
+    assert_int_equal(roaring_bitmap_intersect_with_range(v, 70000, 70100),
+                     roaring_bitmap_intersect_with_range(r, 70000, 70100));
+
+    uint32_t *values = (uint32_t *)malloc(card * sizeof(uint32_t));
+    roaring_bitmap_to_uint32_array(v, values);
+    for (uint64_t i = 0; i < card; i += 97) {
+        uint32_t element;
+        assert_true(roaring_bitmap_contains(v, values[i]));
+        assert_false(roaring_bitmap_contains(v, values[i] + 1) !=
+                     roaring_bitmap_contains(r, values[i] + 1));
+        assert_int_equal(roaring_bitmap_rank(v, values[i]), i + 1);
+        assert_int_equal(roaring_bitmap_get_index(v, values[i]), (int64_t)i);
+        assert_true(roaring_bitmap_select(v, (uint32_t)i, &element));
+        assert_int_equal(element, values[i]);
+    }
+    uint64_t ranks[3];
+    uint32_t probes[3] = {values[0], values[card / 2], values[card - 1]};
+    roaring_bitmap_rank_many(v, probes, probes + 3, ranks);
+    assert_int_equal(ranks[2], card);
+    uint32_t page[16];
+    assert_true(roaring_bitmap_range_uint32_array(v, card / 2, 16, page));
+    assert_int_equal(page[0], values[card / 2]);
+
+    uint64_t visited = 0;
+    assert_true(roaring_iterate(v, count_values, &visited));
+    assert_int_equal(visited, card);
+    roaring_uint32_iterator_t *it = roaring_iterator_create(v);
+    uint32_t read[64];
+    assert_int_equal(roaring_uint32_iterator_read(it, read, 64), 64);
+    assert_int_equal(read[63], values[63]);
+    assert_true(
+        roaring_uint32_iterator_move_equalorlarger(it, values[card / 3]));
+    assert_int_equal(it->current_value, values[card / 3]);
+    assert_true(roaring_uint32_iterator_previous(it));
+    roaring_uint32_iterator_free(it);
+    free(values);
+
+    roaring_bitmap_t *results[] = {
+        roaring_bitmap_and(v, r),    roaring_bitmap_and(r, v),
+        roaring_bitmap_or(v, r),     roaring_bitmap_or(r, v),
+        roaring_bitmap_copy(v),      roaring_bitmap_flip(v, 0, 200000),
+        roaring_bitmap_xor(v, r),    roaring_bitmap_andnot(v, r),
+        roaring_bitmap_andnot(r, v), roaring_bitmap_lazy_or(v, r, true),
+    };
+    roaring_bitmap_repair_after_lazy(results[9]);
+    for (size_t i = 0; i < 5; i++) {
+        assert_true(roaring_bitmap_equals(results[i], r));
+    }
+    assert_int_equal(roaring_bitmap_get_cardinality(results[6]), 0);
+    assert_int_equal(roaring_bitmap_get_cardinality(results[7]), 0);
+    assert_true(roaring_bitmap_equals(results[9], r));
+    roaring_bitmap_and_inplace(results[0], v);
+    roaring_bitmap_or_inplace(results[1], v);
+    roaring_bitmap_xor_inplace(results[2], v);
+    roaring_bitmap_andnot_inplace(results[3], v);
+    assert_true(roaring_bitmap_equals(results[0], r));
+    assert_true(roaring_bitmap_equals(results[1], r));
+    assert_true(roaring_bitmap_is_empty(results[2]));
+    assert_true(roaring_bitmap_is_empty(results[3]));
+    for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
+        roaring_bitmap_free(results[i]);
+    }
+    assert_int_equal(roaring_bitmap_and_cardinality(v, r), card);
+    assert_int_equal(roaring_bitmap_or_cardinality(v, r), card);
+    assert_int_equal(roaring_bitmap_xor_cardinality(v, r), 0);
+    assert_int_equal(roaring_bitmap_andnot_cardinality(v, r), 0);
+    assert_true(roaring_bitmap_jaccard_index(v, r) == 1.0);
+
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(v, &stats);
+    assert_int_equal(stats.cardinality, card);
+    char *again = (char *)malloc(size);
+    assert_int_equal(roaring_bitmap_portable_serialize(v, again), size);
+    assert_memory_equal(again, buf, size);
+    free(again);
+
+    roaring_bitmap_free(v);
+    free(storage);
+}
+#endif  // !CROARING_IS_BIG_ENDIAN
+
+// A portable frozen view uses the container payloads where they sit in the
+// buffer, so they may be unaligned: every read path must tolerate that.
+DEFINE_TEST(test_portable_deserialize_frozen_unaligned) {
+#if !CROARING_IS_BIG_ENDIAN
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t i = 1; i < 3000; i += 3) roaring_bitmap_add(r, i);  // array
+    for (uint32_t i = 65536; i < 65536 + 20000; i += 2) {
+        roaring_bitmap_add(r, i);  // bitset
+    }
+    roaring_bitmap_add_range(r, 140000, 150000);  // run
+    roaring_bitmap_run_optimize(r);
+    // Three containers: no offset headers, and a single run-flag byte puts
+    // every payload at an odd offset.
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    // Enough containers for offset headers.
+    for (uint32_t k = 3; k < 12; k++) {
+        roaring_bitmap_add(r, (k << 16) + 7 * k);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    // No run containers: the other cookie.
+    roaring_bitmap_remove_run_compression(r);
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    // The bitset container first, for the minimum.
+    roaring_bitmap_remove_range(r, 0, 65536);
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    roaring_bitmap_free(r);
+#endif
+}
 #endif  // ROARING_UNSAFE_FROZEN_TESTS
 
 DEFINE_TEST(convert_to_bitset) {
@@ -6215,6 +6370,7 @@ int main() {
         cmocka_unit_test(test_frozen_serialization_max_containers),
 #if ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_portable_deserialize_frozen),
+        cmocka_unit_test(test_portable_deserialize_frozen_unaligned),
 #endif  // ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(issue_15jan2024),
     };

@@ -19,6 +19,7 @@ namespace internal {
 
 // file contains grubby stuff that must know impl. details of all container
 // types.
+CROARING_ALLOW_UNALIGNED
 bitset_container_t *bitset_container_from_array(const array_container_t *ac) {
     bitset_container_t *ans = bitset_container_create();
     int limit = array_container_cardinality(ac);

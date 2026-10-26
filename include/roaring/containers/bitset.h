@@ -136,6 +136,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 }
 
 /* Get the value of the ith bit.  */
+CROARING_ALLOW_UNALIGNED
 inline bool bitset_container_get(const bitset_container_t *bitset,
                                  uint16_t pos) {
     uint64_t word = bitset->words[pos >> 6];
@@ -193,6 +194,7 @@ static inline bool bitset_container_remove(bitset_container_t *bitset,
 }
 
 /* Get the value of the ith bit.  */
+CROARING_ALLOW_UNALIGNED
 inline bool bitset_container_get(const bitset_container_t *bitset,
                                  uint16_t pos) {
     const uint64_t word = bitset->words[pos >> 6];
@@ -205,6 +207,7 @@ inline bool bitset_container_get(const bitset_container_t *bitset,
  * Check if all bits are set in a range of positions from pos_start (included)
  * to pos_end (excluded).
  */
+CROARING_ALLOW_UNALIGNED
 static inline bool bitset_container_get_range(const bitset_container_t *bitset,
                                               uint32_t pos_start,
                                               uint32_t pos_end) {

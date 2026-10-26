@@ -247,6 +247,7 @@ bool array_container_is_subset(const array_container_t *container1,
  * accordingly.
  * Otherwise, it returns false and update start_rank.
  */
+CROARING_ALLOW_UNALIGNED
 static inline bool array_container_select(const array_container_t *container,
                                           uint32_t *start_rank, uint32_t rank,
                                           uint32_t *element) {
@@ -339,6 +340,7 @@ static inline bool array_container_remove(array_container_t *arr,
 }
 
 /* Check whether x is present.  */
+CROARING_ALLOW_UNALIGNED
 inline bool array_container_contains(const array_container_t *arr,
                                      uint16_t pos) {
     /**
@@ -448,12 +450,14 @@ static inline bool array_container_contains_range(const array_container_t *arr,
 }
 
 /* Returns the smallest value (assumes not empty) */
+CROARING_ALLOW_UNALIGNED
 inline uint16_t array_container_minimum(const array_container_t *arr) {
     if (arr->cardinality == 0) return 0;
     return arr->array[0];
 }
 
 /* Returns the largest value (assumes not empty) */
+CROARING_ALLOW_UNALIGNED
 inline uint16_t array_container_maximum(const array_container_t *arr) {
     if (arr->cardinality == 0) return 0;
     return arr->array[arr->cardinality - 1];

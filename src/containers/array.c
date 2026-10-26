@@ -411,6 +411,7 @@ void array_container_intersection_inplace(array_container_t *src_1,
 }
 
 /* Constant n: one or two vector operations on every compiler. */
+CROARING_ALLOW_UNALIGNED
 static inline void array_put(uint32_t *out, const uint16_t *array,
                              uint32_t base, size_t n) {
     for (size_t k = 0; k < n; ++k) {
@@ -498,6 +499,7 @@ void array_container_printf_as_uint32_array(const array_container_t *v,
 /*
  * Validate the container. Returns true if valid.
  */
+CROARING_ALLOW_UNALIGNED
 bool array_container_validate(const array_container_t *v, const char **reason) {
     if (v->capacity < 0) {
         *reason = "negative capacity";
@@ -569,6 +571,7 @@ int32_t array_container_write(const array_container_t *container, char *buf) {
     return array_container_size_in_bytes(container);
 }
 
+CROARING_ALLOW_UNALIGNED
 bool array_container_is_subset(const array_container_t *container1,
                                const array_container_t *container2) {
     if (container1->cardinality > container2->cardinality) {
@@ -611,6 +614,7 @@ int32_t array_container_read(int32_t cardinality, array_container_t *container,
     return array_container_size_in_bytes(container);
 }
 
+CROARING_ALLOW_UNALIGNED
 bool array_container_iterate(const array_container_t *cont, uint32_t base,
                              roaring_iterator iterator, void *ptr) {
     for (int i = 0; i < cont->cardinality; i++)
@@ -618,6 +622,7 @@ bool array_container_iterate(const array_container_t *cont, uint32_t base,
     return true;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool array_container_iterate64(const array_container_t *cont, uint32_t base,
                                roaring_iterator64 iterator, uint64_t high_bits,
                                void *ptr) {

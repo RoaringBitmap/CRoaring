@@ -3607,12 +3607,15 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
         }
     }
 
+    size_t container_size = 0;
+    container_size += num_bitset_containers * sizeof(bitset_container_t);
+    container_size += num_run_containers * sizeof(run_container_t);
+    container_size += num_array_containers * sizeof(array_container_t);
+
     size_t alloc_size = 0;
     alloc_size += sizeof(roaring_bitmap_t);
     alloc_size += num_containers * sizeof(container_t *);
-    alloc_size += num_bitset_containers * sizeof(bitset_container_t);
-    alloc_size += num_run_containers * sizeof(run_container_t);
-    alloc_size += num_array_containers * sizeof(array_container_t);
+    alloc_size += container_size;
     alloc_size += num_containers * sizeof(uint16_t);  // keys
     alloc_size += num_containers * sizeof(uint8_t);   // typecodes
 
@@ -3630,10 +3633,10 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
     rb->high_low_container.containers = (container_t **)arena_alloc(
         &arena, sizeof(container_t *) * num_containers);
 
-    uint16_t *keys =
-        (uint16_t *)arena_alloc(&arena, num_containers * sizeof(uint16_t));
-    uint8_t *typecodes =
-        (uint8_t *)arena_alloc(&arena, num_containers * sizeof(uint8_t));
+    // The keys and typecodes go after the containers, which are allocated in
+    // the loop below: placed before them, they would misalign the containers.
+    uint16_t *keys = (uint16_t *)(arena + container_size);
+    uint8_t *typecodes = (uint8_t *)(keys + num_containers);
 
     rb->high_low_container.keys = keys;
     rb->high_low_container.typecodes = typecodes;
@@ -3651,7 +3654,7 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_frozen(const char *buf) {
             }
         }
 
-        keys[i] = descriptive_headers[2 * i];
+        memcpy(&keys[i], descriptive_headers + 2 * i, sizeof(uint16_t));
 
         if (isbitmap) {
             typecodes[i] = BITSET_CONTAINER_TYPE;

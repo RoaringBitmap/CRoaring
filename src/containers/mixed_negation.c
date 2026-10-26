@@ -94,6 +94,7 @@ int run_container_negation_inplace(run_container_t *src, container_t **dst) {
  * to *dst. Returns true if the result is a bitset container
  * and false for an array container.  *dst is not preallocated.
  */
+CROARING_ALLOW_UNALIGNED
 bool array_container_negation_range(const array_container_t *src,
                                     const int range_start, const int range_end,
                                     container_t **dst) {
@@ -186,6 +187,7 @@ static inline int32_t append_run(rle16_t *runs, int32_t n, uint32_t start,
     return n + 1;
 }
 
+CROARING_ALLOW_UNALIGNED
 int array_container_negation_range_to_any(const array_container_t *src,
                                           const int range_start,
                                           const int range_end,
@@ -297,6 +299,7 @@ bool bitset_container_negation_range_inplace(bitset_container_t *src,
  *  We assume that dst is not pre-allocated. In
  * case of failure, *dst will be NULL.
  */
+CROARING_ALLOW_UNALIGNED
 int run_container_negation_range(const run_container_t *src,
                                  const int range_start, const int range_end,
                                  container_t **dst) {

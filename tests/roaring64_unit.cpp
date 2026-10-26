@@ -2094,6 +2094,131 @@ DEFINE_TEST(test_portable_serialize) {
     roaring64_bitmap_free(r);
 }
 
+#if !CROARING_IS_BIG_ENDIAN
+// Run the read-only API over a portable frozen view of "r" whose buffer starts
+// "offset" bytes past an aligned address. The container payloads then sit at
+// any alignment, which the view must tolerate.
+void check_frozen_view_queries(const roaring64_bitmap_t* r, size_t offset) {
+    size_t size = roaring64_bitmap_portable_size_in_bytes(r);
+    std::vector<char> storage(size + offset);
+    char* buf = storage.data() + offset;
+    assert_int_equal(roaring64_bitmap_portable_serialize(r, buf), size);
+    roaring64_bitmap_t* v =
+        roaring64_bitmap_portable_deserialize_frozen(buf, size);
+    assert_non_null(v);
+
+    assert_r64_valid(v);
+    assert_true(roaring64_bitmap_equals(v, r));
+    assert_true(roaring64_bitmap_is_subset(v, r));
+    assert_true(roaring64_bitmap_is_subset(r, v));
+    assert_true(roaring64_bitmap_intersect(v, r));
+
+    uint64_t card = roaring64_bitmap_get_cardinality(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(v), card);
+    assert_int_equal(roaring64_bitmap_minimum(v), roaring64_bitmap_minimum(r));
+    assert_int_equal(roaring64_bitmap_maximum(v), roaring64_bitmap_maximum(r));
+    assert_int_equal(roaring64_bitmap_range_cardinality(v, 100, 200000),
+                     roaring64_bitmap_range_cardinality(r, 100, 200000));
+
+    std::vector<uint64_t> values(card);
+    roaring64_bitmap_to_uint64_array(v, values.data());
+    for (uint64_t i = 0; i < card; i += 97) {
+        uint64_t element;
+        assert_true(roaring64_bitmap_contains(v, values[i]));
+        assert_int_equal(roaring64_bitmap_contains(v, values[i] + 1),
+                         roaring64_bitmap_contains(r, values[i] + 1));
+        assert_int_equal(roaring64_bitmap_rank(v, values[i]), i + 1);
+        assert_true(roaring64_bitmap_get_index(v, values[i], &element));
+        assert_int_equal(element, i);
+        assert_true(roaring64_bitmap_select(v, i, &element));
+        assert_int_equal(element, values[i]);
+    }
+
+    uint64_t visited = 0;
+    assert_true(roaring64_bitmap_iterate(
+        v,
+        [](uint64_t, void* param) {
+            (*(uint64_t*)param)++;
+            return true;
+        },
+        &visited));
+    assert_int_equal(visited, card);
+    roaring64_iterator_t* it = roaring64_iterator_create(v);
+    std::vector<uint64_t> read(64);
+    assert_int_equal(roaring64_iterator_read(it, read.data(), 64), 64);
+    assert_int_equal(read[63], values[63]);
+    assert_true(roaring64_iterator_move_equalorlarger(it, values[card / 3]));
+    assert_int_equal(roaring64_iterator_value(it), values[card / 3]);
+    roaring64_iterator_free(it);
+
+    roaring64_bitmap_t* results[] = {
+        roaring64_bitmap_and(v, r),    roaring64_bitmap_and(r, v),
+        roaring64_bitmap_or(v, r),     roaring64_bitmap_or(r, v),
+        roaring64_bitmap_copy(v),      roaring64_bitmap_xor(v, r),
+        roaring64_bitmap_andnot(v, r), roaring64_bitmap_andnot(r, v),
+    };
+    for (size_t i = 0; i < 5; i++) {
+        assert_true(roaring64_bitmap_equals(results[i], r));
+    }
+    for (size_t i = 5; i < 8; i++) {
+        assert_true(roaring64_bitmap_is_empty(results[i]));
+    }
+    roaring64_bitmap_and_inplace(results[0], v);
+    roaring64_bitmap_or_inplace(results[1], v);
+    roaring64_bitmap_xor_inplace(results[2], v);
+    roaring64_bitmap_andnot_inplace(results[3], v);
+    assert_true(roaring64_bitmap_equals(results[0], r));
+    assert_true(roaring64_bitmap_equals(results[1], r));
+    assert_true(roaring64_bitmap_is_empty(results[2]));
+    assert_true(roaring64_bitmap_is_empty(results[3]));
+    for (roaring64_bitmap_t* result : results) {
+        roaring64_bitmap_free(result);
+    }
+    assert_int_equal(roaring64_bitmap_and_cardinality(v, r), card);
+    assert_int_equal(roaring64_bitmap_or_cardinality(v, r), card);
+    assert_int_equal(roaring64_bitmap_xor_cardinality(v, r), 0);
+    assert_int_equal(roaring64_bitmap_andnot_cardinality(v, r), 0);
+
+    std::vector<char> again(size);
+    assert_int_equal(roaring64_bitmap_portable_serialize(v, again.data()),
+                     size);
+    assert_memory_equal(again.data(), buf, size);
+
+    roaring64_bitmap_free(v);
+}
+#endif  // !CROARING_IS_BIG_ENDIAN
+
+// A portable frozen view uses the container payloads where they sit in the
+// buffer, so they may be unaligned: every read path must tolerate that.
+DEFINE_TEST(test_portable_deserialize_frozen_unaligned) {
+#if !CROARING_IS_BIG_ENDIAN
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    for (uint64_t i = 1; i < 3000; i += 3) roaring64_bitmap_add(r, i);
+    for (uint64_t i = 65536; i < 65536 + 20000; i += 2) {
+        roaring64_bitmap_add(r, i);
+    }
+    roaring64_bitmap_add_range(r, 140000, 150000);
+    roaring64_bitmap_run_optimize(r);
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    // Several 32-bit buckets, some with enough containers for offset headers.
+    for (uint64_t k = 3; k < 12; k++) {
+        roaring64_bitmap_add(r, (k << 16) + 7 * k);
+        roaring64_bitmap_add(r, (k << 32) + 7 * k);
+    }
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    // The bitset container first, for the minimum.
+    roaring64_bitmap_remove_range(r, 0, 65536);
+    for (size_t offset = 0; offset < 8; offset++) {
+        check_frozen_view_queries(r, offset);
+    }
+    roaring64_bitmap_free(r);
+#endif
+}
+
 void check_frozen_serialization(roaring64_bitmap_t* r1) {
     roaring64_bitmap_shrink_to_fit(r1);
     assert_r64_valid(r1);
@@ -3168,6 +3293,7 @@ int main() {
         cmocka_unit_test(test_flip_inplace),
         cmocka_unit_test(test_add_offset),
         cmocka_unit_test(test_portable_serialize),
+        cmocka_unit_test(test_portable_deserialize_frozen_unaligned),
         cmocka_unit_test(test_frozen_serialize),
         cmocka_unit_test(test_iterate),
         cmocka_unit_test(test_to_uint64_array),

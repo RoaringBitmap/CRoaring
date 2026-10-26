@@ -228,6 +228,7 @@ void run_container_copy(const run_container_t *src, run_container_t *dst) {
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
+CROARING_ALLOW_UNALIGNED
 void run_container_union(const run_container_t *src_1,
                          const run_container_t *src_2, run_container_t *dst) {
     // TODO: this could be a lot more efficient
@@ -284,6 +285,7 @@ void run_container_union(const run_container_t *src_1,
 
 /* Compute the union of `src_1' and `src_2' and write the result to `src_1'
  */
+CROARING_ALLOW_UNALIGNED
 void run_container_union_inplace(run_container_t *src_1,
                                  const run_container_t *src_2) {
     // TODO: this could be a lot more efficient
@@ -345,6 +347,7 @@ void run_container_union_inplace(run_container_t *src_1,
 /* Compute the symmetric difference of `src_1' and `src_2' and write the result
  * to `dst'
  * It is assumed that `dst' is distinct from both `src_1' and `src_2'. */
+CROARING_ALLOW_UNALIGNED
 void run_container_xor(const run_container_t *src_1,
                        const run_container_t *src_2, run_container_t *dst) {
     // don't bother to convert xor with full range into negation
@@ -386,6 +389,7 @@ void run_container_xor(const run_container_t *src_1,
 
 /* Compute the intersection of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
+CROARING_ALLOW_UNALIGNED
 void run_container_intersection(const run_container_t *src_1,
                                 const run_container_t *src_2,
                                 run_container_t *dst) {
@@ -465,6 +469,7 @@ void run_container_intersection(const run_container_t *src_1,
 }
 
 /* Compute the size of the intersection of src_1 and src_2 . */
+CROARING_ALLOW_UNALIGNED
 int run_container_intersection_cardinality(const run_container_t *src_1,
                                            const run_container_t *src_2) {
     const bool if1 = run_container_is_full(src_1);
@@ -534,6 +539,7 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
     return answer;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool run_container_intersect(const run_container_t *src_1,
                              const run_container_t *src_2) {
     const bool if1 = run_container_is_full(src_1);
@@ -574,6 +580,7 @@ bool run_container_intersect(const run_container_t *src_1,
 
 /* Compute the difference of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
+CROARING_ALLOW_UNALIGNED
 void run_container_andnot(const run_container_t *src_1,
                           const run_container_t *src_2, run_container_t *dst) {
     // following Java implementation as of June 2016
@@ -668,6 +675,7 @@ void run_container_printf_as_uint32_array(const run_container_t *cont,
 /*
  * Validate the container. Returns true if valid.
  */
+CROARING_ALLOW_UNALIGNED
 bool run_container_validate(const run_container_t *run, const char **reason) {
     if (run->n_runs < 0) {
         *reason = "negative run count";
@@ -764,6 +772,7 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     return run_container_size_in_bytes(container);
 }
 
+CROARING_ALLOW_UNALIGNED
 bool run_container_iterate(const run_container_t *cont, uint32_t base,
                            roaring_iterator iterator, void *ptr) {
     for (int i = 0; i < cont->n_runs; ++i) {
@@ -776,6 +785,7 @@ bool run_container_iterate(const run_container_t *cont, uint32_t base,
     return true;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool run_container_iterate64(const run_container_t *cont, uint32_t base,
                              roaring_iterator64 iterator, uint64_t high_bits,
                              void *ptr) {
@@ -790,6 +800,7 @@ bool run_container_iterate64(const run_container_t *cont, uint32_t base,
     return true;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool run_container_is_subset(const run_container_t *container1,
                              const run_container_t *container2) {
     int i1 = 0, i2 = 0;
@@ -827,6 +838,7 @@ void run_container_smart_append_exclusive(run_container_t *src,
     src->n_runs = run_append_exclusive(src->runs, src->n_runs, start, length);
 }
 
+CROARING_ALLOW_UNALIGNED
 bool run_container_select(const run_container_t *container,
                           uint32_t *start_rank, uint32_t rank,
                           uint32_t *element) {
@@ -842,6 +854,7 @@ bool run_container_select(const run_container_t *container,
     return false;
 }
 
+CROARING_ALLOW_UNALIGNED
 int run_container_rank(const run_container_t *container, uint16_t x) {
     int sum = 0;
     uint32_t x32 = x;
@@ -858,6 +871,7 @@ int run_container_rank(const run_container_t *container, uint16_t x) {
     }
     return sum;
 }
+CROARING_ALLOW_UNALIGNED
 uint32_t run_container_rank_many(const run_container_t *container,
                                  uint64_t start_rank, const uint32_t *begin,
                                  const uint32_t *end, uint64_t *ans) {
@@ -893,6 +907,7 @@ uint32_t run_container_rank_many(const run_container_t *container,
     return iter - begin;
 }
 
+CROARING_ALLOW_UNALIGNED
 int run_container_get_index(const run_container_t *container, uint16_t x) {
     if (run_container_contains(container, x)) {
         int sum = 0;
@@ -1021,6 +1036,7 @@ int _avx2_run_container_to_uint32_array(void *vout, const run_container_t *cont,
 CROARING_UNTARGET_AVX2
 
 /* Get the cardinality of `run'. Requires an actual computation. */
+CROARING_ALLOW_UNALIGNED
 static inline int _scalar_run_container_cardinality(
     const run_container_t *run) {
     const int32_t n_runs = run->n_runs;
@@ -1050,6 +1066,7 @@ int run_container_cardinality(const run_container_t *run) {
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 int _scalar_run_container_to_uint32_array(void *vout,
                                           const run_container_t *cont,
                                           uint32_t base) {

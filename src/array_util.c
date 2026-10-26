@@ -1121,6 +1121,7 @@ static size_t intersect_tail_uint16_cardinality(const uint16_t *small,
     return k;
 }
 
+CROARING_ALLOW_UNALIGNED
 int32_t intersect_uint16(const uint16_t *A, size_t lenA, const uint16_t *B,
                          size_t lenB, uint16_t *out) {
     if (lenA == 0 || lenB == 0) return 0;
@@ -1176,6 +1177,7 @@ int32_t intersect_uint16(const uint16_t *A, size_t lenA, const uint16_t *B,
     return (int32_t)k;
 }
 
+CROARING_ALLOW_UNALIGNED
 int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
                                      const uint16_t *B, const size_t lenB) {
     size_t i = 0, j = 0;
@@ -1218,6 +1220,7 @@ int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
     return answer;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
                                const uint16_t *B, const size_t lenB) {
     if (lenA == 0 || lenB == 0) return 0;
@@ -1298,6 +1301,7 @@ size_t intersection_uint32_card(const uint32_t *A, const size_t lenA,
 // can one vectorize the computation of the union? (Update: Yes! See
 // union_vector16).
 
+CROARING_ALLOW_UNALIGNED
 size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
                     size_t size_2, uint16_t *buffer) {
     // Every write goes before buffer + idx_1 + size_2, so buffer may start
@@ -1361,6 +1365,7 @@ size_t union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
     return pos;
 }
 
+CROARING_ALLOW_UNALIGNED
 int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
                       int length2, uint16_t *a_out) {
     // Every write goes to a_out[k..] with k <= i, so a_out may be a1.
@@ -1418,6 +1423,7 @@ int difference_uint16(const uint16_t *a1, int length1, const uint16_t *a2,
     return k;
 }
 
+CROARING_ALLOW_UNALIGNED
 int32_t xor_uint16(const uint16_t *array_1, int32_t card_1,
                    const uint16_t *array_2, int32_t card_2, uint16_t *out) {
     if (croaring_skewed_sizes((size_t)card_1, (size_t)card_2)) {
