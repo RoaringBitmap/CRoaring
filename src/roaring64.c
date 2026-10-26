@@ -303,6 +303,7 @@ static inline int compare_high48(art_key_chunk_t key1[],
 // reload the container pointer, or (for bitsets) re-mask the current word.
 // Called after any positioning that sets container_it.index.
 // fast_type is 0 when there is no usable cache (run containers, exhausted).
+CROARING_ALLOW_UNALIGNED
 static inline void roaring64_iterator_prime(roaring64_iterator_t *it) {
     it->fast_type = 0;
     if (it->art_it.value == NULL) {

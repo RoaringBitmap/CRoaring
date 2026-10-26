@@ -784,6 +784,7 @@ bool container_iterator_read_backward_into_uint64(
     }
 }
 
+CROARING_ALLOW_UNALIGNED
 bool container_iterator_skip(const container_t *c, uint8_t typecode,
                              roaring_container_iterator_t *it,
                              uint32_t skip_count, uint32_t *consumed_count,

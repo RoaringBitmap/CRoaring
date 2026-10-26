@@ -808,6 +808,7 @@ size_t bitset_extract_setbits_avx2(const uint64_t *words, size_t length,
 CROARING_UNTARGET_AVX2
 #endif  // CROARING_IS_X64
 
+CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits(const uint64_t *words, size_t length,
                               uint32_t *out, uint32_t base) {
     int outpos = 0;

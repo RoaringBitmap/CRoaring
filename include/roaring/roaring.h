@@ -772,10 +772,12 @@ roaring_bitmap_t *roaring_bitmap_portable_deserialize_safe(const char *buf,
  * Bitmap must be freed as usual, by calling roaring_bitmap_free().
  * Underlying buffer must not be freed or modified while it backs any bitmaps.
  *
- * The function is unsafe in the following ways:
- * 1) It may execute unaligned memory accesses.
- * 2) A buffer overflow may occur if buf does not point to a valid serialized
- *    bitmap.
+ * The function is unsafe: a buffer overflow may occur if buf does not point to
+ * a valid serialized bitmap.
+ *
+ * Container payloads are used where they sit in the buffer, so they may be
+ * unaligned whatever the alignment of buf. Every access path is either SIMD
+ * with unaligned loads or marked `CROARING_ALLOW_UNALIGNED`.
  *
  * This is meant to be compatible with the Java and Go versions:
  * https://github.com/RoaringBitmap/RoaringFormatSpec

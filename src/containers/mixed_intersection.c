@@ -312,6 +312,8 @@ bool run_bitset_container_intersect(const run_container_t *src_1,
 static inline void extract_intersection_to_array(
     const bitset_container_t *src_1, const bitset_container_t *src_2,
     uint16_t *out, int32_t card) {
+    // An empty result has no array to write to: "out" may be NULL.
+    if (card == 0) return;
 #if CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
     if (croaring_hardware_support() & ROARING_SUPPORTS_AVX512) {
         bitset_extract_intersection_setbits_avx512_uint16(

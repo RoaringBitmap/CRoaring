@@ -252,6 +252,7 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
         bitset_container_compute_cardinality(bitset);  // could be smarter
 }
 
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_intersect(const bitset_container_t *src_1,
                                 const bitset_container_t *src_2) {
     // could vectorize, but this is probably already quite fast in practice
@@ -271,6 +272,7 @@ bool bitset_container_intersect(const bitset_container_t *src_1,
 #define WORDS_IN_AVX512_REG sizeof(__m512i) / sizeof(uint64_t)
 #endif
 /* Get the number of bits set (force computation) */
+CROARING_ALLOW_UNALIGNED
 static inline int _scalar_bitset_container_compute_cardinality(
     const bitset_container_t *bitset) {
     const uint64_t *words = bitset->words;
@@ -667,6 +669,7 @@ CROARING_UNTARGET_AVX2
 
 #define SCALAR_BITSET_CONTAINER_FN(opname, opsymbol, avx_intrinsic,            \
                                    neon_intrinsic)                             \
+  CROARING_ALLOW_UNALIGNED                                                               \
   static inline int _scalar_bitset_container_##opname(const bitset_container_t *src_1,       \
                                         const bitset_container_t *src_2,       \
                                         bitset_container_t *dst) {             \
@@ -685,6 +688,7 @@ CROARING_UNTARGET_AVX2
     dst->cardinality = sum;                                                    \
     return dst->cardinality;                                                   \
   }                                                                            \
+  CROARING_ALLOW_UNALIGNED                                                               \
   static inline int _scalar_bitset_container_##opname##_nocard(                              \
       const bitset_container_t *src_1, const bitset_container_t *src_2,        \
       bitset_container_t *dst) {                                               \
@@ -697,6 +701,7 @@ CROARING_UNTARGET_AVX2
     dst->cardinality = BITSET_UNKNOWN_CARDINALITY;                             \
     return dst->cardinality;                                                   \
   }                                                                            \
+  CROARING_ALLOW_UNALIGNED                                                               \
   static inline int _scalar_bitset_container_##opname##_justcard(                            \
       const bitset_container_t *src_1, const bitset_container_t *src_2) {      \
     const uint64_t *__restrict__ words_1 = src_1->words;                       \
@@ -1097,6 +1102,7 @@ int32_t bitset_container_read(int32_t cardinality, bitset_container_t *container
 	return bitset_container_size_in_bytes(container);
 }
 
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roaring_iterator iterator, void *ptr) {
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->words[i];
@@ -1111,6 +1117,7 @@ bool bitset_container_iterate(const bitset_container_t *cont, uint32_t base, roa
   return true;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_iterate64(const bitset_container_t *cont, uint32_t base, roaring_iterator64 iterator, uint64_t high_bits, void *ptr) {
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = cont->words[i];
@@ -1189,6 +1196,7 @@ bool bitset_container_equals(const bitset_container_t *container1, const bitset_
                 BITSET_CONTAINER_SIZE_IN_WORDS*sizeof(uint64_t)) == 0;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_is_subset(const bitset_container_t *container1,
                           const bitset_container_t *container2) {
     if((container1->cardinality != BITSET_UNKNOWN_CARDINALITY) && (container2->cardinality != BITSET_UNKNOWN_CARDINALITY)) {
@@ -1204,6 +1212,7 @@ bool bitset_container_is_subset(const bitset_container_t *container1,
 	return true;
 }
 
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_select(const bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
     int card = bitset_container_cardinality(container);
     if(rank >= *start_rank + card) {
@@ -1237,6 +1246,7 @@ bool bitset_container_select(const bitset_container_t *container, uint32_t *star
 
 
 /* Returns the smallest value (assumes not empty) */
+CROARING_ALLOW_UNALIGNED
 uint16_t bitset_container_minimum(const bitset_container_t *container) {
   for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i ) {
     uint64_t w = container->words[i];
@@ -1249,6 +1259,7 @@ uint16_t bitset_container_minimum(const bitset_container_t *container) {
 }
 
 /* Returns the largest value (assumes not empty) */
+CROARING_ALLOW_UNALIGNED
 uint16_t bitset_container_maximum(const bitset_container_t *container) {
   for (int32_t i = BITSET_CONTAINER_SIZE_IN_WORDS - 1; i > 0; --i ) {
     uint64_t w = container->words[i];
@@ -1261,6 +1272,7 @@ uint16_t bitset_container_maximum(const bitset_container_t *container) {
 }
 
 /* Returns the number of values equal or smaller than x */
+CROARING_ALLOW_UNALIGNED
 int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
   // credit: aqrit
   int sum = 0;
@@ -1275,6 +1287,7 @@ int bitset_container_rank(const bitset_container_t *container, uint16_t x) {
   return sum;
 }
 
+CROARING_ALLOW_UNALIGNED
 uint32_t bitset_container_rank_many(const bitset_container_t *container, uint64_t start_rank, const uint32_t* begin, const uint32_t* end, uint64_t* ans){
   const uint16_t high = (uint16_t)((*begin) >> 16);
   int i = 0;
@@ -1299,6 +1312,7 @@ uint32_t bitset_container_rank_many(const bitset_container_t *container, uint64_
 
 
 /* Returns the index of x , if not exsist return -1 */
+CROARING_ALLOW_UNALIGNED
 int bitset_container_get_index(const bitset_container_t *container, uint16_t x) {
   if (bitset_container_get(container, x)) {
     // credit: aqrit
@@ -1318,6 +1332,7 @@ int bitset_container_get_index(const bitset_container_t *container, uint16_t x) 
 }
 
 /* Returns the index of the first value equal or larger than x, or -1 */
+CROARING_ALLOW_UNALIGNED
 int bitset_container_index_equalorlarger(const bitset_container_t *container, uint16_t x) {
   uint32_t x32 = x;
   uint32_t k = x32 / 64;

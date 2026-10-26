@@ -108,6 +108,7 @@ static inline void recoverRoomAtIndex(run_container_t *run, uint16_t index) {
 /**
  * Good old binary search through rle data
  */
+CROARING_ALLOW_UNALIGNED
 inline int32_t interleavedBinarySearch(const rle16_t *array, int32_t lenarray,
                                        uint16_t ikey) {
     int32_t low = 0;
@@ -257,6 +258,7 @@ static inline bool run_container_remove(run_container_t *run, uint16_t pos) {
 }
 
 /* Check whether `pos' is present in `run'.  */
+CROARING_ALLOW_UNALIGNED
 inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
     if (index >= 0) return true;
@@ -273,6 +275,7 @@ inline bool run_container_contains(const run_container_t *run, uint16_t pos) {
  * Check whether all positions in a range of positions from pos_start (included)
  * to pos_end (excluded) is present in `run'.
  */
+CROARING_ALLOW_UNALIGNED
 static inline bool run_container_contains_range(const run_container_t *run,
                                                 uint32_t pos_start,
                                                 uint32_t pos_end) {
@@ -605,6 +608,7 @@ inline uint16_t run_container_minimum(const run_container_t *run) {
 }
 
 /* Returns the largest value (assumes not empty) */
+CROARING_ALLOW_UNALIGNED
 inline uint16_t run_container_maximum(const run_container_t *run) {
     if (run->n_runs == 0) return 0;
     return run->runs[run->n_runs - 1].value + run->runs[run->n_runs - 1].length;

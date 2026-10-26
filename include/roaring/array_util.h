@@ -48,6 +48,7 @@ namespace internal {
  * followed by a scalar in-block scan that recovers the exact insertion
  * point required by the binarySearch contract.
  */
+CROARING_ALLOW_UNALIGNED
 inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
                             uint16_t ikey) {
     const int32_t gap = 16;
