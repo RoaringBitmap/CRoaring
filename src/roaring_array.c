@@ -443,15 +443,21 @@ bool ra_has_run_container(const roaring_array_t *ra) {
 }
 
 uint32_t ra_portable_header_size(const roaring_array_t *ra) {
-    if (ra_has_run_container(ra)) {
-        if (ra->size <
-            NO_OFFSET_THRESHOLD) {  // for small bitmaps, we omit the offsets
-            return 4 + (ra->size + 7) / 8 + 4 * ra->size;
+    return ra_portable_header_size_from_counts(ra->size,
+                                               ra_has_run_container(ra));
+}
+
+uint32_t ra_portable_header_size_from_counts(int32_t num_containers,
+                                             bool hasrun) {
+    if (hasrun) {
+        // for small bitmaps, we omit the offsets
+        if (num_containers < NO_OFFSET_THRESHOLD) {
+            return 4 + (num_containers + 7) / 8 + 4 * num_containers;
         }
-        return 4 + (ra->size + 7) / 8 +
-               8 * ra->size;  // - 4 because we pack the size with the cookie
+        // - 4 because we pack the size with the cookie
+        return 4 + (num_containers + 7) / 8 + 8 * num_containers;
     } else {
-        return 4 + 4 + 8 * ra->size;
+        return 4 + 4 + 8 * num_containers;
     }
 }
 

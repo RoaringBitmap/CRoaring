@@ -261,6 +261,13 @@ bool ra_has_run_container(const roaring_array_t *ra);
 uint32_t ra_portable_header_size(const roaring_array_t *ra);
 
 /**
+ * Size of the header when serializing "num_containers" containers.
+ * "hasrun" should be true if at least one of them is a run container.
+ */
+uint32_t ra_portable_header_size_from_counts(int32_t num_containers,
+                                             bool hasrun);
+
+/**
  * If the container at the index i is share, unshare it (creating a local
  * copy if needed).
  */

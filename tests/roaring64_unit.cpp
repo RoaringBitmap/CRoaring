@@ -2051,6 +2051,8 @@ void check_portable_serialization(const roaring64_bitmap_t* r1) {
         roaring64_bitmap_portable_deserialize_safe(buf.data(), serialized_size);
     assert_r64_valid(r2);
     assert_true(roaring64_bitmap_equals(r2, r1));
+    assert_int_equal(roaring64_bitmap_portable_size_in_bytes(r2),
+                     serialized_size);
     roaring64_bitmap_free(r2);
 
     roaring64_bitmap_t* r3 = roaring64_bitmap_portable_deserialize_frozen(
@@ -2061,6 +2063,8 @@ void check_portable_serialization(const roaring64_bitmap_t* r1) {
 #else
     assert_r64_valid(r3);
     assert_true(roaring64_bitmap_equals(r3, r1));
+    assert_int_equal(roaring64_bitmap_portable_size_in_bytes(r3),
+                     serialized_size);
     roaring64_bitmap_free(r3);
     assert_null(roaring64_bitmap_portable_deserialize_frozen(
         buf.data(), serialized_size > 0 ? serialized_size - 1 : 0));
@@ -2091,6 +2095,17 @@ DEFINE_TEST(test_portable_serialize) {
     roaring64_bitmap_run_optimize(r);
     check_portable_serialization(r);
 
+    roaring64_bitmap_free(r);
+
+    // Bucket with a run container (and fewer than NO_OFFSET_THRESHOLD
+    // containers) between buckets without one, so each needs its own header.
+    r = roaring64_bitmap_create();
+    roaring64_bitmap_add(r, 5);
+    roaring64_bitmap_add_range(r, 1ULL << 32, (1ULL << 32) + 1000);
+    roaring64_bitmap_add(r, (1ULL << 32) + (1ULL << 16));
+    roaring64_bitmap_add(r, 2ULL << 32);
+    roaring64_bitmap_run_optimize(r);
+    check_portable_serialization(r);
     roaring64_bitmap_free(r);
 }
 
