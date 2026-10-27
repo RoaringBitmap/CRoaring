@@ -118,6 +118,28 @@ DEFINE_TEST(test_shift_left) {
     }
 }
 
+/* Shifting an empty bitset left leaves it empty. */
+DEFINE_TEST(test_shift_left_empty) {
+    for (size_t sh = 0; sh < 256; sh++) {
+        bitset_t *b = bitset_create();
+        bitset_shift_left(b, sh);
+        assert_true(bitset_empty(b));
+        bitset_free(b);
+    }
+}
+
+/* A shift too large for the bitset to grow to leaves it unchanged. */
+DEFINE_TEST(test_shift_left_resize_fails) {
+    bitset_t *b = bitset_create();
+    bitset_set(b, 3);
+    bitset_shift_left(b, SIZE_MAX);       // not a multiple of 64
+    bitset_shift_left(b, SIZE_MAX - 63);  // a multiple of 64
+    assert_true(bitset_size_in_words(b) == 1);
+    assert_true(bitset_get(b, 3));
+    assert_true(bitset_count(b) == 1);
+    bitset_free(b);
+}
+
 DEFINE_TEST(test_set_to_val) {
     bitset_t *b = bitset_create();
     bitset_set_to_value(b, 1, true);
@@ -146,6 +168,55 @@ DEFINE_TEST(test_shift_right) {
         }
         bitset_free(b);
     }
+}
+
+/* Shifting right by as many bits as the bitset holds, or more, empties it. */
+DEFINE_TEST(test_shift_right_past_size) {
+    const size_t values[] = {0, 1, 63, 64, 70, 127};  // two words
+    const size_t count = sizeof(values) / sizeof(values[0]);
+    for (size_t sh = 0; sh < 256; sh++) {
+        bitset_t *b = bitset_create();
+        for (size_t k = 0; k < count; ++k) {
+            bitset_set(b, values[k]);
+        }
+        assert_true(bitset_size_in_words(b) == 2);
+        bitset_shift_right(b, sh);
+        size_t expected = 0;
+        for (size_t k = 0; k < count; ++k) {
+            if (values[k] >= sh) {
+                assert_true(bitset_get(b, values[k] - sh));
+                expected++;
+            }
+        }
+        assert_true(bitset_count(b) == expected);
+        if (sh >= 128) {
+            assert_true(bitset_size_in_words(b) == 0);
+        }
+        bitset_free(b);
+    }
+}
+
+/* Shifting an empty bitset right leaves it empty. */
+DEFINE_TEST(test_shift_right_empty) {
+    for (size_t sh = 0; sh < 256; sh++) {
+        bitset_t *b = bitset_create();
+        bitset_shift_right(b, sh);
+        assert_true(bitset_empty(b));
+        bitset_free(b);
+    }
+}
+
+/* Trimming a bitset whose words are all zero leaves an empty bitset that can
+ * still be used. */
+DEFINE_TEST(test_trim_all_zero) {
+    bitset_t *b = bitset_create_with_capacity(128);  // two zero words
+    assert_true(bitset_trim(b));
+    assert_true(bitset_size_in_words(b) == 0);
+    assert_true(bitset_empty(b));
+    bitset_set(b, 70);
+    assert_true(bitset_get(b, 70));
+    assert_true(bitset_count(b) == 1);
+    bitset_free(b);
 }
 
 DEFINE_TEST(test_union_intersection) {
@@ -301,6 +372,11 @@ int main() {
         cmocka_unit_test(test_counts),
         cmocka_unit_test(test_shift_right),
         cmocka_unit_test(test_shift_left),
+        cmocka_unit_test(test_shift_right_past_size),
+        cmocka_unit_test(test_shift_right_empty),
+        cmocka_unit_test(test_shift_left_empty),
+        cmocka_unit_test(test_shift_left_resize_fails),
+        cmocka_unit_test(test_trim_all_zero),
         cmocka_unit_test(test_disjoint),
         cmocka_unit_test(test_intersects),
         cmocka_unit_test(test_contains_all),

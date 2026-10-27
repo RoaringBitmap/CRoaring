@@ -97,7 +97,8 @@ bool bitset_grow(bitset_t *bitset, size_t newarraysize);
 bool bitset_trim(bitset_t *bitset);
 
 /* shifts all bits by 's' positions so that the bitset representing values
- * 1,2,10 would represent values 1+s, 2+s, 10+s */
+ * 1,2,10 would represent values 1+s, 2+s, 10+s. Attempts to resize the bitset
+ * (may silently fail, leaving the bitset unchanged) */
 void bitset_shift_left(bitset_t *bitset, size_t s);
 
 /* shifts all bits by 's' positions so that the bitset representing values
