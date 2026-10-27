@@ -90,14 +90,21 @@ void bitset_shift_left(bitset_t *bitset, size_t s) {
     size_t extra_words = s / 64;
     int inword_shift = s % 64;
     size_t as = bitset->arraysize;
+    if (as == 0) {
+        return;  // no bits to shift
+    }
     if (inword_shift == 0) {
-        bitset_resize(bitset, as + extra_words, false);
+        if (!bitset_resize(bitset, as + extra_words, false)) {
+            return;
+        }
         // could be done with a memmove
         for (size_t i = as + extra_words; i > extra_words; i--) {
             bitset->array[i - 1] = bitset->array[i - 1 - extra_words];
         }
     } else {
-        bitset_resize(bitset, as + extra_words + 1, true);
+        if (!bitset_resize(bitset, as + extra_words + 1, true)) {
+            return;
+        }
         bitset->array[as + extra_words] =
             bitset->array[as - 1] >> (64 - inword_shift);
         for (size_t i = as + extra_words; i >= extra_words + 2; i--) {
@@ -116,6 +123,11 @@ void bitset_shift_right(bitset_t *bitset, size_t s) {
     size_t extra_words = s / 64;
     int inword_shift = s % 64;
     size_t as = bitset->arraysize;
+    if (extra_words >= as) {
+        // every bit is shifted out
+        bitset_resize(bitset, 0, false);
+        return;
+    }
     if (inword_shift == 0) {
         // could be done with a memmove
         for (size_t i = 0; i < as - extra_words; i++) {
@@ -473,6 +485,14 @@ bool bitset_trim(bitset_t *bitset) {
             break;
     }
     if (bitset->capacity == newsize) return true;  // nothing to do
+    if (newsize == 0) {
+        // realloc(array, 0) may free the array and return NULL
+        roaring_free(bitset->array);
+        bitset->array = NULL;
+        bitset->capacity = 0;
+        bitset->arraysize = 0;
+        return true;
+    }
     uint64_t *newarray;
     if ((newarray = (uint64_t *)roaring_realloc(
              bitset->array, sizeof(uint64_t) * newsize)) == NULL) {
