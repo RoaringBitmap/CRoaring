@@ -505,6 +505,34 @@ void test_run_compression_cpp(bool copy_on_write) {
     return;
 }
 
+DEFINE_TEST(test_cpp_run_optimize_64_return_value) {
+    Roaring64Map empty;
+    assert_false(empty.runOptimize());
+    assert_false(empty.removeRunCompression());
+
+    // one 32-bit bitmap with a run container, one without
+    Roaring64Map r;
+    r.addRange(0, 100);
+    r.add(uint64_t(1) << 40);
+    assert_true(r.runOptimize());
+    assert_true(r.removeRunCompression());
+    assert_false(r.removeRunCompression());
+}
+
+DEFINE_TEST(test_cpp_run_optimize_recovers_space_64) {
+    Roaring64Map r;
+    r.addRange(0, 100);
+    r.runOptimize();
+    for (uint64_t i = 200; i < 65536; i += 2) {
+        r.add(i);  // each value becomes a run of length one
+    }
+    Roaring64Map expected = r;
+    size_t before = r.getSizeInBytes();
+    assert_false(r.runOptimize());
+    assert_true(r.getSizeInBytes() < before / 10);
+    assert_true(expected == r);
+}
+
 void test_run_compression_cpp_64(bool copy_on_write) {
     Roaring64Map r1;
     r1.setCopyOnWrite(copy_on_write);
@@ -2585,6 +2613,8 @@ int main() {
         cmocka_unit_test(test_cpp_r64map_internal_validate),
         cmocka_unit_test(test_cpp_contains_range_interleaved_containers),
         cmocka_unit_test(test_cpp_copy_map_iterator_to_different_map),
+        cmocka_unit_test(test_cpp_run_optimize_64_return_value),
+        cmocka_unit_test(test_cpp_run_optimize_recovers_space_64),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

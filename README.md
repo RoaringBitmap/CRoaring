@@ -601,6 +601,8 @@ For 64-bit values, there are two classes. `Roaring64Map` (`roaring64map.hh`) key
 
 Some users have to deal with large volumes of data. It  may be important for these users to be aware of the `addMany` (C++) `roaring_bitmap_or_many` (C) functions as it is much faster and economical to add values in batches when possible. Furthermore, calling periodically the `runOptimize` (C++) or `roaring_bitmap_run_optimize` (C) functions may help.
 
+Adding or removing single values (`add`, `remove`) does not convert a run container back to an array or bitmap container when its runs stop being the most compact encoding. In the worst case, the runs of one 65536-value chunk can take about 128 KiB of memory where a bitmap container takes 8 KiB. Calling `runOptimize` (C++) or `roaring_bitmap_run_optimize` (C) again after such modifications recovers that space, in memory and once serialized. This applies to the 64-bit bitmaps (`Roaring64Map`, `roaring64_bitmap_run_optimize`) as well.
+
 
 # Running microbenchmarks
 
