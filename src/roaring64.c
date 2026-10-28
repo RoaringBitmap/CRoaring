@@ -2268,28 +2268,6 @@ roaring64_bitmap_t *roaring64_bitmap_add_offset_signed(
     return answer;
 }
 
-// Returns the number of distinct high 32-bit entries in the bitmap.
-static inline uint64_t count_high32(const roaring64_bitmap_t *r) {
-    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
-    uint64_t high32_count = 0;
-    uint32_t prev_high32 = 0;
-    while (it.value != NULL) {
-        uint32_t current_high32 = (uint32_t)(combine_key(it.key, 0) >> 32);
-        if (high32_count == 0 || prev_high32 != current_high32) {
-            high32_count++;
-            prev_high32 = current_high32;
-        }
-        art_iterator_next(&it);
-    }
-    return high32_count;
-}
-
-// Frees the (32-bit!) bitmap without freeing the containers.
-static inline void roaring_bitmap_free_without_containers(roaring_bitmap_t *r) {
-    ra_clear_without_containers(&r->high_low_container);
-    roaring_free(r);
-}
-
 size_t roaring64_bitmap_portable_size_in_bytes(const roaring64_bitmap_t *r) {
     // https://github.com/RoaringBitmap/RoaringFormatSpec#extension-for-64-bit-implementations
     size_t size = 0;
@@ -2352,65 +2330,45 @@ size_t roaring64_bitmap_portable_serialize(const roaring64_bitmap_t *r,
     const char *initial_buf = buf;
 
     // Write as uint64 the distinct number of "buckets", where a bucket is
-    // defined as the most significant 32 bits of an element.
-    uint64_t high32_count = count_high32(r);
-    uint64_t high32_count_le = croaring_htole64(high32_count);
-    memcpy(buf, &high32_count_le, sizeof(high32_count_le));
-    buf += sizeof(high32_count);
+    // defined as the most significant 32 bits of an element. The count is
+    // only known after the loop, so we reserve its place for now.
+    char *high32_count_buf = buf;
+    buf += sizeof(uint64_t);
+    uint64_t high32_count = 0;
+
+    // A 32-bit roaring array that borrows the containers of the current
+    // bucket. It is reused across buckets to avoid allocating per bucket.
+    roaring_array_t bucket;
+    ra_init(&bucket);
 
     art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
-    uint32_t prev_high32 = 0;
-    roaring_bitmap_t *bitmap32 = NULL;
 
     // Iterate through buckets ordered by increasing keys.
     while (it.value != NULL) {
-        uint64_t current_high48 = combine_key(it.key, 0);
-        uint32_t current_high32 = (uint32_t)(current_high48 >> 32);
-        if (bitmap32 == NULL || prev_high32 != current_high32) {
-            if (bitmap32 != NULL) {
-                // Write as uint32 the most significant 32 bits of the
-                // bucket.
-                uint32_t prev_high32_le = croaring_htole32(prev_high32);
-                memcpy(buf, &prev_high32_le, sizeof(prev_high32_le));
-                buf += sizeof(prev_high32);
+        uint32_t current_high32 = (uint32_t)(combine_key(it.key, 0) >> 32);
+        bucket.size = 0;
+        do {
+            leaf_t leaf = (leaf_t)*it.value;
+            ra_append(&bucket, (uint16_t)(combine_key(it.key, 0) >> 16),
+                      get_container(r, leaf), get_typecode(leaf));
+            art_iterator_next(&it);
+        } while (it.value != NULL &&
+                 (uint32_t)(combine_key(it.key, 0) >> 32) == current_high32);
 
-                // Write the 32-bit Roaring bitmaps representing the least
-                // significant bits of a set of elements.
-                buf += roaring_bitmap_portable_serialize(bitmap32, buf);
-                roaring_bitmap_free_without_containers(bitmap32);
-            }
-
-            // Start a new 32-bit bitmap with the current high 32 bits.
-            art_iterator_t it2 = it;
-            uint32_t containers_with_high32 = 0;
-            while (it2.value != NULL &&
-                   (uint32_t)combine_key(it2.key, 0) == current_high32) {
-                containers_with_high32++;
-                art_iterator_next(&it2);
-            }
-            bitmap32 =
-                roaring_bitmap_create_with_capacity(containers_with_high32);
-
-            prev_high32 = current_high32;
-        }
-        leaf_t leaf = (leaf_t)*it.value;
-        ra_append(&bitmap32->high_low_container,
-                  (uint16_t)(current_high48 >> 16), get_container(r, leaf),
-                  get_typecode(leaf));
-        art_iterator_next(&it);
-    }
-
-    if (bitmap32 != NULL) {
         // Write as uint32 the most significant 32 bits of the bucket.
-        uint32_t prev_high32_le = croaring_htole32(prev_high32);
-        memcpy(buf, &prev_high32_le, sizeof(prev_high32_le));
-        buf += sizeof(prev_high32);
+        uint32_t current_high32_le = croaring_htole32(current_high32);
+        memcpy(buf, &current_high32_le, sizeof(current_high32_le));
+        buf += sizeof(current_high32);
 
         // Write the 32-bit Roaring bitmaps representing the least
         // significant bits of a set of elements.
-        buf += roaring_bitmap_portable_serialize(bitmap32, buf);
-        roaring_bitmap_free_without_containers(bitmap32);
+        buf += ra_portable_serialize(&bucket, buf);
+        high32_count++;
     }
+    ra_clear_without_containers(&bucket);
+
+    uint64_t high32_count_le = croaring_htole64(high32_count);
+    memcpy(high32_count_buf, &high32_count_le, sizeof(high32_count_le));
 
     return buf - initial_buf;
 }
