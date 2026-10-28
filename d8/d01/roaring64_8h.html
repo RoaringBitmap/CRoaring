@@ -470,7 +470,7 @@ Functions</h2></td></tr>
 <p>Return a copy of the bitmap with all values shifted up by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00573">573</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00584">584</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
@@ -1865,6 +1865,8 @@ min</span>. Areas outside the range are passed through unchanged. </p>
         </tr>
       </table>
 </div><div class="memdoc">
+<p>Convert array and bitmap containers to run containers when it is more efficient; also convert from run containers when more space efficient.</p>
+<p>Adding or removing single values (for example with roaring64_bitmap_add or roaring64_bitmap_remove) does not convert a run container back to an array or bitmap container when its runs stop being the most compact encoding. Such a container can then use more memory and serialized space than needed: in the worst case, the runs of one 65536-value chunk can take about 128 KiB where a bitmap container takes 8 KiB. Calling this function again after such modifications recovers that space.</p>
 <p>Returns true if the result has at least one run container. </p>
 
 </div>
@@ -1965,7 +1967,7 @@ min</span>. Areas outside the range are passed through unchanged. </p>
 <p>Return a copy of the bitmap with all values shifted down by offset.</p>
 <p>Values that overflow or underflow uint64_t are dropped. The caller is responsible for freeing the returned bitmap. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00584">584</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00595">595</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 <p class="reference">References <a class="el" href="#a2da0db060d3518ad8ba8554416978a85">roaring64_bitmap_add_offset_signed()</a>.</p>
 
@@ -2181,7 +2183,7 @@ min</span>. Areas outside the range are passed through unchanged. </p>
 <p>Returns true if the iterator currently points to a value. If so, calling <span class="tt"><a class="el" href="#a3407daef6cf818a628ae387a2506a1fb">roaring64_iterator_value()</a></span> returns the value.</p>
 <p>A pointer to a structure, suitably converted, points to its initial member (C17 6.7.2.1p15), and <span class="tt"><a class="el" href="#a899dc8c28f6f90e543ca838aef5e388d">roaring64_iterator_public_t</a></span> is the initial member of <span class="tt"><a class="el" href="#a67980556db783643a6ccf7d71e1ed698">roaring64_iterator_t</a></span>, so this reads the field directly. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00825">825</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00836">836</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
@@ -2419,7 +2421,7 @@ min</span>. Areas outside the range are passed through unchanged. </p>
 </div><div class="memdoc">
 <p>Returns the value the iterator currently points to. Should only be called if <span class="tt"><a class="el" href="#a9d4b959bbe9f9cdb4159f8d2c9d4ec65">roaring64_iterator_has_value()</a></span> returns true. </p>
 
-<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00833">833</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="../../d8/d01/roaring64_8h_source.html#l00844">844</a> of file <a class="el" href="../../d8/d01/roaring64_8h_source.html">roaring64.h</a>.</p>
 
 </div>
 </div>
