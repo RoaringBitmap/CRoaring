@@ -479,21 +479,37 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
     roaring_free(r);
 }
 
+// Makes `dst`, which holds no nodes or containers, a copy of `src`. The nodes
+// are copied as they are and each container goes to the same slot, so the
+// leaves stay valid without rebuilding the ART.
+static void copy_into_empty(roaring64_bitmap_t *dst,
+                            const roaring64_bitmap_t *src) {
+    art_copy(&src->art, &dst->art);
+    grow_containers_to(dst, src->end);
+    for (uint64_t i = 0; i < src->end; ++i) {
+        container_t *container = src->containers[i];
+        if (container != NULL) {
+            uint8_t typecode = src->typecodes[i];
+            set_container_at(dst, i, container_clone(container, typecode),
+                             typecode);
+        }
+    }
+    dst->first_free = src->first_free;
+    dst->end = src->end;
+    if (src->num_holes > dst->holes_capacity) {
+        dst->holes = (uint64_t *)roaring_realloc(
+            dst->holes, src->num_holes * sizeof(uint64_t));
+        dst->holes_capacity = src->num_holes;
+    }
+    if (src->num_holes > 0) {
+        memcpy(dst->holes, src->holes, src->num_holes * sizeof(uint64_t));
+    }
+    dst->num_holes = src->num_holes;
+}
+
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
     roaring64_bitmap_t *result = roaring64_bitmap_create();
-    reserve_containers(result, art_num_leaves(&r->art));
-
-    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
-    while (it.value != NULL) {
-        leaf_t leaf = (leaf_t)*it.value;
-        uint8_t result_typecode = get_typecode(leaf);
-        container_t *result_container =
-            container_clone(get_container(r, leaf), result_typecode);
-        leaf_t result_leaf =
-            add_container(result, result_container, result_typecode);
-        art_insert(&result->art, it.key, (art_val_t)result_leaf);
-        art_iterator_next(&it);
-    }
+    copy_into_empty(result, r);
     return result;
 }
 
@@ -512,28 +528,12 @@ void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
     }
     art_free(&dest->art);
 
-    // Reinitialize dest.
-    art_init_cleared(&dest->art);
     dest->flags = 0;
-    dest->first_free = 0;
-    dest->end = 0;
-    holes_clear(dest);
     if (dest->capacity > 0) {
         memset(dest->containers, 0,
                sizeof(dest->containers[0]) * dest->capacity);
     }
-
-    // Copy src's containers into dest.
-    it = art_init_iterator((art_t *)&src->art, /*first=*/true);
-    while (it.value != NULL) {
-        leaf_t leaf = (leaf_t)*it.value;
-        uint8_t typecode = get_typecode(leaf);
-        container_t *container =
-            container_clone(get_container(src, leaf), typecode);
-        leaf_t dest_leaf = add_container(dest, container, typecode);
-        art_insert(&dest->art, it.key, (art_val_t)dest_leaf);
-        art_iterator_next(&it);
-    }
+    copy_into_empty(dest, src);
 }
 
 /**
@@ -1782,6 +1782,10 @@ uint64_t roaring64_bitmap_or_cardinality(const roaring64_bitmap_t *r1,
 void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                                  const roaring64_bitmap_t *r2) {
     if (r1 == r2) {
+        return;
+    }
+    if (art_is_empty(&r1->art)) {
+        roaring64_bitmap_overwrite(r1, r2);
         return;
     }
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);

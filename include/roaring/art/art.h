@@ -104,6 +104,13 @@ bool art_is_empty(const art_t *art);
 void art_free(art_t *art);
 
 /**
+ * Initializes `dst` as a copy of `src`, which may be a frozen view. Nodes keep
+ * their indices; free nodes at the end of the node arrays may be left out.
+ * Does not free any nodes `dst` held before.
+ */
+void art_copy(const art_t *src, art_t *dst);
+
+/**
  * Prints the ART using printf, useful for debugging.
  */
 void art_printf(const art_t *art);

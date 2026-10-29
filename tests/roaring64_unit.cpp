@@ -167,6 +167,62 @@ DEFINE_TEST(test_overwrite) {
     roaring64_bitmap_free(r2);
 }
 
+DEFINE_TEST(test_copy_after_removals) {
+    // Removals leave free container slots and free ART nodes behind. The
+    // earliest go last, so the free lists start below nodes still in use.
+    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 1000; ++i) {
+        roaring64_bitmap_add(r1, i << 16);
+        roaring64_bitmap_add(r1, i << 32);
+    }
+    for (uint64_t k = 0; k < 1000; k += 3) {
+        roaring64_bitmap_remove(r1, (999 - k) << 16);
+        roaring64_bitmap_remove(r1, (999 - k) << 32);
+    }
+    uint64_t card = roaring64_bitmap_get_cardinality(r1);
+
+    roaring64_bitmap_t* r2 = roaring64_bitmap_copy(r1);
+    // A target with a hole, so overwrite grows its heap of holes.
+    roaring64_bitmap_t* r3 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 3; ++i) {
+        roaring64_bitmap_add(r3, i << 48);
+    }
+    roaring64_bitmap_remove(r3, 1ULL << 48);
+    roaring64_bitmap_overwrite(r3, r1);
+    roaring64_bitmap_t* r4 = roaring64_bitmap_create();
+    roaring64_bitmap_or_inplace(r4, r1);
+    for (roaring64_bitmap_t* r : {r2, r3, r4}) {
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_equals(r, r1));
+        // Pushes a hole onto the copied heap, which is full.
+        roaring64_bitmap_remove(r, 1ULL << 16);
+        for (uint64_t i = 3; i < 1000; i += 3) {
+            roaring64_bitmap_add(r, (i << 16) + 1);
+            roaring64_bitmap_add(r, (i << 32) + 1);
+        }
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), card + 665);
+    }
+    assert_int_equal(roaring64_bitmap_get_cardinality(r1), card);
+
+    roaring64_bitmap_free(r1);
+    roaring64_bitmap_free(r2);
+    roaring64_bitmap_free(r3);
+    roaring64_bitmap_free(r4);
+
+    // A removal from a full leaf array ends the free list at the capacity.
+    roaring64_bitmap_t* r5 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 1024; ++i) {
+        roaring64_bitmap_add(r5, i << 16);
+    }
+    roaring64_bitmap_remove(r5, 0);
+    roaring64_bitmap_t* r6 = roaring64_bitmap_copy(r5);
+    assert_r64_valid(r6);
+    assert_true(roaring64_bitmap_equals(r6, r5));
+    roaring64_bitmap_free(r5);
+    roaring64_bitmap_free(r6);
+}
+
 DEFINE_TEST(test_move_from_roaring32) {
     {
         // Empty bitmap
@@ -2302,8 +2358,15 @@ void check_frozen_serialization(roaring64_bitmap_t* r1) {
     assert_r64_valid(r2);
     assert_true(roaring64_bitmap_equals(r2, r1));
 
+    // A copy owns its nodes and containers, so it outlives the buffer.
+    roaring64_bitmap_t* r3 = roaring64_bitmap_copy(r2);
     roaring64_bitmap_free(r2);
     roaring_aligned_free(buf);
+    assert_r64_valid(r3);
+    assert_true(roaring64_bitmap_equals(r3, r1));
+    roaring64_bitmap_add(r3, 1ULL << 40);
+    assert_r64_valid(r3);
+    roaring64_bitmap_free(r3);
 }
 
 DEFINE_TEST(test_frozen_serialize) {
@@ -4176,6 +4239,7 @@ int main() {
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(test_copy),
         cmocka_unit_test(test_overwrite),
+        cmocka_unit_test(test_copy_after_removals),
         cmocka_unit_test(test_from_range),
         cmocka_unit_test(test_move_from_roaring32),
         cmocka_unit_test(test_move_from_roaring32_copy_on_write),

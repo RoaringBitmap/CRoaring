@@ -846,6 +846,58 @@ DEFINE_TEST(test_art_frozen_view) {
     }
 }
 
+DEFINE_TEST(test_art_copy) {
+    // ART with multiple node sizes.
+    std::vector<std::array<uint8_t, 6>> keys;
+    std::vector<size_t> sizes = {4, 16, 48, 256};
+    for (size_t i = 0; i < sizes.size(); i++) {
+        for (size_t j = 0; j < sizes[i]; j++) {
+            keys.push_back(
+                {0, 0, 0, static_cast<uint8_t>(i), static_cast<uint8_t>(j)});
+        }
+    }
+    art_t art1;
+    art_init_cleared(&art1);
+    for (size_t i = 0; i < keys.size(); ++i) {
+        art_insert(&art1, (art_key_chunk_t*)keys[i].data(), i);
+    }
+    // Erase every third key, last first, so free nodes sit before used ones.
+    std::vector<bool> erased(keys.size());
+    for (size_t k = 0; k < keys.size(); k += 3) {
+        size_t i = keys.size() - 1 - k;
+        assert_true(art_erase(&art1, (art_key_chunk_t*)keys[i].data(), NULL));
+        erased[i] = true;
+    }
+
+    art_t art2;
+    art_copy(&art1, &art2);
+    art_free(&art1);
+    assert_art_valid(&art2);
+    art_iterator_t iterator = art_init_iterator(&art2, true);
+    for (size_t i = 0; i < keys.size(); ++i) {
+        if (erased[i]) {
+            continue;
+        }
+        assert_key_eq(iterator.key, (art_key_chunk_t*)keys[i].data());
+        assert_true(*iterator.value == i);
+        art_iterator_next(&iterator);
+    }
+    assert_null(iterator.value);
+
+    // The copy reuses its free nodes, then grows.
+    for (size_t i = 0; i < keys.size(); ++i) {
+        if (erased[i]) {
+            art_insert(&art2, (art_key_chunk_t*)keys[i].data(), i);
+        }
+    }
+    assert_art_valid(&art2);
+    for (size_t i = 0; i < keys.size(); ++i) {
+        art_val_t* val = art_find(&art2, (art_key_chunk_t*)keys[i].data());
+        assert_true(val != NULL && *val == i);
+    }
+    art_free(&art2);
+}
+
 }  // namespace
 
 int main() {
@@ -865,6 +917,7 @@ int main() {
         cmocka_unit_test(test_art_num_leaves_and_reserve),
         cmocka_unit_test(test_art_find_prefixes),
         cmocka_unit_test(test_art_frozen_view),
+        cmocka_unit_test(test_art_copy),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
