@@ -314,6 +314,27 @@ DEFINE_TEST(select_test) {
     bitset_container_free(B);
 }
 
+DEFINE_TEST(min_max_test) {
+    bitset_container_t* B = bitset_container_create();
+    assert_non_null(B);
+    // values confined to the first word
+    bitset_container_add(B, 3);
+    bitset_container_add(B, 5);
+    assert_int_equal(bitset_container_minimum(B), 3);
+    assert_int_equal(bitset_container_maximum(B), 5);
+    bitset_container_clear(B);
+    bitset_container_add(B, 0);
+    assert_int_equal(bitset_container_minimum(B), 0);
+    assert_int_equal(bitset_container_maximum(B), 0);
+    bitset_container_add(B, 63);
+    assert_int_equal(bitset_container_maximum(B), 63);
+    bitset_container_add(B, 64);
+    assert_int_equal(bitset_container_maximum(B), 64);
+    bitset_container_add(B, 65535);
+    assert_int_equal(bitset_container_maximum(B), 65535);
+    bitset_container_free(B);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(hamming_test),
@@ -325,6 +346,7 @@ int main() {
         cmocka_unit_test(andnot_test),
         cmocka_unit_test(to_uint32_array_test),
         cmocka_unit_test(select_test),
+        cmocka_unit_test(min_max_test),
         cmocka_unit_test(test_bitset_compute_cardinality),
     };
 

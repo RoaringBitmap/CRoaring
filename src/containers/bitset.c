@@ -1262,7 +1262,7 @@ uint16_t bitset_container_minimum(const bitset_container_t *container) {
 /* Returns the largest value (assumes not empty) */
 CROARING_ALLOW_UNALIGNED
 uint16_t bitset_container_maximum(const bitset_container_t *container) {
-  for (int32_t i = BITSET_CONTAINER_SIZE_IN_WORDS - 1; i > 0; --i ) {
+  for (int32_t i = BITSET_CONTAINER_SIZE_IN_WORDS - 1; i >= 0; --i ) {
     uint64_t w = container->words[i];
     if (w != 0) {
       int r = roaring_leading_zeroes(w);
