@@ -3527,7 +3527,7 @@ const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,
                 break;
             }
             default:
-                roaring_free(arena);
+                roaring_free(rb);
                 return NULL;
         }
     }
