@@ -3288,19 +3288,21 @@ size_t roaring_bitmap_frozen_size_in_bytes(const roaring_bitmap_t *rb) {
     const roaring_array_t *ra = &rb->high_low_container;
     size_t num_bytes = 0;
     for (int32_t i = 0; i < ra->size; i++) {
-        switch (ra->typecodes[i]) {
+        uint8_t typecode = ra->typecodes[i];
+        const container_t *c =
+            container_unwrap_shared(ra->containers[i], &typecode);
+        switch (typecode) {
             case BITSET_CONTAINER_TYPE: {
                 num_bytes += BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
             }
             case RUN_CONTAINER_TYPE: {
-                const run_container_t *rc = const_CAST_run(ra->containers[i]);
+                const run_container_t *rc = const_CAST_run(c);
                 num_bytes += rc->n_runs * sizeof(rle16_t);
                 break;
             }
             case ARRAY_CONTAINER_TYPE: {
-                const array_container_t *ac =
-                    const_CAST_array(ra->containers[i]);
+                const array_container_t *ac = const_CAST_array(c);
                 num_bytes += ac->cardinality * sizeof(uint16_t);
                 break;
             }
@@ -3331,20 +3333,22 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
     size_t run_zone_size = 0;
     size_t array_zone_size = 0;
     for (int32_t i = 0; i < ra->size; i++) {
-        switch (ra->typecodes[i]) {
+        uint8_t typecode = ra->typecodes[i];
+        const container_t *c =
+            container_unwrap_shared(ra->containers[i], &typecode);
+        switch (typecode) {
             case BITSET_CONTAINER_TYPE: {
                 bitset_zone_size +=
                     BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t);
                 break;
             }
             case RUN_CONTAINER_TYPE: {
-                const run_container_t *rc = const_CAST_run(ra->containers[i]);
+                const run_container_t *rc = const_CAST_run(c);
                 run_zone_size += rc->n_runs * sizeof(rle16_t);
                 break;
             }
             case ARRAY_CONTAINER_TYPE: {
-                const array_container_t *ac =
-                    const_CAST_array(ra->containers[i]);
+                const array_container_t *ac = const_CAST_array(c);
                 array_zone_size += ac->cardinality * sizeof(uint16_t);
                 break;
             }
@@ -3363,10 +3367,12 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
 
     for (int32_t i = 0; i < ra->size; i++) {
         uint16_t count;
-        switch (ra->typecodes[i]) {
+        uint8_t typecode = ra->typecodes[i];
+        const container_t *c =
+            container_unwrap_shared(ra->containers[i], &typecode);
+        switch (typecode) {
             case BITSET_CONTAINER_TYPE: {
-                const bitset_container_t *bc =
-                    const_CAST_bitset(ra->containers[i]);
+                const bitset_container_t *bc = const_CAST_bitset(c);
                 memcpy(bitset_zone, bc->words,
                        BITSET_CONTAINER_SIZE_IN_WORDS * sizeof(uint64_t));
                 bitset_zone += BITSET_CONTAINER_SIZE_IN_WORDS;
@@ -3380,7 +3386,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 break;
             }
             case RUN_CONTAINER_TYPE: {
-                const run_container_t *rc = const_CAST_run(ra->containers[i]);
+                const run_container_t *rc = const_CAST_run(c);
                 size_t num_bytes = rc->n_runs * sizeof(rle16_t);
                 memcpy(run_zone, rc->runs, num_bytes);
                 run_zone += rc->n_runs;
@@ -3388,8 +3394,7 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 break;
             }
             case ARRAY_CONTAINER_TYPE: {
-                const array_container_t *ac =
-                    const_CAST_array(ra->containers[i]);
+                const array_container_t *ac = const_CAST_array(c);
                 size_t num_bytes = ac->cardinality * sizeof(uint16_t);
                 memcpy(array_zone, ac->array, num_bytes);
                 array_zone += ac->cardinality;
@@ -3400,9 +3405,9 @@ void roaring_bitmap_frozen_serialize(const roaring_bitmap_t *rb, char *buf) {
                 roaring_unreachable;
         }
         memcpy(&count_zone[i], &count, 2);
+        typecode_zone[i] = typecode;
     }
     memcpy(key_zone, ra->keys, ra->size * sizeof(uint16_t));
-    memcpy(typecode_zone, ra->typecodes, ra->size * sizeof(uint8_t));
     uint32_t header = ((uint32_t)ra->size << 15) | FROZEN_COOKIE;
     memcpy(header_zone, &header, 4);
 }

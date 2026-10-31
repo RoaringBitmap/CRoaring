@@ -5687,6 +5687,30 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
     frozen_serialization_compare(r);
 }
 
+// Copy-on-write bitmaps hold shared containers once they have been copied.
+DEFINE_TEST(test_frozen_serialization_shared_containers) {
+    const uint64_t s = 65536;
+
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_add(r, 1);                 // array container
+    roaring_bitmap_add_range(r, s, s + 100);  // run container
+    for (uint64_t i = 0; i < s; i += 2) {     // bitset container
+        roaring_bitmap_add(r, s * 2 + i);
+    }
+    roaring_bitmap_run_optimize(r);
+    size_t expected_bytes = roaring_bitmap_frozen_size_in_bytes(r);
+
+    roaring_bitmap_set_copy_on_write(r, true);
+    roaring_bitmap_t *copy = roaring_bitmap_copy(r);
+    for (int32_t i = 0; i < r->high_low_container.size; i++) {
+        assert_int_equal(r->high_low_container.typecodes[i],
+                         SHARED_CONTAINER_TYPE);
+    }
+    assert_int_equal(roaring_bitmap_frozen_size_in_bytes(r), expected_bytes);
+    frozen_serialization_compare(r);
+    roaring_bitmap_free(copy);
+}
+
 #if ROARING_UNSAFE_FROZEN_TESTS
 // This test is unsafe, as it may trigger unaligned memory access
 // It is only enabled if ROARING_UNSAFE_FROZEN_TESTS is defined.
@@ -6368,6 +6392,7 @@ int main() {
         cmocka_unit_test(test_range_cardinality),
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
+        cmocka_unit_test(test_frozen_serialization_shared_containers),
 #if ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_portable_deserialize_frozen),
         cmocka_unit_test(test_portable_deserialize_frozen_unaligned),
