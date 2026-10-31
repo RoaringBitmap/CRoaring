@@ -4,6 +4,10 @@
 
 #include <roaring/bitset/bitset.h>
 
+#ifdef __cplusplus
+using namespace roaring::api;
+#endif
+
 #include "test.h"
 
 int compute_cardinality(bitset_t *b) {
