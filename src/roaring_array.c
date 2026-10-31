@@ -19,25 +19,21 @@ namespace internal {
 // Convention: [0,ra->size) all elements are initialized
 //  [ra->size, ra->allocation_size) is junk and contains nothing needing freeing
 
-extern inline int32_t ra_get_size(const roaring_array_t *ra);
-extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
+CROARING_EXPORT_INLINE(int32_t, ra_get_size, (const roaring_array_t *ra));
+CROARING_EXPORT_INLINE(int32_t, ra_get_index,
+                       (const roaring_array_t *ra, uint16_t x));
 
-extern inline container_t *ra_get_container_at_index(const roaring_array_t *ra,
-                                                     uint16_t i,
-                                                     uint8_t *typecode);
+CROARING_EXPORT_INLINE(container_t *, ra_get_container_at_index,
+                       (const roaring_array_t *ra, uint16_t i,
+                        uint8_t *typecode));
 
-extern inline void ra_unshare_container_at_index(roaring_array_t *ra,
-                                                 uint16_t i);
+CROARING_EXPORT_INLINE(void, ra_replace_key_and_container_at_index,
+                       (roaring_array_t * ra, int32_t i, uint16_t key,
+                        container_t *c, uint8_t typecode));
 
-extern inline void ra_replace_key_and_container_at_index(roaring_array_t *ra,
-                                                         int32_t i,
-                                                         uint16_t key,
-                                                         container_t *c,
-                                                         uint8_t typecode);
-
-extern inline void ra_set_container_at_index(const roaring_array_t *ra,
-                                             int32_t i, container_t *c,
-                                             uint8_t typecode);
+CROARING_EXPORT_INLINE(void, ra_set_container_at_index,
+                       (const roaring_array_t *ra, int32_t i, container_t *c,
+                        uint8_t typecode));
 
 static bool realloc_array(roaring_array_t *ra, int32_t new_capacity) {
     //
@@ -324,17 +320,8 @@ container_t *ra_get_container(roaring_array_t *ra, uint16_t x,
     return ra->containers[i];
 }
 
-extern inline container_t *ra_get_container_at_index(const roaring_array_t *ra,
-                                                     uint16_t i,
-                                                     uint8_t *typecode);
-
-extern inline uint16_t ra_get_key_at_index(const roaring_array_t *ra,
-                                           uint16_t i);
-
-extern inline int32_t ra_get_index(const roaring_array_t *ra, uint16_t x);
-
-extern inline int32_t ra_advance_until(const roaring_array_t *ra, uint16_t x,
-                                       int32_t pos);
+CROARING_EXPORT_INLINE(uint16_t, ra_get_key_at_index,
+                       (const roaring_array_t *ra, uint16_t i));
 
 // everything skipped over is freed
 int32_t ra_advance_until_freeing(roaring_array_t *ra, uint16_t x, int32_t pos) {

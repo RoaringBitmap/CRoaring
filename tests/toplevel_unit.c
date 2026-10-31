@@ -101,7 +101,7 @@ DEFINE_TEST(issue433) {
     roaring_bitmap_add_range_closed(b1, 258047, 262143);
     roaring_bitmap_remove_range_closed(b1, 262143, 262143);
     size_t len = roaring_bitmap_portable_size_in_bytes(b1);
-    char *data = roaring_malloc(len);
+    char *data = (char *)roaring_malloc(len);
     roaring_bitmap_portable_serialize(b1, data);
     roaring_bitmap_t *b2 = roaring_bitmap_portable_deserialize_safe(data, len);
     assert_true(roaring_bitmap_equals(b1, b2));
@@ -119,7 +119,7 @@ DEFINE_TEST(issue436) {
     roaring_bitmap_printf_describe(b1);
     roaring_bitmap_remove_range_closed(b1, 6143, 65505);
     size_t len = roaring_bitmap_portable_size_in_bytes(b1);
-    char *data = roaring_malloc(len);
+    char *data = (char *)roaring_malloc(len);
     roaring_bitmap_portable_serialize(b1, data);
     roaring_bitmap_t *b2 = roaring_bitmap_portable_deserialize_safe(data, len);
     assert_true(roaring_bitmap_equals(b1, b2));
@@ -4364,8 +4364,8 @@ void read_backward_compare(roaring_bitmap_t *r, const uint32_t *ref_values,
                            uint32_t ref_count, uint32_t step) {
     roaring_uint32_iterator_t *iter = roaring_iterator_create(r);
     roaring_iterator_init_last(r, iter);
-    uint32_t *buffer =
-        malloc(sizeof(uint32_t) * (step == UINT32_MAX ? 65536 : step));
+    uint32_t *buffer = (uint32_t *)malloc(sizeof(uint32_t) *
+                                          (step == UINT32_MAX ? 65536 : step));
     uint32_t remaining = ref_count;
     while (remaining > 0) {
         assert_true(iter->has_value == true);
@@ -6086,7 +6086,7 @@ DEFINE_TEST(robust_deserialization) {
 DEFINE_TEST(fuzz_deserializer) {
     for (size_t i = 0; i < 10000; i++) {
         size_t vec_size = our_rand() % 10000;
-        char *buffer = malloc(vec_size);
+        char *buffer = (char *)malloc(vec_size);
         for (size_t j = 0; j < vec_size; j++) {
             buffer[j] = our_rand() % 256;
         }

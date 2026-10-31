@@ -123,8 +123,9 @@ DEFINE_TEST(test_robust_deserialize7) {
     test_deserialize(TEST_DATA_DIR "crashproneinput7.bin");
 }
 
-static void invalid_deserialize_test(const void* data, size_t size,
+static void invalid_deserialize_test(const void* input, size_t size,
                                      const char* description) {
+    const char* data = (const char*)input;
     // Ensure that the data _looks_ like a valid bitmap, but is not.
     size_t serialized_size =
         roaring_bitmap_portable_deserialize_size(data, size);
@@ -148,7 +149,8 @@ static void invalid_deserialize_test(const void* data, size_t size,
     assert_null(bitmap);
 }
 
-static void valid_deserialize_test(const void* data, size_t size) {
+static void valid_deserialize_test(const void* input, size_t size) {
+    const char* data = (const char*)input;
     // Ensure that the data _looks_ like a valid bitmap, but is not.
     size_t serialized_size =
         roaring_bitmap_portable_deserialize_size(data, size);
