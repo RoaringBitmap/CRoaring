@@ -27,8 +27,9 @@ namespace roaring {
 namespace internal {
 #endif
 
-extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
-                                   uint16_t ikey);
+CROARING_EXPORT_INLINE(int32_t, binarySearch,
+                       (const uint16_t *array, int32_t lenarray,
+                        uint16_t ikey));
 
 #if CROARING_IS_X64
 // used by intersect_vector16

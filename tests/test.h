@@ -11,7 +11,11 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <roaring/misc/configreport.h>
+
 #ifdef __cplusplus
+using roaring::misc::tellmeall;
+
 //
 // It's generally not good to span a header file with `extern "C"`, but
 // this is how the cpp_unit.cpp test was doing it.  cmocka.h apparently

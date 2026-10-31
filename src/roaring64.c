@@ -3269,8 +3269,10 @@ void roaring64_iterator_free(roaring64_iterator_t *it) { roaring_free(it); }
 CROARING_STATIC_ASSERT(offsetof(roaring64_iterator_t, pub) == 0,
                        "the public members must be first in the iterator");
 
-extern inline bool roaring64_iterator_has_value(const roaring64_iterator_t *it);
-extern inline uint64_t roaring64_iterator_value(const roaring64_iterator_t *it);
+CROARING_EXPORT_INLINE(bool, roaring64_iterator_has_value,
+                       (const roaring64_iterator_t *it));
+CROARING_EXPORT_INLINE(uint64_t, roaring64_iterator_value,
+                       (const roaring64_iterator_t *it));
 
 // The current container is exhausted: step the ART to the next leaf.
 static inline bool roaring64_iterator_next_leaf(roaring64_iterator_t *it) {
