@@ -5629,6 +5629,113 @@ DEFINE_TEST(test_inplace_mutators_copy_on_write) {
     }
 }
 
+static void lazy_or_inplace_repaired(roaring_bitmap_t *x1,
+                                     const roaring_bitmap_t *x2) {
+    roaring_bitmap_lazy_or_inplace(x1, x2, false);
+    roaring_bitmap_repair_after_lazy(x1);
+}
+
+static void lazy_or_inplace_bitset_repaired(roaring_bitmap_t *x1,
+                                            const roaring_bitmap_t *x2) {
+    roaring_bitmap_lazy_or_inplace(x1, x2, true);
+    roaring_bitmap_repair_after_lazy(x1);
+}
+
+static void lazy_xor_inplace_repaired(roaring_bitmap_t *x1,
+                                      const roaring_bitmap_t *x2) {
+    roaring_bitmap_lazy_xor_inplace(x1, x2);
+    roaring_bitmap_repair_after_lazy(x1);
+}
+
+// Containers 0 and 1, which '*sibling' shares when copy-on-write, and
+// container 3, which is not shared.
+static roaring_bitmap_t *inplace_operand(bool copy_on_write,
+                                         roaring_bitmap_t **sibling) {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(r, copy_on_write);
+    roaring_bitmap_add_range(r, 0, 100);
+    roaring_bitmap_add_range(r, 1 << 16, (1 << 16) + 100);
+    if (sibling != NULL) {
+        *sibling = roaring_bitmap_copy(r);
+    }
+    roaring_bitmap_add_range(r, 3 << 16, (3 << 16) + 100);
+    return r;
+}
+
+// One range in each of 'count' containers, from key 'first' every 'step' keys.
+static roaring_bitmap_t *inplace_destination(bool copy_on_write, uint32_t first,
+                                             uint32_t step, uint32_t count) {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(r, copy_on_write);
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t base = (first + i * step) << 16;
+        roaring_bitmap_add_range(r, base + 50, base + 150);
+    }
+    return r;
+}
+
+static void check_inplace_copy_on_write_operand(
+    void (*op)(roaring_bitmap_t *, const roaring_bitmap_t *),
+    roaring_bitmap_t *(*expected_op)(const roaring_bitmap_t *,
+                                     const roaring_bitmap_t *),
+    bool x1_cow, bool x2_cow, const uint32_t keys[3]) {
+    roaring_bitmap_t *x1 =
+        inplace_destination(x1_cow, keys[0], keys[1], keys[2]);
+    roaring_bitmap_t *sibling = NULL;
+    roaring_bitmap_t *x2 = inplace_operand(x2_cow, &sibling);
+    roaring_bitmap_t *plain1 =
+        inplace_destination(false, keys[0], keys[1], keys[2]);
+    roaring_bitmap_t *plain2 = inplace_operand(false, NULL);
+    roaring_bitmap_t *expected = expected_op(plain1, plain2);
+
+    op(x1, x2);
+
+    assert_bitmap_validate(x1);
+    assert_true(roaring_bitmap_get_copy_on_write(x1) == x1_cow);
+    assert_true(roaring_bitmap_equals(x1, expected));
+    // x2 wraps its unshared container only to share it with x1.
+    assert_bitmap_validate(x2);
+    assert_true(roaring_bitmap_get_copy_on_write(x2) == x2_cow);
+    assert_true(roaring_bitmap_equals(x2, plain2));
+    int32_t i = ra_get_index(&x2->high_low_container, 3);
+    assert_true((x2->high_low_container.typecodes[i] ==
+                 SHARED_CONTAINER_TYPE) == (x1_cow && x2_cow));
+
+    roaring_bitmap_free(x1);
+    roaring_bitmap_free(x2);
+    roaring_bitmap_free(sibling);
+    roaring_bitmap_free(plain1);
+    roaring_bitmap_free(plain2);
+    roaring_bitmap_free(expected);
+}
+
+// An in-place union or xor shares the containers of x2 only when both bitmaps
+// are copy-on-write. Otherwise x1 gets copies. Neither bitmap changes setting.
+DEFINE_TEST(test_inplace_ops_copy_on_write_operand) {
+    void (*const ops[])(roaring_bitmap_t *, const roaring_bitmap_t *) = {
+        roaring_bitmap_or_inplace, roaring_bitmap_xor_inplace,
+        lazy_or_inplace_repaired, lazy_or_inplace_bitset_repaired,
+        lazy_xor_inplace_repaired};
+    roaring_bitmap_t *(*const expected_ops[])(const roaring_bitmap_t *,
+                                              const roaring_bitmap_t *) = {
+        roaring_bitmap_or, roaring_bitmap_xor, roaring_bitmap_or,
+        roaring_bitmap_or, roaring_bitmap_xor};
+    // Keys of x1 as {first, step, count}: none; key 0, so that the other
+    // containers of x2 are appended; key 2, so that they are merged or
+    // inserted before it; and enough keys that roaring_bitmap_or_inplace()
+    // inserts the few containers of x2 one by one.
+    const uint32_t layouts[][3] = {
+        {0, 1, 0}, {0, 1, 1}, {2, 1, 1}, {0, 2, 100}};
+    for (size_t o = 0; o < sizeof(ops) / sizeof(ops[0]); o++) {
+        for (size_t l = 0; l < sizeof(layouts) / sizeof(layouts[0]); l++) {
+            for (int cow = 0; cow < 4; cow++) {
+                check_inplace_copy_on_write_operand(
+                    ops[o], expected_ops[o], cow & 1, cow & 2, layouts[l]);
+            }
+        }
+    }
+}
+
 DEFINE_TEST(test_range_cardinality) {
     const uint64_t s = 65536;
 
@@ -6415,6 +6522,7 @@ int main() {
         cmocka_unit_test(test_remove_many_copy_on_write),
         cmocka_unit_test(test_remove_many_copy_on_write_many_copies),
         cmocka_unit_test(test_inplace_mutators_copy_on_write),
+        cmocka_unit_test(test_inplace_ops_copy_on_write_operand),
         cmocka_unit_test(test_range_cardinality),
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
