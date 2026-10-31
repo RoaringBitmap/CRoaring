@@ -885,6 +885,64 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *x1,
     ra_downsize(&x1->high_low_container, intersection_size);
 }
 
+// Frees the containers of ra and empties it, keeping its allocated table.
+static void clear_keeping_capacity(roaring_array_t *ra) {
+    ra_clear_containers(ra);
+    ra->size = 0;
+}
+
+bool roaring_bitmap_and_into(roaring_bitmap_t *dst, const roaring_bitmap_t *x1,
+                             const roaring_bitmap_t *x2) {
+    if (dst == x1) {
+        roaring_bitmap_and_inplace(dst, x2);
+        return true;
+    }
+    if (dst == x2) {
+        roaring_bitmap_and_inplace(dst, x1);
+        return true;
+    }
+    const roaring_array_t *ra1 = &x1->high_low_container;
+    const roaring_array_t *ra2 = &x2->high_low_container;
+    roaring_array_t *answer = &dst->high_low_container;
+    const int length1 = ra1->size, length2 = ra2->size;
+    clear_keeping_capacity(answer);
+    // With room for every key of the smaller input, ra_append never grows the
+    // table.
+    if (!extend_array(answer, length1 < length2 ? length1 : length2)) {
+        return false;
+    }
+    uint8_t result_type = 0;
+    int pos1 = 0, pos2 = 0;
+    while (pos1 < length1 && pos2 < length2) {
+        const uint16_t s1 = ra_get_key_at_index(ra1, (uint16_t)pos1);
+        const uint16_t s2 = ra_get_key_at_index(ra2, (uint16_t)pos2);
+        if (s1 == s2) {
+            uint8_t type1, type2;
+            container_t *c1 =
+                ra_get_container_at_index(ra1, (uint16_t)pos1, &type1);
+            container_t *c2 =
+                ra_get_container_at_index(ra2, (uint16_t)pos2, &type2);
+            container_t *c = container_and(c1, type1, c2, type2, &result_type);
+            if (c == NULL) {
+                clear_keeping_capacity(answer);
+                return false;
+            }
+            if (container_nonzero_cardinality(c, result_type)) {
+                ra_append(answer, s1, c, result_type);
+            } else {
+                container_free(c, result_type);
+            }
+            ++pos1;
+            ++pos2;
+        } else if (s1 < s2) {
+            pos1 = ra_advance_until(ra1, s2, pos1);
+        } else {  // s1 > s2
+            pos2 = ra_advance_until(ra2, s1, pos2);
+        }
+    }
+    return true;
+}
+
 roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2) {
     uint8_t result_type = 0;
@@ -1517,6 +1575,114 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
         intersection_size += (length1 - pos1);
     }
     ra_downsize(&x1->high_low_container, intersection_size);
+}
+
+// Appends the containers of ra at indexes [start, end) to answer: shared if
+// copy_on_write, otherwise copied (unwrapping shared ones). Returns false if
+// an allocation fails.
+static bool append_container_copies(roaring_array_t *answer,
+                                    const roaring_array_t *ra, int32_t start,
+                                    int32_t end, bool copy_on_write) {
+    for (int32_t i = start; i < end; ++i) {
+        uint8_t typecode = ra->typecodes[i];
+        container_t *c =
+            get_copy_of_container(ra->containers[i], &typecode, copy_on_write);
+        if (c == NULL) {
+            return false;
+        }
+        if (copy_on_write && c != ra->containers[i]) {  // c is a new wrapper
+            ra->containers[i] = c;
+            ra->typecodes[i] = typecode;
+        }
+        ra_append(answer, ra->keys[i], c, typecode);
+    }
+    return true;
+}
+
+// Appends ra1 minus ra2 to answer, which must have room for every key of ra1.
+// Returns false if an allocation fails.
+static bool andnot_append(roaring_array_t *answer, const roaring_array_t *ra1,
+                          const roaring_array_t *ra2, bool copy_on_write) {
+    const int length1 = ra1->size, length2 = ra2->size;
+    uint8_t result_type = 0;
+    int pos1 = 0, pos2 = 0;
+    while (pos1 < length1 && pos2 < length2) {
+        const uint16_t s1 = ra_get_key_at_index(ra1, (uint16_t)pos1);
+        const uint16_t s2 = ra_get_key_at_index(ra2, (uint16_t)pos2);
+        if (s1 == s2) {
+            uint8_t type1, type2;
+            container_t *c1 =
+                ra_get_container_at_index(ra1, (uint16_t)pos1, &type1);
+            container_t *c2 =
+                ra_get_container_at_index(ra2, (uint16_t)pos2, &type2);
+            container_t *c =
+                container_andnot(c1, type1, c2, type2, &result_type);
+            if (c == NULL) {
+                return false;
+            }
+            if (container_nonzero_cardinality(c, result_type)) {
+                ra_append(answer, s1, c, result_type);
+            } else {
+                container_free(c, result_type);
+            }
+            ++pos1;
+            ++pos2;
+        } else if (s1 < s2) {
+            const int next_pos1 = ra_advance_until(ra1, s2, pos1);
+            if (!append_container_copies(answer, ra1, pos1, next_pos1,
+                                         copy_on_write)) {
+                return false;
+            }
+            pos1 = next_pos1;
+        } else {  // s1 > s2
+            pos2 = ra_advance_until(ra2, s1, pos2);
+        }
+    }
+    return append_container_copies(answer, ra1, pos1, length1, copy_on_write);
+}
+
+bool roaring_bitmap_andnot_into(roaring_bitmap_t *dst,
+                                const roaring_bitmap_t *x1,
+                                const roaring_bitmap_t *x2) {
+    const int length1 = x1->high_low_container.size;
+    if (x1 == x2 || length1 == 0) {
+        clear_keeping_capacity(&dst->high_low_container);
+        return true;
+    }
+    if (dst == x1) {
+        roaring_bitmap_andnot_inplace(dst, x2);
+        return true;
+    }
+    // dst keeps its copy-on-write setting: it shares containers with x1 only
+    // if both are copy-on-write.
+    const bool copy_on_write = is_cow(dst) && is_cow(x1);
+    if (dst == x2) {
+        // x2 is read to the end, so the result goes into a new table.
+        roaring_array_t answer;
+        if (!ra_init_with_capacity(&answer, (uint32_t)length1)) {
+            clear_keeping_capacity(&dst->high_low_container);
+            return false;
+        }
+        answer.flags = dst->high_low_container.flags;
+        if (!andnot_append(&answer, &x1->high_low_container,
+                           &x2->high_low_container, copy_on_write)) {
+            ra_clear(&answer);
+            clear_keeping_capacity(&dst->high_low_container);
+            return false;
+        }
+        ra_clear(&dst->high_low_container);
+        dst->high_low_container = answer;
+        return true;
+    }
+    roaring_array_t *answer = &dst->high_low_container;
+    clear_keeping_capacity(answer);
+    if (!extend_array(answer, length1) ||
+        !andnot_append(answer, &x1->high_low_container, &x2->high_low_container,
+                       copy_on_write)) {
+        clear_keeping_capacity(answer);
+        return false;
+    }
+    return true;
 }
 
 uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r) {

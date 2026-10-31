@@ -281,6 +281,18 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *r1,
                                 const roaring_bitmap_t *r2);
 
 /**
+ * Computes the intersection of r1 and r2 into dst, replacing its values.
+ * Unlike `roaring_bitmap_and()`, it reuses the container table of dst, so
+ * computing into the same bitmap again does not reallocate it. dst keeps its
+ * copy-on-write setting. dst may be r1 or r2.
+ *
+ * Returns true on success, or false if an allocation fails, in which case dst
+ * is left empty (and valid).
+ */
+bool roaring_bitmap_and_into(roaring_bitmap_t *dst, const roaring_bitmap_t *r1,
+                             const roaring_bitmap_t *r2);
+
+/**
  * Computes the union between two bitmaps and returns new bitmap. The caller is
  * responsible for memory management.
  * The returned pointer may be NULL in case of errors.
@@ -347,6 +359,20 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *r1,
  */
 void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
                                    const roaring_bitmap_t *r2);
+
+/**
+ * Computes the difference (andnot) of r1 and r2 into dst, replacing its
+ * values. Like `roaring_bitmap_and_into()`, it reuses the container table of
+ * dst and keeps its copy-on-write setting: dst shares the containers of r1
+ * only if both are copy-on-write, and copies them otherwise. dst may be r1 or
+ * r2.
+ *
+ * Returns true on success, or false if an allocation fails, in which case dst
+ * is left empty (and valid).
+ */
+bool roaring_bitmap_andnot_into(roaring_bitmap_t *dst,
+                                const roaring_bitmap_t *r1,
+                                const roaring_bitmap_t *r2);
 
 /**
  * TODO: consider implementing:
