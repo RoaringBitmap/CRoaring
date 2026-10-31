@@ -544,7 +544,13 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
 
 bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
                               const roaring_bitmap_t *src) {
-    roaring_bitmap_set_copy_on_write(dest, is_cow(src));
+    // ra_overwrite() frees dest's containers, shared or not. Setting the flag
+    // with roaring_bitmap_set_copy_on_write() would first copy the shared ones.
+    if (is_cow(src)) {
+        dest->high_low_container.flags |= ROARING_FLAG_COW;
+    } else {
+        dest->high_low_container.flags &= ~ROARING_FLAG_COW;
+    }
     return ra_overwrite(&src->high_low_container, &dest->high_low_container,
                         is_cow(src));
 }
