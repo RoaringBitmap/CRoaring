@@ -400,6 +400,333 @@ DEFINE_TEST(overwrite_copy_on_write_with_plain) {
     roaring_bitmap_free(src);
 }
 
+// Memory hooks that fail the fail_alloc_countdown-th allocation. With the
+// countdown at 0 they only forward, like the default hooks.
+static int fail_alloc_countdown = 0;
+
+static bool fail_alloc_now(void) {
+    return fail_alloc_countdown > 0 && --fail_alloc_countdown == 0;
+}
+
+static void *fail_alloc_malloc(size_t size) {
+    return fail_alloc_now() ? NULL : malloc(size);
+}
+
+static void *fail_alloc_realloc(void *p, size_t size) {
+    return fail_alloc_now() ? NULL : realloc(p, size);
+}
+
+static void *fail_alloc_calloc(size_t count, size_t size) {
+    return fail_alloc_now() ? NULL : calloc(count, size);
+}
+
+static void *fail_alloc_aligned_malloc(size_t alignment, size_t size) {
+    if (fail_alloc_now()) return NULL;
+    void *p;
+#ifdef _MSC_VER
+    p = _aligned_malloc(size, alignment);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    p = __mingw_aligned_malloc(size, alignment);
+#else
+    if (posix_memalign(&p, alignment, size) != 0) return NULL;
+#endif
+    return p;
+}
+
+static void fail_alloc_aligned_free(void *p) {
+#ifdef _MSC_VER
+    _aligned_free(p);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    __mingw_aligned_free(p);
+#else
+    free(p);
+#endif
+}
+
+static void use_fail_alloc_hooks(void) {
+    roaring_memory_t hooks = {
+        fail_alloc_malloc,         fail_alloc_realloc,
+        fail_alloc_calloc,         free,
+        fail_alloc_aligned_malloc, fail_alloc_aligned_free};
+    roaring_init_memory_hook(hooks);
+}
+
+// Checks roaring_bitmap_and_into and roaring_bitmap_andnot_into against
+// roaring_bitmap_and and roaring_bitmap_andnot: into a bitmap holding other
+// values, with and without copy-on-write, and into a copy of either input.
+static void check_and_andnot_into(const roaring_bitmap_t *x1,
+                                  const roaring_bitmap_t *x2) {
+    roaring_bitmap_t *expected_and = roaring_bitmap_and(x1, x2);
+    roaring_bitmap_t *expected_andnot = roaring_bitmap_andnot(x1, x2);
+    for (int cow = 0; cow < 2; cow++) {
+        roaring_bitmap_t *dst = roaring_bitmap_from_range(0, 40 * 65536, 999);
+        roaring_bitmap_set_copy_on_write(dst, cow == 1);
+        assert_true(roaring_bitmap_and_into(dst, x1, x2));
+        assert_true(roaring_bitmap_equals(dst, expected_and));
+        assert_true(roaring_bitmap_internal_validate(dst, NULL));
+        assert_true(roaring_bitmap_andnot_into(dst, x1, x2));
+        assert_true(roaring_bitmap_equals(dst, expected_andnot));
+        assert_true(roaring_bitmap_internal_validate(dst, NULL));
+        assert_true(roaring_bitmap_get_copy_on_write(dst) == (cow == 1));
+        roaring_bitmap_free(dst);
+    }
+
+    roaring_bitmap_t *copy1 = roaring_bitmap_copy(x1);
+    roaring_bitmap_t *copy2 = roaring_bitmap_copy(x2);
+    assert_true(roaring_bitmap_and_into(copy1, copy1, x2));
+    assert_true(roaring_bitmap_and_into(copy2, x1, copy2));
+    assert_true(roaring_bitmap_equals(copy1, expected_and));
+    assert_true(roaring_bitmap_equals(copy2, expected_and));
+    assert_true(roaring_bitmap_internal_validate(copy1, NULL));
+    assert_true(roaring_bitmap_internal_validate(copy2, NULL));
+    assert_true(roaring_bitmap_overwrite(copy1, x1));
+    assert_true(roaring_bitmap_overwrite(copy2, x2));
+    assert_true(roaring_bitmap_andnot_into(copy1, copy1, x2));
+    assert_true(roaring_bitmap_andnot_into(copy2, x1, copy2));
+    assert_true(roaring_bitmap_equals(copy1, expected_andnot));
+    assert_true(roaring_bitmap_equals(copy2, expected_andnot));
+    assert_true(roaring_bitmap_internal_validate(copy1, NULL));
+    assert_true(roaring_bitmap_internal_validate(copy2, NULL));
+
+    roaring_bitmap_free(copy1);
+    roaring_bitmap_free(copy2);
+    roaring_bitmap_free(expected_and);
+    roaring_bitmap_free(expected_andnot);
+}
+
+// Adds an array (kind 0), bitset (kind 1) or run (kind 2) container at key.
+static void add_container_of_kind(roaring_bitmap_t *r, uint32_t key, int kind,
+                                  uint32_t *state) {
+    const uint32_t base = key * 65536;
+    const int count = kind == 0 ? 100 : kind == 1 ? 20000 : 10;
+    for (int k = 0; k < count; k++) {
+        *state = *state * 1664525 + 1013904223;
+        uint32_t v = base + (*state >> 16) % 65000;
+        if (kind == 2) {
+            roaring_bitmap_add_range(r, v, v + 1 + (*state >> 8) % 300);
+        } else {
+            roaring_bitmap_add(r, v);
+        }
+    }
+}
+
+DEFINE_TEST(test_and_andnot_into) {
+    roaring_bitmap_t *a = roaring_bitmap_create();
+    roaring_bitmap_t *b = roaring_bitmap_create();
+    uint32_t rng = 1234;
+    // Keys 0, 4 and 8 are only in a, keys 1, 5 and 9 only in b, the others in
+    // both, with different values. Container kinds cycle through all three.
+    for (uint32_t key = 0; key < 12; key++) {
+        if (key % 4 != 1) add_container_of_kind(a, key, (int)(key % 3), &rng);
+        if (key % 4 != 0) add_container_of_kind(b, key, (int)(key % 3), &rng);
+    }
+    // Disjoint values at key 12, so that its intersection is empty.
+    roaring_bitmap_add(a, 12 * 65536 + 1);
+    roaring_bitmap_add(b, 12 * 65536 + 2);
+    roaring_bitmap_run_optimize(a);
+    roaring_bitmap_run_optimize(b);
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(a, &stats);
+    assert_true(stats.n_array_containers >= 1);
+    assert_true(stats.n_bitset_containers >= 1);
+    assert_true(stats.n_run_containers >= 1);
+    roaring_bitmap_t *empty = roaring_bitmap_create();
+
+    check_and_andnot_into(a, b);
+    check_and_andnot_into(b, a);
+    check_and_andnot_into(a, a);
+    check_and_andnot_into(a, empty);
+    check_and_andnot_into(empty, a);
+
+    // Copy-on-write inputs whose containers are shared with other bitmaps.
+    roaring_bitmap_set_copy_on_write(a, true);
+    roaring_bitmap_set_copy_on_write(b, true);
+    roaring_bitmap_t *a_copy = roaring_bitmap_copy(a);
+    roaring_bitmap_t *b_copy = roaring_bitmap_copy(b);
+    check_and_andnot_into(a, b);
+    check_and_andnot_into(b, a);
+    assert_true(roaring_bitmap_equals(a, a_copy));
+    assert_true(roaring_bitmap_equals(b, b_copy));
+    assert_true(roaring_bitmap_internal_validate(a, NULL));
+    assert_true(roaring_bitmap_internal_validate(b, NULL));
+
+    roaring_bitmap_free(a_copy);
+    roaring_bitmap_free(b_copy);
+    roaring_bitmap_free(empty);
+    roaring_bitmap_free(a);
+    roaring_bitmap_free(b);
+}
+
+// dst shares the containers of a copy-on-write input only if dst is
+// copy-on-write too. Otherwise it copies them and leaves the input unchanged.
+DEFINE_TEST(test_andnot_into_copy_on_write) {
+    roaring_bitmap_t *x1 = roaring_bitmap_from_range(0, 4 * 65536, 3);
+    roaring_bitmap_t *x2 = roaring_bitmap_from(1);  // only in container 0
+    roaring_bitmap_t *expected = roaring_bitmap_andnot(x1, x2);
+    roaring_bitmap_set_copy_on_write(x1, true);
+    roaring_array_t *ra1 = &x1->high_low_container;
+    for (int32_t i = 0; i < ra1->size; i++) {
+        assert_true(ra1->typecodes[i] != SHARED_CONTAINER_TYPE);
+    }
+
+    roaring_bitmap_t *dst = roaring_bitmap_create();
+    assert_true(roaring_bitmap_andnot_into(dst, x1, x2));
+    assert_true(roaring_bitmap_equals(dst, expected));
+    for (int32_t i = 0; i < ra1->size; i++) {
+        assert_true(ra1->typecodes[i] != SHARED_CONTAINER_TYPE);
+    }
+
+    roaring_bitmap_set_copy_on_write(dst, true);
+    assert_true(roaring_bitmap_andnot_into(dst, x1, x2));
+    assert_true(roaring_bitmap_equals(dst, expected));
+    for (int32_t i = 1; i < ra1->size; i++) {
+        assert_true(dst->high_low_container.containers[i] ==
+                    ra1->containers[i]);
+    }
+    assert_true(roaring_bitmap_internal_validate(dst, NULL));
+    assert_true(roaring_bitmap_internal_validate(x1, NULL));
+
+    roaring_bitmap_free(dst);
+    roaring_bitmap_free(expected);
+    roaring_bitmap_free(x1);
+    roaring_bitmap_free(x2);
+}
+
+// Computing into a bitmap keeps its container table, also when the bitmap is
+// one of the inputs.
+DEFINE_TEST(test_and_andnot_into_keep_capacity) {
+    roaring_bitmap_t *dst = roaring_bitmap_from_range(0, 100 * 65536, 1000);
+    const roaring_array_t *ra = &dst->high_low_container;
+    const int32_t capacity = ra->allocation_size;
+    const uint16_t *keys = ra->keys;
+    roaring_bitmap_t *x1 = roaring_bitmap_from(1, 65536 + 1, 2 * 65536 + 1);
+    roaring_bitmap_t *x2 = roaring_bitmap_from(1, 2 * 65536 + 1);
+
+    assert_true(roaring_bitmap_and_into(dst, x1, x2));
+    assert_int_equal(roaring_bitmap_get_cardinality(dst), 2);
+    assert_true(roaring_bitmap_andnot_into(dst, x1, x2));
+    assert_int_equal(roaring_bitmap_get_cardinality(dst), 1);
+    assert_true(roaring_bitmap_andnot_into(dst, x1, dst));
+    assert_true(roaring_bitmap_equals(dst, x2));
+    assert_true(roaring_bitmap_and_into(dst, dst, x1));
+    assert_true(roaring_bitmap_equals(dst, x2));
+    assert_true(roaring_bitmap_and_into(dst, x1, dst));
+    assert_true(roaring_bitmap_equals(dst, x2));
+    assert_true(roaring_bitmap_andnot_into(dst, dst, x2));
+    assert_true(roaring_bitmap_is_empty(dst));
+    assert_int_equal(ra->allocation_size, capacity);
+    assert_true(ra->keys == keys);
+
+    roaring_bitmap_free(dst);
+    roaring_bitmap_free(x1);
+    roaring_bitmap_free(x2);
+}
+
+typedef bool (*into_function_t)(roaring_bitmap_t *, const roaring_bitmap_t *,
+                                const roaring_bitmap_t *);
+typedef roaring_bitmap_t *(*set_function_t)(const roaring_bitmap_t *,
+                                            const roaring_bitmap_t *);
+
+// Fails each allocation of into() in turn, until it completes, with dst a new
+// bitmap (alias 0), a copy of x1 passed as x1 (alias 1) or a copy of x2 passed
+// as x2 (alias 2). After a failure, dst must be empty and every bitmap valid.
+static void check_into_allocation_failure(into_function_t into,
+                                          set_function_t expected_function,
+                                          const roaring_bitmap_t *x1,
+                                          const roaring_bitmap_t *x2, int alias,
+                                          bool copy_on_write) {
+    roaring_bitmap_t *expected = expected_function(x1, x2);
+    for (int n = 1;; n++) {
+        roaring_bitmap_t *dst = alias == 1   ? roaring_bitmap_copy(x1)
+                                : alias == 2 ? roaring_bitmap_copy(x2)
+                                             : roaring_bitmap_create();
+        roaring_bitmap_set_copy_on_write(dst, copy_on_write);
+        fail_alloc_countdown = n;
+        bool ok = into(dst, alias == 1 ? dst : x1, alias == 2 ? dst : x2);
+        bool failed = fail_alloc_countdown == 0;  // the n-th allocation failed
+        fail_alloc_countdown = 0;
+        assert_true(ok == !failed);
+        assert_true(roaring_bitmap_internal_validate(dst, NULL));
+        assert_true(roaring_bitmap_internal_validate(x1, NULL));
+        assert_true(roaring_bitmap_internal_validate(x2, NULL));
+        if (ok) {
+            assert_true(roaring_bitmap_equals(dst, expected));
+            roaring_bitmap_free(dst);
+            break;
+        }
+        assert_true(roaring_bitmap_is_empty(dst));
+        roaring_bitmap_free(dst);
+    }
+    roaring_bitmap_free(expected);
+}
+
+// The allocations are those of dst's container table, of the copies of x1's
+// containers and of the container operations. Not every container operation
+// checks its allocations yet, so the keys in both inputs pair a bitset with a
+// run, for which the operations used here do: with a small run, the
+// intersection is a new array, and with a full run, the intersection is a
+// copy of the bitset and the difference a new empty array.
+DEFINE_TEST(test_and_andnot_into_allocation_failure) {
+    use_fail_alloc_hooks();
+    // Two bitset containers and an array container.
+    roaring_bitmap_t *x1 = roaring_bitmap_from_range(0, 2 * 65536, 2);
+    roaring_bitmap_add(x1, 2 * 65536 + 1);
+    roaring_bitmap_t *disjoint = roaring_bitmap_from(4 * 65536 + 1);
+    roaring_bitmap_t *small_and_full_runs = roaring_bitmap_create();
+    roaring_bitmap_add_range(small_and_full_runs, 10, 20);
+    roaring_bitmap_add_range(small_and_full_runs, 65536, 2 * 65536);
+    roaring_bitmap_t *full_runs = roaring_bitmap_from_range(0, 2 * 65536, 1);
+    roaring_bitmap_run_optimize(small_and_full_runs);
+    roaring_bitmap_run_optimize(full_runs);
+    roaring_statistics_t stats;
+    roaring_bitmap_statistics(small_and_full_runs, &stats);
+    assert_int_equal(stats.n_run_containers, 2);
+    roaring_bitmap_statistics(full_runs, &stats);
+    assert_int_equal(stats.n_run_containers, 2);
+
+    for (int cow = 0; cow < 2; cow++) {
+        roaring_bitmap_set_copy_on_write(x1, cow == 1);
+        for (int alias = 0; alias < 3; alias++) {
+            check_into_allocation_failure(roaring_bitmap_and_into,
+                                          roaring_bitmap_and, x1, disjoint,
+                                          alias, cow == 1);
+            check_into_allocation_failure(roaring_bitmap_and_into,
+                                          roaring_bitmap_and, x1,
+                                          small_and_full_runs, alias, cow == 1);
+            check_into_allocation_failure(roaring_bitmap_andnot_into,
+                                          roaring_bitmap_andnot, x1, disjoint,
+                                          alias, cow == 1);
+            check_into_allocation_failure(roaring_bitmap_andnot_into,
+                                          roaring_bitmap_andnot, x1, full_runs,
+                                          alias, cow == 1);
+        }
+    }
+    roaring_bitmap_free(x1);
+    roaring_bitmap_free(disjoint);
+    roaring_bitmap_free(small_and_full_runs);
+    roaring_bitmap_free(full_runs);
+}
+
+// When dst is r2 and the inputs have more than 65536 keys together, dst's
+// table cannot hold both, and the result is written over the containers of
+// dst already read.
+DEFINE_TEST(test_andnot_into_all_keys) {
+    roaring_bitmap_t *x1 = roaring_bitmap_create();
+    roaring_bitmap_t *all = roaring_bitmap_create();
+    roaring_bitmap_t *high = roaring_bitmap_create();
+    for (uint32_t key = 0; key < 65536; key++) {
+        roaring_bitmap_add(x1, key << 16);
+        roaring_bitmap_add(x1, (key << 16) + 1);
+        roaring_bitmap_add(all, key << 16);
+        if (key >= 32768) roaring_bitmap_add(high, key << 16);
+    }
+    check_and_andnot_into(x1, all);
+    check_and_andnot_into(x1, high);
+    roaring_bitmap_free(x1);
+    roaring_bitmap_free(all);
+    roaring_bitmap_free(high);
+}
+
 DEFINE_TEST(can_copy_empty_true) { can_copy_empty(true); }
 
 DEFINE_TEST(can_copy_empty_false) { can_copy_empty(false); }
@@ -6259,6 +6586,11 @@ int main() {
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
         cmocka_unit_test(overwrite_copy_on_write_with_plain),
+        cmocka_unit_test(test_and_andnot_into),
+        cmocka_unit_test(test_andnot_into_copy_on_write),
+        cmocka_unit_test(test_and_andnot_into_keep_capacity),
+        cmocka_unit_test(test_and_andnot_into_allocation_failure),
+        cmocka_unit_test(test_andnot_into_all_keys),
         cmocka_unit_test(PyRoaringBitMap124),
         cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),
