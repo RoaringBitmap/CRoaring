@@ -513,12 +513,12 @@ static void add_container_of_kind(roaring_bitmap_t *r, uint32_t key, int kind,
 DEFINE_TEST(test_and_andnot_into) {
     roaring_bitmap_t *a = roaring_bitmap_create();
     roaring_bitmap_t *b = roaring_bitmap_create();
-    uint32_t state = 1234;
+    uint32_t rng = 1234;
     // Keys 0, 4 and 8 are only in a, keys 1, 5 and 9 only in b, the others in
     // both, with different values. Container kinds cycle through all three.
     for (uint32_t key = 0; key < 12; key++) {
-        if (key % 4 != 1) add_container_of_kind(a, key, (int)(key % 3), &state);
-        if (key % 4 != 0) add_container_of_kind(b, key, (int)(key % 3), &state);
+        if (key % 4 != 1) add_container_of_kind(a, key, (int)(key % 3), &rng);
+        if (key % 4 != 0) add_container_of_kind(b, key, (int)(key % 3), &rng);
     }
     // Disjoint values at key 12, so that its intersection is empty.
     roaring_bitmap_add(a, 12 * 65536 + 1);
