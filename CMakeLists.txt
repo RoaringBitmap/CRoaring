@@ -157,6 +157,7 @@ if(ENABLE_ROARING_TESTS AND BASH AND NOT EMSCRIPTEN)
 
   add_library(croaring-singleheader-source-lib $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/roaring.c>)
   set_target_properties(croaring-singleheader-source-lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS YES)
+  add_dependencies(croaring-singleheader-source-lib croaring-singleheader-files)
   target_include_directories(croaring-singleheader-source-lib PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 
   add_executable(amalgamate_demo_cpp $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamation_demo.cpp>)
