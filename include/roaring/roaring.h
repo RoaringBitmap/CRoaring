@@ -287,7 +287,8 @@ void roaring_bitmap_and_inplace(roaring_bitmap_t *r1,
  * copy-on-write setting. dst may be r1 or r2.
  *
  * Returns true on success, or false if an allocation fails, in which case dst
- * is left empty (and valid).
+ * is left empty (and valid). Some container operations do not check their
+ * allocations yet, and a failure inside one of them is not handled.
  */
 bool roaring_bitmap_and_into(roaring_bitmap_t *dst, const roaring_bitmap_t *r1,
                              const roaring_bitmap_t *r2);
@@ -368,7 +369,9 @@ void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
  * r2.
  *
  * Returns true on success, or false if an allocation fails, in which case dst
- * is left empty (and valid).
+ * is left empty (and valid). As with `roaring_bitmap_and_into()`, a failure
+ * inside a container operation that does not check its allocations yet is not
+ * handled.
  */
 bool roaring_bitmap_andnot_into(roaring_bitmap_t *dst,
                                 const roaring_bitmap_t *r1,
