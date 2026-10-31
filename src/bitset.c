@@ -11,7 +11,7 @@
 #ifdef __cplusplus
 extern "C" {
 namespace roaring {
-namespace internal {
+namespace api {  // bitset_t was once internal, but made public in the API
 #endif
 
 extern inline void bitset_print(const bitset_t *b);
