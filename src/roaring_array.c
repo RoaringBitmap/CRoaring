@@ -152,8 +152,10 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
                 dest->size = 0;
                 return false;
             }
-            source->containers[i] = c;
-            source->typecodes[i] = typecode;
+            if (c != source->containers[i]) {  // c is a new wrapper
+                source->containers[i] = c;
+                source->typecodes[i] = typecode;
+            }
         }
         // we do a shallow copy to the other bitmap
         memcpy(dest->containers, source->containers,
