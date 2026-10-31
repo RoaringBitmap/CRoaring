@@ -1,4 +1,4 @@
-name: C-Cpp-CI
+name: Ubuntu-C-Cpp-CI
 
 'on':
   - push
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  linux:
+  ci:
     name: ubuntu-${{ matrix.compiler.cc }}-library-cpp-${{ matrix.mode.library }}-tests-cpp-${{ matrix.mode.tests }}-shared-${{ matrix.mode.shared }}
     runs-on: ubuntu-latest
     strategy:
@@ -49,30 +49,3 @@ jobs:
           else
             bash tools/check-c-symbols.sh build-c/src/libroaring.a build/src/libroaring.a
           fi
-
-  windows:
-    name: windows-msvc-tests-cpp-${{ matrix.mode.tests }}-shared-${{ matrix.mode.shared }}
-    runs-on: windows-2025-vs2026
-    strategy:
-      fail-fast: false
-      matrix:
-        mode:
-          - { tests: 'OFF', shared: 'ON' }
-          - { tests: 'ON', shared: 'OFF' }
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Configure
-        run: >
-          cmake -S . -B build -G "Visual Studio 18 2026" -A x64
-          -DENABLE_ROARING_TESTS=ON -DENABLE_ROARING_BENCHMARKS=OFF
-          -DBUILD_SHARED_LIBS=${{ matrix.mode.shared }} -DROARING_BUILD_STATIC=ON
-          -DROARING_BUILD_C_AS_CPP=ON
-          -DROARING_BUILD_C_TESTS_AS_CPP=${{ matrix.mode.tests }}
-      - name: Build Release
-        run: cmake --build build --config Release --parallel 2
-      - name: Test Release
-        run: ctest --test-dir build -C Release --output-on-failure --no-tests=error
-      - name: Build Debug
-        run: cmake --build build --config Debug --parallel 2
-      - name: Test Debug
-        run: ctest --test-dir build -C Debug --output-on-failure --no-tests=error

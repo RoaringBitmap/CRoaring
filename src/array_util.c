@@ -2035,9 +2035,11 @@ static inline __m512i avx512_cx16(__m512i v, __m512i t, __mmask32 hi) {
 static inline __m512i avx512_bitonic_sort32(__m512i v) {
     v = avx512_cx16(v, _mm512_shuffle_i64x2(v, v, 0x4E), 0xFFFF0000u);  // d=16
     v = avx512_cx16(v, _mm512_shuffle_i64x2(v, v, 0xB1), 0xFF00FF00u);  // d=8
-    v = avx512_cx16(v, _mm512_shuffle_epi32(v, 0x4E), 0xF0F0F0F0u);     // d=4
-    v = avx512_cx16(v, _mm512_shuffle_epi32(v, 0xB1), 0xCCCCCCCCu);     // d=2
-    v = avx512_cx16(v, _mm512_rol_epi32(v, 16), 0xAAAAAAAAu);           // d=1
+    // d=4, then d=2. GCC declares this immediate as _MM_PERM_ENUM, and C++
+    // does not convert an int to it, so use the named constants.
+    v = avx512_cx16(v, _mm512_shuffle_epi32(v, _MM_PERM_BADC), 0xF0F0F0F0u);
+    v = avx512_cx16(v, _mm512_shuffle_epi32(v, _MM_PERM_CDAB), 0xCCCCCCCCu);
+    v = avx512_cx16(v, _mm512_rol_epi32(v, 16), 0xAAAAAAAAu);  // d=1
     return v;
 }
 
