@@ -381,6 +381,108 @@ DEFINE_TEST(issue288) {
     roaring_bitmap_free(r2);
 }
 
+// Memory hooks that fail the fail_alloc_countdown-th allocation. With the
+// countdown at 0 they only forward, like the default hooks.
+static int fail_alloc_countdown = 0;
+
+static bool fail_alloc_now(void) {
+    return fail_alloc_countdown > 0 && --fail_alloc_countdown == 0;
+}
+
+static void *fail_alloc_malloc(size_t size) {
+    return fail_alloc_now() ? NULL : malloc(size);
+}
+
+static void *fail_alloc_realloc(void *p, size_t size) {
+    return fail_alloc_now() ? NULL : realloc(p, size);
+}
+
+static void *fail_alloc_calloc(size_t count, size_t size) {
+    return fail_alloc_now() ? NULL : calloc(count, size);
+}
+
+static void *fail_alloc_aligned_malloc(size_t alignment, size_t size) {
+    if (fail_alloc_now()) return NULL;
+    void *p;
+#ifdef _MSC_VER
+    p = _aligned_malloc(size, alignment);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    p = __mingw_aligned_malloc(size, alignment);
+#else
+    if (posix_memalign(&p, alignment, size) != 0) return NULL;
+#endif
+    return p;
+}
+
+static void fail_alloc_aligned_free(void *p) {
+#ifdef _MSC_VER
+    _aligned_free(p);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    __mingw_aligned_free(p);
+#else
+    free(p);
+#endif
+}
+
+static void use_fail_alloc_hooks(void) {
+    roaring_memory_t hooks = {
+        fail_alloc_malloc,         fail_alloc_realloc,
+        fail_alloc_calloc,         free,
+        fail_alloc_aligned_malloc, fail_alloc_aligned_free};
+    roaring_init_memory_hook(hooks);
+}
+
+// A failed copy-on-write copy must return NULL and leave the source valid.
+// Under a leak checker, this also checks that the references taken before the
+// failure are released.
+DEFINE_TEST(test_copy_on_write_allocation_failure) {
+    use_fail_alloc_hooks();
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(r, true);
+    roaring_bitmap_add(r, 1);
+    roaring_bitmap_t *earlier = roaring_bitmap_copy(r);  // shares container 0
+    roaring_bitmap_add(r, 65536 + 1);
+    roaring_bitmap_add(r, 2 * 65536 + 1);
+
+    // roaring_bitmap_copy() allocates the bitmap, its container table, then a
+    // shared wrapper for each container that has none. Fail the wrapper for
+    // container 2, after container 1 got one.
+    fail_alloc_countdown = 4;
+    roaring_bitmap_t *copy = roaring_bitmap_copy(r);
+    fail_alloc_countdown = 0;
+    assert_null(copy);
+    assert_true(roaring_bitmap_internal_validate(r, NULL));
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 3);
+    assert_true(roaring_bitmap_internal_validate(earlier, NULL));
+
+    roaring_bitmap_free(earlier);
+    roaring_bitmap_free(r);
+}
+
+// A failed overwrite must leave dest valid and empty, as documented.
+DEFINE_TEST(test_overwrite_allocation_failure) {
+    use_fail_alloc_hooks();
+    roaring_bitmap_t *src = roaring_bitmap_create();
+    for (uint32_t i = 0; i < 3; i++) {
+        roaring_bitmap_add(src, i * 65536);
+    }
+    roaring_bitmap_t *dest = roaring_bitmap_create();
+    roaring_bitmap_add(dest, 1);
+    assert_true(dest->high_low_container.allocation_size <
+                src->high_low_container.size);
+
+    // dest's container table must grow. Fail growing it.
+    fail_alloc_countdown = 1;
+    bool ok = roaring_bitmap_overwrite(dest, src);
+    fail_alloc_countdown = 0;
+    assert_false(ok);
+    assert_true(roaring_bitmap_is_empty(dest));
+    assert_true(roaring_bitmap_internal_validate(dest, NULL));
+
+    roaring_bitmap_free(dest);
+    roaring_bitmap_free(src);
+}
+
 DEFINE_TEST(can_copy_empty_true) { can_copy_empty(true); }
 
 DEFINE_TEST(can_copy_empty_false) { can_copy_empty(false); }
@@ -6233,6 +6335,8 @@ int main() {
         cmocka_unit_test(test_contains_range_PyRoaringBitMap_issue81),
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
+        cmocka_unit_test(test_copy_on_write_allocation_failure),
+        cmocka_unit_test(test_overwrite_allocation_failure),
         cmocka_unit_test(PyRoaringBitMap124),
         cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),

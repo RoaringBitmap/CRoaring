@@ -132,6 +132,7 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
     }
     if (dest->allocation_size < source->size) {
         if (!realloc_array(dest, source->size)) {
+            dest->size = 0;  // its containers were freed above
             return false;
         }
     }
@@ -140,8 +141,21 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
     // we go through the containers, turning them into shared containers...
     if (copy_on_write) {
         for (int32_t i = 0; i < dest->size; ++i) {
-            source->containers[i] = get_copy_of_container(
-                source->containers[i], &source->typecodes[i], copy_on_write);
+            uint8_t typecode = source->typecodes[i];
+            container_t *c = get_copy_of_container(source->containers[i],
+                                                   &typecode, copy_on_write);
+            if (c == NULL) {
+                // Drop dest's references; the source keeps its own.
+                for (int32_t j = 0; j < i; ++j) {
+                    shared_container_free(CAST_shared(source->containers[j]));
+                }
+                dest->size = 0;
+                return false;
+            }
+            if (c != source->containers[i]) {  // c is a new wrapper
+                source->containers[i] = c;
+                source->typecodes[i] = typecode;
+            }
         }
         // we do a shallow copy to the other bitmap
         memcpy(dest->containers, source->containers,
@@ -229,9 +243,12 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
     if (copy_on_write) {
-        sa->containers[index] = get_copy_of_container(
+        container_t *c = get_copy_of_container(
             sa->containers[index], &sa->typecodes[index], copy_on_write);
-        ra->containers[pos] = sa->containers[index];
+        if (c != sa->containers[index]) {  // c is a new wrapper
+            sa->containers[index] = c;
+        }
+        ra->containers[pos] = c;
         ra->typecodes[pos] = sa->typecodes[index];
     } else {
         ra->containers[pos] =
@@ -257,9 +274,12 @@ void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
-            sa->containers[i] = get_copy_of_container(
+            container_t *c = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
-            ra->containers[pos] = sa->containers[i];
+            if (c != sa->containers[i]) {  // c is a new wrapper
+                sa->containers[i] = c;
+            }
+            ra->containers[pos] = c;
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
             ra->containers[pos] =
@@ -303,9 +323,12 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
-            sa->containers[i] = get_copy_of_container(
+            container_t *c = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
-            ra->containers[pos] = sa->containers[i];
+            if (c != sa->containers[i]) {  // c is a new wrapper
+                sa->containers[i] = c;
+            }
+            ra->containers[pos] = c;
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
             ra->containers[pos] =
