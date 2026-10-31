@@ -86,6 +86,9 @@ typedef struct shared_container_s shared_container_t;
  * otherwise, increase the count
  * If copy_on_write = false, then clone.
  * Return NULL in case of failure.
+ * With copy_on_write, store the result back into the source bitmap only when it
+ * differs from the container passed in, so that a bitmap whose containers are
+ * all shared is never written.
  **/
 container_t *get_copy_of_container(container_t *container, uint8_t *typecode,
                                    bool copy_on_write);

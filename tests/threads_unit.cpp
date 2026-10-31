@@ -1,3 +1,4 @@
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
@@ -179,10 +180,114 @@ bool run_shared_container_race_test() {
     return is_ok;
 }
 
+// Operations that share a copy-on-write input's containers must leave the
+// slots that are already shared untouched. Then a bitmap whose containers are
+// all shared can be read while another thread computes from it; thread
+// sanitizer reports a race if any of these operations writes to it.
+bool run_shared_input_test() {
+    // One value in each container with a key in [begin, end).
+    auto bitmap_with_keys = [](uint32_t begin, uint32_t end) {
+        roaring_bitmap_t *r = roaring_bitmap_create();
+        for (uint32_t key = begin; key < end; key++) {
+            roaring_bitmap_add(r, key * 65536 + 1);
+        }
+        roaring_bitmap_set_copy_on_write(r, true);
+        return r;
+    };
+    roaring_bitmap_t *r = bitmap_with_keys(0, 10);
+    roaring_bitmap_t *copy = roaring_bitmap_copy(r);  // shares every container
+    // Keys only in r come before, between and after the keys of other.
+    roaring_bitmap_t *other = bitmap_with_keys(3, 8);
+    // Many more containers than r, for the in-place union of a few containers.
+    roaring_bitmap_t *large = bitmap_with_keys(3, 400);
+    roaring_bitmap_t *empty = bitmap_with_keys(0, 0);
+
+    // The reader runs for as long as the other thread computes.
+    std::atomic<bool> reading(false);
+    std::atomic<bool> done(false);
+    bool reader_ok = true;
+    std::thread reader([r, &reading, &done, &reader_ok] {
+        reading = true;
+        do {
+            if (roaring_bitmap_get_cardinality(r) != 10) {
+                reader_ok = false;
+            }
+        } while (!done);
+    });
+    std::thread computer([r, other, large, empty, &reading, &done] {
+        while (!reading) {
+        }
+        for (size_t i = 0; i < 100; i++) {
+            roaring_bitmap_t *results[] = {
+                // Copying and empty-input paths also share through ra_overwrite.
+                roaring_bitmap_copy(r),
+                roaring_bitmap_or(r, empty),
+                roaring_bitmap_or(empty, r),
+                roaring_bitmap_xor(r, empty),
+                roaring_bitmap_xor(empty, r),
+                roaring_bitmap_andnot(r, empty),
+                roaring_bitmap_lazy_or(r, empty, false),
+                roaring_bitmap_lazy_or(empty, r, false),
+                roaring_bitmap_lazy_xor(r, empty),
+                roaring_bitmap_lazy_xor(empty, r),
+                roaring_bitmap_or(r, other),
+                roaring_bitmap_or(other, r),
+                roaring_bitmap_xor(r, other),
+                roaring_bitmap_xor(other, r),
+                roaring_bitmap_lazy_or(r, other, false),
+                roaring_bitmap_lazy_or(other, r, false),
+                roaring_bitmap_lazy_xor(r, other),
+                roaring_bitmap_lazy_xor(other, r),
+                roaring_bitmap_andnot(r, other),
+                roaring_bitmap_flip(r, 5 * 65536, 6 * 65536),
+                roaring_bitmap_add_offset(r, 65536),
+            };
+            for (roaring_bitmap_t *result : results) {
+                roaring_bitmap_free(result);
+            }
+            roaring_bitmap_t *targets[] = {
+                roaring_bitmap_copy(other), roaring_bitmap_copy(other),
+                roaring_bitmap_copy(other), roaring_bitmap_copy(other),
+                roaring_bitmap_copy(large), roaring_bitmap_create(),
+            };
+            roaring_bitmap_or_inplace(targets[0], r);
+            roaring_bitmap_xor_inplace(targets[1], r);
+            roaring_bitmap_lazy_or_inplace(targets[2], r, false);
+            roaring_bitmap_lazy_xor_inplace(targets[3], r);
+            roaring_bitmap_or_inplace(targets[4], r);
+            roaring_bitmap_overwrite(targets[5], r);
+            for (roaring_bitmap_t *target : targets) {
+                roaring_bitmap_free(target);
+            }
+        }
+        done = true;
+    });
+    reader.join();
+    computer.join();
+
+    bool is_ok = true;
+    if (!reader_ok) {
+        printf("the shared bitmap changed while it was read\n");
+        is_ok = false;
+    }
+    const char *reason = NULL;
+    if (!roaring_bitmap_internal_validate(r, &reason)) {
+        printf("the shared bitmap is invalid: %s\n", reason);
+        is_ok = false;
+    }
+    roaring_bitmap_free(r);
+    roaring_bitmap_free(copy);
+    roaring_bitmap_free(other);
+    roaring_bitmap_free(large);
+    roaring_bitmap_free(empty);
+    return is_ok;
+}
+
 int main() {
     roaring::misc::tellmeall();
     bool is_ok = run_threads_unit_tests();
     is_ok = run_shared_container_race_test() && is_ok;
+    is_ok = run_shared_input_test() && is_ok;
     if (is_ok) {
         printf("code run completed.\n");
     }

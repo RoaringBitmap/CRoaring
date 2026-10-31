@@ -927,7 +927,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                                         (uint16_t)pos1, &type1);
             // c1 = container_clone(c1, type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
-            if (is_cow(x1)) {
+            if (is_cow(x1) && c1 != x1->high_low_container.containers[pos1]) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
             }
@@ -941,7 +941,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             // c2 = container_clone(c2, type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            if (is_cow(x2) && c2 != x2->high_low_container.containers[pos2]) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -1010,7 +1010,7 @@ static void roaring_inplace_merge_bulk(roaring_bitmap_t *x1,
             uint8_t type2 = ra2->typecodes[right];
             container_t *c2 =
                 get_copy_of_container(ra2->containers[right], &type2, cow2);
-            if (cow2) {
+            if (cow2 && c2 != ra2->containers[right]) {
                 ra_set_container_at_index(ra2, right, c2, type2);
             }
             ra_append(&merged, k2, c2, type2);
@@ -1059,7 +1059,7 @@ static void roaring_inplace_merge_bulk(roaring_bitmap_t *x1,
         uint8_t type2 = ra2->typecodes[right];
         container_t *c2 =
             get_copy_of_container(ra2->containers[right], &type2, cow2);
-        if (cow2) {
+        if (cow2 && c2 != ra2->containers[right]) {
             ra_set_container_at_index(ra2, right, c2, type2);
         }
         ra_append(&merged, ra2->keys[right], c2, type2);
@@ -1129,7 +1129,7 @@ static void roaring_inplace_union_few(roaring_bitmap_t *x1,
         uint8_t type2 = ra2->typecodes[pos2];
         container_t *c2 =
             get_copy_of_container(ra2->containers[pos2], &type2, cow2);
-        if (cow2) {
+        if (cow2 && c2 != ra2->containers[pos2]) {
             ra_set_container_at_index(ra2, pos2, c2, type2);
         }
         ra1->keys[dst] = key;
@@ -1246,7 +1246,7 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
-            if (is_cow(x1)) {
+            if (is_cow(x1) && c1 != x1->high_low_container.containers[pos1]) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
             }
@@ -1259,7 +1259,7 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            if (is_cow(x2) && c2 != x2->high_low_container.containers[pos2]) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -2648,7 +2648,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
-            if (is_cow(x1)) {
+            if (is_cow(x1) && c1 != x1->high_low_container.containers[pos1]) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
             }
@@ -2661,7 +2661,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            if (is_cow(x2) && c2 != x2->high_low_container.containers[pos2]) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -2748,7 +2748,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            if (is_cow(x2) && c2 != x2->high_low_container.containers[pos2]) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -2811,7 +2811,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
             container_t *c1 = ra_get_container_at_index(&x1->high_low_container,
                                                         (uint16_t)pos1, &type1);
             c1 = get_copy_of_container(c1, &type1, is_cow(x1));
-            if (is_cow(x1)) {
+            if (is_cow(x1) && c1 != x1->high_low_container.containers[pos1]) {
                 ra_set_container_at_index(&x1->high_low_container, pos1, c1,
                                           type1);
             }
@@ -2824,7 +2824,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            if (is_cow(x2) && c2 != x2->high_low_container.containers[pos2]) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -2909,7 +2909,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                                         (uint16_t)pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
             c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            if (is_cow(x2) && c2 != x2->high_low_container.containers[pos2]) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
