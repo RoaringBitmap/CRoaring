@@ -381,6 +381,25 @@ DEFINE_TEST(issue288) {
     roaring_bitmap_free(r2);
 }
 
+// Overwriting a copy-on-write bitmap with one that is not must release its
+// shared containers and leave the bitmap it shares them with intact.
+DEFINE_TEST(overwrite_copy_on_write_with_plain) {
+    roaring_bitmap_t *r = roaring_bitmap_from_range(0, 3 * 65536, 3);
+    roaring_bitmap_set_copy_on_write(r, true);
+    roaring_bitmap_t *dest = roaring_bitmap_copy(r);  // shares every container
+    roaring_bitmap_t *src = roaring_bitmap_from(1, 2, 3);
+
+    assert_true(roaring_bitmap_overwrite(dest, src));
+    assert_false(roaring_bitmap_get_copy_on_write(dest));
+    assert_true(roaring_bitmap_equals(dest, src));
+    assert_true(roaring_bitmap_internal_validate(dest, NULL));
+    assert_true(roaring_bitmap_get_cardinality(r) == 65536);
+    assert_true(roaring_bitmap_internal_validate(r, NULL));
+    roaring_bitmap_free(r);
+    roaring_bitmap_free(dest);
+    roaring_bitmap_free(src);
+}
+
 DEFINE_TEST(can_copy_empty_true) { can_copy_empty(true); }
 
 DEFINE_TEST(can_copy_empty_false) { can_copy_empty(false); }
@@ -6233,6 +6252,7 @@ int main() {
         cmocka_unit_test(test_contains_range_PyRoaringBitMap_issue81),
         cmocka_unit_test(issue316),
         cmocka_unit_test(issue288),
+        cmocka_unit_test(overwrite_copy_on_write_with_plain),
         cmocka_unit_test(PyRoaringBitMap124),
         cmocka_unit_test(issue245),
         cmocka_unit_test(issue208),
