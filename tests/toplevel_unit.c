@@ -5706,6 +5706,12 @@ DEFINE_TEST(test_frozen_serialization_max_containers) {
     frozen_serialization_compare(r);
 }
 
+DEFINE_TEST(test_frozen_serialization_empty) {
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    assert_true(r->high_low_container.keys == NULL);
+    frozen_serialization_compare(r);
+}
+
 // Copy-on-write bitmaps hold shared containers once they have been copied.
 DEFINE_TEST(test_frozen_serialization_shared_containers) {
     const uint64_t s = 65536;
@@ -6412,6 +6418,7 @@ int main() {
         cmocka_unit_test(test_range_cardinality),
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
+        cmocka_unit_test(test_frozen_serialization_empty),
         cmocka_unit_test(test_frozen_serialization_shared_containers),
 #if ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_portable_deserialize_frozen),
