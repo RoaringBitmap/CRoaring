@@ -149,11 +149,13 @@ bool ra_overwrite(const roaring_array_t *source, roaring_array_t *dest,
         memcpy(dest->typecodes, source->typecodes,
                dest->size * sizeof(uint8_t));
     } else {
-        memcpy(dest->typecodes, source->typecodes,
-               dest->size * sizeof(uint8_t));
         for (int32_t i = 0; i < dest->size; i++) {
-            dest->containers[i] =
-                container_clone(source->containers[i], source->typecodes[i]);
+            // source may be copy-on-write while dest is not
+            uint8_t type = source->typecodes[i];
+            const container_t *c =
+                container_unwrap_shared(source->containers[i], &type);
+            dest->containers[i] = container_clone(c, type);
+            dest->typecodes[i] = type;
             if (dest->containers[i] == NULL) {
                 for (int32_t j = 0; j < i; j++) {
                     container_free(dest->containers[j], dest->typecodes[j]);
@@ -262,9 +264,12 @@ void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
             ra->containers[pos] = sa->containers[i];
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
-            ra->containers[pos] =
-                container_clone(sa->containers[i], sa->typecodes[i]);
-            ra->typecodes[pos] = sa->typecodes[i];
+            // sa may be copy-on-write while ra is not
+            uint8_t type = sa->typecodes[i];
+            const container_t *c =
+                container_unwrap_shared(sa->containers[i], &type);
+            ra->containers[pos] = container_clone(c, type);
+            ra->typecodes[pos] = type;
         }
         ra->size++;
     }

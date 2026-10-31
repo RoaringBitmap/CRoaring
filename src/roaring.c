@@ -968,7 +968,8 @@ static void roaring_inplace_merge_bulk(roaring_bitmap_t *x1,
                                        int left, int right, bool is_xor) {
     roaring_array_t *ra1 = &x1->high_low_container;
     const roaring_array_t *ra2 = &x2->high_low_container;
-    const bool cow2 = is_cow(x2);
+    // x1 shares the containers of x2 only if both are copy-on-write.
+    const bool share = is_cow(x1) && is_cow(x2);
     const int length1 = ra1->size;
     const int length2 = ra2->size;
 
@@ -1009,8 +1010,8 @@ static void roaring_inplace_merge_bulk(roaring_bitmap_t *x1,
         } else if (k1 > k2) {
             uint8_t type2 = ra2->typecodes[right];
             container_t *c2 =
-                get_copy_of_container(ra2->containers[right], &type2, cow2);
-            if (cow2) {
+                get_copy_of_container(ra2->containers[right], &type2, share);
+            if (share) {
                 ra_set_container_at_index(ra2, right, c2, type2);
             }
             ra_append(&merged, k2, c2, type2);
@@ -1058,8 +1059,8 @@ static void roaring_inplace_merge_bulk(roaring_bitmap_t *x1,
     for (; right < length2; right++) {
         uint8_t type2 = ra2->typecodes[right];
         container_t *c2 =
-            get_copy_of_container(ra2->containers[right], &type2, cow2);
-        if (cow2) {
+            get_copy_of_container(ra2->containers[right], &type2, share);
+        if (share) {
             ra_set_container_at_index(ra2, right, c2, type2);
         }
         ra_append(&merged, ra2->keys[right], c2, type2);
@@ -1077,7 +1078,7 @@ static void roaring_inplace_union_few(roaring_bitmap_t *x1,
                                       const roaring_bitmap_t *x2) {
     roaring_array_t *ra1 = &x1->high_low_container;
     const roaring_array_t *ra2 = &x2->high_low_container;
-    const bool cow2 = is_cow(x2);
+    const bool share = is_cow(x1) && is_cow(x2);
     const int32_t length1 = ra1->size;
     const int32_t length2 = ra2->size;
     uint8_t result_type = 0;
@@ -1128,8 +1129,8 @@ static void roaring_inplace_union_few(roaring_bitmap_t *x1,
         dst--;
         uint8_t type2 = ra2->typecodes[pos2];
         container_t *c2 =
-            get_copy_of_container(ra2->containers[pos2], &type2, cow2);
-        if (cow2) {
+            get_copy_of_container(ra2->containers[pos2], &type2, share);
+        if (share) {
             ra_set_container_at_index(ra2, pos2, c2, type2);
         }
         ra1->keys[dst] = key;
@@ -1146,11 +1147,12 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
+    const bool share = is_cow(x1) && is_cow(x2);
 
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        ra_overwrite(&x2->high_low_container, &x1->high_low_container, share);
         return;
     }
     // Merging would visit all the containers of x1.
@@ -1200,7 +1202,7 @@ void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+                             pos2, length2, share);
     }
 }
 
@@ -1289,11 +1291,12 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
+    const bool share = is_cow(x1) && is_cow(x2);
 
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        ra_overwrite(&x2->high_low_container, &x1->high_low_container, share);
         return;
     }
 
@@ -1354,7 +1357,7 @@ void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+                             pos2, length2, share);
     }
 }
 
@@ -2689,11 +2692,12 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
+    const bool share = is_cow(x1) && is_cow(x2);
 
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        ra_overwrite(&x2->high_low_container, &x1->high_low_container, share);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -2747,8 +2751,8 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
-            c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            c2 = get_copy_of_container(c2, &type2, share);
+            if (share) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -2763,7 +2767,7 @@ void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+                             pos2, length2, share);
     }
 }
 
@@ -2852,11 +2856,12 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
+    const bool share = is_cow(x1) && is_cow(x2);
 
     if (0 == length2) return;
 
     if (0 == length1) {
-        roaring_bitmap_overwrite(x1, x2);
+        ra_overwrite(&x2->high_low_container, &x1->high_low_container, share);
         return;
     }
     int pos1 = 0, pos2 = 0;
@@ -2908,8 +2913,8 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
             container_t *c2 = ra_get_container_at_index(&x2->high_low_container,
                                                         (uint16_t)pos2, &type2);
             // container_t *c2_clone = container_clone(c2, type2);
-            c2 = get_copy_of_container(c2, &type2, is_cow(x2));
-            if (is_cow(x2)) {
+            c2 = get_copy_of_container(c2, &type2, share);
+            if (share) {
                 ra_set_container_at_index(&x2->high_low_container, pos2, c2,
                                           type2);
             }
@@ -2924,7 +2929,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
     }
     if (pos1 == length1) {
         ra_append_copy_range(&x1->high_low_container, &x2->high_low_container,
-                             pos2, length2, is_cow(x2));
+                             pos2, length2, share);
     }
 }
 
