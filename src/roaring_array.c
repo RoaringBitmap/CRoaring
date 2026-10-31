@@ -243,9 +243,12 @@ void ra_append_copy(roaring_array_t *ra, const roaring_array_t *sa,
     ra->keys[pos] = sa->keys[index];
     // the shared container will be in two bitmaps
     if (copy_on_write) {
-        sa->containers[index] = get_copy_of_container(
+        container_t *c = get_copy_of_container(
             sa->containers[index], &sa->typecodes[index], copy_on_write);
-        ra->containers[pos] = sa->containers[index];
+        if (c != sa->containers[index]) {  // c is a new wrapper
+            sa->containers[index] = c;
+        }
+        ra->containers[pos] = c;
         ra->typecodes[pos] = sa->typecodes[index];
     } else {
         ra->containers[pos] =
@@ -271,9 +274,12 @@ void ra_append_copy_range(roaring_array_t *ra, const roaring_array_t *sa,
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
-            sa->containers[i] = get_copy_of_container(
+            container_t *c = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
-            ra->containers[pos] = sa->containers[i];
+            if (c != sa->containers[i]) {  // c is a new wrapper
+                sa->containers[i] = c;
+            }
+            ra->containers[pos] = c;
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
             ra->containers[pos] =
@@ -317,9 +323,12 @@ void ra_append_range(roaring_array_t *ra, roaring_array_t *sa,
         const int32_t pos = ra->size;
         ra->keys[pos] = sa->keys[i];
         if (copy_on_write) {
-            sa->containers[i] = get_copy_of_container(
+            container_t *c = get_copy_of_container(
                 sa->containers[i], &sa->typecodes[i], copy_on_write);
-            ra->containers[pos] = sa->containers[i];
+            if (c != sa->containers[i]) {  // c is a new wrapper
+                sa->containers[i] = c;
+            }
+            ra->containers[pos] = c;
             ra->typecodes[pos] = sa->typecodes[i];
         } else {
             ra->containers[pos] =
