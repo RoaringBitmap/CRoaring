@@ -3452,6 +3452,10 @@ const roaring_bitmap_t *roaring_bitmap_frozen_view(const char *buf,
         return NULL;
     }
     int32_t num_containers = (header >> 15);
+    if (num_containers > (1 << 16)) {
+        // there are at most 65536 distinct 16-bit keys
+        return NULL;
+    }
 
     // typecodes, counts and keys
     if (length < 4 + (size_t)num_containers * (1 + 2 + 2)) {

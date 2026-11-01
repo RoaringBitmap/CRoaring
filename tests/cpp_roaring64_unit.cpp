@@ -392,6 +392,47 @@ DEFINE_TEST(test_cpp_r64_run_optimize) {
     assert_true(r.contains(sparse));
 }
 
+// Self-aliasing operators: r &= r and r |= r leave r unchanged; the binary
+// operators on (r, r) give r or the empty set. (`r ^= r` and `r -= r` are not
+// allowed by the C API, see roaring64_bitmap_xor_inplace.)
+DEFINE_TEST(test_cpp_r64_self_aliasing) {
+    const uint64_t K = uint64_t(1) << 32;
+    Roaring64 r;
+    r.addRange(1, 11);
+    r.runOptimize();
+    r.add(K + 3);
+    r.add(UINT64_MAX);
+    const Roaring64 orig = r;
+    r &= r;
+    assert_true(r == orig);
+    r |= r;
+    assert_true(r == orig);
+    assert_true((r & r) == orig);
+    assert_true((r | r) == orig);
+    assert_true((r ^ r).isEmpty());
+    assert_true((r - r).isEmpty());
+    assert_true(r.isSubset(r));
+    assert_false(r.isStrictSubset(r));
+    assert_true(r == orig);
+}
+
+// runOptimize on a run container fragmented into length-1 runs returns false
+// and shrinks the bitmap, while preserving equality.
+DEFINE_TEST(test_cpp_r64_run_optimize_recovers_space) {
+    Roaring64 r;
+    r.addRange(0, 100);
+    assert_true(r.runOptimize());
+    for (uint64_t v = 200; v < 65536; v += 2) {
+        r.add(v);
+    }
+    const Roaring64 expected = r;
+    const size_t before = r.getSizeInBytes();
+    assert_false(r.runOptimize());
+    assert_true(r.getSizeInBytes() < before / 10);
+    assert_true(r == expected);
+    assert_int_equal(r.cardinality(), 100 + (65536 - 200) / 2);
+}
+
 DEFINE_TEST(test_cpp_r64_remove_run_compression) {
     Roaring64 r;
     for (uint64_t i = 0; i < 30000; ++i) {
@@ -740,6 +781,8 @@ int main() {
 #endif
         cmocka_unit_test(test_cpp_r64_random_vs_set),
         cmocka_unit_test(test_cpp_r64_random_range_ops_vs_set),
+        cmocka_unit_test(test_cpp_r64_self_aliasing),
+        cmocka_unit_test(test_cpp_r64_run_optimize_recovers_space),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

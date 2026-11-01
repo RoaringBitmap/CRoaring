@@ -3250,6 +3250,677 @@ DEFINE_TEST(test_shrink_to_fit_many_containers) {
     }
 }
 
+// Constants for the boundary tests below.
+const uint64_t K32 = UINT64_C(1) << 32;
+const uint64_t H63 = UINT64_C(1) << 63;
+const uint64_t M64 = UINT64_MAX;
+
+std::vector<uint64_t> r64_to_vector(const roaring64_bitmap_t* r) {
+    std::vector<uint64_t> v(roaring64_bitmap_get_cardinality(r));
+    roaring64_bitmap_to_uint64_array(r, v.data());
+    return v;
+}
+
+uint64_t r64_num_containers(const roaring64_bitmap_t* r) {
+    roaring64_statistics_t stats;
+    roaring64_bitmap_statistics(r, &stats);
+    return stats.n_containers;
+}
+
+// An exclusive range end that falls exactly on a 2^32 boundary must not
+// create a container in the next high-32 bucket.
+DEFINE_TEST(test_add_remove_range_across_2_32) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    roaring64_bitmap_add_range(r, K32 - 2, K32);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 2);
+    assert_vector_equal(r64_to_vector(r), {K32 - 2, K32 - 1});
+    assert_int_equal(r64_num_containers(r), 1);
+    assert_false(roaring64_bitmap_contains(r, K32));
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_create();
+    roaring64_bitmap_add_range(r, K32 - 10, K32 + 10);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 20);
+    assert_int_equal(roaring64_bitmap_minimum(r), K32 - 10);
+    assert_int_equal(roaring64_bitmap_maximum(r), K32 + 9);
+    roaring64_bitmap_remove_range(r, K32 - 5, K32 + 5);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 10);
+    assert_true(roaring64_bitmap_contains(r, K32 - 6));
+    assert_false(roaring64_bitmap_contains(r, K32 - 5));
+    assert_false(roaring64_bitmap_contains(r, K32 + 4));
+    assert_true(roaring64_bitmap_contains(r, K32 + 5));
+    roaring64_bitmap_remove_range(r, K32 - 10, K32);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_minimum(r), K32 + 5);
+    roaring64_bitmap_free(r);
+}
+
+// Ranges crossing 2^63 must be treated as unsigned.
+DEFINE_TEST(test_add_range_across_2_63) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    roaring64_bitmap_add_range(r, H63 - 2, H63 + 2);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 4);
+    assert_vector_equal(r64_to_vector(r), {H63 - 2, H63 - 1, H63, H63 + 1});
+    assert_int_equal(roaring64_bitmap_rank(r, H63 - 1), 2);
+    uint64_t element = 0;
+    assert_true(roaring64_bitmap_select(r, 2, &element));
+    assert_int_equal(element, H63);
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_flip_across_2_63) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(0);
+    roaring64_bitmap_t* flipped = roaring64_bitmap_flip(r, H63 - 1, H63 + 1);
+    roaring64_bitmap_flip_inplace(r, H63 - 1, H63 + 1);
+    for (roaring64_bitmap_t* b : {r, flipped}) {
+        assert_r64_valid(b);
+        assert_vector_equal(r64_to_vector(b), {0, H63 - 1, H63});
+        uint64_t element = 0;
+        assert_true(roaring64_bitmap_select(b, 1, &element));
+        assert_int_equal(element, H63 - 1);
+        assert_true(roaring64_bitmap_select(b, 2, &element));
+        assert_int_equal(element, H63);
+    }
+    roaring64_bitmap_free(r);
+    roaring64_bitmap_free(flipped);
+}
+
+// xor / flip that empties the first or the last container must keep
+// minimum/maximum and the container count right.
+DEFINE_TEST(test_flip_xor_empties_first_or_last_container) {
+    for (uint64_t second : {UINT64_C(65536), K32, M64}) {
+        roaring64_bitmap_t* r = roaring64_bitmap_from(0, second);
+        roaring64_bitmap_t* zero = roaring64_bitmap_from(0);
+        roaring64_bitmap_t* last = roaring64_bitmap_from(second);
+
+        roaring64_bitmap_t* x = roaring64_bitmap_xor(r, zero);
+        roaring64_bitmap_t* xi = roaring64_bitmap_copy(r);
+        roaring64_bitmap_xor_inplace(xi, zero);
+        for (roaring64_bitmap_t* b : {x, xi}) {
+            assert_r64_valid(b);
+            assert_int_equal(roaring64_bitmap_get_cardinality(b), 1);
+            assert_int_equal(roaring64_bitmap_minimum(b), second);
+            assert_int_equal(roaring64_bitmap_maximum(b), second);
+            assert_int_equal(r64_num_containers(b), 1);
+        }
+        roaring64_bitmap_free(x);
+        roaring64_bitmap_free(xi);
+
+        x = roaring64_bitmap_xor(r, last);
+        xi = roaring64_bitmap_copy(r);
+        roaring64_bitmap_xor_inplace(xi, last);
+        for (roaring64_bitmap_t* b : {x, xi}) {
+            assert_r64_valid(b);
+            assert_int_equal(roaring64_bitmap_get_cardinality(b), 1);
+            assert_int_equal(roaring64_bitmap_minimum(b), 0);
+            assert_int_equal(roaring64_bitmap_maximum(b), 0);
+            assert_int_equal(r64_num_containers(b), 1);
+        }
+        roaring64_bitmap_free(x);
+        roaring64_bitmap_free(xi);
+
+        roaring64_bitmap_t* f = roaring64_bitmap_flip(r, 0, 1);
+        roaring64_bitmap_flip_inplace(r, 0, 1);
+        for (roaring64_bitmap_t* b : {r, f}) {
+            assert_r64_valid(b);
+            assert_int_equal(roaring64_bitmap_get_cardinality(b), 1);
+            assert_int_equal(roaring64_bitmap_minimum(b), second);
+            assert_int_equal(roaring64_bitmap_maximum(b), second);
+            assert_int_equal(r64_num_containers(b), 1);
+        }
+        roaring64_bitmap_free(f);
+        roaring64_bitmap_free(r);
+        roaring64_bitmap_free(zero);
+        roaring64_bitmap_free(last);
+    }
+}
+
+// add/contains/remove/toArray at the boundaries of the 16/32/48/64-bit
+// key spaces, inserted in a shuffled order.
+DEFINE_TEST(test_boundary_values) {
+    const std::vector<uint64_t> sorted = {0,
+                                          65535,
+                                          65536,
+                                          K32 - 1,
+                                          K32,
+                                          (UINT64_C(1) << 48) - 1,
+                                          UINT64_C(1) << 48,
+                                          H63 - 1,
+                                          H63,
+                                          M64 - 1,
+                                          M64};
+    std::vector<uint64_t> shuffled = sorted;
+    std::mt19937_64 gen(1234);
+    std::shuffle(shuffled.begin(), shuffled.end(), gen);
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    for (uint64_t v : shuffled) {
+        assert_true(roaring64_bitmap_add_checked(r, v));
+    }
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), sorted.size());
+    for (uint64_t v : sorted) {
+        assert_true(roaring64_bitmap_contains(r, v));
+        if (v != M64 &&
+            !std::binary_search(sorted.begin(), sorted.end(), v + 1)) {
+            assert_false(roaring64_bitmap_contains(r, v + 1));
+        }
+        if (v != 0 &&
+            !std::binary_search(sorted.begin(), sorted.end(), v - 1)) {
+            assert_false(roaring64_bitmap_contains(r, v - 1));
+        }
+    }
+    assert_vector_equal(r64_to_vector(r), sorted);
+    assert_int_equal(roaring64_bitmap_minimum(r), 0);
+    assert_int_equal(roaring64_bitmap_maximum(r), M64);
+
+    uint64_t expected_card = sorted.size();
+    for (uint64_t v : shuffled) {
+        assert_true(roaring64_bitmap_remove_checked(r, v));
+        expected_card--;
+        assert_false(roaring64_bitmap_contains(r, v));
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), expected_card);
+        assert_r64_valid(r);
+    }
+    assert_true(roaring64_bitmap_is_empty(r));
+    roaring64_bitmap_free(r);
+}
+
+// rank/select/min/max with values at the extremes, including 2^63 and
+// UINT64_MAX (unsigned ordering).
+DEFINE_TEST(test_rank_select_extremes) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(0, 1, H63 - 1, H63);
+    const uint64_t expected[] = {0, 1, H63 - 1, H63};
+    uint64_t element = 0;
+    for (uint64_t i = 0; i < 4; ++i) {
+        assert_true(roaring64_bitmap_select(r, i, &element));
+        assert_int_equal(element, expected[i]);
+        uint64_t index = 0;
+        assert_true(roaring64_bitmap_get_index(r, expected[i], &index));
+        assert_int_equal(index, i);
+    }
+    assert_false(roaring64_bitmap_select(r, 4, &element));
+    assert_int_equal(roaring64_bitmap_rank(r, 0), 1);
+    assert_int_equal(roaring64_bitmap_rank(r, 1), 2);
+    assert_int_equal(roaring64_bitmap_rank(r, 2), 2);
+    assert_int_equal(roaring64_bitmap_rank(r, H63 - 2), 2);
+    assert_int_equal(roaring64_bitmap_rank(r, H63 - 1), 3);
+    assert_int_equal(roaring64_bitmap_rank(r, H63), 4);
+    assert_int_equal(roaring64_bitmap_rank(r, M64), 4);
+    assert_int_equal(roaring64_bitmap_minimum(r), 0);
+    assert_int_equal(roaring64_bitmap_maximum(r), H63);
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_from(M64);
+    assert_int_equal(roaring64_bitmap_rank(r, M64 - 1), 0);
+    assert_int_equal(roaring64_bitmap_rank(r, M64), 1);
+    assert_true(roaring64_bitmap_select(r, 0, &element));
+    assert_int_equal(element, M64);
+    assert_int_equal(roaring64_bitmap_minimum(r), M64);
+    assert_int_equal(roaring64_bitmap_maximum(r), M64);
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_from(1, M64);
+    assert_true(roaring64_bitmap_select(r, 1, &element));
+    assert_int_equal(element, M64);
+    assert_int_equal(roaring64_bitmap_rank(r, M64), 2);
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_rank_select_empty_and_out_of_range) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    for (uint64_t p : {UINT64_C(0), UINT64_C(1), H63 - 1, H63, M64}) {
+        assert_int_equal(roaring64_bitmap_rank(r, p), 0);
+    }
+    uint64_t element = 0;
+    assert_false(roaring64_bitmap_select(r, 0, &element));
+    roaring64_bitmap_add(r, 123);
+    assert_true(roaring64_bitmap_select(r, 0, &element));
+    assert_int_equal(element, 123);
+    assert_false(roaring64_bitmap_select(r, 1, &element));
+    assert_false(roaring64_bitmap_select(r, 2, &element));
+    roaring64_bitmap_free(r);
+}
+
+// rank of a value whose high bucket is absent, between two buckets.
+DEFINE_TEST(test_rank_in_missing_bucket) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(123, H63 - 1);
+    assert_int_equal(roaring64_bitmap_rank(r, (H63 - 1) / 2), 1);
+    assert_int_equal(roaring64_bitmap_rank(r, H63 - 2), 1);
+    assert_int_equal(roaring64_bitmap_rank(r, H63 - 1), 2);
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_from(5, 3 * K32 + 7);
+    assert_int_equal(roaring64_bitmap_rank(r, 2 * K32), 1);
+    assert_int_equal(roaring64_bitmap_rank(r, 3 * K32 + 6), 1);
+    assert_int_equal(roaring64_bitmap_rank(r, 3 * K32 + 7), 2);
+    roaring64_bitmap_free(r);
+}
+
+// Remove the only value of a high bucket, then select and add again.
+DEFINE_TEST(test_remove_last_value_of_bucket) {
+    uint64_t element = 0;
+    roaring64_bitmap_t* r = roaring64_bitmap_from(123, H63 - 1);
+    roaring64_bitmap_remove(r, H63 - 1);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 1);
+    assert_true(roaring64_bitmap_select(r, 0, &element));
+    assert_int_equal(element, 123);
+    assert_false(roaring64_bitmap_select(r, 1, &element));
+    roaring64_bitmap_add(r, H63 - 1);
+    assert_true(roaring64_bitmap_select(r, 1, &element));
+    assert_int_equal(element, H63 - 1);
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_from(123, H63 - 1);
+    roaring64_bitmap_remove(r, H63 - 1);
+    roaring64_bitmap_add(r, (H63 - 1) / 2);
+    assert_r64_valid(r);
+    assert_true(roaring64_bitmap_select(r, 1, &element));
+    assert_int_equal(element, (H63 - 1) / 2);
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_from(123, (H63 - 1) / 2);
+    roaring64_bitmap_remove(r, (H63 - 1) / 2);
+    roaring64_bitmap_add(r, H63 - 1);
+    assert_r64_valid(r);
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 2);
+    assert_true(roaring64_bitmap_select(r, 1, &element));
+    assert_int_equal(element, H63 - 1);
+    roaring64_bitmap_free(r);
+}
+
+// Operations of a bitmap with itself. xor_inplace and andnot_inplace are
+// documented as not allowing aliasing, so only the other forms are tested.
+DEFINE_TEST(test_self_aliasing_ops) {
+    roaring64_bitmap_t* b = roaring64_bitmap_from_range(1, 11, 1);
+    roaring64_bitmap_run_optimize(b);
+    roaring64_bitmap_add(b, K32 + 3);
+    roaring64_bitmap_add(b, M64);
+    roaring64_bitmap_t* orig = roaring64_bitmap_copy(b);
+    const uint64_t card = roaring64_bitmap_get_cardinality(b);
+
+    roaring64_bitmap_or_inplace(b, b);
+    assert_r64_valid(b);
+    assert_true(roaring64_bitmap_equals(b, orig));
+    roaring64_bitmap_and_inplace(b, b);
+    assert_r64_valid(b);
+    assert_true(roaring64_bitmap_equals(b, orig));
+
+    roaring64_bitmap_t* tmp = roaring64_bitmap_or(b, b);
+    assert_true(roaring64_bitmap_equals(tmp, orig));
+    roaring64_bitmap_free(tmp);
+    tmp = roaring64_bitmap_and(b, b);
+    assert_true(roaring64_bitmap_equals(tmp, orig));
+    roaring64_bitmap_free(tmp);
+    tmp = roaring64_bitmap_xor(b, b);
+    assert_r64_valid(tmp);
+    assert_true(roaring64_bitmap_is_empty(tmp));
+    roaring64_bitmap_free(tmp);
+    tmp = roaring64_bitmap_andnot(b, b);
+    assert_r64_valid(tmp);
+    assert_true(roaring64_bitmap_is_empty(tmp));
+    roaring64_bitmap_free(tmp);
+
+    assert_int_equal(roaring64_bitmap_and_cardinality(b, b), card);
+    assert_int_equal(roaring64_bitmap_or_cardinality(b, b), card);
+    assert_int_equal(roaring64_bitmap_xor_cardinality(b, b), 0);
+    assert_int_equal(roaring64_bitmap_andnot_cardinality(b, b), 0);
+    assert_true(roaring64_bitmap_intersect(b, b));
+    assert_true(roaring64_bitmap_is_subset(b, b));
+    assert_false(roaring64_bitmap_is_strict_subset(b, b));
+    assert_true(roaring64_bitmap_equals(b, orig));
+
+    roaring64_bitmap_free(orig);
+    roaring64_bitmap_free(b);
+}
+
+// Regression vectors ported from Java's TestRoaring64Bitmap (ART issues).
+DEFINE_TEST(test_java_art_regressions) {
+    {  // testIssue428
+        const uint64_t input = UINT64_C(1353768194141061120);
+        const uint64_t compare[] = {
+            UINT64_C(5192650370358181888), UINT64_C(5193776270265024512),
+            UINT64_C(5194532734264934400), UINT64_C(5194544828892839936),
+            UINT64_C(5194545653526560768), UINT64_C(5194545688960040960),
+            UINT64_C(5194545692181266432), UINT64_C(5194545705066168320),
+            UINT64_C(5194545722246037504), UINT64_C(5194545928404467712),
+            UINT64_C(5194550326450978816), UINT64_C(5194620695195156480),
+            UINT64_C(5206161169240293376)};
+        const size_t n = sizeof(compare) / sizeof(compare[0]);
+        roaring64_bitmap_t* in = roaring64_bitmap_from(input);
+        roaring64_bitmap_t* c = roaring64_bitmap_of_ptr(n, compare);
+        roaring64_bitmap_and_inplace(c, in);
+        assert_r64_valid(c);
+        assert_int_equal(roaring64_bitmap_get_cardinality(c), 0);
+        roaring64_bitmap_free(c);
+        c = roaring64_bitmap_of_ptr(n, compare);
+        roaring64_bitmap_or_inplace(c, in);
+        assert_r64_valid(c);
+        assert_int_equal(roaring64_bitmap_get_cardinality(c), 14);
+        roaring64_bitmap_free(c);
+        c = roaring64_bitmap_of_ptr(n, compare);
+        roaring64_bitmap_andnot_inplace(c, in);
+        assert_r64_valid(c);
+        assert_int_equal(roaring64_bitmap_get_cardinality(c), 13);
+        roaring64_bitmap_free(c);
+        roaring64_bitmap_free(in);
+    }
+    {  // shouldNotThrowNPE / shouldNotThrowAIOOB / shouldNotThrowIAE
+        const uint64_t input = UINT64_C(5183829215128059904);
+        const std::vector<std::vector<uint64_t>> crossers = {
+            {UINT64_C(4413527634823086080), UINT64_C(4418031234450456576),
+             UINT64_C(4421408934170984448), UINT64_C(4421690409147695104),
+             UINT64_C(4421479302915162112), UINT64_C(4421426526357028864),
+             UINT64_C(4421413332217495552), UINT64_C(4421416630752378880),
+             UINT64_C(4421416905630285824), UINT64_C(4421417111788716032),
+             UINT64_C(4421417128968585216), UINT64_C(4421417133263552512),
+             UINT64_C(4421417134337294336)},
+            {UINT64_C(4413527634823086080), UINT64_C(4418031234450456576),
+             UINT64_C(4421408934170984448), UINT64_C(4421127459194273792),
+             UINT64_C(4420916352961740800), UINT64_C(4420863576403607552),
+             UINT64_C(4420850382264074240), UINT64_C(4420847083729190912),
+             UINT64_C(4420847358607097856), UINT64_C(4420847564765528064),
+             UINT64_C(4420847616305135616), UINT64_C(4420847620600102912),
+             UINT64_C(4420847623821328384)},
+            {UINT64_C(4421416447812311717), UINT64_C(4420658333523655893),
+             UINT64_C(4420658332008999025)}};
+        roaring64_bitmap_t* ref = roaring64_bitmap_from(input);
+        for (const auto& cr : crossers) {
+            roaring64_bitmap_t* c =
+                roaring64_bitmap_of_ptr(cr.size(), cr.data());
+            assert_r64_valid(c);
+            assert_int_equal(roaring64_bitmap_get_cardinality(c), cr.size());
+            roaring64_bitmap_and_inplace(c, ref);
+            assert_r64_valid(c);
+            assert_int_equal(roaring64_bitmap_get_cardinality(c), 0);
+            roaring64_bitmap_free(c);
+        }
+        roaring64_bitmap_free(ref);
+    }
+    {  // testIssue537
+        const uint64_t v = 275846320;
+        roaring64_bitmap_t* a = roaring64_bitmap_from(v);
+        roaring64_bitmap_t* b = roaring64_bitmap_from(v);
+        const uint64_t cvals[] = {
+            275845652, 275845746, 275846148, 275847372, 275847380, 275847388,
+            275847459, 275847528, 275847586, 275847588, 275847600, 275847607,
+            275847610, 275847613, 275847631, 275847664, 275847672, 275847677,
+            275847680, 275847742, 275847808, 275847811, 275847824, 275847830,
+            275847856, 275847861, 275847863, 275847872, 275847896, 275847923,
+            275847924, 275847975, 275847990, 275847995, 275848003, 275848080,
+            275848081, 275848084, 275848095, 275848100, 275848120, 275848129,
+            275848134, 275848163, 275848174, 275848206, 275848218, 275848231,
+            275848272, 275848281, 275848308, 275848344, 275848376, 275848382,
+            275848395, 275848400, 275848411, 275848426, 275848445, 275848449,
+            275848451, 275848454, 275848469};
+        roaring64_bitmap_t* c =
+            roaring64_bitmap_of_ptr(sizeof(cvals) / sizeof(cvals[0]), cvals);
+        roaring64_bitmap_and_inplace(c, b);
+        assert_false(roaring64_bitmap_contains(c, v));
+        roaring64_bitmap_and_inplace(c, a);
+        assert_false(roaring64_bitmap_contains(c, v));
+        assert_r64_valid(c);
+        assert_true(roaring64_bitmap_is_empty(c));
+        roaring64_bitmap_free(a);
+        roaring64_bitmap_free(b);
+        roaring64_bitmap_free(c);
+    }
+    {  // testIssue580
+        const uint64_t vals[] = {
+            UINT64_C(3242766498713841665), UINT64_C(3492544636360507394),
+            UINT64_C(3418218112527884289), UINT64_C(3220956490660966402),
+            UINT64_C(3495344165583036418), UINT64_C(3495023214002368514),
+            UINT64_C(3485108231289675778)};
+        roaring64_bitmap_t* r = roaring64_bitmap_of_ptr(7, vals);
+        roaring64_iterator_t* it = roaring64_iterator_create(r);
+        size_t count = 0;
+        uint64_t prev = 0;
+        while (roaring64_iterator_has_value(it)) {
+            uint64_t v = roaring64_iterator_value(it);
+            if (count > 0) {
+                assert_true(v > prev);
+            }
+            prev = v;
+            count++;
+            roaring64_iterator_advance(it);
+        }
+        assert_int_equal(count, 7);
+        roaring64_iterator_free(it);
+        roaring64_bitmap_free(r);
+    }
+    {  // testIssue619
+        const uint64_t cleaner_value = UINT64_C(140664568792144);
+        const uint64_t address_value = UINT64_C(140662937752432);
+        roaring64_bitmap_t* address_space = roaring64_bitmap_create();
+        roaring64_bitmap_t* cleaner = roaring64_bitmap_from(cleaner_value);
+        for (int iteration = 0;; iteration++) {
+            roaring64_bitmap_add(address_space, address_value);
+            roaring64_bitmap_add(address_space, cleaner_value);
+            if (iteration == 33) break;
+            roaring64_bitmap_andnot_inplace(address_space, cleaner);
+            assert_r64_valid(address_space);
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(address_space), 2);
+        roaring64_bitmap_free(address_space);
+        roaring64_bitmap_free(cleaner);
+    }
+    {  // testToArrayAfterAndOptHasEmptyContainer
+        roaring64_bitmap_t* r0 = roaring64_bitmap_from(0);
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(1);
+        roaring64_bitmap_t* a = roaring64_bitmap_and(r0, r1);
+        roaring64_bitmap_and_inplace(r0, r1);
+        for (roaring64_bitmap_t* b : {r0, a}) {
+            assert_r64_valid(b);
+            assert_true(roaring64_bitmap_is_empty(b));
+            assert_int_equal(r64_num_containers(b), 0);
+            assert_true(r64_to_vector(b).empty());
+        }
+        roaring64_bitmap_free(r0);
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(a);
+    }
+    {  // testAndDisjoint
+        const uint64_t left_data[] = {
+            UINT64_C(1076595327100), UINT64_C(1074755534972),
+            UINT64_C(5060192403580), UINT64_C(5060308664444)};
+        const uint64_t right_data[] = {UINT64_C(3470563844)};
+        roaring64_bitmap_t* left = roaring64_bitmap_of_ptr(4, left_data);
+        roaring64_bitmap_t* right = roaring64_bitmap_of_ptr(1, right_data);
+        roaring64_bitmap_t* a = roaring64_bitmap_and(left, right);
+        roaring64_bitmap_t* swapped = roaring64_bitmap_and(right, left);
+        roaring64_bitmap_t* right_copy = roaring64_bitmap_copy(right);
+        roaring64_bitmap_and_inplace(left, right);
+        roaring64_bitmap_t* left_again = roaring64_bitmap_of_ptr(4, left_data);
+        roaring64_bitmap_and_inplace(right_copy, left_again);
+        uint64_t element = 0;
+        for (roaring64_bitmap_t* b : {a, swapped, left, right_copy}) {
+            assert_r64_valid(b);
+            assert_int_equal(roaring64_bitmap_get_cardinality(b), 0);
+            assert_false(roaring64_bitmap_select(b, 0, &element));
+        }
+        roaring64_bitmap_free(a);
+        roaring64_bitmap_free(swapped);
+        roaring64_bitmap_free(left);
+        roaring64_bitmap_free(right);
+        roaring64_bitmap_free(right_copy);
+        roaring64_bitmap_free(left_again);
+    }
+}
+
+// Cardinality variants and intersect with disjoint high keys, several
+// buckets, and an empty operand.
+DEFINE_TEST(test_op_cardinalities_disjoint_and_empty) {
+    {
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from(1, 2 * K32 + 5);
+        roaring64_bitmap_t* r2 =
+            roaring64_bitmap_from(7 * K32 + 1, 9 * K32 + 5);
+        assert_int_equal(roaring64_bitmap_and_cardinality(r1, r2), 0);
+        assert_false(roaring64_bitmap_intersect(r1, r2));
+        assert_int_equal(roaring64_bitmap_or_cardinality(r1, r2), 4);
+        assert_int_equal(roaring64_bitmap_xor_cardinality(r1, r2), 4);
+        assert_int_equal(roaring64_bitmap_andnot_cardinality(r1, r2), 2);
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        roaring64_bitmap_t* r1 = roaring64_bitmap_from_range(0, 100, 1);
+        roaring64_bitmap_add_range(r1, 2 * K32, 2 * K32 + 100);
+        roaring64_bitmap_t* r2 = roaring64_bitmap_from_range(50, 150, 1);
+        roaring64_bitmap_add_range(r2, 8 * K32 + 50, 8 * K32 + 150);
+        roaring64_bitmap_add(r1, 9 * K32 + 1);
+        roaring64_bitmap_t* o = roaring64_bitmap_or(r1, r2);
+        roaring64_bitmap_t* x = roaring64_bitmap_xor(r1, r2);
+        roaring64_bitmap_t* d12 = roaring64_bitmap_andnot(r1, r2);
+        roaring64_bitmap_t* d21 = roaring64_bitmap_andnot(r2, r1);
+        roaring64_bitmap_t* a = roaring64_bitmap_and(r1, r2);
+        assert_int_equal(roaring64_bitmap_get_cardinality(o), 351);
+        assert_int_equal(roaring64_bitmap_or_cardinality(r1, r2),
+                         roaring64_bitmap_get_cardinality(o));
+        assert_int_equal(roaring64_bitmap_xor_cardinality(r1, r2),
+                         roaring64_bitmap_get_cardinality(x));
+        assert_int_equal(roaring64_bitmap_and_cardinality(r1, r2),
+                         roaring64_bitmap_get_cardinality(a));
+        assert_int_equal(roaring64_bitmap_get_cardinality(a), 50);
+        assert_int_equal(roaring64_bitmap_andnot_cardinality(r1, r2),
+                         roaring64_bitmap_get_cardinality(d12));
+        assert_int_equal(roaring64_bitmap_andnot_cardinality(r2, r1),
+                         roaring64_bitmap_get_cardinality(d21));
+        assert_int_equal(roaring64_bitmap_get_cardinality(d12), 151);
+        assert_int_equal(roaring64_bitmap_get_cardinality(d21), 150);
+        assert_true(roaring64_bitmap_intersect(r1, r2));
+        for (roaring64_bitmap_t* b : {o, x, d12, d21, a}) {
+            assert_r64_valid(b);
+            roaring64_bitmap_free(b);
+        }
+        roaring64_bitmap_free(r1);
+        roaring64_bitmap_free(r2);
+    }
+    {
+        roaring64_bitmap_t* r = roaring64_bitmap_from(1, K32 + 2, M64);
+        roaring64_bitmap_t* e = roaring64_bitmap_create();
+        const uint64_t card = 3;
+        assert_int_equal(roaring64_bitmap_and_cardinality(r, e), 0);
+        assert_int_equal(roaring64_bitmap_and_cardinality(e, r), 0);
+        assert_int_equal(roaring64_bitmap_or_cardinality(r, e), card);
+        assert_int_equal(roaring64_bitmap_or_cardinality(e, r), card);
+        assert_int_equal(roaring64_bitmap_xor_cardinality(r, e), card);
+        assert_int_equal(roaring64_bitmap_xor_cardinality(e, r), card);
+        assert_int_equal(roaring64_bitmap_andnot_cardinality(r, e), card);
+        assert_int_equal(roaring64_bitmap_andnot_cardinality(e, r), 0);
+        assert_false(roaring64_bitmap_intersect(r, e));
+        assert_false(roaring64_bitmap_intersect(e, r));
+        assert_false(roaring64_bitmap_intersect(e, e));
+        assert_true(roaring64_bitmap_is_subset(e, r));
+        assert_false(roaring64_bitmap_is_subset(r, e));
+        roaring64_bitmap_free(r);
+        roaring64_bitmap_free(e);
+    }
+}
+
+// move_equalorlarger across 2^63 (unsigned ordering).
+DEFINE_TEST(test_iterator_move_across_2_63) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    roaring64_bitmap_add_range(r, H63 - 1, H63 + 3);
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    assert_true(roaring64_iterator_move_equalorlarger(it, H63 - 1));
+    assert_int_equal(roaring64_iterator_value(it), H63 - 1);
+    assert_true(roaring64_iterator_move_equalorlarger(it, H63 + 1));
+    assert_int_equal(roaring64_iterator_value(it), H63 + 1);
+    assert_true(roaring64_iterator_move_equalorlarger(it, 0));
+    assert_int_equal(roaring64_iterator_value(it), H63 - 1);
+    assert_false(roaring64_iterator_move_equalorlarger(it, H63 + 3));
+    roaring64_iterator_free(it);
+    roaring64_bitmap_free(r);
+}
+
+// move_equalorlarger to UINT64_MAX, present or absent.
+DEFINE_TEST(test_iterator_move_to_uint64_max) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(5, M64 - 1, M64);
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    assert_true(roaring64_iterator_move_equalorlarger(it, M64));
+    assert_true(roaring64_iterator_has_value(it));
+    assert_int_equal(roaring64_iterator_value(it), M64);
+    assert_false(roaring64_iterator_advance(it));
+    assert_false(roaring64_iterator_has_value(it));
+    assert_true(roaring64_iterator_previous(it));
+    assert_int_equal(roaring64_iterator_value(it), M64);
+    assert_true(roaring64_iterator_move_equalorlarger(it, M64));
+    assert_true(roaring64_iterator_previous(it));
+    assert_int_equal(roaring64_iterator_value(it), M64 - 1);
+    roaring64_iterator_free(it);
+    roaring64_bitmap_free(r);
+
+    r = roaring64_bitmap_from(5, M64 - 1);
+    it = roaring64_iterator_create(r);
+    assert_false(roaring64_iterator_move_equalorlarger(it, M64));
+    assert_false(roaring64_iterator_has_value(it));
+    assert_false(roaring64_iterator_move_equalorlarger(it, M64));
+    assert_true(roaring64_iterator_previous(it));
+    assert_int_equal(roaring64_iterator_value(it), M64 - 1);
+    roaring64_iterator_free(it);
+    roaring64_bitmap_free(r);
+}
+
+bool r64_collect(uint64_t value, void* param) {
+    ((std::vector<uint64_t>*)param)->push_back(value);
+    return true;
+}
+
+// Forward, reverse, to_array and iterate all use unsigned order across 2^63.
+DEFINE_TEST(test_iteration_order_unsigned) {
+    roaring64_bitmap_t* r = roaring64_bitmap_from(H63, 0, M64, 1, H63 - 1);
+    const std::vector<uint64_t> expected = {0, 1, H63 - 1, H63, M64};
+    assert_vector_equal(r64_to_vector(r), expected);
+
+    std::vector<uint64_t> forward;
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    while (roaring64_iterator_has_value(it)) {
+        forward.push_back(roaring64_iterator_value(it));
+        roaring64_iterator_advance(it);
+    }
+    roaring64_iterator_free(it);
+    assert_vector_equal(forward, expected);
+
+    std::vector<uint64_t> backward;
+    it = roaring64_iterator_create_last(r);
+    while (roaring64_iterator_has_value(it)) {
+        backward.push_back(roaring64_iterator_value(it));
+        roaring64_iterator_previous(it);
+    }
+    roaring64_iterator_free(it);
+    assert_vector_reversed(backward, expected);
+
+    std::vector<uint64_t> iterated;
+    assert_true(roaring64_bitmap_iterate(r, r64_collect, &iterated));
+    assert_vector_equal(iterated, expected);
+    roaring64_bitmap_free(r);
+}
+
+// run_optimize on a run container fragmented into length-1 runs must convert
+// it back to a compact container, return false, and preserve equality.
+DEFINE_TEST(test_run_optimize_recovers_space) {
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    roaring64_bitmap_add_range(r, 0, 100);
+    assert_true(roaring64_bitmap_run_optimize(r));
+    for (uint64_t v = 200; v < 65536; v += 2) {
+        roaring64_bitmap_add(r, v);
+    }
+    roaring64_bitmap_t* expected = roaring64_bitmap_copy(r);
+    const size_t size_before = roaring64_bitmap_portable_size_in_bytes(r);
+    assert_false(roaring64_bitmap_run_optimize(r));
+    assert_r64_valid(r);
+    const size_t size_after = roaring64_bitmap_portable_size_in_bytes(r);
+    assert_true(size_after < size_before / 10);
+    assert_true(roaring64_bitmap_equals(r, expected));
+    assert_true(roaring64_bitmap_equals(expected, r));
+    roaring64_bitmap_free(expected);
+    roaring64_bitmap_free(r);
+}
+
 }  // namespace
 
 int main() {
@@ -3331,6 +4002,22 @@ int main() {
         cmocka_unit_test(test_iterator_read_ranges_interleaved),
         cmocka_unit_test(test_stats),
         cmocka_unit_test(test_iterator_read_past_end_can_go_previous),
+        cmocka_unit_test(test_add_remove_range_across_2_32),
+        cmocka_unit_test(test_add_range_across_2_63),
+        cmocka_unit_test(test_flip_across_2_63),
+        cmocka_unit_test(test_flip_xor_empties_first_or_last_container),
+        cmocka_unit_test(test_boundary_values),
+        cmocka_unit_test(test_rank_select_extremes),
+        cmocka_unit_test(test_rank_select_empty_and_out_of_range),
+        cmocka_unit_test(test_rank_in_missing_bucket),
+        cmocka_unit_test(test_remove_last_value_of_bucket),
+        cmocka_unit_test(test_self_aliasing_ops),
+        cmocka_unit_test(test_java_art_regressions),
+        cmocka_unit_test(test_op_cardinalities_disjoint_and_empty),
+        cmocka_unit_test(test_iterator_move_across_2_63),
+        cmocka_unit_test(test_iterator_move_to_uint64_max),
+        cmocka_unit_test(test_iteration_order_unsigned),
+        cmocka_unit_test(test_run_optimize_recovers_space),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
