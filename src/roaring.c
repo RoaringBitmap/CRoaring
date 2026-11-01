@@ -226,8 +226,9 @@ roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
     if (max <= min) return NULL;
     roaring_bitmap_t *answer = roaring_bitmap_create();
     if (step >= (1 << 16)) {
-        for (uint32_t value = (uint32_t)min; value < max; value += step) {
-            roaring_bitmap_add(answer, value);
+        // 64-bit counter: max may be 2^32, which a uint32_t never reaches
+        for (uint64_t value = min; value < max; value += step) {
+            roaring_bitmap_add(answer, (uint32_t)value);
         }
         return answer;
     }
@@ -1531,7 +1532,10 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r) {
 uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *r,
                                           uint64_t range_start,
                                           uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1) {
+    if (range_end > (uint64_t)UINT32_MAX + 1) {
+        range_end = (uint64_t)UINT32_MAX + 1;
+    }
+    if (range_start >= range_end) {
         return 0;
     }
     return roaring_bitmap_range_cardinality_closed(r, (uint32_t)range_start,
@@ -2375,7 +2379,10 @@ static void inplace_fully_flip_container(roaring_array_t *x1_arr, uint16_t hb) {
 roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *x1,
                                       uint64_t range_start,
                                       uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1) {
+    if (range_end > (uint64_t)UINT32_MAX + 1) {
+        range_end = (uint64_t)UINT32_MAX + 1;
+    }
+    if (range_start >= range_end) {
         return roaring_bitmap_copy(x1);
     }
     return roaring_bitmap_flip_closed(x1, (uint32_t)range_start,
@@ -2436,7 +2443,10 @@ roaring_bitmap_t *roaring_bitmap_flip_closed(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_flip_inplace(roaring_bitmap_t *x1, uint64_t range_start,
                                  uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1) {
+    if (range_end > (uint64_t)UINT32_MAX + 1) {
+        range_end = (uint64_t)UINT32_MAX + 1;
+    }
+    if (range_start >= range_end) {
         return;
     }
     roaring_bitmap_flip_inplace_closed(x1, (uint32_t)range_start,
@@ -3114,8 +3124,11 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
 
 bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm, uint64_t x,
                                          uint64_t y) {
+    if (y > (uint64_t)UINT32_MAX + 1) {
+        y = (uint64_t)UINT32_MAX + 1;
+    }
     if (x >= y) {
-        // Empty range.
+        // Empty range (or range entirely beyond UINT32_MAX).
         return false;
     }
     roaring_uint32_iterator_t it;
@@ -3198,7 +3211,10 @@ uint64_t roaring_bitmap_xor_cardinality(const roaring_bitmap_t *x1,
  */
 bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_start, uint64_t range_end) {
-    if (range_start >= range_end || range_start > (uint64_t)UINT32_MAX + 1) {
+    if (range_end > (uint64_t)UINT32_MAX + 1) {
+        range_end = (uint64_t)UINT32_MAX + 1;
+    }
+    if (range_start >= range_end) {
         return true;
     }
     return roaring_bitmap_contains_range_closed(r, (uint32_t)range_start,

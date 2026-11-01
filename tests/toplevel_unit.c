@@ -5663,6 +5663,110 @@ DEFINE_TEST(test_range_cardinality) {
     roaring_bitmap_free(r);
 }
 
+// The uint64_t range functions must treat an end beyond UINT32_MAX + 1 as
+// UINT32_MAX + 1, never let it wrap around when cast to uint32_t.
+DEFINE_TEST(test_range_end_beyond_universe) {
+    const uint64_t universe = (uint64_t)UINT32_MAX + 1;  // 2^32
+
+    // remove_range (port of Go's TestRoaringRangeEnd)
+    roaring_bitmap_t *r = roaring_bitmap_of(1, UINT32_MAX);
+    roaring_bitmap_remove_range(r, 0, UINT32_MAX);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 1);
+    roaring_bitmap_remove_range(r, 0, UINT64_MAX);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 0);
+    roaring_bitmap_add(r, UINT32_MAX);
+    roaring_bitmap_remove_range(r, 0, universe + 1);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 0);
+    roaring_bitmap_add(r, UINT32_MAX);
+    roaring_bitmap_remove_range(r, 0, universe);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 0);
+    // a range starting at 2^32 is empty: it must not remove 0
+    roaring_bitmap_add(r, 0);
+    roaring_bitmap_remove_range(r, universe, universe + 1);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 1);
+    roaring_bitmap_free(r);
+
+    // add_range
+    r = roaring_bitmap_create();
+    roaring_bitmap_add_range(r, universe, universe + 1);
+    roaring_bitmap_add_range(r, universe + 5, universe + 10);
+    assert_true(roaring_bitmap_is_empty(r));
+    roaring_bitmap_add_range(r, UINT32_MAX, UINT64_MAX);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 1);
+    assert_true(roaring_bitmap_contains(r, UINT32_MAX));
+    roaring_bitmap_add_range(r, 0, universe + 1);
+    assert_true(roaring_bitmap_get_cardinality(r) == universe);
+    roaring_bitmap_free(r);
+
+    // range_cardinality
+    r = roaring_bitmap_of(2, 5, UINT32_MAX);
+    assert_int_equal(roaring_bitmap_range_cardinality(r, 0, universe + 1), 2);
+    assert_int_equal(roaring_bitmap_range_cardinality(r, 0, UINT64_MAX), 2);
+    assert_int_equal(
+        roaring_bitmap_range_cardinality(r, UINT32_MAX, UINT64_MAX), 1);
+    assert_int_equal(roaring_bitmap_range_cardinality(r, universe, UINT64_MAX),
+                     0);
+    roaring_bitmap_free(r);
+
+    // contains_range
+    r = roaring_bitmap_of(1, 0);
+    assert_false(roaring_bitmap_contains_range(r, 0, universe + 1));
+    assert_false(roaring_bitmap_contains_range(r, 0, universe + 6));
+    roaring_bitmap_add(r, UINT32_MAX);
+    assert_true(roaring_bitmap_contains_range(r, UINT32_MAX, UINT64_MAX));
+    roaring_bitmap_add_range(r, 0, universe);
+    assert_true(roaring_bitmap_contains_range(r, 0, universe + 1));
+    assert_true(roaring_bitmap_contains_range(r, 0, UINT64_MAX));
+    roaring_bitmap_free(r);
+
+    // flip and flip_inplace
+    roaring_bitmap_t *empty = roaring_bitmap_create();
+    roaring_bitmap_t *f = roaring_bitmap_flip(empty, universe, universe + 1);
+    assert_true(roaring_bitmap_is_empty(f));
+    roaring_bitmap_free(f);
+    f = roaring_bitmap_flip(empty, 0, universe + 1);
+    assert_true(roaring_bitmap_get_cardinality(f) == universe);
+    roaring_bitmap_free(f);
+    f = roaring_bitmap_flip(empty, UINT32_MAX, UINT64_MAX);
+    assert_int_equal(roaring_bitmap_get_cardinality(f), 1);
+    assert_true(roaring_bitmap_contains(f, UINT32_MAX));
+    roaring_bitmap_flip_inplace(f, universe, universe + 1);
+    assert_int_equal(roaring_bitmap_get_cardinality(f), 1);
+    roaring_bitmap_flip_inplace(f, UINT32_MAX, universe + 5);
+    assert_true(roaring_bitmap_is_empty(f));
+    roaring_bitmap_flip_inplace(f, 0, universe + 1);
+    assert_true(roaring_bitmap_get_cardinality(f) == universe);
+    roaring_bitmap_free(f);
+    roaring_bitmap_free(empty);
+
+    // intersect_with_range
+    r = roaring_bitmap_of(1, 5);
+    assert_false(
+        roaring_bitmap_intersect_with_range(r, universe + 5, universe + 10));
+    assert_false(roaring_bitmap_intersect_with_range(r, universe, UINT64_MAX));
+    assert_true(roaring_bitmap_intersect_with_range(r, 0, UINT64_MAX));
+    assert_true(roaring_bitmap_intersect_with_range(r, 5, universe + 1));
+    roaring_bitmap_add(r, UINT32_MAX);
+    assert_true(roaring_bitmap_intersect_with_range(r, UINT32_MAX, UINT64_MAX));
+    assert_false(roaring_bitmap_intersect_with_range(r, universe + UINT32_MAX,
+                                                     UINT64_MAX));
+    roaring_bitmap_free(r);
+
+    // from_range with a large step and max reaching 2^32 must terminate
+    r = roaring_bitmap_from_range(0, universe, 65536);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 65536);
+    assert_true(roaring_bitmap_contains(r, UINT32_MAX - 65535));
+    roaring_bitmap_free(r);
+    r = roaring_bitmap_from_range(UINT32_MAX, universe + 100, 65536);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 1);
+    assert_true(roaring_bitmap_contains(r, UINT32_MAX));
+    roaring_bitmap_free(r);
+    r = roaring_bitmap_from_range(0, UINT64_MAX, UINT32_MAX);
+    assert_int_equal(roaring_bitmap_get_cardinality(r), 2);
+    assert_true(roaring_bitmap_contains(r, UINT32_MAX));
+    roaring_bitmap_free(r);
+}
+
 void frozen_serialization_compare(roaring_bitmap_t *r1) {
     size_t num_bytes = roaring_bitmap_frozen_size_in_bytes(r1);
     char *buf = (char *)roaring_aligned_malloc(32, num_bytes);
@@ -6416,6 +6520,7 @@ int main() {
         cmocka_unit_test(test_remove_many_copy_on_write_many_copies),
         cmocka_unit_test(test_inplace_mutators_copy_on_write),
         cmocka_unit_test(test_range_cardinality),
+        cmocka_unit_test(test_range_end_beyond_universe),
         cmocka_unit_test(test_frozen_serialization),
         cmocka_unit_test(test_frozen_serialization_max_containers),
         cmocka_unit_test(test_frozen_serialization_empty),
