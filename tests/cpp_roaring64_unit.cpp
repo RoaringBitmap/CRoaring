@@ -590,6 +590,10 @@ DEFINE_TEST(test_cpp_r64_deserialize_high_vals) {
     assert_true(deserialize64("64maphighvals.bin"));
 }
 
+DEFINE_TEST(test_cpp_r64_deserialize_run_bitset_vals) {
+    assert_true(deserialize64("64maprunbitsetvals.bin"));
+}
+
 #if ROARING_EXCEPTIONS
 DEFINE_TEST(test_cpp_r64_deserialize_empty_input) {
     assert_false(deserialize64("64mapemptyinput.bin"));
@@ -773,6 +777,7 @@ int main() {
         cmocka_unit_test(test_cpp_r64_deserialize_32bit_vals),
         cmocka_unit_test(test_cpp_r64_deserialize_spread_vals),
         cmocka_unit_test(test_cpp_r64_deserialize_high_vals),
+        cmocka_unit_test(test_cpp_r64_deserialize_run_bitset_vals),
 #if ROARING_EXCEPTIONS
         cmocka_unit_test(test_cpp_r64_deserialize_empty_input),
         cmocka_unit_test(test_cpp_r64_deserialize_size_too_small),
