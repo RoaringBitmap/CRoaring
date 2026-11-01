@@ -7,6 +7,11 @@
 
 #include "test.h"
 
+#ifdef __cplusplus  // stronger type checking errors if C built in C++ mode
+using namespace roaring::api;
+using namespace roaring::misc;
+#endif
+
 bool roaring_iterator_sumall(uint32_t value, void *param) {
     *(uint32_t *)param += value;
     return true;  // iterate till the end
