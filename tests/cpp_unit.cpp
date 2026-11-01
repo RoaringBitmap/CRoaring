@@ -2525,6 +2525,94 @@ DEFINE_TEST(test_cpp_copy_map_iterator_to_different_map) {
     assert_int_equal(2, n);
 }
 
+// C++ const_iterator operator-- on 32-bit bitmaps
+DEFINE_TEST(test_cpp_bidirectional_iterator_32) {
+    Roaring r = Roaring::bitmapOf(3, 1, 70000, UINT32_MAX);
+    Roaring::const_iterator it = r.begin();
+    assert_true(*it == 1);
+    ++it;
+    ++it;
+    assert_true(*it == UINT32_MAX);
+    ++it;
+    assert_true(it == r.end());
+    --it;
+    assert_true(*it == UINT32_MAX);
+    --it;
+    assert_true(*it == 70000);
+    Roaring::const_iterator orig = it--;
+    assert_true(*orig == 70000);
+    assert_true(*it == 1);
+    --it;
+    assert_false(it.i.has_value);
+    ++it;
+    assert_true(*it == 1);
+}
+
+namespace {
+struct halt_after {
+    uint64_t calls;
+    uint64_t stop;
+};
+bool halt_after_callback(uint32_t, void *p) {
+    halt_after *h = static_cast<halt_after *>(p);
+    h->calls++;
+    return h->calls < h->stop;
+}
+}  // namespace
+
+// Go TestIterateHalt
+DEFINE_TEST(test_cpp_iterate_halts_early) {
+    Roaring r;
+    r.addRange(150000, 450000);
+    uint64_t card = r.cardinality();
+    halt_after h = {0, card - 1};
+    r.iterate(halt_after_callback, &h);  // returns void in C++
+    assert_true(h.calls == card - 1);
+    halt_after all = {0, UINT64_MAX};
+    r.iterate(halt_after_callback, &all);
+    assert_true(all.calls == card);
+}
+
+// Java testWithYourself
+DEFINE_TEST(test_cpp_self_aliasing) {
+    Roaring r;
+    r.addRange(10, 5000);
+    r.add(1u << 20);
+    r.runOptimize();
+    Roaring orig = r;
+    r &= r;
+    assert_true(r == orig);
+    assert_true((r & r) == orig);
+    assert_true((r | r) == orig);
+    assert_true((r ^ r).isEmpty());
+    assert_true((r - r).isEmpty());
+    assert_true(r.and_cardinality(r) == orig.cardinality());
+    assert_true(r.or_cardinality(r) == orig.cardinality());
+    assert_true(r.xor_cardinality(r) == 0);
+    assert_true(r.andnot_cardinality(r) == 0);
+    assert_true(r.intersect(r));
+    assert_true(r.isSubset(r));
+    assert_false(r.isStrictSubset(r));
+}
+
+// fastunion with zero or one input (Go aggregation "aggregate nothing")
+DEFINE_TEST(test_cpp_fastunion_zero_or_one_input) {
+    Roaring u = Roaring::fastunion(0, nullptr);
+    assert_true(u.isEmpty());
+    Roaring in;
+    in.addRange(0, 100000);
+    in.add(1u << 30);
+    in.runOptimize();
+    in.setCopyOnWrite(true);
+    Roaring orig = in;
+    const Roaring *inputs[] = {&in};
+    Roaring one = Roaring::fastunion(1, inputs);
+    assert_true(one == in);
+    one.remove(5);
+    one.add(200000);
+    assert_true(in == orig);
+}
+
 int main() {
     roaring::misc::tellmeall();
     const struct CMUnitTest tests[] = {
@@ -2615,6 +2703,10 @@ int main() {
         cmocka_unit_test(test_cpp_copy_map_iterator_to_different_map),
         cmocka_unit_test(test_cpp_run_optimize_64_return_value),
         cmocka_unit_test(test_cpp_run_optimize_recovers_space_64),
+        cmocka_unit_test(test_cpp_bidirectional_iterator_32),
+        cmocka_unit_test(test_cpp_iterate_halts_early),
+        cmocka_unit_test(test_cpp_self_aliasing),
+        cmocka_unit_test(test_cpp_fastunion_zero_or_one_input),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
