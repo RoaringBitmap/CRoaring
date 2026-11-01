@@ -239,6 +239,7 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *r1,
 
 /**
  * Check whether a bitmap and an open range intersect.
+ * Values of y beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  */
 bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm, uint64_t x,
                                          uint64_t y);
@@ -429,10 +430,14 @@ void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
 
 /**
  * Add all values in range [min, max)
+ * Values of max beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  */
 inline void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min,
                                      uint64_t max) {
-    if (max <= min || min > (uint64_t)UINT32_MAX + 1) {
+    if (max > (uint64_t)UINT32_MAX + 1) {
+        max = (uint64_t)UINT32_MAX + 1;
+    }
+    if (max <= min) {
         return;
     }
     roaring_bitmap_add_range_closed(r, (uint32_t)min, (uint32_t)(max - 1));
@@ -451,10 +456,14 @@ void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min,
 
 /**
  * Remove all values in range [min, max)
+ * Values of max beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  */
 inline void roaring_bitmap_remove_range(roaring_bitmap_t *r, uint64_t min,
                                         uint64_t max) {
-    if (max <= min || min > (uint64_t)UINT32_MAX + 1) {
+    if (max > (uint64_t)UINT32_MAX + 1) {
+        max = (uint64_t)UINT32_MAX + 1;
+    }
+    if (max <= min) {
         return;
     }
     roaring_bitmap_remove_range_closed(r, (uint32_t)min, (uint32_t)(max - 1));
@@ -500,6 +509,7 @@ inline bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val) {
 /**
  * Check whether a range of values from range_start (included)
  * to range_end (excluded) is present
+ * Values of range_end beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  */
 bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
                                    uint64_t range_start, uint64_t range_end);
@@ -538,6 +548,7 @@ uint64_t roaring_bitmap_get_cardinality(const roaring_bitmap_t *r);
 
 /**
  * Returns the number of elements in the range [range_start, range_end).
+ * Values of range_end beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  */
 uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *r,
                                           uint64_t range_start,
@@ -1009,6 +1020,7 @@ void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *r1,
  * Compute the negation of the bitmap in the interval [range_start, range_end).
  * The number of negated values is range_end - range_start.
  * Areas outside the range are passed through unchanged.
+ * Values of range_end beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  * The returned pointer may be NULL in case of errors.
  */
 roaring_bitmap_t *roaring_bitmap_flip(const roaring_bitmap_t *r1,
@@ -1028,6 +1040,7 @@ roaring_bitmap_t *roaring_bitmap_flip_closed(const roaring_bitmap_t *x1,
  * interval: [range_start, range_end). The number of negated values is
  * range_end - range_start.
  * Areas outside the range are passed through unchanged.
+ * Values of range_end beyond UINT32_MAX + 1 are treated as UINT32_MAX + 1.
  */
 void roaring_bitmap_flip_inplace(roaring_bitmap_t *r1, uint64_t range_start,
                                  uint64_t range_end);

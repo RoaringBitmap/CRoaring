@@ -1846,6 +1846,56 @@ DEFINE_TEST(test_cpp_flip) {
     }
 }
 
+// Range ends beyond 2^32 must be treated as 2^32, not wrap around.
+DEFINE_TEST(test_cpp_range_end_beyond_universe) {
+    const uint64_t universe = static_cast<uint64_t>(uint32_max) + 1;
+    {
+        // addRange with an end past 2^32 adds up to uint32 max
+        Roaring r1;
+        r1.addRange(uint32_max - 1, universe + 1);
+        Roaring r2 = Roaring::bitmapOf(2, uint32_max - 1, uint32_max);
+        assert_true(r1 == r2);
+        // a range starting at 2^32 is empty: 0 must not be added
+        r1.addRange(universe, universe + 1);
+        assert_true(r1 == r2);
+    }
+    {
+        // removeRange with an end past 2^32 removes uint32 max
+        Roaring r1 = Roaring::bitmapOf(3, 0, 7, uint32_max);
+        r1.removeRange(5, std::numeric_limits<uint64_t>::max());
+        Roaring r2 = Roaring::bitmapOf(1, 0);
+        assert_true(r1 == r2);
+        // a range starting at 2^32 is empty: 0 must not be removed
+        r1.removeRange(universe, universe + 1);
+        assert_true(r1 == r2);
+    }
+    {
+        // containsRange: {0} does not contain [0, 2^32 + 1)
+        Roaring r1 = Roaring::bitmapOf(1, 0);
+        assert_false(r1.containsRange(0, universe + 1));
+        r1.add(uint32_max);
+        assert_true(
+            r1.containsRange(uint32_max, std::numeric_limits<uint64_t>::max()));
+    }
+    {
+        // flip with an end past 2^32 flips up to uint32 max
+        Roaring r1;
+        r1.flip(uint32_max - 1, universe + 1);
+        Roaring r2 = Roaring::bitmapOf(2, uint32_max - 1, uint32_max);
+        assert_true(r1 == r2);
+        // a range starting at 2^32 is empty: 0 must not be flipped
+        r1.flip(universe, universe + 1);
+        assert_true(r1 == r2);
+    }
+    {
+        // mask with an end past 2^32 keeps uint32 max
+        Roaring r1 = Roaring::bitmapOf(3, 1, 5, uint32_max);
+        r1.mask(2, universe + 1);
+        Roaring r2 = Roaring::bitmapOf(2, 5, uint32_max);
+        assert_true(r1 == r2);
+    }
+}
+
 DEFINE_TEST(test_cpp_flip_closed) {
     {
         // flipping an empty map works as expected
@@ -2578,6 +2628,7 @@ int main() {
         cmocka_unit_test(test_cpp_frozen_64_portable),
 #endif  // ROARING_UNSAFE_FROZEN_TESTS
         cmocka_unit_test(test_cpp_flip),
+        cmocka_unit_test(test_cpp_range_end_beyond_universe),
         cmocka_unit_test(test_cpp_flip_closed),
         cmocka_unit_test(test_cpp_flip_64),
         cmocka_unit_test(test_cpp_flip_closed_64),
