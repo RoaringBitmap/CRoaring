@@ -4000,6 +4000,172 @@ DEFINE_TEST(test_intersect_small_run_bitset) {
     roaring_bitmap_free(rb2);
 }
 
+static uint32_t *intersect_test_snapshot(const roaring_bitmap_t *bitmap,
+                                         uint64_t *cardinality) {
+    *cardinality = roaring_bitmap_get_cardinality(bitmap);
+    size_t count = (size_t)*cardinality;
+    uint32_t *values =
+        (uint32_t *)malloc((count == 0 ? 1 : count) * sizeof(uint32_t));
+    assert_non_null(values);
+    if (count != 0) roaring_bitmap_to_uint32_array(bitmap, values);
+    return values;
+}
+
+static void intersect_test_assert_unchanged(const roaring_bitmap_t *bitmap,
+                                            const uint32_t *before,
+                                            uint64_t cardinality) {
+    assert_int_equal(roaring_bitmap_get_cardinality(bitmap), cardinality);
+    size_t count = (size_t)cardinality;
+    uint32_t *after =
+        (uint32_t *)malloc((count == 0 ? 1 : count) * sizeof(uint32_t));
+    assert_non_null(after);
+    if (count != 0) {
+        roaring_bitmap_to_uint32_array(bitmap, after);
+        assert_true(memcmp(after, before, count * sizeof(uint32_t)) == 0);
+    }
+    free(after);
+}
+
+static void intersect_test_pair(const uint32_t *values1, size_t size1,
+                                const uint32_t *values2, size_t size2) {
+    roaring_bitmap_t *bitmap1 = size1 == 0
+                                    ? roaring_bitmap_create()
+                                    : roaring_bitmap_of_ptr(size1, values1);
+    roaring_bitmap_t *bitmap2 = size2 == 0
+                                    ? roaring_bitmap_create()
+                                    : roaring_bitmap_of_ptr(size2, values2);
+    assert_non_null(bitmap1);
+    assert_non_null(bitmap2);
+    roaring_bitmap_shrink_to_fit(bitmap1);
+    roaring_bitmap_shrink_to_fit(bitmap2);
+
+    uint64_t cardinality1, cardinality2;
+    uint32_t *before1 = intersect_test_snapshot(bitmap1, &cardinality1);
+    uint32_t *before2 = intersect_test_snapshot(bitmap2, &cardinality2);
+    bool expected = roaring_bitmap_and_cardinality(bitmap1, bitmap2) > 0;
+    assert_true(roaring_bitmap_intersect(bitmap1, bitmap2) == expected);
+    assert_true(roaring_bitmap_intersect(bitmap2, bitmap1) == expected);
+    intersect_test_assert_unchanged(bitmap1, before1, cardinality1);
+    intersect_test_assert_unchanged(bitmap2, before2, cardinality2);
+
+    free(before1);
+    free(before2);
+    roaring_bitmap_free(bitmap1);
+    roaring_bitmap_free(bitmap2);
+}
+
+DEFINE_TEST(test_intersect_array_container_pairs) {
+    const size_t sizes[] = {0,  1,  7,  8,  9,  15,  16,  17,
+                            31, 32, 33, 64, 65, 128, 4096};
+    uint32_t left[4096], right[4096];
+    for (size_t k = 0; k < sizeof(sizes) / sizeof(sizes[0]); ++k) {
+        const size_t n = sizes[k];
+        for (size_t i = 0; i < n; ++i) {
+            left[i] = (uint32_t)(2 * i);
+            right[i] = (uint32_t)(2 * i + 1);
+        }
+        intersect_test_pair(left, n, right, n);
+        if (n != 0) {
+            right[0] = 0;
+            for (size_t i = 1; i < n; ++i) right[i] = (uint32_t)(2 * i - 1);
+            intersect_test_pair(left, n, right, n);
+
+            if (n >= 2) {
+                for (size_t i = 0; i < n; ++i) {
+                    left[i] = (uint32_t)(2 * i + 2);
+                    right[i] = (uint32_t)(2 * i + 1);
+                }
+                right[1] = 2;
+                intersect_test_pair(left, n, right, n);
+            }
+
+            for (size_t i = 0; i + 1 < n; ++i) right[i] = (uint32_t)(2 * i + 1);
+            right[n - 1] = (uint32_t)(2 * (n - 1));
+            intersect_test_pair(left, n, right, n);
+        }
+    }
+
+    for (size_t i = 0; i < 8; ++i) left[i] = (uint32_t)(2 * i);
+    intersect_test_pair(NULL, 0, left, 8);
+    intersect_test_pair(left, 8, NULL, 0);
+
+    const size_t tail_size = 4095;
+    for (size_t i = 0; i + 1 < tail_size; ++i) {
+        left[i] = (uint32_t)(2 * i);
+        right[i] = (uint32_t)(2 * i + 1);
+    }
+    left[tail_size - 1] = 65535;
+    right[tail_size - 1] = 65535;
+    intersect_test_pair(left, tail_size, right, tail_size);
+
+    const size_t ratios[][2] = {{8, 512},   {8, 513},   {16, 1024},
+                                {16, 1025}, {64, 4096}, {65, 4096}};
+    for (size_t k = 0; k < sizeof(ratios) / sizeof(ratios[0]); ++k) {
+        const size_t small = ratios[k][0];
+        const size_t large = ratios[k][1];
+        for (size_t i = 0; i < small; ++i) left[i] = (uint32_t)(2 * i);
+        for (size_t i = 0; i < large; ++i) right[i] = (uint32_t)(2 * i + 1);
+        intersect_test_pair(left, small, right, large);
+    }
+
+    // The first blocks are disjoint, but the next block on the left overlaps
+    // the current block on the right. Advance the side with the smaller max.
+    for (size_t i = 0; i < 16; ++i) {
+        left[i] = (uint32_t)i;
+        right[i] = (uint32_t)(i + 8);
+    }
+    intersect_test_pair(left, 16, right, 16);
+}
+
+DEFINE_TEST(test_intersect_shared_cow_arrays) {
+    roaring_bitmap_t *bitmap1 = roaring_bitmap_create();
+    assert_non_null(bitmap1);
+    for (uint32_t i = 0; i < 64; ++i) roaring_bitmap_add(bitmap1, 2 * i);
+    for (uint32_t i = 0; i < 16; ++i)
+        roaring_bitmap_add(bitmap1, 65536 + 2 * i);
+    roaring_bitmap_shrink_to_fit(bitmap1);
+    roaring_bitmap_set_copy_on_write(bitmap1, true);
+    roaring_bitmap_t *bitmap2 = roaring_bitmap_copy(bitmap1);
+    assert_non_null(bitmap2);
+
+    // Mutating key zero separates that array; the second container remains
+    // shared.
+    for (uint32_t i = 0; i < 64; ++i) {
+        assert_true(roaring_bitmap_contains(bitmap2, 2 * i));
+        roaring_bitmap_remove(bitmap2, 2 * i);
+        assert_false(roaring_bitmap_contains(bitmap2, 2 * i));
+    }
+    for (uint32_t i = 0; i < 64; ++i) {
+        roaring_bitmap_add(bitmap2, 2 * i + 1);
+        assert_true(roaring_bitmap_contains(bitmap2, 2 * i + 1));
+    }
+    int32_t shared_index1 = ra_get_index(&bitmap1->high_low_container, 1);
+    int32_t shared_index2 = ra_get_index(&bitmap2->high_low_container, 1);
+    assert_true(shared_index1 >= 0);
+    assert_true(shared_index2 >= 0);
+    uint8_t type1, type2;
+    ra_get_container_at_index(&bitmap1->high_low_container,
+                              (uint16_t)shared_index1, &type1);
+    ra_get_container_at_index(&bitmap2->high_low_container,
+                              (uint16_t)shared_index2, &type2);
+    assert_int_equal(type1, SHARED_CONTAINER_TYPE);
+    assert_int_equal(type2, SHARED_CONTAINER_TYPE);
+
+    uint64_t cardinality1, cardinality2;
+    uint32_t *before1 = intersect_test_snapshot(bitmap1, &cardinality1);
+    uint32_t *before2 = intersect_test_snapshot(bitmap2, &cardinality2);
+    assert_int_equal(roaring_bitmap_and_cardinality(bitmap1, bitmap2), 16);
+    assert_true(roaring_bitmap_intersect(bitmap1, bitmap2));
+    assert_true(roaring_bitmap_intersect(bitmap2, bitmap1));
+    intersect_test_assert_unchanged(bitmap1, before1, cardinality1);
+    intersect_test_assert_unchanged(bitmap2, before2, cardinality2);
+
+    free(before1);
+    free(before2);
+    roaring_bitmap_free(bitmap1);
+    roaring_bitmap_free(bitmap2);
+}
+
 DEFINE_TEST(issue316) {
     roaring_bitmap_t *rb1 = roaring_bitmap_create();
     roaring_bitmap_set_copy_on_write(rb1, true);
@@ -8448,6 +8614,8 @@ int main() {
         cmocka_unit_test(can_copy_empty_true),
         cmocka_unit_test(can_copy_empty_false),
         cmocka_unit_test(test_intersect_small_run_bitset),
+        cmocka_unit_test(test_intersect_array_container_pairs),
+        cmocka_unit_test(test_intersect_shared_cow_arrays),
         cmocka_unit_test(is_really_empty),
         cmocka_unit_test(test_rank),
         cmocka_unit_test(test_get_index),
