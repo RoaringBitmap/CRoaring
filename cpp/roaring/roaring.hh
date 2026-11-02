@@ -960,10 +960,13 @@ class Roaring {
     const_iterator begin() const;
 
     /**
-     * A bogus iterator that can be used together with begin()
-     * for constructions such as for (auto i = b.begin(); * i!=b.end(); ++i) {}
+     * Returns a past-the-end iterator bound to this bitmap.
+     * Decrementing it yields the last value.
+     *
+     * Returned by value, like begin(). Each call is independent and refers
+     * to this bitmap.
      */
-    const_iterator &end() const;
+    const_iterator end() const;
 
     roaring_bitmap_t roaring;
 };
@@ -1091,9 +1094,8 @@ inline RoaringSetBitBiDirectionalIterator Roaring::begin() const {
     return RoaringSetBitBiDirectionalIterator(*this);
 }
 
-inline RoaringSetBitBiDirectionalIterator &Roaring::end() const {
-    static RoaringSetBitBiDirectionalIterator e(*this, true);
-    return e;
+inline RoaringSetBitBiDirectionalIterator Roaring::end() const {
+    return RoaringSetBitBiDirectionalIterator(*this, true);
 }
 
 }  // namespace roaring

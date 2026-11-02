@@ -695,10 +695,7 @@ class Roaring {
         return roaring::RoaringSetBitBiDirectionalIterator(plain);
     }
 
-    const_iterator &end() const {
-        static roaring::RoaringSetBitBiDirectionalIterator e(plain, true);
-        return e;
-    }
+    const_iterator end() const { return plain.end(); }
 };
 
 }  // namespace doublechecked

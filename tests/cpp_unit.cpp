@@ -29,6 +29,10 @@ using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
               "Expected Roaring to be no except move constructable");
+static_assert(
+    std::is_same<decltype(static_cast<const Roaring *>(nullptr)->end()),
+                 Roaring::const_iterator>::value,
+    "Roaring::end() must return an iterator by value");
 
 namespace {
 // We put std::numeric_limits<>::max in parentheses to avoid a
@@ -2598,6 +2602,78 @@ DEFINE_TEST(test_cpp_bidirectional_iterator_32) {
     assert_true(*it == 1);
 }
 
+// Roaring::end() must be bound to the bitmap it was called on.
+// https://github.com/RoaringBitmap/CRoaring/issues/945
+DEFINE_TEST(test_cpp_end_iterator_is_per_bitmap) {
+    Roaring a = Roaring::bitmapOf(2, 1, 2);
+    Roaring b = Roaring::bitmapOf(2, 100, 200);
+    (void)a.end();
+
+    Roaring::const_iterator it = b.end();
+    assert_true(it.i.parent == &b.roaring);
+    assert_false(it.i.has_value);
+    --it;
+    assert_int_equal(*it, 200);
+
+    // Copies from distinct bitmaps stay independent.
+    Roaring::const_iterator ea = a.end();
+    Roaring::const_iterator eb = b.end();
+    --ea;
+    assert_int_equal(*ea, 2);
+    assert_false(eb.i.has_value);
+    assert_true(eb.i.parent == &b.roaring);
+    --eb;
+    assert_int_equal(*eb, 200);
+    assert_int_equal(*ea, 2);
+
+    // Two end iterators of one bitmap are distinct objects.
+    Roaring::const_iterator e1 = b.end();
+    Roaring::const_iterator e2 = b.end();
+    --e1;
+    assert_int_equal(*e1, 200);
+    assert_false(e2.i.has_value);
+
+    // Decrementing a temporary must not disturb a later forward scan.
+    --b.end();
+    uint32_t n = 0;
+    for (Roaring::const_iterator i = b.begin(); i != b.end(); ++i) {
+        ++n;
+    }
+    assert_int_equal(n, 2);
+    assert_false(b.end().i.has_value);
+
+    // A freshly constructed end iterator walks back across containers.
+    Roaring wide = Roaring::bitmapOf(3, 1, 70000, uint32_max);
+    (void)a.end();
+    Roaring::const_iterator wit = wide.end();
+    assert_true(wit.i.parent == &wide.roaring);
+    --wit;
+    assert_int_equal(*wit, uint32_max);
+    --wit;
+    assert_int_equal(*wit, 70000);
+    --wit;
+    assert_int_equal(*wit, 1);
+
+    // Destroying a bitmap after end() leaves no dangling parent in a later
+    // bitmap's end iterator.
+    {
+        Roaring gone = Roaring::bitmapOf(1, 7);
+        (void)gone.end();
+    }
+    it = b.end();
+    assert_true(it.i.parent == &b.roaring);
+    --it;
+    assert_int_equal(*it, 200);
+
+    Roaring empty;
+    (void)b.end();
+    Roaring::const_iterator eit = empty.end();
+    assert_true(eit.i.parent == &empty.roaring);
+    --eit;
+    assert_false(eit.i.has_value);
+    assert_true(empty.begin() == empty.end());
+}
+
 namespace {
 struct halt_after {
     uint64_t calls;
@@ -2755,6 +2831,7 @@ int main() {
         cmocka_unit_test(test_cpp_run_optimize_64_return_value),
         cmocka_unit_test(test_cpp_run_optimize_recovers_space_64),
         cmocka_unit_test(test_cpp_bidirectional_iterator_32),
+        cmocka_unit_test(test_cpp_end_iterator_is_per_bitmap),
         cmocka_unit_test(test_cpp_iterate_halts_early),
         cmocka_unit_test(test_cpp_self_aliasing),
         cmocka_unit_test(test_cpp_fastunion_zero_or_one_input),
