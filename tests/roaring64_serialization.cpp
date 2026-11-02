@@ -104,6 +104,51 @@ DEFINE_TEST(test_64mapspreadvals) {
     assert_true(test_serialization("64mapspreadvals.bin"));
 }
 
+// 64maprunbitsetvals.bin was written by the Java library (RoaringBitmap). It
+// holds run, bitset and array containers, and a bucket with more than four
+// containers, so its 32-bit bitmap carries the offset header.
+DEFINE_TEST(test_64maprunbitsetvals) {
+    assert_true(test_serialization("64maprunbitsetvals.bin"));
+
+    std::ifstream in(TEST_DATA_DIR "64maprunbitsetvals.bin", std::ios::binary);
+    std::vector<char> buf(std::istreambuf_iterator<char>(in), {});
+    roaring64_bitmap_t* r =
+        roaring64_bitmap_portable_deserialize_safe(buf.data(), buf.size());
+    assert_non_null(r);
+
+    const uint64_t K = UINT64_C(1) << 32;
+    const uint64_t H = UINT64_C(1) << 63;
+    const uint64_t M = UINT64_MAX;
+    roaring64_bitmap_t* expected = roaring64_bitmap_create();
+    roaring64_bitmap_add(expected, 5);
+    roaring64_bitmap_add_range(expected, K, K + 1000);  // a run
+    roaring64_bitmap_add(expected, K + 65536);
+    for (uint64_t i = 0; i < 5000; i++) {
+        roaring64_bitmap_add(expected, 2 * K + 2 * i);  // a bitset
+    }
+    for (uint64_t i = 1; i <= 4; i++) {
+        roaring64_bitmap_add(expected, 2 * K + i * 65536);
+    }
+    roaring64_bitmap_add(expected, H - 1);
+    roaring64_bitmap_add(expected, H);
+    roaring64_bitmap_add_range_closed(expected, M - 99, M);
+
+    assert_int_equal(roaring64_bitmap_get_cardinality(r), 6108);
+    assert_true(roaring64_bitmap_contains(r, M));
+    assert_true(roaring64_bitmap_equals(r, expected));
+
+    // Run-optimized, the expected bitmap serializes to the same bytes.
+    roaring64_bitmap_run_optimize(expected);
+    std::vector<char> out(roaring64_bitmap_portable_size_in_bytes(expected));
+    assert_int_equal(roaring64_bitmap_portable_serialize(expected, out.data()),
+                     buf.size());
+    assert_true(out.size() == buf.size() &&
+                memcmp(out.data(), buf.data(), buf.size()) == 0);
+
+    roaring64_bitmap_free(expected);
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_64deseroverlappingkeys) {
     // clang-format off
     char simple_bitmap[] = {
@@ -376,6 +421,7 @@ int main() {
         cmocka_unit_test(test_64mapkeytoosmall),
         cmocka_unit_test(test_64mapsizetoosmall),
         cmocka_unit_test(test_64mapspreadvals),
+        cmocka_unit_test(test_64maprunbitsetvals),
         cmocka_unit_test(test_64deseroverlappingkeys),
         cmocka_unit_test(test_64deseroverlappingupper32),
         cmocka_unit_test(test_64truncated_every_prefix),
