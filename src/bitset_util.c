@@ -660,8 +660,8 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length,
 }
 
 // Same kernel as bitset_extract_setbits_avx512, writing 16-bit values, so the
-// blocks hold 32 values instead of 16. This one is only worth calling on
-// reasonably dense input: see array_container_from_bitset.
+// blocks hold 32 values instead of 16. It beats the scalar loop even on the
+// sparse input of array_container_from_bitset (at most 4096 values).
 CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
                                             size_t length, uint16_t *vout,

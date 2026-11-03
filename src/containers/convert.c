@@ -61,13 +61,13 @@ array_container_t *array_container_from_bitset(const bitset_container_t *bits) {
 #if CROARING_IS_X64
 #if CROARING_COMPILER_SUPPORTS_AVX512
     // Every caller first checks that the cardinality fits an array container
-    // (<= DEFAULT_MAX_SIZE), so the input here is sparse: under 6.25% density,
-    // a couple of set bits per word.
-    // Below ~1024 values the vector decoder does not make back its per-word
-    // cost and the scalar loop is as fast or faster; from 1024 up it wins
-    // (1.2x at 1024, 1.4x at 4096, measured on an Emerald Rapids Xeon).
-    if ((bits->cardinality >= 1024) &&
-        (croaring_hardware_support() & ROARING_SUPPORTS_AVX512)) {
+    // (<= DEFAULT_MAX_SIZE), so the input here is sparse: under 6.25% density.
+    // The vector decoder is still faster than the scalar loop at every
+    // cardinality, from 16 values up, whether the values are spread out,
+    // clustered or in runs: see microbenchmarks/bitset_to_array_bench.cpp.
+    // Do not gate it on the cardinality without measuring there: a gate at
+    // 1024 values made this conversion up to 2.3x slower below the gate.
+    if (croaring_hardware_support() & ROARING_SUPPORTS_AVX512) {
         bitset_extract_setbits_avx512_uint16(
             bits->words, BITSET_CONTAINER_SIZE_IN_WORDS, result->array,
             bits->cardinality, 0);
