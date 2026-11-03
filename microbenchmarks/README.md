@@ -8,6 +8,7 @@ of CRoaring operations.
 - `bench`: dataset-backed and synthetic microbenchmarks (contains, unions, intersections, etc.)
 - `synthetic_bench`: additional synthetic workloads
 - `array_merge_bench`: unions, differences, symmetric differences and intersections between a small and a large array container
+- `bitset_to_array_bench`: conversion of sparse bitset containers to array containers (each decoder, and the dispatch), and the unions of many sparse bitmaps that depend on it
 
 ## Build
 
