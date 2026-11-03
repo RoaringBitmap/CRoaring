@@ -368,7 +368,8 @@ static inline uint32_t croaring_detect_supported_architectures(void) {
 // for the first time all write.
 #if CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_CPP
 typedef std::atomic<int> croaring_atomic_int;
-#define CROARING_SUPPORT_UNKNOWN {0xFFFFFFF}  // no copy before C++17
+#define CROARING_SUPPORT_UNKNOWN \
+    { 0xFFFFFFF }  // no copy before C++17
 #elif CROARING_ATOMIC_IMPL == CROARING_ATOMIC_IMPL_C
 typedef _Atomic int croaring_atomic_int;
 #define CROARING_SUPPORT_UNKNOWN 0xFFFFFFF
