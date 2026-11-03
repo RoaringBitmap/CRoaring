@@ -6,6 +6,7 @@
 // predictor cannot learn a single input.
 #include <algorithm>
 #include <benchmark/benchmark.h>
+#include <cstdlib>
 #include <random>
 #include <vector>
 
@@ -97,6 +98,63 @@ void Sizes(benchmark::internal::Benchmark *b) {
     b->Args({2000, 2000});
 }
 
+// Balanced, disjoint arrays in one 16-bit container. Randomly partitioning
+// sorted values gives the scalar merge unpredictable advances without overlap.
+struct DisjointPairs {
+    std::vector<roaring_bitmap_t *> left, right;
+
+    explicit DisjointPairs(size_t cardinality) {
+        std::mt19937 gen(1234u + static_cast<uint32_t>(cardinality));
+        for (size_t p = 0; p < kPairs; ++p) {
+            std::vector<uint32_t> values(1u << 16);
+            for (uint32_t i = 0; i < values.size(); ++i) values[i] = i;
+            std::shuffle(values.begin(), values.end(), gen);
+            values.resize(2 * cardinality);
+            std::sort(values.begin(), values.end());
+
+            std::vector<size_t> owners(2 * cardinality);
+            for (size_t i = 0; i < cardinality; ++i) {
+                owners[i] = 0;
+                owners[cardinality + i] = 1;
+            }
+            std::shuffle(owners.begin(), owners.end(), gen);
+            std::vector<uint32_t> a, b;
+            a.reserve(cardinality);
+            b.reserve(cardinality);
+            for (size_t i = 0; i < values.size(); ++i) {
+                if (owners[i] == 0)
+                    a.push_back(values[i]);
+                else
+                    b.push_back(values[i]);
+            }
+            left.push_back(from_values(a));
+            right.push_back(from_values(b));
+            if (roaring_bitmap_intersect(left.back(), right.back()))
+                std::abort();
+        }
+    }
+
+    ~DisjointPairs() {
+        for (roaring_bitmap_t *r : left) roaring_bitmap_free(r);
+        for (roaring_bitmap_t *r : right) roaring_bitmap_free(r);
+    }
+};
+
+void IntersectNoMatch(benchmark::State &state) {
+    DisjointPairs pairs((size_t)state.range(0));
+    size_t p = 0;
+    for (auto _ : state) {
+        bool overlap = roaring_bitmap_intersect(pairs.left[p], pairs.right[p]);
+        benchmark::DoNotOptimize(overlap);
+        p = (p + 1) % pairs.left.size();
+    }
+    state.SetItemsProcessed(state.iterations());
+}
+
+void IntersectSizes(benchmark::internal::Benchmark *b) {
+    for (int64_t cardinality : {8, 64, 1024, 4096}) b->Arg(cardinality);
+}
+
 }  // namespace
 
 BENCHMARK(BinaryOp<roaring_bitmap_or, true>)->Name("Or")->Apply(Sizes);
@@ -109,5 +167,6 @@ BENCHMARK(BinaryOp<roaring_bitmap_andnot, true>)
     ->Apply(Sizes);
 BENCHMARK(BinaryOp<roaring_bitmap_xor, true>)->Name("Xor")->Apply(Sizes);
 BENCHMARK(BinaryOp<roaring_bitmap_and, true>)->Name("And")->Apply(Sizes);
+BENCHMARK(IntersectNoMatch)->Apply(IntersectSizes);
 
 BENCHMARK_MAIN();
