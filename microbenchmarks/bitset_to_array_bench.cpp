@@ -5,12 +5,14 @@
 // roaring_bitmap_or_many), intersections, differences, symmetric differences,
 // negations and removals.
 //
-// The "Decode" benchmarks time the conversion alone, through the dispatching
-// array_container_from_bitset and through each decoder forced: on x64 with
-// AVX-512, the dispatch should never be slower than the faster decoder. The
-// "OrMany" benchmarks time roaring_bitmap_or_many over many sparse bitmaps
-// whose union is still sparse, so that each container goes through a bitset and
-// is converted back to an array.
+// "Decode" times array_container_from_bitset, allocation included. That is
+// the before/after of the real conversion, and it is not comparable to the
+// forced decoders: the malloc would hide a decoder change. "DecodeScalar"
+// and "DecodeAvx512" time one decoder into a single reused array of exactly
+// `card` values, the size the library allocates and no more, so compare
+// those two with each other. "OrMany" times roaring_bitmap_or_many over many
+// sparse bitmaps whose union is still sparse, so that each container goes
+// through a bitset and is converted back to an array.
 //
 // Each benchmark cycles through many distinct inputs so that the branch
 // predictor cannot learn them.
@@ -92,7 +94,20 @@ struct Bitsets {
     }
 };
 
-// array_container_from_bitset, as used by the library.
+// Exactly `card` values, allocated the way array_container_from_bitset
+// allocates. Reused by the forced decoders so the timed loop is the decoder.
+struct ExactArray {
+    array_container_t *container;
+    explicit ExactArray(size_t card) {
+        container = array_container_create_given_capacity((int32_t)card);
+    }
+    ~ExactArray() {
+        if (container != NULL) array_container_free(container);
+    }
+    uint16_t *data() const { return container->array; }
+};
+
+// array_container_from_bitset, as used by the library, allocation included.
 void Decode(benchmark::State &state) {
     Bitsets bitsets((size_t)state.range(0), (Layout)state.range(1));
     size_t i = 0;
@@ -108,7 +123,11 @@ void Decode(benchmark::State &state) {
 // The portable scalar decoder, forced.
 void DecodeScalar(benchmark::State &state) {
     Bitsets bitsets((size_t)state.range(0), (Layout)state.range(1));
-    std::vector<uint16_t> out(DEFAULT_MAX_SIZE + 64);
+    ExactArray out((size_t)state.range(0));
+    if (out.container == NULL) {
+        state.SkipWithError("allocation failed");
+        return;
+    }
     size_t i = 0;
     for (auto _ : state) {
         const bitset_container_t *b = bitsets.inputs[i];
@@ -129,7 +148,11 @@ void DecodeAvx512(benchmark::State &state) {
         return;
     }
     Bitsets bitsets((size_t)state.range(0), (Layout)state.range(1));
-    std::vector<uint16_t> out(DEFAULT_MAX_SIZE + 64);
+    ExactArray out((size_t)state.range(0));
+    if (out.container == NULL) {
+        state.SkipWithError("allocation failed");
+        return;
+    }
     size_t i = 0;
     for (auto _ : state) {
         const bitset_container_t *b = bitsets.inputs[i];
