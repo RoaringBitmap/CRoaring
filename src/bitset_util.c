@@ -659,9 +659,45 @@ size_t bitset_extract_setbits_avx512(const uint64_t *words, size_t length,
     return out - initout;
 }
 
+// Writes the "advance" values of the word "v" to "out", adding them to the
+// 16-bit lanes of "base_v".
+static inline void avx512_decode_word_uint16(uint64_t v, unsigned advance,
+                                             __m512i base_v,
+                                             __m512i index_table,
+                                             uint16_t *out) {
+    __m512i vec = _mm512_maskz_compress_epi8((__mmask64)v, index_table);
+    _mm512_mask_storeu_epi16(
+        out, (__mmask32)_bzhi_u64(~UINT64_C(0), advance),
+        _mm512_add_epi16(base_v,
+                         _mm512_cvtepu8_epi16(_mm512_castsi512_si256(vec))));
+    if (advance > 32) {
+        _mm512_mask_storeu_epi16(
+            out + 32, (__mmask32)_bzhi_u64(~UINT64_C(0), advance - 32),
+            _mm512_add_epi16(base_v, _mm512_cvtepu8_epi16(
+                                         _mm512_extracti64x4_epi64(vec, 1))));
+    }
+}
+
 // Same kernel as bitset_extract_setbits_avx512, writing 16-bit values, so the
-// blocks hold 32 values instead of 16. It beats the scalar loop even on the
-// sparse input of array_container_from_bitset (at most 4096 values).
+// blocks hold 32 values instead of 16. It is called by
+// array_container_from_bitset, with "capacity" set to the cardinality, on
+// sparse input (at most 4096 values), where many words can be zero. How best
+// to skip them depends on how many there are:
+//
+// - Testing each word ("if (v != 0)") is mispredicted about once per value
+//   when zero and nonzero words alternate, as when about 1000 values are
+//   spread out: that was up to 2.7x slower than the loops below.
+// - From 2048 values (two per word on average), we decode every word without
+//   testing it: with v == 0, the masked store writes nothing and we advance by
+//   zero.
+// - Below 2048 values, decoding every word wastes time when most are zero, so
+//   we test eight words at a time and visit only the nonzero ones: a run of
+//   zero words costs little, and a group of eight words costs about one
+//   misprediction, when the inner loop exits.
+//
+// See microbenchmarks/bitset_to_array_bench.cpp. Either way, we stop once
+// "capacity" values are written, so that we do not scan the words past the
+// last value.
 CROARING_ALLOW_UNALIGNED
 size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
                                             size_t length, uint16_t *vout,
@@ -671,32 +707,59 @@ size_t bitset_extract_setbits_avx512_uint16(const uint64_t *array,
     uint16_t *initout = out;
     uint16_t *safeout = vout + capacity;
 
-    __m512i base_v = _mm512_set1_epi16((short)base);
-    const __m512i inc_v = _mm512_set1_epi16(64);
     const __m512i index_table = _mm512_loadu_si512(vbmi2_table);
     size_t i = 0;
 
-    for (; i < length; i++) {
-        uint64_t v = array[i];
-        if (v != 0) {
-            size_t advance = (size_t)roaring_hamming(v);
-            if (out + advance > safeout) break;
-            __m512i vec = _mm512_maskz_compress_epi8((__mmask64)v, index_table);
-            uint64_t bits = ~UINT64_C(0) >> (64 - advance);
-            _mm512_mask_storeu_epi16(
-                out, (__mmask32)bits,
-                _mm512_add_epi16(
-                    base_v, _mm512_cvtepu8_epi16(_mm512_castsi512_si256(vec))));
-            if (advance > 32) {
-                _mm512_mask_storeu_epi16(
-                    out + 32, (__mmask32)(bits >> 32),
-                    _mm512_add_epi16(base_v,
-                                     _mm512_cvtepu8_epi16(
-                                         _mm512_extracti64x4_epi64(vec, 1))));
+    // When "capacity" truncates the output, the loops below stop at the word
+    // that does not fit, and the scalar loop at the end writes the values that
+    // do.
+    if (capacity >= 2048) {
+        __m512i base_v = _mm512_set1_epi16((short)base);
+        const __m512i inc_v = _mm512_set1_epi16(64);
+        // Four words hold at most 256 values: no need to check the capacity
+        // for each one while there is room for that many.
+        for (; (i + 4 <= length) && ((size_t)(safeout - out) >= 4 * 64);
+             i += 4) {
+            for (size_t j = 0; j < 4; j++) {
+                uint64_t v = array[i + j];
+                unsigned advance = (unsigned)roaring_hamming(v);
+                avx512_decode_word_uint16(v, advance, base_v, index_table, out);
+                out += advance;
+                base_v = _mm512_add_epi16(base_v, inc_v);
             }
-            out += advance;
         }
-        base_v = _mm512_add_epi16(base_v, inc_v);
+        for (; (i < length) && (out < safeout); i++) {
+            uint64_t v = array[i];
+            unsigned advance = (unsigned)roaring_hamming(v);
+            if ((size_t)(safeout - out) < advance) break;
+            avx512_decode_word_uint16(v, advance, base_v, index_table, out);
+            out += advance;
+            base_v = _mm512_add_epi16(base_v, inc_v);
+        }
+    } else {
+        bool truncated = false;
+        while ((i + 8 <= length) && (out < safeout)) {
+            __m512i words = _mm512_loadu_si512((const __m512i *)(array + i));
+            uint32_t nonzero = (uint32_t)_mm512_test_epi64_mask(words, words);
+            while (nonzero != 0) {
+                size_t j = (size_t)roaring_trailing_zeroes(nonzero);
+                uint64_t v = array[i + j];
+                unsigned advance = (unsigned)roaring_hamming(v);
+                if ((size_t)(safeout - out) < advance) {
+                    i += j;
+                    truncated = true;
+                    break;
+                }
+                avx512_decode_word_uint16(
+                    v, advance,
+                    _mm512_set1_epi16((short)(uint16_t)(base + (i + j) * 64)),
+                    index_table, out);
+                out += advance;
+                nonzero &= nonzero - 1;
+            }
+            if (truncated) break;
+            i += 8;
+        }
     }
 
     base = (uint16_t)(base + i * 64);

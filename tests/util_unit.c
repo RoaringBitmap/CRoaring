@@ -162,6 +162,79 @@ static uint64_t splitmix64(uint64_t* state) {
     return z ^ (z >> 31);
 }
 
+#if CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
+// Checks the 16-bit AVX-512 decoder against the scalar one on sparse bitsets
+// with many zero words, as array_container_from_bitset sees them: values spread
+// out or in runs (so that some words hold more than 32 values), on both sides
+// of 2048 values (where the decoder changes strategy), with the output
+// truncated at various capacities, including within a group of eight words.
+DEFINE_TEST(avx512_extract_uint16_sparse_matches_scalar) {
+    if ((croaring_hardware_support() & ROARING_SUPPORTS_AVX512) == 0) {
+        return;  // no VBMI2 here
+    }
+    const size_t length = (1 << 16) / 64;
+    uint64_t* words = (uint64_t*)malloc(length * sizeof(uint64_t));
+    assert_non_null(words);
+    uint64_t rng = 1234;
+    const size_t targets[] = {1, 7, 64, 500, 1000, 2047, 2048, 3000, 4096};
+    for (size_t t = 0; t < sizeof(targets) / sizeof(targets[0]); t++) {
+        for (int runs = 0; runs <= 1; runs++) {
+            memset(words, 0, length * sizeof(uint64_t));
+            size_t cardinality = 0;
+            while (cardinality < targets[t]) {
+                uint32_t start = (uint32_t)(splitmix64(&rng) % 65536);
+                uint32_t len =
+                    runs ? 1 + (uint32_t)(splitmix64(&rng) % 100) : 1;
+                for (uint32_t v = start;
+                     v < start + len && v < 65536 && cardinality < targets[t];
+                     v++) {
+                    uint64_t bit = UINT64_C(1) << (v % 64);
+                    if ((words[v / 64] & bit) == 0) {
+                        words[v / 64] |= bit;
+                        cardinality++;
+                    }
+                }
+            }
+            const uint16_t base = 7;
+            size_t capacities[] = {cardinality,
+                                   cardinality - 1,
+                                   cardinality / 2,
+                                   cardinality / 3 + 1,
+                                   2048,
+                                   2047,
+                                   33,
+                                   1};
+            for (size_t k = 0; k < sizeof(capacities) / sizeof(capacities[0]);
+                 k++) {
+                size_t capacity = capacities[k];
+                if (capacity == 0 || capacity > cardinality) continue;
+                // Exactly "capacity" values, with no padding.
+                uint16_t* got = (uint16_t*)malloc(capacity * 2);
+                uint16_t* want = (uint16_t*)malloc(capacity * 2);
+                assert_non_null(got);
+                assert_non_null(want);
+                size_t n = 0;
+                for (size_t i = 0; (i < length) && (n < capacity); ++i) {
+                    uint64_t w = words[i];
+                    while ((w != 0) && (n < capacity)) {
+                        want[n++] = (uint16_t)(roaring_trailing_zeroes(w) +
+                                               base + i * 64);
+                        w &= (w - 1);
+                    }
+                }
+                size_t n16 = bitset_extract_setbits_avx512_uint16(
+                    words, length, got, capacity, base);
+                assert_int_equal(n16, n);
+                assert_true(memcmp(got, want, n * sizeof(uint16_t)) == 0);
+                free(got);
+                free(want);
+            }
+        }
+    }
+    free(words);
+}
+#endif  // CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
+
 // Checks the branchless intersection decoders against the plain loop, on
 // random bitsets with densities from empty to full, so that every choice of
 // unrolling (and the fallback for words with many bits) is exercised. The
@@ -337,6 +410,7 @@ int main() {
         cmocka_unit_test(setandextract_uint32),
 #if CROARING_IS_X64 && CROARING_COMPILER_SUPPORTS_AVX512
         cmocka_unit_test(avx512_extract_matches_scalar),
+        cmocka_unit_test(avx512_extract_uint16_sparse_matches_scalar),
 #endif
         cmocka_unit_test(intersection_extract_matches_scalar),
         cmocka_unit_test(scalar_merges_match_reference),
