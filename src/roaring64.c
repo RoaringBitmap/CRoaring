@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <roaring/art/art.h>
@@ -38,7 +39,16 @@ namespace api {
 typedef struct roaring64_bitmap_s {
     art_t art;
     uint8_t flags;
+    // The container slots. Every slot at or above end is free; the free slots
+    // below end (the holes) are kept in a min-heap, so that the lowest free
+    // slot, first_free, is found without scanning the slots. first_free is
+    // the top of the heap, or end if there are no holes (capacity if the
+    // slots are all taken).
     uint64_t first_free;
+    uint64_t end;
+    uint64_t *holes;  // min-heap of num_holes indices
+    uint64_t num_holes;
+    uint64_t holes_capacity;
     uint64_t capacity;
     container_t **containers;
     // Parallel to containers[]. Live slots (non-NULL pointers) have the
@@ -221,21 +231,67 @@ static void reserve_containers(roaring64_bitmap_t *r, uint64_t num_containers) {
     grow_containers_to(r, num_containers);
 }
 
-static uint64_t next_free_container_idx(const roaring64_bitmap_t *r) {
-    for (uint64_t i = r->first_free + 1; i < r->capacity; ++i) {
-        if (r->containers[i] == NULL) {
-            return i;
-        }
+// The heap of holes: holes[0] is the smallest index, and every index is
+// smaller than its children, holes[2i+1] and holes[2i+2].
+static void holes_push(roaring64_bitmap_t *r, uint64_t index) {
+    if (r->num_holes == r->holes_capacity) {
+        uint64_t new_capacity =
+            r->holes_capacity < 16 ? 16 : 2 * r->holes_capacity;
+        r->holes = (uint64_t *)roaring_realloc(r->holes,
+                                               new_capacity * sizeof(uint64_t));
+        r->holes_capacity = new_capacity;
     }
-    return r->capacity;
+    uint64_t i = r->num_holes++;
+    while (i > 0) {
+        uint64_t parent = (i - 1) / 2;
+        if (r->holes[parent] <= index) {
+            break;
+        }
+        r->holes[i] = r->holes[parent];
+        i = parent;
+    }
+    r->holes[i] = index;
 }
 
+static void holes_pop(roaring64_bitmap_t *r) {
+    uint64_t last = r->holes[--r->num_holes];
+    uint64_t n = r->num_holes;
+    uint64_t i = 0;
+    while (2 * i + 1 < n) {
+        uint64_t child = 2 * i + 1;
+        if (child + 1 < n && r->holes[child + 1] < r->holes[child]) {
+            child++;
+        }
+        if (last <= r->holes[child]) {
+            break;
+        }
+        r->holes[i] = r->holes[child];
+        i = child;
+    }
+    if (n > 0) {
+        r->holes[i] = last;
+    }
+}
+
+// Forgets every hole (the slots below end are then all taken).
+static void holes_clear(roaring64_bitmap_t *r) { r->num_holes = 0; }
+
+static inline void update_first_free(roaring64_bitmap_t *r) {
+    r->first_free = r->num_holes > 0 ? r->holes[0] : r->end;
+}
+
+// Takes the lowest free slot and returns its index. The caller fills it.
 static uint64_t allocate_index(roaring64_bitmap_t *r) {
     uint64_t first_free = r->first_free;
     if (first_free == r->capacity) {
         extend_containers(r);
     }
-    r->first_free = next_free_container_idx(r);
+    if (r->num_holes > 0) {
+        holes_pop(r);  // first_free is the top of the heap
+    } else {
+        r->end = first_free + 1;  // first_free == end
+    }
+    update_first_free(r);
     return first_free;
 }
 
@@ -277,12 +333,20 @@ static void ensure_container_capacity(roaring64_bitmap_t *r, uint64_t extra) {
     r->capacity = new_capacity;
 }
 
-static void remove_container(roaring64_bitmap_t *r, leaf_t leaf) {
-    uint64_t index = get_index(leaf);
+// Frees a slot (it does not free the container in it).
+static void free_index(roaring64_bitmap_t *r, uint64_t index) {
     r->containers[index] = NULL;
-    if (index < r->first_free) {
-        r->first_free = index;
+    if (index + 1 == r->end) {
+        // The holes, all below index, stay below end.
+        r->end = index;
+    } else {
+        holes_push(r, index);
     }
+    update_first_free(r);
+}
+
+static void remove_container(roaring64_bitmap_t *r, leaf_t leaf) {
+    free_index(r, get_index(leaf));
 }
 
 // Copies the container referenced by `leaf` from `r1` to `r2`.
@@ -382,6 +446,10 @@ roaring64_bitmap_t *roaring64_bitmap_create(void) {
     r->flags = 0;
     r->capacity = 0;
     r->first_free = 0;
+    r->end = 0;
+    r->holes = NULL;
+    r->num_holes = 0;
+    r->holes_capacity = 0;
     r->containers = NULL;
     r->typecodes = NULL;
     return r;
@@ -409,6 +477,7 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
     art_free(&r->art);
     roaring_free(r->containers);
     roaring_free(r->typecodes);
+    roaring_free(r->holes);
     roaring_free(r);
 }
 
@@ -449,6 +518,8 @@ void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
     art_init_cleared(&dest->art);
     dest->flags = 0;
     dest->first_free = 0;
+    dest->end = 0;
+    holes_clear(dest);
     if (dest->capacity > 0) {
         memset(dest->containers, 0,
                sizeof(dest->containers[0]) * dest->capacity);
@@ -1192,10 +1263,11 @@ static void move_to_shrink(roaring64_bitmap_t *r, leaf_t *leaf) {
         return;
     }
     uint8_t typecode = get_typecode(*leaf);
-    set_container_at(r, r->first_free, get_container(r, *leaf), typecode);
-    r->containers[idx] = NULL;
-    *leaf = create_leaf(r->first_free, typecode);
-    r->first_free = next_free_container_idx(r);
+    container_t *c = get_container(r, *leaf);
+    uint64_t new_idx = allocate_index(r);
+    set_container_at(r, new_idx, c, typecode);
+    free_index(r, idx);
+    *leaf = create_leaf(new_idx, typecode);
 }
 
 static inline bool is_shrunken(const roaring64_bitmap_t *r) {
@@ -1211,6 +1283,16 @@ size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
                                          get_typecode(*leaf));
         move_to_shrink(r, leaf);
         art_iterator_next(&it);
+    }
+    // Every container now sits below first_free, and every slot below it is
+    // taken.
+    r->end = r->first_free;
+    holes_clear(r);
+    if (r->holes != NULL) {
+        freed += r->holes_capacity * sizeof(uint64_t);
+        roaring_free(r->holes);
+        r->holes = NULL;
+        r->holes_capacity = 0;
     }
     if (is_shrunken(r)) {
         return freed;
@@ -1291,8 +1373,80 @@ static bool roaring64_leaf_internal_validate(const art_val_t val,
     return container_internal_validate(r->containers[index], typecode, reason);
 }
 
+static int compare_uint64(const void *a, const void *b) {
+    uint64_t x = *(const uint64_t *)a, y = *(const uint64_t *)b;
+    return (x > y) - (x < y);
+}
+
+// Checks the bookkeeping of the container slots (see roaring64_bitmap_s).
+static bool roaring64_slots_internal_validate(const roaring64_bitmap_t *r,
+                                              const char **reason) {
+    if (r->flags & ROARING_FLAG_FROZEN) {
+        return true;  // read-only: every slot is marked as taken
+    }
+    if (r->end > r->capacity) {
+        *reason = "container slots end beyond capacity";
+        return false;
+    }
+    uint64_t free_below_end = 0;
+    for (uint64_t i = 0; i < r->capacity; ++i) {
+        if (r->containers[i] == NULL) {
+            free_below_end += i < r->end;
+        } else if (i >= r->end) {
+            *reason = "container slot in use at or above end";
+            return false;
+        }
+    }
+    if (free_below_end != r->num_holes) {
+        *reason = "wrong count of free container slots";
+        return false;
+    }
+    // Each hole must be a distinct free slot below end: since there are as
+    // many holes as free slots below end, they are then exactly those slots.
+    uint64_t lowest = r->end;
+    if (r->num_holes > 0) {
+        uint64_t *sorted =
+            (uint64_t *)roaring_malloc(r->num_holes * sizeof(uint64_t));
+        if (sorted == NULL) {
+            *reason = "out of memory";
+            return false;
+        }
+        memcpy(sorted, r->holes, r->num_holes * sizeof(uint64_t));
+        qsort(sorted, r->num_holes, sizeof(uint64_t), compare_uint64);
+        bool ok = true;
+        for (uint64_t i = 0; i < r->num_holes && ok; ++i) {
+            ok = sorted[i] < r->end && r->containers[sorted[i]] == NULL &&
+                 (i == 0 || sorted[i - 1] < sorted[i]);
+        }
+        roaring_free(sorted);
+        if (!ok) {
+            *reason = "container slot hole list is wrong";
+            return false;
+        }
+        for (uint64_t i = 1; i < r->num_holes; ++i) {
+            if (r->holes[(i - 1) / 2] > r->holes[i]) {
+                *reason = "container slot holes are not a heap";
+                return false;
+            }
+        }
+        lowest = r->holes[0];
+    }
+    if (lowest != r->first_free) {
+        *reason = "first_free is not the lowest free container slot";
+        return false;
+    }
+    return true;
+}
+
 bool roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r,
                                         const char **reason) {
+    const char *reason_local;
+    if (reason == NULL) {
+        reason = &reason_local;
+    }
+    if (!roaring64_slots_internal_validate(r, reason)) {
+        return false;
+    }
     return art_internal_validate(&r->art, reason,
                                  roaring64_leaf_internal_validate, (void *)r);
 }
@@ -2744,6 +2898,10 @@ static roaring64_bitmap_t *alloc_frozen_bitmap(
     r->flags = ROARING_FLAG_FROZEN;
     r->capacity = capacity;
     r->first_free = 0;
+    r->end = 0;
+    r->holes = NULL;
+    r->num_holes = 0;
+    r->holes_capacity = 0;
     cursor = roaring64_arena_pad(cursor, base, alignof(container_t *));
     if (capacity == 0) {
         r->containers = NULL;
@@ -2923,7 +3081,9 @@ roaring64_bitmap_t *roaring64_bitmap_frozen_view(const char *buf,
     // Padding to make overall size a multiple of required alignment.
     buf = CROARING_ALIGN_BUF(buf, CROARING_BITSET_ALIGNMENT);
 
+    // A frozen view is read-only: mark every slot as taken.
     r->first_free = r->capacity;
+    r->end = r->capacity;
     return r;
 }
 

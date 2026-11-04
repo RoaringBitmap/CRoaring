@@ -3,6 +3,7 @@
 #include <map>
 #include <numeric>
 #include <random>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -3231,6 +3232,62 @@ DEFINE_TEST(test_iterator_read_past_end_can_go_previous) {
 
 // Shrinks bitmaps that lost most of their containers, with inner nodes of
 // every type, and checks that the content and the structure survive.
+DEFINE_TEST(test_container_slot_churn) {
+    // Containers come and go: removing the only value of a container frees
+    // its slot, adding a value to a new container takes one. Check the slot
+    // bookkeeping (internal_validate) and the contents against std::set.
+    std::mt19937_64 gen(1234);
+    for (uint64_t universe : {8, 64, 1000}) {
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        std::set<uint64_t> ref;
+        for (int step = 0; step < 6000; ++step) {
+            uint64_t v = (gen() % universe) << 16 | (gen() % 3);
+            switch (gen() % 5) {
+                case 0:
+                case 1:
+                    roaring64_bitmap_add(r, v);
+                    ref.insert(v);
+                    break;
+                case 2:
+                case 3:
+                    roaring64_bitmap_remove(r, v);
+                    ref.erase(v);
+                    break;
+                default:
+                    if (step % 97 == 0) {
+                        roaring64_bitmap_shrink_to_fit(r);
+                    } else {
+                        // Remove whole containers at once.
+                        uint64_t lo = (gen() % universe) << 16;
+                        uint64_t hi = lo + ((gen() % 4) << 16);
+                        roaring64_bitmap_remove_range_closed(r, lo, hi);
+                        ref.erase(ref.lower_bound(lo), ref.upper_bound(hi));
+                    }
+            }
+            if (step % 50 == 0) {
+                assert_r64_valid(r);
+                assert_int_equal(roaring64_bitmap_get_cardinality(r),
+                                 ref.size());
+            }
+        }
+        assert_r64_valid(r);
+        std::vector<uint64_t> got(ref.size());
+        roaring64_bitmap_to_uint64_array(r, got.data());
+        assert_true(std::equal(got.begin(), got.end(), ref.begin()));
+        // A copy and a shrunken bitmap keep consistent slots too.
+        roaring64_bitmap_t* c = roaring64_bitmap_copy(r);
+        assert_r64_valid(c);
+        roaring64_bitmap_shrink_to_fit(r);
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_equals(r, c));
+        roaring64_bitmap_add(r, universe << 16);
+        roaring64_bitmap_remove(r, *ref.begin());
+        assert_r64_valid(r);
+        roaring64_bitmap_free(c);
+        roaring64_bitmap_free(r);
+    }
+}
+
 DEFINE_TEST(test_shrink_to_fit_many_containers) {
     // High key bytes spread so that the tree has Node4, Node16, Node48 and
     // Node256 inner nodes.
@@ -3967,6 +4024,7 @@ DEFINE_TEST(test_run_optimize_recovers_space) {
 
 int main() {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(test_container_slot_churn),
         cmocka_unit_test(test_shrink_to_fit_many_containers),
         cmocka_unit_test(test_remove_many_issue_742),
         cmocka_unit_test(test_remove_many_issue_742B),
