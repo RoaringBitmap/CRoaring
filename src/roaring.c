@@ -3069,26 +3069,24 @@ uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *bm) {
 
 bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank,
                            uint32_t *element) {
-    container_t *container;
-    uint8_t typecode;
-    uint16_t key;
+    const roaring_array_t *ra = &bm->high_low_container;
     uint32_t start_rank = 0;
-    int i = 0;
-    bool valid = false;
-    while (!valid && i < bm->high_low_container.size) {
-        container = bm->high_low_container.containers[i];
-        typecode = bm->high_low_container.typecodes[i];
-        valid =
-            container_select(container, typecode, &start_rank, rank, element);
-        i++;
+    for (int32_t i = 0; i < ra->size; i++) {
+        uint8_t typecode = ra->typecodes[i];
+        const container_t *c =
+            container_unwrap_shared(ra->containers[i], &typecode);
+        uint32_t card = (uint32_t)container_get_cardinality(c, typecode);
+        if (rank - start_rank < card) {  // rank >= start_rank always holds
+            if (!container_select(c, typecode, &start_rank, rank, element)) {
+                return false;
+            }
+            // w/o cast, key promotes signed
+            *element |= (((uint32_t)ra->keys[i]) << 16);
+            return true;
+        }
+        start_rank += card;
     }
-
-    if (valid) {
-        key = bm->high_low_container.keys[i - 1];
-        *element |= (((uint32_t)key) << 16);  // w/o cast, key promotes signed
-        return true;
-    } else
-        return false;
+    return false;
 }
 
 bool roaring_bitmap_intersect(const roaring_bitmap_t *x1,
