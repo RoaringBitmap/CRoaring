@@ -1558,18 +1558,23 @@ uint64_t roaring_bitmap_range_cardinality_closed(const roaring_bitmap_t *r,
 
     uint64_t card = 0;
 
+    // In the first and last containers, container_range_cardinality() counts
+    // the values in the range: in a bitset, subtracting ranks would count
+    // every value below the range, twice.
     int i = ra_get_index(ra, minhb);
     if (i >= 0) {
         if (minhb == maxhb) {
-            card += container_rank(ra->containers[i], ra->typecodes[i],
-                                   range_end & 0xffff);
-        } else {
+            return (uint64_t)container_range_cardinality(
+                ra->containers[i], ra->typecodes[i], range_start & 0xffff,
+                range_end & 0xffff);
+        }
+        if ((range_start & 0xffff) == 0) {
             card +=
                 container_get_cardinality(ra->containers[i], ra->typecodes[i]);
-        }
-        if ((range_start & 0xffff) != 0) {
-            card -= container_rank(ra->containers[i], ra->typecodes[i],
-                                   (range_start & 0xffff) - 1);
+        } else {
+            card +=
+                container_range_cardinality(ra->containers[i], ra->typecodes[i],
+                                            range_start & 0xffff, 0xffff);
         }
         i++;
     } else {
@@ -1582,8 +1587,8 @@ uint64_t roaring_bitmap_range_cardinality_closed(const roaring_bitmap_t *r,
             card +=
                 container_get_cardinality(ra->containers[i], ra->typecodes[i]);
         } else if (key == maxhb) {
-            card += container_rank(ra->containers[i], ra->typecodes[i],
-                                   range_end & 0xffff);
+            card += container_range_cardinality(
+                ra->containers[i], ra->typecodes[i], 0, range_end & 0xffff);
             break;
         } else {
             break;
@@ -2272,34 +2277,6 @@ bool roaring_bitmap_is_subset(const roaring_bitmap_t *r1,
         return false;
 }
 
-static void insert_flipped_container(roaring_array_t *ans_arr,
-                                     const roaring_array_t *x1_arr, uint16_t hb,
-                                     uint16_t lb_start, uint16_t lb_end) {
-    const int i = ra_get_index(x1_arr, hb);
-    const int j = ra_get_index(ans_arr, hb);
-    uint8_t ctype_in, ctype_out;
-    container_t *flipped_container = NULL;
-    if (i >= 0) {
-        container_t *container_to_flip =
-            ra_get_container_at_index(x1_arr, (uint16_t)i, &ctype_in);
-        flipped_container =
-            container_not_range(container_to_flip, ctype_in, (uint32_t)lb_start,
-                                (uint32_t)(lb_end + 1), &ctype_out);
-
-        if (container_nonzero_cardinality(flipped_container, ctype_out))
-            ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
-                                       ctype_out);
-        else {
-            container_free(flipped_container, ctype_out);
-        }
-    } else {
-        flipped_container = container_range_of_ones(
-            (uint32_t)lb_start, (uint32_t)(lb_end + 1), &ctype_out);
-        ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
-                                   ctype_out);
-    }
-}
-
 static void inplace_flip_container(roaring_array_t *x1_arr, uint16_t hb,
                                    uint16_t lb_start, uint16_t lb_end) {
     const int i = ra_get_index(x1_arr, hb);
@@ -2323,31 +2300,6 @@ static void inplace_flip_container(roaring_array_t *x1_arr, uint16_t hb,
         flipped_container = container_range_of_ones(
             (uint32_t)lb_start, (uint32_t)(lb_end + 1), &ctype_out);
         ra_insert_new_key_value_at(x1_arr, -i - 1, hb, flipped_container,
-                                   ctype_out);
-    }
-}
-
-static void insert_fully_flipped_container(roaring_array_t *ans_arr,
-                                           const roaring_array_t *x1_arr,
-                                           uint16_t hb) {
-    const int i = ra_get_index(x1_arr, hb);
-    const int j = ra_get_index(ans_arr, hb);
-    uint8_t ctype_in, ctype_out;
-    container_t *flipped_container = NULL;
-    if (i >= 0) {
-        container_t *container_to_flip =
-            ra_get_container_at_index(x1_arr, (uint16_t)i, &ctype_in);
-        flipped_container =
-            container_not(container_to_flip, ctype_in, &ctype_out);
-        if (container_nonzero_cardinality(flipped_container, ctype_out))
-            ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
-                                       ctype_out);
-        else {
-            container_free(flipped_container, ctype_out);
-        }
-    } else {
-        flipped_container = container_range_of_ones(0U, 0x10000U, &ctype_out);
-        ra_insert_new_key_value_at(ans_arr, -j - 1, hb, flipped_container,
                                    ctype_out);
     }
 }
@@ -2399,45 +2351,43 @@ roaring_bitmap_t *roaring_bitmap_flip_closed(const roaring_bitmap_t *x1,
     roaring_bitmap_t *ans = roaring_bitmap_create();
     roaring_bitmap_set_copy_on_write(ans, is_cow(x1));
 
-    uint16_t hb_start = (uint16_t)(range_start >> 16);
-    const uint16_t lb_start = (uint16_t)range_start;  // & 0xFFFF;
-    uint16_t hb_end = (uint16_t)(range_end >> 16);
-    const uint16_t lb_end = (uint16_t)range_end;  // & 0xFFFF;
+    const roaring_array_t *x1_arr = &x1->high_low_container;
+    roaring_array_t *ans_arr = &ans->high_low_container;
+    const uint32_t hb_start = range_start >> 16;
+    const uint32_t hb_end = range_end >> 16;
 
-    ra_append_copies_until(&ans->high_low_container, &x1->high_low_container,
-                           hb_start, is_cow(x1));
-    if (hb_start == hb_end) {
-        insert_flipped_container(&ans->high_low_container,
-                                 &x1->high_low_container, hb_start, lb_start,
-                                 lb_end);
-    } else {
-        // start and end containers are distinct
-        if (lb_start > 0) {
-            // handle first (partial) container
-            insert_flipped_container(&ans->high_low_container,
-                                     &x1->high_low_container, hb_start,
-                                     lb_start, 0xFFFF);
-            ++hb_start;  // for the full containers.  Can't wrap.
+    ra_append_copies_until(ans_arr, x1_arr, (uint16_t)hb_start, is_cow(x1));
+    // We visit the keys of the range and the containers of x1 together, in
+    // order, appending the flipped containers to ans. Index i is that of the
+    // first container of x1 not visited yet.
+    int32_t i = ans_arr->size;
+    for (uint32_t hb = hb_start; hb <= hb_end; ++hb) {
+        const uint32_t lb_start = hb == hb_start ? (range_start & 0xFFFF) : 0;
+        const uint32_t lb_end = hb == hb_end ? (range_end & 0xFFFF) : 0xFFFF;
+        uint8_t ctype_out;
+        container_t *flipped;
+        if (i < x1_arr->size && x1_arr->keys[i] == hb) {
+            const container_t *c = x1_arr->containers[i];
+            const uint8_t ctype_in = x1_arr->typecodes[i];
+            ++i;
+            if (lb_start == 0 && lb_end == 0xFFFF) {
+                // A full container flips to nothing.
+                if (container_is_full(c, ctype_in)) continue;
+                flipped = container_not(c, ctype_in, &ctype_out);
+            } else {
+                flipped = container_not_range(c, ctype_in, lb_start, lb_end + 1,
+                                              &ctype_out);
+            }
+            if (!container_nonzero_cardinality(flipped, ctype_out)) {
+                container_free(flipped, ctype_out);
+                continue;
+            }
+        } else {
+            flipped = container_range_of_ones(lb_start, lb_end + 1, &ctype_out);
         }
-
-        if (lb_end != 0xFFFF) --hb_end;  // later we'll handle the partial block
-
-        for (uint32_t hb = hb_start; hb <= hb_end; ++hb) {
-            insert_fully_flipped_container(&ans->high_low_container,
-                                           &x1->high_low_container,
-                                           (uint16_t)hb);
-        }
-
-        // handle a partial final container
-        if (lb_end != 0xFFFF) {
-            insert_flipped_container(&ans->high_low_container,
-                                     &x1->high_low_container, hb_end + 1, 0,
-                                     lb_end);
-            ++hb_end;
-        }
+        ra_append(ans_arr, (uint16_t)hb, flipped, ctype_out);
     }
-    ra_append_copies_after(&ans->high_low_container, &x1->high_low_container,
-                           hb_end, is_cow(x1));
+    ra_append_copy_range(ans_arr, x1_arr, i, x1_arr->size, is_cow(x1));
     return ans;
 }
 

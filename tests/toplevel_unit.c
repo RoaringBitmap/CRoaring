@@ -7276,6 +7276,56 @@ DEFINE_TEST(test_flip_to_empty_is_valid) {
     roaring_bitmap_free(r);
 }
 
+// Range cardinality and flip, against a plain bit array, on chunks holding
+// every kind of container: missing, array, bitset, full, one run, many runs.
+DEFINE_TEST(test_range_cardinality_and_flip_by_container) {
+    enum { NCHUNKS = 7, UNIVERSE = NCHUNKS << 16 };
+    uint8_t *bits = (uint8_t *)calloc(UNIVERSE, 1);
+    for (uint32_t i = 0; i < 65536; i += 97) bits[(1 << 16) + i] = 1;
+    for (uint32_t i = 0; i < 65536; i += 3) bits[(2 << 16) + i] = 1;
+    for (uint32_t i = 0; i < 65536; i++) bits[(3 << 16) + i] = 1;
+    for (uint32_t i = 1000; i < 50000; i++) bits[(4 << 16) + i] = 1;
+    for (uint32_t i = 0; i < 65536; i += 1000) {
+        for (uint32_t j = i; j < i + 300 && j < 65536; j++) {
+            bits[(5 << 16) + j] = 1;
+        }
+    }
+    for (uint32_t i = 0; i < 65536; i++) bits[(6 << 16) + i] = 1;
+    roaring_bitmap_t *r = roaring_bitmap_create();
+    for (uint32_t v = 0; v < UNIVERSE; v++) {
+        if (bits[v]) roaring_bitmap_add(r, v);
+    }
+    roaring_bitmap_run_optimize(r);
+    // Ends inside chunks, on chunk boundaries, and wide ranges in a chunk.
+    const uint32_t points[] = {0,      1,      777,    32768,  40000,   65535,
+                               65536,  65537,  99999,  131072, 150000,  196608,
+                               196609, 230000, 262143, 262144, 300000,  327680,
+                               393215, 393216, 400000, 458751, UNIVERSE};
+    const size_t npoints = sizeof(points) / sizeof(points[0]);
+    for (size_t a = 0; a < npoints; a++) {
+        for (size_t b = a; b < npoints; b++) {
+            uint64_t start = points[a], end = points[b];
+            uint64_t expected = 0;
+            for (uint64_t v = start; v < end; v++) expected += bits[v];
+            assert_true(roaring_bitmap_range_cardinality(r, start, end) ==
+                        expected);
+            roaring_bitmap_t *f = roaring_bitmap_flip(r, start, end);
+            assert_bitmap_validate(f);
+            assert_true(roaring_bitmap_get_cardinality(f) ==
+                        roaring_bitmap_get_cardinality(r) - expected +
+                            (end - start - expected));
+            for (uint32_t v = 0; v < UNIVERSE; v += 61) {
+                bool flipped = v >= start && v < end;
+                assert_true(roaring_bitmap_contains(f, v) ==
+                            (bits[v] != flipped));
+            }
+            roaring_bitmap_free(f);
+        }
+    }
+    roaring_bitmap_free(r);
+    free(bits);
+}
+
 /* ---- 32-bit set operations ---- */
 
 // Java containerSharingWithXor / testAstesana
@@ -8657,6 +8707,7 @@ int main() {
         cmocka_unit_test(test_minimum_maximum_extremes),
         cmocka_unit_test(test_minimal_run_point_mutations),
         cmocka_unit_test(test_flip_to_empty_is_valid),
+        cmocka_unit_test(test_range_cardinality_and_flip_by_container),
         cmocka_unit_test(test_inplace_ops_do_not_share_mutated_containers),
         cmocka_unit_test(test_results_do_not_share_containers_with_inputs),
         cmocka_unit_test(test_xor_many_drops_cancelled_containers),
