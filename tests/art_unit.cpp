@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <array>
 #include <cinttypes>
+#include <cstring>
 #include <iomanip>
 #include <ios>
 #include <map>
@@ -717,6 +719,102 @@ DEFINE_TEST(test_art_num_leaves_and_reserve) {
     }
 }
 
+struct art_visit_record {
+    std::vector<std::array<uint8_t, 6>> keys;
+    std::vector<art_val_t> values;
+    size_t stop_after;  // Stop after this many leaves (0: never).
+};
+
+static bool art_visit_record_cb(const art_key_chunk_t key[], art_val_t val,
+                                void* context) {
+    art_visit_record* record = (art_visit_record*)context;
+    std::array<uint8_t, 6> k;
+    memcpy(k.data(), key, 6);
+    record->keys.push_back(k);
+    record->values.push_back(val);
+    return record->stop_after == 0 || record->keys.size() < record->stop_after;
+}
+
+DEFINE_TEST(test_art_visit) {
+    {
+        // Empty ART: no calls, not stopped.
+        art_t art;
+        art_init_cleared(&art);
+        art_visit_record record{{}, {}, 0};
+        assert_true(art_visit(&art, art_visit_record_cb, &record));
+        assert_true(record.keys.empty());
+        art_free(&art);
+    }
+    std::vector<std::vector<std::array<uint8_t, 6>>> key_sets;
+    {
+        // ART with multiple node sizes and long shared prefixes.
+        std::vector<std::array<uint8_t, 6>> keys;
+        std::vector<size_t> sizes = {4, 16, 48, 256};
+        for (size_t i = 0; i < sizes.size(); i++) {
+            for (size_t j = 0; j < sizes[i]; j++) {
+                keys.push_back({0, 0, 0, static_cast<uint8_t>(i),
+                                static_cast<uint8_t>(j), 7});
+            }
+        }
+        key_sets.push_back(keys);
+    }
+    // Max-depth ART.
+    key_sets.push_back({
+        {0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 1, 0},
+        {0, 0, 0, 1, 0, 0},
+        {0, 0, 1, 0, 0, 0},
+        {0, 1, 0, 0, 0, 0},
+        {1, 0, 0, 0, 0, 0},
+    });
+    // Single leaf at the root.
+    key_sets.push_back({{1, 2, 3, 4, 5, 6}});
+    for (const auto& sorted_keys : key_sets) {
+        art_t art;
+        art_init_cleared(&art);
+        // Insert in reverse order so that visiting must sort.
+        for (size_t i = sorted_keys.size(); i-- > 0;) {
+            art_insert(&art, (art_key_chunk_t*)sorted_keys[i].data(), i);
+        }
+        assert_art_valid(&art);
+
+        art_visit_record record{{}, {}, 0};
+        assert_true(art_visit(&art, art_visit_record_cb, &record));
+        assert_true(record.keys == sorted_keys);
+        for (size_t i = 0; i < record.values.size(); ++i) {
+            assert_true(record.values[i] == i);
+        }
+
+        // Stopping early visits exactly the first leaves.
+        size_t stop = (sorted_keys.size() + 1) / 2;
+        art_visit_record partial{{}, {}, stop};
+        // The callback stops the traversal, so art_visit reports it.
+        assert_false(art_visit(&art, art_visit_record_cb, &partial));
+        assert_true(partial.keys.size() == stop);
+        for (size_t i = 0; i < stop; ++i) {
+            assert_true(partial.keys[i] == sorted_keys[i]);
+        }
+
+        // Every key is found, and keys differing in any single byte from a
+        // present key are found only if present.
+        for (size_t i = 0; i < sorted_keys.size(); ++i) {
+            art_val_t* val =
+                art_find(&art, (art_key_chunk_t*)sorted_keys[i].data());
+            assert_true(val != NULL && *val == i);
+            for (size_t b = 0; b < 6; ++b) {
+                std::array<uint8_t, 6> other = sorted_keys[i];
+                other[b] ^= 0x80;
+                bool present = std::find(sorted_keys.begin(), sorted_keys.end(),
+                                         other) != sorted_keys.end();
+                assert_true((art_find(&art, (art_key_chunk_t*)other.data()) !=
+                             NULL) == present);
+            }
+        }
+        art_free(&art);
+    }
+}
+
 DEFINE_TEST(test_art_frozen_view) {
     {
         // ART with multiple node sizes.
@@ -810,6 +908,7 @@ int main() {
         cmocka_unit_test(test_art_shadowed),
         cmocka_unit_test(test_art_shrink_grow_node48),
         cmocka_unit_test(test_art_num_leaves_and_reserve),
+        cmocka_unit_test(test_art_visit),
         cmocka_unit_test(test_art_frozen_view),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
