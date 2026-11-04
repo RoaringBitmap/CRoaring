@@ -133,6 +133,7 @@ roaring64_bitmap_t *roaring64_bitmap_of_ptr(size_t n_args,
 
 /**
  * Create a new bitmap by moving containers from a 32 bit roaring bitmap.
+ * Containers shared with other copy-on-write bitmaps are copied.
  *
  * After calling this function, the original bitmap will be empty, and the
  * returned bitmap will contain all the values from the original bitmap.

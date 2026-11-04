@@ -50,7 +50,7 @@ void assert_vector_reversed(const std::vector<uint64_t>& lhs,
 void assert_r32_valid(const roaring_bitmap_t* b) {
     const char* reason = nullptr;
     if (!roaring_bitmap_internal_validate(b, &reason)) {
-        fail_msg("Roaring64 bitmap is invalid: '%s'\n", reason);
+        fail_msg("Roaring bitmap is invalid: '%s'\n", reason);
     }
 }
 
@@ -196,6 +196,53 @@ DEFINE_TEST(test_move_from_roaring32) {
         roaring_bitmap_free(r32);
         roaring64_bitmap_free(r);
     }
+}
+
+DEFINE_TEST(test_move_from_roaring32_copy_on_write) {
+    // Array, bitset and run containers.
+    roaring_bitmap_t* values = roaring_bitmap_create();
+    for (uint32_t i = 0; i < 100; i++) {
+        roaring_bitmap_add(values, 2 * i);
+    }
+    for (uint32_t i = 0; i < 5000; i++) {
+        roaring_bitmap_add(values, (1 << 16) + 2 * i);
+    }
+    roaring_bitmap_add_range(values, 2 << 16, (2 << 16) + 1000);
+    const uint64_t absent[] = {1, (1 << 16) + 1, (2 << 16) + 1001};
+
+    for (bool source_alive : {true, false}) {
+        roaring_bitmap_t* source = roaring_bitmap_copy(values);
+        roaring_bitmap_set_copy_on_write(source, true);
+        roaring_bitmap_t* copy = roaring_bitmap_copy(source);
+        if (!source_alive) {
+            roaring_bitmap_free(source);
+        }
+        roaring64_bitmap_t* moved = roaring64_bitmap_move_from_roaring32(copy);
+        assert_r64_valid(moved);
+        for (uint64_t value : absent) {
+            roaring64_bitmap_add(moved, value);
+        }
+        assert_r64_valid(moved);
+        assert_int_equal(roaring64_bitmap_get_cardinality(moved),
+                         roaring_bitmap_get_cardinality(values) + 3);
+        assert_true(roaring_iterate(
+            values,
+            [](uint32_t value, void* r) {
+                return roaring64_bitmap_contains((roaring64_bitmap_t*)r, value);
+            },
+            moved));
+        for (uint64_t value : absent) {
+            assert_true(roaring64_bitmap_contains(moved, value));
+        }
+        if (source_alive) {
+            assert_r32_valid(source);
+            assert_true(roaring_bitmap_equals(source, values));
+            roaring_bitmap_free(source);
+        }
+        roaring64_bitmap_free(moved);
+        roaring_bitmap_free(copy);
+    }
+    roaring_bitmap_free(values);
 }
 
 DEFINE_TEST(test_from_range) {
@@ -4033,6 +4080,7 @@ int main() {
         cmocka_unit_test(test_overwrite),
         cmocka_unit_test(test_from_range),
         cmocka_unit_test(test_move_from_roaring32),
+        cmocka_unit_test(test_move_from_roaring32_copy_on_write),
         cmocka_unit_test(test_of_ptr),
         cmocka_unit_test(test_of),
         cmocka_unit_test(test_add),
