@@ -1214,35 +1214,74 @@ bool bitset_container_is_subset(const bitset_container_t *container1,
 }
 
 CROARING_ALLOW_UNALIGNED
-bool bitset_container_select(const bitset_container_t *container, uint32_t *start_rank, uint32_t rank, uint32_t *element) {
+// Returns the position of the set bit of rank r (0-based) in w. Requires
+// r < roaring_hamming(w). Narrowing with popcounts compiles to conditional
+// moves, avoiding a mispredicted exit from a bit-by-bit loop.
+static inline uint32_t bitset_select_in_word(uint64_t w, uint32_t r) {
+    uint32_t pos = 0;
+    uint32_t c = roaring_hamming(w & 0xFFFFFFFF);
+    if (r >= c) {
+        r -= c;
+        w >>= 32;
+        pos += 32;
+    }
+    c = roaring_hamming(w & 0xFFFF);
+    if (r >= c) {
+        r -= c;
+        w >>= 16;
+        pos += 16;
+    }
+    c = roaring_hamming(w & 0xFF);
+    if (r >= c) {
+        r -= c;
+        w >>= 8;
+        pos += 8;
+    }
+    for (; r > 0; r--) {
+        w &= w - 1;
+    }
+    return pos + roaring_trailing_zeroes(w);
+}
+
+bool bitset_container_select(const bitset_container_t *container,
+                             uint32_t *start_rank, uint32_t rank,
+                             uint32_t *element) {
     int card = bitset_container_cardinality(container);
-    if(rank >= *start_rank + card) {
+    if (rank >= *start_rank + card) {
         *start_rank += card;
         return false;
     }
     const uint64_t *words = container->words;
-    int32_t size;
-    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i += 1) {
-        size = roaring_hamming(words[i]);
-        if(rank <= *start_rank + size) {
-            uint64_t w = container->words[i];
-            uint16_t base = i*64;
-            while (w != 0) {
-                uint64_t t = w & (~w + 1);
-                int r = roaring_trailing_zeroes(w);
-                if(*start_rank == rank) {
-                    *element = r+base;
-                    return true;
-                }
-                w ^= t;
-                *start_rank += 1;
-            }
+    uint32_t r = rank - *start_rank;
+    int32_t i = 0;
+    // Independent popcounts over blocks of words pipeline well, and the
+    // per-block branch is taken far less often than a per-word branch.
+    for (; i + 8 <= BITSET_CONTAINER_SIZE_IN_WORDS; i += 8) {
+        uint32_t c = roaring_hamming(words[i]) + roaring_hamming(words[i + 1]) +
+                     roaring_hamming(words[i + 2]) +
+                     roaring_hamming(words[i + 3]) +
+                     roaring_hamming(words[i + 4]) +
+                     roaring_hamming(words[i + 5]) +
+                     roaring_hamming(words[i + 6]) +
+                     roaring_hamming(words[i + 7]);
+        if (r < c) {
+            break;
         }
-        else
-            *start_rank += size;
+        r -= c;
     }
+    for (; i < BITSET_CONTAINER_SIZE_IN_WORDS; i++) {
+        uint32_t c = roaring_hamming(words[i]);
+        if (r < c) {
+            *element = (uint32_t)i * 64 + bitset_select_in_word(words[i], r);
+            *start_rank = rank;
+            return true;
+        }
+        r -= c;
+    }
+    // Only reachable if the stored cardinality is inconsistent.
     assert(false);
-    roaring_unreachable;
+    *start_rank += card;
+    return false;
 }
 
 
