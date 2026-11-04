@@ -106,14 +106,15 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
 }
 
 int run_container_shrink_to_fit(run_container_t *src) {
-    if (src->n_runs == src->capacity) return 0;  // nothing to do
-    int savings = src->capacity - src->n_runs;
-    src->capacity = src->n_runs;
-    rle16_t *oldruns = src->runs;
-    src->runs =
-        (rle16_t *)roaring_realloc(oldruns, src->capacity * sizeof(rle16_t));
-    if (src->runs == NULL) roaring_free(oldruns);  // should never happen?
-    return savings;
+    int32_t n_runs = src->n_runs;
+    int32_t capacity = src->capacity;
+    if (n_runs == capacity) return 0;  // nothing to do
+    bool shrunk;
+    src->runs = (rle16_t *)croaring_realloc_shrink(
+        src->runs, n_runs * sizeof(rle16_t), &shrunk);
+    if (!shrunk) return 0;
+    src->capacity = n_runs;
+    return (capacity - n_runs) * (int)sizeof(rle16_t);
 }
 /* Create a new run container. Return NULL in case of failure. */
 run_container_t *run_container_create(void) {

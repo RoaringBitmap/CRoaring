@@ -13,6 +13,7 @@
 #ifndef INCLUDE_ROARING_MEMORY_H_
 #define INCLUDE_ROARING_MEMORY_H_
 
+#include <stdbool.h>
 #include <stddef.h>  // for size_t
 
 #ifdef __cplusplus
@@ -43,6 +44,20 @@ void* roaring_calloc(size_t, size_t);
 void roaring_free(void*);
 void* roaring_aligned_malloc(size_t, size_t);
 void roaring_aligned_free(void*);
+
+// Internal: shrinks p to size bytes, freeing it at 0 as realloc(p, 0) varies.
+// Returns the block to keep, p if realloc fails; *shrunk: whether it shrank.
+static inline void* croaring_realloc_shrink(void* p, size_t size,
+                                            bool* shrunk) {
+    if (size == 0) {
+        roaring_free(p);
+        *shrunk = true;
+        return NULL;
+    }
+    void* q = roaring_realloc(p, size);
+    *shrunk = q != NULL;
+    return q != NULL ? q : p;
+}
 
 #ifdef __cplusplus
 }

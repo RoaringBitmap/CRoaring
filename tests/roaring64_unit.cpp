@@ -10,6 +10,7 @@
 #include <roaring/roaring64.h>
 
 #include "test.h"
+#include "test_memory_hook.h"
 
 using namespace roaring::api;
 
@@ -3349,6 +3350,97 @@ DEFINE_TEST(test_shrink_to_fit_many_containers) {
     }
 }
 
+DEFINE_TEST(test_shrink_to_fit_emptied_holds_no_more_than_new) {
+    test_track_memory();
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    size_t new_blocks = test_memory()->blocks;
+    size_t new_bytes = test_memory()->bytes;
+    for (uint64_t i = 0; i < 100; ++i) {
+        roaring64_bitmap_add(r, i << 16);
+    }
+    for (uint64_t i = 0; i < 100; ++i) {
+        roaring64_bitmap_remove(r, i << 16);
+    }
+    size_t held = test_memory()->bytes;
+
+    size_t saved = roaring64_bitmap_shrink_to_fit(r);
+
+    assert_int_equal(saved, held - test_memory()->bytes);
+    assert_true(test_memory()->blocks <= new_blocks);
+    assert_true(test_memory()->bytes <= new_bytes);
+    roaring64_bitmap_add(r, 42);
+    assert_true(roaring64_bitmap_contains(r, 42));
+    roaring64_bitmap_free(r);
+}
+
+DEFINE_TEST(test_shrink_to_fit_failed_allocation_keeps_values) {
+    // Every allocation of the shrink fails, then each one alone.
+    for (size_t failing = 0;; ++failing) {
+        test_track_memory();
+        roaring64_bitmap_t* r = roaring64_bitmap_create();
+        std::vector<uint64_t> kept;
+        for (uint64_t i = 0; i < 100; ++i) {
+            roaring64_bitmap_add(r, i << 16);
+        }
+        for (uint64_t i = 0; i < 100; ++i) {
+            if (i % 3 == 0) {
+                kept.push_back(i << 16);
+            } else {
+                roaring64_bitmap_remove(r, i << 16);
+            }
+        }
+        size_t held = test_memory()->bytes;
+
+        test_fail_allocations(failing == 0 ? 1 : failing,
+                              failing == 0 ? SIZE_MAX : failing);
+        size_t saved = roaring64_bitmap_shrink_to_fit(r);
+        size_t allocations = test_memory()->allocations;
+        test_fail_allocations(0, 0);
+        if (failing > allocations) {   // each has failed alone
+            assert_true(failing > 1);  // the shrink allocated
+            roaring64_bitmap_free(r);
+            break;
+        }
+
+        assert_int_equal(saved, held - test_memory()->bytes);
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), kept.size());
+        std::vector<uint64_t> got(kept.size());
+        roaring64_bitmap_to_uint64_array(r, got.data());
+        assert_true(got == kept);
+        // New keys need new containers and tree nodes.
+        std::vector<uint64_t> added;
+        for (uint64_t i = 1; i < 100; i += 3) {
+            added.push_back(i << 16);
+        }
+        added.push_back(UINT64_C(1) << 40);
+        for (uint64_t v : added) {
+            roaring64_bitmap_add(r, v);
+        }
+        assert_r64_valid(r);
+        for (uint64_t v : added) {
+            assert_true(roaring64_bitmap_contains(r, v));
+        }
+        assert_int_equal(roaring64_bitmap_get_cardinality(r),
+                         kept.size() + added.size());
+
+        // The next shrink fits it for the frozen format.
+        roaring64_bitmap_shrink_to_fit(r);
+        size_t frozen_size = roaring64_bitmap_frozen_size_in_bytes(r);
+        assert_true(frozen_size > 0);
+        char* frozen = (char*)roaring_aligned_malloc(64, frozen_size);
+        assert_int_equal(roaring64_bitmap_frozen_serialize(r, frozen),
+                         frozen_size);
+        roaring64_bitmap_t* view =
+            roaring64_bitmap_frozen_view(frozen, frozen_size);
+        assert_non_null(view);
+        assert_true(roaring64_bitmap_equals(view, r));
+        roaring64_bitmap_free(view);
+        roaring_aligned_free(frozen);
+        roaring64_bitmap_free(r);
+    }
+}
+
 // Constants for the boundary tests below.
 const uint64_t K32 = UINT64_C(1) << 32;
 const uint64_t H63 = UINT64_C(1) << 63;
@@ -4026,6 +4118,12 @@ int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_container_slot_churn),
         cmocka_unit_test(test_shrink_to_fit_many_containers),
+        cmocka_unit_test_teardown(
+            test_shrink_to_fit_emptied_holds_no_more_than_new,
+            test_reset_memory_hook_teardown),
+        cmocka_unit_test_teardown(
+            test_shrink_to_fit_failed_allocation_keeps_values,
+            test_reset_memory_hook_teardown),
         cmocka_unit_test(test_remove_many_issue_742),
         cmocka_unit_test(test_remove_many_issue_742B),
         cmocka_unit_test(fuzz_deserializer),

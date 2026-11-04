@@ -132,20 +132,15 @@ void array_container_offset(const array_container_t *c, container_t **loc,
 }
 
 int array_container_shrink_to_fit(array_container_t *src) {
-    if (src->cardinality == src->capacity) return 0;  // nothing to do
-    int savings = src->capacity - src->cardinality;
-    src->capacity = src->cardinality;
-    if (src->capacity ==
-        0) {  // we do not want to rely on realloc for zero allocs
-        roaring_free(src->array);
-        src->array = NULL;
-    } else {
-        uint16_t *oldarray = src->array;
-        src->array = (uint16_t *)roaring_realloc(
-            oldarray, src->capacity * sizeof(uint16_t));
-        if (src->array == NULL) roaring_free(oldarray);  // should never happen?
-    }
-    return savings;
+    int32_t cardinality = src->cardinality;
+    int32_t capacity = src->capacity;
+    if (cardinality == capacity) return 0;  // nothing to do
+    bool shrunk;
+    src->array = (uint16_t *)croaring_realloc_shrink(
+        src->array, cardinality * sizeof(uint16_t), &shrunk);
+    if (!shrunk) return 0;
+    src->capacity = cardinality;
+    return (capacity - cardinality) * (int)sizeof(uint16_t);
 }
 
 /* Free memory. */

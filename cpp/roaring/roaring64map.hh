@@ -1245,18 +1245,18 @@ class Roaring64Map {
 
     /**
      * If needed, reallocate memory to shrink the memory usage.
-     * Returns the number of bytes saved.
+     * Returns the number of bytes saved. Containers shared with other
+     * copy-on-write bitmaps are skipped.
      */
     size_t shrinkToFit() {
         size_t savedBytes = 0;
         auto iter = roarings.begin();
         while (iter != roarings.cend()) {
+            savedBytes += iter->second.shrinkToFit();
             if (iter->second.isEmpty()) {
-                // empty Roarings are 84 bytes
-                savedBytes += 88;
+                savedBytes += sizeof(*iter);
                 roarings.erase(iter++);
             } else {
-                savedBytes += iter->second.shrinkToFit();
                 iter++;
             }
         }

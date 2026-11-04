@@ -1294,19 +1294,22 @@ size_t roaring64_bitmap_shrink_to_fit(roaring64_bitmap_t *r) {
         r->holes = NULL;
         r->holes_capacity = 0;
     }
-    if (is_shrunken(r)) {
+    uint64_t new_capacity = r->first_free;
+    uint64_t capacity = r->capacity;
+    if (new_capacity == capacity) {
         return freed;
     }
-    uint64_t new_capacity = r->first_free;
-    if (new_capacity < r->capacity) {
-        r->containers = (container_t **)roaring_realloc(
-            r->containers, new_capacity * sizeof(container_t *));
-        r->typecodes = (uint8_t *)roaring_realloc(
-            r->typecodes, new_capacity * sizeof(uint8_t));
-        freed += (r->capacity - new_capacity) *
-                 (sizeof(container_t *) + sizeof(uint8_t));
-        r->capacity = new_capacity;
-    }
+    size_t slack = (size_t)(capacity - new_capacity);
+    // A failed realloc keeps the larger block, valid under the smaller capacity
+    // since growth reallocs from the block; a later shrink does not retry it.
+    bool shrunk;
+    r->containers = (container_t **)croaring_realloc_shrink(
+        r->containers, new_capacity * sizeof(container_t *), &shrunk);
+    if (shrunk) freed += slack * sizeof(container_t *);
+    r->typecodes = (uint8_t *)croaring_realloc_shrink(
+        r->typecodes, new_capacity * sizeof(uint8_t), &shrunk);
+    if (shrunk) freed += slack * sizeof(uint8_t);
+    r->capacity = new_capacity;
     return freed;
 }
 

@@ -660,6 +660,7 @@ bool roaring_bitmap_run_optimize(roaring_bitmap_t *r);
 /**
  * If needed, reallocate memory to shrink the memory usage.
  * Returns the number of bytes saved.
+ * Containers shared with other copy-on-write bitmaps are skipped.
  */
 size_t roaring_bitmap_shrink_to_fit(roaring_bitmap_t *r);
 

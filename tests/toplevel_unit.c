@@ -16,6 +16,7 @@ using namespace roaring::internal;
 #endif
 
 #include "test.h"
+#include "test_memory_hook.h"
 
 static unsigned int seed = 123456789;
 static const int OUR_RAND_MAX = (1 << 30) - 1;
@@ -5629,6 +5630,50 @@ DEFINE_TEST(test_inplace_mutators_copy_on_write) {
     }
 }
 
+DEFINE_TEST(test_shrink_to_fit_copy_left_sole_holder_shrinks_container) {
+    test_track_memory();
+    roaring_bitmap_t *source = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(source, true);
+    for (uint32_t i = 0; i < 1000; i++) {
+        roaring_bitmap_add(source, i);
+    }
+    for (uint32_t i = 0; i < 1000; i += 2) {
+        roaring_bitmap_remove(source, i);  // room for 1000 values, 500 left
+    }
+    roaring_bitmap_t *copy = roaring_bitmap_copy(source);
+    roaring_bitmap_shrink_to_fit(copy);  // the source still reads the container
+    roaring_bitmap_free(source);
+    size_t held = test_memory()->bytes;
+
+    size_t saved = roaring_bitmap_shrink_to_fit(copy);
+
+    assert_true(saved > 0);
+    assert_int_equal(saved, held - test_memory()->bytes);
+    assert_int_equal(roaring_bitmap_get_cardinality(copy), 500);
+    for (uint32_t i = 1; i < 1000; i += 2) {
+        assert_true(roaring_bitmap_contains(copy, i));
+    }
+    roaring_bitmap_free(copy);
+}
+
+DEFINE_TEST(test_shrink_to_fit_fitted_bitmap_allocates_nothing) {
+    test_track_memory();
+    roaring_bitmap_t *r = roaring_bitmap_from_range(0, 200000, 3);
+    for (uint32_t i = 0; i < 100; i++) {
+        roaring_bitmap_add(r, (1u << 20) + i * 7);  // an array container
+    }
+    roaring_bitmap_add_range(r, 1u << 24, (1u << 24) + 5000);  // a run
+    roaring_bitmap_run_optimize(r);
+    roaring_bitmap_shrink_to_fit(r);
+    test_fail_allocations(0, 0);
+
+    size_t saved = roaring_bitmap_shrink_to_fit(r);
+
+    assert_int_equal(saved, 0);
+    assert_int_equal(test_memory()->allocations, 0);
+    roaring_bitmap_free(r);
+}
+
 DEFINE_TEST(test_range_cardinality) {
     const uint64_t s = 65536;
 
@@ -8579,6 +8624,12 @@ int main() {
         cmocka_unit_test(test_remove_many_copy_on_write),
         cmocka_unit_test(test_remove_many_copy_on_write_many_copies),
         cmocka_unit_test(test_inplace_mutators_copy_on_write),
+        cmocka_unit_test_teardown(
+            test_shrink_to_fit_copy_left_sole_holder_shrinks_container,
+            test_reset_memory_hook_teardown),
+        cmocka_unit_test_teardown(
+            test_shrink_to_fit_fitted_bitmap_allocates_nothing,
+            test_reset_memory_hook_teardown),
         cmocka_unit_test(test_range_cardinality),
         cmocka_unit_test(test_range_end_beyond_universe),
         cmocka_unit_test(test_frozen_serialization),

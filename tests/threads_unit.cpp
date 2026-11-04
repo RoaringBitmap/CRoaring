@@ -4,10 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
+#include <vector>
 
 #include <roaring/memory.h>
 #include <roaring/misc/configreport.h>
 #include <roaring/roaring.h>
+
+#include "test_memory_hook.h"
 
 // We are mostly running this test to check for data races using thread
 // sanitizer.
@@ -106,35 +109,10 @@ void *race_malloc(size_t size) {
     return malloc(size);
 }
 
-void *race_aligned_malloc(size_t alignment, size_t size) {
-    void *p;
-#ifdef _MSC_VER
-    p = _aligned_malloc(size, alignment);
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-    p = __mingw_aligned_malloc(size, alignment);
-#else
-    if (posix_memalign(&p, alignment, size) != 0) return NULL;
-#endif
-    return p;
-}
-
-void race_aligned_free(void *p) {
-#ifdef _MSC_VER
-    _aligned_free(p);
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-    __mingw_aligned_free(p);
-#else
-    free(p);
-#endif
-}
-
 }  // namespace
 
 bool run_shared_container_race_test() {
-    roaring_memory_t hooks = {
-        race_malloc,         realloc,          calloc, free,
-        race_aligned_malloc, race_aligned_free};
-    roaring_init_memory_hook(hooks);
+    test_set_memory_hook(race_malloc, realloc, calloc, free);
 
     roaring_bitmap_t *r1 = roaring_bitmap_create();
     for (uint32_t i = 0; i < 10000; i++) {
@@ -176,12 +154,67 @@ bool run_shared_container_race_test() {
         is_ok = false;
     }
     roaring_bitmap_free(r1);
+    test_reset_memory_hook();
+    return is_ok;
+}
+
+// Shrinking a copy-on-write copy on one thread while another thread reads the
+// source: thread sanitizer reports a race if the shrink moves a shared array.
+bool run_shrink_to_fit_race_test() {
+    roaring_bitmap_t *source = roaring_bitmap_create();
+    roaring_bitmap_set_copy_on_write(source, true);
+    for (uint32_t i = 0; i < 2000; i++) {
+        roaring_bitmap_add(source, 3 * i);  // an array container
+    }
+    roaring_bitmap_add_range(source, 1 << 16, (1 << 16) + 2000);
+    for (uint32_t i = 0; i < 2000; i += 2) {
+        roaring_bitmap_remove(source, (1 << 16) + i);  // 1000 runs
+    }
+    for (uint32_t i = 2; i < 2000; i += 4) {
+        roaring_bitmap_add(source, (1 << 16) + i);  // merged into 500
+    }
+    for (uint32_t i = 0; i < 2000; i += 4) {
+        roaring_bitmap_remove(source, 3 * i);
+    }
+    // 1500 values and 500 runs in containers that held 2000 and 1000, which
+    // removals never shrink: both have room to give back.
+    const uint64_t cardinality = roaring_bitmap_get_cardinality(source);
+    std::vector<uint32_t> expected(cardinality);
+    roaring_bitmap_to_uint32_array(source, expected.data());
+    roaring_bitmap_t *copy = roaring_bitmap_copy(source);
+
+    bool read_ok = true;
+    std::thread reader([source, &expected, &read_ok] {
+        std::vector<uint32_t> got(expected.size());
+        for (int round = 0; round < 100; round++) {
+            roaring_bitmap_to_uint32_array(source, got.data());
+            read_ok = read_ok && got == expected;
+        }
+    });
+    std::thread shrinker([copy] { roaring_bitmap_shrink_to_fit(copy); });
+    reader.join();
+    shrinker.join();
+
+    bool is_ok = read_ok;
+    if (!read_ok) {
+        printf("the source changed while its copy was shrunk\n");
+    }
+    std::vector<uint32_t> copy_values(cardinality);
+    roaring_bitmap_to_uint32_array(copy, copy_values.data());
+    if (roaring_bitmap_get_cardinality(copy) != cardinality ||
+        copy_values != expected) {
+        printf("the shrunk copy lost values\n");
+        is_ok = false;
+    }
+    roaring_bitmap_free(copy);
+    roaring_bitmap_free(source);
     return is_ok;
 }
 
 int main() {
     roaring::misc::tellmeall();
     bool is_ok = run_threads_unit_tests();
+    is_ok = run_shrink_to_fit_race_test() && is_ok;
     is_ok = run_shared_container_race_test() && is_ok;
     if (is_ok) {
         printf("code run completed.\n");
