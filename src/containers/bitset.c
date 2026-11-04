@@ -1213,7 +1213,6 @@ bool bitset_container_is_subset(const bitset_container_t *container1,
 	return true;
 }
 
-CROARING_ALLOW_UNALIGNED
 // Returns the position of the set bit of rank r (0-based) in w. Requires
 // r < roaring_hamming(w). Narrowing with popcounts compiles to conditional
 // moves, avoiding a mispredicted exit from a bit-by-bit loop.
@@ -1243,6 +1242,7 @@ static inline uint32_t bitset_select_in_word(uint64_t w, uint32_t r) {
     return pos + roaring_trailing_zeroes(w);
 }
 
+CROARING_ALLOW_UNALIGNED
 bool bitset_container_select(const bitset_container_t *container,
                              uint32_t *start_rank, uint32_t rank,
                              uint32_t *element) {
