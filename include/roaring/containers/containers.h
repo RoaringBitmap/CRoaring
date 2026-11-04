@@ -2224,6 +2224,58 @@ static inline int container_rank(const container_t *c, uint8_t type,
     return false;
 }
 
+// number of values in [min, max], with min <= max <= 0xFFFF
+static inline int container_range_cardinality(const container_t *c,
+                                              uint8_t type, uint32_t min,
+                                              uint32_t max) {
+    c = container_unwrap_shared(c, &type);
+    switch (type) {
+        case BITSET_CONTAINER_TYPE: {
+            const bitset_container_t *bitset = const_CAST_bitset(c);
+            // For a wide range, count the values outside it instead.
+            if (max - min >= (1 << 15) &&
+                bitset->cardinality != BITSET_UNKNOWN_CARDINALITY) {
+                int outside = 0;
+                if (min > 0) {
+                    outside +=
+                        bitset_lenrange_cardinality(bitset->words, 0, min - 1);
+                }
+                if (max < 0xFFFF) {
+                    outside += bitset_lenrange_cardinality(
+                        bitset->words, max + 1, 0xFFFF - max - 1);
+                }
+                return bitset->cardinality - outside;
+            }
+            return bitset_lenrange_cardinality(bitset->words, min, max - min);
+        }
+        case ARRAY_CONTAINER_TYPE: {
+            const array_container_t *array = const_CAST_array(c);
+            int below =
+                min > 0 ? array_container_rank(array, (uint16_t)(min - 1)) : 0;
+            return array_container_rank(array, (uint16_t)max) - below;
+        }
+        case RUN_CONTAINER_TYPE: {
+            const run_container_t *run = const_CAST_run(c);
+            int sum = 0;
+            for (int32_t i = 0; i < run->n_runs; i++) {
+                uint32_t start = run->runs[i].value;
+                uint32_t end = start + run->runs[i].length;
+                if (start > max) break;
+                if (end < min) continue;
+                sum += (int)((end < max ? end : max) -
+                             (start > min ? start : min) + 1);
+            }
+            return sum;
+        }
+        default:
+            assert(false);
+            roaring_unreachable;
+    }
+    assert(false);
+    roaring_unreachable;
+    return 0;
+}
+
 // bulk version of container_rank(); return number of consumed elements
 static inline uint32_t container_rank_many(const container_t *c, uint8_t type,
                                            uint64_t start_rank,
