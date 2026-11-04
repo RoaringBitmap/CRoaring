@@ -1668,23 +1668,25 @@ void roaring64_bitmap_and_inplace(roaring64_bitmap_t *r1,
 
 bool roaring64_bitmap_intersect(const roaring64_bitmap_t *r1,
                                 const roaring64_bitmap_t *r2) {
-    bool intersect = false;
     art_iterator_t it1 = art_init_iterator((art_t *)&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator((art_t *)&r2->art, /*first=*/true);
 
     while (it1.value != NULL && it2.value != NULL) {
         // Cases:
         // 1. it1 <  it2 -> it1++
-        // 2. it1 == it1 -> intersect |= it1 & it2, it1++, it2++
+        // 2. it1 == it2 -> return true if the containers intersect,
+        //    else it1++, it2++
         // 3. it1 >  it2 -> it2++
         int compare_result = compare_high48(it1.key, it2.key);
         if (compare_result == 0) {
             // Case 2: iterators at the same high key position.
             leaf_t leaf1 = (leaf_t)*it1.value;
             leaf_t leaf2 = (leaf_t)*it2.value;
-            intersect |= container_intersect(
-                get_container(r1, leaf1), get_typecode(leaf1),
-                get_container(r2, leaf2), get_typecode(leaf2));
+            if (container_intersect(
+                    get_container(r1, leaf1), get_typecode(leaf1),
+                    get_container(r2, leaf2), get_typecode(leaf2))) {
+                return true;
+            }
             art_iterator_next(&it1);
             art_iterator_next(&it2);
         } else if (compare_result < 0) {
@@ -1695,7 +1697,7 @@ bool roaring64_bitmap_intersect(const roaring64_bitmap_t *r1,
             art_iterator_lower_bound(&it2, it1.key);
         }
     }
-    return intersect;
+    return false;
 }
 
 bool roaring64_bitmap_intersect_with_range(const roaring64_bitmap_t *r,
