@@ -277,6 +277,12 @@ static inline bool container_is_full(const container_t *c, uint8_t typecode) {
 }
 
 static inline int container_shrink_to_fit(container_t *c, uint8_t type) {
+    // Other bitmaps, maybe on other threads, read a shared container's array:
+    // only its sole holder may move it.
+    if (type == SHARED_CONTAINER_TYPE &&
+        !croaring_refcount_is_unique(&CAST_shared(c)->counter)) {
+        return 0;
+    }
     c = container_mutable_unwrap_shared(c, &type);
     switch (type) {
         case BITSET_CONTAINER_TYPE:

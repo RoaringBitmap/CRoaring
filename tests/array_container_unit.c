@@ -18,6 +18,7 @@ using namespace roaring::internal;
 #endif
 
 #include "test.h"
+#include "test_memory_hook.h"
 
 DEFINE_TEST(printf_test) {
     array_container_t* B = array_container_create();
@@ -437,6 +438,43 @@ DEFINE_TEST(mini_fuzz_recycle_array_container_intersection_inplace) {
     free(buffer3);
 }
 
+DEFINE_TEST(shrink_to_fit_answers_bytes_test) {
+    test_track_memory();
+    array_container_t* B = array_container_create_given_capacity(100);
+    array_container_add(B, 1);
+    array_container_add(B, 5);
+    array_container_add(B, 9);
+    size_t held = test_memory()->bytes;
+
+    int saved = array_container_shrink_to_fit(B);
+
+    assert_true(saved > 0);
+    assert_int_equal(saved, held - test_memory()->bytes);
+    assert_int_equal(array_container_shrink_to_fit(B), 0);
+    assert_int_equal(array_container_cardinality(B), 3);
+    assert_true(array_container_contains(B, 5));
+    array_container_free(B);
+}
+
+DEFINE_TEST(shrink_to_fit_failed_realloc_test) {
+    test_track_memory();
+    array_container_t* B = array_container_create_given_capacity(100);
+    array_container_add(B, 1);
+    array_container_add(B, 5);
+    size_t held = test_memory()->bytes;
+
+    test_fail_allocations(1, SIZE_MAX);
+    int saved = array_container_shrink_to_fit(B);
+    test_fail_allocations(0, 0);
+
+    assert_int_equal(saved, 0);
+    assert_int_equal(test_memory()->bytes, held);
+    assert_int_equal(array_container_cardinality(B), 2);
+    assert_true(array_container_contains(B, 1));
+    assert_true(array_container_contains(B, 5));
+    array_container_free(B);
+}
+
 int main() {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(mini_fuzz_array_container_intersection_inplace),
@@ -449,7 +487,11 @@ int main() {
         cmocka_unit_test(to_uint32_array_small_test),
         cmocka_unit_test(select_test),
         cmocka_unit_test(capacity_test),
-        cmocka_unit_test(number_of_runs_test)};
+        cmocka_unit_test(number_of_runs_test),
+        cmocka_unit_test_teardown(shrink_to_fit_answers_bytes_test,
+                                  test_reset_memory_hook_teardown),
+        cmocka_unit_test_teardown(shrink_to_fit_failed_realloc_test,
+                                  test_reset_memory_hook_teardown)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

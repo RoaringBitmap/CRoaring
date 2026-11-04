@@ -26,6 +26,7 @@ using roaring::Roaring64Map;  // C++ class extended for 64-bit numbers
 
 #include "roaring64map_checked.hh"
 #include "test.h"
+#include "test_memory_hook.h"
 
 static_assert(std::is_nothrow_move_constructible<Roaring>::value,
               "Expected Roaring to be no except move constructable");
@@ -535,6 +536,29 @@ DEFINE_TEST(test_cpp_run_optimize_recovers_space_64) {
     assert_false(r.runOptimize());
     assert_true(r.getSizeInBytes() < before / 10);
     assert_true(expected == r);
+}
+
+DEFINE_TEST(test_cpp_shrink_to_fit_erases_and_counts_emptied_bitmap_64) {
+    test_track_memory();
+    Roaring emptied;
+    for (uint32_t i = 0; i < 1000; ++i) {
+        emptied.add(i << 16);
+    }
+    for (uint32_t i = 0; i < 1000; ++i) {
+        emptied.remove(i << 16);
+    }
+    Roaring64Map r(std::move(emptied));
+    size_t held = test_memory()->bytes;
+
+    size_t saved = r.shrinkToFit();
+
+    // The map's node is std::allocator's, which no hook sees: erasing it
+    // frees the entry and at most a tree node's links and colour.
+    size_t entry = held - test_memory()->bytes +
+                   sizeof(std::pair<const uint32_t, Roaring>);
+    assert_true(saved >= entry);
+    assert_true(saved <= entry + 4 * sizeof(void *));
+    assert_int_equal(r.getSizeInBytes(), Roaring64Map().getSizeInBytes());
 }
 
 void test_run_compression_cpp_64(bool copy_on_write) {
@@ -2830,6 +2854,9 @@ int main() {
         cmocka_unit_test(test_cpp_copy_map_iterator_to_different_map),
         cmocka_unit_test(test_cpp_run_optimize_64_return_value),
         cmocka_unit_test(test_cpp_run_optimize_recovers_space_64),
+        cmocka_unit_test_teardown(
+            test_cpp_shrink_to_fit_erases_and_counts_emptied_bitmap_64,
+            test_reset_memory_hook_teardown),
         cmocka_unit_test(test_cpp_bidirectional_iterator_32),
         cmocka_unit_test(test_cpp_end_iterator_is_per_bitmap),
         cmocka_unit_test(test_cpp_iterate_halts_early),

@@ -101,13 +101,14 @@ bool ra_init_with_capacity(roaring_array_t *new_ra, uint32_t cap) {
 }
 
 int ra_shrink_to_fit(roaring_array_t *ra) {
-    int savings = (ra->allocation_size - ra->size) *
-                  (sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t));
-    if (!realloc_array(ra, ra->size)) {
+    int32_t size = ra->size;
+    int32_t allocation_size = ra->allocation_size;
+    if (allocation_size == size) return 0;  // nothing to do
+    if (!realloc_array(ra, size)) {
         return 0;
     }
-    ra->allocation_size = ra->size;
-    return savings;
+    return (allocation_size - size) *
+           (sizeof(uint16_t) + sizeof(container_t *) + sizeof(uint8_t));
 }
 
 void ra_init(roaring_array_t *new_ra) {

@@ -485,20 +485,10 @@ bool bitset_trim(bitset_t *bitset) {
             break;
     }
     if (bitset->capacity == newsize) return true;  // nothing to do
-    if (newsize == 0) {
-        // realloc(array, 0) may free the array and return NULL
-        roaring_free(bitset->array);
-        bitset->array = NULL;
-        bitset->capacity = 0;
-        bitset->arraysize = 0;
-        return true;
-    }
-    uint64_t *newarray;
-    if ((newarray = (uint64_t *)roaring_realloc(
-             bitset->array, sizeof(uint64_t) * newsize)) == NULL) {
-        return false;
-    }
-    bitset->array = newarray;
+    bool shrunk;
+    bitset->array = (uint64_t *)croaring_realloc_shrink(
+        bitset->array, sizeof(uint64_t) * newsize, &shrunk);
+    if (!shrunk) return false;
     bitset->capacity = newsize;
     bitset->arraysize = newsize;
     return true;

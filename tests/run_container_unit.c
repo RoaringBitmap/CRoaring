@@ -15,6 +15,7 @@ using namespace roaring::internal;
 #endif
 
 #include "test.h"
+#include "test_memory_hook.h"
 
 DEFINE_TEST(printf_test) {
     run_container_t* B = run_container_create();
@@ -216,13 +217,82 @@ DEFINE_TEST(remove_range_test) {
     run_container_free(run);
 }
 
+DEFINE_TEST(shrink_to_fit_answers_bytes_test) {
+    test_track_memory();
+    run_container_t* run = run_container_create_given_capacity(100);
+    run_container_add(run, 1);
+    run_container_add(run, 5);
+    run_container_add(run, 9);
+    size_t held = test_memory()->bytes;
+
+    int saved = run_container_shrink_to_fit(run);
+
+    assert_true(saved > 0);
+    assert_int_equal(saved, held - test_memory()->bytes);
+    assert_int_equal(run_container_shrink_to_fit(run), 0);
+    assert_true(run_container_cardinality(run) == 3);
+    assert_true(run_container_contains(run, 5));
+    run_container_free(run);
+}
+
+DEFINE_TEST(shrink_to_fit_emptied_holds_no_more_than_new_test) {
+    test_track_memory();
+    run_container_t* fresh = run_container_create();
+    size_t new_blocks = test_memory()->blocks;
+    size_t new_bytes = test_memory()->bytes;
+    run_container_free(fresh);
+    run_container_t* run = run_container_create_given_capacity(8);
+    run_container_add(run, 7);
+    run_container_remove(run, 7);
+    size_t held = test_memory()->bytes;
+
+    int saved = run_container_shrink_to_fit(run);
+
+    assert_int_equal(saved, held - test_memory()->bytes);
+    assert_true(test_memory()->blocks <= new_blocks);
+    assert_true(test_memory()->bytes <= new_bytes);
+    run_container_add(run, 3);
+    assert_true(run_container_contains(run, 3));
+    assert_true(run_container_cardinality(run) == 1);
+    run_container_free(run);
+}
+
+DEFINE_TEST(shrink_to_fit_failed_realloc_test) {
+    test_track_memory();
+    run_container_t* run = run_container_create_given_capacity(100);
+    run_container_add(run, 1);
+    run_container_add(run, 5);
+    size_t held = test_memory()->bytes;
+
+    test_fail_allocations(1, SIZE_MAX);
+    int saved = run_container_shrink_to_fit(run);
+    test_fail_allocations(0, 0);
+
+    assert_int_equal(saved, 0);
+    assert_int_equal(test_memory()->bytes, held);
+    assert_true(run_container_cardinality(run) == 2);
+    assert_true(run_container_contains(run, 1));
+    assert_true(run_container_contains(run, 5));
+    run_container_free(run);
+}
+
 int main() {
     tellmeall();
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(printf_test), cmocka_unit_test(add_contains_test),
-        cmocka_unit_test(and_or_test), cmocka_unit_test(to_uint32_array_test),
-        cmocka_unit_test(select_test), cmocka_unit_test(remove_range_test),
+        cmocka_unit_test(printf_test),
+        cmocka_unit_test(add_contains_test),
+        cmocka_unit_test(and_or_test),
+        cmocka_unit_test(to_uint32_array_test),
+        cmocka_unit_test(select_test),
+        cmocka_unit_test(remove_range_test),
+        cmocka_unit_test_teardown(shrink_to_fit_answers_bytes_test,
+                                  test_reset_memory_hook_teardown),
+        cmocka_unit_test_teardown(
+            shrink_to_fit_emptied_holds_no_more_than_new_test,
+            test_reset_memory_hook_teardown),
+        cmocka_unit_test_teardown(shrink_to_fit_failed_realloc_test,
+                                  test_reset_memory_hook_teardown),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

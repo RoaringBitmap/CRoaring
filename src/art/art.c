@@ -1682,16 +1682,17 @@ static size_t art_shrink_node_arrays(art_t *art) {
     size_t freed = 0;
     for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
          ++t) {
-        if (art->first_free[t] < art->capacities[t]) {
-            uint64_t new_capacity = art->first_free[t];
-            if (new_capacity == 0) {
-                roaring_free(art->nodes[t]);
-                art->nodes[t] = NULL;
-            } else {
-                art->nodes[t] = roaring_realloc(
-                    art->nodes[t], new_capacity * ART_NODE_SIZES[t]);
+        uint64_t new_capacity = art->first_free[t];
+        uint64_t capacity = art->capacities[t];
+        if (new_capacity < capacity) {
+            bool shrunk;
+            art->nodes[t] = croaring_realloc_shrink(
+                art->nodes[t], new_capacity * ART_NODE_SIZES[t], &shrunk);
+            if (shrunk) {
+                freed += (capacity - new_capacity) * ART_NODE_SIZES[t];
             }
-            freed += (art->capacities[t] - new_capacity) * ART_NODE_SIZES[t];
+            // Even when the array kept its size: the slots past first_free
+            // are not a free list.
             art->capacities[t] = new_capacity;
         }
     }

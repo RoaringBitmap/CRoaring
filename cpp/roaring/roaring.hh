@@ -513,7 +513,8 @@ class Roaring {
 
     /**
      * If needed, reallocate memory to shrink the memory usage. Returns
-     * the number of bytes saved.
+     * the number of bytes saved. Containers shared with other copy-on-write
+     * bitmaps are skipped.
      */
     size_t shrinkToFit() noexcept {
         return api::roaring_bitmap_shrink_to_fit(&roaring);
