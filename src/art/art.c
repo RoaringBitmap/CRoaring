@@ -1868,68 +1868,6 @@ bool art_erase(art_t *art, const art_key_chunk_t *key, art_val_t *erased_val) {
     return true;
 }
 
-static bool art_visit_at(const art_t *art, art_ref_t ref, art_visit_cb_t cb,
-                         void *context) {
-    switch (art_ref_typecode(ref)) {
-        case CROARING_ART_LEAF_TYPE: {
-            const art_leaf_t *leaf = (const art_leaf_t *)art_deref(art, ref);
-            return cb(leaf->key, leaf->val, context);
-        }
-        case CROARING_ART_NODE4_TYPE: {
-            const art_node4_t *node = (const art_node4_t *)art_deref(art, ref);
-            for (size_t i = 0; i < node->count; ++i) {
-                if (!art_visit_at(art, node->children[i], cb, context)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        case CROARING_ART_NODE16_TYPE: {
-            const art_node16_t *node =
-                (const art_node16_t *)art_deref(art, ref);
-            for (size_t i = 0; i < node->count; ++i) {
-                if (!art_visit_at(art, node->children[i], cb, context)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        case CROARING_ART_NODE48_TYPE: {
-            const art_node48_t *node =
-                (const art_node48_t *)art_deref(art, ref);
-            for (size_t i = 0; i < 256; ++i) {
-                uint8_t val_idx = node->keys[i];
-                if (val_idx != CROARING_ART_NODE48_EMPTY_VAL &&
-                    !art_visit_at(art, node->children[val_idx], cb, context)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        case CROARING_ART_NODE256_TYPE: {
-            const art_node256_t *node =
-                (const art_node256_t *)art_deref(art, ref);
-            for (size_t i = 0; i < 256; ++i) {
-                if (node->children[i] != CROARING_ART_NULL_REF &&
-                    !art_visit_at(art, node->children[i], cb, context)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        default:
-            assert(false);
-            return true;
-    }
-}
-
-bool art_visit(const art_t *art, art_visit_cb_t cb, void *context) {
-    if (art->root == CROARING_ART_NULL_REF) {
-        return true;
-    }
-    return art_visit_at(art, art->root, cb, context);
-}
-
 art_val_t *art_find(const art_t *art, const art_key_chunk_t *key) {
     if (art->root == CROARING_ART_NULL_REF) {
         return NULL;

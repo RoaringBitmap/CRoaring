@@ -208,20 +208,6 @@ bool art_iterator_erase(art_iterator_t *iterator, art_val_t *erased_val);
 void art_reserve(art_t *art, uint64_t num_leaves);
 
 /**
- * Callback for `art_visit`, called with each leaf's key and value. Returning
- * false stops the traversal.
- */
-typedef bool (*art_visit_cb_t)(const art_key_chunk_t key[], art_val_t val,
-                               void *context);
-
-/**
- * Calls `cb` on every leaf in increasing key order, until `cb` returns false.
- * Returns false if the traversal was stopped by `cb`, true otherwise. This is
- * cheaper than stepping an iterator when visiting leaves in order.
- */
-bool art_visit(const art_t *art, art_visit_cb_t cb, void *context);
-
-/**
  * Returns the number of leaves (key/value pairs) in the ART. This walks the
  * free list of leaves, so it is O(1) for an ART that has had no erasures or
  * that has been shrunken, and O(number of free leaf slots) otherwise.

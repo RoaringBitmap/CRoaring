@@ -800,42 +800,29 @@ bool roaring64_bitmap_contains_bulk(const roaring64_bitmap_t *r,
                               get_typecode(*context->leaf));
 }
 
-typedef struct roaring64_select_context_s {
-    const roaring64_bitmap_t *r;
-    uint64_t rank;
-    uint64_t start_rank;
-    uint64_t *element;
-    bool found;
-} roaring64_select_context_t;
-
-static bool roaring64_select_visit(const art_key_chunk_t key[], art_val_t val,
-                                   void *context) {
-    roaring64_select_context_t *ctx = (roaring64_select_context_t *)context;
-    leaf_t leaf = (leaf_t)val;
-    const container_t *container = get_container(ctx->r, leaf);
-    uint8_t typecode = get_typecode(leaf);
-    uint64_t cardinality = container_get_cardinality(container, typecode);
-    // ctx->rank >= ctx->start_rank always holds.
-    if (ctx->rank - ctx->start_rank < cardinality) {
-        uint32_t uint32_start = 0;
-        uint32_t uint32_element = 0;
-        ctx->found = container_select(container, typecode, &uint32_start,
-                                      (uint32_t)(ctx->rank - ctx->start_rank),
-                                      &uint32_element);
-        if (ctx->found) {
-            *ctx->element = combine_key(key, (uint16_t)uint32_element);
-        }
-        return false;
-    }
-    ctx->start_rank += cardinality;
-    return true;
-}
-
 bool roaring64_bitmap_select(const roaring64_bitmap_t *r, uint64_t rank,
                              uint64_t *element) {
-    roaring64_select_context_t ctx = {r, rank, 0, element, false};
-    art_visit(&r->art, roaring64_select_visit, &ctx);
-    return ctx.found;
+    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
+    uint64_t start_rank = 0;
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint64_t cardinality = container_get_cardinality(get_container(r, leaf),
+                                                         get_typecode(leaf));
+        if (start_rank + cardinality > rank) {
+            uint32_t uint32_start = 0;
+            uint32_t uint32_rank = rank - start_rank;
+            uint32_t uint32_element = 0;
+            if (container_select(get_container(r, leaf), get_typecode(leaf),
+                                 &uint32_start, uint32_rank, &uint32_element)) {
+                *element = combine_key(it.key, (uint16_t)uint32_element);
+                return true;
+            }
+            return false;
+        }
+        start_rank += cardinality;
+        art_iterator_next(&it);
+    }
+    return false;
 }
 
 uint64_t roaring64_bitmap_rank(const roaring64_bitmap_t *r, uint64_t val) {
