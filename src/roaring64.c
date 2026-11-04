@@ -3247,6 +3247,9 @@ static inline bool roaring64_bitset_decodes_vectorized(
 #endif
 }
 
+// The containers of a portable frozen view may be unaligned: see
+// roaring64_bitmap_portable_deserialize_frozen.
+CROARING_ALLOW_UNALIGNED
 static uint64_t *roaring64_bitset_to_uint64_array(const bitset_container_t *bc,
                                                   uint64_t high48,
                                                   uint64_t *out) {
@@ -3268,6 +3271,7 @@ static void roaring64_bitmap_to_uint64_array_iterator(
     roaring64_iterator_read(&it, out, UINT64_MAX);
 }
 
+CROARING_ALLOW_UNALIGNED
 void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
                                       uint64_t *out) {
     // Where vectorized 32-bit bitset decoders are available, decoding into a
