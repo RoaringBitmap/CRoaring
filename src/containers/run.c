@@ -725,6 +725,7 @@ bool run_container_validate(const run_container_t *run, const char **reason) {
     return true;
 }
 
+CROARING_ALLOW_UNALIGNED
 int32_t run_container_write(const run_container_t *container, char *buf) {
     uint16_t cast_16 = container->n_runs;
     uint16_t n_runs_le = croaring_htole16(cast_16);

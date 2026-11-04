@@ -559,6 +559,7 @@ int32_t array_container_number_of_runs(const array_container_t *ac) {
  * array_container_size_in_bytes(container).
  *
  */
+CROARING_ALLOW_UNALIGNED
 int32_t array_container_write(const array_container_t *container, char *buf) {
 #if CROARING_IS_BIG_ENDIAN
     for (int32_t i = 0; i < container->cardinality; ++i) {

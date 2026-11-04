@@ -1074,6 +1074,7 @@ int bitset_container_number_of_runs(bitset_container_t *bc) {
 }
 
 
+CROARING_ALLOW_UNALIGNED
 int32_t bitset_container_write(const bitset_container_t *container,
                                   char *buf) {
 #if CROARING_IS_BIG_ENDIAN
