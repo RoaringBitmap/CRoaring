@@ -1506,9 +1506,9 @@ static art_erase_result_t art_erase_at(art_t *art, art_ref_t ref,
 static art_val_t *art_find_at(const art_t *art, art_ref_t ref,
                               const art_key_chunk_t *key, uint8_t depth) {
 #if !CROARING_IS_BIG_ENDIAN
-    // Prefixes are compared as masked words rather than byte by byte. The key
-    // is assembled from 4- and 2-byte loads: a 6-byte memcpy into a word goes
-    // through the stack and stalls on store forwarding.
+    // A 6-byte memcpy into a word stalls on store forwarding. The
+    // prefix-size check below keeps the shift and the child-byte read
+    // inside the key.
     uint32_t key_lo;
     uint16_t key_hi;
     memcpy(&key_lo, key, sizeof(key_lo));
@@ -1519,9 +1519,6 @@ static art_val_t *art_find_at(const art_t *art, art_ref_t ref,
         const art_inner_node_t *inner_node =
             (const art_inner_node_t *)art_deref(art, ref);
         uint8_t prefix_size = inner_node->prefix_size;
-        // In a valid tree, an inner node's prefix and child key chunk fit
-        // within the key. Checking it keeps the shifts and key reads below
-        // in bounds, as the byte-wise comparison did.
         if (prefix_size >= ART_KEY_BYTES - depth) {
             return NULL;
         }
