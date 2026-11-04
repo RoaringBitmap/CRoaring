@@ -2316,6 +2316,48 @@ DEFINE_TEST(test_to_uint64_array) {
     assert_vector_equal(a2, a1);
 
     roaring64_bitmap_free(r);
+
+    // Empty bitmap: nothing is written.
+    r = roaring64_bitmap_create();
+    uint64_t sentinel = 42;
+    roaring64_bitmap_to_uint64_array(r, &sentinel);
+    assert_int_equal(sentinel, 42);
+    roaring64_bitmap_free(r);
+
+    // Bitset, array and run containers under several high keys, including the
+    // top of the 64-bit range, checked against the iterator.
+    r = roaring64_bitmap_create();
+    const uint64_t highs[] = {0, 1ULL << 20, 1ULL << 40, UINT64_MAX - 0xFFFF};
+    for (uint64_t high : highs) {
+        for (uint64_t i = 0; i < 65536; i += 3) {  // bitset
+            roaring64_bitmap_add(r, high + i);
+        }
+        uint64_t array_base = high + (1ULL << 16);
+        for (uint64_t i = 0; i < 65536; i += 1000) {  // array
+            roaring64_bitmap_add(r, array_base + i);
+        }
+        uint64_t run_base = high + (2ULL << 16);
+        roaring64_bitmap_add_range_closed(r, run_base + 10, run_base + 500);
+        roaring64_bitmap_add_range_closed(r, run_base + 60000,
+                                          run_base + 65535);
+        uint64_t full_base = high + (3ULL << 16);
+        roaring64_bitmap_add_range_closed(r, full_base, full_base + 65535);
+        if (high == UINT64_MAX - 0xFFFF) {
+            break;  // the other containers would wrap around
+        }
+    }
+    roaring64_bitmap_run_optimize(r);
+    uint64_t card = roaring64_bitmap_get_cardinality(r);
+    std::vector<uint64_t> got(card + 1, 7);
+    roaring64_bitmap_to_uint64_array(r, got.data());
+    assert_int_equal(got[card], 7);  // nothing written past the end
+    got.pop_back();
+    std::vector<uint64_t> expected(card);
+    roaring64_iterator_t* it = roaring64_iterator_create(r);
+    assert_int_equal(roaring64_iterator_read(it, expected.data(), card), card);
+    roaring64_iterator_free(it);
+    assert_vector_equal(got, expected);
+    roaring64_bitmap_free(r);
 }
 
 DEFINE_TEST(test_iterator_create) {

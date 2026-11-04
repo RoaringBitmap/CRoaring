@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <roaring/art/art.h>
+#include <roaring/isadetection.h>
 #include <roaring/portability.h>
 #include <roaring/roaring64.h>
 
@@ -3227,11 +3228,107 @@ bool roaring64_bitmap_iterate(const roaring64_bitmap_t *r,
     return true;
 }
 
-void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
-                                      uint64_t *out) {
+// Whether bitset_container_to_uint32_array picks a vectorized decoder for
+// `bc` (keep in sync with it). Only then does decoding to 32 bits and widening
+// beat decoding directly to 64 bits.
+static inline bool roaring64_bitset_decodes_vectorized(
+    const bitset_container_t *bc) {
+#if CROARING_IS_X64
+    int support = croaring_hardware_support();
+#if CROARING_COMPILER_SUPPORTS_AVX512
+    if (support & ROARING_SUPPORTS_AVX512) {
+        return true;
+    }
+#endif
+    return (support & ROARING_SUPPORTS_AVX2) && bc->cardinality >= 8192;
+#else
+    (void)bc;
+    return false;
+#endif
+}
+
+static uint64_t *roaring64_bitset_to_uint64_array(const bitset_container_t *bc,
+                                                  uint64_t high48,
+                                                  uint64_t *out) {
+    for (int32_t i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; ++i) {
+        uint64_t w = bc->words[i];
+        uint64_t base = high48 + (uint64_t)i * 64;
+        while (w != 0) {
+            *out++ = base + roaring_trailing_zeroes(w);
+            w &= w - 1;
+        }
+    }
+    return out;
+}
+
+static void roaring64_bitmap_to_uint64_array_iterator(
+    const roaring64_bitmap_t *r, uint64_t *out) {
     roaring64_iterator_t it;  // gets initialized in the next line
     roaring64_iterator_init_at(r, &it, /*first=*/true);
     roaring64_iterator_read(&it, out, UINT64_MAX);
+}
+
+void roaring64_bitmap_to_uint64_array(const roaring64_bitmap_t *r,
+                                      uint64_t *out) {
+    // Where vectorized 32-bit bitset decoders are available, decoding into a
+    // scratch buffer and widening is several times faster than decoding value
+    // by value.
+    uint64_t *const start = out;
+    uint32_t *scratch = NULL;
+    art_iterator_t it = art_init_iterator((art_t *)&r->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint64_t high48 = combine_key(it.key, 0);
+        uint8_t typecode = get_typecode(leaf);
+        const container_t *c =
+            container_unwrap_shared(get_container(r, leaf), &typecode);
+        switch (typecode) {
+            case BITSET_CONTAINER_TYPE: {
+                const bitset_container_t *bc = const_CAST_bitset(c);
+                if (!roaring64_bitset_decodes_vectorized(bc)) {
+                    out = roaring64_bitset_to_uint64_array(bc, high48, out);
+                    break;
+                }
+                if (scratch == NULL) {
+                    scratch = (uint32_t *)roaring_malloc((1 << 16) *
+                                                         sizeof(uint32_t));
+                    if (scratch == NULL) {
+                        roaring64_bitmap_to_uint64_array_iterator(r, start);
+                        return;
+                    }
+                }
+                int n = bitset_container_to_uint32_array(scratch, bc, 0);
+                for (int i = 0; i < n; ++i) {
+                    out[i] = high48 | scratch[i];
+                }
+                out += n;
+                break;
+            }
+            case ARRAY_CONTAINER_TYPE: {
+                const array_container_t *ac = const_CAST_array(c);
+                for (int32_t i = 0; i < ac->cardinality; ++i) {
+                    out[i] = high48 | ac->array[i];
+                }
+                out += ac->cardinality;
+                break;
+            }
+            case RUN_CONTAINER_TYPE: {
+                const run_container_t *rc = const_CAST_run(c);
+                for (int32_t i = 0; i < rc->n_runs; ++i) {
+                    uint64_t value = high48 | rc->runs[i].value;
+                    for (uint32_t j = 0; j <= rc->runs[i].length; ++j) {
+                        *out++ = value + j;
+                    }
+                }
+                break;
+            }
+            default:
+                assert(false);
+                roaring_unreachable;
+        }
+        art_iterator_next(&it);
+    }
+    roaring_free(scratch);
 }
 
 roaring64_iterator_t *roaring64_iterator_create(const roaring64_bitmap_t *r) {
