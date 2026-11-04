@@ -3070,8 +3070,6 @@ uint32_t roaring_bitmap_maximum(const roaring_bitmap_t *bm) {
 bool roaring_bitmap_select(const roaring_bitmap_t *bm, uint32_t rank,
                            uint32_t *element) {
     const roaring_array_t *ra = &bm->high_low_container;
-    // Skip whole containers using their cardinality, then select within the
-    // single container that holds the requested rank.
     uint32_t start_rank = 0;
     for (int32_t i = 0; i < ra->size; i++) {
         uint8_t typecode = ra->typecodes[i];
