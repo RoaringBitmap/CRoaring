@@ -1505,30 +1505,70 @@ static art_erase_result_t art_erase_at(art_t *art, art_ref_t ref,
 // was not found.
 static art_val_t *art_find_at(const art_t *art, art_ref_t ref,
                               const art_key_chunk_t *key, uint8_t depth) {
+#if !CROARING_IS_BIG_ENDIAN
+    // A 6-byte memcpy into a word stalls on store forwarding. The
+    // prefix-size check below keeps the shift and the child-byte read
+    // inside the key.
+    uint32_t key_lo;
+    uint16_t key_hi;
+    memcpy(&key_lo, key, sizeof(key_lo));
+    memcpy(&key_hi, key + sizeof(key_lo), sizeof(key_hi));
+    const uint64_t key_word = key_lo | ((uint64_t)key_hi << 32);
+#endif
     while (!art_is_leaf(ref)) {
-        art_inner_node_t *inner_node = (art_inner_node_t *)art_deref(art, ref);
-        uint8_t common_prefix =
-            art_common_prefix(inner_node->prefix, 0, inner_node->prefix_size,
-                              key, depth, ART_KEY_BYTES);
-        if (common_prefix != inner_node->prefix_size) {
+        const art_inner_node_t *inner_node =
+            (const art_inner_node_t *)art_deref(art, ref);
+        uint8_t prefix_size = inner_node->prefix_size;
+        if (prefix_size >= ART_KEY_BYTES - depth) {
             return NULL;
         }
-        art_ref_t child = art_find_child(inner_node, art_ref_typecode(ref),
-                                         key[depth + inner_node->prefix_size]);
+#if !CROARING_IS_BIG_ENDIAN
+        // In bounds: inner nodes are larger than 8 bytes.
+        uint64_t header;
+        memcpy(&header, inner_node, sizeof(header));
+        uint64_t mask = (UINT64_C(1) << (8 * prefix_size)) - 1;
+        if (((header >> 8) ^ (key_word >> (8 * depth))) & mask) {
+            return NULL;
+        }
+#else
+        for (uint8_t i = 0; i < prefix_size; ++i) {
+            if (inner_node->prefix[i] != key[depth + i]) {
+                return NULL;
+            }
+        }
+#endif
+        art_key_chunk_t key_chunk = key[depth + prefix_size];
+        art_ref_t child;
+        switch (art_ref_typecode(ref)) {
+            case CROARING_ART_NODE4_TYPE:
+                child = art_node4_find_child((const art_node4_t *)inner_node,
+                                             key_chunk);
+                break;
+            case CROARING_ART_NODE16_TYPE:
+                child = art_node16_find_child((const art_node16_t *)inner_node,
+                                              key_chunk);
+                break;
+            case CROARING_ART_NODE48_TYPE:
+                child = art_node48_find_child((const art_node48_t *)inner_node,
+                                              key_chunk);
+                break;
+            case CROARING_ART_NODE256_TYPE:
+                child = art_node256_find_child(
+                    (const art_node256_t *)inner_node, key_chunk);
+                break;
+            default:
+                assert(false);
+                return NULL;
+        }
         if (child == CROARING_ART_NULL_REF) {
             return NULL;
         }
         ref = child;
         // Include both the prefix and the child key chunk in the depth.
-        depth += inner_node->prefix_size + 1;
+        depth += prefix_size + 1;
     }
     art_leaf_t *leaf = (art_leaf_t *)art_deref(art, ref);
-    if (depth >= ART_KEY_BYTES) {
-        return &leaf->val;
-    }
-    uint8_t common_prefix =
-        art_common_prefix(leaf->key, 0, ART_KEY_BYTES, key, 0, ART_KEY_BYTES);
-    if (common_prefix == ART_KEY_BYTES) {
+    if (depth >= ART_KEY_BYTES || memcmp(leaf->key, key, ART_KEY_BYTES) == 0) {
         return &leaf->val;
     }
     return NULL;

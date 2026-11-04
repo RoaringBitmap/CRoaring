@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <array>
 #include <cinttypes>
+#include <cstring>
 #include <iomanip>
 #include <ios>
 #include <map>
@@ -717,6 +719,57 @@ DEFINE_TEST(test_art_num_leaves_and_reserve) {
     }
 }
 
+DEFINE_TEST(test_art_find_prefixes) {
+    std::vector<std::vector<std::array<uint8_t, 6>>> key_sets;
+    {
+        // ART with multiple node sizes and long shared prefixes.
+        std::vector<std::array<uint8_t, 6>> keys;
+        std::vector<size_t> sizes = {4, 16, 48, 256};
+        for (size_t i = 0; i < sizes.size(); i++) {
+            for (size_t j = 0; j < sizes[i]; j++) {
+                keys.push_back({0, 0, 0, static_cast<uint8_t>(i),
+                                static_cast<uint8_t>(j), 7});
+            }
+        }
+        key_sets.push_back(keys);
+    }
+    // Max-depth ART.
+    key_sets.push_back({
+        {0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 1},
+        {0, 0, 0, 0, 1, 0},
+        {0, 0, 0, 1, 0, 0},
+        {0, 0, 1, 0, 0, 0},
+        {0, 1, 0, 0, 0, 0},
+        {1, 0, 0, 0, 0, 0},
+    });
+    // Single leaf at the root.
+    key_sets.push_back({{1, 2, 3, 4, 5, 6}});
+    for (const auto& keys : key_sets) {
+        art_t art;
+        art_init_cleared(&art);
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_insert(&art, (art_key_chunk_t*)keys[i].data(), i);
+        }
+        assert_art_valid(&art);
+        // Every key is found, and a key differing from a present key in any
+        // single byte is found only if it is present too.
+        for (size_t i = 0; i < keys.size(); ++i) {
+            art_val_t* val = art_find(&art, (art_key_chunk_t*)keys[i].data());
+            assert_true(val != NULL && *val == i);
+            for (size_t b = 0; b < 6; ++b) {
+                std::array<uint8_t, 6> other = keys[i];
+                other[b] ^= 0x80;
+                bool present =
+                    std::find(keys.begin(), keys.end(), other) != keys.end();
+                assert_true((art_find(&art, (art_key_chunk_t*)other.data()) !=
+                             NULL) == present);
+            }
+        }
+        art_free(&art);
+    }
+}
+
 DEFINE_TEST(test_art_frozen_view) {
     {
         // ART with multiple node sizes.
@@ -810,6 +863,7 @@ int main() {
         cmocka_unit_test(test_art_shadowed),
         cmocka_unit_test(test_art_shrink_grow_node48),
         cmocka_unit_test(test_art_num_leaves_and_reserve),
+        cmocka_unit_test(test_art_find_prefixes),
         cmocka_unit_test(test_art_frozen_view),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
