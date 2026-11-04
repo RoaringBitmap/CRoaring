@@ -9,6 +9,7 @@ of CRoaring operations.
 - `synthetic_bench`: additional synthetic workloads
 - `array_merge_bench`: unions, differences, symmetric differences and intersections between a small and a large array container
 - `bitset_to_array_bench`: conversion of sparse bitset containers to array containers (each decoder, and the dispatch), and the unions of many sparse bitmaps that depend on it
+- `roaring64_slots_bench`: removals and additions that free and take container slots in 64-bit bitmaps with many containers
 
 ## Build
 
