@@ -1,6 +1,7 @@
 /**
  * Unit tests for the C++ roaring::Roaring64 class (ART-based 64-bit bitmap).
  */
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -254,6 +255,79 @@ DEFINE_TEST(test_cpp_r64_is_subset) {
     assert_false(a.isStrictSubset(b));
 }
 
+DEFINE_TEST(test_cpp_r64_set_op_cardinalities) {
+    const uint64_t K1 = uint64_t(1) << 16;
+    const uint64_t K2 = uint64_t(1) << 32;
+
+    Roaring64 a{1, 2, 7, K1 + 1, K1 + 5, K2 + 1};
+    Roaring64 b{3, 4, 7, K1 + 5, K1 + 9, K2 + 2};
+    assert_int_equal(a.and_cardinality(b), 2);
+    assert_int_equal(a.or_cardinality(b), 10);
+    assert_int_equal(a.andnot_cardinality(b), 4);
+    assert_int_equal(a.xor_cardinality(b), 8);
+    assert_true(a.intersect(b));
+    assert_true(std::fabs(a.jaccard_index(b) - 0.2) < 1e-12);
+
+    Roaring64 c{uint64_t(1) << 40};
+    Roaring64 empty;
+    assert_false(a.intersect(c));
+    assert_int_equal(a.and_cardinality(c), 0);
+    assert_true(a.jaccard_index(c) == 0.0);
+    assert_false(a.intersect(empty));
+    assert_int_equal(a.or_cardinality(empty), 6);
+    assert_int_equal(empty.andnot_cardinality(a), 0);
+}
+
+DEFINE_TEST(test_cpp_r64_rank_select_get_index) {
+    const uint64_t K1 = uint64_t(1) << 16;
+    const uint64_t K2 = uint64_t(1) << 32;
+    const uint64_t far = uint64_t(1) << 50;
+
+    Roaring64 r{5, K1 + 1, K2 + 3, far};
+    assert_int_equal(r.rank(0), 0);
+    assert_int_equal(r.rank(5), 1);
+    assert_int_equal(r.rank(K1), 1);
+    assert_int_equal(r.rank(K2 + 3), 3);
+    assert_int_equal(r.rank(UINT64_MAX), 4);
+
+    uint64_t element;
+    assert_true(r.select(0, &element));
+    assert_int_equal(element, 5);
+    assert_true(r.select(3, &element));
+    assert_int_equal(element, far);
+    assert_false(r.select(4, &element));
+
+    assert_int_equal(r.getIndex(5), 0);
+    assert_int_equal(r.getIndex(far), 3);
+    assert_int_equal(r.getIndex(6), -1);
+
+    Roaring64 empty;
+    assert_int_equal(empty.rank(UINT64_MAX), 0);
+    assert_false(empty.select(0, &element));
+    assert_int_equal(empty.getIndex(0), -1);
+}
+
+DEFINE_TEST(test_cpp_r64_internal_validate) {
+    {
+        Roaring64 r{1, uint64_t(1) << 40};
+        r.addRange(100, 200);
+        r.runOptimize();
+        const char* reason = nullptr;
+        assert_true(r.internal_validate(&reason));
+    }
+    {
+        // One bucket (key 0) wrapping a run container declaring zero runs:
+        // readSafe accepts it, validate must not.
+        const char data[] = {1,    0,    0, 0, 0,    0, 0, 0, 0, 0, 0, 0,
+                             0x3B, 0x30, 0, 0, 0x01, 0, 0, 0, 0, 0, 0};
+        Roaring64 r = Roaring64::readSafe(data, sizeof(data));
+        const char* reason = nullptr;
+        assert_false(r.internal_validate(&reason));
+        assert_true(reason != nullptr);
+        assert_false(r.internal_validate());
+    }
+}
+
 DEFINE_TEST(test_cpp_r64_flip) {
     const uint64_t K = uint64_t(1) << 32;
     const uint64_t far = uint64_t(1) << 50;
@@ -334,6 +408,38 @@ DEFINE_TEST(test_cpp_r64_iteration) {
     Roaring64::const_iterator it4 = r.end();
     it4 = std::move(moved);  // move assignment
     assert_int_equal(*it4, uint64_t(7));
+}
+
+struct IterateState {
+    std::vector<uint64_t> seen;
+    size_t limit;
+};
+
+// Records each value, and stops once `limit` values are recorded.
+static bool record_value(uint64_t value, void* ptr) {
+    IterateState* state = static_cast<IterateState*>(ptr);
+    state->seen.push_back(value);
+    return state->seen.size() < state->limit;
+}
+
+DEFINE_TEST(test_cpp_r64_iterate) {
+    const uint64_t K = uint64_t(1) << 32;
+    const uint64_t far = uint64_t(1) << 50;
+
+    Roaring64 r{far, 7, K, 5};
+    IterateState all{{}, SIZE_MAX};
+    r.iterate(record_value, &all);
+    assert_true((all.seen == std::vector<uint64_t>{5, 7, K, far}));
+
+    // The iteration stops when the function returns false.
+    IterateState two{{}, 2};
+    r.iterate(record_value, &two);
+    assert_true((two.seen == std::vector<uint64_t>{5, 7}));
+
+    Roaring64 empty;
+    IterateState none{{}, SIZE_MAX};
+    empty.iterate(record_value, &none);
+    assert_true(none.seen.empty());
 }
 
 DEFINE_TEST(test_cpp_r64_bidirectional) {
@@ -665,9 +771,16 @@ DEFINE_TEST(test_cpp_r64_random_vs_set) {
         if ((i % 500) == 0) {
             (void)r.cardinality();
             if (!added.empty()) {
-                (void)r.contains(added[next() % added.size()]);
+                uint64_t v = added[next() % added.size()];
+                (void)r.contains(v);
+                (void)r.rank(v);
+                (void)r.getIndex(v);
+                (void)r.getIndex(v + 1);
             }
+            uint64_t element;
+            (void)r.select(next() % (r.cardinality() + 1), &element);
             (void)r.isEmpty();
+            r.iterate([](uint64_t, void*) { return true; }, nullptr);
             r.validate();
         }
     }
@@ -748,6 +861,19 @@ DEFINE_TEST(test_cpp_r64_random_range_ops_vs_set) {
             (void)r.isSubset(before);
             (void)before.isStrictSubset(r);
             (void)r.isStrictSubset(before);
+            (void)before.and_cardinality(r);
+            (void)before.or_cardinality(r);
+            (void)before.andnot_cardinality(r);
+            (void)r.andnot_cardinality(before);
+            (void)before.xor_cardinality(r);
+            (void)before.intersect(r);
+            (void)before.jaccard_index(r);
+            (void)r.rank(min);
+            (void)r.rank(max);
+            (void)r.getIndex(min);
+            uint64_t element;
+            (void)r.select(next() % (r.cardinality() + 1), &element);
+            r.iterate([](uint64_t, void*) { return true; }, nullptr);
             r.validate();
         }
     }
@@ -766,8 +892,12 @@ int main() {
         cmocka_unit_test(test_cpp_r64_minmax_equals),
         cmocka_unit_test(test_cpp_r64_set_ops),
         cmocka_unit_test(test_cpp_r64_is_subset),
+        cmocka_unit_test(test_cpp_r64_set_op_cardinalities),
+        cmocka_unit_test(test_cpp_r64_rank_select_get_index),
+        cmocka_unit_test(test_cpp_r64_internal_validate),
         cmocka_unit_test(test_cpp_r64_flip),
         cmocka_unit_test(test_cpp_r64_iteration),
+        cmocka_unit_test(test_cpp_r64_iterate),
         cmocka_unit_test(test_cpp_r64_bidirectional),
         cmocka_unit_test(test_cpp_r64_run_optimize),
         cmocka_unit_test(test_cpp_r64_remove_run_compression),

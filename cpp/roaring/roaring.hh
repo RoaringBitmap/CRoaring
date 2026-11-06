@@ -585,7 +585,7 @@ class Roaring {
     }
 
     /**
-     * Computes the size of the symmetric difference (andnot) between two
+     * Computes the size of the symmetric difference (xor) between two
      * bitmaps.
      */
     uint64_t xor_cardinality(const Roaring &r) const noexcept {
