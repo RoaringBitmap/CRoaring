@@ -1901,7 +1901,10 @@ uint64_t roaring64_bitmap_xor_cardinality(const roaring64_bitmap_t *r1,
 
 void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                                   const roaring64_bitmap_t *r2) {
-    assert(r1 != r2);
+    if (r1 == r2) {
+        roaring64_bitmap_clear(r1);
+        return;
+    }
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator((art_t *)&r2->art, /*first=*/true);
 
@@ -2028,6 +2031,10 @@ uint64_t roaring64_bitmap_andnot_cardinality(const roaring64_bitmap_t *r1,
 
 void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                                      const roaring64_bitmap_t *r2) {
+    if (r1 == r2) {
+        roaring64_bitmap_clear(r1);
+        return;
+    }
     art_iterator_t it1 = art_init_iterator(&r1->art, /*first=*/true);
     art_iterator_t it2 = art_init_iterator((art_t *)&r2->art, /*first=*/true);
 

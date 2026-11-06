@@ -2743,6 +2743,31 @@ DEFINE_TEST(test_cpp_self_aliasing) {
     assert_true(r.intersect(r));
     assert_true(r.isSubset(r));
     assert_false(r.isStrictSubset(r));
+    Roaring &alias = r;  // through a reference, so compilers do not warn
+    r = alias;
+    assert_true(r == orig);
+    r -= alias;
+    assert_true(r.isEmpty());
+    r = orig;
+    r ^= alias;
+    assert_true(r.isEmpty());
+}
+
+DEFINE_TEST(test_cpp_roaring64map_self_aliasing) {
+    Roaring64Map r;
+    r.addRange(10, 5000);
+    r.add(uint64_t(3) << 32);
+    const Roaring64Map orig = r;
+    Roaring64Map &alias = r;  // through a reference, so compilers do not warn
+    r &= alias;
+    assert_true(r == orig);
+    r |= alias;
+    assert_true(r == orig);
+    r -= alias;
+    assert_true(r.isEmpty());
+    r = orig;
+    r ^= alias;
+    assert_true(r.isEmpty());
 }
 
 // fastunion with zero or one input (Go aggregation "aggregate nothing")
@@ -2861,6 +2886,7 @@ int main() {
         cmocka_unit_test(test_cpp_end_iterator_is_per_bitmap),
         cmocka_unit_test(test_cpp_iterate_halts_early),
         cmocka_unit_test(test_cpp_self_aliasing),
+        cmocka_unit_test(test_cpp_roaring64map_self_aliasing),
         cmocka_unit_test(test_cpp_fastunion_zero_or_one_input),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);

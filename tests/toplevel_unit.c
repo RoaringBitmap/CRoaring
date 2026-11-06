@@ -5584,6 +5584,22 @@ static void cow_andnot_inplace(roaring_bitmap_t *r) {
     roaring_bitmap_free(other);
 }
 
+static void cow_xor_itself(roaring_bitmap_t *r) {
+    roaring_bitmap_xor_inplace(r, r);
+    assert_true(roaring_bitmap_is_empty(r));
+}
+
+static void cow_andnot_itself(roaring_bitmap_t *r) {
+    roaring_bitmap_andnot_inplace(r, r);
+    assert_true(roaring_bitmap_is_empty(r));
+}
+
+static void cow_lazy_xor_itself(roaring_bitmap_t *r) {
+    roaring_bitmap_lazy_xor_inplace(r, r);
+    roaring_bitmap_repair_after_lazy(r);
+    assert_true(roaring_bitmap_is_empty(r));
+}
+
 DEFINE_TEST(test_remove_many_copy_on_write) {
     for (int run_optimize = 0; run_optimize <= 1; run_optimize++) {
         check_unshares(cow_remove_many, run_optimize);
@@ -5613,15 +5629,27 @@ DEFINE_TEST(test_remove_many_copy_on_write_many_copies) {
     roaring_bitmap_free(source);
 }
 
-// The other in-place mutators are already correct; these keep them that way.
+// In-place mutators, x op x included, leave the sharing copy as it was.
 DEFINE_TEST(test_inplace_mutators_copy_on_write) {
-    void (*const mutators[])(roaring_bitmap_t *) = {
-        cow_add,           cow_add_checked,   cow_add_many,
-        cow_add_bulk,      cow_remove,        cow_remove_checked,
-        cow_add_range,     cow_remove_range,  cow_flip_inplace,
-        cow_run_optimize,  cow_shrink_to_fit, cow_remove_run_compression,
-        cow_and_inplace,   cow_or_inplace,    cow_xor_inplace,
-        cow_andnot_inplace};
+    void (*const mutators[])(roaring_bitmap_t *) = {cow_add,
+                                                    cow_add_checked,
+                                                    cow_add_many,
+                                                    cow_add_bulk,
+                                                    cow_remove,
+                                                    cow_remove_checked,
+                                                    cow_add_range,
+                                                    cow_remove_range,
+                                                    cow_flip_inplace,
+                                                    cow_run_optimize,
+                                                    cow_shrink_to_fit,
+                                                    cow_remove_run_compression,
+                                                    cow_and_inplace,
+                                                    cow_or_inplace,
+                                                    cow_xor_inplace,
+                                                    cow_andnot_inplace,
+                                                    cow_xor_itself,
+                                                    cow_andnot_itself,
+                                                    cow_lazy_xor_itself};
     const size_t count = sizeof(mutators) / sizeof(mutators[0]);
     for (int run_optimize = 0; run_optimize <= 1; run_optimize++) {
         for (size_t i = 0; i < count; i++) {
@@ -7754,18 +7782,21 @@ DEFINE_TEST(test_full_range_mask_with_mixed_data) {
     }
 }
 
-// Java testWithYourself: x op x for every container type
+// Java testWithYourself: x op x on each container shape, leaking nothing
 DEFINE_TEST(test_self_aliasing_ops) {
-    for (int t = 0; t < 3; t++) {
+    for (int t = 0; t < 4; t++) {
+        test_track_memory();
         roaring_bitmap_t *x;
         if (t == 0) {
             x = roaring_bitmap_from_range(1, 11, 1);
             roaring_bitmap_remove_run_compression(x);
         } else if (t == 1) {
             x = roaring_bitmap_from_range(0, 20000, 3);
-        } else {
+        } else if (t == 2) {
             x = roaring_bitmap_from_range(10, 5000, 1);
             roaring_bitmap_run_optimize(x);
+        } else {
+            x = roaring_bitmap_from_range(0, 200000, 100);
         }
         roaring_bitmap_t *orig = roaring_bitmap_copy(x);
         uint64_t card = roaring_bitmap_get_cardinality(x);
@@ -7793,8 +7824,33 @@ DEFINE_TEST(test_self_aliasing_ops) {
         roaring_bitmap_and_inplace(x, x);  // documented as allowed
         assert_true(roaring_bitmap_equals(x, orig));
         assert_bitmap_validate(x);
+        roaring_bitmap_or_inplace(x, x);
+        assert_true(roaring_bitmap_equals(x, orig));
+        roaring_bitmap_lazy_or_inplace(x, x, true);
+        roaring_bitmap_repair_after_lazy(x);
+        assert_true(roaring_bitmap_equals(x, orig));
+        assert_bitmap_validate(x);
+        roaring_bitmap_lazy_or_inplace(x, x, false);
+        roaring_bitmap_repair_after_lazy(x);
+        assert_true(roaring_bitmap_equals(x, orig));
+        assert_true(roaring_bitmap_overwrite(x, x));
+        assert_true(roaring_bitmap_equals(x, orig));
+        assert_bitmap_validate(x);
+        roaring_bitmap_andnot_inplace(x, x);
+        assert_true(roaring_bitmap_is_empty(x));
+        assert_bitmap_validate(x);
+        roaring_bitmap_overwrite(x, orig);
+        roaring_bitmap_lazy_xor_inplace(x, x);
+        roaring_bitmap_repair_after_lazy(x);
+        assert_true(roaring_bitmap_is_empty(x));
+        assert_bitmap_validate(x);
+        roaring_bitmap_overwrite(x, orig);
+        roaring_bitmap_xor_inplace(x, x);
+        assert_true(roaring_bitmap_is_empty(x));
+        assert_bitmap_validate(x);
         roaring_bitmap_free(x);
         roaring_bitmap_free(orig);
+        assert_int_equal(test_memory()->blocks, 0);
     }
     roaring_bitmap_t *empty = roaring_bitmap_create();
     assert_false(roaring_bitmap_intersect(empty, empty));
@@ -8717,7 +8773,8 @@ int main() {
         cmocka_unit_test(test_subset_run_container_regressions),
         cmocka_unit_test(test_ops_emptying_or_splitting_containers),
         cmocka_unit_test(test_full_range_mask_with_mixed_data),
-        cmocka_unit_test(test_self_aliasing_ops),
+        cmocka_unit_test_teardown(test_self_aliasing_ops,
+                                  test_reset_memory_hook_teardown),
         cmocka_unit_test(test_andnot_inplace_bitset_to_array_then_serialize),
         cmocka_unit_test(test_or_inplace_copy_on_write_isolation),
         cmocka_unit_test(test_ops_with_empty_operands),
