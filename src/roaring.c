@@ -18,25 +18,33 @@
 using namespace ::roaring::internal;
 
 extern "C" {
+#endif
+
+CROARING_EXPORT_INLINE(int, roaring_trailing_zeroes,
+                       (unsigned long long input_num));
+CROARING_EXPORT_INLINE(int, roaring_leading_zeroes,
+                       (unsigned long long input_num));
+
+#ifdef __cplusplus
 namespace roaring {
 namespace api {
 #endif
 
 #define CROARING_SERIALIZATION_ARRAY_UINT32 1
 #define CROARING_SERIALIZATION_CONTAINER 2
-extern inline bool roaring_bitmap_contains(const roaring_bitmap_t *r,
-                                           uint32_t val);
-extern inline int roaring_trailing_zeroes(unsigned long long input_num);
-extern inline int roaring_leading_zeroes(unsigned long long input_num);
-extern inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r);
-extern inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t *r);
-extern inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r,
-                                                    bool cow);
-extern inline roaring_bitmap_t *roaring_bitmap_create(void);
-extern inline void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min,
-                                            uint64_t max);
-extern inline void roaring_bitmap_remove_range(roaring_bitmap_t *r,
-                                               uint64_t min, uint64_t max);
+CROARING_EXPORT_INLINE(bool, roaring_bitmap_contains,
+                       (const roaring_bitmap_t *r, uint32_t val));
+CROARING_EXPORT_INLINE(void, roaring_bitmap_init_cleared,
+                       (roaring_bitmap_t * r));
+CROARING_EXPORT_INLINE(bool, roaring_bitmap_get_copy_on_write,
+                       (const roaring_bitmap_t *r));
+CROARING_EXPORT_INLINE(void, roaring_bitmap_set_copy_on_write,
+                       (roaring_bitmap_t * r, bool cow));
+CROARING_EXPORT_INLINE(roaring_bitmap_t *, roaring_bitmap_create, (void));
+CROARING_EXPORT_INLINE(void, roaring_bitmap_add_range,
+                       (roaring_bitmap_t * r, uint64_t min, uint64_t max));
+CROARING_EXPORT_INLINE(void, roaring_bitmap_remove_range,
+                       (roaring_bitmap_t * r, uint64_t min, uint64_t max));
 
 static inline bool is_cow(const roaring_bitmap_t *r) {
     return r->high_low_container.flags & ROARING_FLAG_COW;

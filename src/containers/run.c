@@ -21,20 +21,16 @@ namespace roaring {
 namespace internal {
 #endif
 
-extern inline uint16_t run_container_minimum(const run_container_t *run);
-extern inline uint16_t run_container_maximum(const run_container_t *run);
-extern inline int32_t interleavedBinarySearch(const rle16_t *array,
-                                              int32_t lenarray, uint16_t ikey);
-extern inline bool run_container_contains(const run_container_t *run,
-                                          uint16_t pos);
-extern inline int run_container_index_equalorlarger(const run_container_t *arr,
-                                                    uint16_t x);
-extern inline bool run_container_is_full(const run_container_t *run);
-extern inline bool run_container_nonzero_cardinality(const run_container_t *rc);
-extern inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
-extern inline run_container_t *run_container_create_range(uint32_t start,
-                                                          uint32_t stop);
-extern inline int run_container_cardinality(const run_container_t *run);
+CROARING_EXPORT_INLINE(uint16_t, run_container_minimum,
+                       (const run_container_t *run));
+CROARING_EXPORT_INLINE(uint16_t, run_container_maximum,
+                       (const run_container_t *run));
+CROARING_EXPORT_INLINE(int32_t, interleavedBinarySearch,
+                       (const rle16_t *array, int32_t lenarray, uint16_t ikey));
+CROARING_EXPORT_INLINE(bool, run_container_contains,
+                       (const run_container_t *run, uint16_t pos));
+CROARING_EXPORT_INLINE(int, run_container_index_equalorlarger,
+                       (const run_container_t *arr, uint16_t x));
 
 bool run_container_add(run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);

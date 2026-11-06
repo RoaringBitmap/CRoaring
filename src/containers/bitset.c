@@ -31,22 +31,10 @@ namespace roaring {
 namespace internal {
 #endif
 
-extern inline int bitset_container_cardinality(
-    const bitset_container_t *bitset);
-extern inline void bitset_container_set(bitset_container_t *bitset,
-                                        uint16_t pos);
-// unused at this time:
-// extern inline void bitset_container_unset(bitset_container_t *bitset,
-// uint16_t pos);
-extern inline bool bitset_container_get(const bitset_container_t *bitset,
-                                        uint16_t pos);
-extern inline int32_t bitset_container_serialized_size_in_bytes(void);
-extern inline bool bitset_container_add(bitset_container_t *bitset,
-                                        uint16_t pos);
-extern inline bool bitset_container_remove(bitset_container_t *bitset,
-                                           uint16_t pos);
-extern inline bool bitset_container_contains(const bitset_container_t *bitset,
-                                             uint16_t pos);
+CROARING_EXPORT_INLINE(bool, bitset_container_get,
+                       (const bitset_container_t *bitset, uint16_t pos));
+CROARING_EXPORT_INLINE(bool, bitset_container_contains,
+                       (const bitset_container_t *bitset, uint16_t pos));
 
 void bitset_container_clear(bitset_container_t *bitset) {
     memset(bitset->words, 0, sizeof(uint64_t) * BITSET_CONTAINER_SIZE_IN_WORDS);
