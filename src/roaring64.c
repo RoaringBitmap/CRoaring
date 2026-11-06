@@ -482,8 +482,8 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
 // Makes `dst`, whose ART holds no nodes and whose container slots are all
 // NULL, a copy of `src` by inserting every key into a new ART. The result is
 // compact.
-static void copy_rebuild(roaring64_bitmap_t *dst,
-                         const roaring64_bitmap_t *src, uint64_t live) {
+static void copy_rebuild(roaring64_bitmap_t *dst, const roaring64_bitmap_t *src,
+                         uint64_t live) {
     art_init_cleared(&dst->art);
     dst->first_free = 0;
     dst->end = 0;
