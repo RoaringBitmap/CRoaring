@@ -1922,6 +1922,10 @@ void art_copy(const art_t *src, art_t *dst) {
     }
 }
 
+uint64_t art_leaf_capacity(const art_t *art) {
+    return art->capacities[CROARING_ART_LEAF_TYPE];
+}
+
 void art_reserve(art_t *art, uint64_t num_leaves) {
     art_grow_to(art, CROARING_ART_LEAF_TYPE, num_leaves);
 }

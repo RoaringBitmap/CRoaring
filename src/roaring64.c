@@ -479,12 +479,45 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r) {
     roaring_free(r);
 }
 
-// Makes `dst`, which holds no nodes or containers, a copy of `src`. The nodes
-// are copied as they are and each container goes to the same slot, so the
-// leaves stay valid without rebuilding the ART.
+// Makes `dst`, whose ART holds no nodes and whose container slots are all
+// NULL, a copy of `src` by inserting every key into a new ART. The result is
+// compact.
+static void copy_rebuild(roaring64_bitmap_t *dst,
+                         const roaring64_bitmap_t *src, uint64_t live) {
+    art_init_cleared(&dst->art);
+    dst->first_free = 0;
+    dst->end = 0;
+    holes_clear(dst);
+    reserve_containers(dst, live);
+    art_iterator_t it = art_init_iterator((art_t *)&src->art, /*first=*/true);
+    while (it.value != NULL) {
+        leaf_t leaf = (leaf_t)*it.value;
+        uint8_t typecode = get_typecode(leaf);
+        container_t *container =
+            container_clone(get_container(src, leaf), typecode);
+        leaf_t dst_leaf = add_container(dst, container, typecode);
+        art_insert(&dst->art, it.key, (art_val_t)dst_leaf);
+        art_iterator_next(&it);
+    }
+}
+
+// Makes `dst`, whose ART holds no nodes and whose container slots are all
+// NULL, a copy of `src`. Unless `src` is mostly free space, the nodes are
+// copied as they are and each container goes to the same slot, so the leaves
+// stay valid without rebuilding the ART.
 static void copy_into_empty(roaring64_bitmap_t *dst,
                             const roaring64_bitmap_t *src) {
+    // Every slot below end not in the heap of holes holds a container.
+    uint64_t live = src->end - src->num_holes;
+    if (live < src->end / 2 || live < art_leaf_capacity(&src->art) / 2) {
+        copy_rebuild(dst, src, live);
+        return;
+    }
     art_copy(&src->art, &dst->art);
+    // A frozen view marks all its slots as taken, so the slot bookkeeping is
+    // derived from the slots rather than copied.
+    uint64_t end = 0;
+    uint64_t num_containers = 0;
     grow_containers_to(dst, src->end);
     for (uint64_t i = 0; i < src->end; ++i) {
         container_t *container = src->containers[i];
@@ -492,19 +525,24 @@ static void copy_into_empty(roaring64_bitmap_t *dst,
             uint8_t typecode = src->typecodes[i];
             set_container_at(dst, i, container_clone(container, typecode),
                              typecode);
+            end = i + 1;
+            num_containers++;
         }
     }
-    dst->first_free = src->first_free;
-    dst->end = src->end;
-    if (src->num_holes > dst->holes_capacity) {
-        dst->holes = (uint64_t *)roaring_realloc(
-            dst->holes, src->num_holes * sizeof(uint64_t));
-        dst->holes_capacity = src->num_holes;
+    dst->end = end;
+    holes_clear(dst);
+    uint64_t num_holes = end - num_containers;
+    if (num_holes > dst->holes_capacity) {
+        dst->holes = (uint64_t *)roaring_realloc(dst->holes,
+                                                 num_holes * sizeof(uint64_t));
+        dst->holes_capacity = num_holes;
     }
-    if (src->num_holes > 0) {
-        memcpy(dst->holes, src->holes, src->num_holes * sizeof(uint64_t));
+    for (uint64_t i = 0; i < end; ++i) {
+        if (dst->containers[i] == NULL) {
+            holes_push(dst, i);  // in increasing order: no sifting
+        }
     }
-    dst->num_holes = src->num_holes;
+    update_first_free(dst);
 }
 
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r) {
@@ -1355,17 +1393,31 @@ void roaring64_bitmap_statistics(const roaring64_bitmap_t *r,
     }
 }
 
+typedef struct roaring64_validate_context_s {
+    const roaring64_bitmap_t *r;
+    uint64_t *seen;  // one bit per container slot
+    uint64_t num_leaves;
+} roaring64_validate_context_t;
+
 static bool roaring64_leaf_internal_validate(const art_val_t val,
                                              const char **reason,
                                              void *context) {
     leaf_t leaf = (leaf_t)val;
-    roaring64_bitmap_t *r = (roaring64_bitmap_t *)context;
+    roaring64_validate_context_t *ctx = (roaring64_validate_context_t *)context;
+    const roaring64_bitmap_t *r = ctx->r;
     uint64_t index = get_index(leaf);
     uint8_t typecode = get_typecode(leaf);
     if (index >= r->capacity || r->containers[index] == NULL) {
         *reason = "ART leaf points at an empty container slot";
         return false;
     }
+    uint64_t bit = UINT64_C(1) << (index % 64);
+    if (ctx->seen[index / 64] & bit) {
+        *reason = "two ART leaves point at the same container slot";
+        return false;
+    }
+    ctx->seen[index / 64] |= bit;
+    ctx->num_leaves++;
     if (r->typecodes[index] != typecode) {
         *reason = "typecode array does not match ART leaf";
         return false;
@@ -1383,11 +1435,9 @@ static int compare_uint64(const void *a, const void *b) {
 }
 
 // Checks the bookkeeping of the container slots (see roaring64_bitmap_s).
+// A frozen view has no holes: its slots below end all hold a container.
 static bool roaring64_slots_internal_validate(const roaring64_bitmap_t *r,
                                               const char **reason) {
-    if (r->flags & ROARING_FLAG_FROZEN) {
-        return true;  // read-only: every slot is marked as taken
-    }
     if (r->end > r->capacity) {
         *reason = "container slots end beyond capacity";
         return false;
@@ -1451,8 +1501,25 @@ bool roaring64_bitmap_internal_validate(const roaring64_bitmap_t *r,
     if (!roaring64_slots_internal_validate(r, reason)) {
         return false;
     }
-    return art_internal_validate(&r->art, reason,
-                                 roaring64_leaf_internal_validate, (void *)r);
+    // Every container must belong to exactly one leaf: copies keep the slot
+    // indices, and freeing goes through the leaves.
+    roaring64_validate_context_t ctx;
+    ctx.r = r;
+    ctx.num_leaves = 0;
+    ctx.seen = (uint64_t *)roaring_calloc((r->capacity + 63) / 64 + 1,
+                                          sizeof(uint64_t));
+    if (ctx.seen == NULL) {
+        *reason = "out of memory";
+        return false;
+    }
+    bool ok = art_internal_validate(&r->art, reason,
+                                    roaring64_leaf_internal_validate, &ctx);
+    roaring_free(ctx.seen);
+    if (ok && ctx.num_leaves != r->end - r->num_holes) {
+        *reason = "a container slot is not referenced by any ART leaf";
+        return false;
+    }
+    return ok;
 }
 
 bool roaring64_bitmap_equals(const roaring64_bitmap_t *r1,
