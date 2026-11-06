@@ -545,6 +545,7 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r) {
 
 bool roaring_bitmap_overwrite(roaring_bitmap_t *dest,
                               const roaring_bitmap_t *src) {
+    if (dest == src) return true;
     // ra_overwrite() frees dest's containers, shared or not. Setting the flag
     // with roaring_bitmap_set_copy_on_write() would first copy the shared ones.
     if (is_cow(src)) {
@@ -1144,6 +1145,7 @@ static void roaring_inplace_union_few(roaring_bitmap_t *x1,
 // inplace or (modifies its first argument).
 void roaring_bitmap_or_inplace(roaring_bitmap_t *x1,
                                const roaring_bitmap_t *x2) {
+    if (x1 == x2) return;
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
@@ -1286,7 +1288,11 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_xor_inplace(roaring_bitmap_t *x1,
                                 const roaring_bitmap_t *x2) {
-    assert(x1 != x2);
+    if (x1 == x2) {  // empty, keeping the capacity
+        ra_clear_containers(&x1->high_low_container);
+        x1->high_low_container.size = 0;
+        return;
+    }
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
@@ -1428,7 +1434,11 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_andnot_inplace(roaring_bitmap_t *x1,
                                    const roaring_bitmap_t *x2) {
-    assert(x1 != x2);
+    if (x1 == x2) {  // empty, keeping the capacity
+        ra_clear_containers(&x1->high_low_container);
+        x1->high_low_container.size = 0;
+        return;
+    }
 
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
@@ -2646,6 +2656,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *x1,
 void roaring_bitmap_lazy_or_inplace(roaring_bitmap_t *x1,
                                     const roaring_bitmap_t *x2,
                                     const bool bitsetconversion) {
+    if (x1 == x2) return;
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;
@@ -2808,7 +2819,11 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *x1,
 
 void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *x1,
                                      const roaring_bitmap_t *x2) {
-    assert(x1 != x2);
+    if (x1 == x2) {  // empty, keeping the capacity
+        ra_clear_containers(&x1->high_low_container);
+        x1->high_low_container.size = 0;
+        return;
+    }
     uint8_t result_type = 0;
     int length1 = x1->high_low_container.size;
     const int length2 = x2->high_low_container.size;

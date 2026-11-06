@@ -372,7 +372,7 @@ class Roaring64 {
     /**
      * Compute the difference between the current bitmap and the provided
      * bitmap, writing the result in the current bitmap. The provided bitmap is
-     * not modified. Behavior is undefined if &r == this.
+     * not modified, unless it is the current one (`r -= r` empties it).
      */
     Roaring64& operator-=(const Roaring64& r) noexcept {
         api::roaring64_bitmap_andnot_inplace(roaring, r.roaring);
@@ -390,8 +390,8 @@ class Roaring64 {
 
     /**
      * Compute the XOR of the current bitmap and the provided bitmap, writing
-     * the result in the current bitmap. The provided bitmap is not modified.
-     * Behavior is undefined if &r == this.
+     * the result in the current bitmap. The provided bitmap is not modified,
+     * unless it is the current one (`r ^= r` empties it).
      */
     Roaring64& operator^=(const Roaring64& r) noexcept {
         api::roaring64_bitmap_xor_inplace(roaring, r.roaring);

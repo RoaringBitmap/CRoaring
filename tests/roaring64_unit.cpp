@@ -3771,8 +3771,7 @@ DEFINE_TEST(test_remove_last_value_of_bucket) {
     roaring64_bitmap_free(r);
 }
 
-// Operations of a bitmap with itself. xor_inplace and andnot_inplace are
-// documented as not allowing aliasing, so only the other forms are tested.
+// Operations of a bitmap with itself.
 DEFINE_TEST(test_self_aliasing_ops) {
     roaring64_bitmap_t* b = roaring64_bitmap_from_range(1, 11, 1);
     roaring64_bitmap_run_optimize(b);
@@ -3811,6 +3810,14 @@ DEFINE_TEST(test_self_aliasing_ops) {
     assert_true(roaring64_bitmap_is_subset(b, b));
     assert_false(roaring64_bitmap_is_strict_subset(b, b));
     assert_true(roaring64_bitmap_equals(b, orig));
+
+    roaring64_bitmap_andnot_inplace(b, b);
+    assert_r64_valid(b);
+    assert_true(roaring64_bitmap_is_empty(b));
+    roaring64_bitmap_overwrite(b, orig);
+    roaring64_bitmap_xor_inplace(b, b);
+    assert_r64_valid(b);
+    assert_true(roaring64_bitmap_is_empty(b));
 
     roaring64_bitmap_free(orig);
     roaring64_bitmap_free(b);

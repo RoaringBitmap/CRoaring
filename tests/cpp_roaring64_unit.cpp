@@ -392,9 +392,8 @@ DEFINE_TEST(test_cpp_r64_run_optimize) {
     assert_true(r.contains(sparse));
 }
 
-// Self-aliasing operators: r &= r and r |= r leave r unchanged; the binary
-// operators on (r, r) give r or the empty set. (`r ^= r` and `r -= r` are not
-// allowed by the C API, see roaring64_bitmap_xor_inplace.)
+// Self-aliasing operators: r &= r and r |= r leave r unchanged, r ^= r and
+// r -= r empty it; the binary operators on (r, r) give r or the empty set.
 DEFINE_TEST(test_cpp_r64_self_aliasing) {
     const uint64_t K = uint64_t(1) << 32;
     Roaring64 r;
@@ -414,6 +413,11 @@ DEFINE_TEST(test_cpp_r64_self_aliasing) {
     assert_true(r.isSubset(r));
     assert_false(r.isStrictSubset(r));
     assert_true(r == orig);
+    r ^= r;
+    assert_true(r.isEmpty());
+    r = orig;
+    r -= r;
+    assert_true(r.isEmpty());
 }
 
 // runOptimize on a run container fragmented into length-1 runs returns false

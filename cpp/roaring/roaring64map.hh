@@ -634,7 +634,7 @@ class Roaring64Map {
     /**
      * Compute the difference between the current bitmap and the provided
      * bitmap, writing the result in the current bitmap. The provided bitmap
-     * is not modified.
+     * is not modified, unless it is the current one (`r -= r` empties it).
      */
     Roaring64Map &operator-=(const Roaring64Map &other) {
         if (this == &other) {
@@ -754,7 +754,8 @@ class Roaring64Map {
 
     /**
      * Compute the XOR of the current bitmap and the provided bitmap, writing
-     * the result in the current bitmap. The provided bitmap is not modified.
+     * the result in the current bitmap. The provided bitmap is not modified,
+     * unless it is the current one (`r ^= r` empties it).
      */
     Roaring64Map &operator^=(const Roaring64Map &other) {
         if (this == &other) {

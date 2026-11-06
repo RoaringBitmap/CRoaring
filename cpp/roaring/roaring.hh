@@ -361,7 +361,7 @@ class Roaring {
     /**
      * Compute the difference between the current bitmap and the provided
      * bitmap, writing the result in the current bitmap. The provided bitmap
-     * is not modified.
+     * is not modified, unless it is the current one (`r -= r` empties it).
      */
     Roaring &operator-=(const Roaring &r) noexcept {
         api::roaring_bitmap_andnot_inplace(&roaring, &r.roaring);
@@ -383,7 +383,7 @@ class Roaring {
     /**
      * Compute the symmetric union between the current bitmap and the provided
      * bitmap, writing the result in the current bitmap. The provided bitmap
-     * is not modified.
+     * is not modified, unless it is the current one (`r ^= r` empties it).
      */
     Roaring &operator^=(const Roaring &r) noexcept {
         api::roaring_bitmap_xor_inplace(&roaring, &r.roaring);

@@ -195,7 +195,7 @@ roaring_bitmap_t *roaring_bitmap_copy(const roaring_bitmap_t *r);
 /**
  * Copies a bitmap from src to dest. It is assumed that the pointer dest
  * is to an already allocated bitmap. The content of the dest bitmap is
- * freed/deleted.
+ * freed/deleted. dest == src leaves it unchanged.
  *
  * It might be preferable and simpler to call roaring_bitmap_copy except
  * that roaring_bitmap_overwrite can save on memory allocations.
@@ -291,7 +291,7 @@ roaring_bitmap_t *roaring_bitmap_or(const roaring_bitmap_t *r1,
 
 /**
  * Inplace version of `roaring_bitmap_or(), modifies r1.
- * TODO: decide whether r1 == r2 ok
+ * r1 == r2 is allowed.
  */
 void roaring_bitmap_or_inplace(roaring_bitmap_t *r1,
                                const roaring_bitmap_t *r2);
@@ -322,7 +322,7 @@ roaring_bitmap_t *roaring_bitmap_xor(const roaring_bitmap_t *r1,
                                      const roaring_bitmap_t *r2);
 
 /**
- * Inplace version of roaring_bitmap_xor, modifies r1, r1 != r2.
+ * Inplace version of roaring_bitmap_xor, modifies r1 (emptied when r1 == r2).
  */
 void roaring_bitmap_xor_inplace(roaring_bitmap_t *r1,
                                 const roaring_bitmap_t *r2);
@@ -344,7 +344,8 @@ roaring_bitmap_t *roaring_bitmap_andnot(const roaring_bitmap_t *r1,
                                         const roaring_bitmap_t *r2);
 
 /**
- * Inplace version of roaring_bitmap_andnot, modifies r1, r1 != r2.
+ * Inplace version of roaring_bitmap_andnot, modifies r1 (emptied when
+ * r1 == r2).
  */
 void roaring_bitmap_andnot_inplace(roaring_bitmap_t *r1,
                                    const roaring_bitmap_t *r2);
@@ -977,6 +978,7 @@ roaring_bitmap_t *roaring_bitmap_lazy_or(const roaring_bitmap_t *r1,
  * (For expert users who seek high performance.)
  *
  * Inplace version of roaring_bitmap_lazy_or, modifies r1.
+ * r1 == r2 is allowed.
  *
  * `bitsetconversion` is a flag which determines whether container-container
  * operations force a bitset conversion.
@@ -1012,7 +1014,8 @@ roaring_bitmap_t *roaring_bitmap_lazy_xor(const roaring_bitmap_t *r1,
 /**
  * (For expert users who seek high performance.)
  *
- * Inplace version of roaring_bitmap_lazy_xor, modifies r1. r1 != r2
+ * Inplace version of roaring_bitmap_lazy_xor, modifies r1 (emptied when
+ * r1 == r2).
  */
 void roaring_bitmap_lazy_xor_inplace(roaring_bitmap_t *r1,
                                      const roaring_bitmap_t *r2);

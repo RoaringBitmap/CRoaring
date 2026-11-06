@@ -77,7 +77,7 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r);
 /**
  * Copies a bitmap from src to dest. It is assumed that the pointer dest
  * is to an already allocated bitmap. The content of the dest bitmap is
- * freed/deleted.
+ * freed/deleted. dest == src leaves it unchanged.
  *
  * It might be preferable and simpler to call roaring64_bitmap_copy except
  * that roaring64_bitmap_overwrite can save on memory allocations.
@@ -487,7 +487,8 @@ uint64_t roaring64_bitmap_or_cardinality(const roaring64_bitmap_t *r1,
                                          const roaring64_bitmap_t *r2);
 
 /**
- * In-place version of `roaring64_bitmap_or(), modifies `r1`.
+ * In-place version of `roaring64_bitmap_or(), modifies `r1`. `r1` and `r2`
+ * are allowed to be equal.
  */
 void roaring64_bitmap_or_inplace(roaring64_bitmap_t *r1,
                                  const roaring64_bitmap_t *r2);
@@ -507,8 +508,8 @@ uint64_t roaring64_bitmap_xor_cardinality(const roaring64_bitmap_t *r1,
                                           const roaring64_bitmap_t *r2);
 
 /**
- * In-place version of `roaring64_bitmap_xor()`, modifies `r1`. `r1` and `r2`
- * are not allowed to be equal (that would result in an empty bitmap).
+ * In-place version of `roaring64_bitmap_xor()`, modifies `r1` (emptied when
+ * `r1 == r2`).
  */
 void roaring64_bitmap_xor_inplace(roaring64_bitmap_t *r1,
                                   const roaring64_bitmap_t *r2);
@@ -528,8 +529,8 @@ uint64_t roaring64_bitmap_andnot_cardinality(const roaring64_bitmap_t *r1,
                                              const roaring64_bitmap_t *r2);
 
 /**
- * In-place version of `roaring64_bitmap_andnot()`, modifies `r1`. `r1` and `r2`
- * are not allowed to be equal (that would result in an empty bitmap).
+ * In-place version of `roaring64_bitmap_andnot()`, modifies `r1` (emptied when
+ * `r1 == r2`).
  */
 void roaring64_bitmap_andnot_inplace(roaring64_bitmap_t *r1,
                                      const roaring64_bitmap_t *r2);
