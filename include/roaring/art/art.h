@@ -104,6 +104,20 @@ bool art_is_empty(const art_t *art);
 void art_free(art_t *art);
 
 /**
+ * Initializes `dst` as a copy of `src`, which may be a frozen view. Nodes keep
+ * their indices, so references into `src` (such as leaf values) remain valid
+ * in `dst`. The copy also keeps the free nodes of `src`, except for a run of
+ * free nodes at the end of each node array, which is dropped. Does not free
+ * any nodes `dst` held before.
+ */
+void art_copy(const art_t *src, art_t *dst);
+
+/**
+ * Returns the number of leaves the ART has room for, used or free.
+ */
+uint64_t art_leaf_capacity(const art_t *art);
+
+/**
  * Prints the ART using printf, useful for debugging.
  */
 void art_printf(const art_t *art);

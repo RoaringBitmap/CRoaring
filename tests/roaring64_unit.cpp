@@ -167,6 +167,138 @@ DEFINE_TEST(test_overwrite) {
     roaring64_bitmap_free(r2);
 }
 
+DEFINE_TEST(test_copy_after_removals) {
+    // Removals leave free container slots and free ART nodes behind. The
+    // earliest go last, so the free lists start below nodes still in use.
+    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 1000; ++i) {
+        roaring64_bitmap_add(r1, i << 16);
+        roaring64_bitmap_add(r1, i << 32);
+    }
+    for (uint64_t k = 0; k < 1000; k += 3) {
+        roaring64_bitmap_remove(r1, (999 - k) << 16);
+        roaring64_bitmap_remove(r1, (999 - k) << 32);
+    }
+    uint64_t card = roaring64_bitmap_get_cardinality(r1);
+
+    roaring64_bitmap_t* r2 = roaring64_bitmap_copy(r1);
+    // A target with a hole, so overwrite grows its heap of holes.
+    roaring64_bitmap_t* r3 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 3; ++i) {
+        roaring64_bitmap_add(r3, i << 48);
+    }
+    roaring64_bitmap_remove(r3, 1ULL << 48);
+    roaring64_bitmap_overwrite(r3, r1);
+    roaring64_bitmap_t* r4 = roaring64_bitmap_create();
+    roaring64_bitmap_or_inplace(r4, r1);
+    for (roaring64_bitmap_t* r : {r2, r3, r4}) {
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_equals(r, r1));
+        // Pushes a hole onto the copied heap, which is full.
+        roaring64_bitmap_remove(r, 1ULL << 16);
+        for (uint64_t i = 3; i < 1000; i += 3) {
+            roaring64_bitmap_add(r, (i << 16) + 1);
+            roaring64_bitmap_add(r, (i << 32) + 1);
+        }
+        assert_r64_valid(r);
+        assert_int_equal(roaring64_bitmap_get_cardinality(r), card + 665);
+    }
+    assert_int_equal(roaring64_bitmap_get_cardinality(r1), card);
+
+    roaring64_bitmap_free(r1);
+    roaring64_bitmap_free(r2);
+    roaring64_bitmap_free(r3);
+    roaring64_bitmap_free(r4);
+
+    // A removal from a full leaf array ends the free list at the capacity.
+    roaring64_bitmap_t* r5 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 1024; ++i) {
+        roaring64_bitmap_add(r5, i << 16);
+    }
+    roaring64_bitmap_remove(r5, 0);
+    roaring64_bitmap_t* r6 = roaring64_bitmap_copy(r5);
+    assert_r64_valid(r6);
+    assert_true(roaring64_bitmap_equals(r6, r5));
+    roaring64_bitmap_free(r5);
+    roaring64_bitmap_free(r6);
+}
+
+DEFINE_TEST(test_copy_fragmented) {
+    // Removing most containers leaves mostly free space, so copies rebuild a
+    // compact bitmap instead of keeping it.
+    roaring64_bitmap_t* r1 = roaring64_bitmap_create();
+    for (uint64_t i = 0; i < 1000; ++i) {
+        roaring64_bitmap_add(r1, i << 16);
+        roaring64_bitmap_add(r1, i << 32);
+    }
+    for (uint64_t i = 0; i < 1000; ++i) {
+        if (i % 10 != 9) {
+            roaring64_bitmap_remove(r1, i << 16);
+            roaring64_bitmap_remove(r1, i << 32);
+        }
+    }
+    roaring64_bitmap_t* r2 = roaring64_bitmap_copy(r1);
+    roaring64_bitmap_t* r3 = roaring64_bitmap_create();
+    roaring64_bitmap_add(r3, 1ULL << 50);
+    roaring64_bitmap_overwrite(r3, r1);
+    roaring64_bitmap_t* r4 = roaring64_bitmap_create();
+    roaring64_bitmap_or_inplace(r4, r1);
+    for (roaring64_bitmap_t* r : {r2, r3, r4}) {
+        assert_r64_valid(r);
+        assert_true(roaring64_bitmap_equals(r, r1));
+        roaring64_bitmap_add(r, 5ULL << 40);
+        roaring64_bitmap_remove(r, 9ULL << 16);
+        assert_r64_valid(r);
+    }
+    assert_true(roaring64_bitmap_shrink_to_fit(r2) <
+                roaring64_bitmap_shrink_to_fit(r1));
+    roaring64_bitmap_free(r1);
+    roaring64_bitmap_free(r2);
+    roaring64_bitmap_free(r3);
+    roaring64_bitmap_free(r4);
+}
+
+DEFINE_TEST(test_validate_frozen_shared_slot) {
+    // A frozen view whose two leaves point at the same container slot must
+    // not validate: a copy would give both leaves one container.
+    roaring64_bitmap_t* r = roaring64_bitmap_create();
+    roaring64_bitmap_add(r, 1);
+    roaring64_bitmap_add(r, 1ULL << 40);
+    roaring64_bitmap_shrink_to_fit(r);
+    size_t size = roaring64_bitmap_frozen_size_in_bytes(r);
+    char* buf = (char*)roaring_aligned_malloc(64, size);
+    assert_int_equal(roaring64_bitmap_frozen_serialize(r, buf), size);
+    // The leaf of the second container: index 1, array typecode.
+    const uint64_t second = (1 << 8) | ARRAY_CONTAINER_TYPE;
+    size_t found = 0;
+    size_t where = 0;
+    for (size_t i = 0; i + sizeof(uint64_t) <= size; i += 8) {
+        uint64_t word;
+        memcpy(&word, buf + i, sizeof(word));
+        if (word == second) {
+            found++;
+            where = i;
+        }
+    }
+    assert_int_equal(found, 1);
+    roaring64_bitmap_t* view = roaring64_bitmap_frozen_view(buf, size);
+    assert_non_null(view);
+    assert_r64_valid(view);
+    roaring64_bitmap_free(view);
+
+    const uint64_t first = (0 << 8) | ARRAY_CONTAINER_TYPE;
+    memcpy(buf + where, &first, sizeof(first));
+    view = roaring64_bitmap_frozen_view(buf, size);
+    assert_non_null(view);
+    const char* reason = nullptr;
+    assert_false(roaring64_bitmap_internal_validate(view, &reason));
+    // Slot 1 is left empty, which a frozen view may not have.
+    assert_string_equal(reason, "wrong count of free container slots");
+    roaring64_bitmap_free(view);
+    roaring_aligned_free(buf);
+    roaring64_bitmap_free(r);
+}
+
 DEFINE_TEST(test_move_from_roaring32) {
     {
         // Empty bitmap
@@ -2302,8 +2434,15 @@ void check_frozen_serialization(roaring64_bitmap_t* r1) {
     assert_r64_valid(r2);
     assert_true(roaring64_bitmap_equals(r2, r1));
 
+    // A copy owns its nodes and containers, so it outlives the buffer.
+    roaring64_bitmap_t* r3 = roaring64_bitmap_copy(r2);
     roaring64_bitmap_free(r2);
     roaring_aligned_free(buf);
+    assert_r64_valid(r3);
+    assert_true(roaring64_bitmap_equals(r3, r1));
+    roaring64_bitmap_add(r3, 1ULL << 40);
+    assert_r64_valid(r3);
+    roaring64_bitmap_free(r3);
 }
 
 DEFINE_TEST(test_frozen_serialize) {
@@ -4183,6 +4322,9 @@ int main() {
         cmocka_unit_test(fuzz_deserializer),
         cmocka_unit_test(test_copy),
         cmocka_unit_test(test_overwrite),
+        cmocka_unit_test(test_copy_after_removals),
+        cmocka_unit_test(test_copy_fragmented),
+        cmocka_unit_test(test_validate_frozen_shared_slot),
         cmocka_unit_test(test_from_range),
         cmocka_unit_test(test_move_from_roaring32),
         cmocka_unit_test(test_move_from_roaring32_copy_on_write),

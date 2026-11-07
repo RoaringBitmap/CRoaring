@@ -1887,6 +1887,45 @@ void art_free(art_t *art) {
     }
 }
 
+/**
+ * Returns the capacity a copy of the given node array needs. If the free list
+ * ends with the last nodes of the array in order, those are left out: the free
+ * node before them then points at the new capacity, which ends the list.
+ */
+static uint64_t art_trimmed_capacity(const art_t *art,
+                                     art_typecode_t typecode) {
+    uint64_t capacity = art->capacities[typecode];
+    uint64_t trimmed = art->first_free[typecode];
+    for (uint64_t i = trimmed; i < capacity;) {
+        uint64_t next = art_node_get_next_free(art, art_to_ref(i, typecode));
+        if (next != i + 1) {
+            trimmed = next;
+        }
+        i = next;
+    }
+    return trimmed;
+}
+
+void art_copy(const art_t *src, art_t *dst) {
+    art_init_cleared(dst);
+    dst->root = src->root;
+    for (art_typecode_t t = CROARING_ART_MIN_TYPE; t <= CROARING_ART_MAX_TYPE;
+         ++t) {
+        uint64_t capacity = art_trimmed_capacity(src, t);
+        dst->first_free[t] = src->first_free[t];
+        dst->capacities[t] = capacity;
+        size_t size = capacity * ART_NODE_SIZES[t];
+        if (size > 0) {
+            dst->nodes[t] = roaring_malloc(size);
+            memcpy(dst->nodes[t], src->nodes[t], size);
+        }
+    }
+}
+
+uint64_t art_leaf_capacity(const art_t *art) {
+    return art->capacities[CROARING_ART_LEAF_TYPE];
+}
+
 void art_reserve(art_t *art, uint64_t num_leaves) {
     art_grow_to(art, CROARING_ART_LEAF_TYPE, num_leaves);
 }

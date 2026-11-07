@@ -71,6 +71,9 @@ void roaring64_bitmap_free(roaring64_bitmap_t *r);
 /**
  * Returns a copy of a bitmap.
  * The returned pointer may be NULL in case of errors.
+ *
+ * The copy may keep some of the free space that removals left in `r`; call
+ * `roaring64_bitmap_shrink_to_fit` on it for a compact bitmap.
  */
 roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r);
 
@@ -82,6 +85,8 @@ roaring64_bitmap_t *roaring64_bitmap_copy(const roaring64_bitmap_t *r);
  * It might be preferable and simpler to call roaring64_bitmap_copy except
  * that roaring64_bitmap_overwrite can save on memory allocations.
  *
+ * As with roaring64_bitmap_copy, dest may keep some of the free space that
+ * removals left in src.
  */
 void roaring64_bitmap_overwrite(roaring64_bitmap_t *dest,
                                 const roaring64_bitmap_t *src);
