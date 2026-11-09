@@ -418,6 +418,52 @@ class Roaring64 {
     }
 
     /**
+     * Iterates over the values in increasing order, calling iterator once for
+     * each value until it returns false. To visit all values, the iterator
+     * function should always return true.
+     *
+     * The roaring_iterator64 parameter is a pointer to a function that
+     * returns bool (true means that the iteration should continue while false
+     * means that it should stop), and takes (uint64_t element, void* ptr) as
+     * inputs.
+     */
+    void iterate(api::roaring_iterator64 iterator, void* ptr) const {
+        api::roaring64_bitmap_iterate(roaring, iterator, ptr);
+    }
+
+    /**
+     * Selects the value at index rnk in the bitmap, where the smallest value
+     * is at index 0. If rnk < cardinality(), returns true and sets *element to
+     * the value of the given rank. Otherwise, returns false.
+     */
+    bool select(uint64_t rnk, uint64_t* element) const noexcept {
+        return api::roaring64_bitmap_select(roaring, rnk, element);
+    }
+
+    /**
+     * Returns the number of values that are smaller or equal to x. Thus the
+     * rank of the smallest value is one. The rank and select functions differ
+     * in convention: this function returns 1 when ranking the smallest value,
+     * but the select function returns the smallest value when using index 0.
+     */
+    uint64_t rank(uint64_t x) const noexcept {
+        return api::roaring64_bitmap_rank(roaring, x);
+    }
+
+    /**
+     * Returns the index of x in the set, where the smallest value is at index
+     * 0, or -1 if the set does not contain x. Unlike rank(), this tells
+     * whether x is present.
+     */
+    int64_t getIndex(uint64_t x) const noexcept {
+        uint64_t index;
+        if (!api::roaring64_bitmap_get_index(roaring, x, &index)) {
+            return -1;
+        }
+        return static_cast<int64_t>(index);
+    }
+
+    /**
      * Returns true if the bitmap is a subset of the other.
      */
     bool isSubset(const Roaring64& r) const noexcept {
@@ -429,6 +475,51 @@ class Roaring64 {
      */
     bool isStrictSubset(const Roaring64& r) const noexcept {
         return api::roaring64_bitmap_is_strict_subset(roaring, r.roaring);
+    }
+
+    /**
+     * Computes the size of the intersection between two bitmaps.
+     */
+    uint64_t and_cardinality(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_and_cardinality(roaring, r.roaring);
+    }
+
+    /**
+     * Check whether the two bitmaps intersect.
+     */
+    bool intersect(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_intersect(roaring, r.roaring);
+    }
+
+    /**
+     * Computes the Jaccard index between two bitmaps (also known as the
+     * Tanimoto distance or the Jaccard similarity coefficient). The Jaccard
+     * index is undefined if both bitmaps are empty.
+     */
+    double jaccard_index(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_jaccard_index(roaring, r.roaring);
+    }
+
+    /**
+     * Computes the size of the union between two bitmaps.
+     */
+    uint64_t or_cardinality(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_or_cardinality(roaring, r.roaring);
+    }
+
+    /**
+     * Computes the size of the difference (andnot) between two bitmaps.
+     */
+    uint64_t andnot_cardinality(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_andnot_cardinality(roaring, r.roaring);
+    }
+
+    /**
+     * Computes the size of the symmetric difference (xor) between two
+     * bitmaps.
+     */
+    uint64_t xor_cardinality(const Roaring64& r) const noexcept {
+        return api::roaring64_bitmap_xor_cardinality(roaring, r.roaring);
     }
 
     /**
@@ -593,6 +684,14 @@ class Roaring64 {
             ROARING_TERMINATE("failed to read frozen portable bitmap");
         }
         return Roaring64(result);
+    }
+
+    /**
+     * Validate the structure of a bitmap read from an untrusted source.
+     * Returns false and sets *reason (when not null) if it is invalid.
+     */
+    bool internal_validate(const char** reason = nullptr) const noexcept {
+        return api::roaring64_bitmap_internal_validate(roaring, reason);
     }
 
     typedef Roaring64ConstIterator const_iterator;

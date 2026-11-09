@@ -29,6 +29,7 @@
 #define INCLUDE_ROARING_64_CHECKED_HH_
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
 #include <set>
 #include <vector>
@@ -146,6 +147,93 @@ class Roaring64 {
         return ans;
     }
 
+    uint64_t and_cardinality(const Roaring64& r) const {
+        uint64_t ans = plain.and_cardinality(r.plain);
+        assert_int_equal(ans, intersectionSize(r));
+        return ans;
+    }
+
+    uint64_t or_cardinality(const Roaring64& r) const {
+        uint64_t ans = plain.or_cardinality(r.plain);
+        assert_int_equal(ans,
+                         check.size() + r.check.size() - intersectionSize(r));
+        return ans;
+    }
+
+    uint64_t andnot_cardinality(const Roaring64& r) const {
+        uint64_t ans = plain.andnot_cardinality(r.plain);
+        assert_int_equal(ans, check.size() - intersectionSize(r));
+        return ans;
+    }
+
+    uint64_t xor_cardinality(const Roaring64& r) const {
+        uint64_t ans = plain.xor_cardinality(r.plain);
+        assert_int_equal(
+            ans, check.size() + r.check.size() - 2 * intersectionSize(r));
+        return ans;
+    }
+
+    bool intersect(const Roaring64& r) const {
+        bool ans = plain.intersect(r.plain);
+        assert_true(ans == (intersectionSize(r) > 0));
+        return ans;
+    }
+
+    double jaccard_index(const Roaring64& r) const {
+        double ans = plain.jaccard_index(r.plain);
+        uint64_t inter = intersectionSize(r);
+        uint64_t uni = check.size() + r.check.size() - inter;
+        if (uni > 0) {  // undefined when both are empty
+            double expected =
+                static_cast<double>(inter) / static_cast<double>(uni);
+            assert_true(std::fabs(ans - expected) < 1e-12);
+        }
+        return ans;
+    }
+
+    uint64_t rank(uint64_t x) const {
+        uint64_t ans = plain.rank(x);
+        assert_int_equal(ans,
+                         std::distance(check.begin(), check.upper_bound(x)));
+        return ans;
+    }
+
+    bool select(uint64_t rnk, uint64_t* element) const {
+        bool ans = plain.select(rnk, element);
+        assert_true(ans == (rnk < check.size()));
+        if (ans) {
+            auto it =
+                std::next(check.begin(), static_cast<std::ptrdiff_t>(rnk));
+            assert_int_equal(*element, *it);
+        }
+        return ans;
+    }
+
+    int64_t getIndex(uint64_t x) const {
+        int64_t ans = plain.getIndex(x);
+        auto it = check.find(x);
+        assert_true(
+            ans == (it == check.end() ? -1 : std::distance(check.begin(), it)));
+        return ans;
+    }
+
+    void iterate(roaring::api::roaring_iterator64 iterator, void* ptr) const {
+        std::vector<uint64_t> seen;
+        plain.iterate(
+            [](uint64_t value, void* p) {
+                static_cast<std::vector<uint64_t>*>(p)->push_back(value);
+                return true;
+            },
+            &seen);
+        assert_int_equal(seen.size(), check.size());
+        assert_true(std::equal(seen.begin(), seen.end(), check.begin()));
+        plain.iterate(iterator, ptr);
+    }
+
+    bool internal_validate(const char** reason = nullptr) const {
+        return plain.internal_validate(reason);
+    }
+
     void clear() {
         plain.clear();
         check.clear();
@@ -173,8 +261,10 @@ class Roaring64 {
 
     size_t getSizeInBytes() const { return plain.getSizeInBytes(); }
 
-    // Manually validates the full contents against the reference set.
+    // Validates the internal structure, then manually validates the full
+    // contents against the reference set.
     void validate() const {
+        assert_true(plain.internal_validate());
         assert_int_equal(plain.cardinality(), check.size());
         std::vector<uint64_t> from_plain;
         for (auto it = plain.begin(); it != plain.end(); ++it) {
@@ -209,6 +299,24 @@ class Roaring64 {
         if (check.erase(v) == 0) {
             check.insert(v);
         }
+    }
+
+    uint64_t intersectionSize(const Roaring64& r) const {
+        uint64_t count = 0;
+        auto a = check.begin();
+        auto b = r.check.begin();
+        while (a != check.end() && b != r.check.end()) {
+            if (*a < *b) {
+                ++a;
+            } else if (*b < *a) {
+                ++b;
+            } else {
+                ++count;
+                ++a;
+                ++b;
+            }
+        }
+        return count;
     }
 
     // Requires min <= max.
