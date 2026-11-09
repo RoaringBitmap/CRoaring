@@ -14,6 +14,13 @@
 #include <roaring/roaring64.hh>
 #include <roaring/roaring64map.hh>
 
+// CI jobs that must exercise the std::expected API define this macro, so that
+// a failed feature detection breaks the build instead of skipping the tests.
+#if defined(ROARING_TEST_REQUIRE_STD_EXPECTED) && \
+    !defined(ROARING_HAS_STD_EXPECTED)
+#error "std::expected is required but ROARING_HAS_STD_EXPECTED is not defined"
+#endif
+
 #include "config.h"
 #include "roaring64_checked.hh"
 #include "test.h"
@@ -305,6 +312,15 @@ DEFINE_TEST(test_cpp_r64_rank_select_get_index) {
     assert_int_equal(empty.rank(UINT64_MAX), 0);
     assert_false(empty.select(0, &element));
     assert_int_equal(empty.getIndex(0), -1);
+
+#ifdef ROARING_HAS_STD_EXPECTED
+    assert_true(r.getIndexExpected(5) == 0u);
+    assert_true(r.getIndexExpected(K2 + 3) == 2u);
+    assert_true(r.getIndexExpected(far) == 3u);
+    assert_false(r.getIndexExpected(6).has_value());
+    assert_true(r.getIndexExpected(6).error() == roaring::IndexError::NotFound);
+    assert_false(empty.getIndexExpected(0).has_value());
+#endif
 }
 
 DEFINE_TEST(test_cpp_r64_internal_validate) {

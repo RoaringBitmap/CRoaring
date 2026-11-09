@@ -454,6 +454,10 @@ class Roaring64 {
      * Returns the index of x in the set, where the smallest value is at index
      * 0, or -1 if the set does not contain x. Unlike rank(), this tells
      * whether x is present.
+     *
+     * The result is only meaningful if the bitmap has fewer than 2^63
+     * elements. When std::expected is available (C++23), getIndexExpected()
+     * has no such limit.
      */
     int64_t getIndex(uint64_t x) const noexcept {
         uint64_t index;
@@ -462,6 +466,24 @@ class Roaring64 {
         }
         return static_cast<int64_t>(index);
     }
+
+#ifdef ROARING_HAS_STD_EXPECTED
+    /**
+     * Returns the index of x in the set, where the smallest value is at index
+     * 0, or IndexError::NotFound if the set does not contain x. Unlike
+     * getIndex(), the index is unsigned, so it is correct for any number of
+     * elements. Only available when the standard library provides
+     * std::expected (C++23).
+     */
+    std::expected<uint64_t, IndexError> getIndexExpected(
+        uint64_t x) const noexcept {
+        uint64_t index;
+        if (!api::roaring64_bitmap_get_index(roaring, x, &index)) {
+            return std::unexpected(IndexError::NotFound);
+        }
+        return index;
+    }
+#endif
 
     /**
      * Returns true if the bitmap is a subset of the other.

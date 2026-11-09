@@ -1340,6 +1340,10 @@ class Roaring64Map {
      * The difference with rank function is that this function will return -1
      * when x isn't in the set, but the rank function will return a
      * non-negative number.
+     *
+     * The result is only meaningful if the bitmap has fewer than 2^63
+     * elements. When std::expected is available (C++23), getIndexExpected()
+     * has no such limit.
      */
     int64_t getIndex(uint64_t x) const {
         int64_t index = 0;
@@ -1356,6 +1360,32 @@ class Roaring64Map {
         }
         return -1;
     }
+
+#ifdef ROARING_HAS_STD_EXPECTED
+    /**
+     * Returns the index of x in the set, where the smallest value is at index
+     * 0, or IndexError::NotFound if the set does not contain x. Unlike
+     * getIndex(), the index is unsigned, so it is correct for any number of
+     * elements. Only available when the standard library provides
+     * std::expected (C++23).
+     */
+    std::expected<uint64_t, IndexError> getIndexExpected(uint64_t x) const {
+        auto roaring_destination = roarings.find(highBytes(x));
+        if (roaring_destination == roarings.cend()) {
+            return std::unexpected(IndexError::NotFound);
+        }
+        int64_t low_idx = roaring_destination->second.getIndex(lowBytes(x));
+        if (low_idx < 0) {
+            return std::unexpected(IndexError::NotFound);
+        }
+        uint64_t index = static_cast<uint64_t>(low_idx);
+        for (auto roaring_iter = roarings.cbegin();
+             roaring_iter != roaring_destination; ++roaring_iter) {
+            index += roaring_iter->second.cardinality();
+        }
+        return index;
+    }
+#endif
 
     /**
      * Write a bitmap to a char buffer. This is meant to be compatible with
