@@ -36,7 +36,26 @@ A C++ header for Roaring Bitmaps.
 
 #include <roaring/roaring_array.h>  // roaring::internal array functions used
 
+// std::expected requires C++23 and a standard library that provides it.
+#ifdef __has_include
+#if __has_include(<version>)
+#include <version>
+#endif
+#endif
+#if defined(__cpp_lib_expected) && __cpp_lib_expected >= 202202L
+#include <expected>
+#define ROARING_HAS_STD_EXPECTED 1
+#endif
+
 namespace roaring {
+
+#ifdef ROARING_HAS_STD_EXPECTED
+/**
+ * The error returned by getIndexExpected() when the value is not in the
+ * bitmap.
+ */
+enum class IndexError { NotFound };
+#endif
 
 class RoaringSetBitBiDirectionalIterator;
 
