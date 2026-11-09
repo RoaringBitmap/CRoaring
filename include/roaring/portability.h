@@ -327,6 +327,23 @@ static inline int roaring_hamming(uint64_t x) {
 }  // extern "C" {
 #endif  // __cplusplus
 
+/*
+ * Emit a callable definition for an external inline function defined in a
+ * header. Use this once in its implementation file, never for static inline
+ * helpers. C's extern inline declaration emits the definition; C++ needs an
+ * externally visible reference even when every call in the library is inlined.
+ * The constant pointer provides that reference without compiler-specific flags
+ * or attributes. Its croaring_inline_ symbol is an implementation detail.
+ */
+#ifdef __cplusplus
+#define CROARING_EXPORT_INLINE(result, name, args) \
+    extern inline result name args;                \
+    extern const auto croaring_inline_##name = &name
+#else
+#define CROARING_EXPORT_INLINE(result, name, args) \
+    extern inline result name args
+#endif
+
 // this is almost standard?
 #undef STRINGIFY_IMPLEMENTATION_
 #undef STRINGIFY

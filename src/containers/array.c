@@ -22,28 +22,23 @@ namespace roaring {
 namespace internal {
 #endif
 
-extern inline uint16_t array_container_minimum(const array_container_t *arr);
-extern inline uint16_t array_container_maximum(const array_container_t *arr);
-extern inline int array_container_index_equalorlarger(
-    const array_container_t *arr, uint16_t x);
+CROARING_EXPORT_INLINE(uint16_t, array_container_minimum,
+                       (const array_container_t *arr));
+CROARING_EXPORT_INLINE(uint16_t, array_container_maximum,
+                       (const array_container_t *arr));
+CROARING_EXPORT_INLINE(int, array_container_index_equalorlarger,
+                       (const array_container_t *arr, uint16_t x));
 
-extern inline int array_container_rank(const array_container_t *arr,
-                                       uint16_t x);
-extern inline uint32_t array_container_rank_many(const array_container_t *arr,
-                                                 uint64_t start_rank,
-                                                 const uint32_t *begin,
-                                                 const uint32_t *end,
-                                                 uint64_t *ans);
-extern inline int array_container_get_index(const array_container_t *arr,
-                                            uint16_t x);
-extern inline bool array_container_contains(const array_container_t *arr,
-                                            uint16_t pos);
-extern inline int array_container_cardinality(const array_container_t *array);
-extern inline bool array_container_nonzero_cardinality(
-    const array_container_t *array);
-extern inline int32_t array_container_serialized_size_in_bytes(int32_t card);
-extern inline bool array_container_empty(const array_container_t *array);
-extern inline bool array_container_full(const array_container_t *array);
+CROARING_EXPORT_INLINE(int, array_container_rank,
+                       (const array_container_t *arr, uint16_t x));
+CROARING_EXPORT_INLINE(uint32_t, array_container_rank_many,
+                       (const array_container_t *arr, uint64_t start_rank,
+                        const uint32_t *begin, const uint32_t *end,
+                        uint64_t *ans));
+CROARING_EXPORT_INLINE(int, array_container_get_index,
+                       (const array_container_t *arr, uint16_t x));
+CROARING_EXPORT_INLINE(bool, array_container_contains,
+                       (const array_container_t *arr, uint16_t pos));
 
 /* Create a new array with capacity size. Return NULL in case of failure. */
 array_container_t *array_container_create_given_capacity(int32_t size) {
