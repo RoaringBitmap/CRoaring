@@ -17,43 +17,15 @@ static inline uint32_t minimum_uint32(uint32_t a, uint32_t b) {
     return (a < b) ? a : b;
 }
 
-extern inline const container_t *container_unwrap_shared(
-    const container_t *candidate_shared_container, uint8_t *type);
+CROARING_EXPORT_INLINE(bool, container_iterator_next,
+                       (const container_t *c, uint8_t typecode,
+                        roaring_container_iterator_t *it, uint16_t *value));
 
-extern inline container_t *container_mutable_unwrap_shared(
-    container_t *candidate_shared_container, uint8_t *type);
-
-extern inline int container_get_cardinality(const container_t *c,
-                                            uint8_t typecode);
-
-extern inline container_t *container_iand(container_t *c1, uint8_t type1,
-                                          const container_t *c2, uint8_t type2,
-                                          uint8_t *result_type);
-
-extern inline container_t *container_ior(container_t *c1, uint8_t type1,
-                                         const container_t *c2, uint8_t type2,
-                                         uint8_t *result_type);
-
-extern inline container_t *container_ixor(container_t *c1, uint8_t type1,
-                                          const container_t *c2, uint8_t type2,
-                                          uint8_t *result_type);
-
-extern inline container_t *container_iandnot(container_t *c1, uint8_t type1,
-                                             const container_t *c2,
-                                             uint8_t type2,
-                                             uint8_t *result_type);
-
-extern bool container_iterator_next(const container_t *c, uint8_t typecode,
-                                    roaring_container_iterator_t *it,
-                                    uint16_t *value);
-
-extern bool container_iterator_prev(const container_t *c, uint8_t typecode,
-                                    roaring_container_iterator_t *it,
-                                    uint16_t *value);
-extern bool container_contains(
-    const container_t *c, uint16_t val,
-    uint8_t typecode  // !!! should be second argument?
-);
+CROARING_EXPORT_INLINE(bool, container_iterator_prev,
+                       (const container_t *c, uint8_t typecode,
+                        roaring_container_iterator_t *it, uint16_t *value));
+CROARING_EXPORT_INLINE(bool, container_contains,
+                       (const container_t *c, uint16_t val, uint8_t typecode));
 
 void container_free(container_t *c, uint8_t type) {
     switch (type) {
@@ -151,32 +123,6 @@ bool container_internal_validate(const container_t *container, uint8_t typecode,
     }
 }
 
-extern inline bool container_nonzero_cardinality(const container_t *c,
-                                                 uint8_t typecode);
-
-extern inline int container_to_uint32_array(uint32_t *output,
-                                            const container_t *c,
-                                            uint8_t typecode, uint32_t base);
-
-extern inline container_t *container_add(container_t *c, uint16_t val,
-                                         uint8_t typecode,  // !!! 2nd arg?
-                                         uint8_t *new_typecode);
-
-extern inline bool container_contains(const container_t *c, uint16_t val,
-                                      uint8_t typecode);  // !!! 2nd arg?
-
-extern inline container_t *container_and(const container_t *c1, uint8_t type1,
-                                         const container_t *c2, uint8_t type2,
-                                         uint8_t *result_type);
-
-extern inline container_t *container_or(const container_t *c1, uint8_t type1,
-                                        const container_t *c2, uint8_t type2,
-                                        uint8_t *result_type);
-
-extern inline container_t *container_xor(const container_t *c1, uint8_t type1,
-                                         const container_t *c2, uint8_t type2,
-                                         uint8_t *result_type);
-
 container_t *get_copy_of_container(container_t *c, uint8_t *typecode,
                                    bool copy_on_write) {
     if (copy_on_write) {
@@ -260,45 +206,6 @@ void shared_container_free(shared_container_t *container) {
         roaring_free(container);
     }
 }
-
-extern inline container_t *container_not(const container_t *c1, uint8_t type1,
-                                         uint8_t *result_type);
-
-extern inline container_t *container_not_range(const container_t *c1,
-                                               uint8_t type1,
-                                               uint32_t range_start,
-                                               uint32_t range_end,
-                                               uint8_t *result_type);
-
-extern inline container_t *container_inot(container_t *c1, uint8_t type1,
-                                          uint8_t *result_type);
-
-extern inline container_t *container_inot_range(container_t *c1, uint8_t type1,
-                                                uint32_t range_start,
-                                                uint32_t range_end,
-                                                uint8_t *result_type);
-
-extern inline container_t *container_range_of_ones(uint32_t range_start,
-                                                   uint32_t range_end,
-                                                   uint8_t *result_type);
-
-// where are the correponding things for union and intersection??
-extern inline container_t *container_lazy_xor(const container_t *c1,
-                                              uint8_t type1,
-                                              const container_t *c2,
-                                              uint8_t type2,
-                                              uint8_t *result_type);
-
-extern inline container_t *container_lazy_ixor(container_t *c1, uint8_t type1,
-                                               const container_t *c2,
-                                               uint8_t type2,
-                                               uint8_t *result_type);
-
-extern inline container_t *container_andnot(const container_t *c1,
-                                            uint8_t type1,
-                                            const container_t *c2,
-                                            uint8_t type2,
-                                            uint8_t *result_type);
 
 CROARING_ALLOW_UNALIGNED
 roaring_container_iterator_t container_init_iterator(const container_t *c,

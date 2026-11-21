@@ -1,0 +1,51 @@
+name: Ubuntu-C-Cpp-CI
+
+'on':
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ubuntu-${{ matrix.compiler.cc }}-library-cpp-${{ matrix.mode.library }}-tests-cpp-${{ matrix.mode.tests }}-shared-${{ matrix.mode.shared }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - { cc: gcc, cxx: g++ }
+          - { cc: clang, cxx: clang++ }
+        mode:
+          - { library: 'OFF', tests: 'ON', shared: 'OFF' }
+          - { library: 'ON', tests: 'OFF', shared: 'OFF' }
+          - { library: 'ON', tests: 'ON', shared: 'OFF' }
+          - { library: 'ON', tests: 'OFF', shared: 'ON' }
+    env:
+      CC: ${{ matrix.compiler.cc }}
+      CXX: ${{ matrix.compiler.cxx }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build and test
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_ROARING_TESTS=ON -DENABLE_ROARING_BENCHMARKS=OFF \
+            -DBUILD_SHARED_LIBS=${{ matrix.mode.shared }} -DROARING_BUILD_STATIC=ON \
+            -DROARING_BUILD_C_AS_CPP=${{ matrix.mode.library }} \
+            -DROARING_BUILD_C_TESTS_AS_CPP=${{ matrix.mode.tests }}
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure --no-tests=error
+      - name: Compare C and C++ function symbols
+        if: matrix.mode.library == 'ON' && matrix.mode.tests == 'OFF'
+        run: |
+          cmake -S . -B build-c -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_ROARING_TESTS=OFF -DENABLE_ROARING_BENCHMARKS=OFF -DROARING_USE_CPM=OFF \
+            -DBUILD_SHARED_LIBS=${{ matrix.mode.shared }} -DROARING_BUILD_STATIC=ON \
+            -DROARING_BUILD_C_AS_CPP=OFF
+          cmake --build build-c --target roaring --parallel 2
+          if [[ '${{ matrix.mode.shared }}' == ON ]]; then
+            bash tools/check-c-symbols.sh build-c/libroaring.so build/libroaring.so
+          else
+            bash tools/check-c-symbols.sh build-c/src/libroaring.a build/src/libroaring.a
+          fi
