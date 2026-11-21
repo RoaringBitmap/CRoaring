@@ -1,0 +1,197 @@
+# Roaring Bitmap — Portable Format (SDDL v0.6)
+#
+# Roaring bitmaps are compressed bitmaps that store sets of 32-bit unsigned
+# integers using a two-level structure. 32-bit integers are split into a 16-bit
+# "key" (most significant bits) and a 16-bit value (least significant bits).
+# Each key maps to one container of three possible types:
+#   - Array container:  sorted UInt16 list, used when cardinality <= 4096
+#   - Bitset container: dense 8KB bitset, used when cardinality > 4096
+#   - Run container:    sorted list of (start, length) run pairs
+#
+# The initial 16-bit cookie selects between two top-level formats:
+#   12346 (NO_RUN_CONTAINER): no run containers; a 32-bit padding word follows
+#   12347 (WITH_RUNS):        run containers may be present; a run-bitset follows
+#
+# License: Apache-2.0
+# Source:  https://github.com/RoaringBitmap/RoaringFormatSpec
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+var COOKIE_NO_RUNS  = 12346
+var COOKIE_WITH_RUNS = 12347
+var ARRAY_CARDINALITY_THRESHOLD = 4096  # containers with cardinality <= this are array containers
+var NO_OFFSET_THRESHOLD = 4             # offset header present when num_containers >= this
+
+# ---------------------------------------------------------------------------
+# Enumerations
+# ---------------------------------------------------------------------------
+
+enum CookieType {
+    NO_RUNS   = 12346,
+    WITH_RUNS = 12347
+}
+
+# ---------------------------------------------------------------------------
+# Sub-records
+# ---------------------------------------------------------------------------
+
+# A single run: a start value and a run length (both minus-1 encoded for runs).
+# The run covers the closed interval [start, start + count_minus_1], all within
+# the 16-bit value space, so the end must not exceed 65535.
+Record Run() = {
+    start:          UInt16LE,   # first value in the run (16-bit, within container)
+    count_minus_1:  UInt16LE    # length of run minus 1; run covers [start, start + count_minus_1]
+    expect start + count_minus_1 <= 65535   # run must not overflow the 16-bit value space
+}
+
+# Run container: a list of non-overlapping, sorted runs of consecutive 16-bit integers.
+# Space-efficient when values cluster into long consecutive ranges.
+#
+# Ordering invariant across runs (for each run i > 0):
+#   runs[i].start  >  runs[i-1].start + runs[i-1].count_minus_1
+#
+# i.e. runs are strictly increasing and non-overlapping: the start of run i must
+# be strictly greater than the last value of run i-1.
+#
+# In SDDL v0.6 this cross-element constraint is expressed with a `where` clause
+# using `_prev` to refer to the preceding element. The predicate is skipped for
+# the first element (index 0) since there is no predecessor.
+Record RunContainer() = {
+    num_runs:   UInt16LE,       # number of runs in this container
+    runs:       Run[num_runs]
+        where _index == 0 or runs[_index].start > runs[_index - 1].start + runs[_index - 1].count_minus_1
+        # [requires scan — num_runs from local field; where clause references adjacent elements]
+}
+
+# Array container: a sorted array of 16-bit integers.
+# Used when cardinality <= 4096 (denser encoding than a full bitset).
+#
+# Ordering invariant: values are strictly increasing (no duplicates, sorted).
+# In SDDL v0.6 this is expressed with a `where` clause using `_index` to compare
+# each element against its predecessor. The predicate is skipped for index 0.
+Record ArrayContainer(num_values) = {
+    values: UInt16LE[num_values]
+        where _index == 0 or values[_index] > values[_index - 1]
+        # [requires scan — num_values is a parameter, but where clause references local data]
+}
+
+# Bitset container: a dense 65536-bit (8 KB) bitset.
+# Bit i is set if the value i is present in this container.
+# Used when cardinality > 4096.
+Record BitsetContainer() = {
+    bitset: Bytes(8192)             # 2^16 bits = 8192 bytes  [instant-parse]
+}
+
+# Per-container metadata entry in the descriptive header.
+# Stored for every container, before the actual container data.
+Record ContainerMeta() = {
+    key:                UInt16LE,   # 16 most-significant bits shared by all values in this container
+    cardinality_minus_1: UInt16LE   # actual cardinality = cardinality_minus_1 + 1  (range 1..65536)
+}
+
+# ---------------------------------------------------------------------------
+# Top-level header variants (selected by the cookie)
+# ---------------------------------------------------------------------------
+
+# Header used when cookie == 12346 (no run containers).
+# The full 32-bit cookie word is completed by two zero bytes, then a 32-bit
+# container count follows.
+Record HeaderNoRuns() = {
+    _:              Bytes(2),       # two zero bytes completing the 32-bit cookie (0x0000)
+    num_containers: UInt32LE        # number of containers in the bitmap
+}
+
+# Header used when cookie == 12347 (run containers possible).
+# The upper 16 bits of the cookie word are the container count minus 1, followed
+# by a run-bitset whose byte length = ceil(num_containers / 8).
+# Bit i of the bitset (LSB-first) is 1 if container i is a run container.
+Record HeaderWithRuns() = {
+    num_containers_minus_1: UInt16LE,                               # num_containers = this + 1
+    run_bitset: Bytes((num_containers_minus_1 + 1 + 7) / 8)        # ceil(N/8) bytes  [requires scan]
+}
+
+# ---------------------------------------------------------------------------
+# Root-level parse
+# ---------------------------------------------------------------------------
+#
+# The file begins with a 16-bit cookie that determines:
+#   a) which header format to read, and
+#   b) whether any container may be a run container.
+#
+# After the header, num_containers ContainerMeta entries are read.
+#
+# An optional offset table (one UInt32LE per container, giving byte offsets from
+# stream start) follows when:
+#   - cookie == NO_RUNS  (always), OR
+#   - num_containers >= NO_OFFSET_THRESHOLD (4)
+#
+# Finally, num_containers containers are read in order. The container type for
+# container i is determined by:
+#   1. If cookie == WITH_RUNS AND bit i of the run_bitset is set  → RunContainer
+#   2. Else if cardinality_i <= 4096                              → ArrayContainer
+#   3. Else                                                       → BitsetContainer
+
+cookie: UInt16LE
+expect cookie in CookieType   # must be 12346 or 12347
+
+# Read the appropriate header variant based on the cookie.
+when cookie == COOKIE_NO_RUNS {
+    header_no_runs: HeaderNoRuns
+}
+when cookie == COOKIE_WITH_RUNS {
+    header_with_runs: HeaderWithRuns
+}
+
+# Resolve num_containers from whichever header was parsed.
+var num_containers = switch cookie {
+    case COOKIE_NO_RUNS:   header_no_runs.num_containers,
+    default:               header_with_runs.num_containers_minus_1 + 1
+}
+
+# Descriptive header: one ContainerMeta per container.
+container_meta: ContainerMeta[num_containers]   # [requires scan — num_containers from parsed data]
+
+# Optional byte-offset table.
+# Present when there are no run containers OR when num_containers >= 4.
+# Each entry is a UInt32LE byte offset measured from the beginning of the stream.
+when (cookie == COOKIE_NO_RUNS) or (num_containers >= NO_OFFSET_THRESHOLD) {
+    offsets: UInt32LE[num_containers]
+}
+
+# Container data.
+# Each container is one of RunContainer, ArrayContainer, or BitsetContainer.
+# Because the type depends on per-container state (the run_bitset and the
+# individual cardinality values), this section requires scanning.
+#
+# The Union below dispatches on an integer kind computed per container:
+#   kind 1 → RunContainer
+#   kind 2 → ArrayContainer
+#   kind 3 → BitsetContainer
+#
+# Note: SDDL does not support per-element index expressions in top-level
+# repeated unions directly, so the three container types are described
+# individually below for documentation purposes. A custom parser or
+# a function-graph extension is recommended for the full dispatch logic.
+#
+# The layout rules for each container type are:
+#
+#   RunContainer    — consumed when run_bitset bit i == 1 (WITH_RUNS only)
+#       num_runs: UInt16LE
+#       runs:     Run[num_runs]
+#
+#   ArrayContainer  — consumed when cardinality_i <= 4096
+#       values:   UInt16LE[cardinality_i]
+#
+#   BitsetContainer — consumed when cardinality_i > 4096
+#       bitset:   Bytes(8192)   # always exactly 8 KB
+
+# The Union type definitions below allow OpenZL to understand each container
+# shape for compression purposes even when dispatched externally.
+
+Union Container(kind, cardinality) = {
+    case 1: RunContainer,
+    case 2: ArrayContainer(cardinality),
+    case 3: BitsetContainer
+}
