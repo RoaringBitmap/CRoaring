@@ -16,8 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         compiler:
-          - { cc: gcc, cxx: g++ }
-          - { cc: clang, cxx: clang++ }
+          # libstdc++ provides std::expected to gcc but not to clang 18, so
+          # only the gcc job requires the std::expected API to be tested.
+          - { cc: gcc, cxx: g++, cxxflags: -DROARING_TEST_REQUIRE_STD_EXPECTED }
+          - { cc: clang, cxx: clang++, cxxflags: '' }
 
     env:
       CC: ${{ matrix.compiler.cc }}
@@ -29,7 +31,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_C_STANDARD=23 -DCMAKE_CXX_STANDARD=23 -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON -DROARING_UNSAFE_FROZEN_TESTS=ON ..
+          cmake -DCMAKE_C_STANDARD=23 -DCMAKE_CXX_STANDARD=23 -DCMAKE_CXX_FLAGS="${{ matrix.compiler.cxxflags }}" -DCMAKE_INSTALL_PREFIX:PATH=destination -DENABLE_ROARING_TESTS=ON -DROARING_UNSAFE_FROZEN_TESTS=ON ..
           cmake --build .
           ctest . --output-on-failure
           cmake --install .

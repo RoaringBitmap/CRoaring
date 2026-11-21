@@ -214,6 +214,16 @@ class Roaring64 {
         auto it = check.find(x);
         assert_true(
             ans == (it == check.end() ? -1 : std::distance(check.begin(), it)));
+#ifdef ROARING_HAS_STD_EXPECTED
+        auto expected = plain.getIndexExpected(x);
+        if (it == check.end()) {
+            assert_false(expected.has_value());
+            assert_true(expected.error() == roaring::IndexError::NotFound);
+        } else {
+            assert_true(expected.has_value());
+            assert_int_equal(*expected, std::distance(check.begin(), it));
+        }
+#endif
         return ans;
     }
 

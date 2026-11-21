@@ -19,6 +19,13 @@
 #include <roaring/roaring.hh>
 #include <roaring/roaring64map.hh>
 
+// CI jobs that must exercise the std::expected API define this macro, so that
+// a failed feature detection breaks the build instead of skipping the tests.
+#if defined(ROARING_TEST_REQUIRE_STD_EXPECTED) && \
+    !defined(ROARING_HAS_STD_EXPECTED)
+#error "std::expected is required but ROARING_HAS_STD_EXPECTED is not defined"
+#endif
+
 #include "config.h"
 
 using roaring::Roaring;       // the C++ wrapper class
@@ -2753,6 +2760,32 @@ DEFINE_TEST(test_cpp_self_aliasing) {
     assert_true(r.isEmpty());
 }
 
+DEFINE_TEST(test_cpp_roaring64map_get_index) {
+    const uint64_t K = uint64_t(1) << 32;
+    Roaring64Map r;
+    r.addRange(10, 20);  // indices 0 to 9
+    r.add(K + 5);        // index 10
+    r.add(3 * K);        // index 11
+    assert_true(r.getIndex(10) == 0);
+    assert_true(r.getIndex(19) == 9);
+    assert_true(r.getIndex(K + 5) == 10);
+    assert_true(r.getIndex(3 * K) == 11);
+    assert_true(r.getIndex(20) == -1);
+    assert_true(r.getIndex(2 * K) == -1);
+#ifdef ROARING_HAS_STD_EXPECTED
+    assert_true(r.getIndexExpected(10) == 0u);
+    assert_true(r.getIndexExpected(19) == 9u);
+    assert_true(r.getIndexExpected(K + 5) == 10u);
+    assert_true(r.getIndexExpected(3 * K) == 11u);
+    // Missing low bits in an existing bucket, and a missing bucket.
+    assert_false(r.getIndexExpected(20).has_value());
+    assert_true(r.getIndexExpected(20).error() ==
+                roaring::IndexError::NotFound);
+    assert_false(r.getIndexExpected(2 * K).has_value());
+    assert_false(Roaring64Map().getIndexExpected(0).has_value());
+#endif
+}
+
 DEFINE_TEST(test_cpp_roaring64map_self_aliasing) {
     Roaring64Map r;
     r.addRange(10, 5000);
@@ -2886,6 +2919,7 @@ int main() {
         cmocka_unit_test(test_cpp_end_iterator_is_per_bitmap),
         cmocka_unit_test(test_cpp_iterate_halts_early),
         cmocka_unit_test(test_cpp_self_aliasing),
+        cmocka_unit_test(test_cpp_roaring64map_get_index),
         cmocka_unit_test(test_cpp_roaring64map_self_aliasing),
         cmocka_unit_test(test_cpp_fastunion_zero_or_one_input),
     };
