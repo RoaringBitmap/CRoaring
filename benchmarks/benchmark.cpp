@@ -2218,8 +2218,8 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
         out.push_back(std::move(e));
     }
 
-    // Successive AND / OR between adjacent bitmaps (from
-    // real_bitmaps_benchmark).
+    // Materialized AND / OR and boolean overlap between adjacent bitmaps
+    // (from real_bitmaps_benchmark).
     {
         Entry e;
         e.name = "real_bitmaps/successive_and" + suffix;
@@ -2243,6 +2243,33 @@ void register_real_bitmaps(std::vector<Entry> &out, LoadedBitmaps *loaded,
                 roaring_bitmap_free(r);
             }
             return sum;
+        };
+        e.teardown = nullptr;
+        e.ops_per_run = std::max<size_t>(1, loaded->bitmaps.size() - 1);
+        e.inner_reps = 20;
+        out.push_back(std::move(e));
+    }
+    {
+        Entry e;
+        e.name = "real_bitmaps/successive_intersect" + suffix;
+        e.description =
+            "Walks the bitmaps of the \"" + dataset +
+            "\" dataset and calls roaring_bitmap_intersect(bitmap[i], "
+            "bitmap[i+1]) for every adjacent pair, summing the number of "
+            "overlapping pairs. Measures boolean intersection throughput on "
+            "real data; reported cost is per adjacent pair. The input "
+            "bitmaps are run-optimized, shared across iterations and never "
+            "mutated." +
+            in_dataset;
+        e.setup = [loaded]() -> void * { return loaded; };
+        e.run = [](void *sv) -> int64_t {
+            auto *lb = static_cast<LoadedBitmaps *>(sv);
+            int64_t hits = 0;
+            for (size_t i = 0; i + 1 < lb->bitmaps.size(); ++i) {
+                hits += roaring_bitmap_intersect(lb->bitmaps[i],
+                                                 lb->bitmaps[i + 1]);
+            }
+            return hits;
         };
         e.teardown = nullptr;
         e.ops_per_run = std::max<size_t>(1, loaded->bitmaps.size() - 1);

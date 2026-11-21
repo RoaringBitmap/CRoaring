@@ -540,43 +540,121 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
     return answer;
 }
 
+enum { kRunIntersectLinearScan = 8, kRunIntersectScalarPrefix = 10 };
+
+CROARING_ALLOW_UNALIGNED
+static inline int32_t run_container_advance_until(const run_container_t *src,
+                                                  int32_t pos, uint16_t value) {
+    // The caller has already excluded the run at pos.
+    int32_t low = pos;
+    int32_t step = 1;
+    int32_t high;
+    for (;;) {
+        int32_t remaining = src->n_runs - low;
+        int32_t probe = step >= remaining ? src->n_runs - 1 : low + step;
+        const rle16_t *run = &src->runs[probe];
+        uint32_t run_end = (uint32_t)run->value + run->length + 1;
+        if (run_end > value) {
+            high = probe;
+            break;
+        }
+        if (probe == src->n_runs - 1) return src->n_runs;
+        low = probe;
+        step = step <= (src->n_runs - low) / 2 ? step * 2 : src->n_runs - low;
+    }
+
+    int32_t first = low + 1;
+    while (first < high) {
+        int32_t middle = first + (high - first) / 2;
+        const rle16_t *run = &src->runs[middle];
+        uint32_t run_end = (uint32_t)run->value + run->length + 1;
+        if (run_end > value) {
+            high = middle;
+        } else {
+            first = middle + 1;
+        }
+    }
+    return first;
+}
+
 CROARING_ALLOW_UNALIGNED
 bool run_container_intersect(const run_container_t *src_1,
                              const run_container_t *src_2) {
-    const bool if1 = run_container_is_full(src_1);
-    const bool if2 = run_container_is_full(src_2);
-    if (if1 || if2) {
-        if (if1) {
-            return !run_container_empty(src_2);
-        }
-        if (if2) {
-            return !run_container_empty(src_1);
-        }
-    }
+    if (src_1->n_runs == 0 || src_2->n_runs == 0) return false;
     int32_t rlepos = 0;
     int32_t xrlepos = 0;
     int32_t start = src_1->runs[rlepos].value;
     int32_t end = start + src_1->runs[rlepos].length + 1;
     int32_t xstart = src_2->runs[xrlepos].value;
     int32_t xend = xstart + src_2->runs[xrlepos].length + 1;
-    while ((rlepos < src_1->n_runs) && (xrlepos < src_2->n_runs)) {
+    // Try a short scalar prefix before paying for search setup.
+    for (int32_t scanned = 0; scanned < kRunIntersectScalarPrefix; ++scanned) {
         if (end <= xstart) {
             ++rlepos;
-            if (rlepos < src_1->n_runs) {
-                start = src_1->runs[rlepos].value;
-                end = start + src_1->runs[rlepos].length + 1;
-            }
+            if (rlepos == src_1->n_runs) return false;
+            start = src_1->runs[rlepos].value;
+            end = start + src_1->runs[rlepos].length + 1;
         } else if (xend <= start) {
             ++xrlepos;
-            if (xrlepos < src_2->n_runs) {
-                xstart = src_2->runs[xrlepos].value;
-                xend = xstart + src_2->runs[xrlepos].length + 1;
-            }
+            if (xrlepos == src_2->n_runs) return false;
+            xstart = src_2->runs[xrlepos].value;
+            xend = xstart + src_2->runs[xrlepos].length + 1;
         } else {  // they overlap
             return true;
         }
     }
-    return false;
+    for (;;) {
+        if (end <= xstart) {
+            if (++rlepos == src_1->n_runs) return false;
+            start = src_1->runs[rlepos].value;
+            end = start + src_1->runs[rlepos].length + 1;
+            if (end <= xstart) {
+                // Search only when a whole block of runs can be skipped.
+                int32_t probe = rlepos + kRunIntersectLinearScan;
+                if (probe < src_1->n_runs && (int32_t)src_1->runs[probe].value +
+                                                     src_1->runs[probe].length +
+                                                     1 <=
+                                                 xstart) {
+                    rlepos = run_container_advance_until(src_1, probe, xstart);
+                    if (rlepos == src_1->n_runs) return false;
+                    start = src_1->runs[rlepos].value;
+                    end = start + src_1->runs[rlepos].length + 1;
+                } else {
+                    do {
+                        if (++rlepos == src_1->n_runs) return false;
+                        start = src_1->runs[rlepos].value;
+                        end = start + src_1->runs[rlepos].length + 1;
+                    } while (end <= xstart);
+                }
+            }
+        }
+        if (xend <= start) {
+            if (++xrlepos == src_2->n_runs) return false;
+            xstart = src_2->runs[xrlepos].value;
+            xend = xstart + src_2->runs[xrlepos].length + 1;
+            if (xend <= start) {
+                int32_t probe = xrlepos + kRunIntersectLinearScan;
+                if (probe < src_2->n_runs && (int32_t)src_2->runs[probe].value +
+                                                     src_2->runs[probe].length +
+                                                     1 <=
+                                                 start) {
+                    xrlepos = run_container_advance_until(src_2, probe, start);
+                    if (xrlepos == src_2->n_runs) return false;
+                    xstart = src_2->runs[xrlepos].value;
+                    xend = xstart + src_2->runs[xrlepos].length + 1;
+                } else {
+                    do {
+                        if (++xrlepos == src_2->n_runs) return false;
+                        xstart = src_2->runs[xrlepos].value;
+                        xend = xstart + src_2->runs[xrlepos].length + 1;
+                    } while (xend <= start);
+                }
+            }
+        } else {
+            return true;
+        }
+        if (end > xstart) return true;
+    }
 }
 
 /* Compute the difference of src_1 and src_2 and write the result to
