@@ -269,6 +269,26 @@ inline int roaring_leading_zeroes(unsigned long long input_num) {
 #define CROARING_WARN_UNUSED
 #endif
 
+// Compilers may fill local variables that have no initializer: GCC and Clang
+// do so under -ftrivial-auto-var-init=zero|pattern (common in hardened
+// builds), and C++26 (P2795R5) leads GCC to zero them by default.
+// CROARING_INDETERMINATE opts a local variable out of that fill. Use it only on
+// scratch buffers that the code always writes before it reads them.
+#if defined(__cplusplus) && __cplusplus > 202302L && \
+    defined(__has_cpp_attribute)
+#if __has_cpp_attribute(indeterminate)
+#define CROARING_INDETERMINATE [[indeterminate]]
+#endif
+#endif
+#if !defined(CROARING_INDETERMINATE) && defined(__has_attribute)
+#if __has_attribute(uninitialized)
+#define CROARING_INDETERMINATE __attribute__((uninitialized))
+#endif
+#endif
+#ifndef CROARING_INDETERMINATE
+#define CROARING_INDETERMINATE
+#endif
+
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
 #ifdef CROARING_USENEON

@@ -212,7 +212,7 @@ bool array_array_container_inplace_union(array_container_t *src_1,
             // See report https://github.com/RoaringBitmap/CRoaring/issues/476
             // So we copy src_1 aside first, which costs about as much as
             // moving it to the end of its array for the scalar union.
-            uint16_t buffer[DEFAULT_MAX_SIZE];
+            CROARING_INDETERMINATE uint16_t buffer[DEFAULT_MAX_SIZE];
             memcpy(buffer, src_1->array, src_1->cardinality * sizeof(uint16_t));
             src_1->cardinality = (int32_t)fast_union_uint16(
                 buffer, src_1->cardinality, src_2->array, src_2->cardinality,
