@@ -2487,7 +2487,7 @@ size_t roaring64_bitmap_portable_size_in_bytes(const roaring64_bitmap_t *r) {
             // Read the containers in batches, so that their cache misses
             // overlap instead of each one waiting behind the tree walk.
             enum { LEAF_BATCH_SIZE = 64 };
-            leaf_t leaves[LEAF_BATCH_SIZE];
+            CROARING_INDETERMINATE leaf_t leaves[LEAF_BATCH_SIZE];
             int32_t num_leaves = 0;
             do {
                 leaves[num_leaves++] = (leaf_t)*it.value;
